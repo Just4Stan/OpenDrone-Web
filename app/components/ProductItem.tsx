@@ -21,7 +21,7 @@ export function ProductItem({
   const image = product.featuredImage;
   return (
     <Link
-      className="group block bg-[var(--color-bg-card)] border border-[var(--color-border)] rounded-lg overflow-hidden hover:border-[var(--color-accent-light)]/30 transition-all duration-300"
+      className="product-card group"
       key={product.id}
       prefetch="intent"
       to={variantUrl}
@@ -34,15 +34,15 @@ export function ProductItem({
             data={image}
             loading={loading}
             sizes="(min-width: 45em) 400px, 100vw"
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+            className="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-500"
           />
         </div>
       )}
-      <div className="p-4">
-        <h4 className="text-sm font-medium mb-1 group-hover:text-[var(--color-gold)] transition-colors">
+      <div className="p-3">
+        <h4 className="text-xs font-medium mb-0.5 group-hover:text-[var(--color-gold)] transition-colors leading-snug">
           {product.title}
         </h4>
-        <p className="font-mono text-xs text-[var(--color-text-muted)]">
+        <p className="font-mono text-[11px] text-[var(--color-text-muted)]">
           <Money data={product.priceRange.minVariantPrice} />
         </p>
       </div>

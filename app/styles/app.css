@@ -18,7 +18,7 @@
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, "Cascadia Code", monospace;
 
-  --header-height: 64px;
+  --header-height: 56px;
   --aside-width: 400px;
 }
 
@@ -48,7 +48,7 @@ body {
 
 /* Scrollbar */
 ::-webkit-scrollbar {
-  width: 6px;
+  width: 5px;
 }
 ::-webkit-scrollbar-track {
   background: var(--color-bg);
@@ -56,6 +56,9 @@ body {
 ::-webkit-scrollbar-thumb {
   background: var(--color-border);
   border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-text-muted);
 }
 
 /* Links */
@@ -67,7 +70,180 @@ a:hover {
   color: var(--color-accent);
 }
 
-/* Aside (cart drawer) */
+/* ============================================
+   Header
+   ============================================ */
+
+.site-header {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  height: var(--header-height);
+  padding: 0 1.5rem;
+  background: rgba(10, 10, 10, 0.92);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--color-border);
+}
+
+@media (min-width: 768px) {
+  .site-header {
+    padding: 0 2.5rem;
+  }
+}
+
+/* ============================================
+   Homepage sections
+   ============================================ */
+
+.section-spacing {
+  padding-top: 5rem;
+  padding-bottom: 5rem;
+}
+
+@media (min-width: 768px) {
+  .section-spacing {
+    padding-top: 6rem;
+    padding-bottom: 6rem;
+  }
+}
+
+.section-label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.25em;
+  color: var(--color-accent-light);
+  margin-bottom: 0.375rem;
+}
+
+.section-title {
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  line-height: 1.15;
+}
+
+@media (min-width: 768px) {
+  .section-title {
+    font-size: 1.875rem;
+  }
+}
+
+/* ============================================
+   Hero CTAs
+   ============================================ */
+
+.hero-cta-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.5rem 1.25rem;
+  background: var(--color-gold);
+  color: var(--color-bg);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  border-radius: 3px;
+  transition: background-color 150ms ease;
+}
+
+.hero-cta-primary:hover {
+  background: var(--color-gold-hover);
+  color: var(--color-bg);
+}
+
+.hero-cta-secondary {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.5rem 1.25rem;
+  border: 1px solid var(--color-border);
+  color: var(--color-text-muted);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  border-radius: 3px;
+  transition: border-color 150ms ease, color 150ms ease;
+}
+
+.hero-cta-secondary:hover {
+  border-color: var(--color-text-muted);
+  color: var(--color-text);
+}
+
+/* ============================================
+   Feature cards
+   ============================================ */
+
+.feature-card {
+  display: flex;
+  flex-direction: column;
+  padding: 1.25rem;
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  transition: border-color 200ms ease;
+}
+
+.feature-card:hover {
+  border-color: color-mix(in srgb, var(--color-accent-light) 30%, transparent);
+}
+
+.spec-tag {
+  padding: 0.25rem 0.5rem;
+  background: var(--color-bg);
+  border-radius: 3px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--color-text-muted);
+  letter-spacing: 0.02em;
+}
+
+/* ============================================
+   Repo cards (open source section)
+   ============================================ */
+
+.repo-card {
+  text-align: left;
+  padding: 1rem;
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  transition: border-color 200ms ease;
+}
+
+.repo-card:hover {
+  border-color: color-mix(in srgb, var(--color-accent-light) 30%, transparent);
+}
+
+/* ============================================
+   Product cards (override for consistency)
+   ============================================ */
+
+.product-card {
+  display: block;
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  overflow: hidden;
+  transition: border-color 200ms ease;
+}
+
+.product-card:hover {
+  border-color: color-mix(in srgb, var(--color-accent-light) 30%, transparent);
+}
+
+/* ============================================
+   Aside (cart / search drawer)
+   ============================================ */
+
 aside {
   background: var(--color-bg-elevated);
   box-shadow: 0 0 50px rgba(0, 0, 0, 0.5);
@@ -158,7 +334,10 @@ button.reset {
   color: inherit;
 }
 
-/* Cart */
+/* ============================================
+   Cart
+   ============================================ */
+
 .cart-main {
   height: 100%;
   max-height: calc(100vh - 250px);
@@ -194,7 +373,10 @@ button.reset {
   display: flex;
 }
 
-/* Product options */
+/* ============================================
+   Product options
+   ============================================ */
+
 .product-options-grid {
   display: flex;
   flex-wrap: wrap;
@@ -220,7 +402,10 @@ button.reset {
   color: var(--color-accent);
 }
 
-/* Search */
+/* ============================================
+   Search
+   ============================================ */
+
 .predictive-search {
   height: calc(100vh - var(--header-height) - 40px);
   overflow-y: auto;
