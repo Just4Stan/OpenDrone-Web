@@ -67,19 +67,20 @@ export default function Homepage() {
 
 function HeroSection() {
   return (
-    <section className="relative min-h-[90vh] flex items-center overflow-hidden">
-      {/* 3D Background */}
-      <div className="absolute inset-0 opacity-60">
-        <ClientHeroScene />
-      </div>
+    <section className="relative min-h-[200vh] overflow-hidden">
+      {/* 3D Scene — sticky, full viewport */}
+      <div className="sticky top-0 h-screen">
+        <div className="absolute inset-0">
+          <ClientHeroScene />
+        </div>
 
-      {/* Gradient overlays */}
-      <div className="absolute inset-0 bg-gradient-to-b from-[var(--color-bg)] via-transparent to-[var(--color-bg)]" />
-      <div className="absolute inset-0 bg-gradient-to-r from-[var(--color-bg)] via-transparent to-transparent" />
+        {/* Gradient overlays — less aggressive so drone is prominent */}
+        <div className="absolute inset-0 bg-gradient-to-b from-[var(--color-bg)]/80 via-transparent to-[var(--color-bg)]/60" />
+        <div className="absolute inset-0 bg-gradient-to-r from-[var(--color-bg)]/70 via-transparent to-transparent" />
 
-      {/* Content */}
-      <div className="relative z-10 max-w-7xl mx-auto px-6 py-24">
-        <div className="max-w-2xl">
+        {/* Content */}
+        <div className="relative z-10 max-w-7xl mx-auto px-6 flex items-center h-full">
+          <div className="max-w-2xl">
           <p className="font-mono text-xs uppercase tracking-[0.3em] text-[var(--color-accent)] mb-4">
             Open Source Drone Electronics
           </p>
@@ -118,10 +119,11 @@ function HeroSection() {
         </div>
       </div>
 
-      {/* Scroll indicator */}
-      <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 text-[var(--color-text-muted)]">
-        <span className="font-mono text-[10px] uppercase tracking-widest">Scroll</span>
-        <div className="w-px h-8 bg-gradient-to-b from-[var(--color-text-muted)] to-transparent animate-pulse" />
+        {/* Scroll indicator */}
+        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 text-[var(--color-text-muted)]">
+          <span className="font-mono text-[10px] uppercase tracking-widest">Scroll to explore</span>
+          <div className="w-px h-8 bg-gradient-to-b from-[var(--color-text-muted)] to-transparent animate-pulse" />
+        </div>
       </div>
     </section>
   );
