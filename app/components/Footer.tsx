@@ -71,7 +71,7 @@ export function Footer({
           </p>
           <div className="flex items-center gap-4">
             <a
-              href="https://github.com/OpenDrone"
+              href="https://github.com/Just4Stan"
               target="_blank"
               rel="noopener noreferrer"
               className="text-[var(--color-text-muted)] hover:text-[var(--color-text)] transition-colors"

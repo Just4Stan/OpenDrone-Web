@@ -104,7 +104,7 @@ function HeroSection() {
               </svg>
             </Link>
             <a
-              href="https://github.com/OpenDrone"
+              href="https://github.com/Just4Stan"
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-2 px-6 py-3 border border-[var(--color-border)] text-[var(--color-text)] font-mono text-sm uppercase tracking-wider rounded hover:border-[var(--color-text-muted)] transition-colors"
@@ -260,7 +260,7 @@ function OpenSourceSection() {
         </p>
         <div className="flex flex-wrap justify-center gap-4">
           <a
-            href="https://github.com/OpenDrone"
+            href="https://github.com/Just4Stan"
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-3 px-6 py-3 bg-[var(--color-bg-card)] border border-[var(--color-border)] rounded hover:border-[var(--color-text-muted)] transition-colors"
@@ -275,15 +275,18 @@ function OpenSourceSection() {
         {/* Repo cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-12 max-w-4xl mx-auto">
           {[
-            {name: 'OpenFC', description: 'Flight controller hardware & firmware', license: 'CERN-OHL-S / GPL'},
-            {name: 'OpenESC', description: 'ESC hardware with AM32 firmware', license: 'CERN-OHL-S / GPL'},
-            {name: 'OpenDrone-Web', description: 'This website — Hydrogen storefront', license: 'MIT'},
+            {name: 'OpenFC', description: '20x20 flight controller with integrated ELRS receiver', license: 'CERN-OHL-S', url: 'https://github.com/Just4Stan/OpenFC'},
+            {name: 'Open-4in1-AM32-ESC', description: '20x20 4-in-1 ESC, 35A, AM32 firmware', license: 'CERN-OHL-S', url: 'https://github.com/Just4Stan/Open-4in1-AM32-ESC'},
+            {name: 'Open-4in1-AM32-ESC-30x30', description: '30x30 variant of the 4-in-1 ESC', license: 'CERN-OHL-S', url: 'https://github.com/Just4Stan/Open-4in1-AM32-ESC-30x30'},
           ].map((repo) => (
-            <div
+            <a
+              href={repo.url}
+              target="_blank"
+              rel="noopener noreferrer"
               key={repo.name}
-              className="text-left p-4 bg-[var(--color-bg-card)] border border-[var(--color-border)] rounded-lg"
+              className="text-left p-4 bg-[var(--color-bg-card)] border border-[var(--color-border)] rounded-lg hover:border-[var(--color-accent-light)]/30 transition-all"
             >
-              <h4 className="font-mono text-sm font-bold text-[var(--color-accent)] mb-1">
+              <h4 className="font-mono text-sm font-bold text-[var(--color-accent-light)] mb-1">
                 {repo.name}
               </h4>
               <p className="text-xs text-[var(--color-text-muted)] mb-3">
@@ -292,7 +295,7 @@ function OpenSourceSection() {
               <p className="font-mono text-[10px] text-[var(--color-text-muted)]">
                 {repo.license}
               </p>
-            </div>
+            </a>
           ))}
         </div>
       </div>
