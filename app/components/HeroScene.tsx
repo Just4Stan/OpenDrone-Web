@@ -66,7 +66,7 @@ function DroneModel({scrollProgress}: {scrollProgress: number}) {
   // Try loading the real model, fall back to placeholder
   let model: ReturnType<typeof useGLTF> | null = null;
   try {
-    model = useGLTF('/models/drone-skeleton.glb');
+    model = useGLTF('/models/opendrone3.glb');
   } catch {
     model = null;
   }
