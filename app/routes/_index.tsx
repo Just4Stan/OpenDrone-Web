@@ -67,18 +67,18 @@ export default function Homepage() {
 
 function HeroSection() {
   return (
-    <section className="hero-section relative h-screen">
+    <section className="hero-section relative" style={{height: '200vh'}}>
+      <div className="sticky top-0 h-screen">
         <div className="absolute inset-0">
           <ClientHeroScene />
         </div>
 
-        {/* Bottom gradient — subtle fade for text legibility */}
+        {/* Bottom gradient */}
         <div className="absolute bottom-0 left-0 right-0 h-48 bg-gradient-to-t from-[var(--color-bg)] via-[var(--color-bg)]/60 to-transparent pointer-events-none" />
 
-        {/* Bottom-anchored content — tight, minimal, stays out of the drone's way */}
+        {/* Bottom content */}
         <div className="absolute bottom-12 left-0 right-0 z-10 px-6 md:px-10">
           <div className="max-w-7xl mx-auto flex items-end justify-between gap-6">
-            {/* Left: wordmark + tagline */}
             <div className="flex flex-col gap-1">
               <h1 className="font-display text-3xl md:text-4xl font-bold tracking-tight leading-none">
                 Open<span className="text-[var(--color-gold)]">Drone</span>
@@ -87,34 +87,25 @@ function HeroSection() {
                 Open Source Drone Electronics
               </p>
             </div>
-
-            {/* Right: CTAs */}
             <div className="hidden md:flex items-center gap-3">
-              <Link
-                to="/collections/all"
-                className="hero-cta-primary"
-              >
+              <Link to="/collections/all" className="hero-cta-primary">
                 Shop
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                   <line x1="5" y1="12" x2="19" y2="12" />
                   <polyline points="12 5 19 12 12 19" />
                 </svg>
               </Link>
-              <a
-                href="https://github.com/Just4Stan"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="hero-cta-secondary"
-              >
+              <a href="https://github.com/Just4Stan" target="_blank" rel="noopener noreferrer" className="hero-cta-secondary">
                 Source
               </a>
             </div>
           </div>
         </div>
 
-      {/* Scroll hint */}
-      <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex flex-col items-center gap-1 opacity-40">
-        <div className="w-px h-5 bg-gradient-to-b from-[var(--color-text-muted)] to-transparent animate-pulse" />
+        {/* Scroll hint */}
+        <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex flex-col items-center gap-1 opacity-40">
+          <div className="w-px h-5 bg-gradient-to-b from-[var(--color-text-muted)] to-transparent animate-pulse" />
+        </div>
       </div>
     </section>
   );
