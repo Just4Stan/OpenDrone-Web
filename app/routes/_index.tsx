@@ -67,9 +67,7 @@ export default function Homepage() {
 
 function HeroSection() {
   return (
-    <section className="hero-section relative" style={{height: '200vh'}}>
-      {/* 3D Scene — sticky, full viewport, drone dominates */}
-      <div className="sticky top-0 h-screen">
+    <section className="hero-section relative h-screen">
         <div className="absolute inset-0">
           <ClientHeroScene />
         </div>
@@ -114,10 +112,9 @@ function HeroSection() {
           </div>
         </div>
 
-        {/* Scroll hint */}
-        <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex flex-col items-center gap-1 opacity-40">
-          <div className="w-px h-5 bg-gradient-to-b from-[var(--color-text-muted)] to-transparent animate-pulse" />
-        </div>
+      {/* Scroll hint */}
+      <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex flex-col items-center gap-1 opacity-40">
+        <div className="w-px h-5 bg-gradient-to-b from-[var(--color-text-muted)] to-transparent animate-pulse" />
       </div>
     </section>
   );

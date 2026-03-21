@@ -17,48 +17,61 @@ function useScrollProgress() {
   return progress;
 }
 
-function DroneModel({scrollProgress}: {scrollProgress: number}) {
-  const groupRef = useRef<Group>(null);
+function useGLTFModel(url: string, materialProps?: {color: number; specular: number; shininess: number}) {
   const [model, setModel] = useState<THREE.Group | null>(null);
-
   useEffect(() => {
     const loader = new GLTFLoader();
-    loader.load('/models/opendrone3.glb', (gltf) => {
+    loader.load(url, (gltf) => {
       const scene = gltf.scene;
-      // Center
       const box = new THREE.Box3().setFromObject(scene);
       const center = box.getCenter(new THREE.Vector3());
       scene.position.sub(center);
-      // Material
-      scene.traverse((child: any) => {
-        if (child.isMesh) {
-          child.material = new THREE.MeshPhongMaterial({
-            color: 0x555555,
-            specular: 0xb8922e,
-            shininess: 60,
-          });
-        }
-      });
+      if (materialProps) {
+        scene.traverse((child: any) => {
+          if (child.isMesh) {
+            child.material = new THREE.MeshPhongMaterial(materialProps);
+          }
+        });
+      }
       setModel(scene);
     });
-  }, []);
+  }, [url]);
+  return model;
+}
 
-  // Add model to group imperatively (avoids R3F primitive/hooks issues)
+function DroneModel({scrollProgress}: {scrollProgress: number}) {
+  const groupRef = useRef<Group>(null);
+
+  // Load frame + boards
+  const frame = useGLTFModel('/models/opendrone3.glb', {color: 0x555555, specular: 0xb8922e, shininess: 60});
+  const fc = useGLTFModel('/models/openfc.glb'); // Keep original KiCad materials
+  const esc = useGLTFModel('/models/esc-20x20.glb');
+
+  // Add models to group
   useEffect(() => {
-    if (!groupRef.current || !model) return;
-    groupRef.current.add(model);
-    return () => {
-      groupRef.current?.remove(model);
-    };
-  }, [model]);
+    if (!groupRef.current) return;
+    // Clear
+    while (groupRef.current.children.length > 0) {
+      groupRef.current.remove(groupRef.current.children[0]);
+    }
+    if (frame) groupRef.current.add(frame);
+    if (fc) {
+      // FC sits on top of the stack — slight Y offset
+      fc.position.set(0, 0.003, 0);
+      groupRef.current.add(fc);
+    }
+    if (esc) {
+      // ESC sits below FC
+      esc.position.set(0, -0.003, 0);
+      groupRef.current.add(esc);
+    }
+  }, [frame, fc, esc]);
 
   useFrame((state) => {
     if (!groupRef.current) return;
     groupRef.current.rotation.y = state.clock.elapsedTime * 0.15;
   });
 
-  // Scale: model is ~0.13m wide. Scale 12 = ~1.6 units.
-  // Tilt X by ~35deg so camera sees the top face.
   return <group ref={groupRef} scale={12} rotation={[0.6, 0, 0.1]} />;
 }
 
