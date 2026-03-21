@@ -9,3 +9,8 @@ build/
 *.swo
 *~
 .claude/
+/public/build
+/.mf
+.shopify
+.react-router
+.cursor/

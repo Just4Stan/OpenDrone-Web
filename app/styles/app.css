@@ -1,0 +1,232 @@
+@import "tailwindcss";
+
+@theme {
+  --color-bg: #0a0a0a;
+  --color-bg-card: #141414;
+  --color-bg-elevated: #1a1a1a;
+  --color-text: #e5e5e5;
+  --color-text-muted: #737373;
+  --color-accent: #f97316;
+  --color-accent-hover: #fb923c;
+  --color-border: #262626;
+
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "Cascadia Code", monospace;
+
+  --header-height: 64px;
+  --aside-width: 400px;
+}
+
+/* Base styles */
+html {
+  background-color: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  min-height: 100vh;
+}
+
+/* Selection */
+::selection {
+  background-color: var(--color-accent);
+  color: var(--color-bg);
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: var(--color-bg);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+  border-radius: 3px;
+}
+
+/* Links */
+a {
+  color: var(--color-text);
+  text-decoration: none;
+}
+a:hover {
+  color: var(--color-accent);
+}
+
+/* Aside (cart drawer) */
+aside {
+  background: var(--color-bg-elevated);
+  box-shadow: 0 0 50px rgba(0, 0, 0, 0.5);
+  height: 100vh;
+  width: min(var(--aside-width), 100vw);
+  position: fixed;
+  right: calc(-1 * var(--aside-width));
+  top: 0;
+  transition: transform 200ms ease-in-out;
+  z-index: 50;
+}
+
+aside header {
+  align-items: center;
+  border-bottom: 1px solid var(--color-border);
+  display: flex;
+  height: var(--header-height);
+  justify-content: space-between;
+  padding: 0 20px;
+}
+
+aside header .close {
+  color: var(--color-text-muted);
+  font-weight: bold;
+  text-decoration: none;
+  transition: color 200ms;
+}
+aside header .close:hover {
+  color: var(--color-text);
+}
+
+aside main {
+  margin: 1rem;
+}
+
+.overlay {
+  background: rgba(0, 0, 0, 0.6);
+  bottom: 0;
+  left: 0;
+  opacity: 0;
+  pointer-events: none;
+  position: fixed;
+  right: 0;
+  top: 0;
+  transition: opacity 400ms;
+  visibility: hidden;
+  z-index: 40;
+}
+
+.overlay.expanded {
+  opacity: 1;
+  pointer-events: auto;
+  visibility: visible;
+}
+
+.overlay.expanded aside {
+  transform: translateX(calc(var(--aside-width) * -1));
+}
+
+.overlay .close-outside {
+  background: transparent;
+  border: none;
+  color: transparent;
+  height: 100%;
+  left: 0;
+  position: absolute;
+  top: 0;
+  width: calc(100% - var(--aside-width));
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+/* Button reset */
+button.reset {
+  border: 0;
+  background: inherit;
+  font-size: inherit;
+  color: inherit;
+}
+
+/* Cart */
+.cart-main {
+  height: 100%;
+  max-height: calc(100vh - 250px);
+  overflow-y: auto;
+}
+
+.cart-line {
+  padding: 0.75rem 0;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.cart-line-inner {
+  display: flex;
+}
+
+.cart-line img {
+  height: 100%;
+  display: block;
+  margin-right: 0.75rem;
+  border-radius: 4px;
+}
+
+.cart-summary-aside {
+  background: var(--color-bg-elevated);
+  border-top: 1px solid var(--color-border);
+  bottom: 0;
+  padding-top: 0.75rem;
+  position: absolute;
+  width: calc(var(--aside-width) - 40px);
+}
+
+.cart-line-quantity {
+  display: flex;
+}
+
+/* Product options */
+.product-options-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.product-options-item {
+  padding: 0.25rem 0.75rem;
+  background-color: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  color: var(--color-text);
+  font-size: 0.875rem;
+  font-family: var(--font-mono);
+  cursor: pointer;
+  transition: border-color 200ms;
+}
+.product-options-item:hover {
+  border-color: var(--color-accent);
+}
+.product-options-item[aria-checked="true"] {
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+}
+
+/* Search */
+.predictive-search {
+  height: calc(100vh - var(--header-height) - 40px);
+  overflow-y: auto;
+}
+
+.predictive-search input {
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  color: var(--color-text);
+  padding: 0.5rem 1rem;
+  width: 100%;
+  font-family: var(--font-mono);
+}
+
+/* Mock shop notice */
+.mock-shop-notice {
+  display: none;
+}
