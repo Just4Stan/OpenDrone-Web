@@ -128,20 +128,20 @@ function FeaturesSection() {
     {
       title: 'OpenFC',
       subtitle: 'Flight Controller',
-      description: 'STM32H7 with dual IMU, barometer, and OSD. Betaflight & INAV ready.',
-      specs: ['STM32H750', '2x BMI270', 'BMP388 Baro', '8 Motor Out'],
+      description: 'RP2354B flight controller with integrated break-off ELRS receiver, 16MB blackbox, and analog OSD.',
+      specs: ['RP2354B', 'LSM6DSV IMU', 'BMP388 Baro', 'ELRS 2.4GHz'],
     },
     {
-      title: 'OpenESC',
+      title: 'OpenFC-ECO',
+      subtitle: 'Flight Controller',
+      description: 'Stripped-down OpenFC. Same RP2354B core and IMU, no baro, no blackbox, no ELRS. Lower cost.',
+      specs: ['RP2354B', 'LSM6DSV IMU', 'Analog OSD', '2-6S Input'],
+    },
+    {
+      title: 'Open ESC',
       subtitle: '4-in-1 ESC',
-      description: '50A continuous per motor, AM32 firmware, 128kHz PWM, DShot1200.',
-      specs: ['50A / Motor', 'AM32 FW', '128kHz PWM', 'DShot1200'],
-    },
-    {
-      title: 'Open Stack',
-      subtitle: 'FC + ESC Combo',
-      description: '30.5x30.5mm mounting, single connector, 3-6S. Drop-in integration.',
-      specs: ['30.5mm Mount', '8-pin Link', '3-6S LiPo', '20x20 Option'],
+      description: 'AM32 firmware, AT32F421 MCU, 35A per channel. 20x20 and 30x30 mounting options.',
+      specs: ['35A / Channel', 'AM32 FW', 'AT32F421', '3-6S LiPo'],
     },
   ];
 
