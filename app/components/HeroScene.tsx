@@ -44,7 +44,7 @@ function DronePlaceholder() {
       {/* Center body — flight controller */}
       <mesh position={[0, 0, 0]}>
         <boxGeometry args={[1.2, 0.15, 1.2]} />
-        <meshStandardMaterial color="#2d6b3f" metalness={0.8} roughness={0.2} />
+        <meshStandardMaterial color="#1f4d2c" metalness={0.8} roughness={0.2} />
       </mesh>
 
       {/* Arms */}
@@ -95,7 +95,7 @@ function Propeller({position, direction}: {position: number[]; direction: number
     <mesh ref={ref} position={position as [number, number, number]}>
       <torusGeometry args={[0.3, 0.01, 4, 32]} />
       <meshStandardMaterial
-        color="#2d6b3f"
+        color="#1f4d2c"
         transparent
         opacity={0.3}
         metalness={0.5}
@@ -109,9 +109,9 @@ function Scene() {
   return (
     <>
       <ambientLight intensity={0.3} />
-      <directionalLight position={[5, 5, 5]} intensity={1} color="#2d6b3f" />
+      <directionalLight position={[5, 5, 5]} intensity={1} color="#1f4d2c" />
       <directionalLight position={[-5, 3, -5]} intensity={0.5} color="#3b82f6" />
-      <pointLight position={[0, -2, 0]} intensity={0.3} color="#2d6b3f" />
+      <pointLight position={[0, -2, 0]} intensity={0.3} color="#1f4d2c" />
       <DronePlaceholder />
       <OrbitControls
         enableZoom={false}
