@@ -19,7 +19,7 @@ export function Footer({
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {/* Brand */}
           <div>
-            <h3 className="font-mono text-lg font-bold text-[var(--color-accent)] mb-3">
+            <h3 className="font-mono text-lg font-bold text-[var(--color-gold)] mb-3">
               OPENDRONE
             </h3>
             <p className="text-sm text-[var(--color-text-muted)] leading-relaxed">

@@ -21,7 +21,7 @@ export function ProductItem({
   const image = product.featuredImage;
   return (
     <Link
-      className="group block bg-[var(--color-bg-card)] border border-[var(--color-border)] rounded-lg overflow-hidden hover:border-[var(--color-accent)]/30 transition-all duration-300"
+      className="group block bg-[var(--color-bg-card)] border border-[var(--color-border)] rounded-lg overflow-hidden hover:border-[var(--color-accent-light)]/30 transition-all duration-300"
       key={product.id}
       prefetch="intent"
       to={variantUrl}
@@ -39,7 +39,7 @@ export function ProductItem({
         </div>
       )}
       <div className="p-4">
-        <h4 className="text-sm font-medium mb-1 group-hover:text-[var(--color-accent)] transition-colors">
+        <h4 className="text-sm font-medium mb-1 group-hover:text-[var(--color-gold)] transition-colors">
           {product.title}
         </h4>
         <p className="font-mono text-xs text-[var(--color-text-muted)]">

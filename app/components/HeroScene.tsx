@@ -1,12 +1,30 @@
 import {Canvas, useFrame} from '@react-three/fiber';
 import {
-  Float,
-  MeshDistortMaterial,
-  Environment,
   OrbitControls,
 } from '@react-three/drei';
-import {Suspense, useRef, useState, useEffect} from 'react';
+import {Component, Suspense, useRef, useState, useEffect} from 'react';
+import type {ErrorInfo, ReactNode} from 'react';
 import type {Mesh, Group} from 'three';
+
+class SceneErrorBoundary extends Component<
+  {children: ReactNode; fallback: ReactNode},
+  {hasError: boolean}
+> {
+  constructor(props: {children: ReactNode; fallback: ReactNode}) {
+    super(props);
+    this.state = {hasError: false};
+  }
+  static getDerivedStateFromError() {
+    return {hasError: true};
+  }
+  componentDidCatch(error: Error, info: ErrorInfo) {
+    console.warn('3D scene failed to load:', error.message);
+  }
+  render() {
+    if (this.state.hasError) return this.props.fallback;
+    return this.props.children;
+  }
+}
 
 /**
  * Placeholder drone-like geometry.
@@ -26,7 +44,7 @@ function DronePlaceholder() {
       {/* Center body — flight controller */}
       <mesh position={[0, 0, 0]}>
         <boxGeometry args={[1.2, 0.15, 1.2]} />
-        <meshStandardMaterial color="#f97316" metalness={0.8} roughness={0.2} />
+        <meshStandardMaterial color="#2d6b3f" metalness={0.8} roughness={0.2} />
       </mesh>
 
       {/* Arms */}
@@ -77,7 +95,7 @@ function Propeller({position, direction}: {position: number[]; direction: number
     <mesh ref={ref} position={position as [number, number, number]}>
       <torusGeometry args={[0.3, 0.01, 4, 32]} />
       <meshStandardMaterial
-        color="#f97316"
+        color="#2d6b3f"
         transparent
         opacity={0.3}
         metalness={0.5}
@@ -91,9 +109,9 @@ function Scene() {
   return (
     <>
       <ambientLight intensity={0.3} />
-      <directionalLight position={[5, 5, 5]} intensity={1} color="#f97316" />
+      <directionalLight position={[5, 5, 5]} intensity={1} color="#2d6b3f" />
       <directionalLight position={[-5, 3, -5]} intensity={0.5} color="#3b82f6" />
-      <pointLight position={[0, -2, 0]} intensity={0.3} color="#f97316" />
+      <pointLight position={[0, -2, 0]} intensity={0.3} color="#2d6b3f" />
       <DronePlaceholder />
       <OrbitControls
         enableZoom={false}
@@ -103,7 +121,8 @@ function Scene() {
         maxPolarAngle={Math.PI / 2.2}
         minPolarAngle={Math.PI / 3}
       />
-      <Environment preset="night" />
+      {/* Rim light for depth */}
+      <spotLight position={[-3, 3, -3]} intensity={0.8} color="#1e40af" angle={0.6} />
     </>
   );
 }
@@ -131,15 +150,17 @@ export function HeroScene() {
 
   return (
     <div className="absolute inset-0">
-      <Suspense fallback={<HeroFallback />}>
-        <Canvas
-          camera={{position: [3, 2, 3], fov: 45}}
-          style={{background: 'transparent'}}
-          gl={{antialias: true, alpha: true}}
-        >
-          <Scene />
-        </Canvas>
-      </Suspense>
+      <SceneErrorBoundary fallback={<HeroFallback />}>
+        <Suspense fallback={<HeroFallback />}>
+          <Canvas
+            camera={{position: [3, 2, 3], fov: 45}}
+            style={{background: 'transparent'}}
+            gl={{antialias: true, alpha: true}}
+          >
+            <Scene />
+          </Canvas>
+        </Suspense>
+      </SceneErrorBoundary>
     </div>
   );
 }

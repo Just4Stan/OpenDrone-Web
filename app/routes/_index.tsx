@@ -1,12 +1,22 @@
 import {Await, useLoaderData, Link} from 'react-router';
 import type {Route} from './+types/_index';
-import {Suspense, lazy, useEffect, useRef} from 'react';
+import {Suspense, useEffect, useState} from 'react';
 import type {RecommendedProductsQuery} from 'storefrontapi.generated';
 import {ProductItem} from '~/components/ProductItem';
 
-const HeroScene = lazy(() =>
-  import('~/components/HeroScene').then((m) => ({default: m.HeroScene}))
-);
+// Fully client-only — returns null during SSR, lazy-loads on client
+function ClientHeroScene() {
+  const [Scene, setScene] = useState<React.ComponentType | null>(null);
+
+  useEffect(() => {
+    import('~/components/HeroScene').then((m) => {
+      setScene(() => m.HeroScene);
+    });
+  }, []);
+
+  if (!Scene) return null;
+  return <Scene />;
+}
 
 export const meta: Route.MetaFunction = () => {
   return [
@@ -60,9 +70,7 @@ function HeroSection() {
     <section className="relative min-h-[90vh] flex items-center overflow-hidden">
       {/* 3D Background */}
       <div className="absolute inset-0 opacity-60">
-        <Suspense fallback={null}>
-          <HeroScene />
-        </Suspense>
+        <ClientHeroScene />
       </div>
 
       {/* Gradient overlays */}
@@ -78,7 +86,7 @@ function HeroSection() {
           <h1 className="text-5xl md:text-7xl font-bold tracking-tight leading-[1.05] mb-6">
             Build Better
             <br />
-            <span className="text-[var(--color-accent)]">Drones.</span>
+            <span className="text-[var(--color-gold)]">Drones.</span>
           </h1>
           <p className="text-lg md:text-xl text-[var(--color-text-muted)] max-w-lg mb-10 leading-relaxed">
             Flight controllers and ESCs designed from the ground up.
@@ -87,7 +95,7 @@ function HeroSection() {
           <div className="flex flex-wrap gap-4">
             <Link
               to="/collections/all"
-              className="inline-flex items-center gap-2 px-6 py-3 bg-[var(--color-accent)] text-[var(--color-bg)] font-mono text-sm font-bold uppercase tracking-wider rounded hover:bg-[var(--color-accent-hover)] transition-colors"
+              className="inline-flex items-center gap-2 px-6 py-3 bg-[var(--color-gold)] text-[var(--color-bg)] font-mono text-sm font-bold uppercase tracking-wider rounded hover:bg-[var(--color-gold-hover)] transition-colors"
             >
               Shop Now
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -157,7 +165,7 @@ function FeaturesSection() {
           {features.map((feature) => (
             <div
               key={feature.title}
-              className="group p-6 bg-[var(--color-bg-card)] border border-[var(--color-border)] rounded-lg hover:border-[var(--color-accent)]/30 transition-all duration-300"
+              className="group p-6 bg-[var(--color-bg-card)] border border-[var(--color-border)] rounded-lg hover:border-[var(--color-accent-light)]/30 transition-all duration-300"
             >
               <p className="font-mono text-[10px] uppercase tracking-widest text-[var(--color-accent)] mb-1">
                 {feature.subtitle}

@@ -30,7 +30,7 @@ export function Header({
         prefetch="intent"
         to="/"
         end
-        className="font-mono text-lg font-bold tracking-tight text-[var(--color-accent)] hover:text-[var(--color-accent-hover)] transition-colors"
+        className="font-mono text-lg font-bold tracking-tight text-[var(--color-gold)] hover:text-[var(--color-gold-hover)] transition-colors"
       >
         OPENDRONE
       </NavLink>
@@ -97,7 +97,7 @@ export function HeaderMenu({
             className={({isActive}) =>
               `text-sm font-mono uppercase tracking-wider transition-colors ${
                 isActive
-                  ? 'text-[var(--color-accent)]'
+                  ? 'text-[var(--color-gold)]'
                   : 'text-[var(--color-text-muted)] hover:text-[var(--color-text)]'
               }`
             }
@@ -192,7 +192,7 @@ function CartBadge({count}: {count: number}) {
         <path d="M16 10a4 4 0 01-8 0" />
       </svg>
       {count > 0 && (
-        <span className="absolute -top-1.5 -right-1.5 bg-[var(--color-accent)] text-[var(--color-bg)] text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center">
+        <span className="absolute -top-1.5 -right-1.5 bg-[var(--color-gold)] text-[var(--color-bg)] text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center">
           {count}
         </span>
       )}

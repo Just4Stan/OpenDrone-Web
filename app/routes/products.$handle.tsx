@@ -107,7 +107,7 @@ export default function Product() {
 
         {/* Product info */}
         <div className="md:sticky md:top-24 self-start">
-          <p className="font-mono text-xs uppercase tracking-[0.3em] text-[var(--color-accent)] mb-2">
+          <p className="font-mono text-xs uppercase tracking-[0.3em] text-[var(--color-accent-light)] mb-2">
             {product.vendor || 'OpenDrone'}
           </p>
           <h1 className="text-3xl font-bold tracking-tight mb-4">{title}</h1>
