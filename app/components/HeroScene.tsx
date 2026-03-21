@@ -1,6 +1,6 @@
-import {Canvas, useFrame, useLoader} from '@react-three/fiber';
+import {Canvas, useFrame} from '@react-three/fiber';
 import {useRef, useState, useEffect} from 'react';
-import type {Mesh, Group} from 'three';
+import type {Group} from 'three';
 import * as THREE from 'three';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 
@@ -17,55 +17,28 @@ function useScrollProgress() {
   return progress;
 }
 
-function useGLTFModel(url: string, materialProps?: {color: number; specular: number; shininess: number}) {
+function DroneModel({scrollProgress}: {scrollProgress: number}) {
+  const groupRef = useRef<Group>(null);
   const [model, setModel] = useState<THREE.Group | null>(null);
+
   useEffect(() => {
     const loader = new GLTFLoader();
-    loader.load(url, (gltf) => {
+    loader.load('/models/opendrone-full.glb', (gltf) => {
       const scene = gltf.scene;
+      // Center the whole assembly
       const box = new THREE.Box3().setFromObject(scene);
       const center = box.getCenter(new THREE.Vector3());
       scene.position.sub(center);
-      if (materialProps) {
-        scene.traverse((child: any) => {
-          if (child.isMesh) {
-            child.material = new THREE.MeshPhongMaterial(materialProps);
-          }
-        });
-      }
+      console.log('Full drone loaded, centered');
       setModel(scene);
     });
-  }, [url]);
-  return model;
-}
+  }, []);
 
-function DroneModel({scrollProgress}: {scrollProgress: number}) {
-  const groupRef = useRef<Group>(null);
-
-  // Load frame + boards
-  const frame = useGLTFModel('/models/opendrone3.glb', {color: 0x555555, specular: 0xb8922e, shininess: 60});
-  const fc = useGLTFModel('/models/openfc.glb'); // Keep original KiCad materials
-  const esc = useGLTFModel('/models/esc-20x20.glb');
-
-  // Add models to group
   useEffect(() => {
-    if (!groupRef.current) return;
-    // Clear
-    while (groupRef.current.children.length > 0) {
-      groupRef.current.remove(groupRef.current.children[0]);
-    }
-    if (frame) groupRef.current.add(frame);
-    if (fc) {
-      // FC sits on top of the stack — slight Y offset
-      fc.position.set(0, 0.003, 0);
-      groupRef.current.add(fc);
-    }
-    if (esc) {
-      // ESC sits below FC
-      esc.position.set(0, -0.003, 0);
-      groupRef.current.add(esc);
-    }
-  }, [frame, fc, esc]);
+    if (!groupRef.current || !model) return;
+    groupRef.current.add(model);
+    return () => { groupRef.current?.remove(model); };
+  }, [model]);
 
   useFrame((state) => {
     if (!groupRef.current) return;
@@ -78,11 +51,11 @@ function DroneModel({scrollProgress}: {scrollProgress: number}) {
 function Scene({scrollProgress}: {scrollProgress: number}) {
   return (
     <>
-      <ambientLight intensity={0.4} />
-      <directionalLight position={[5, 8, 5]} intensity={3} color="#e0be5a" />
-      <directionalLight position={[-4, 3, -3]} intensity={1} color="#6699cc" />
-      <directionalLight position={[0, -2, -5]} intensity={1.5} color="#347a44" />
-      <pointLight position={[0, 3, 0]} intensity={0.5} color="#ffffff" />
+      <ambientLight intensity={0.8} />
+      <directionalLight position={[5, 8, 5]} intensity={2} color="#ffffff" />
+      <directionalLight position={[-4, 3, -3]} intensity={0.8} color="#8899bb" />
+      <directionalLight position={[0, -2, -5]} intensity={1} color="#347a44" />
+      <pointLight position={[0, 3, 0]} intensity={1} color="#ffffff" />
       <DroneModel scrollProgress={scrollProgress} />
     </>
   );
@@ -97,9 +70,10 @@ export function HeroScene() {
   return (
     <div className="absolute inset-0">
       <Canvas
-        camera={{position: [0, 0, 2.2], fov: 40}}
+        camera={{position: [0, 1.2, 2], fov: 40}}
         style={{background: 'transparent'}}
         gl={{antialias: true, alpha: true}}
+        onCreated={({camera}) => { camera.lookAt(0, 0, 0); }}
       >
         <Scene scrollProgress={scrollProgress} />
       </Canvas>
