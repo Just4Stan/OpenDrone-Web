@@ -30,7 +30,7 @@ export function Header({
         prefetch="intent"
         to="/"
         end
-        className="font-mono text-lg font-bold tracking-tight text-[var(--color-gold)] hover:text-[var(--color-gold-hover)] transition-colors"
+        className="font-display text-lg font-bold tracking-tight text-[var(--color-gold)] hover:text-[var(--color-gold-hover)] transition-colors"
       >
         OPENDRONE
       </NavLink>

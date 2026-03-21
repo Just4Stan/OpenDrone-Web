@@ -110,7 +110,7 @@ export default function Product() {
           <p className="font-mono text-xs uppercase tracking-[0.3em] text-[var(--color-accent-light)] mb-2">
             {product.vendor || 'OpenDrone'}
           </p>
-          <h1 className="text-3xl font-bold tracking-tight mb-4">{title}</h1>
+          <h1 className="font-display text-3xl font-bold tracking-tight mb-4">{title}</h1>
           <div className="mb-6">
             <ProductPrice
               price={selectedVariant?.price}

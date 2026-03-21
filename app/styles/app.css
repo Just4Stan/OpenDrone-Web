@@ -13,11 +13,17 @@
   --color-gold-hover: #d4b76e;
   --color-border: #1e2e1e;
 
+  --font-display: "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, "Cascadia Code", monospace;
 
   --header-height: 64px;
   --aside-width: 400px;
+}
+
+/* Font utilities */
+.font-display {
+  font-family: var(--font-display);
 }
 
 /* Base styles */

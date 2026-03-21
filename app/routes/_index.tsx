@@ -83,7 +83,7 @@ function HeroSection() {
           <p className="font-mono text-xs uppercase tracking-[0.3em] text-[var(--color-accent)] mb-4">
             Open Source Drone Electronics
           </p>
-          <h1 className="text-5xl md:text-7xl font-bold tracking-tight leading-[1.05] mb-6">
+          <h1 className="font-display text-5xl md:text-7xl font-bold tracking-tight leading-[1.05] mb-6">
             Build Better
             <br />
             <span className="text-[var(--color-gold)]">Drones.</span>
@@ -156,7 +156,7 @@ function FeaturesSection() {
           <p className="font-mono text-xs uppercase tracking-[0.3em] text-[var(--color-accent)] mb-3">
             Hardware
           </p>
-          <h2 className="text-3xl md:text-4xl font-bold tracking-tight">
+          <h2 className="font-display text-3xl md:text-4xl font-bold tracking-tight">
             Designed for Performance
           </h2>
         </div>
@@ -170,7 +170,7 @@ function FeaturesSection() {
               <p className="font-mono text-[10px] uppercase tracking-widest text-[var(--color-accent)] mb-1">
                 {feature.subtitle}
               </p>
-              <h3 className="text-xl font-bold mb-3">{feature.title}</h3>
+              <h3 className="font-display text-xl font-bold mb-3">{feature.title}</h3>
               <p className="text-sm text-[var(--color-text-muted)] leading-relaxed mb-6">
                 {feature.description}
               </p>
@@ -204,7 +204,7 @@ function ProductsSection({
           <p className="font-mono text-xs uppercase tracking-[0.3em] text-[var(--color-accent)] mb-3">
             Shop
           </p>
-          <h2 className="text-3xl md:text-4xl font-bold tracking-tight">
+          <h2 className="font-display text-3xl md:text-4xl font-bold tracking-tight">
             Products
           </h2>
         </div>
@@ -251,7 +251,7 @@ function OpenSourceSection() {
         <p className="font-mono text-xs uppercase tracking-[0.3em] text-[var(--color-accent)] mb-3">
           Community
         </p>
-        <h2 className="text-3xl md:text-4xl font-bold tracking-tight mb-6">
+        <h2 className="font-display text-3xl md:text-4xl font-bold tracking-tight mb-6">
           100% Open Source
         </h2>
         <p className="text-lg text-[var(--color-text-muted)] max-w-2xl mx-auto mb-10 leading-relaxed">
