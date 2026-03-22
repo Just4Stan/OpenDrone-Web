@@ -29,19 +29,23 @@ function DroneModel({scrollProgress}: {scrollProgress: number}) {
       const box = new THREE.Box3().setFromObject(scene);
       const center = box.getCenter(new THREE.Vector3());
       scene.position.sub(center);
-      // Make frame parts darker — Onshape exports white/light materials
+      // Darken frame parts — Onshape exports with light/default materials
       scene.traverse((child: any) => {
-        if (child.isMesh && child.material) {
-          const mat = child.material;
-          if (mat.color) {
+        if (child.isMesh) {
+          const mats = Array.isArray(child.material) ? child.material : [child.material];
+          mats.forEach((mat: any) => {
+            if (!mat || !mat.color) return;
             const r = mat.color.r, g = mat.color.g, b = mat.color.b;
-            // If material is white/light grey (frame parts), darken it
-            if (r > 0.7 && g > 0.7 && b > 0.7) {
-              mat.color.set(0x222222);
-              mat.metalness = 0.7;
-              mat.roughness = 0.3;
+            const brightness = (r + g + b) / 3;
+            const saturation = Math.max(r, g, b) - Math.min(r, g, b);
+            // Grey/white (low saturation, bright) → dark carbon fiber
+            // Skip colored materials (PCB green, gold pads, component colors)
+            if (brightness > 0.35 && saturation < 0.15) {
+              mat.color.set(0x1a1a1a);
+              if ('metalness' in mat) mat.metalness = 0.8;
+              if ('roughness' in mat) mat.roughness = 0.25;
             }
-          }
+          });
         }
       });
       setModel(scene);
@@ -89,7 +93,7 @@ function CameraController({scrollProgress}: {scrollProgress: number}) {
 function Scene({scrollProgress}: {scrollProgress: number}) {
   return (
     <>
-      <ambientLight intensity={0.8} />
+      <ambientLight intensity={0.4} />
       <directionalLight position={[5, 8, 5]} intensity={2} color="#ffffff" />
       <directionalLight position={[-4, 3, -3]} intensity={0.8} color="#8899bb" />
       <directionalLight position={[0, -2, -5]} intensity={1} color="#347a44" />
@@ -104,7 +108,13 @@ export function HeroScene() {
   const [mounted, setMounted] = useState(false);
   const scrollProgress = useScrollProgress();
   useEffect(() => { setMounted(true); }, []);
-  if (!mounted) return null;
+  if (!mounted) return (
+    <div className="absolute inset-0 flex items-center justify-center">
+      <div className="w-16 h-16 border border-[var(--color-border)] rounded-full flex items-center justify-center">
+        <div className="w-8 h-8 border-t border-[var(--color-gold)] rounded-full animate-spin" />
+      </div>
+    </div>
+  );
 
   return (
     <div className="absolute inset-0">
