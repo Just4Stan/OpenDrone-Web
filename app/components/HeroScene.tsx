@@ -58,9 +58,9 @@ function DroneAssembly({scrollProgress}: {scrollProgress: number}) {
         const mats = Array.isArray(child.material) ? child.material : [child.material];
         mats.forEach((m: any) => {
           if (!m) return;
-          m.color?.set(0x444444);
-          if ('metalness' in m) m.metalness = 0.6;
-          if ('roughness' in m) m.roughness = 0.35;
+          m.color?.set(0x555555);
+          if ('metalness' in m) m.metalness = 0.5;
+          if ('roughness' in m) m.roughness = 0.3;
           m.transparent = true;
           m.opacity = 0.45;
           m.depthWrite = false;
@@ -151,18 +151,26 @@ function DroneAssembly({scrollProgress}: {scrollProgress: number}) {
     // All face-on, evenly spaced, in upper portion of viewport
     // wrapper scale is ~12, so 0.1 in model space = 1.2 in world space
 
-    // --- Frame (center, fades away) ---
+    // --- Frame (center) ---
+    // During transition: becomes MORE visible, then fades at the end
     frameRef.current.position.set(
       0,
       THREE.MathUtils.lerp(0, 0.02, flyEase),
-      THREE.MathUtils.lerp(0, 0.02, flyEase),
+      THREE.MathUtils.lerp(0, 0.03, flyEase),
     );
     frameRef.current.traverse((c: any) => {
       if (c.isMesh && c.material?.transparent) {
-        c.material.opacity = THREE.MathUtils.lerp(0.45, 0.08, flyEase);
+        // Opacity: 0.45 → peaks at 0.7 during mid-transition → settles at 0.3
+        let targetOpacity;
+        if (flyEase < 0.5) {
+          targetOpacity = THREE.MathUtils.lerp(0.45, 0.7, flyEase * 2);
+        } else {
+          targetOpacity = THREE.MathUtils.lerp(0.7, 0.3, (flyEase - 0.5) * 2);
+        }
+        c.material.opacity = targetOpacity;
       }
     });
-    frameRef.current.scale.setScalar(THREE.MathUtils.lerp(1, 0.6, flyEase));
+    frameRef.current.scale.setScalar(THREE.MathUtils.lerp(1, 0.65, flyEase));
 
     // --- FC (slides left, moves up) ---
     fcRef.current.position.set(

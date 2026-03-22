@@ -92,38 +92,38 @@ function HeroSection() {
           className="absolute inset-0 z-10 pointer-events-none"
           style={{opacity: labelOpacity}}
         >
-          <div className="absolute bottom-[28%] left-0 right-0 px-6 md:px-10">
-            <div className="max-w-6xl mx-auto flex justify-between">
-              {/* FC label */}
+          <div className="absolute bottom-[22%] left-0 right-0 px-6 md:px-10">
+            <div className="max-w-7xl mx-auto grid grid-cols-3 gap-4">
+              {/* FC label — aligned left third */}
               <Link
                 to="/collections/all"
-                className="pointer-events-auto text-center w-1/3 group"
+                className="pointer-events-auto text-center group"
               >
-                <p className="font-display text-sm md:text-base font-bold group-hover:text-[var(--color-gold)] transition-colors">
+                <p className="font-display text-sm md:text-lg font-bold group-hover:text-[var(--color-gold)] transition-colors">
                   OpenFC
                 </p>
-                <p className="font-mono text-[9px] md:text-[10px] text-[var(--color-text-muted)] uppercase tracking-wider">
+                <p className="font-mono text-[9px] md:text-[10px] text-[var(--color-text-muted)] uppercase tracking-[0.15em]">
                   Flight Controller
                 </p>
               </Link>
-              {/* Frame label */}
-              <div className="text-center w-1/3">
-                <p className="font-display text-sm md:text-base font-bold text-[var(--color-text-muted)]">
+              {/* Frame label — center third */}
+              <div className="text-center">
+                <p className="font-display text-sm md:text-lg font-bold text-[var(--color-text-muted)]/60">
                   Frame
                 </p>
-                <p className="font-mono text-[9px] md:text-[10px] text-[var(--color-text-muted)]/50 uppercase tracking-wider">
+                <p className="font-mono text-[9px] md:text-[10px] text-[var(--color-text-muted)]/30 uppercase tracking-[0.15em]">
                   Carbon Fiber
                 </p>
               </div>
-              {/* ESC label */}
+              {/* ESC label — right third */}
               <Link
                 to="/collections/all"
-                className="pointer-events-auto text-center w-1/3 group"
+                className="pointer-events-auto text-center group"
               >
-                <p className="font-display text-sm md:text-base font-bold group-hover:text-[var(--color-gold)] transition-colors">
+                <p className="font-display text-sm md:text-lg font-bold group-hover:text-[var(--color-gold)] transition-colors">
                   Open ESC
                 </p>
-                <p className="font-mono text-[9px] md:text-[10px] text-[var(--color-text-muted)] uppercase tracking-wider">
+                <p className="font-mono text-[9px] md:text-[10px] text-[var(--color-text-muted)] uppercase tracking-[0.15em]">
                   4-in-1 35A
                 </p>
               </Link>
@@ -137,7 +137,7 @@ function HeroSection() {
         {/* Bottom content — fades out as labels appear */}
         <div
           className="absolute bottom-10 left-0 right-0 z-10 px-6 md:px-10"
-          style={{opacity: 1 - labelOpacity}}
+          style={{opacity: Math.max(0, 1 - scrollProgress * 2.5)}}
         >
           <div className="max-w-7xl mx-auto flex items-end justify-between gap-6">
             <div className="flex flex-col gap-1">
