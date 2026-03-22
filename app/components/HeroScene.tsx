@@ -8,8 +8,8 @@ function useScrollProgress() {
   const [progress, setProgress] = useState(0);
   useEffect(() => {
     const onScroll = () => {
-      // Use 2x viewport for the full animation range
-      const p = Math.min(1, Math.max(0, window.scrollY / (window.innerHeight * 2)));
+      // 4x viewport for the full extended hero
+      const p = Math.min(1, Math.max(0, window.scrollY / (window.innerHeight * 3)));
       setProgress(p);
     };
     window.addEventListener('scroll', onScroll, {passive: true});
@@ -24,18 +24,22 @@ function loadModel(url: string): Promise<THREE.Group> {
   });
 }
 
+// Smooth step — no hard edges
+function smoothstep(edge0: number, edge1: number, x: number) {
+  const t = Math.max(0, Math.min(1, (x - edge0) / (edge1 - edge0)));
+  return t * t * (3 - 2 * t);
+}
+
 function DroneAssembly({scrollProgress}: {scrollProgress: number}) {
   const wrapperRef = useRef<Group>(null);
   const frameRef = useRef<Group>(null);
   const escRef = useRef<Group>(null);
   const fcRef = useRef<Group>(null);
 
-  // Animation state
   const rotRef = useRef(0);
   const dragRef = useRef({x: 0, y: 0});
   const dragging = useRef(false);
   const lastPtr = useRef({x: 0, y: 0});
-  const centerOffset = useRef(new THREE.Vector3());
 
   useEffect(() => {
     Promise.all([
@@ -43,16 +47,14 @@ function DroneAssembly({scrollProgress}: {scrollProgress: number}) {
       loadModel('/models/esc.glb'),
       loadModel('/models/fc.glb'),
     ]).then(([frameScene, escScene, fcScene]) => {
-      // Center on frame bbox
       const box = new THREE.Box3().setFromObject(frameScene);
       const c = box.getCenter(new THREE.Vector3());
-      centerOffset.current.copy(c);
 
       frameScene.position.sub(c);
       escScene.position.sub(c);
       fcScene.position.sub(c);
 
-      // Frame: dark, semi-transparent
+      // Frame: dark carbon look
       frameScene.traverse((child: any) => {
         if (!child.isMesh) return;
         const mats = Array.isArray(child.material) ? child.material : [child.material];
@@ -62,7 +64,7 @@ function DroneAssembly({scrollProgress}: {scrollProgress: number}) {
           if ('metalness' in m) m.metalness = 0.5;
           if ('roughness' in m) m.roughness = 0.3;
           m.transparent = true;
-          m.opacity = 0.45;
+          m.opacity = 0.4;
           m.depthWrite = false;
         });
       });
@@ -73,7 +75,7 @@ function DroneAssembly({scrollProgress}: {scrollProgress: number}) {
     });
   }, []);
 
-  // Pointer drag
+  // Drag
   const onDown = useCallback((e: any) => {
     dragging.current = true;
     lastPtr.current = {x: e.clientX, y: e.clientY};
@@ -100,85 +102,61 @@ function DroneAssembly({scrollProgress}: {scrollProgress: number}) {
   useFrame((_, dt) => {
     if (!wrapperRef.current || !frameRef.current || !escRef.current || !fcRef.current) return;
 
-    const p = scrollProgress; // 0 = top, 1 = fully scrolled
+    const p = scrollProgress;
 
-    // Phase 1 (0 → 0.4): assembled drone rotating, camera zooms in
-    // Phase 2 (0.4 → 0.8): parts fly out, rotate to face-on
-    // Phase 3 (0.8 → 1.0): settle into final positions
+    // Continuous smooth curves — something always moving
+    const flyOut = smoothstep(0.15, 0.5, p);    // parts separate
+    const flatten = smoothstep(0.08, 0.4, p);   // rotation flattens (earlier)
+    const rotSlow = smoothstep(0, 0.5, p);      // rotation slows
+    const frameOpacity = smoothstep(0.15, 0.45, p); // frame becomes solid
 
-    // Smooth easing
-    const easeInOut = (t: number) => t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
-    const easeOut = (t: number) => 1 - Math.pow(1 - t, 3);
+    // Drag influence fades
+    const dragInf = 1 - flyOut * 0.9;
 
-    // Fly-out starts at 30% scroll, finishes at 100%
-    const flyRaw = Math.max(0, (p - 0.3) / 0.7);
-    const flyEase = easeInOut(flyRaw);
-
-    // --- Wrapper rotation ---
-    // Auto-rotate (slows during fly-out, stops at end)
+    // Auto-rotate (always something moving — slows but never fully stops until flyOut=1)
     if (!dragging.current) {
-      const speed = THREE.MathUtils.lerp(0.12, 0, easeOut(p));
+      const speed = THREE.MathUtils.lerp(0.12, 0.0, rotSlow);
       rotRef.current += dt * speed;
     }
 
-    // During fly-out, the drag influence fades
-    const dragInfluence = 1 - flyEase * 0.8;
-
-    // Y rotation: auto-rotate fades to fixed position facing camera
-    const autoRot = rotRef.current + dragRef.current.y * dragInfluence;
-    // At full fly-out, snap to nearest clean angle (face-on)
+    // Wrapper rotation — smoothly flattens to face-on
+    const autoRot = rotRef.current + dragRef.current.y * dragInf;
     const targetY = Math.round(autoRot / (Math.PI * 2)) * (Math.PI * 2);
-    wrapperRef.current.rotation.y = THREE.MathUtils.lerp(autoRot, targetY, flyEase * flyEase);
-
-    // X tilt: angled view → flat face-on
+    wrapperRef.current.rotation.y = THREE.MathUtils.lerp(autoRot, targetY, flyOut * flyOut);
     wrapperRef.current.rotation.x = THREE.MathUtils.lerp(
-      0.45 + dragRef.current.x * dragInfluence,
-      0,
-      flyEase
+      0.45 + dragRef.current.x * dragInf, 0, flatten
     );
-    wrapperRef.current.rotation.z = THREE.MathUtils.lerp(0.05, 0, flyEase);
+    wrapperRef.current.rotation.z = THREE.MathUtils.lerp(0.05, 0, flatten);
 
     // Scale
-    const scale = THREE.MathUtils.lerp(12, 10, flyEase);
-    wrapperRef.current.scale.setScalar(scale);
+    wrapperRef.current.scale.setScalar(THREE.MathUtils.lerp(12, 13, flyOut));
 
-    // --- Final layout: Frame center, FC left, ESC right ---
-    // All face-on, evenly spaced, in upper portion of viewport
-    // wrapper scale is ~12, so 0.1 in model space = 1.2 in world space
-
-    // --- Frame (center) ---
-    // During transition: becomes MORE visible, then fades at the end
+    // --- Frame (center) — goes from transparent to more solid ---
     frameRef.current.position.set(
       0,
-      THREE.MathUtils.lerp(0, 0.02, flyEase),
-      THREE.MathUtils.lerp(0, 0.03, flyEase),
+      THREE.MathUtils.lerp(0, 0.015, flyOut),
+      THREE.MathUtils.lerp(0, 0.03, flyOut),
     );
     frameRef.current.traverse((c: any) => {
       if (c.isMesh && c.material?.transparent) {
-        // Opacity: 0.45 → peaks at 0.7 during mid-transition → settles at 0.3
-        let targetOpacity;
-        if (flyEase < 0.5) {
-          targetOpacity = THREE.MathUtils.lerp(0.45, 0.7, flyEase * 2);
-        } else {
-          targetOpacity = THREE.MathUtils.lerp(0.7, 0.3, (flyEase - 0.5) * 2);
-        }
-        c.material.opacity = targetOpacity;
+        // 0.4 → 0.75 (solid during display)
+        c.material.opacity = THREE.MathUtils.lerp(0.4, 0.75, frameOpacity);
       }
     });
-    frameRef.current.scale.setScalar(THREE.MathUtils.lerp(1, 0.65, flyEase));
+    frameRef.current.scale.setScalar(THREE.MathUtils.lerp(1, 0.65, flyOut));
 
-    // --- FC (slides left, moves up) ---
+    // --- FC (left) ---
     fcRef.current.position.set(
-      THREE.MathUtils.lerp(0, -0.08, flyEase),
-      THREE.MathUtils.lerp(0, 0.015, flyEase),
-      THREE.MathUtils.lerp(0, 0.05, flyEase),
+      THREE.MathUtils.lerp(0, -0.055, flyOut),
+      THREE.MathUtils.lerp(0, 0.012, flyOut),
+      THREE.MathUtils.lerp(0, 0.05, flyOut),
     );
 
-    // --- ESC (slides right, moves up) ---
+    // --- ESC (right) ---
     escRef.current.position.set(
-      THREE.MathUtils.lerp(0, 0.08, flyEase),
-      THREE.MathUtils.lerp(0, 0.015, flyEase),
-      THREE.MathUtils.lerp(0, 0.05, flyEase),
+      THREE.MathUtils.lerp(0, 0.055, flyOut),
+      THREE.MathUtils.lerp(0, 0.012, flyOut),
+      THREE.MathUtils.lerp(0, 0.05, flyOut),
     );
   });
 
@@ -193,24 +171,17 @@ function DroneAssembly({scrollProgress}: {scrollProgress: number}) {
 
 function CameraRig({scrollProgress}: {scrollProgress: number}) {
   const {camera} = useThree();
-
   useFrame(() => {
     const p = scrollProgress;
+    const camMove = smoothstep(0.1, 0.6, p);
 
-    // Phase 1: pull back slightly for overview
-    // Phase 2: move to front-on view as parts separate
-    const phase2 = Math.max(0, Math.min(1, (p - 0.4) / 0.6));
-    const ease = 1 - Math.pow(1 - phase2, 2);
-
-    // Camera: starts high/angled, ends front-on looking slightly down
     camera.position.set(
       0,
-      THREE.MathUtils.lerp(0.8, 0.4, ease),
-      THREE.MathUtils.lerp(1.8, 2.2, ease),
+      THREE.MathUtils.lerp(0.8, 0.35, camMove),
+      THREE.MathUtils.lerp(1.8, 2.0, camMove),
     );
-    camera.lookAt(0, THREE.MathUtils.lerp(0, 0.05, ease), 0);
+    camera.lookAt(0, THREE.MathUtils.lerp(0, 0.08, camMove), 0);
   });
-
   return null;
 }
 
