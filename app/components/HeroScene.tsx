@@ -106,18 +106,12 @@ function DroneAssembly({scrollProgress}: {scrollProgress: number}) {
     // Phase 2 (0.4 → 0.8): parts fly out, rotate to face-on
     // Phase 3 (0.8 → 1.0): settle into final positions
 
-    const phase1 = Math.min(1, p / 0.4);                              // 0→1 over scroll 0→0.4
-    const phase2 = Math.max(0, Math.min(1, (p - 0.4) / 0.4));         // 0→1 over scroll 0.4→0.8
-    const phase3 = Math.max(0, Math.min(1, (p - 0.8) / 0.2));         // 0→1 over scroll 0.8→1.0
-    const flyOut = phase2;
-    const settle = phase3;
-
-    // Ease functions
-    const easeOut = (t: number) => 1 - Math.pow(1 - t, 3);
+    // Smooth easing function
     const easeInOut = (t: number) => t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
 
-    const flyEase = easeInOut(flyOut);
-    const settleEase = easeOut(settle);
+    // Single smooth fly-out curve over the full scroll range
+    // Starts slow, accelerates in middle, settles at end
+    const flyEase = easeInOut(p);
 
     // --- Wrapper rotation ---
     // Auto-rotate (slows during fly-out, stops at end)
