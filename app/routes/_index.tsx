@@ -1,6 +1,6 @@
 import {Await, useLoaderData, Link} from 'react-router';
 import type {Route} from './+types/_index';
-import {Suspense, useEffect, useState} from 'react';
+import {Suspense, useEffect, useState, useCallback} from 'react';
 import type {RecommendedProductsQuery} from 'storefrontapi.generated';
 import {ProductItem} from '~/components/ProductItem';
 
@@ -66,6 +66,20 @@ export default function Homepage() {
 }
 
 function HeroSection() {
+  const [scrollProgress, setScrollProgress] = useState(0);
+
+  useEffect(() => {
+    const onScroll = () => {
+      const p = Math.min(1, Math.max(0, window.scrollY / (window.innerHeight * 2)));
+      setScrollProgress(p);
+    };
+    window.addEventListener('scroll', onScroll, {passive: true});
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+
+  // Fade in labels after 70% scroll
+  const labelOpacity = Math.max(0, (scrollProgress - 0.7) / 0.3);
+
   return (
     <section className="hero-section relative" style={{height: '300vh'}}>
       <div className="sticky top-0 h-screen">
@@ -73,11 +87,58 @@ function HeroSection() {
           <ClientHeroScene />
         </div>
 
-        {/* Bottom gradient */}
-        <div className="absolute bottom-0 left-0 right-0 h-48 bg-gradient-to-t from-[var(--color-bg)] via-[var(--color-bg)]/60 to-transparent pointer-events-none" />
+        {/* Product labels — appear at end of fly-out */}
+        <div
+          className="absolute inset-0 z-10 pointer-events-none"
+          style={{opacity: labelOpacity}}
+        >
+          <div className="absolute bottom-[28%] left-0 right-0 px-6 md:px-10">
+            <div className="max-w-6xl mx-auto flex justify-between">
+              {/* FC label */}
+              <Link
+                to="/collections/all"
+                className="pointer-events-auto text-center w-1/3 group"
+              >
+                <p className="font-display text-sm md:text-base font-bold group-hover:text-[var(--color-gold)] transition-colors">
+                  OpenFC
+                </p>
+                <p className="font-mono text-[9px] md:text-[10px] text-[var(--color-text-muted)] uppercase tracking-wider">
+                  Flight Controller
+                </p>
+              </Link>
+              {/* Frame label */}
+              <div className="text-center w-1/3">
+                <p className="font-display text-sm md:text-base font-bold text-[var(--color-text-muted)]">
+                  Frame
+                </p>
+                <p className="font-mono text-[9px] md:text-[10px] text-[var(--color-text-muted)]/50 uppercase tracking-wider">
+                  Carbon Fiber
+                </p>
+              </div>
+              {/* ESC label */}
+              <Link
+                to="/collections/all"
+                className="pointer-events-auto text-center w-1/3 group"
+              >
+                <p className="font-display text-sm md:text-base font-bold group-hover:text-[var(--color-gold)] transition-colors">
+                  Open ESC
+                </p>
+                <p className="font-mono text-[9px] md:text-[10px] text-[var(--color-text-muted)] uppercase tracking-wider">
+                  4-in-1 35A
+                </p>
+              </Link>
+            </div>
+          </div>
+        </div>
 
-        {/* Bottom content */}
-        <div className="absolute bottom-12 left-0 right-0 z-10 px-6 md:px-10">
+        {/* Bottom gradient */}
+        <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-[var(--color-bg)] via-[var(--color-bg)]/60 to-transparent pointer-events-none" />
+
+        {/* Bottom content — fades out as labels appear */}
+        <div
+          className="absolute bottom-10 left-0 right-0 z-10 px-6 md:px-10"
+          style={{opacity: 1 - labelOpacity}}
+        >
           <div className="max-w-7xl mx-auto flex items-end justify-between gap-6">
             <div className="flex flex-col gap-1">
               <h1 className="font-display text-3xl md:text-4xl font-bold tracking-tight leading-none">
@@ -102,8 +163,11 @@ function HeroSection() {
           </div>
         </div>
 
-        {/* Scroll hint */}
-        <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex flex-col items-center gap-1 opacity-40">
+        {/* Scroll hint — fades out on scroll */}
+        <div
+          className="absolute bottom-3 left-1/2 -translate-x-1/2 flex flex-col items-center gap-1"
+          style={{opacity: Math.max(0, 0.4 - scrollProgress * 2)}}
+        >
           <div className="w-px h-5 bg-gradient-to-b from-[var(--color-text-muted)] to-transparent animate-pulse" />
         </div>
       </div>
