@@ -125,43 +125,22 @@ export default function Homepage() {
           </div>
         </div>
 
-        {/* Phase 3: Specs + CTAs overlay */}
+        {/* Phase 3: CTAs only */}
         <div
-          className="fixed bottom-0 left-0 right-0 z-20"
+          className="fixed bottom-6 left-0 right-0 z-20"
           style={{opacity: infoOpacity}}
         >
-          <div className="bg-gradient-to-t from-[var(--color-bg)] via-[var(--color-bg)]/90 to-transparent pt-12 pb-6 px-6 md:px-10">
-            <div className="max-w-5xl mx-auto">
-              <div className="grid grid-cols-3 gap-6 mb-6">
-                <div className="text-center">
-                  <p className="font-mono text-[10px] text-[var(--color-accent-light)] uppercase tracking-[0.2em] mb-1">MCU</p>
-                  <p className="font-display text-sm font-bold">RP2354B</p>
-                  <p className="font-mono text-[10px] text-[var(--color-text-muted)]">ARM Cortex-M33</p>
-                </div>
-                <div className="text-center">
-                  <p className="font-mono text-[10px] text-[var(--color-accent-light)] uppercase tracking-[0.2em] mb-1">ESC</p>
-                  <p className="font-display text-sm font-bold">35A × 4</p>
-                  <p className="font-mono text-[10px] text-[var(--color-text-muted)]">AM32 · DShot</p>
-                </div>
-                <div className="text-center">
-                  <p className="font-mono text-[10px] text-[var(--color-accent-light)] uppercase tracking-[0.2em] mb-1">License</p>
-                  <p className="font-display text-sm font-bold">CERN-OHL-S</p>
-                  <p className="font-mono text-[10px] text-[var(--color-text-muted)]">100% Open Source</p>
-                </div>
-              </div>
-              <div className="flex items-center justify-center gap-4 pointer-events-auto">
-                <Link to="/collections/all" className="hero-cta-primary">
-                  Shop Now
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                    <line x1="5" y1="12" x2="19" y2="12" />
-                    <polyline points="12 5 19 12 12 19" />
-                  </svg>
-                </Link>
-                <a href="https://github.com/Just4Stan" target="_blank" rel="noopener noreferrer" className="hero-cta-secondary pointer-events-auto">
-                  View Source
-                </a>
-              </div>
-            </div>
+          <div className="flex items-center justify-center gap-4 pointer-events-auto">
+            <Link to="/collections/all" className="hero-cta-primary">
+              Shop Now
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                <line x1="5" y1="12" x2="19" y2="12" />
+                <polyline points="12 5 19 12 12 19" />
+              </svg>
+            </Link>
+            <a href="https://github.com/Just4Stan" target="_blank" rel="noopener noreferrer" className="hero-cta-secondary pointer-events-auto">
+              View Source
+            </a>
           </div>
         </div>
       </div>

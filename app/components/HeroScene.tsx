@@ -148,18 +148,18 @@ function DroneAssembly({scrollProgress}: {scrollProgress: number}) {
         c.material.opacity = opacity;
       }
     });
-    frameRef.current.scale.setScalar(THREE.MathUtils.lerp(1, 0.6, flyOut));
+    frameRef.current.scale.setScalar(THREE.MathUtils.lerp(1, 0.45, flyOut));
 
-    // FC — slides left (keep on screen)
+    // FC — slides left (closer to center)
     fcRef.current.position.set(
-      THREE.MathUtils.lerp(0, -0.065, flyOut),
+      THREE.MathUtils.lerp(0, -0.05, flyOut),
       THREE.MathUtils.lerp(0, 0.008, flyOut),
       THREE.MathUtils.lerp(0, 0.04, flyOut),
     );
 
-    // ESC — slides right (keep on screen)
+    // ESC — slides right (closer to center)
     escRef.current.position.set(
-      THREE.MathUtils.lerp(0, 0.065, flyOut),
+      THREE.MathUtils.lerp(0, 0.05, flyOut),
       THREE.MathUtils.lerp(0, 0.008, flyOut),
       THREE.MathUtils.lerp(0, 0.04, flyOut),
     );
