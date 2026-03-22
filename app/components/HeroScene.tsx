@@ -41,9 +41,9 @@ function DroneModel({scrollProgress}: {scrollProgress: number}) {
             // Grey/white (low saturation, bright) → dark carbon fiber
             // Skip colored materials (PCB green, gold pads, component colors)
             if (brightness > 0.35 && saturation < 0.15) {
-              mat.color.set(0x1a1a1a);
-              if ('metalness' in mat) mat.metalness = 0.8;
-              if ('roughness' in mat) mat.roughness = 0.25;
+              mat.color.set(0x3a3a3a);
+              if ('metalness' in mat) mat.metalness = 0.6;
+              if ('roughness' in mat) mat.roughness = 0.35;
             }
           });
         }
@@ -93,7 +93,7 @@ function CameraController({scrollProgress}: {scrollProgress: number}) {
 function Scene({scrollProgress}: {scrollProgress: number}) {
   return (
     <>
-      <ambientLight intensity={0.4} />
+      <ambientLight intensity={0.6} />
       <directionalLight position={[5, 8, 5]} intensity={2} color="#ffffff" />
       <directionalLight position={[-4, 3, -3]} intensity={0.8} color="#8899bb" />
       <directionalLight position={[0, -2, -5]} intensity={1} color="#347a44" />
