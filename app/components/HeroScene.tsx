@@ -44,6 +44,9 @@ function DroneModel({scrollProgress}: {scrollProgress: number}) {
               mat.color.set(0x3a3a3a);
               if ('metalness' in mat) mat.metalness = 0.6;
               if ('roughness' in mat) mat.roughness = 0.35;
+              mat.transparent = true;
+              mat.opacity = 0.35;
+              mat.depthWrite = false;
             }
           });
         }
