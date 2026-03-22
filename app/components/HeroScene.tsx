@@ -190,10 +190,10 @@ function CameraRig({scrollProgress}: {scrollProgress: number}) {
 
     camera.position.set(
       0,
-      THREE.MathUtils.lerp(0.35, 0.55, zoomOut) + THREE.MathUtils.lerp(0, -0.15, pullBack),
+      THREE.MathUtils.lerp(0.15, 0.35, zoomOut) + THREE.MathUtils.lerp(0, -0.05, pullBack),
       THREE.MathUtils.lerp(0.7, 1.2, zoomOut) + THREE.MathUtils.lerp(0, 0.3, pullBack),
     );
-    camera.lookAt(0, THREE.MathUtils.lerp(0.03, 0.08, pullBack), 0);
+    camera.lookAt(0, THREE.MathUtils.lerp(0, 0.03, pullBack), 0);
   });
   return null;
 }
@@ -214,7 +214,7 @@ export function HeroScene() {
   return (
     <div className="absolute inset-0">
       <Canvas
-        camera={{position: [0, 0.3, 0.7], fov: 40}}
+        camera={{position: [0, 0.15, 0.7], fov: 40}}
         style={{background: 'transparent'}}
         gl={{antialias: true, alpha: true}}
         onCreated={({camera}) => { camera.lookAt(0, 0, 0); }}
