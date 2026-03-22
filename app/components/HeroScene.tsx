@@ -67,7 +67,9 @@ function DroneModel({
   const frameGroupRef = useRef<Group>(null);
   const pcbGroupRef = useRef<Group>(null);
   const rotationRef = useRef(0);
-  const prevTimeRef = useRef(0);
+  const dragRotRef = useRef({x: 0, y: 0});
+  const isDragging = useRef(false);
+  const lastMouse = useRef({x: 0, y: 0});
 
   useEffect(() => {
     const loader = new GLTFLoader();
@@ -80,35 +82,83 @@ function DroneModel({
       scene.position.sub(center);
 
       // Classify and style meshes
-      const groups = classifyMeshes(scene);
+      classifyMeshes(scene);
 
-      if (groupRef.current && frameGroupRef.current && pcbGroupRef.current) {
-        // Add all children to appropriate groups
-        // We need to add the whole scene first, then the groups reference the same meshes
+      // Log node tree for debugging fly-out animation
+      const logTree = (obj: THREE.Object3D, depth = 0) => {
+        if (depth < 3 && obj.name) {
+          console.log(`${'  '.repeat(depth)}${obj.name} (${obj.type}, children: ${obj.children.length})`);
+        }
+        if (depth < 3) obj.children.forEach(c => logTree(c, depth + 1));
+      };
+      logTree(scene);
+
+      if (groupRef.current) {
         groupRef.current.add(scene);
       }
     });
   }, []);
 
+  // Drag-to-rotate state
+  const dragRotRef = useRef({x: 0, y: 0});
+  const isDragging = useRef(false);
+  const lastMouse = useRef({x: 0, y: 0});
+
+  const onPointerDown = useCallback((e: any) => {
+    isDragging.current = true;
+    lastMouse.current = {x: e.clientX, y: e.clientY};
+    document.body.style.cursor = 'grabbing';
+  }, []);
+
+  useEffect(() => {
+    const onPointerUp = () => {
+      isDragging.current = false;
+      document.body.style.cursor = 'auto';
+    };
+    const onPointerMove = (e: PointerEvent) => {
+      if (!isDragging.current) return;
+      const dx = e.clientX - lastMouse.current.x;
+      const dy = e.clientY - lastMouse.current.y;
+      dragRotRef.current.y += dx * 0.005;
+      dragRotRef.current.x = Math.max(-0.5, Math.min(1.0,
+        dragRotRef.current.x + dy * 0.005
+      ));
+      lastMouse.current = {x: e.clientX, y: e.clientY};
+    };
+    window.addEventListener('pointerup', onPointerUp);
+    window.addEventListener('pointermove', onPointerMove);
+    return () => {
+      window.removeEventListener('pointerup', onPointerUp);
+      window.removeEventListener('pointermove', onPointerMove);
+    };
+  }, []);
+
   useFrame((state, delta) => {
     if (!groupRef.current) return;
 
-    // Incremental rotation — no unwinding on scroll
-    const rotSpeed = THREE.MathUtils.lerp(0.15, 0.03, scrollProgress);
-    rotationRef.current += delta * rotSpeed;
-    groupRef.current.rotation.y = rotationRef.current;
+    // Auto-rotation slows on scroll, stops on drag
+    if (!isDragging.current) {
+      const rotSpeed = THREE.MathUtils.lerp(0.15, 0.03, scrollProgress);
+      rotationRef.current += delta * rotSpeed;
+    }
 
-    // Tilt: start angled, flatten as scroll progresses
-    groupRef.current.rotation.x = THREE.MathUtils.lerp(0.5, 0.15, scrollProgress);
+    // Combine auto-rotation + drag offset
+    groupRef.current.rotation.y = rotationRef.current + dragRotRef.current.y;
+    groupRef.current.rotation.x =
+      THREE.MathUtils.lerp(0.5, 0.15, scrollProgress) + dragRotRef.current.x;
 
-    // Scale up slightly as we zoom in
     const s = THREE.MathUtils.lerp(12, 14, scrollProgress);
     groupRef.current.scale.setScalar(s);
   });
 
   return (
     <group>
-      <group ref={groupRef} scale={12} rotation={[0.5, 0, 0.05]}>
+      <group
+        ref={groupRef}
+        scale={12}
+        rotation={[0.5, 0, 0.05]}
+        onPointerDown={onPointerDown}
+      >
         <group ref={frameGroupRef} />
         <group ref={pcbGroupRef} />
       </group>

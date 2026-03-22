@@ -38,6 +38,14 @@ html {
 
 body {
   min-height: 100vh;
+  overscroll-behavior: none;
+}
+
+.hero-section canvas {
+  cursor: grab;
+}
+.hero-section canvas:active {
+  cursor: grabbing;
 }
 
 /* Selection */
