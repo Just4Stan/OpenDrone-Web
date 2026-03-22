@@ -36,9 +36,12 @@ html {
   -moz-osx-font-smoothing: grayscale;
 }
 
+html {
+  overscroll-behavior-y: none;
+}
 body {
   min-height: 100vh;
-  overscroll-behavior: none;
+  overscroll-behavior-y: none;
 }
 
 .hero-section canvas {

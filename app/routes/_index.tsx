@@ -67,7 +67,7 @@ export default function Homepage() {
 
 function HeroSection() {
   return (
-    <section className="hero-section relative" style={{height: '200vh'}}>
+    <section className="hero-section relative" style={{height: '300vh'}}>
       <div className="sticky top-0 h-screen">
         <div className="absolute inset-0">
           <ClientHeroScene />
