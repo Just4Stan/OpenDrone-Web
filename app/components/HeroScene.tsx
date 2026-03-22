@@ -151,33 +151,31 @@ function DroneAssembly({scrollProgress}: {scrollProgress: number}) {
     // All face-on, evenly spaced, in upper portion of viewport
     // wrapper scale is ~12, so 0.1 in model space = 1.2 in world space
 
-    // --- Frame (stays center, shrinks and fades) ---
+    // --- Frame (center, fades away) ---
     frameRef.current.position.set(
       0,
-      THREE.MathUtils.lerp(0, 0.01, flyEase),
-      THREE.MathUtils.lerp(0, 0.03, flyEase),
+      THREE.MathUtils.lerp(0, 0.02, flyEase),
+      THREE.MathUtils.lerp(0, 0.02, flyEase),
     );
     frameRef.current.traverse((c: any) => {
       if (c.isMesh && c.material?.transparent) {
-        c.material.opacity = THREE.MathUtils.lerp(0.45, 0.15, flyEase);
+        c.material.opacity = THREE.MathUtils.lerp(0.45, 0.08, flyEase);
       }
     });
-    // Scale frame down slightly during fly-out
-    const frameScale = THREE.MathUtils.lerp(1, 0.7, flyEase);
-    frameRef.current.scale.setScalar(frameScale);
+    frameRef.current.scale.setScalar(THREE.MathUtils.lerp(1, 0.6, flyEase));
 
-    // --- FC (slides left) ---
+    // --- FC (slides left, moves up) ---
     fcRef.current.position.set(
       THREE.MathUtils.lerp(0, -0.08, flyEase),
-      THREE.MathUtils.lerp(0, 0.005, flyEase),
-      THREE.MathUtils.lerp(0, 0.04, flyEase),
+      THREE.MathUtils.lerp(0, 0.015, flyEase),
+      THREE.MathUtils.lerp(0, 0.05, flyEase),
     );
 
-    // --- ESC (slides right) ---
+    // --- ESC (slides right, moves up) ---
     escRef.current.position.set(
       THREE.MathUtils.lerp(0, 0.08, flyEase),
-      THREE.MathUtils.lerp(0, 0.005, flyEase),
-      THREE.MathUtils.lerp(0, 0.04, flyEase),
+      THREE.MathUtils.lerp(0, 0.015, flyEase),
+      THREE.MathUtils.lerp(0, 0.05, flyEase),
     );
   });
 
