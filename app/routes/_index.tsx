@@ -46,13 +46,13 @@ export default function Homepage() {
   const infoOpacity = smoothstep(0.7, 0.85, scrollProgress);
 
   return (
-    <div className="homepage h-screen overflow-hidden">
-      {/* Full-screen 3D — no page scroll, only scroll-driven animation */}
-      <div className="fixed inset-0">
+    <div className="homepage">
+      {/* Full-screen 3D — fixed behind everything */}
+      <div className="fixed inset-0 z-0">
         <ClientHeroScene />
       </div>
 
-      {/* Invisible scroll container — drives the animation */}
+      {/* Scroll spacer — drives the animation, allows scrolling */}
       <div className="relative z-10 pointer-events-none" style={{height: '400vh'}}>
 
         {/* Phase 1: OpenDrone wordmark */}

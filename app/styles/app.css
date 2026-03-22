@@ -51,6 +51,15 @@ body {
   cursor: grabbing;
 }
 
+/* Hide footer on homepage */
+.homepage ~ footer,
+.homepage + footer {
+  display: none;
+}
+body:has(.homepage) > main ~ footer {
+  display: none;
+}
+
 /* Selection */
 ::selection {
   background-color: var(--color-gold);
