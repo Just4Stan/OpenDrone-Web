@@ -99,26 +99,26 @@ export default function Homepage() {
         >
           <div className="max-w-7xl mx-auto px-6 md:px-10 grid grid-cols-3">
             <Link to="/collections/all" className="pointer-events-auto text-center group px-8">
-              <p className="font-display text-sm md:text-lg font-bold group-hover:text-[var(--color-gold)] transition-colors">
-                OpenFC
+              <p className="font-display text-lg md:text-2xl font-bold group-hover:text-[var(--color-gold)] transition-colors">
+                Open<span className="text-[var(--color-gold)]">FC</span>
               </p>
-              <p className="font-mono text-[9px] md:text-[10px] text-[var(--color-text-muted)] uppercase tracking-[0.15em]">
+              <p className="font-mono text-[9px] md:text-[11px] text-[var(--color-text-muted)] uppercase tracking-[0.15em]">
                 Flight Controller
               </p>
             </Link>
             <Link to="/collections/all" className="pointer-events-auto text-center group">
-              <p className="font-display text-sm md:text-lg font-bold group-hover:text-[var(--color-gold)] transition-colors">
-                Frame
+              <p className="font-display text-lg md:text-2xl font-bold group-hover:text-[var(--color-gold)] transition-colors">
+                Open<span className="text-[var(--color-gold)]">Frame</span>
               </p>
-              <p className="font-mono text-[9px] md:text-[10px] text-[var(--color-text-muted)] uppercase tracking-[0.15em]">
+              <p className="font-mono text-[9px] md:text-[11px] text-[var(--color-text-muted)] uppercase tracking-[0.15em]">
                 Carbon Fiber
               </p>
             </Link>
             <Link to="/collections/all" className="pointer-events-auto text-center group px-8">
-              <p className="font-display text-sm md:text-lg font-bold group-hover:text-[var(--color-gold)] transition-colors">
-                Open ESC
+              <p className="font-display text-lg md:text-2xl font-bold group-hover:text-[var(--color-gold)] transition-colors">
+                Open<span className="text-[var(--color-gold)]">ESC</span>
               </p>
-              <p className="font-mono text-[9px] md:text-[10px] text-[var(--color-text-muted)] uppercase tracking-[0.15em]">
+              <p className="font-mono text-[9px] md:text-[11px] text-[var(--color-text-muted)] uppercase tracking-[0.15em]">
                 4-in-1 · 35A
               </p>
             </Link>
