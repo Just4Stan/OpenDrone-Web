@@ -17,45 +17,6 @@ function useScrollProgress() {
   return progress;
 }
 
-interface DroneGroups {
-  frame: THREE.Object3D[];
-  pcbs: THREE.Object3D[];
-}
-
-function classifyMeshes(scene: THREE.Group): DroneGroups {
-  const frame: THREE.Object3D[] = [];
-  const pcbs: THREE.Object3D[] = [];
-
-  scene.traverse((child: any) => {
-    if (!child.isMesh) return;
-    const mats = Array.isArray(child.material) ? child.material : [child.material];
-    let isFrame = false;
-    mats.forEach((mat: any) => {
-      if (!mat?.color) return;
-      const {r, g, b} = mat.color;
-      const brightness = (r + g + b) / 3;
-      const saturation = Math.max(r, g, b) - Math.min(r, g, b);
-      if (brightness > 0.35 && saturation < 0.15) {
-        isFrame = true;
-        // Dark semi-transparent frame
-        mat.color.set(0x444444);
-        if ('metalness' in mat) mat.metalness = 0.6;
-        if ('roughness' in mat) mat.roughness = 0.35;
-        mat.transparent = true;
-        mat.opacity = 0.45;
-        mat.depthWrite = false;
-      }
-    });
-    if (isFrame) {
-      frame.push(child);
-    } else {
-      pcbs.push(child);
-    }
-  });
-
-  return {frame, pcbs};
-}
-
 function DroneModel({
   scrollProgress,
   onClickProduct,
@@ -63,9 +24,11 @@ function DroneModel({
   scrollProgress: number;
   onClickProduct: () => void;
 }) {
-  const groupRef = useRef<Group>(null);
-  const frameGroupRef = useRef<Group>(null);
-  const pcbGroupRef = useRef<Group>(null);
+  const wrapperRef = useRef<Group>(null);
+  const frameRef = useRef<Group>(null);
+  const escRef = useRef<Group>(null);
+  const fcRef = useRef<Group>(null);
+
   const rotationRef = useRef(0);
   const dragRotRef = useRef({x: 0, y: 0});
   const isDragging = useRef(false);
@@ -76,34 +39,50 @@ function DroneModel({
     loader.load('/models/opendrone-full.glb', (gltf) => {
       const scene = gltf.scene;
 
-      // Center
+      // Center the assembly
       const box = new THREE.Box3().setFromObject(scene);
       const center = box.getCenter(new THREE.Vector3());
       scene.position.sub(center);
 
-      // Classify and style meshes
-      classifyMeshes(scene);
+      // Sort meshes into frame / ESC / FC groups
+      const frameGroup = new THREE.Group();
+      const escGroup = new THREE.Group();
+      const fcGroup = new THREE.Group();
 
-      // Log node tree for debugging fly-out animation
-      const logTree = (obj: THREE.Object3D, depth = 0) => {
-        if (depth < 3 && obj.name) {
-          console.log(`${'  '.repeat(depth)}${obj.name} (${obj.type}, children: ${obj.children.length})`);
+      // Collect children first (can't modify while iterating)
+      const children = [...scene.children];
+      children.forEach((child: any) => {
+        const name = child.name || '';
+
+        if (name === 'base') {
+          // Frame — dark semi-transparent
+          if (child.isMesh) {
+            const mats = Array.isArray(child.material) ? child.material : [child.material];
+            mats.forEach((mat: any) => {
+              mat.color?.set(0x444444);
+              if ('metalness' in mat) mat.metalness = 0.6;
+              if ('roughness' in mat) mat.roughness = 0.35;
+              mat.transparent = true;
+              mat.opacity = 0.45;
+              mat.depthWrite = false;
+            });
+          }
+          frameGroup.add(child);
+        } else if (name.startsWith('4in1ESC')) {
+          escGroup.add(child);
+        } else {
+          // Everything else is FC
+          fcGroup.add(child);
         }
-        if (depth < 3) obj.children.forEach(c => logTree(c, depth + 1));
-      };
-      logTree(scene);
+      });
 
-      if (groupRef.current) {
-        groupRef.current.add(scene);
-      }
+      if (frameRef.current) frameRef.current.add(frameGroup);
+      if (escRef.current) escRef.current.add(escGroup);
+      if (fcRef.current) fcRef.current.add(fcGroup);
     });
   }, []);
 
-  // Drag-to-rotate state
-  const dragRotRef = useRef({x: 0, y: 0});
-  const isDragging = useRef(false);
-  const lastMouse = useRef({x: 0, y: 0});
-
+  // Drag handlers
   const onPointerDown = useCallback((e: any) => {
     isDragging.current = true;
     lastMouse.current = {x: e.clientX, y: e.clientY};
@@ -134,45 +113,62 @@ function DroneModel({
   }, []);
 
   useFrame((state, delta) => {
-    if (!groupRef.current) return;
+    if (!wrapperRef.current) return;
 
-    // Auto-rotation slows on scroll, stops on drag
+    // Auto-rotation
     if (!isDragging.current) {
       const rotSpeed = THREE.MathUtils.lerp(0.15, 0.03, scrollProgress);
       rotationRef.current += delta * rotSpeed;
     }
 
-    // Combine auto-rotation + drag offset
-    groupRef.current.rotation.y = rotationRef.current + dragRotRef.current.y;
-    groupRef.current.rotation.x =
+    wrapperRef.current.rotation.y = rotationRef.current + dragRotRef.current.y;
+    wrapperRef.current.rotation.x =
       THREE.MathUtils.lerp(0.5, 0.15, scrollProgress) + dragRotRef.current.x;
+    wrapperRef.current.scale.setScalar(THREE.MathUtils.lerp(12, 14, scrollProgress));
 
-    const s = THREE.MathUtils.lerp(12, 14, scrollProgress);
-    groupRef.current.scale.setScalar(s);
+    // Fly-out animation: parts separate as scroll progresses
+    const flyOut = Math.max(0, (scrollProgress - 0.3) / 0.7); // starts at 30% scroll
+    const ease = 1 - Math.pow(1 - flyOut, 2); // ease-out
+
+    if (frameRef.current) {
+      // Frame moves back and fades more
+      frameRef.current.position.z = ease * -0.02;
+      frameRef.current.traverse((c: any) => {
+        if (c.isMesh && c.material?.transparent) {
+          c.material.opacity = THREE.MathUtils.lerp(0.45, 0.15, ease);
+        }
+      });
+    }
+    if (escRef.current) {
+      // ESC slides left
+      escRef.current.position.x = ease * -0.04;
+      escRef.current.position.z = ease * 0.01;
+    }
+    if (fcRef.current) {
+      // FC slides right
+      fcRef.current.position.x = ease * 0.04;
+      fcRef.current.position.z = ease * 0.01;
+    }
   });
 
   return (
-    <group>
-      <group
-        ref={groupRef}
-        scale={12}
-        rotation={[0.5, 0, 0.05]}
-        onPointerDown={onPointerDown}
-      >
-        <group ref={frameGroupRef} />
-        <group ref={pcbGroupRef} />
-      </group>
+    <group
+      ref={wrapperRef}
+      scale={12}
+      rotation={[0.5, 0, 0.05]}
+      onPointerDown={onPointerDown}
+    >
+      <group ref={frameRef} />
+      <group ref={escRef} />
+      <group ref={fcRef} />
     </group>
   );
 }
 
 function CameraController({scrollProgress}: {scrollProgress: number}) {
   const {camera} = useThree();
-
   useFrame(() => {
     const ease = scrollProgress * scrollProgress;
-
-    // Wide shot → close-up on center stack
     camera.position.set(
       THREE.MathUtils.lerp(0, 0.2, ease),
       THREE.MathUtils.lerp(1.0, 0.3, ease),
@@ -180,7 +176,6 @@ function CameraController({scrollProgress}: {scrollProgress: number}) {
     );
     camera.lookAt(0, 0, 0);
   });
-
   return null;
 }
 
@@ -199,10 +194,7 @@ function Scene({
       <directionalLight position={[0, -2, -5]} intensity={1} color="#347a44" />
       <pointLight position={[0, 3, 0]} intensity={1} color="#ffffff" />
       <CameraController scrollProgress={scrollProgress} />
-      <DroneModel
-        scrollProgress={scrollProgress}
-        onClickProduct={onClickProduct}
-      />
+      <DroneModel scrollProgress={scrollProgress} onClickProduct={onClickProduct} />
     </>
   );
 }
@@ -211,22 +203,19 @@ export function HeroScene() {
   const [mounted, setMounted] = useState(false);
   const scrollProgress = useScrollProgress();
 
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+  useEffect(() => { setMounted(true); }, []);
 
   const handleClickProduct = useCallback(() => {
     window.location.href = '/collections/all';
   }, []);
 
-  if (!mounted)
-    return (
-      <div className="absolute inset-0 flex items-center justify-center">
-        <div className="w-16 h-16 border border-[var(--color-border)] rounded-full flex items-center justify-center">
-          <div className="w-8 h-8 border-t border-[var(--color-gold)] rounded-full animate-spin" />
-        </div>
+  if (!mounted) return (
+    <div className="absolute inset-0 flex items-center justify-center">
+      <div className="w-16 h-16 border border-[var(--color-border)] rounded-full flex items-center justify-center">
+        <div className="w-8 h-8 border-t border-[var(--color-gold)] rounded-full animate-spin" />
       </div>
-    );
+    </div>
+  );
 
   return (
     <div className="absolute inset-0">
@@ -234,14 +223,9 @@ export function HeroScene() {
         camera={{position: [0, 1.0, 2.0], fov: 40}}
         style={{background: 'transparent'}}
         gl={{antialias: true, alpha: true}}
-        onCreated={({camera}) => {
-          camera.lookAt(0, 0, 0);
-        }}
+        onCreated={({camera}) => { camera.lookAt(0, 0, 0); }}
       >
-        <Scene
-          scrollProgress={scrollProgress}
-          onClickProduct={handleClickProduct}
-        />
+        <Scene scrollProgress={scrollProgress} onClickProduct={handleClickProduct} />
       </Canvas>
     </div>
   );
