@@ -7,8 +7,8 @@ import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 function useScrollProgress() {
   const [progress, setProgress] = useState(0);
   useEffect(() => {
+    window.scrollTo(0, 0);
     const onScroll = () => {
-      // 4x viewport for the full extended hero
       const p = Math.min(1, Math.max(0, window.scrollY / (window.innerHeight * 3)));
       setProgress(p);
     };
@@ -24,7 +24,6 @@ function loadModel(url: string): Promise<THREE.Group> {
   });
 }
 
-// Smooth step — no hard edges
 function smoothstep(edge0: number, edge1: number, x: number) {
   const t = Math.max(0, Math.min(1, (x - edge0) / (edge1 - edge0)));
   return t * t * (3 - 2 * t);
@@ -40,6 +39,7 @@ function DroneAssembly({scrollProgress}: {scrollProgress: number}) {
   const dragRef = useRef({x: 0, y: 0});
   const dragging = useRef(false);
   const lastPtr = useRef({x: 0, y: 0});
+  const dampedP = useRef(0);
 
   useEffect(() => {
     Promise.all([
@@ -49,12 +49,10 @@ function DroneAssembly({scrollProgress}: {scrollProgress: number}) {
     ]).then(([frameScene, escScene, fcScene]) => {
       const box = new THREE.Box3().setFromObject(frameScene);
       const c = box.getCenter(new THREE.Vector3());
-
       frameScene.position.sub(c);
       escScene.position.sub(c);
       fcScene.position.sub(c);
 
-      // Frame: dark carbon look
       frameScene.traverse((child: any) => {
         if (!child.isMesh) return;
         const mats = Array.isArray(child.material) ? child.material : [child.material];
@@ -64,7 +62,7 @@ function DroneAssembly({scrollProgress}: {scrollProgress: number}) {
           if ('metalness' in m) m.metalness = 0.5;
           if ('roughness' in m) m.roughness = 0.3;
           m.transparent = true;
-          m.opacity = 0.4;
+          m.opacity = 0.35;
           m.depthWrite = false;
         });
       });
@@ -75,7 +73,6 @@ function DroneAssembly({scrollProgress}: {scrollProgress: number}) {
     });
   }, []);
 
-  // Drag
   const onDown = useCallback((e: any) => {
     dragging.current = true;
     lastPtr.current = {x: e.clientX, y: e.clientY};
@@ -102,24 +99,27 @@ function DroneAssembly({scrollProgress}: {scrollProgress: number}) {
   useFrame((_, dt) => {
     if (!wrapperRef.current || !frameRef.current || !escRef.current || !fcRef.current) return;
 
-    const p = scrollProgress;
+    // Damped scroll for silky smooth transitions
+    const damp = 1 - Math.pow(0.0005, dt);
+    dampedP.current += (scrollProgress - dampedP.current) * damp;
+    const p = dampedP.current;
 
-    // Continuous smooth curves — something always moving
-    const flyOut = smoothstep(0.15, 0.5, p);    // parts separate
-    const flatten = smoothstep(0.08, 0.4, p);   // rotation flattens (earlier)
-    const rotSlow = smoothstep(0, 0.5, p);      // rotation slows
-    const frameOpacity = smoothstep(0.15, 0.45, p); // frame becomes solid
-
-    // Drag influence fades
+    // Animation curves
+    // Phase 1 (0-0.35): zoom out from stack to reveal full drone
+    // Phase 2 (0.35-0.7): parts fly out to side-by-side
+    const zoomOut = smoothstep(0, 0.35, p);
+    const flyOut = smoothstep(0.3, 0.65, p);
+    const flatten = smoothstep(0.2, 0.55, p);
+    const rotSlow = smoothstep(0, 0.5, p);
+    const frameOpacity = smoothstep(0.3, 0.55, p);
     const dragInf = 1 - flyOut * 0.9;
 
-    // Auto-rotate (always something moving — slows but never fully stops until flyOut=1)
+    // Auto-rotate
     if (!dragging.current) {
-      const speed = THREE.MathUtils.lerp(0.12, 0.0, rotSlow);
-      rotRef.current += dt * speed;
+      rotRef.current += dt * THREE.MathUtils.lerp(0.12, 0.0, rotSlow);
     }
 
-    // Wrapper rotation — smoothly flattens to face-on
+    // Rotation
     const autoRot = rotRef.current + dragRef.current.y * dragInf;
     const targetY = Math.round(autoRot / (Math.PI * 2)) * (Math.PI * 2);
     wrapperRef.current.rotation.y = THREE.MathUtils.lerp(autoRot, targetY, flyOut * flyOut);
@@ -128,40 +128,45 @@ function DroneAssembly({scrollProgress}: {scrollProgress: number}) {
     );
     wrapperRef.current.rotation.z = THREE.MathUtils.lerp(0.05, 0, flatten);
 
-    // Scale
-    wrapperRef.current.scale.setScalar(THREE.MathUtils.lerp(12, 13, flyOut));
+    // Scale — small enough to fit all 3 on screen
+    wrapperRef.current.scale.setScalar(THREE.MathUtils.lerp(7, 8, flyOut));
 
-    // --- Frame (center) — goes from transparent to more solid ---
+    // Frame — becomes more solid during fly-out
     frameRef.current.position.set(
       0,
-      THREE.MathUtils.lerp(0, 0.015, flyOut),
-      THREE.MathUtils.lerp(0, 0.03, flyOut),
+      THREE.MathUtils.lerp(0, 0.012, flyOut),
+      THREE.MathUtils.lerp(0, 0.025, flyOut),
     );
     frameRef.current.traverse((c: any) => {
       if (c.isMesh && c.material?.transparent) {
-        // 0.4 → 0.75 (solid during display)
-        c.material.opacity = THREE.MathUtils.lerp(0.4, 0.75, frameOpacity);
+        let opacity;
+        if (flyOut < 0.5) {
+          opacity = THREE.MathUtils.lerp(0.35, 0.7, frameOpacity);
+        } else {
+          opacity = THREE.MathUtils.lerp(0.7, 0.5, (flyOut - 0.5) * 2);
+        }
+        c.material.opacity = opacity;
       }
     });
-    frameRef.current.scale.setScalar(THREE.MathUtils.lerp(1, 0.65, flyOut));
+    frameRef.current.scale.setScalar(THREE.MathUtils.lerp(1, 0.6, flyOut));
 
-    // --- FC (left) ---
+    // FC — slides left (keep on screen)
     fcRef.current.position.set(
-      THREE.MathUtils.lerp(0, -0.055, flyOut),
-      THREE.MathUtils.lerp(0, 0.012, flyOut),
-      THREE.MathUtils.lerp(0, 0.05, flyOut),
+      THREE.MathUtils.lerp(0, -0.065, flyOut),
+      THREE.MathUtils.lerp(0, 0.008, flyOut),
+      THREE.MathUtils.lerp(0, 0.04, flyOut),
     );
 
-    // --- ESC (right) ---
+    // ESC — slides right (keep on screen)
     escRef.current.position.set(
-      THREE.MathUtils.lerp(0, 0.055, flyOut),
-      THREE.MathUtils.lerp(0, 0.012, flyOut),
-      THREE.MathUtils.lerp(0, 0.05, flyOut),
+      THREE.MathUtils.lerp(0, 0.065, flyOut),
+      THREE.MathUtils.lerp(0, 0.008, flyOut),
+      THREE.MathUtils.lerp(0, 0.04, flyOut),
     );
   });
 
   return (
-    <group ref={wrapperRef} scale={12} rotation={[0.45, 0, 0.05]} onPointerDown={onDown}>
+    <group ref={wrapperRef} scale={7} rotation={[0.45, 0, 0.05]} onPointerDown={onDown}>
       <group ref={frameRef} />
       <group ref={escRef} />
       <group ref={fcRef} />
@@ -171,16 +176,24 @@ function DroneAssembly({scrollProgress}: {scrollProgress: number}) {
 
 function CameraRig({scrollProgress}: {scrollProgress: number}) {
   const {camera} = useThree();
-  useFrame(() => {
-    const p = scrollProgress;
-    const camMove = smoothstep(0.1, 0.6, p);
+  const dampedP = useRef(0);
+
+  useFrame((_, dt) => {
+    const damp = 1 - Math.pow(0.0005, dt);
+    dampedP.current += (scrollProgress - dampedP.current) * damp;
+    const p = dampedP.current;
+
+    // Phase 1: zoom out from tight stack view
+    // Phase 2: pull back to show all 3 side by side
+    const zoomOut = smoothstep(0, 0.35, p);
+    const pullBack = smoothstep(0.3, 0.65, p);
 
     camera.position.set(
       0,
-      THREE.MathUtils.lerp(0.8, 0.35, camMove),
-      THREE.MathUtils.lerp(1.8, 2.0, camMove),
+      THREE.MathUtils.lerp(0.35, 0.55, zoomOut) + THREE.MathUtils.lerp(0, -0.15, pullBack),
+      THREE.MathUtils.lerp(0.7, 1.2, zoomOut) + THREE.MathUtils.lerp(0, 0.3, pullBack),
     );
-    camera.lookAt(0, THREE.MathUtils.lerp(0, 0.08, camMove), 0);
+    camera.lookAt(0, THREE.MathUtils.lerp(0.03, 0.08, pullBack), 0);
   });
   return null;
 }
@@ -201,7 +214,7 @@ export function HeroScene() {
   return (
     <div className="absolute inset-0">
       <Canvas
-        camera={{position: [0, 0.8, 1.8], fov: 40}}
+        camera={{position: [0, 0.3, 0.7], fov: 40}}
         style={{background: 'transparent'}}
         gl={{antialias: true, alpha: true}}
         onCreated={({camera}) => { camera.lookAt(0, 0, 0); }}
