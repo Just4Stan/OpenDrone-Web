@@ -20,6 +20,11 @@ Webshop and marketing site for OpenDrone. Stan does the web dev himself with Cla
 - Mobile-first responsive design.
 - Performance matters (fast loading for global audience).
 
+## Compliance
+See [COMPLIANCE.md](COMPLIANCE.md) — mandatory pages, GPSR product requirements, cookie banner spec, Peppol e-invoicing, OSS VAT, country shipping blocks, GDPR, CRA SBOM downloads. **Read this before building any legal page or product listing component.**
+
+Source of truth for legal templates: `~/Library/Mobile Documents/com~apple~CloudDocs/incutec/compliance/` — read these Markdown files rather than drafting legal copy from scratch.
+
 ## Related
-- Business repo: ~/Library/Mobile Documents/com~apple~CloudDocs/OpenDrone/
+- Incutec command center: ~/Library/Mobile Documents/com~apple~CloudDocs/incutec/
 - Hardware repos: OpenFC, OpenESC in iCloud Drive

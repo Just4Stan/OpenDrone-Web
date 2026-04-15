@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <rect width="1200" height="630" fill="#0a0a0a"/>
+  <text x="600" y="290" text-anchor="middle" font-family="'Space Grotesk', sans-serif" font-size="72" font-weight="700" fill="#b8922e">OpenDrone</text>
+  <text x="600" y="360" text-anchor="middle" font-family="'Inter', sans-serif" font-size="28" fill="#737373">Open source drone electronics designed in Belgium</text>
+</svg>

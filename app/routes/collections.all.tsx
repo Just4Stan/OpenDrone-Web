@@ -4,10 +4,15 @@ import {getPaginationVariables, Image, Money} from '@shopify/hydrogen';
 import {PaginatedResourceSection} from '~/components/PaginatedResourceSection';
 import {ProductItem} from '~/components/ProductItem';
 import type {CollectionItemFragment} from 'storefrontapi.generated';
+import {buildSeoMeta} from '~/lib/seo';
 
-export const meta: Route.MetaFunction = () => {
-  return [{title: `Hydrogen | Products`}];
-};
+export const meta: Route.MetaFunction = () =>
+  buildSeoMeta({
+    title: 'Products',
+    description:
+      'Browse all OpenDrone products, including open source flight controllers, ESCs, frames, and supporting hardware.',
+    type: 'product',
+  });
 
 export async function loader(args: Route.LoaderArgs) {
   // Start fetching non-critical data without blocking time to first byte
@@ -51,8 +56,15 @@ export default function Collection() {
   const {products} = useLoaderData<typeof loader>();
 
   return (
-    <div className="collection">
-      <h1>Products</h1>
+    <div className="collection page-shell">
+      <header className="page-header">
+        <p className="page-eyebrow">Storefront</p>
+        <h1 className="page-title">All Products</h1>
+        <p className="page-description">
+          A complete view of the current OpenDrone catalog, from core flight
+          electronics to frame components.
+        </p>
+      </header>
       <PaginatedResourceSection<CollectionItemFragment>
         connection={products}
         resourcesClassName="products-grid"

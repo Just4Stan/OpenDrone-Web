@@ -1,4 +1,4 @@
-import {Link, useNavigate} from 'react-router';
+import {Link, useNavigate, useRouteLoaderData} from 'react-router';
 import {type MappedProductOptions} from '@shopify/hydrogen';
 import type {
   Maybe,
@@ -7,6 +7,12 @@ import type {
 import {AddToCartButton} from './AddToCartButton';
 import {useAside} from './Aside';
 import type {ProductFragment} from 'storefrontapi.generated';
+import type {RootLoader} from '~/root';
+
+function isNlLocale(locale?: string) {
+  if (!locale) return false;
+  return locale.toUpperCase().startsWith('NL');
+}
 
 export function ProductForm({
   productOptions,
@@ -17,6 +23,10 @@ export function ProductForm({
 }) {
   const navigate = useNavigate();
   const {open} = useAside();
+  const rootData = useRouteLoaderData<RootLoader>('root');
+  const nl = isNlLocale(rootData?.locale);
+  const ctaLabelAvailable = nl ? 'Bestelling met betalingsverplichting' : 'Add to cart';
+  const ctaLabelSoldOut = nl ? 'Uitverkocht' : 'Sold out';
   return (
     <div className="product-form">
       {productOptions.map((option) => {
@@ -54,6 +64,8 @@ export function ProductForm({
                       preventScrollReset
                       replace
                       to={`/products/${handle}?${variantUriQuery}`}
+                      aria-label={name}
+                      aria-current={selected ? 'page' : undefined}
                       style={{
                         opacity: available ? 1 : 0.3,
                       }}
@@ -78,6 +90,8 @@ export function ProductForm({
                         opacity: available ? 1 : 0.3,
                       }}
                       disabled={!exists}
+                      aria-label={name}
+                      aria-pressed={selected}
                       onClick={() => {
                         if (!selected) {
                           void navigate(`?${variantUriQuery}`, {
@@ -114,7 +128,7 @@ export function ProductForm({
             : []
         }
       >
-        {selectedVariant?.availableForSale ? 'Add to cart' : 'Sold out'}
+        {selectedVariant?.availableForSale ? ctaLabelAvailable : ctaLabelSoldOut}
       </AddToCartButton>
     </div>
   );
@@ -134,13 +148,13 @@ function ProductOptionSwatch({
 
   return (
     <div
-      aria-label={name}
+      aria-hidden="true"
       className="product-option-label-swatch"
       style={{
         backgroundColor: color || 'transparent',
       }}
     >
-      {!!image && <img src={image} alt={name} />}
+      {!!image && <img src={image} alt="" />}
     </div>
   );
 }

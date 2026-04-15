@@ -3,10 +3,14 @@ import type {Route} from './+types/cart';
 import type {CartQueryDataReturn} from '@shopify/hydrogen';
 import {CartForm} from '@shopify/hydrogen';
 import {CartMain} from '~/components/CartMain';
+import {buildSeoMeta} from '~/lib/seo';
 
-export const meta: Route.MetaFunction = () => {
-  return [{title: `Hydrogen | Cart`}];
-};
+export const meta: Route.MetaFunction = () =>
+  buildSeoMeta({
+    title: 'Cart',
+    description: 'Review the items currently in your OpenDrone cart.',
+    robots: 'noindex,nofollow',
+  });
 
 export const headers: HeadersFunction = ({actionHeaders}) => actionHeaders;
 
@@ -79,8 +83,11 @@ export async function action({request, context}: Route.ActionArgs) {
 
   const redirectTo = formData.get('redirectTo') ?? null;
   if (typeof redirectTo === 'string') {
-    status = 303;
-    headers.set('Location', redirectTo);
+    // Only allow relative paths to prevent open redirect
+    if (redirectTo.startsWith('/') && !redirectTo.startsWith('//')) {
+      status = 303;
+      headers.set('Location', redirectTo);
+    }
   }
 
   return data(
@@ -105,8 +112,14 @@ export default function Cart() {
   const cart = useLoaderData<typeof loader>();
 
   return (
-    <div className="cart">
-      <h1>Cart</h1>
+    <div className="cart page-shell">
+      <header className="page-header">
+        <p className="page-eyebrow">Checkout</p>
+        <h1 className="page-title">Your cart</h1>
+        <p className="page-description">
+          Review your selected hardware before heading to Shopify checkout.
+        </p>
+      </header>
       <CartMain layout="page" cart={cart} />
     </div>
   );

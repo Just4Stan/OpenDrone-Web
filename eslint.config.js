@@ -244,4 +244,10 @@ export default [
       'react-hooks/rules-of-hooks': 'off',
     },
   },
+  {
+    files: ['app/components/HeroScene.tsx'],
+    rules: {
+      'react/no-unknown-property': 'off',
+    },
+  },
 ];

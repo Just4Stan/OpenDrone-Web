@@ -3,6 +3,14 @@ import type {Route} from './+types/collections._index';
 import {getPaginationVariables, Image} from '@shopify/hydrogen';
 import type {CollectionFragment} from 'storefrontapi.generated';
 import {PaginatedResourceSection} from '~/components/PaginatedResourceSection';
+import {buildSeoMeta} from '~/lib/seo';
+
+export const meta: Route.MetaFunction = () =>
+  buildSeoMeta({
+    title: 'Collections',
+    description:
+      'Browse OpenDrone collections for flight controllers, ESCs, frames, and open hardware builds.',
+  });
 
 export async function loader(args: Route.LoaderArgs) {
   // Start fetching non-critical data without blocking time to first byte
@@ -46,8 +54,15 @@ export default function Collections() {
   const {collections} = useLoaderData<typeof loader>();
 
   return (
-    <div className="collections">
-      <h1>Collections</h1>
+    <div className="collections page-shell">
+      <header className="page-header">
+        <p className="page-eyebrow">Catalog</p>
+        <h1 className="page-title">Collections</h1>
+        <p className="page-description">
+          Browse the catalog by product family and jump straight into the
+          hardware stack you care about.
+        </p>
+      </header>
       <PaginatedResourceSection<CollectionFragment>
         connection={collections}
         resourcesClassName="collections-grid"
@@ -73,7 +88,7 @@ function CollectionItem({
 }) {
   return (
     <Link
-      className="collection-item"
+      className="collection-card"
       key={collection.id}
       to={`/collections/${collection.handle}`}
       prefetch="intent"
@@ -87,7 +102,10 @@ function CollectionItem({
           sizes="(min-width: 45em) 400px, 100vw"
         />
       )}
-      <h5>{collection.title}</h5>
+      <div className="collection-card-body">
+        <h2>{collection.title}</h2>
+        <p>OpenDrone collection</p>
+      </div>
     </Link>
   );
 }

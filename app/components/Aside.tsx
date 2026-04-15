@@ -60,7 +60,7 @@ export function Aside({
       role="dialog"
       aria-labelledby={id}
     >
-      <button className="close-outside" onClick={close} />
+      <button className="close-outside" onClick={close} aria-label="Close" />
       <aside>
         <header>
           <h3 id={id}>{heading}</h3>

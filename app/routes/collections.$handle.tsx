@@ -5,10 +5,18 @@ import {PaginatedResourceSection} from '~/components/PaginatedResourceSection';
 import {redirectIfHandleIsLocalized} from '~/lib/redirect';
 import {ProductItem} from '~/components/ProductItem';
 import type {ProductItemFragment} from 'storefrontapi.generated';
+import {buildSeoMeta} from '~/lib/seo';
 
-export const meta: Route.MetaFunction = ({data}) => {
-  return [{title: `Hydrogen | ${data?.collection.title ?? ''} Collection`}];
-};
+export const meta: Route.MetaFunction = ({data}) =>
+  buildSeoMeta({
+    title: data?.collection?.title
+      ? `${data.collection.title} Collection`
+      : 'Collection',
+    description:
+      data?.collection?.description ||
+      'Explore curated OpenDrone hardware collections and product families.',
+    type: 'product',
+  });
 
 export async function loader(args: Route.LoaderArgs) {
   // Start fetching non-critical data without blocking time to first byte
@@ -69,9 +77,14 @@ export default function Collection() {
   const {collection} = useLoaderData<typeof loader>();
 
   return (
-    <div className="collection">
-      <h1>{collection.title}</h1>
-      <p className="collection-description">{collection.description}</p>
+    <div className="collection page-shell">
+      <header className="page-header">
+        <p className="page-eyebrow">Collection</p>
+        <h1 className="page-title">{collection.title}</h1>
+        {collection.description ? (
+          <p className="page-description">{collection.description}</p>
+        ) : null}
+      </header>
       <PaginatedResourceSection<ProductItemFragment>
         connection={collection.products}
         resourcesClassName="products-grid"

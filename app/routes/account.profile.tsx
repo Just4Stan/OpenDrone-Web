@@ -9,15 +9,19 @@ import {
   useOutletContext,
 } from 'react-router';
 import type {Route} from './+types/account.profile';
+import {buildSeoMeta} from '~/lib/seo';
 
 export type ActionResponse = {
   error: string | null;
   customer: CustomerFragment | null;
 };
 
-export const meta: Route.MetaFunction = () => {
-  return [{title: 'Profile'}];
-};
+export const meta: Route.MetaFunction = () =>
+  buildSeoMeta({
+    title: 'Profile',
+    description: 'Update your OpenDrone account profile details.',
+    robots: 'noindex,nofollow',
+  });
 
 export async function loader({context}: Route.LoaderArgs) {
   await context.customerAccount.handleAuthStatus();
@@ -87,11 +91,13 @@ export default function AccountProfile() {
 
   return (
     <div className="account-profile">
-      <h2>My profile</h2>
-      <br />
-      <Form method="PUT">
-        <legend>Personal information</legend>
-        <fieldset>
+      <header className="account-section-header">
+        <h2>My profile</h2>
+        <p>Keep your customer details up to date for future orders.</p>
+      </header>
+      <Form className="account-form" method="PUT">
+        <fieldset className="account-form-grid">
+          <legend>Personal information</legend>
           <label htmlFor="firstName">First name</label>
           <input
             id="firstName"
@@ -124,7 +130,7 @@ export default function AccountProfile() {
         ) : (
           <br />
         )}
-        <button type="submit" disabled={state !== 'idle'}>
+        <button className="account-button" type="submit" disabled={state !== 'idle'}>
           {state !== 'idle' ? 'Updating' : 'Update'}
         </button>
       </Form>

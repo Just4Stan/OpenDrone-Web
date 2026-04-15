@@ -2,10 +2,16 @@ import {useLoaderData} from 'react-router';
 import type {Route} from './+types/blogs.$blogHandle.$articleHandle';
 import {Image} from '@shopify/hydrogen';
 import {redirectIfHandleIsLocalized} from '~/lib/redirect';
+import {buildSeoMeta} from '~/lib/seo';
 
-export const meta: Route.MetaFunction = ({data}) => {
-  return [{title: `Hydrogen | ${data?.article.title ?? ''} article`}];
-};
+export const meta: Route.MetaFunction = ({data}) =>
+  buildSeoMeta({
+    title: data?.article?.seo?.title || data?.article?.title || 'Article',
+    description:
+      data?.article?.seo?.description || data?.article?.contentHtml || undefined,
+    image: data?.article?.image?.url,
+    type: 'article',
+  });
 
 export async function loader(args: Route.LoaderArgs) {
   // Start fetching non-critical data without blocking time to first byte
@@ -76,21 +82,22 @@ export default function Article() {
   }).format(new Date(article.publishedAt));
 
   return (
-    <div className="article">
-      <h1>
-        {title}
-        <div>
-          <time dateTime={article.publishedAt}>{publishedDate}</time> &middot;{' '}
-          <address>{author?.name}</address>
+    <article className="article page-shell">
+      <header className="page-header article-header">
+        <p className="page-eyebrow">Article</p>
+        <h1 className="page-title">{title}</h1>
+        <div className="article-meta">
+        <time dateTime={article.publishedAt}>{publishedDate}</time> &middot;{' '}
+        <address>{author?.name}</address>
         </div>
-      </h1>
+      </header>
 
-      {image && <Image data={image} sizes="90vw" loading="eager" />}
+      {image && <Image data={image} sizes="90vw" loading="eager" alt={image.altText || title} />}
       <div
         dangerouslySetInnerHTML={{__html: contentHtml}}
-        className="article"
+        className="rich-content article-content"
       />
-    </div>
+    </article>
   );
 }
 

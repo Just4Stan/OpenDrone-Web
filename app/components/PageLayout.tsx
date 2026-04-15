@@ -5,15 +5,16 @@ import type {
   FooterQuery,
   HeaderQuery,
 } from 'storefrontapi.generated';
+import type {CompanyIdentity} from '~/lib/company';
 import {Aside} from '~/components/Aside';
 import {Footer} from '~/components/Footer';
 import {Header, HeaderMenu} from '~/components/Header';
 import {CartMain} from '~/components/CartMain';
 import {
-  SEARCH_ENDPOINT,
   SearchFormPredictive,
 } from '~/components/SearchFormPredictive';
 import {SearchResultsPredictive} from '~/components/SearchResultsPredictive';
+import {buildSearchPath} from '~/lib/search';
 
 interface PageLayoutProps {
   cart: Promise<CartApiQueryFragment | null>;
@@ -21,16 +22,18 @@ interface PageLayoutProps {
   header: HeaderQuery;
   isLoggedIn: Promise<boolean>;
   publicStoreDomain: string;
+  company: CompanyIdentity;
   children?: React.ReactNode;
 }
 
 export function PageLayout({
   cart,
   children = null,
-  footer,
+  footer: _footer,
   header,
   isLoggedIn,
   publicStoreDomain,
+  company,
 }: PageLayoutProps) {
   return (
     <Aside.Provider>
@@ -45,11 +48,11 @@ export function PageLayout({
           publicStoreDomain={publicStoreDomain}
         />
       )}
-      <main>{children}</main>
+      <main className="site-main">{children}</main>
       <Footer
-        footer={footer}
         header={header}
         publicStoreDomain={publicStoreDomain}
+        company={company}
       />
     </Aside.Provider>
   );
@@ -134,7 +137,7 @@ function SearchAside() {
                 {term.current && total ? (
                   <Link
                     onClick={closeSearch}
-                    to={`${SEARCH_ENDPOINT}?q=${term.current}`}
+                    to={buildSearchPath(term.current)}
                   >
                     <p>
                       View all results for <q>{term.current}</q>

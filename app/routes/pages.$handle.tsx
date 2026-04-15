@@ -1,10 +1,13 @@
 import {useLoaderData} from 'react-router';
 import type {Route} from './+types/pages.$handle';
 import {redirectIfHandleIsLocalized} from '~/lib/redirect';
+import {buildSeoMeta} from '~/lib/seo';
 
-export const meta: Route.MetaFunction = ({data}) => {
-  return [{title: `Hydrogen | ${data?.page.title ?? ''}`}];
-};
+export const meta: Route.MetaFunction = ({data}) =>
+  buildSeoMeta({
+    title: data?.page?.seo?.title || data?.page?.title || 'Page',
+    description: data?.page?.seo?.description || data?.page?.body || undefined,
+  });
 
 export async function loader(args: Route.LoaderArgs) {
   // Start fetching non-critical data without blocking time to first byte
@@ -58,12 +61,13 @@ export default function Page() {
   const {page} = useLoaderData<typeof loader>();
 
   return (
-    <div className="page">
-      <header>
-        <h1>{page.title}</h1>
+    <article className="page page-shell">
+      <header className="page-header">
+        <p className="page-eyebrow">Page</p>
+        <h1 className="page-title">{page.title}</h1>
       </header>
-      <main dangerouslySetInnerHTML={{__html: page.body}} />
-    </div>
+      <div className="rich-content" dangerouslySetInnerHTML={{__html: page.body}} />
+    </article>
   );
 }
 

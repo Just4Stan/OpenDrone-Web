@@ -7,6 +7,7 @@ import {
 } from '@shopify/hydrogen';
 import type {HeaderQuery, CartApiQueryFragment} from 'storefrontapi.generated';
 import {useAside} from '~/components/Aside';
+import {LangToggle} from '~/components/LangToggle';
 
 interface HeaderProps {
   header: HeaderQuery;
@@ -23,7 +24,7 @@ export function Header({
   cart,
   publicStoreDomain,
 }: HeaderProps) {
-  const {shop, menu} = header;
+  const {menu} = header;
   return (
     <header className="site-header">
       {/* Left: wordmark */}
@@ -92,6 +93,25 @@ export function HeaderMenu({
           item.url.includes(primaryDomainUrl)
             ? new URL(item.url).pathname
             : item.url;
+        const className = isMobile
+          ? 'text-sm font-mono uppercase tracking-wider text-[var(--color-text-muted)] hover:text-[var(--color-text)] transition-colors'
+          : 'font-mono text-[11px] uppercase tracking-[0.15em] transition-colors text-[var(--color-text-muted)] hover:text-[var(--color-text)]';
+
+        if (!url.startsWith('/')) {
+          return (
+            <a
+              className={className}
+              href={url}
+              key={item.id}
+              onClick={close}
+              rel="noopener noreferrer"
+              target="_blank"
+            >
+              {item.title}
+            </a>
+          );
+        }
+
         return (
           <NavLink
             end
@@ -100,7 +120,7 @@ export function HeaderMenu({
             prefetch="intent"
             to={url}
             className={({isActive}) =>
-              `font-mono text-[11px] uppercase tracking-[0.15em] transition-colors ${
+              `${isMobile ? 'text-sm tracking-wider' : 'text-[11px] tracking-[0.15em]'} font-mono uppercase transition-colors ${
                 isActive
                   ? 'text-[var(--color-text)]'
                   : 'text-[var(--color-text-muted)] hover:text-[var(--color-text)]'
@@ -121,6 +141,7 @@ function HeaderCtas({
 }: Pick<HeaderProps, 'isLoggedIn' | 'cart'>) {
   return (
     <nav className="flex items-center gap-5 ml-auto" role="navigation">
+      <LangToggle className="header-lang-toggle" />
       <NavLink
         prefetch="intent"
         to="/account"
@@ -231,6 +252,33 @@ const FALLBACK_HEADER_MENU = {
       title: 'Products',
       type: 'HTTP',
       url: '/collections/all',
+      items: [],
+    },
+    {
+      id: 'gid://shopify/MenuItem/461609566264',
+      resourceId: null,
+      tags: [],
+      title: 'Collections',
+      type: 'HTTP',
+      url: '/collections',
+      items: [],
+    },
+    {
+      id: 'gid://shopify/MenuItem/461609566265',
+      resourceId: null,
+      tags: [],
+      title: 'Journal',
+      type: 'HTTP',
+      url: '/blogs',
+      items: [],
+    },
+    {
+      id: 'gid://shopify/MenuItem/461609566266',
+      resourceId: null,
+      tags: [],
+      title: 'Policies',
+      type: 'HTTP',
+      url: '/policies',
       items: [],
     },
     {

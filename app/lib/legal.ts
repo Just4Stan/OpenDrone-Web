@@ -1,0 +1,278 @@
+/**
+ * Load + render legal Markdown snapshots from app/content/legal/.
+ *
+ * Uses Vite's ?raw import so the Markdown is bundled at build time and
+ * available in Oxygen's edge runtime (no fs access). A small Markdown →
+ * HTML converter handles headings, paragraphs, lists, blockquotes, tables,
+ * bold/italic, inline code, and links. This avoids pulling in a full
+ * Markdown parser dep and matches the existing .rich-content styling.
+ *
+ * The compliance Markdown files contain editorial annotations (front-matter
+ * style notes, "Implementation Checklist" sections). Everything before the
+ * first `---` separator and after `## Implementation Checklist` / `## Source`
+ * / `## Notes` headings is stripped so only the customer-facing body is
+ * rendered.
+ */
+
+// NL = authoritative text synced from the compliance repo via scripts/sync-legal.mjs.
+// EN = hand-authored translations, stored in the webshop repo.
+// When a new legal language is added later (FR/DE), mirror this pattern:
+// add a new directory under app/content/legal/<lang>/ and a new SOURCES_<lang> map.
+import algemeneVoorwaardenNl from '~/content/legal/nl/algemene-voorwaarden.md?raw';
+import privacyPolicyNl from '~/content/legal/nl/privacy-policy.md?raw';
+import cookiePolicyNl from '~/content/legal/nl/cookie-policy.md?raw';
+import herroepingNl from '~/content/legal/nl/herroepingsformulier.md?raw';
+import peppolNl from '~/content/legal/nl/peppol-e-invoicing.md?raw';
+import exportControlNl from '~/content/legal/nl/export-control-memo.md?raw';
+import vulnPolicyNl from '~/content/legal/nl/vulnerability-handling-policy.md?raw';
+import warrantyNl from '~/content/legal/nl/warranty.md?raw';
+import shippingNl from '~/content/legal/nl/shipping.md?raw';
+import contactNl from '~/content/legal/nl/contact.md?raw';
+
+import algemeneVoorwaardenEn from '~/content/legal/en/algemene-voorwaarden.md?raw';
+import privacyPolicyEn from '~/content/legal/en/privacy-policy.md?raw';
+import cookiePolicyEn from '~/content/legal/en/cookie-policy.md?raw';
+import herroepingEn from '~/content/legal/en/herroepingsformulier.md?raw';
+import peppolEn from '~/content/legal/en/peppol-e-invoicing.md?raw';
+import exportControlEn from '~/content/legal/en/export-control-memo.md?raw';
+import vulnPolicyEn from '~/content/legal/en/vulnerability-handling-policy.md?raw';
+import warrantyEn from '~/content/legal/en/warranty.md?raw';
+import shippingEn from '~/content/legal/en/shipping.md?raw';
+import contactEn from '~/content/legal/en/contact.md?raw';
+
+export type LegalSlug =
+  | 'algemene-voorwaarden'
+  | 'privacy-policy'
+  | 'cookie-policy'
+  | 'herroepingsformulier'
+  | 'peppol-e-invoicing'
+  | 'export-control-memo'
+  | 'vulnerability-handling-policy'
+  | 'warranty'
+  | 'shipping'
+  | 'contact';
+
+const SOURCES_NL: Record<LegalSlug, string> = {
+  'algemene-voorwaarden': algemeneVoorwaardenNl,
+  'privacy-policy': privacyPolicyNl,
+  'cookie-policy': cookiePolicyNl,
+  herroepingsformulier: herroepingNl,
+  'peppol-e-invoicing': peppolNl,
+  'export-control-memo': exportControlNl,
+  'vulnerability-handling-policy': vulnPolicyNl,
+  warranty: warrantyNl,
+  shipping: shippingNl,
+  contact: contactNl,
+};
+
+const SOURCES_EN: Record<LegalSlug, string> = {
+  'algemene-voorwaarden': algemeneVoorwaardenEn,
+  'privacy-policy': privacyPolicyEn,
+  'cookie-policy': cookiePolicyEn,
+  herroepingsformulier: herroepingEn,
+  'peppol-e-invoicing': peppolEn,
+  'export-control-memo': exportControlEn,
+  'vulnerability-handling-policy': vulnPolicyEn,
+  warranty: warrantyEn,
+  shipping: shippingEn,
+  contact: contactEn,
+};
+
+const STRIP_SECTIONS = [
+  'Implementation Checklist',
+  'Implementation checklist',
+  'Source',
+  'Sources',
+  'Notes',
+  'Internal notes',
+];
+
+function escapeHtml(s: string) {
+  return s
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function inline(s: string) {
+  // bold, italic, inline code, links
+  let out = escapeHtml(s);
+  out = out.replace(/`([^`]+)`/g, '<code>$1</code>');
+  out = out.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+  out = out.replace(/\*([^*]+)\*/g, '<em>$1</em>');
+  out = out.replace(
+    /\[([^\]]+)\]\(([^)]+)\)/g,
+    '<a href="$2" rel="noopener">$1</a>',
+  );
+  return out;
+}
+
+/**
+ * Minimal, purposely-limited Markdown → HTML converter. Supports:
+ * headings, paragraphs, ordered/unordered lists, blockquotes, simple
+ * pipe tables, horizontal rules, and inline bold/italic/code/links.
+ * Not a general-purpose MD parser — tuned to the compliance documents.
+ */
+export function mdToHtml(src: string): string {
+  const lines = src.split(/\r?\n/);
+  const out: string[] = [];
+  let i = 0;
+
+  while (i < lines.length) {
+    const line = lines[i];
+
+    // horizontal rule
+    if (/^---+\s*$/.test(line)) {
+      out.push('<hr />');
+      i++;
+      continue;
+    }
+
+    // heading
+    const h = /^(#{1,6})\s+(.*)$/.exec(line);
+    if (h) {
+      const level = h[1].length;
+      out.push(`<h${level}>${inline(h[2].trim())}</h${level}>`);
+      i++;
+      continue;
+    }
+
+    // table (must have header row + separator row)
+    if (/\|/.test(line) && i + 1 < lines.length && /^\s*\|?[\s:|-]+\|?\s*$/.test(lines[i + 1]) && /\|/.test(lines[i + 1])) {
+      const header = line
+        .trim()
+        .replace(/^\||\|$/g, '')
+        .split('|')
+        .map((c) => c.trim());
+      i += 2;
+      const rows: string[][] = [];
+      while (i < lines.length && /\|/.test(lines[i])) {
+        const row = lines[i]
+          .trim()
+          .replace(/^\||\|$/g, '')
+          .split('|')
+          .map((c) => c.trim());
+        rows.push(row);
+        i++;
+      }
+      const headHtml = header.map((c) => `<th>${inline(c)}</th>`).join('');
+      const bodyHtml = rows
+        .map(
+          (r) =>
+            `<tr>${r.map((c) => `<td>${inline(c)}</td>`).join('')}</tr>`,
+        )
+        .join('');
+      out.push(
+        `<table><thead><tr>${headHtml}</tr></thead><tbody>${bodyHtml}</tbody></table>`,
+      );
+      continue;
+    }
+
+    // blockquote
+    if (/^>\s?/.test(line)) {
+      const buf: string[] = [];
+      while (i < lines.length && /^>\s?/.test(lines[i])) {
+        buf.push(lines[i].replace(/^>\s?/, ''));
+        i++;
+      }
+      out.push(`<blockquote>${inline(buf.join(' '))}</blockquote>`);
+      continue;
+    }
+
+    // unordered list
+    if (/^\s*[-*]\s+/.test(line)) {
+      const items: string[] = [];
+      while (i < lines.length && /^\s*[-*]\s+/.test(lines[i])) {
+        items.push(`<li>${inline(lines[i].replace(/^\s*[-*]\s+/, ''))}</li>`);
+        i++;
+      }
+      out.push(`<ul>${items.join('')}</ul>`);
+      continue;
+    }
+
+    // ordered list
+    if (/^\s*\d+\.\s+/.test(line)) {
+      const items: string[] = [];
+      while (i < lines.length && /^\s*\d+\.\s+/.test(lines[i])) {
+        items.push(`<li>${inline(lines[i].replace(/^\s*\d+\.\s+/, ''))}</li>`);
+        i++;
+      }
+      out.push(`<ol>${items.join('')}</ol>`);
+      continue;
+    }
+
+    // blank line
+    if (!line.trim()) {
+      i++;
+      continue;
+    }
+
+    // paragraph (collect consecutive non-blank lines that don't start a block)
+    const para: string[] = [line];
+    i++;
+    while (
+      i < lines.length &&
+      lines[i].trim() &&
+      !/^#{1,6}\s/.test(lines[i]) &&
+      !/^>\s?/.test(lines[i]) &&
+      !/^\s*[-*]\s+/.test(lines[i]) &&
+      !/^\s*\d+\.\s+/.test(lines[i]) &&
+      !/^---+\s*$/.test(lines[i])
+    ) {
+      para.push(lines[i]);
+      i++;
+    }
+    out.push(`<p>${inline(para.join(' '))}</p>`);
+  }
+
+  return out.join('\n');
+}
+
+/**
+ * Strip editorial sections. Keeps only the customer-facing portion of a
+ * compliance markdown file.
+ */
+function cleanSource(src: string): string {
+  let working = src;
+
+  // Remove everything above the first `---` separator iff the first heading
+  // appears after it (indicates editorial preamble).
+  const firstHr = working.indexOf('\n---');
+  const firstHeading = working.indexOf('\n## ');
+  if (firstHr > -1 && firstHeading > firstHr) {
+    working = working.slice(firstHr + 4);
+  }
+
+  // Cut at the earliest stripped-section heading, regardless of which
+  // marker name matches first. Previously this loop broke on the first
+  // name in STRIP_SECTIONS that matched anywhere in the document, which
+  // meant a `## Sources` heading at the bottom of a file could win over
+  // a `## Notes` heading higher up and leak internal content.
+  let cutAt = -1;
+  for (const name of STRIP_SECTIONS) {
+    const re = new RegExp(`\\n##+\\s+${name}\\b`, 'i');
+    const m = re.exec(working);
+    if (m && (cutAt === -1 || m.index < cutAt)) {
+      cutAt = m.index;
+    }
+  }
+  if (cutAt !== -1) {
+    working = working.slice(0, cutAt);
+  }
+
+  return working.trim();
+}
+
+/**
+ * Render a legal page to HTML for a given locale.
+ * The Dutch version is legally authoritative for consumers residing in
+ * Belgium; the English version is informative only. Both are bundled at
+ * build time via Vite's `?raw` imports so they work on Oxygen's edge
+ * runtime without filesystem access.
+ */
+export function loadLegal(slug: LegalSlug, locale: 'en' | 'nl'): string {
+  const src = locale === 'nl' ? SOURCES_NL[slug] : SOURCES_EN[slug];
+  return mdToHtml(cleanSource(src));
+}

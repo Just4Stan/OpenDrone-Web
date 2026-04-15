@@ -3,12 +3,16 @@ import type {Route} from './+types/blogs._index';
 import {getPaginationVariables} from '@shopify/hydrogen';
 import {PaginatedResourceSection} from '~/components/PaginatedResourceSection';
 import type {BlogsQuery} from 'storefrontapi.generated';
+import {buildSeoMeta} from '~/lib/seo';
 
 type BlogNode = BlogsQuery['blogs']['nodes'][0];
 
-export const meta: Route.MetaFunction = () => {
-  return [{title: `Hydrogen | Blogs`}];
-};
+export const meta: Route.MetaFunction = () =>
+  buildSeoMeta({
+    title: 'Journal',
+    description:
+      'Read build notes, product updates, and open hardware articles from OpenDrone.',
+  });
 
 export async function loader(args: Route.LoaderArgs) {
   // Start fetching non-critical data without blocking time to first byte
@@ -54,17 +58,25 @@ export default function Blogs() {
   const {blogs} = useLoaderData<typeof loader>();
 
   return (
-    <div className="blogs">
-      <h1>Blogs</h1>
+    <div className="blogs page-shell">
+      <header className="page-header">
+        <p className="page-eyebrow">Journal</p>
+        <h1 className="page-title">OpenDrone Journal</h1>
+        <p className="page-description">
+          Product notes, documentation updates, and engineering context around
+          the hardware.
+        </p>
+      </header>
       <div className="blogs-grid">
         <PaginatedResourceSection<BlogNode> connection={blogs}>
           {({node: blog}) => (
             <Link
-              className="blog"
+              className="blog-card"
               key={blog.handle}
               prefetch="intent"
               to={`/blogs/${blog.handle}`}
             >
+              <p className="page-eyebrow">Blog</p>
               <h2>{blog.title}</h2>
             </Link>
           )}

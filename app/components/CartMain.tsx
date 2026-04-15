@@ -23,8 +23,8 @@ function getLineItemChildrenMap(lines: CartLine[]): LineItemChildrenMap {
       children[parentId].push(line);
     }
     if ('lineComponents' in line) {
-      const children = getLineItemChildrenMap(line.lineComponents);
-      for (const [parentId, childIds] of Object.entries(children)) {
+      const nested = getLineItemChildrenMap(line.lineComponents);
+      for (const [parentId, childIds] of Object.entries(nested)) {
         if (!children[parentId]) children[parentId] = [];
         children[parentId].push(...childIds);
       }
@@ -97,11 +97,11 @@ function CartEmpty({
     <div hidden={hidden}>
       <br />
       <p>
-        Looks like you haven&rsquo;t added anything yet, let&rsquo;s get you
-        started!
+        Looks like you haven&rsquo;t added anything yet. Start with the full
+        catalog.
       </p>
       <br />
-      <Link to="/collections" onClick={close} prefetch="viewport">
+      <Link to="/collections/all" onClick={close} prefetch="viewport">
         Continue shopping →
       </Link>
     </div>

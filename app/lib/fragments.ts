@@ -114,7 +114,6 @@ export const CART_QUERY_FRAGMENT = `#graphql
     }
   }
   fragment CartApiQuery on Cart {
-    updatedAt
     id
     appliedGiftCards {
       id
@@ -132,7 +131,6 @@ export const CART_QUERY_FRAGMENT = `#graphql
         email
         firstName
         lastName
-        displayName
       }
       email
       phone
@@ -201,7 +199,6 @@ export const HEADER_QUERY = `#graphql
   fragment Shop on Shop {
     id
     name
-    description
     primaryDomain {
       url
     }

@@ -31,6 +31,16 @@ export function CartSummary({cart, layout}: CartSummaryProps) {
           )}
         </dd>
       </dl>
+      <dl role="group" className="cart-subtotal">
+        <dt>Estimated total</dt>
+        <dd>
+          {cart?.cost?.totalAmount?.amount ? (
+            <Money data={cart.cost.totalAmount} />
+          ) : (
+            '-'
+          )}
+        </dd>
+      </dl>
       <CartDiscounts
         discountCodes={cart?.discountCodes}
         discountsHeadingId={discountsHeadingId}
@@ -42,6 +52,9 @@ export function CartSummary({cart, layout}: CartSummaryProps) {
         giftCardInputId={giftCardInputId}
       />
       <CartCheckoutActions checkoutUrl={cart?.checkoutUrl} />
+      <p className="cart-summary-note">
+        Taxes and shipping are calculated by Shopify during checkout.
+      </p>
     </div>
   );
 }

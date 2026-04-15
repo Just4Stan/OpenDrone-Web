@@ -6,10 +6,14 @@ import type {
   OrderQuery,
 } from 'customer-accountapi.generated';
 import {CUSTOMER_ORDER_QUERY} from '~/graphql/customer-account/CustomerOrderQuery';
+import {buildSeoMeta} from '~/lib/seo';
 
-export const meta: Route.MetaFunction = ({data}) => {
-  return [{title: `Order ${data?.order?.name}`}];
-};
+export const meta: Route.MetaFunction = ({data}) =>
+  buildSeoMeta({
+    title: data?.order?.name ? `Order ${data.order.name}` : 'Order',
+    description: 'Review order details, line items, and fulfillment status.',
+    robots: 'noindex,nofollow',
+  });
 
 export async function loader({params, context}: Route.LoaderArgs) {
   const {customerAccount} = context;
@@ -17,7 +21,12 @@ export async function loader({params, context}: Route.LoaderArgs) {
     return redirect('/account/orders');
   }
 
-  const orderId = atob(params.id);
+  let orderId: string;
+  try {
+    orderId = atob(params.id);
+  } catch {
+    throw new Response('Invalid order ID', {status: 400});
+  }
   const {data, errors}: {data: OrderQuery; errors?: Array<{message: string}>} =
     await customerAccount.query(CUSTOMER_ORDER_QUERY, {
       variables: {
@@ -27,7 +36,7 @@ export async function loader({params, context}: Route.LoaderArgs) {
     });
 
   if (errors?.length || !data?.order) {
-    throw new Error('Order not found');
+    throw new Response('Order not found', {status: 404});
   }
 
   const {order} = data;
@@ -83,83 +92,77 @@ export default function OrderRoute() {
   } = useLoaderData<typeof loader>();
   return (
     <div className="account-order">
-      <h2>Order {order.name}</h2>
-      <p>Placed on {new Date(order.processedAt!).toDateString()}</p>
-      {order.confirmationNumber && (
-        <p>Confirmation: {order.confirmationNumber}</p>
-      )}
-      <br />
-      <div>
-        <table>
-          <thead>
-            <tr>
-              <th scope="col">Product</th>
-              <th scope="col">Price</th>
-              <th scope="col">Quantity</th>
-              <th scope="col">Total</th>
-            </tr>
-          </thead>
-          <tbody>
-            {lineItems.map((lineItem, lineItemIndex) => (
-              // eslint-disable-next-line react/no-array-index-key
-              <OrderLineRow key={lineItemIndex} lineItem={lineItem} />
-            ))}
-          </tbody>
-          <tfoot>
-            {((discountValue && discountValue.amount) ||
-              discountPercentage) && (
+      <header className="page-header">
+        <p className="page-eyebrow">Order</p>
+        <h2 className="page-title">Order {order.name}</h2>
+        <p className="page-description">
+          Placed on {new Date(order.processedAt!).toDateString()}
+          {order.confirmationNumber
+            ? ` - Confirmation ${order.confirmationNumber}`
+            : ''}
+        </p>
+      </header>
+      <div className="account-order-layout">
+        <div className="account-order-table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th scope="col">Product</th>
+                <th scope="col">Price</th>
+                <th scope="col">Quantity</th>
+                <th scope="col">Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              {lineItems.map((lineItem, lineItemIndex) => (
+                // eslint-disable-next-line react/no-array-index-key
+                <OrderLineRow key={lineItemIndex} lineItem={lineItem} />
+              ))}
+            </tbody>
+            <tfoot>
+              {((discountValue && discountValue.amount) ||
+                discountPercentage) && (
+                <tr>
+                  <th scope="row" colSpan={3}>
+                    Discounts
+                  </th>
+                  <td>
+                    {discountPercentage ? (
+                      <span>-{discountPercentage}% OFF</span>
+                    ) : (
+                      discountValue && <Money data={discountValue!} />
+                    )}
+                  </td>
+                </tr>
+              )}
               <tr>
                 <th scope="row" colSpan={3}>
-                  <p>Discounts</p>
-                </th>
-                <th scope="row">
-                  <p>Discounts</p>
+                  Subtotal
                 </th>
                 <td>
-                  {discountPercentage ? (
-                    <span>-{discountPercentage}% OFF</span>
-                  ) : (
-                    discountValue && <Money data={discountValue!} />
-                  )}
+                  <Money data={order.subtotal!} />
                 </td>
               </tr>
-            )}
-            <tr>
-              <th scope="row" colSpan={3}>
-                <p>Subtotal</p>
-              </th>
-              <th scope="row">
-                <p>Subtotal</p>
-              </th>
-              <td>
-                <Money data={order.subtotal!} />
-              </td>
-            </tr>
-            <tr>
-              <th scope="row" colSpan={3}>
-                Tax
-              </th>
-              <th scope="row">
-                <p>Tax</p>
-              </th>
-              <td>
-                <Money data={order.totalTax!} />
-              </td>
-            </tr>
-            <tr>
-              <th scope="row" colSpan={3}>
-                Total
-              </th>
-              <th scope="row">
-                <p>Total</p>
-              </th>
-              <td>
-                <Money data={order.totalPrice!} />
-              </td>
-            </tr>
-          </tfoot>
-        </table>
-        <div>
+              <tr>
+                <th scope="row" colSpan={3}>
+                  Tax
+                </th>
+                <td>
+                  <Money data={order.totalTax!} />
+                </td>
+              </tr>
+              <tr>
+                <th scope="row" colSpan={3}>
+                  Total
+                </th>
+                <td>
+                  <Money data={order.totalPrice!} />
+                </td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+        <aside className="account-order-sidebar">
           <h3>Shipping Address</h3>
           {order?.shippingAddress ? (
             <address>
@@ -182,10 +185,9 @@ export default function OrderRoute() {
           <div>
             <p>{fulfillmentStatus}</p>
           </div>
-        </div>
+        </aside>
       </div>
-      <br />
-      <p>
+      <p className="account-order-status-link">
         <a target="_blank" href={order.statusPageUrl} rel="noreferrer">
           View Order Status →
         </a>
@@ -195,13 +197,21 @@ export default function OrderRoute() {
 }
 
 function OrderLineRow({lineItem}: {lineItem: OrderLineItemFullFragment}) {
+  const quantity = lineItem.quantity ?? 0;
+  const unitAmount = Number(lineItem.price?.amount ?? 0);
+  const discountAmount = Number(lineItem.totalDiscount?.amount ?? 0);
+  const lineTotal = {
+    amount: Math.max(0, unitAmount * quantity - discountAmount).toFixed(2),
+    currencyCode: lineItem.price?.currencyCode ?? 'USD',
+  };
+
   return (
     <tr key={lineItem.id}>
       <td>
         <div>
           {lineItem?.image && (
             <div>
-              <Image data={lineItem.image} width={96} height={96} />
+              <Image data={lineItem.image} width={96} height={96} alt={lineItem.title} />
             </div>
           )}
           <div>
@@ -215,7 +225,7 @@ function OrderLineRow({lineItem}: {lineItem: OrderLineItemFullFragment}) {
       </td>
       <td>{lineItem.quantity}</td>
       <td>
-        <Money data={lineItem.totalDiscount!} />
+        <Money data={lineTotal} />
       </td>
     </tr>
   );

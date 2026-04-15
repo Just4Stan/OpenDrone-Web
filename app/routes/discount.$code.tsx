@@ -21,22 +21,34 @@ export async function loader({request, context, params}: Route.LoaderArgs) {
   let redirectParam =
     searchParams.get('redirect') || searchParams.get('return_to') || '/';
 
-  if (redirectParam.includes('//')) {
-    // Avoid redirecting to external URLs to prevent phishing attacks
+  // Only allow relative paths — reject anything that resolves to a different origin
+  try {
+    const resolved = new URL(redirectParam, url.origin);
+    if (resolved.origin !== url.origin) {
+      redirectParam = '/';
+    }
+  } catch {
+    redirectParam = '/';
+  }
+  if (!redirectParam.startsWith('/')) {
     redirectParam = '/';
   }
 
   searchParams.delete('redirect');
   searchParams.delete('return_to');
 
-  const redirectUrl = `${redirectParam}?${searchParams}`;
+  const redirectSuffix = searchParams.toString();
+  const redirectUrl = redirectSuffix
+    ? `${redirectParam}?${redirectSuffix}`
+    : redirectParam;
 
   if (!code) {
     return redirect(redirectUrl);
   }
 
   const result = await cart.updateDiscountCodes([code]);
-  const headers = cart.setCartId(result.cart.id);
+  const cartId = result?.cart?.id;
+  const headers = cartId ? cart.setCartId(cartId) : new Headers();
 
   // Using set-cookie on a 303 redirect will not work if the domain origin have port number (:3000)
   // If there is no cart id and a new cart id is created in the progress, it will not be set in the cookie

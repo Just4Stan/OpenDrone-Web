@@ -19,6 +19,18 @@ export type PredictiveSearchReturn = ResultWithItems<
   NonNullable<PredictiveSearchQuery['predictiveSearch']>
 >;
 
+export function buildSearchPath(term?: string | null) {
+  const params = new URLSearchParams();
+  const trimmedTerm = term?.trim();
+
+  if (trimmedTerm) {
+    params.set('q', trimmedTerm);
+  }
+
+  const search = params.toString();
+  return search ? `/search?${search}` : '/search';
+}
+
 /**
  * Returns the empty state of a predictive search result to reset the search state.
  */
@@ -68,7 +80,7 @@ export function urlWithTrackingParams({
 }: UrlWithTrackingParams) {
   let search = new URLSearchParams({
     ...extraParams,
-    q: encodeURIComponent(term),
+    q: term,
   }).toString();
 
   if (trackingParams) {

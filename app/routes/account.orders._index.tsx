@@ -23,15 +23,19 @@ import type {
   OrderItemFragment,
 } from 'customer-accountapi.generated';
 import {PaginatedResourceSection} from '~/components/PaginatedResourceSection';
+import {buildSeoMeta} from '~/lib/seo';
 
 type OrdersLoaderData = {
   customer: CustomerOrdersFragment;
   filters: OrderFilterParams;
 };
 
-export const meta: Route.MetaFunction = () => {
-  return [{title: 'Orders'}];
-};
+export const meta: Route.MetaFunction = () =>
+  buildSeoMeta({
+    title: 'Orders',
+    description: 'View and filter your OpenDrone order history.',
+    robots: 'noindex,nofollow',
+  });
 
 export async function loader({request, context}: Route.LoaderArgs) {
   const {customerAccount} = context;
@@ -52,7 +56,7 @@ export async function loader({request, context}: Route.LoaderArgs) {
   });
 
   if (errors?.length || !data?.customer) {
-    throw Error('Customer orders not found');
+    throw new Response('Customer orders not found', {status: 404});
   }
 
   return {customer: data.customer, filters};
@@ -80,7 +84,7 @@ function OrdersTable({
   const hasFilters = !!(filters.name || filters.confirmationNumber);
 
   return (
-    <div className="acccount-orders" aria-live="polite">
+    <div className="account-orders" aria-live="polite">
       {orders?.nodes.length ? (
         <PaginatedResourceSection connection={orders}>
           {({node: order}) => <OrderItem key={order.id} order={order} />}
@@ -108,7 +112,7 @@ function EmptyOrders({hasFilters = false}: {hasFilters?: boolean}) {
           <p>You haven&apos;t placed any orders yet.</p>
           <br />
           <p>
-            <Link to="/collections">Start Shopping →</Link>
+            <Link to="/collections/all">Start Shopping →</Link>
           </p>
         </>
       )}
@@ -202,8 +206,8 @@ function OrderSearchForm({
 function OrderItem({order}: {order: OrderItemFragment}) {
   const fulfillmentStatus = flattenConnection(order.fulfillments)[0]?.status;
   return (
-    <>
-      <fieldset>
+    <article className="order-card">
+      <div>
         <Link to={`/account/orders/${btoa(order.id)}`}>
           <strong>#{order.number}</strong>
         </Link>
@@ -215,8 +219,7 @@ function OrderItem({order}: {order: OrderItemFragment}) {
         {fulfillmentStatus && <p>{fulfillmentStatus}</p>}
         <Money data={order.totalPrice} />
         <Link to={`/account/orders/${btoa(order.id)}`}>View Order →</Link>
-      </fieldset>
-      <br />
-    </>
+      </div>
+    </article>
   );
 }

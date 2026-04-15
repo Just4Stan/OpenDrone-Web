@@ -11,17 +11,19 @@ import {
 import {ProductPrice} from '~/components/ProductPrice';
 import {ProductImage} from '~/components/ProductImage';
 import {ProductForm} from '~/components/ProductForm';
+import {ProductCompliance} from '~/components/ProductCompliance';
 import {redirectIfHandleIsLocalized} from '~/lib/redirect';
+import {buildSeoMeta} from '~/lib/seo';
+import {getCompanyIdentity} from '~/lib/company';
 
-export const meta: Route.MetaFunction = ({data}) => {
-  return [
-    {title: `Hydrogen | ${data?.product.title ?? ''}`},
-    {
-      rel: 'canonical',
-      href: `/products/${data?.product.handle}`,
-    },
-  ];
-};
+export const meta: Route.MetaFunction = ({data}) =>
+  buildSeoMeta({
+    title: data?.product?.seo?.title || data?.product?.title || 'Product',
+    description:
+      data?.product?.seo?.description || data?.product?.description || undefined,
+    image: data?.product?.selectedOrFirstAvailableVariant?.image?.url,
+    type: 'product',
+  });
 
 export async function loader(args: Route.LoaderArgs) {
   // Start fetching non-critical data without blocking time to first byte
@@ -59,8 +61,13 @@ async function loadCriticalData({context, params, request}: Route.LoaderArgs) {
   // The API handle might be localized, so redirect to the localized handle
   redirectIfHandleIsLocalized(request, {handle, data: product});
 
+  const company = getCompanyIdentity(
+    context.env as unknown as Record<string, string | undefined>,
+  );
+
   return {
     product,
+    company,
   };
 }
 
@@ -77,7 +84,7 @@ function loadDeferredData({context, params}: Route.LoaderArgs) {
 }
 
 export default function Product() {
-  const {product} = useLoaderData<typeof loader>();
+  const {product, company} = useLoaderData<typeof loader>();
 
   // Optimistically selects a variant with given available variant information
   const selectedVariant = useOptimisticVariant(
@@ -96,42 +103,82 @@ export default function Product() {
   });
 
   const {title, descriptionHtml} = product;
+  const productFacts = [
+    {
+      label: 'Availability',
+      value: selectedVariant?.availableForSale ? 'In stock' : 'Sold out',
+    },
+    {label: 'Vendor', value: product.vendor || 'OpenDrone'},
+    {
+      label: 'SKU',
+      value: selectedVariant?.sku || 'Assigned per variant',
+    },
+    {
+      label: 'Variant',
+      value:
+        selectedVariant?.title && selectedVariant.title !== 'Default Title'
+          ? selectedVariant.title
+          : `${productOptions.length} configurable option${
+              productOptions.length === 1 ? '' : 's'
+            }`,
+    },
+  ];
 
   return (
-    <div className="max-w-7xl mx-auto px-6 py-12">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
-        {/* Product image / 3D viewer */}
-        <div className="bg-[var(--color-bg-card)] border border-[var(--color-border)] rounded-lg overflow-hidden">
+    <div className="product-page page-shell">
+      <div className="product-layout">
+        <div className="product-media">
           <ProductImage image={selectedVariant?.image} />
         </div>
 
-        {/* Product info */}
-        <div className="md:sticky md:top-24 self-start">
-          <p className="font-mono text-xs uppercase tracking-[0.3em] text-[var(--color-accent-light)] mb-2">
+        <div className="product-panel">
+          <p className="product-eyebrow">
             {product.vendor || 'OpenDrone'}
           </p>
-          <h1 className="font-display text-3xl font-bold tracking-tight mb-4">{title}</h1>
-          <div className="mb-6">
+          <h1 className="page-title">{title}</h1>
+          <div className="product-price-wrap">
             <ProductPrice
               price={selectedVariant?.price}
               compareAtPrice={selectedVariant?.compareAtPrice}
             />
           </div>
 
-          <div className="mb-8">
+          <div className="product-form-wrap">
             <ProductForm
               productOptions={productOptions}
               selectedVariant={selectedVariant}
             />
           </div>
 
-          {/* Description */}
-          <div className="border-t border-[var(--color-border)] pt-6">
-            <h3 className="font-mono text-xs uppercase tracking-wider text-[var(--color-text-muted)] mb-4">
-              Description
-            </h3>
+          <dl className="product-facts">
+            {productFacts.map((fact) => (
+              <div key={fact.label}>
+                <dt>{fact.label}</dt>
+                <dd>{fact.value}</dd>
+              </div>
+            ))}
+          </dl>
+
+          <ProductCompliance
+            product={{
+              title: product.title,
+              vendor: product.vendor,
+              handle: product.handle,
+              safetyWarningsNl: product.safetyWarningsNl,
+              datasheetUrl: product.datasheetUrl,
+              manualUrl: product.manualUrl,
+              docUrl: product.docUrl,
+              sbomUrl: product.sbomUrl,
+              githubRepo: product.githubRepo,
+              modelNumber: product.modelNumber,
+              batchId: product.batchId,
+            }}
+            company={company}
+          />
+
+          <div className="rich-content product-description">
+            <h2 className="section-heading">Description</h2>
             <div
-              className="text-sm text-[var(--color-text-muted)] leading-relaxed prose-invert"
               dangerouslySetInnerHTML={{__html: descriptionHtml}}
             />
           </div>
@@ -230,6 +277,36 @@ const PRODUCT_FRAGMENT = `#graphql
       description
       title
     }
+    safetyWarningsNl: metafield(namespace: "custom", key: "safety_warnings_nl") {
+      ...ComplianceMetafield
+    }
+    datasheetUrl: metafield(namespace: "custom", key: "datasheet_url") {
+      ...ComplianceMetafield
+    }
+    manualUrl: metafield(namespace: "custom", key: "manual_url") {
+      ...ComplianceMetafield
+    }
+    docUrl: metafield(namespace: "custom", key: "doc_url") {
+      ...ComplianceMetafield
+    }
+    sbomUrl: metafield(namespace: "custom", key: "sbom_url") {
+      ...ComplianceMetafield
+    }
+    githubRepo: metafield(namespace: "custom", key: "github_repo") {
+      ...ComplianceMetafield
+    }
+    modelNumber: metafield(namespace: "custom", key: "model_number") {
+      ...ComplianceMetafield
+    }
+    batchId: metafield(namespace: "custom", key: "batch_id") {
+      ...ComplianceMetafield
+    }
+  }
+  fragment ComplianceMetafield on Metafield {
+    key
+    namespace
+    type
+    value
   }
   ${PRODUCT_VARIANT_FRAGMENT}
 ` as const;

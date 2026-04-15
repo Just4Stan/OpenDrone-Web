@@ -103,7 +103,7 @@ function SearchResultsPredictiveArticles({
               <Link onClick={closeSearch} to={articleUrl}>
                 {article.image?.url && (
                   <Image
-                    alt={article.image.altText ?? ''}
+                    alt={article.image.altText || article.title}
                     src={article.image.url}
                     width={50}
                     height={50}
@@ -144,7 +144,7 @@ function SearchResultsPredictiveCollections({
               <Link onClick={closeSearch} to={collectionUrl}>
                 {collection.image?.url && (
                   <Image
-                    alt={collection.image.altText ?? ''}
+                    alt={collection.image.altText || collection.title}
                     src={collection.image.url}
                     width={50}
                     height={50}
@@ -220,7 +220,7 @@ function SearchResultsPredictiveProducts({
               <Link to={productUrl} onClick={closeSearch}>
                 {image && (
                   <Image
-                    alt={image.altText ?? ''}
+                    alt={image.altText || product.title}
                     src={image.url}
                     width={50}
                     height={50}

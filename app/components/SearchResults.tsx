@@ -39,12 +39,12 @@ function SearchResultsArticles({
   }
 
   return (
-    <div className="search-result">
+    <section className="search-section">
       <h2>Articles</h2>
-      <div>
+      <div className="search-results-list">
         {articles?.nodes?.map((article) => {
           const articleUrl = urlWithTrackingParams({
-            baseUrl: `/blogs/${article.handle}`,
+            baseUrl: `/blogs/${article.blog.handle}/${article.handle}`,
             trackingParams: article.trackingParameters,
             term,
           });
@@ -58,8 +58,7 @@ function SearchResultsArticles({
           );
         })}
       </div>
-      <br />
-    </div>
+    </section>
   );
 }
 
@@ -69,9 +68,9 @@ function SearchResultsPages({term, pages}: PartialSearchResult<'pages'>) {
   }
 
   return (
-    <div className="search-result">
+    <section className="search-section">
       <h2>Pages</h2>
-      <div>
+      <div className="search-results-list">
         {pages?.nodes?.map((page) => {
           const pageUrl = urlWithTrackingParams({
             baseUrl: `/pages/${page.handle}`,
@@ -88,8 +87,7 @@ function SearchResultsPages({term, pages}: PartialSearchResult<'pages'>) {
           );
         })}
       </div>
-      <br />
-    </div>
+    </section>
   );
 }
 
@@ -102,7 +100,7 @@ function SearchResultsProducts({
   }
 
   return (
-    <div className="search-result">
+    <section className="search-section">
       <h2>Products</h2>
       <Pagination connection={products}>
         {({nodes, isLoading, NextLink, PreviousLink}) => {
@@ -118,7 +116,7 @@ function SearchResultsProducts({
 
             return (
               <div className="search-results-item" key={product.id}>
-                <Link prefetch="intent" to={productUrl}>
+                <Link className="search-product-link" prefetch="intent" to={productUrl}>
                   {image && (
                     <Image data={image} alt={product.title} width={50} />
                   )}
@@ -133,16 +131,15 @@ function SearchResultsProducts({
 
           return (
             <div>
-              <div>
+              <div className="search-pagination">
                 <PreviousLink>
                   {isLoading ? 'Loading...' : <span>↑ Load previous</span>}
                 </PreviousLink>
               </div>
-              <div>
+              <div className="search-results-list">
                 {ItemsMarkup}
-                <br />
               </div>
-              <div>
+              <div className="search-pagination">
                 <NextLink>
                   {isLoading ? 'Loading...' : <span>Load more ↓</span>}
                 </NextLink>
@@ -151,11 +148,14 @@ function SearchResultsProducts({
           );
         }}
       </Pagination>
-      <br />
-    </div>
+    </section>
   );
 }
 
 function SearchResultsEmpty() {
-  return <p>No results, try a different search.</p>;
+  return (
+    <div className="empty-state">
+      <p>No results yet. Try a product name, part number, or article keyword.</p>
+    </div>
+  );
 }

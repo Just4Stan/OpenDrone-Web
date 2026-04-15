@@ -33,13 +33,46 @@ Webshop and marketing site for OpenDrone (working name). Built with Shopify Hydr
 - Blog (engineering articles, launch updates)
 - Legal (AV, privacy, cookies, herroepingsrecht)
 
+## Compliance Integration
+
+Legal content is sourced from the Incutec compliance repo at
+`~/Library/Mobile Documents/com~apple~CloudDocs/incutec/compliance/`. The
+storefront ships with Markdown snapshots under `app/content/legal/`. To
+re-sync from the source:
+
+```sh
+npm run sync:legal
+```
+
+`prebuild` also invokes `sync:legal` so every production build picks up
+the latest compliance copy from iCloud when available. Legal entity
+identity (Incutec BV, KBO, VAT, support email) lives in `PUBLIC_COMPANY_*`
+env vars — see `.env.example`. Product branding (OpenDrone, OpenFC,
+OpenESC) stays separate from the seller identity shown in the footer and
+on `/legal`.
+
+Mandatory legal routes: `/algemene-voorwaarden`, `/privacy`, `/cookies`,
+`/herroepingsrecht`, `/shipping`, `/warranty`, `/export-compliance`,
+`/legal`, `/contact`, `/security`, `/cookie-settings`, and
+`/.well-known/security.txt`. The old Shopify `/policies/*` URLs 308 to
+the dedicated routes.
+
+Analytics: Plausible (cookieless, no consent banner). Shopify
+`withPrivacyBanner` is disabled — only strictly-necessary cookies are
+shipped at launch.
+
 ## Belgian Legal Requirements
-- Company info in footer: KBO, BTW, address
+Full compliance spec: [COMPLIANCE.md](COMPLIANCE.md). Summary:
+- Company info in footer: KBO, BTW, address (per WER Art. VI.45)
 - Prices including 21% BTW
-- Cookie consent banner
-- ODR platform link
-- Herroepingsrecht info + withdrawal form
-- Dutch language support (minimum for Flanders market)
+- GBA-compliant cookie banner (Pandectes/Consentmo, NOT Shopify default)
+- Herroepingsrecht (14 days) + withdrawal form, no ODR link (EU ODR platform discontinued 20 Jul 2025)
+- Dutch language minimum for Flanders market
+- GPSR pre-sale info block on each product page
+- OSS VAT registration from day 1 (not waiting for €10K threshold)
+- Peppol e-invoicing for B2B (mandatory since 1 Jan 2026)
+- Country shipping blocks for RU/BY/IR/SY/KP/CU/MM + occupied territories
+- Replace Shopify default Terms/Privacy/Refund templates with Incutec-authored versions
 
 ## Payment Providers
 - Mollie (Bancontact = 25.7% of Belgian payments!)

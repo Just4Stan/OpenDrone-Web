@@ -8,14 +8,20 @@ import {
   type PredictiveSearchReturn,
   getEmptyPredictiveSearchResult,
 } from '~/lib/search';
+import {buildSeoMeta} from '~/lib/seo';
 import type {
   RegularSearchQuery,
   PredictiveSearchQuery,
 } from 'storefrontapi.generated';
 
-export const meta: Route.MetaFunction = () => {
-  return [{title: `Hydrogen | Search`}];
-};
+export const meta: Route.MetaFunction = ({data}) =>
+  buildSeoMeta({
+    title: data?.term ? `Search results for "${data.term}"` : 'Search',
+    description: data?.term
+      ? `Search OpenDrone for ${data.term}.`
+      : 'Search OpenDrone products, articles, and pages.',
+    robots: 'noindex,follow',
+  });
 
 export async function loader({request, context}: Route.LoaderArgs) {
   const url = new URL(request.url);
@@ -25,12 +31,12 @@ export async function loader({request, context}: Route.LoaderArgs) {
       ? predictiveSearch({request, context})
       : regularSearch({request, context});
 
-  searchPromise.catch((error: Error) => {
+  try {
+    return await searchPromise;
+  } catch (error) {
     console.error(error);
-    return {term: '', result: null, error: error.message};
-  });
-
-  return await searchPromise;
+    throw new Response((error as Error).message, {status: 500});
+  }
 }
 
 /**
@@ -41,30 +47,39 @@ export default function SearchPage() {
   if (type === 'predictive') return null;
 
   return (
-    <div className="search">
-      <h1>Search</h1>
+    <div className="search-page page-shell">
+      <header className="page-header">
+        <p className="page-eyebrow">Search</p>
+        <h1 className="page-title">Search the catalog</h1>
+        <p className="page-description">
+          Find products, technical pages, and journal entries across the
+          OpenDrone storefront.
+        </p>
+      </header>
       <SearchForm>
         {({inputRef}) => (
-          <>
+          <div className="search-form-row">
             <input
+              className="search-input"
               defaultValue={term}
               name="q"
-              placeholder="Search…"
+              placeholder="Search..."
               ref={inputRef}
               type="search"
             />
-            &nbsp;
-            <button type="submit">Search</button>
-          </>
+            <button className="search-submit" type="submit">
+              Search
+            </button>
+          </div>
         )}
       </SearchForm>
-      {error && <p style={{color: 'red'}}>{error}</p>}
+      {error && <p className="search-error">{error}</p>}
       {!term || !result?.total ? (
         <SearchResults.Empty />
       ) : (
         <SearchResults result={result} term={term}>
           {({articles, pages, products, term}) => (
-            <div>
+            <div className="search-results-layout">
               <SearchResults.Products products={products} term={term} />
               <SearchResults.Pages pages={pages} term={term} />
               <SearchResults.Articles articles={articles} term={term} />
@@ -139,6 +154,9 @@ const SEARCH_ARTICLE_FRAGMENT = `#graphql
     id
     title
     trackingParameters
+    blog {
+      handle
+    }
   }
 ` as const;
 

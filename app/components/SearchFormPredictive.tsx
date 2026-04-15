@@ -5,7 +5,7 @@ import {
   type Fetcher,
 } from 'react-router';
 import React, {useRef, useEffect} from 'react';
-import type {PredictiveSearchReturn} from '~/lib/search';
+import {buildSearchPath, type PredictiveSearchReturn} from '~/lib/search';
 import {useAside} from './Aside';
 
 type SearchFormPredictiveChildren = (args: {
@@ -46,7 +46,7 @@ export function SearchFormPredictive({
   /** Navigate to the search page with the current input value */
   function goToSearch() {
     const term = inputRef?.current?.value;
-    void navigate(SEARCH_ENDPOINT + (term ? `?q=${term}` : ''));
+    void navigate(buildSearchPath(term));
     aside.close();
   }
 

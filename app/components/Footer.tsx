@@ -1,104 +1,142 @@
-import {Suspense} from 'react';
-import {Await, NavLink} from 'react-router';
-import type {FooterQuery, HeaderQuery} from 'storefrontapi.generated';
+import {NavLink} from 'react-router';
+import type {HeaderQuery} from 'storefrontapi.generated';
+import type {CompanyIdentity} from '~/lib/company';
+import {CompanyFooterBlock} from '~/components/CompanyFooterBlock';
 
 interface FooterProps {
-  footer: Promise<FooterQuery | null>;
   header: HeaderQuery;
   publicStoreDomain: string;
+  company: CompanyIdentity;
 }
 
-export function Footer({
-  footer: footerPromise,
-  header,
-  publicStoreDomain,
-}: FooterProps) {
+const SHOP_LINKS: Array<{to: string; label: string}> = [
+  {to: '/collections/all', label: 'All products'},
+  {to: '/collections', label: 'Collections'},
+  {to: '/search', label: 'Search'},
+];
+
+const OPEN_SOURCE_LINKS: Array<{href: string; label: string}> = [
+  {href: 'https://github.com/Just4Stan', label: 'GitHub'},
+  {href: 'https://github.com/Just4Stan/OpenFC', label: 'OpenFC'},
+  {href: 'https://github.com/Just4Stan/Open-4in1-AM32-ESC', label: 'OpenESC'},
+];
+
+const COMPANY_LINKS: Array<{to: string; label: string}> = [
+  {to: '/legal', label: 'Legal / Imprint'},
+  {to: '/contact', label: 'Contact'},
+  {to: '/security', label: 'Security'},
+];
+
+const LEGAL_LINKS: Array<{to: string; label: string}> = [
+  {to: '/algemene-voorwaarden', label: 'Algemene Voorwaarden'},
+  {to: '/privacy', label: 'Privacy'},
+  {to: '/cookies', label: 'Cookies'},
+  {to: '/herroepingsrecht', label: 'Herroepingsrecht'},
+  {to: '/shipping', label: 'Shipping'},
+  {to: '/warranty', label: 'Warranty'},
+  {to: '/export-compliance', label: 'Export Compliance'},
+  {to: '/cookie-settings', label: 'Cookie settings'},
+];
+
+function ColumnHeading({children}: {children: React.ReactNode}) {
+  return (
+    <h4 className="font-mono text-[10px] uppercase tracking-[0.2em] text-[var(--color-text-muted)] mb-3">
+      {children}
+    </h4>
+  );
+}
+
+function FooterNavLink({to, children}: {to: string; children: React.ReactNode}) {
+  return (
+    <NavLink
+      end
+      prefetch="intent"
+      to={to}
+      className={({isActive}) =>
+        `text-xs transition-colors ${
+          isActive
+            ? 'text-[var(--color-text)]'
+            : 'text-[var(--color-text-muted)] hover:text-[var(--color-text)]'
+        }`
+      }
+    >
+      {children}
+    </NavLink>
+  );
+}
+
+export function Footer({company}: FooterProps) {
   return (
     <footer className="mt-auto border-t border-[var(--color-border)]">
       <div className="max-w-6xl mx-auto px-6 md:px-10 py-10">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-          {/* Brand */}
+          {/* Company identity */}
           <div className="md:col-span-1">
-            <h3 className="font-display text-sm font-bold tracking-[0.08em] uppercase text-[var(--color-gold)] mb-2">
+            <h3 className="font-display text-sm font-bold tracking-[0.08em] uppercase text-[var(--color-gold)] mb-3">
               OpenDrone
             </h3>
-            <p className="text-xs text-[var(--color-text-muted)] leading-relaxed">
-              Open source drone electronics.<br />
-              Designed in Belgium.
+            <p className="text-[11px] text-[var(--color-text-muted)] mb-3 leading-relaxed">
+              OpenDrone is a product brand of
             </p>
+            <CompanyFooterBlock company={company} />
           </div>
 
-          {/* Navigation */}
+          {/* Shop */}
           <div>
-            <h4 className="font-mono text-[10px] uppercase tracking-[0.2em] text-[var(--color-text-muted)] mb-3">
-              Shop
-            </h4>
-            <Suspense>
-              <Await resolve={footerPromise}>
-                {(footer) =>
-                  footer?.menu && header.shop.primaryDomain?.url ? (
-                    <FooterMenu
-                      menu={footer.menu}
-                      primaryDomainUrl={header.shop.primaryDomain.url}
-                      publicStoreDomain={publicStoreDomain}
-                    />
-                  ) : null
-                }
-              </Await>
-            </Suspense>
-          </div>
-
-          {/* Open Source */}
-          <div>
-            <h4 className="font-mono text-[10px] uppercase tracking-[0.2em] text-[var(--color-text-muted)] mb-3">
-              Open Source
-            </h4>
+            <ColumnHeading>Shop</ColumnHeading>
             <nav className="flex flex-col gap-1.5">
-              <a
-                href="https://github.com/Just4Stan"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-xs text-[var(--color-text-muted)] hover:text-[var(--color-text)] transition-colors"
-              >
-                GitHub
-              </a>
-              <a
-                href="https://github.com/Just4Stan/OpenFC"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-xs text-[var(--color-text-muted)] hover:text-[var(--color-text)] transition-colors"
-              >
-                OpenFC
-              </a>
-              <a
-                href="https://github.com/Just4Stan/Open-4in1-AM32-ESC"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-xs text-[var(--color-text-muted)] hover:text-[var(--color-text)] transition-colors"
-              >
-                OpenESC
-              </a>
+              {SHOP_LINKS.map((link) => (
+                <FooterNavLink key={link.to} to={link.to}>
+                  {link.label}
+                </FooterNavLink>
+              ))}
+            </nav>
+          </div>
+
+          {/* Open Source + Company */}
+          <div>
+            <ColumnHeading>Open Source</ColumnHeading>
+            <nav className="flex flex-col gap-1.5 mb-6">
+              {OPEN_SOURCE_LINKS.map((link) => (
+                <a
+                  key={link.href}
+                  href={link.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-xs text-[var(--color-text-muted)] hover:text-[var(--color-text)] transition-colors"
+                >
+                  {link.label}
+                </a>
+              ))}
+            </nav>
+            <ColumnHeading>Company</ColumnHeading>
+            <nav className="flex flex-col gap-1.5">
+              {COMPANY_LINKS.map((link) => (
+                <FooterNavLink key={link.to} to={link.to}>
+                  {link.label}
+                </FooterNavLink>
+              ))}
             </nav>
           </div>
 
           {/* Legal */}
           <div>
-            <h4 className="font-mono text-[10px] uppercase tracking-[0.2em] text-[var(--color-text-muted)] mb-3">
-              Legal
-            </h4>
-            <div className="flex flex-col gap-1.5 font-mono text-xs text-[var(--color-text-muted)]">
-              <p>OpenDrone</p>
-              <p>Belgium</p>
-              <p>KBO/BCE: [pending]</p>
-              <p>BTW/TVA: [pending]</p>
-            </div>
+            <ColumnHeading>Legal</ColumnHeading>
+            <nav className="flex flex-col gap-1.5">
+              {LEGAL_LINKS.map((link) => (
+                <FooterNavLink key={link.to} to={link.to}>
+                  {link.label}
+                </FooterNavLink>
+              ))}
+            </nav>
           </div>
         </div>
 
         {/* Bottom bar */}
         <div className="mt-8 pt-5 border-t border-[var(--color-border)] flex flex-col md:flex-row items-center justify-between gap-3">
           <p className="text-[10px] text-[var(--color-text-muted)] font-mono tracking-wide">
-            &copy; {new Date().getFullYear()} OpenDrone. Hardware: CERN-OHL-S. Firmware: GPL/MIT.
+            &copy; {new Date().getFullYear()} {company.name}. Hardware:
+            CERN-OHL-S. Firmware: GPL/MIT. Open Source Hardware.
           </p>
           <a
             href="https://github.com/Just4Stan"
@@ -116,97 +154,3 @@ export function Footer({
     </footer>
   );
 }
-
-function FooterMenu({
-  menu,
-  primaryDomainUrl,
-  publicStoreDomain,
-}: {
-  menu: FooterQuery['menu'];
-  primaryDomainUrl: FooterProps['header']['shop']['primaryDomain']['url'];
-  publicStoreDomain: string;
-}) {
-  return (
-    <nav className="flex flex-col gap-1.5" role="navigation">
-      {(menu || FALLBACK_FOOTER_MENU).items.map((item) => {
-        if (!item.url) return null;
-        const url =
-          item.url.includes('myshopify.com') ||
-          item.url.includes(publicStoreDomain) ||
-          item.url.includes(primaryDomainUrl)
-            ? new URL(item.url).pathname
-            : item.url;
-        const isExternal = !url.startsWith('/');
-        return isExternal ? (
-          <a
-            href={url}
-            key={item.id}
-            rel="noopener noreferrer"
-            target="_blank"
-            className="text-xs text-[var(--color-text-muted)] hover:text-[var(--color-text)] transition-colors"
-          >
-            {item.title}
-          </a>
-        ) : (
-          <NavLink
-            end
-            key={item.id}
-            prefetch="intent"
-            to={url}
-            className={({isActive}) =>
-              `text-xs transition-colors ${
-                isActive
-                  ? 'text-[var(--color-text)]'
-                  : 'text-[var(--color-text-muted)] hover:text-[var(--color-text)]'
-              }`
-            }
-          >
-            {item.title}
-          </NavLink>
-        );
-      })}
-    </nav>
-  );
-}
-
-const FALLBACK_FOOTER_MENU = {
-  id: 'gid://shopify/Menu/199655620664',
-  items: [
-    {
-      id: 'gid://shopify/MenuItem/461633060920',
-      resourceId: 'gid://shopify/ShopPolicy/23358046264',
-      tags: [],
-      title: 'Privacy Policy',
-      type: 'SHOP_POLICY',
-      url: '/policies/privacy-policy',
-      items: [],
-    },
-    {
-      id: 'gid://shopify/MenuItem/461633093688',
-      resourceId: 'gid://shopify/ShopPolicy/23358013496',
-      tags: [],
-      title: 'Refund Policy',
-      type: 'SHOP_POLICY',
-      url: '/policies/refund-policy',
-      items: [],
-    },
-    {
-      id: 'gid://shopify/MenuItem/461633126456',
-      resourceId: 'gid://shopify/ShopPolicy/23358111800',
-      tags: [],
-      title: 'Shipping Policy',
-      type: 'SHOP_POLICY',
-      url: '/policies/shipping-policy',
-      items: [],
-    },
-    {
-      id: 'gid://shopify/MenuItem/461633159224',
-      resourceId: 'gid://shopify/ShopPolicy/23358079032',
-      tags: [],
-      title: 'Terms of Service',
-      type: 'SHOP_POLICY',
-      url: '/policies/terms-of-service',
-      items: [],
-    },
-  ],
-};

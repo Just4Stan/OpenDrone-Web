@@ -4,10 +4,15 @@ import {Image, getPaginationVariables} from '@shopify/hydrogen';
 import type {ArticleItemFragment} from 'storefrontapi.generated';
 import {PaginatedResourceSection} from '~/components/PaginatedResourceSection';
 import {redirectIfHandleIsLocalized} from '~/lib/redirect';
+import {buildSeoMeta} from '~/lib/seo';
 
-export const meta: Route.MetaFunction = ({data}) => {
-  return [{title: `Hydrogen | ${data?.blog.title ?? ''} blog`}];
-};
+export const meta: Route.MetaFunction = ({data}) =>
+  buildSeoMeta({
+    title: data?.blog?.seo?.title || data?.blog?.title || 'Blog',
+    description:
+      data?.blog?.seo?.description ||
+      `Read the latest articles from the ${data?.blog?.title || 'OpenDrone'} blog.`,
+  });
 
 export async function loader(args: Route.LoaderArgs) {
   // Start fetching non-critical data without blocking time to first byte
@@ -65,8 +70,14 @@ export default function Blog() {
   const {articles} = blog;
 
   return (
-    <div className="blog">
-      <h1>{blog.title}</h1>
+    <div className="blog page-shell">
+      <header className="page-header">
+        <p className="page-eyebrow">Blog</p>
+        <h1 className="page-title">{blog.title}</h1>
+        <p className="page-description">
+          Articles, updates, and documentation related to {blog.title}.
+        </p>
+      </header>
       <div className="blog-grid">
         <PaginatedResourceSection<ArticleItemFragment> connection={articles}>
           {({node: article, index}) => (
@@ -108,8 +119,10 @@ function ArticleItem({
             />
           </div>
         )}
-        <h3>{article.title}</h3>
-        <small>{publishedAt}</small>
+        <div className="blog-article-body">
+          <h2>{article.title}</h2>
+          <small>{publishedAt}</small>
+        </div>
       </Link>
     </div>
   );

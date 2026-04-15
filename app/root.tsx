@@ -16,6 +16,8 @@ import {FOOTER_QUERY, HEADER_QUERY} from '~/lib/fragments';
 import resetStyles from '~/styles/reset.css?url';
 import appStyles from '~/styles/app.css?url';
 import {PageLayout} from './components/PageLayout';
+import {getCompanyIdentity} from '~/lib/company';
+import {buildOrgJsonLd} from '~/lib/seo';
 
 export type RootLoader = typeof loader;
 
@@ -78,10 +80,15 @@ export async function loader(args: Route.LoaderArgs) {
 
   const {storefront, env} = args.context;
 
+  const company = getCompanyIdentity(env as unknown as Record<string, string | undefined>);
+  const locale = `${storefront.i18n.language}_${storefront.i18n.country}`;
+
   return {
     ...deferredData,
     ...criticalData,
     publicStoreDomain: env.PUBLIC_STORE_DOMAIN,
+    company,
+    locale,
     shop: getShopAnalytics({
       storefront,
       publicStorefrontId: env.PUBLIC_STOREFRONT_ID,
@@ -89,8 +96,10 @@ export async function loader(args: Route.LoaderArgs) {
     consent: {
       checkoutDomain: env.PUBLIC_CHECKOUT_DOMAIN,
       storefrontAccessToken: env.PUBLIC_STOREFRONT_API_TOKEN,
+      // No cookie banner at launch: Plausible-only analytics, Shopify analytics
+      // not shipped. Consent is default-denied. Banner will return when marketing
+      // cookies are introduced.
       withPrivacyBanner: false,
-      // localize the privacy banner
       country: args.context.storefront.i18n.country,
       language: args.context.storefront.i18n.language,
     },
@@ -147,9 +156,12 @@ function loadDeferredData({context}: Route.LoaderArgs) {
 
 export function Layout({children}: {children?: React.ReactNode}) {
   const nonce = useNonce();
+  const data = useRouteLoaderData<RootLoader>('root');
+  const htmlLang = (data?.locale || 'en_US').split('_')[0] || 'en';
+  const orgJsonLd = data?.company ? buildOrgJsonLd(data.company) : null;
 
   return (
-    <html lang="en" className="dark">
+    <html lang={htmlLang} className="dark">
       <head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width,initial-scale=1" />
@@ -158,6 +170,20 @@ export function Layout({children}: {children?: React.ReactNode}) {
         <link rel="stylesheet" href={appStyles}></link>
         <Meta />
         <Links />
+        {/* Plausible — cookieless analytics, no consent required */}
+        <script
+          defer
+          data-domain="opendrone.eu"
+          src="https://plausible.io/js/script.js"
+          nonce={nonce}
+        />
+        {orgJsonLd ? (
+          <script
+            type="application/ld+json"
+            nonce={nonce}
+            dangerouslySetInnerHTML={{__html: JSON.stringify(orgJsonLd)}}
+          />
+        ) : null}
       </head>
       <body className="bg-[var(--color-bg)] text-[var(--color-text)] min-h-screen flex flex-col">
         {children}

@@ -28,6 +28,10 @@ export async function loader({request, context, params}: Route.LoaderArgs) {
     const variantId = lineDetails[0];
     const quantity = parseInt(lineDetails[1], 10);
 
+    if (!quantity || quantity <= 0 || isNaN(quantity)) {
+      throw new Response('Invalid quantity in cart link', {status: 400});
+    }
+
     return {
       merchandiseId: `gid://shopify/ProductVariant/${variantId}`,
       quantity,
