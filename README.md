@@ -1,8 +1,8 @@
 # OpenDrone Web
 
-Open-source storefront for [OpenDrone](https://opendrone.eu) — FPV flight controllers, ESCs, and frames. Built on Shopify Hydrogen.
+Open-source storefront for OpenDrone — FPV flight controllers, ESCs, and frames. Built on Shopify Hydrogen.
 
-Hardware is open source (CERN-OHL-S). The storefront is open source (MIT). Everything on this page is the real code running at opendrone.eu.
+Hardware is open source (CERN-OHL-S). The storefront is open source (MIT).
 
 ## Stack
 
@@ -101,6 +101,7 @@ Found a vulnerability? See [SECURITY.md](SECURITY.md). Do not open a public issu
 
 - [CONTRIBUTING.md](CONTRIBUTING.md) — setup, workflow, coding standards
 - [SCOPE.md](SCOPE.md) — what's open for redesign, what's locked
+- [Discord](https://discord.gg/v3sWmTcx3R) — `#opendrone-web` for questions and design chat
 
 ## License
 
