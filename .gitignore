@@ -1,6 +1,7 @@
 node_modules/
 .env
 .env.local
+.env.*.local
 .cache/
 dist/
 build/
@@ -15,3 +16,11 @@ build/
 .react-router
 .cursor/
 public/models/*.glb
+tsconfig.tsbuildinfo
+*.tsbuildinfo
+coverage/
+.vercel
+.netlify
+
+# Internal ops docs — never commit
+HANDOFF.md
