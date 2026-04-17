@@ -15,7 +15,6 @@ build/
 .shopify
 .react-router
 .cursor/
-public/models/*.glb
 tsconfig.tsbuildinfo
 *.tsbuildinfo
 coverage/
