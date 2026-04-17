@@ -3,6 +3,3 @@ contact_links:
   - name: Security vulnerability
     url: https://github.com/Just4Stan/OpenDrone-Web/security/advisories/new
     about: Report privately via GitHub Security Advisories (or email security@incutec.com).
-  - name: Questions / general discussion
-    url: https://discord.gg/opendrone
-    about: Ask in the #opendrone-web channel on Discord.

@@ -16,7 +16,7 @@ Thanks for helping build the OpenDrone storefront. Before starting design work, 
 - Node 20+ (LTS) — `node --version`
 - npm 10+ — `npm --version`
 - Git with SSH or HTTPS access to GitHub
-- Shopify dev-store credentials — pinned in the `#opendrone-web-devs` Discord channel
+- Shopify dev-store credentials — shared in the project Discord
 
 ## Getting started
 
@@ -31,15 +31,13 @@ git remote add upstream https://github.com/Just4Stan/OpenDrone-Web.git
 # 3. Install and configure
 npm install
 cp .env.example .env
-# Fill in the dev-store tokens from the Discord pin
+# Fill in the dev-store tokens (shared separately, not in this repo)
 
 # 4. Run it
 npm run dev
 ```
 
 Dev server runs at **http://localhost:3000**. Hot reload is on.
-
-If `npm install` fails on legacy-peer-dep errors, that's Shopify's preinstall — retry with a clean node_modules.
 
 ## Useful scripts
 
@@ -199,7 +197,7 @@ All contributions are licensed under MIT (see [LICENSE](LICENSE)).
 
 ## Where to ask
 
-- **Quick question**: `#opendrone-web` on Discord
+- **Quick question**: project Discord
 - **Blocked**: tag `@Stan` in Discord
 - **Design direction**: open a Design proposal issue before coding
 - **Security vulnerability**: see [SECURITY.md](SECURITY.md), **do not open a public issue**

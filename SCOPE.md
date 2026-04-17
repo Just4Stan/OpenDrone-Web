@@ -54,4 +54,4 @@ Legal content is drafted by a lawyer and synced from a private compliance repo. 
 
 ## When in doubt
 
-Ask in `#opendrone-web` on Discord before spending hours on something. Stan would rather clarify upfront than reject a polished PR.
+Ask in the project Discord before spending hours on something. Stan would rather clarify upfront than reject a polished PR.
