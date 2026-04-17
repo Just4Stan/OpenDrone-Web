@@ -13,7 +13,7 @@ Thanks for helping build the OpenDrone storefront. Before starting design work, 
 
 ## Prerequisites
 
-- Node 20+ (LTS) — `node --version`
+- Node 22 or 24 (see `engines` in `package.json`) — `node --version`
 - npm 10+ — `npm --version`
 - Git with SSH or HTTPS access to GitHub
 - Shopify dev-store credentials — pinned in `#opendrone-web` on [Discord](https://discord.gg/v3sWmTcx3R)
@@ -60,8 +60,9 @@ app/
   components/       # shared React components
   styles/app.css    # Tailwind v4 + design tokens under @theme
   content/legal/    # committed legal Markdown — do not hand-edit
-  graphql/          # Storefront API queries
-  lib/              # helpers (i18n, SEO, company, context)
+  graphql/          # Customer Account API queries (Storefront queries
+                    #   live inline in routes and in app/lib/*.ts)
+  lib/              # helpers (i18n, SEO, company, context, fragments)
 public/             # static assets (3D models, OG images, PDFs)
 scripts/            # build-time scripts (legal sync, etc.)
 .github/            # CI, Dependabot, PR/issue templates, CODEOWNERS
@@ -141,9 +142,8 @@ The PR template asks for:
 Every PR gets:
 
 1. **CI run** (lint + typecheck + build) — must pass
-2. **Preview deploy** via Oxygen — a live URL appears as a status check
-3. **Code Owner review** from Stan — direct, critical feedback. Not personal.
-4. **Conversation resolution** — every review comment must be resolved before merge
+2. **Code Owner review** from the maintainer — direct, critical feedback. Not personal.
+3. **Conversation resolution** — every review comment must be resolved before merge
 
 Address feedback with new commits on the same branch (don't force-push during review — reviewers lose context). Once approved, Stan squash-merges.
 

@@ -2,7 +2,7 @@
 
 Open-source storefront for OpenDrone — FPV flight controllers, ESCs, and frames. Built on Shopify Hydrogen.
 
-Hardware is open source (CERN-OHL-S). The storefront is open source (MIT).
+The storefront is MIT licensed (see [LICENSE](LICENSE)). Hardware repos are linked at the bottom — see those repos for their respective licenses.
 
 ## Stack
 
@@ -45,8 +45,8 @@ app/
   components/       # shared React components
   styles/app.css    # Tailwind + design tokens
   content/legal/    # committed legal Markdown (do not hand-edit)
-  graphql/          # Storefront API queries
-  lib/              # helpers (i18n, SEO, company, context)
+  graphql/          # Customer Account API queries
+  lib/              # helpers (i18n, SEO, company, context, fragments)
 public/             # static assets
 scripts/            # build-time scripts (legal sync, etc.)
 ```
