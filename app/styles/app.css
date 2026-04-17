@@ -59,6 +59,14 @@ html {
     pointer-events: none;
   }
 }
+
+.splash-overlay.splash-hidden {
+  animation: none;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.4s ease-out;
+}
+
 body {
   min-height: 100vh;
   overscroll-behavior-y: none;
@@ -114,6 +122,13 @@ a:hover {
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   border-bottom: 1px solid var(--color-border);
+}
+
+/* On the homepage the header floats over the hero scene instead of
+   pushing it down. */
+.homepage-layout .site-header {
+  position: fixed;
+  width: 100%;
 }
 
 @media (min-width: 768px) {

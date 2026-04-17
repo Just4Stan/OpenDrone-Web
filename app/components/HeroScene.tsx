@@ -86,8 +86,9 @@ function createCarbonFiberTextures(canvas: HTMLCanvasElement) {
   return {colorMap, detailMap};
 }
 
-function linearstep(edge0: number, edge1: number, x: number) {
-  return Math.max(0, Math.min(1, (x - edge0) / (edge1 - edge0)));
+function smoothstep(edge0: number, edge1: number, x: number) {
+  const t = Math.max(0, Math.min(1, (x - edge0) / (edge1 - edge0)));
+  return t * t * (3 - 2 * t);
 }
 
 /**
@@ -362,11 +363,11 @@ function DroneAssembly({scrollRef}: {scrollRef: React.RefObject<number>}) {
     // Animation curves
     // Phase 1 (0-0.35): zoom out from stack to reveal full drone
     // Phase 2 (0.35-0.7): parts fly out to side-by-side
-    const zoomOut = linearstep(0, 0.35, p);
-    const flyOut = linearstep(0.3, 0.65, p);
-    const flatten = linearstep(0.2, 0.55, p);
-    const rotSlow = linearstep(0, 0.5, p);
-    const frameOpacity = linearstep(0.3, 0.55, p);
+    const zoomOut = smoothstep(0, 0.35, p);
+    const flyOut = smoothstep(0.3, 0.65, p);
+    const flatten = smoothstep(0.2, 0.55, p);
+    const rotSlow = smoothstep(0, 0.5, p);
+    const frameOpacity = smoothstep(0.3, 0.55, p);
     const dragInf = 1 - flyOut * 0.9;
 
     // Auto-rotate
@@ -595,8 +596,8 @@ function CameraRig({scrollRef}: {scrollRef: React.RefObject<number>}) {
 
     // Phase 1: zoom out from tight stack view
     // Phase 2: pull back to show all 3 side by side
-    const zoomOut = linearstep(0, 0.35, p);
-    const pullBack = linearstep(0.3, 0.65, p);
+    const zoomOut = smoothstep(0, 0.35, p);
+    const pullBack = smoothstep(0.3, 0.65, p);
 
     camera.position.set(
       0,
@@ -608,7 +609,7 @@ function CameraRig({scrollRef}: {scrollRef: React.RefObject<number>}) {
   return null;
 }
 
-const PERF_HUD = true;
+const PERF_HUD = false;
 
 export function HeroScene() {
   const [mounted, setMounted] = useState(false);
@@ -624,7 +625,7 @@ export function HeroScene() {
     const update = () => {
       const visible = document.visibilityState === 'visible';
       const heroOnScreen =
-        window.scrollY < window.innerHeight * 5; // matches HERO_SPACER_VH
+        window.scrollY < window.innerHeight * 8; // matches HERO_SPACER_VH
       setActive(visible && heroOnScreen);
     };
     update();

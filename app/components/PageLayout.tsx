@@ -1,4 +1,4 @@
-import {Await, Link} from 'react-router';
+import {Await, Link, useLocation} from 'react-router';
 import {Suspense, useId} from 'react';
 import type {
   CartApiQueryFragment,
@@ -35,25 +35,30 @@ export function PageLayout({
   publicStoreDomain,
   company,
 }: PageLayoutProps) {
+  const {pathname} = useLocation();
+  const isHomepage = pathname === '/';
+
   return (
     <Aside.Provider>
       <CartAside cart={cart} />
       <SearchAside />
       <MobileMenuAside header={header} publicStoreDomain={publicStoreDomain} />
-      {header && (
-        <Header
+      <div className={isHomepage ? 'homepage-layout' : ''}>
+        {header && (
+          <Header
+            header={header}
+            cart={cart}
+            isLoggedIn={isLoggedIn}
+            publicStoreDomain={publicStoreDomain}
+          />
+        )}
+        <main className="site-main">{children}</main>
+        <Footer
           header={header}
-          cart={cart}
-          isLoggedIn={isLoggedIn}
           publicStoreDomain={publicStoreDomain}
+          company={company}
         />
-      )}
-      <main className="site-main">{children}</main>
-      <Footer
-        header={header}
-        publicStoreDomain={publicStoreDomain}
-        company={company}
-      />
+      </div>
     </Aside.Provider>
   );
 }

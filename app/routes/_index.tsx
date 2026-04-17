@@ -32,7 +32,7 @@ function linearstep(edge0: number, edge1: number, x: number) {
 // screen heights before the page releases and the legal footer becomes
 // reachable. Higher = more work to reach the footer (still reachable, just
 // intentional). 5 screen heights ≈ "scroll-wall" the footer behind the hero.
-const HERO_SPACER_VH = 500;
+const HERO_SPACER_VH = 800;
 // Scroll denominator for 0..1 progress maps to the first 4 screen heights;
 // the final screen height is a quiet buffer so the CTA stays pinned a bit
 // longer before the sticky hero releases.
@@ -42,17 +42,26 @@ export default function Homepage() {
   const scrollRef = useRef(0);
   const rafId = useRef(0);
   const [scrollProgress, setScrollProgress] = useState(0);
+  const [splashHidden, setSplashHidden] = useState(false);
   const tick = useCallback(() => {
     setScrollProgress(scrollRef.current);
     rafId.current = 0;
   }, []);
 
   useEffect(() => {
+    if ('scrollRestoration' in history) {
+      history.scrollRestoration = 'manual';
+    }
+    window.scrollTo(0, 0);
+
     const onScroll = () => {
       scrollRef.current = Math.min(
         1,
         Math.max(0, window.scrollY / (window.innerHeight * HERO_PROGRESS_VH)),
       );
+      if (window.scrollY > window.innerHeight * 0.15) {
+        setSplashHidden(true);
+      }
       if (!rafId.current) {
         rafId.current = requestAnimationFrame(tick);
       }
@@ -71,8 +80,8 @@ export default function Homepage() {
 
   return (
     <div className="homepage">
-      {/* Splash overlay — pure CSS, no React state */}
-      <div className="splash-overlay">
+      {/* Splash overlay — fades after 1.5s OR on scroll, whichever is first */}
+      <div className={`splash-overlay${splashHidden ? ' splash-hidden' : ''}`}>
         <h1
           className="font-display font-bold tracking-tight"
           style={{fontSize: 'clamp(3rem, 10vw, 8rem)'}}
