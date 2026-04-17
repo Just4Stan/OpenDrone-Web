@@ -2,8 +2,7 @@
 
 Everything the storefront must implement to be legally compliant for a Belgian BV selling FPV drone electronics to EU consumers.
 
-Source of truth: `~/Library/Mobile Documents/com~apple~CloudDocs/incutec/compliance/` (research + templates).
-This file is the implementation-focused extract for the web codebase.
+This file is the implementation-focused extract for the web codebase. Legal copy is maintained by the Incutec compliance workstream and synced into `app/content/legal/` via `npm run sync:legal` (see README.md → Compliance Integration). Template paths referenced below (e.g. `webshop/algemene-voorwaarden.md`) are relative to the authoring source, not this repo.
 
 ---
 
@@ -245,10 +244,12 @@ Not a legal requirement to display, but recommended for trust:
 
 ## 16. File storage reference
 
-All templates, research, and legal drafts live in the Incutec command center repo:
+Templates, research, and legal drafts are maintained in the Incutec
+compliance workstream (separate from this public repo). Contributors do
+not need access. For reference, the layout of the authoring source is:
 
 ```
-~/Library/Mobile Documents/com~apple~CloudDocs/incutec/compliance/
+<COMPLIANCE_SRC>/
   webshop/
     algemene-voorwaarden.md          ← T&C draft (has Art. 9.2 2yr fix needed)
     privacy-policy.md                ← GDPR + DPA inventory

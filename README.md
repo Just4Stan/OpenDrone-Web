@@ -1,68 +1,82 @@
 # OpenDrone Web
 
-Webshop and marketing site for OpenDrone (working name). Built with Shopify Hydrogen (React/Remix) or Shopify Liquid theme.
+Open-source storefront for [OpenDrone](https://opendrone.be) — FPV flight controllers, ESCs, and frames. Built on Shopify Hydrogen.
 
-## Architecture Decision
+Hardware is open source (CERN-OHL-S). The storefront is open source (MIT). Everything on this page is the real code running at opendrone.be.
 
-### Option A: Shopify Hydrogen (Headless)
-- React + Remix frontend
-- Shopify Storefront API as backend
-- Host on Vercel (free hobby tier)
-- Full design freedom
-- Proper git workflow
-- Cost: €5/month Shopify Starter + free Vercel
+## Stack
 
-### Option B: Shopify Theme (Liquid)
-- Customize a Shopify theme
-- Liquid templating + HTML/CSS/JS
-- Hosted by Shopify
-- Less freedom but simpler
-- Cost: €36/month Shopify Basic
+- **Shopify Hydrogen** 2026.1.x on Oxygen (Shopify's edge runtime)
+- **React Router 7** — file-based routes under `app/routes/`
+- **Tailwind CSS v4** — design tokens in `app/styles/app.css`
+- **react-three-fiber** — 3D hero scene in `app/components/HeroScene.tsx`
+- **TypeScript** strict
+- **Plausible** analytics — cookieless, no consent banner required
 
-## Style
-- Dark background, clean engineering aesthetic
-- Matches JustFPV YouTube style (1920x1080, dark)
-- Product-focused, not marketing fluff
-- Open source badge + GitHub links prominent
-- Interactive BOM viewer (link to ibom)
+## Quick start
 
-## Pages Needed
-- Landing / hero (product showcase)
-- Product pages (stack, ESC, bare PCBs)
-- About (open source mission, the team)
-- Blog (engineering articles, launch updates)
-- Legal (AV, privacy, cookies, herroepingsrecht)
+```sh
+git clone https://github.com/Just4Stan/OpenDrone-Web.git
+cd OpenDrone-Web
+npm install
+cp .env.example .env   # fill in Shopify tokens — see CONTRIBUTING.md
+npm run dev            # http://localhost:3000
+```
+
+Contributing? Read [CONTRIBUTING.md](CONTRIBUTING.md) and [SCOPE.md](SCOPE.md) first.
+
+## Scripts
+
+| Script | Purpose |
+|---|---|
+| `npm run dev` | Local dev server with codegen |
+| `npm run build` | Production build (runs `sync:legal` first) |
+| `npm run preview` | Serve production bundle locally |
+| `npm run lint` | ESLint |
+| `npm run typecheck` | TypeScript + React Router typegen |
+| `npm run codegen` | Regenerate Shopify Storefront API types |
+| `npm run sync:legal` | Refresh legal Markdown snapshots |
+
+## Project layout
+
+```
+app/
+  routes/           # file-based routes
+  components/       # shared React components
+  styles/app.css    # Tailwind + design tokens
+  content/legal/    # committed legal Markdown (do not hand-edit)
+  graphql/          # Storefront API queries
+  lib/              # helpers (i18n, SEO, company, context)
+public/             # static assets
+scripts/            # build-time scripts (legal sync, etc.)
+```
+
+## Design
+
+Dark background (`#0a0a0a`), gold accent (`#b8922e`), JetBrains Mono for technical specs, Space Grotesk for headings. Engineering aesthetic — no stock photography, no marketing fluff. Performance-first; bundle size is reviewed on every PR.
+
+Full design scope and what's open vs. locked: [SCOPE.md](SCOPE.md).
 
 ## Compliance Integration
 
-Legal content is sourced from the Incutec compliance repo at
-`~/Library/Mobile Documents/com~apple~CloudDocs/incutec/compliance/`. The
-storefront ships with Markdown snapshots under `app/content/legal/`. To
-re-sync from the source:
+The storefront ships with Markdown snapshots under `app/content/legal/` — that committed snapshot is the source of truth for what is deployed. Maintainers author legal copy in a separate location and run `npm run sync:legal` to refresh the snapshot. Contributors do not need access to the authoring source; `sync:legal` no-ops gracefully when the source is unavailable and the existing snapshot is preserved.
+
+Override the authoring-source path with `COMPLIANCE_SRC` if you maintain your own fork:
 
 ```sh
-npm run sync:legal
+COMPLIANCE_SRC=/path/to/your/legal-md npm run sync:legal
 ```
 
-`prebuild` also invokes `sync:legal` so every production build picks up
-the latest compliance copy from iCloud when available. Legal entity
-identity (Incutec BV, KBO, VAT, support email) lives in `PUBLIC_COMPANY_*`
-env vars — see `.env.example`. Product branding (OpenDrone, OpenFC,
-OpenESC) stays separate from the seller identity shown in the footer and
-on `/legal`.
+Legal entity identity (company name, KBO, VAT, support email) lives in `PUBLIC_COMPANY_*` env vars — see `.env.example`. Product branding (OpenDrone, OpenFC, OpenESC) is separate from the seller identity shown in the footer and on `/legal`.
 
-Mandatory legal routes: `/algemene-voorwaarden`, `/privacy`, `/cookies`,
-`/herroepingsrecht`, `/shipping`, `/warranty`, `/export-compliance`,
-`/legal`, `/contact`, `/security`, `/cookie-settings`, and
-`/.well-known/security.txt`. The old Shopify `/policies/*` URLs 308 to
-the dedicated routes.
+Mandatory legal routes: `/algemene-voorwaarden`, `/privacy`, `/cookies`, `/herroepingsrecht`, `/shipping`, `/warranty`, `/export-compliance`, `/legal`, `/contact`, `/security`, `/cookie-settings`, and `/.well-known/security.txt`. The old Shopify `/policies/*` URLs 308 to the dedicated routes.
 
-Analytics: Plausible (cookieless, no consent banner). Shopify
-`withPrivacyBanner` is disabled — only strictly-necessary cookies are
-shipped at launch.
+Analytics: Plausible (cookieless, no consent banner). Shopify `withPrivacyBanner` is disabled — only strictly-necessary cookies are shipped at launch.
 
 ## Belgian Legal Requirements
+
 Full compliance spec: [COMPLIANCE.md](COMPLIANCE.md). Summary:
+
 - Company info in footer: KBO, BTW, address (per WER Art. VI.45)
 - Prices including 21% BTW
 - GBA-compliant cookie banner (Pandectes/Consentmo, NOT Shopify default)
@@ -72,13 +86,28 @@ Full compliance spec: [COMPLIANCE.md](COMPLIANCE.md). Summary:
 - OSS VAT registration from day 1 (not waiting for €10K threshold)
 - Peppol e-invoicing for B2B (mandatory since 1 Jan 2026)
 - Country shipping blocks for RU/BY/IR/SY/KP/CU/MM + occupied territories
-- Replace Shopify default Terms/Privacy/Refund templates with Incutec-authored versions
+- Incutec-authored legal copy replaces Shopify defaults
 
 ## Payment Providers
-- Mollie (Bancontact = 25.7% of Belgian payments!)
-- Shopify Payments / Stripe (cards, Apple Pay, Google Pay)
 
-## Related Repos
-- [OpenDrone](https://github.com/Just4Stan/OpenDrone) (private) — business/strategy
+- Mollie — Bancontact (25.7% of Belgian payments), iDEAL, SEPA
+- Shopify Payments / Stripe — cards, Apple Pay, Google Pay
+
+## Security
+
+Found a vulnerability? See [SECURITY.md](SECURITY.md). Do not open a public issue.
+
+## Contributing
+
+- [CONTRIBUTING.md](CONTRIBUTING.md) — setup, workflow, coding standards
+- [SCOPE.md](SCOPE.md) — what's open for redesign, what's locked
+- Discord: `#opendrone-web`
+
+## License
+
+[MIT](LICENSE). Contributions accepted under DCO sign-off (`git commit -s`).
+
+## Related
+
 - [OpenFC](https://github.com/Just4Stan/OpenFC) — flight controller hardware
-- [OpenESC 20x20](https://github.com/Just4Stan/Open-4in1-AM32-ESC) — ESC hardware
+- [OpenESC](https://github.com/Just4Stan/Open-4in1-AM32-ESC) — 4-in-1 ESC hardware
