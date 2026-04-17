@@ -16,7 +16,7 @@ Thanks for helping build the OpenDrone storefront. Before starting design work, 
 - Node 20+ (LTS) — `node --version`
 - npm 10+ — `npm --version`
 - Git with SSH or HTTPS access to GitHub
-- Shopify dev-store credentials — shared in the project Discord
+- Shopify dev-store credentials — pinned in `#opendrone-web` on [Discord](https://discord.gg/v3sWmTcx3R)
 
 ## Getting started
 
@@ -197,7 +197,7 @@ All contributions are licensed under MIT (see [LICENSE](LICENSE)).
 
 ## Where to ask
 
-- **Quick question**: project Discord
-- **Blocked**: tag `@Stan` in Discord
+- **Quick question**: `#opendrone-web` on [Discord](https://discord.gg/v3sWmTcx3R)
+- **Blocked**: tag `@JustFPV` in Discord
 - **Design direction**: open a Design proposal issue before coding
 - **Security vulnerability**: see [SECURITY.md](SECURITY.md), **do not open a public issue**
