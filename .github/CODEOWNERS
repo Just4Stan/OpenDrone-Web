@@ -1,0 +1,37 @@
+# CODEOWNERS — owners are auto-requested for review on matching paths.
+# Docs: https://docs.github.com/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+
+# Default owner — every PR needs Stan's review
+*                                       @Just4Stan
+
+# Locked paths — legal & compliance, never merge without explicit sign-off
+/app/routes/algemene-voorwaarden.tsx    @Just4Stan
+/app/routes/privacy.tsx                 @Just4Stan
+/app/routes/cookies.tsx                 @Just4Stan
+/app/routes/herroepingsrecht.tsx        @Just4Stan
+/app/routes/terms.tsx                   @Just4Stan
+/app/routes/shipping.tsx                @Just4Stan
+/app/routes/warranty.tsx                @Just4Stan
+/app/routes/export-compliance.tsx       @Just4Stan
+/app/routes/legal.tsx                   @Just4Stan
+/app/routes/security.tsx                @Just4Stan
+/app/routes/cookie-settings.tsx         @Just4Stan
+/app/routes/[.well-known]*              @Just4Stan
+/app/content/legal/                     @Just4Stan
+/app/components/CompanyFooterBlock.tsx  @Just4Stan
+/app/components/ProductCompliance.tsx   @Just4Stan
+/app/lib/company.ts                     @Just4Stan
+/COMPLIANCE.md                          @Just4Stan
+
+# Infra / config — also locked
+/.github/                               @Just4Stan
+/package.json                           @Just4Stan
+/package-lock.json                      @Just4Stan
+/vite.config.ts                         @Just4Stan
+/react-router.config.ts                 @Just4Stan
+/server.ts                              @Just4Stan
+/scripts/                               @Just4Stan
+/.env.example                           @Just4Stan
+/LICENSE                                @Just4Stan
+/SECURITY.md                            @Just4Stan
+/SCOPE.md                               @Just4Stan
