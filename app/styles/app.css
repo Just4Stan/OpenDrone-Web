@@ -114,26 +114,83 @@ a:hover {
   position: sticky;
   top: 0;
   z-index: 30;
-  display: flex;
-  align-items: center;
-  height: var(--header-height);
-  padding: 0 1.5rem;
   background: rgba(10, 10, 10, 0.92);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   border-bottom: 1px solid var(--color-border);
 }
 
-/* On the homepage the header floats over the hero scene instead of
-   pushing it down. */
+.site-header-main {
+  display: flex;
+  align-items: center;
+  height: var(--header-height);
+  padding: 0 1.5rem;
+}
+
+.site-header-logo {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 0.9rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-text);
+  transition: opacity 0.15s ease;
+}
+
+.site-header-logo span {
+  color: var(--color-gold);
+}
+
+.site-header-logo:hover {
+  color: var(--color-text);
+  opacity: 0.85;
+}
+
+/* Gold category subrow — sits below the main header. Hidden on
+   narrow screens; the mobile menu carries the same links. */
+.site-header-categories {
+  display: none;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 1.25rem;
+  padding: 0.5rem 1.5rem 0.6rem;
+  border-top: 1px solid color-mix(in srgb, var(--color-border) 60%, transparent);
+}
+
+.site-header-categories a {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--color-gold);
+  opacity: 0.75;
+  transition: opacity 0.15s ease, color 0.15s ease;
+}
+
+.site-header-categories a:hover,
+.site-header-categories a.active {
+  opacity: 1;
+  color: var(--color-gold-hover);
+}
+
+/* On the homepage the header floats over the hero scene. */
 .homepage-layout .site-header {
   position: fixed;
   width: 100%;
 }
 
 @media (min-width: 768px) {
-  .site-header {
+  /* Two-row header on desktop: main (56) + category subrow (~30). */
+  :root {
+    --header-height: 88px;
+  }
+  .site-header-main {
     padding: 0 2.5rem;
+    height: 56px;
+  }
+  .site-header-categories {
+    display: flex;
+    padding: 0.5rem 2.5rem 0.6rem;
   }
 }
 
@@ -946,11 +1003,12 @@ button.reset {
    ============================================ */
 
 /* Product page uses the same container width as the rest of the site
-   for a consistent gutter. */
+   for a consistent gutter. Top padding kept small — the breadcrumb
+   was dropped and the hero is the opening statement. */
 .product-page {
   width: min(1440px, calc(100% - 3rem));
   margin: 0 auto;
-  padding: 2rem 0 4rem;
+  padding: 0.75rem 0 4rem;
 }
 
 .product-hero {

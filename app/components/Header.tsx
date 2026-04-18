@@ -18,6 +18,17 @@ interface HeaderProps {
 
 type Viewport = 'desktop' | 'mobile';
 
+// Product categories shown as the secondary header row. They map to
+// Shopify product_type filters — set the Product Type on each product
+// in Shopify admin so the chips on /collections/all filter correctly.
+const CATEGORY_LINKS = [
+  {label: 'OpenFC', type: 'FC'},
+  {label: 'OpenFrame', type: 'Frame'},
+  {label: 'OpenESC', type: 'ESC'},
+  {label: 'OpenRX', type: 'RX'},
+  {label: 'Accessories', type: 'Accessories'},
+];
+
 export function Header({
   header,
   isLoggedIn,
@@ -27,26 +38,41 @@ export function Header({
   const {menu} = header;
   return (
     <header className="site-header">
-      {/* Left: wordmark */}
-      <NavLink
-        prefetch="intent"
-        to="/"
-        end
-        className="font-display text-sm font-bold tracking-[0.08em] uppercase text-[var(--color-gold)] hover:text-[var(--color-gold-hover)] transition-colors"
-      >
-        OpenDrone
-      </NavLink>
+      <div className="site-header-main">
+        {/* Left: wordmark — "Open" neutral, "Drone" in gold, matches splash */}
+        <NavLink
+          prefetch="intent"
+          to="/"
+          end
+          className="site-header-logo"
+        >
+          Open<span>Drone</span>
+        </NavLink>
 
-      {/* Center: nav */}
-      <HeaderMenu
-        menu={menu}
-        viewport="desktop"
-        primaryDomainUrl={header.shop.primaryDomain.url}
-        publicStoreDomain={publicStoreDomain}
-      />
+        {/* Center: primary nav */}
+        <HeaderMenu
+          menu={menu}
+          viewport="desktop"
+          primaryDomainUrl={header.shop.primaryDomain.url}
+          publicStoreDomain={publicStoreDomain}
+        />
 
-      {/* Right: actions */}
-      <HeaderCtas isLoggedIn={isLoggedIn} cart={cart} />
+        {/* Right: actions */}
+        <HeaderCtas isLoggedIn={isLoggedIn} cart={cart} />
+      </div>
+      {/* Secondary: category subrow — gold mono, also drives the chip
+          filter on /collections/all. Hidden on mobile (menu covers it). */}
+      <nav className="site-header-categories" aria-label="Product categories">
+        {CATEGORY_LINKS.map((cat) => (
+          <NavLink
+            key={cat.type}
+            prefetch="intent"
+            to={`/collections/all?type=${encodeURIComponent(cat.type)}`}
+          >
+            {cat.label}
+          </NavLink>
+        ))}
+      </nav>
     </header>
   );
 }
@@ -249,18 +275,9 @@ const FALLBACK_HEADER_MENU = {
       id: 'gid://shopify/MenuItem/461609500728',
       resourceId: null,
       tags: [],
-      title: 'Products',
+      title: 'Catalog',
       type: 'HTTP',
       url: '/collections/all',
-      items: [],
-    },
-    {
-      id: 'gid://shopify/MenuItem/461609566264',
-      resourceId: null,
-      tags: [],
-      title: 'Collections',
-      type: 'HTTP',
-      url: '/collections',
       items: [],
     },
     {
@@ -270,15 +287,6 @@ const FALLBACK_HEADER_MENU = {
       title: 'Journal',
       type: 'HTTP',
       url: '/blogs',
-      items: [],
-    },
-    {
-      id: 'gid://shopify/MenuItem/461609566266',
-      resourceId: null,
-      tags: [],
-      title: 'Policies',
-      type: 'HTTP',
-      url: '/policies',
       items: [],
     },
     {
