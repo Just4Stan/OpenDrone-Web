@@ -1,3 +1,4 @@
+import {useEffect} from 'react';
 import {useLoaderData} from 'react-router';
 import type {Route} from './+types/products.$handle';
 import {
@@ -18,6 +19,10 @@ import {FirmwareSplit} from '~/components/FirmwareSplit';
 import {redirectIfHandleIsLocalized} from '~/lib/redirect';
 import {buildSeoMeta} from '~/lib/seo';
 import {getCompanyIdentity} from '~/lib/company';
+import {
+  PRODUCT_CONTENT,
+  PRODUCT_CONTENT_FALLBACK,
+} from '~/lib/product-content';
 
 export const meta: Route.MetaFunction = ({data}) =>
   buildSeoMeta({
@@ -97,8 +102,58 @@ function loadDeferredData({context, params}: Route.LoaderArgs) {
   return {recommendations};
 }
 
+function Chapter({
+  number,
+  label,
+  title,
+  children,
+}: {
+  number: string;
+  label: string;
+  title: React.ReactNode;
+  children: React.ReactNode;
+}) {
+  return (
+    <section className="chapter" data-chapter={number}>
+      <div className="chapter-index">
+        <div className="chapter-number">{number}</div>
+        <div className="chapter-label">{label}</div>
+      </div>
+      <div className="chapter-body-col">
+        <h2 className="chapter-title">{title}</h2>
+        {children}
+      </div>
+    </section>
+  );
+}
+
+/**
+ * Scroll-reveal: walk every `.chapter` on the PDP and toggle `.is-visible`
+ * when it enters the viewport. CSS handles the fade/translate.
+ */
+function useChapterReveal() {
+  useEffect(() => {
+    if (typeof IntersectionObserver === 'undefined') return;
+    const chapters = document.querySelectorAll('.chapter');
+    const io = new IntersectionObserver(
+      (entries) => {
+        for (const e of entries) {
+          if (e.isIntersecting) {
+            e.target.classList.add('is-visible');
+            io.unobserve(e.target);
+          }
+        }
+      },
+      {rootMargin: '0px 0px -15% 0px', threshold: 0.05},
+    );
+    chapters.forEach((el) => io.observe(el));
+    return () => io.disconnect();
+  }, []);
+}
+
 export default function Product() {
   const {product, company, recommendations} = useLoaderData<typeof loader>();
+  useChapterReveal();
 
   // Optimistically selects a variant with given available variant information
   const selectedVariant = useOptimisticVariant(
@@ -116,24 +171,7 @@ export default function Product() {
     selectedOrFirstAvailableVariant: selectedVariant,
   });
 
-  const {title, descriptionHtml} = product;
-  const hasRealVariant =
-    !!selectedVariant?.title && selectedVariant.title !== 'Default Title';
-  const productFacts = [
-    {
-      label: 'Availability',
-      value: selectedVariant?.availableForSale ? 'In stock' : 'Sold out',
-    },
-    {label: 'Vendor', value: product.vendor || 'OpenDrone'},
-    selectedVariant?.sku
-      ? {label: 'SKU', value: selectedVariant.sku}
-      : null,
-    hasRealVariant
-      ? {label: 'Variant', value: selectedVariant.title}
-      : null,
-  ].filter(
-    (f): f is {label: string; value: string} => f !== null,
-  );
+  const {title} = product;
 
   const galleryImages = product.images?.nodes?.length
     ? product.images.nodes
@@ -142,6 +180,8 @@ export default function Product() {
       : [];
 
   const primaryCollection = product.collections?.nodes?.[0];
+  const content = PRODUCT_CONTENT[product.handle] ?? PRODUCT_CONTENT_FALLBACK;
+  const hasHeroCopy = Boolean(content.hero.line1);
 
   return (
     <div className="product-page page-shell">
@@ -159,72 +199,196 @@ export default function Product() {
           {label: product.title},
         ]}
       />
-      <div className="product-layout">
-        <div className="product-media">
-          <ProductGallery
-            images={galleryImages}
-            activeImageId={selectedVariant?.image?.id ?? null}
-          />
+
+      {/* === HERO: headline left, gallery right === */}
+      <section className="product-hero">
+        <div className="product-hero-copy">
+          <p className="product-hero-eyebrow">
+            File {content.fileNumber} · {content.family}
+          </p>
+          {hasHeroCopy ? (
+            <h1 className="product-hero-headline">
+              <span>{content.hero.line1}</span>
+              <span>
+                <em>{content.hero.line2Italic}</em>
+              </span>
+              <span>{content.hero.line3}</span>
+            </h1>
+          ) : (
+            <h1 className="product-hero-headline">
+              <span>{title}</span>
+            </h1>
+          )}
+          {content.hero.lead ? (
+            <p className="product-hero-lead">{content.hero.lead}</p>
+          ) : null}
+
+          <ul className="trust-chips" aria-label="Certifications">
+            <li className="trust-chip trust-chip-green">
+              ● Open source · CERN-OHL-S-2.0
+            </li>
+            {content.firmware.project && content.firmware.project !== '—' ? (
+              <li className="trust-chip trust-chip-gold">
+                €1 → {content.firmware.project} maintainers
+              </li>
+            ) : null}
+            <li className="trust-chip">
+              {selectedVariant?.availableForSale ? 'In stock' : 'Sold out'}
+            </li>
+          </ul>
         </div>
 
-        <div className="product-panel">
-          <p className="product-eyebrow">
-            {product.vendor || 'OpenDrone'}
-          </p>
-          <h1 className="page-title">{title}</h1>
-          <div className="product-price-wrap">
-            <ProductPrice
-              price={selectedVariant?.price}
-              compareAtPrice={selectedVariant?.compareAtPrice}
+        <div className="product-hero-right">
+          <div className="product-hero-media">
+            <ProductGallery
+              images={galleryImages}
+              activeImageId={selectedVariant?.image?.id ?? null}
             />
           </div>
-
-          <div className="product-form-wrap">
+          <div className="product-buy">
+            <div className="product-buy-price">
+              <ProductPrice
+                price={selectedVariant?.price}
+                compareAtPrice={selectedVariant?.compareAtPrice}
+              />
+              {selectedVariant?.sku ? (
+                <span className="product-buy-sku">SKU {selectedVariant.sku}</span>
+              ) : null}
+            </div>
             <ProductForm
               productOptions={productOptions}
               selectedVariant={selectedVariant}
             />
           </div>
+        </div>
+      </section>
 
-          <dl className="product-facts">
-            {productFacts.map((fact) => (
-              <div key={fact.label}>
-                <dt>{fact.label}</dt>
-                <dd>{fact.value}</dd>
-              </div>
+      {/* === Chapter 01: Teardown === */}
+      {content.teardown ? (
+        <Chapter number="01" label="Teardown" title={content.teardown.title}>
+          <p className="chapter-body">{content.teardown.body}</p>
+          <ul className="teardown-pins">
+            {content.teardown.pins.map((pin) => (
+              <li key={pin.ref}>
+                <span className="teardown-pin-ref">{pin.ref}</span>
+                <span className="teardown-pin-part">{pin.part}</span>
+                {pin.cost ? (
+                  <span className="teardown-pin-cost">{pin.cost}</span>
+                ) : null}
+              </li>
             ))}
-          </dl>
+          </ul>
+        </Chapter>
+      ) : null}
 
+      {/* === Chapter 02: Open for learning === */}
+      <Chapter
+        number="02"
+        label="Open for learning"
+        title="Published so you can study it. Produced so you don't have to."
+      >
+        <p className="chapter-body">
+          The schematic, PCB, BOM and 3D STEP are on GitHub under CERN-OHL-S v2.
+          Read them, fork them, ship a variant — the license is the contract.
+          What you buy here is the production run: EU manufacturing, CE / EMC,
+          QC, packaging, support. That pays for the next design.
+        </p>
+        <div className="open-source-cards">
+          <a
+            href={content.repoUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="open-source-card"
+          >
+            <p className="open-source-card-label">Study</p>
+            <p className="open-source-card-title">GitHub repo ↗</p>
+            <p className="open-source-card-sub">
+              Schematic · PCB · BOM · 3D STEP · design notes
+            </p>
+          </a>
+          <a
+            href={`${content.repoUrl}/issues`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="open-source-card"
+          >
+            <p className="open-source-card-label">Iterate</p>
+            <p className="open-source-card-title">Open issues ↗</p>
+            <p className="open-source-card-sub">
+              Rev candidates · bugs · community discussion
+            </p>
+          </a>
+          <a
+            href="https://ohwr.org/cern_ohl_s_v2.txt"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="open-source-card"
+          >
+            <p className="open-source-card-label">License</p>
+            <p className="open-source-card-title">CERN-OHL-S v2 ↗</p>
+            <p className="open-source-card-sub">
+              Strong reciprocal — share your changes
+            </p>
+          </a>
+        </div>
+      </Chapter>
+
+      {/* === Chapter 03: €N + €1 === */}
+      {content.firmware.project && content.firmware.project !== '—' ? (
+        <Chapter
+          number="03"
+          label="The €1"
+          title={
+            <>
+              What <em>you</em> pay, what the{' '}
+              <em>people who wrote the firmware</em> get.
+            </>
+          }
+        >
           <FirmwareSplit
             price={selectedVariant?.price}
             productTitle={product.title}
+            firmwareProject={content.firmware.project}
+            firmwareUrl={content.firmware.projectUrl}
           />
+        </Chapter>
+      ) : null}
 
-          <ProductCompliance
-            product={{
-              title: product.title,
-              vendor: product.vendor,
-              handle: product.handle,
-              safetyWarningsNl: product.safetyWarningsNl,
-              datasheetUrl: product.datasheetUrl,
-              manualUrl: product.manualUrl,
-              docUrl: product.docUrl,
-              sbomUrl: product.sbomUrl,
-              githubRepo: product.githubRepo,
-              modelNumber: product.modelNumber,
-              batchId: product.batchId,
-            }}
-            company={company}
-          />
+      {/* === Chapter 04: Specs === */}
+      {content.specs.length > 0 ? (
+        <Chapter number="04" label="Datasheet" title="Every spec, in one table.">
+          <dl className="spec-table">
+            {content.specs.map(([k, v]) => (
+              <div key={k}>
+                <dt>{k}</dt>
+                <dd>{v}</dd>
+              </div>
+            ))}
+          </dl>
+          {content.footnote ? (
+            <p className="chapter-footnote">{content.footnote}</p>
+          ) : null}
+        </Chapter>
+      ) : null}
 
-          <div className="rich-content product-description">
-            <h2 className="section-heading">Description</h2>
-            <div
-              dangerouslySetInnerHTML={{__html: descriptionHtml}}
-            />
-          </div>
-        </div>
-      </div>
+      {/* === Compliance: SCOPE-locked, unmoved === */}
+      <ProductCompliance
+        product={{
+          title: product.title,
+          vendor: product.vendor,
+          handle: product.handle,
+          safetyWarningsNl: product.safetyWarningsNl,
+          datasheetUrl: product.datasheetUrl,
+          manualUrl: product.manualUrl,
+          docUrl: product.docUrl,
+          sbomUrl: product.sbomUrl,
+          githubRepo: product.githubRepo,
+          modelNumber: product.modelNumber,
+          batchId: product.batchId,
+        }}
+        company={company}
+      />
+
       <RelatedProducts recommendations={recommendations} />
       <Analytics.ProductView
         data={{
