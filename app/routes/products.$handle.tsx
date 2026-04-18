@@ -13,7 +13,6 @@ import {ProductPrice} from '~/components/ProductPrice';
 import {ProductGallery} from '~/components/ProductGallery';
 import {ProductForm} from '~/components/ProductForm';
 import {ProductCompliance} from '~/components/ProductCompliance';
-import {Breadcrumb} from '~/components/Breadcrumb';
 import {RelatedProducts} from '~/components/RelatedProducts';
 import {FirmwareSplit} from '~/components/FirmwareSplit';
 import {redirectIfHandleIsLocalized} from '~/lib/redirect';
@@ -183,23 +182,13 @@ export default function Product() {
   const content = PRODUCT_CONTENT[product.handle] ?? PRODUCT_CONTENT_FALLBACK;
   const hasHeroCopy = Boolean(content.hero.line1);
 
+  // primaryCollection is retained in the loader but we deliberately
+  // don't render a breadcrumb on the PDP — the editorial hero with
+  // the "File 0N · Family" eyebrow is the navigation clue instead.
+  void primaryCollection;
+
   return (
     <div className="product-page">
-      <Breadcrumb
-        items={[
-          {label: 'Shop', to: '/collections/all'},
-          ...(primaryCollection
-            ? [
-                {
-                  label: primaryCollection.title,
-                  to: `/collections/${primaryCollection.handle}`,
-                },
-              ]
-            : []),
-          {label: product.title},
-        ]}
-      />
-
       {/* === HERO: headline left, gallery right === */}
       <section className="product-hero">
         <div className="product-hero-copy">
