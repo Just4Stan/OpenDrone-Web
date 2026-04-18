@@ -7,6 +7,7 @@ import type {CollectionItemFragment} from 'storefrontapi.generated';
 import {buildSeoMeta} from '~/lib/seo';
 import {Breadcrumb} from '~/components/Breadcrumb';
 import {CollectionSort, resolveSort} from '~/components/CollectionSort';
+import {CategoryChips} from '~/components/CategoryChips';
 import {EmptyState} from '~/components/EmptyState';
 
 export const meta: Route.MetaFunction = () =>
@@ -18,19 +19,11 @@ export const meta: Route.MetaFunction = () =>
   });
 
 export async function loader(args: Route.LoaderArgs) {
-  // Start fetching non-critical data without blocking time to first byte
   const deferredData = loadDeferredData(args);
-
-  // Await the critical data required to render initial state of the page
   const criticalData = await loadCriticalData(args);
-
   return {...deferredData, ...criticalData};
 }
 
-/**
- * Load data necessary for rendering content above the fold. This is the critical data
- * needed to render the page. If it's unavailable, the whole page should 400 or 500 error.
- */
 async function loadCriticalData({context, request}: Route.LoaderArgs) {
   const {storefront} = context;
   const paginationVariables = getPaginationVariables(request, {
@@ -38,6 +31,7 @@ async function loadCriticalData({context, request}: Route.LoaderArgs) {
   });
   const url = new URL(request.url);
   const sort = resolveSort(url.searchParams.get('sort'));
+  const type = url.searchParams.get('type');
 
   // Root products() uses ProductSortKeys which differs from
   // ProductCollectionSortKeys — MANUAL/COLLECTION_DEFAULT → BEST_SELLING,
@@ -49,29 +43,36 @@ async function loadCriticalData({context, request}: Route.LoaderArgs) {
         ? 'CREATED_AT'
         : sort.sortKey;
 
-  const [{products}] = await Promise.all([
+  // Shopify Storefront `query` uses `product_type:"<value>"` syntax.
+  const queryFilter = type ? `product_type:"${type.replace(/"/g, '\\"')}"` : '';
+
+  const [{products}, typesData] = await Promise.all([
     storefront.query(CATALOG_QUERY, {
       variables: {
         ...paginationVariables,
         sortKey: rootSortKey,
         reverse: Boolean(sort.reverse),
+        query: queryFilter,
       },
     }),
+    storefront.query(PRODUCT_TYPES_QUERY, {
+      cache: storefront.CacheShort(),
+    }),
   ]);
-  return {products};
+
+  const types = (typesData?.productTypes?.nodes ?? []).filter(
+    (t: string) => t && t.trim().length > 0,
+  );
+
+  return {products, types, activeType: type};
 }
 
-/**
- * Load data for rendering content below the fold. This data is deferred and will be
- * fetched after the initial page load. If it's unavailable, the page should still 200.
- * Make sure to not throw any errors here, as it will cause the page to 500.
- */
-function loadDeferredData({context}: Route.LoaderArgs) {
+function loadDeferredData(_args: Route.LoaderArgs) {
   return {};
 }
 
 export default function Collection() {
-  const {products} = useLoaderData<typeof loader>();
+  const {products, types, activeType} = useLoaderData<typeof loader>();
   const hasProducts = products.nodes.length > 0;
 
   return (
@@ -88,6 +89,7 @@ export default function Collection() {
         </div>
         {hasProducts && <CollectionSort />}
       </header>
+      {types.length > 0 && <CategoryChips types={types} />}
       {hasProducts ? (
         <PaginatedResourceSection<CollectionItemFragment>
           connection={products}
@@ -103,17 +105,25 @@ export default function Collection() {
         </PaginatedResourceSection>
       ) : (
         <EmptyState
-          title="Catalog is being stocked"
-          description="Products are not yet listed. Follow along on GitHub for hardware progress."
+          title={activeType ? `No ${activeType} products yet` : 'Catalog is being stocked'}
+          description={
+            activeType
+              ? 'Try another category or browse everything.'
+              : 'Products are not yet listed. Follow along on GitHub for hardware progress.'
+          }
+          ctaLabel={activeType ? 'Show all' : undefined}
+          ctaTo={activeType ? '/collections/all' : undefined}
           secondary={
-            <a
-              href="https://github.com/Just4Stan"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="hero-cta-secondary"
-            >
-              GitHub
-            </a>
+            activeType ? undefined : (
+              <a
+                href="https://github.com/Just4Stan"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hero-cta-secondary"
+              >
+                GitHub
+              </a>
+            )
           }
         />
       )}
@@ -130,6 +140,7 @@ const COLLECTION_ITEM_FRAGMENT = `#graphql
     id
     handle
     title
+    productType
     featuredImage {
       id
       altText
@@ -159,6 +170,7 @@ const CATALOG_QUERY = `#graphql
     $endCursor: String
     $sortKey: ProductSortKeys
     $reverse: Boolean
+    $query: String
   ) @inContext(country: $country, language: $language) {
     products(
       first: $first,
@@ -166,7 +178,8 @@ const CATALOG_QUERY = `#graphql
       before: $startCursor,
       after: $endCursor,
       sortKey: $sortKey,
-      reverse: $reverse
+      reverse: $reverse,
+      query: $query
     ) {
       nodes {
         ...CollectionItem
@@ -180,4 +193,13 @@ const CATALOG_QUERY = `#graphql
     }
   }
   ${COLLECTION_ITEM_FRAGMENT}
+` as const;
+
+const PRODUCT_TYPES_QUERY = `#graphql
+  query ProductTypes($country: CountryCode, $language: LanguageCode)
+  @inContext(country: $country, language: $language) {
+    productTypes(first: 25) {
+      nodes
+    }
+  }
 ` as const;
