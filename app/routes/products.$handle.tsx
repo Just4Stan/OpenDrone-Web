@@ -184,7 +184,7 @@ export default function Product() {
   const hasHeroCopy = Boolean(content.hero.line1);
 
   return (
-    <div className="product-page page-shell">
+    <div className="product-page">
       <Breadcrumb
         items={[
           {label: 'Shop', to: '/collections/all'},
