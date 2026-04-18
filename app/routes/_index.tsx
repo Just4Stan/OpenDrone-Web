@@ -2,16 +2,34 @@ import {Link} from 'react-router';
 import type {Route} from './+types/_index';
 import {useEffect, useRef, useState, useCallback} from 'react';
 
+// Kick off the HeroScene chunk download at module eval so it races with
+// hydration instead of waiting for useEffect. The same promise is reused
+// from inside the component below.
+const heroScenePromise =
+  typeof window !== 'undefined'
+    ? import('~/components/HeroScene')
+    : null;
+
 function ClientHeroScene() {
   const [Scene, setScene] = useState<React.ComponentType | null>(null);
   useEffect(() => {
-    void import('~/components/HeroScene').then((m) => {
+    (heroScenePromise ?? import('~/components/HeroScene')).then((m) => {
       setScene(() => m.HeroScene);
     });
   }, []);
   if (!Scene) return null;
   return <Scene />;
 }
+
+export const links: Route.LinksFunction = () => [
+  // Preload the 3D assets so they download in parallel with JS/CSS
+  // instead of waiting for HeroScene to mount post-hydration. Without
+  // these the GLBs only start fetching once the splash fades and the
+  // scene boots, adding ~1-2s of blank hero.
+  {rel: 'preload', as: 'fetch', href: '/models/frame.glb'},
+  {rel: 'preload', as: 'fetch', href: '/models/esc.glb'},
+  {rel: 'preload', as: 'fetch', href: '/models/fc.glb'},
+];
 
 export const meta: Route.MetaFunction = () => {
   return [
