@@ -1,17 +1,19 @@
 import {useLoaderData} from 'react-router';
 import type {Route} from './+types/herroepingsrecht';
 import {LegalPage} from '~/components/LegalPage';
-import {resolveLegalLoader} from '~/lib/i18n';
+import {legalLabels, resolveLegalLoader} from '~/lib/i18n';
 import {buildSeoMeta} from '~/lib/seo';
 
-export const meta: Route.MetaFunction = () =>
-  buildSeoMeta({
-    title: 'Right of Withdrawal',
-    description:
-      '14-day withdrawal right and model withdrawal form for OpenDrone consumers (Incutec BV).',
-    locale: 'en_US',
-    alternateLocales: ['nl_BE'],
+export const meta: Route.MetaFunction = ({data}) => {
+  const locale = data?.locale ?? 'en';
+  const labels = legalLabels('herroepingsrecht', locale);
+  return buildSeoMeta({
+    title: labels.title,
+    description: labels.description,
+    locale: locale === 'nl' ? 'nl_BE' : 'en_US',
+    alternateLocales: [locale === 'nl' ? 'en_US' : 'nl_BE'],
   });
+};
 
 export async function loader({request}: Route.LoaderArgs) {
   return resolveLegalLoader(
@@ -23,10 +25,11 @@ export async function loader({request}: Route.LoaderArgs) {
 
 export default function HerroepingsrechtRoute() {
   const {html, locale} = useLoaderData<typeof loader>();
+  const labels = legalLabels('herroepingsrecht', locale);
   return (
     <LegalPage
-      eyebrow="Legal · Withdrawal"
-      title="Right of Withdrawal"
+      eyebrow={labels.eyebrow}
+      title={labels.title}
       html={html}
       locale={locale}
     />

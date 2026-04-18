@@ -12,13 +12,13 @@
 | | |
 |---|---|
 | Name | Incutec BV |
-| Registered office | Stapelhuisstraat 13, 3000 Leuven |
-| Company number | [PLACEHOLDER] |
-| VAT number | BE0[PLACEHOLDER] |
-| Email | [PLACEHOLDER] |
-| Phone | [PLACEHOLDER] |
-| Website | incutec.com |
-| IBAN | [PLACEHOLDER] |
+| Registered office | Stapelhuisstraat 15, 3000 Leuven |
+| Company number | Published after incorporation (KBO) |
+| VAT number | Published after incorporation |
+| Email | stan@incutec.eu |
+| Phone | Published after incorporation |
+| Website | incutec.eu |
+| IBAN | Published after incorporation |
 
 ### Article 2: Scope
 
@@ -120,7 +120,7 @@
 
 ### Article 12: Personal data
 
-12.1. Incutec BV processes personal data in accordance with the General Data Protection Regulation (GDPR). See the Privacy Policy at incutec.com/privacy.
+12.1. Incutec BV processes personal data in accordance with the General Data Protection Regulation (GDPR). See the Privacy Policy at incutec.eu/privacy.
 
 ### Article 13: Complaints
 
@@ -128,7 +128,7 @@
 
 13.2. Incutec BV responds to complaints within **14 days**.
 
-13.3. If the consumer considers that a product constitutes a safety risk, this can be reported to support@incutec.com. Incutec BV investigates every safety report and takes corrective measures where necessary.
+13.3. If the consumer considers that a product constitutes a safety risk, this can be reported to stan@incutec.eu. Incutec BV investigates every safety report and takes corrective measures where necessary.
 
 ### Article 14: Disputes
 

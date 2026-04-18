@@ -42,10 +42,10 @@ Every page footer must show:
 
 ```
 Incutec BV
-[Stapelhuisstraat 13, 3000 Leuven]  ← verify post-incorporation
-BE [0XXX.XXX.XXX]                    ← KBO number
-BTW BE [0XXX.XXX.XXX]                ← VAT number
-info@incutec.com
+Stapelhuisstraat 15, 3000 Leuven
+BE [0XXX.XXX.XXX]                    ← KBO number (post-incorporation)
+BTW BE [0XXX.XXX.XXX]                ← VAT number (post-incorporation)
+stan@incutec.eu
 Tel: [TBD]                           ← optional but recommended
 ```
 
@@ -82,7 +82,7 @@ Also required in footer:
 
 Each product page must display **before purchase**:
 
-- [ ] **Manufacturer name + address + electronic contact** — "Incutec BV, [address], info@incutec.com"
+- [ ] **Manufacturer name + address + electronic contact** — "Incutec BV, Stapelhuisstraat 15, 3000 Leuven, stan@incutec.eu"
 - [ ] **Responsible economic operator in EU** — same as manufacturer (Incutec is in EU)
 - [ ] **Product identifier** — model number + type/batch/serial
 - [ ] **Image of the product**

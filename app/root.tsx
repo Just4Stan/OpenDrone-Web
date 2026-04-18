@@ -94,7 +94,10 @@ export async function loader(args: Route.LoaderArgs) {
       publicStorefrontId: env.PUBLIC_STOREFRONT_ID,
     }),
     consent: {
-      checkoutDomain: env.PUBLIC_CHECKOUT_DOMAIN,
+      // checkoutDomain is required by Hydrogen Analytics. Fall back to the
+      // store domain when the dedicated checkout subdomain isn't configured.
+      checkoutDomain:
+        env.PUBLIC_CHECKOUT_DOMAIN || env.PUBLIC_STORE_DOMAIN,
       storefrontAccessToken: env.PUBLIC_STOREFRONT_API_TOKEN,
       // No cookie banner at launch: Plausible-only analytics, Shopify analytics
       // not shipped. Consent is default-denied. Banner will return when marketing
@@ -170,17 +173,22 @@ export function Layout({children}: {children?: React.ReactNode}) {
         <link rel="stylesheet" href={appStyles}></link>
         <Meta />
         <Links />
-        {/* Plausible — cookieless analytics, no consent required */}
+        {/* Plausible — cookieless analytics, no consent required.
+            suppressHydrationWarning: nonce is per-request and only meaningful
+            server-side; the client-side value is empty, which React would
+            otherwise flag as a hydration mismatch. */}
         <script
           defer
           data-domain="opendrone.eu"
           src="https://plausible.io/js/script.js"
           nonce={nonce}
+          suppressHydrationWarning
         />
         {orgJsonLd ? (
           <script
             type="application/ld+json"
             nonce={nonce}
+            suppressHydrationWarning
             dangerouslySetInnerHTML={{__html: JSON.stringify(orgJsonLd)}}
           />
         ) : null}
@@ -216,25 +224,42 @@ export default function App() {
 
 export function ErrorBoundary() {
   const error = useRouteError();
-  let errorMessage = 'Unknown error';
+  let errorMessage = '';
   let errorStatus = 500;
 
   if (isRouteErrorResponse(error)) {
-    errorMessage = error?.data?.message ?? error.data;
+    errorMessage =
+      typeof error.data === 'string' ? error.data : (error.data?.message ?? '');
     errorStatus = error.status;
   } else if (error instanceof Error) {
     errorMessage = error.message;
   }
 
+  const isNotFound = errorStatus === 404;
+  const title = isNotFound ? 'Page not found' : 'Something went wrong';
+  const description = isNotFound
+    ? 'The page you were looking for has moved or never existed. Try the catalog or head home.'
+    : 'An unexpected error occurred. Try again, or head back to the catalog.';
+
   return (
-    <div className="route-error">
-      <h1>Oops</h1>
-      <h2>{errorStatus}</h2>
-      {errorMessage && (
-        <fieldset>
+    <div className="route-error page-shell">
+      <p className="route-error-status">{errorStatus}</p>
+      <h1 className="route-error-title">{title}</h1>
+      <p className="route-error-body">{description}</p>
+      {errorMessage ? (
+        <details className="route-error-details">
+          <summary>Technical details</summary>
           <pre>{errorMessage}</pre>
-        </fieldset>
-      )}
+        </details>
+      ) : null}
+      <div className="route-error-actions">
+        <a href="/" className="hero-cta-primary">
+          Home
+        </a>
+        <a href="/collections/all" className="hero-cta-secondary">
+          Shop
+        </a>
+      </div>
     </div>
   );
 }

@@ -9,7 +9,7 @@ export async function loader(_args: Route.LoaderArgs) {
   expires.setFullYear(expires.getFullYear() + 1);
 
   const body = [
-    'Contact: mailto:security@incutec.com',
+    'Contact: mailto:stan@incutec.eu',
     'Preferred-Languages: en, nl',
     'Canonical: https://opendrone.eu/.well-known/security.txt',
     'Policy: https://opendrone.eu/security',

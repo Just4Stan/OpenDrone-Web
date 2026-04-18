@@ -17,25 +17,19 @@ Cookies zijn kleine tekstbestanden die door een website op uw apparaat worden ge
 
 | Cookie | Doel | Bewaartermijn |
 |--------|------|--------------|
-| session_id | Sessie-identificatie (winkelwagen, login) | Sessie (tot sluiting browser) |
-| csrf_token | Beveiliging tegen cross-site request forgery | Sessie |
-| cookie_consent | Onthouden van uw cookievoorkeuren | 6 maanden |
+| `cart`, `cart_sig`, `cart_ts`, `_secure_session_id`, `_shopify_tm` | Winkelwagen- en sessiebeheer (Shopify) | Sessie |
+| `_tracking_consent`, `_cmp_a` | Uw cookievoorkeuren onthouden (Shopify Customer Privacy API) | 6 maanden |
+| `__stripe_mid`, `__stripe_sid` | Fraudepreventie bij betaling (Stripe, Art. 6.1(f) AVG + Art. 129 WEC) | 1 jaar / sessie |
 
-#### Analytische cookies (toestemming vereist)
+#### Analytische cookies
 
-| Cookie | Doel | Bewaartermijn |
-|--------|------|--------------|
-| [PLACEHOLDER: e.g., _ga, _gid (Google Analytics) of Plausible/Fathom] | Anonieme websitestatistieken | [PLACEHOLDER] |
+Wij gebruiken **Plausible Analytics** (EU-gehost, cookieloos). Plausible plaatst geen cookies en verwerkt geen persoonsgegevens waarvoor toestemming nodig is. Daarom tonen wij geen toestemmingsbanner voor analyse.
 
-> **Aanbeveling:** Gebruik Plausible of Fathom (privacy-vriendelijk, geen cookies, geen toestemming vereist) in plaats van Google Analytics. Dit elimineert de noodzaak van cookietoestemming voor analyse volledig.
+Shopify's ingebouwde analytische cookies (`_shopify_s`, `_shopify_y`) staan uit tenzij u deze expliciet aanvaardt.
 
-#### Marketing cookies (toestemming vereist)
+#### Marketing cookies
 
-| Cookie | Doel | Bewaartermijn |
-|--------|------|--------------|
-| [PLACEHOLDER: only if using advertising/remarketing] | [PLACEHOLDER] | [PLACEHOLDER] |
-
-> **Aanbeveling:** Gebruik bij de lancering geen marketingcookies. U heeft ze niet nodig en ze creëren een GDPR/cookie-nalevingslast.
+Incutec BV gebruikt bij de lancering **geen marketing- of remarketingcookies**. Als dit verandert, wordt dit cookiebeleid bijgewerkt en vragen wij opnieuw uw toestemming.
 
 ### Toestemming
 
@@ -53,11 +47,11 @@ U kunt cookies ook beheren via uw browserinstellingen:
 
 ### Contact
 
-Vragen over ons cookiebeleid: [PLACEHOLDER email]
+Vragen over ons cookiebeleid: stan@incutec.eu
 
 ---
 
-*Incutec BV: Stapelhuisstraat 13, 3000 Leuven*
+*Incutec BV: Stapelhuisstraat 15, 3000 Leuven*
 
 ---
 

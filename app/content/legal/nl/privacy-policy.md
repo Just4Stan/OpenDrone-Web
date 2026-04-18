@@ -13,9 +13,9 @@
 | | |
 |---|---|
 | Naam | Incutec BV |
-| Zetel | Stapelhuisstraat 13, 3000 Leuven |
-| Ondernemingsnummer | [PLACEHOLDER] |
-| E-mail | privacy@incutec.com (of [PLACEHOLDER]) |
+| Zetel | Stapelhuisstraat 15, 3000 Leuven |
+| Ondernemingsnummer | wordt gepubliceerd na oprichting (KBO) |
+| E-mail | stan@incutec.eu |
 
 Incutec BV heeft geen Functionaris voor Gegevensbescherming (DPO) aangesteld aangezien dit niet verplicht is voor de huidige activiteiten (Art. 37 AVG).
 
@@ -56,11 +56,14 @@ Incutec BV heeft geen Functionaris voor Gegevensbescherming (DPO) aangesteld aan
 
 | Ontvanger | Doel | Locatie |
 |-----------|------|---------|
-| [PLACEHOLDER: betaalprovider, e.g., Mollie/Stripe] | Betalingsverwerking | EU |
-| [PLACEHOLDER: hosting provider] | Websitehosting | EU |
-| [PLACEHOLDER: e-mail service] | Transactionele e-mails | EU |
-| [PLACEHOLDER: verzendpartner, e.g., Bpost/DHL] | Pakketverzending | EU |
-| Boekhouder | Facturatie en jaarrekening | België |
+| Shopify International Ltd. | Webshop- en orderplatform | Ierland (EU) |
+| Shopify Oxygen | Websitehosting | EU edge netwerk |
+| Mollie B.V. | Betalingsverwerking (Bancontact, SEPA, kaartbetalingen) | Nederland (EU) |
+| Stripe Payments Europe Ltd. | Kaartbetalingen en fraudepreventie | Ierland (EU) |
+| Sendcloud B.V. | Verzendlabels en trackinginformatie | Nederland (EU) |
+| Bpost / DHL / DPD (drager afhankelijk van orde) | Pakketbezorging | EU |
+| Plausible Analytics | Cookieloze websitestatistieken | Duitsland (EU) |
+| Polar Advisory BV (boekhouder) | Facturatie en jaarrekening | België |
 
 Incutec BV draagt geen persoonsgegevens over naar landen buiten de EER, tenzij adequate waarborgen zijn getroffen (Art. 46 AVG).
 
@@ -75,7 +78,7 @@ U heeft het recht om:
 - **Overdraagbaarheid** van uw gegevens te vragen (Art. 20)
 - Uw **toestemming** in te trekken (Art. 7.3)
 
-Verzoeken kunt u richten aan: [PLACEHOLDER email]
+Verzoeken kunt u richten aan: stan@incutec.eu
 Wij reageren binnen **30 dagen** op uw verzoek.
 
 ### 7. Klachten
@@ -111,7 +114,7 @@ Bij een datalek dat een risico inhoudt voor uw rechten en vrijheden, zijn wij ve
 
 ### 11. Wijzigingen
 
-Incutec BV kan dit privacybeleid wijzigen. De meest recente versie is altijd beschikbaar op incutec.com/privacy. Bij wezenlijke wijzigingen wordt u per e-mail op de hoogte gesteld.
+Incutec BV kan dit privacybeleid wijzigen. De meest recente versie is altijd beschikbaar op incutec.eu/privacy. Bij wezenlijke wijzigingen wordt u per e-mail op de hoogte gesteld.
 
 ---
 

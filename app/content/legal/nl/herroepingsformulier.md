@@ -12,8 +12,8 @@
 
 Aan:
 **Incutec BV**
-[PLACEHOLDER: full address]
-E-mail: [PLACEHOLDER]
+Stapelhuisstraat 15, 3000 Leuven, België
+E-mail: stan@incutec.eu
 
 ---
 
@@ -45,20 +45,20 @@ ____________________
 ## Instructies voor de consument
 
 1. U heeft **14 kalenderdagen** bedenktijd vanaf de dag nadat u het product heeft ontvangen.
-2. U kunt dit formulier invullen en terugsturen per e-mail naar [PLACEHOLDER] of per post naar bovenstaand adres.
+2. U kunt dit formulier invullen en terugsturen per e-mail naar stan@incutec.eu of per post naar bovenstaand adres.
 3. U kunt ook op een andere ondubbelzinnige wijze verklaren dat u de overeenkomst wilt herroepen.
 4. Na herroeping heeft u **14 dagen** om het product terug te sturen.
 5. **Terugzendkosten** zijn voor uw rekening.
-6. Incutec BV vergoedt alle betalingen (inclusief standaard leveringskosten) uiterlijk **14 dagen** nadat wij het product hebben terugontvangen of u bewijs van terugzending heeft geleverd, naargelang wat eerst plaatsvindt.
+6. Incutec BV vergoedt alle betalingen (inclusief standaard leveringskosten) uiterlijk **14 dagen** nadat wij het product hebben terugontvangen of u bewijs van terugzending heeft geleverd.
 7. Terugbetaling geschiedt via hetzelfde betaalmiddel als bij uw oorspronkelijke aankoop.
-8. Het product moet in originele staat worden teruggestuurd. Waardevermindering door gebruik dat verder gaat dan nodig is om de aard, de kenmerken en de werking van het product vast te stellen, kan in mindering worden gebracht.
+8. Het product moet in originele staat worden teruggestuurd. Waardevermindering door gebruik dat verder gaat dan nodig is om de aard en kenmerken van het product vast te stellen, kan in mindering worden gebracht.
 
 ---
 
 ## Retouradres
 
 Incutec BV
-[PLACEHOLDER: return address, may differ from zetel]
+Stapelhuisstraat 15, 3000 Leuven, België
 
 ---
 

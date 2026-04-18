@@ -18,25 +18,19 @@ Cookies are small text files placed on your device by a website when you visit i
 
 | Cookie | Purpose | Retention |
 |--------|---------|-----------|
-| session_id | Session identification (cart, login) | Session (until browser is closed) |
-| csrf_token | Protection against cross-site request forgery | Session |
-| cookie_consent | Remembering your cookie preferences | 6 months |
+| `cart`, `cart_sig`, `cart_ts`, `_secure_session_id`, `_shopify_tm` | Cart and session handling (Shopify) | Session |
+| `_tracking_consent`, `_cmp_a` | Remember your cookie preferences (Shopify Customer Privacy API) | 6 months |
+| `__stripe_mid`, `__stripe_sid` | Payment fraud prevention (Stripe, Art. 6.1(f) GDPR + Art. 129 WEC) | 1 year / session |
 
-#### Analytics cookies (consent required)
+#### Analytics
 
-| Cookie | Purpose | Retention |
-|--------|---------|-----------|
-| [PLACEHOLDER: e.g., _ga, _gid (Google Analytics) or Plausible/Fathom] | Anonymous website statistics | [PLACEHOLDER] |
+We use **Plausible Analytics** (EU-hosted, cookieless). Plausible sets no cookies and processes no personal data requiring consent. That is why we do not show a consent banner for analytics.
 
-> **Recommendation:** Use Plausible or Fathom (privacy-friendly, no cookies, no consent required) instead of Google Analytics. This eliminates the need for cookie consent for analytics entirely.
+Shopify's built-in analytics cookies (`_shopify_s`, `_shopify_y`) are disabled unless you explicitly opt in.
 
-#### Marketing cookies (consent required)
+#### Marketing cookies
 
-| Cookie | Purpose | Retention |
-|--------|---------|-----------|
-| [PLACEHOLDER: only if using advertising/remarketing] | [PLACEHOLDER] | [PLACEHOLDER] |
-
-> **Recommendation:** Do not use marketing cookies at launch. They are not needed and create a GDPR/cookie compliance burden.
+Incutec BV uses **no marketing or remarketing cookies** at launch. If that changes, this cookie policy will be updated and we will ask for your consent again.
 
 ### Consent
 
@@ -54,8 +48,8 @@ You can also manage cookies via your browser settings:
 
 ### Contact
 
-Questions about our cookie policy: [PLACEHOLDER email]
+Questions about our cookie policy: stan@incutec.eu
 
 ---
 
-*Incutec BV: Stapelhuisstraat 13, 3000 Leuven*
+*Incutec BV: Stapelhuisstraat 15, 3000 Leuven*

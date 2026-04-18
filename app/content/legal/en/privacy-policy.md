@@ -14,9 +14,9 @@
 | | |
 |---|---|
 | Name | Incutec BV |
-| Registered office | Stapelhuisstraat 13, 3000 Leuven |
-| Company number | [PLACEHOLDER] |
-| Email | privacy@incutec.com (or [PLACEHOLDER]) |
+| Registered office | Stapelhuisstraat 15, 3000 Leuven |
+| Company number | Published after incorporation (KBO) |
+| Email | stan@incutec.eu |
 
 Incutec BV has not appointed a Data Protection Officer (DPO) because this is not mandatory for its current activities (Art. 37 GDPR).
 
@@ -57,11 +57,14 @@ Incutec BV has not appointed a Data Protection Officer (DPO) because this is not
 
 | Recipient | Purpose | Location |
 |-----------|---------|----------|
-| [PLACEHOLDER: payment provider, e.g., Mollie/Stripe] | Payment processing | EU |
-| [PLACEHOLDER: hosting provider] | Website hosting | EU |
-| [PLACEHOLDER: email service] | Transactional emails | EU |
-| [PLACEHOLDER: shipping partner, e.g., Bpost/DHL] | Parcel delivery | EU |
-| Accountant | Invoicing and annual accounts | Belgium |
+| Shopify International Ltd. | Webshop and order platform | Ireland (EU) |
+| Shopify Oxygen | Website hosting | EU edge network |
+| Mollie B.V. | Payment processing (Bancontact, SEPA, cards) | Netherlands (EU) |
+| Stripe Payments Europe Ltd. | Card processing and fraud prevention | Ireland (EU) |
+| Sendcloud B.V. | Shipping labels and tracking | Netherlands (EU) |
+| Bpost / DHL / DPD (carrier depending on order) | Parcel delivery | EU |
+| Plausible Analytics | Cookieless website analytics | Germany (EU) |
+| Polar Advisory BV (accountant) | Invoicing and annual accounts | Belgium |
 
 Incutec BV does not transfer personal data to countries outside the EEA unless adequate safeguards have been put in place (Art. 46 GDPR).
 
@@ -76,7 +79,7 @@ You have the right to:
 - **Portability** of your data (Art. 20)
 - **Withdraw** your consent (Art. 7.3)
 
-Requests can be sent to: [PLACEHOLDER email]
+Requests can be sent to: stan@incutec.eu
 We respond to your request within **30 days**.
 
 ### 7. Complaints
@@ -112,4 +115,4 @@ In the event of a data breach presenting a risk to your rights and freedoms, we 
 
 ### 11. Amendments
 
-Incutec BV may amend this privacy policy. The most recent version is always available at incutec.com/privacy. In the event of material changes, you will be notified by email.
+Incutec BV may amend this privacy policy. The most recent version is always available at incutec.eu/privacy. In the event of material changes, you will be notified by email.

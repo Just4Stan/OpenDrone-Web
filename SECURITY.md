@@ -4,7 +4,7 @@
 
 **Do not open a public GitHub issue for security vulnerabilities.** Use one of:
 
-- Email: **security@incutec.com**
+- Email: **stan@incutec.eu**
 - Or use [GitHub private vulnerability reporting](https://github.com/Just4Stan/OpenDrone-Web/security/advisories/new)
 
 The canonical policy — including CRA obligations, ENISA reporting timelines, triage windows, and patch SLAs — lives on the live site:

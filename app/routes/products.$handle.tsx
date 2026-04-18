@@ -1,4 +1,4 @@
-import {redirect, useLoaderData} from 'react-router';
+import {useLoaderData} from 'react-router';
 import type {Route} from './+types/products.$handle';
 import {
   getSelectedProductOptions,
@@ -9,9 +9,11 @@ import {
   useSelectedOptionInUrlParam,
 } from '@shopify/hydrogen';
 import {ProductPrice} from '~/components/ProductPrice';
-import {ProductImage} from '~/components/ProductImage';
+import {ProductGallery} from '~/components/ProductGallery';
 import {ProductForm} from '~/components/ProductForm';
 import {ProductCompliance} from '~/components/ProductCompliance';
+import {Breadcrumb} from '~/components/Breadcrumb';
+import {RelatedProducts} from '~/components/RelatedProducts';
 import {redirectIfHandleIsLocalized} from '~/lib/redirect';
 import {buildSeoMeta} from '~/lib/seo';
 import {getCompanyIdentity} from '~/lib/company';
@@ -77,14 +79,25 @@ async function loadCriticalData({context, params, request}: Route.LoaderArgs) {
  * Make sure to not throw any errors here, as it will cause the page to 500.
  */
 function loadDeferredData({context, params}: Route.LoaderArgs) {
-  // Put any API calls that is not critical to be available on first page render
-  // For example: product reviews, product recommendations, social feeds.
+  const {handle} = params;
+  const {storefront} = context;
 
-  return {};
+  if (!handle) {
+    return {recommendations: Promise.resolve(null)};
+  }
+
+  const recommendations = storefront
+    .query(PRODUCT_RECOMMENDATIONS_QUERY, {
+      variables: {handle},
+    })
+    .then((res) => res?.productRecommendations ?? null)
+    .catch(() => null);
+
+  return {recommendations};
 }
 
 export default function Product() {
-  const {product, company} = useLoaderData<typeof loader>();
+  const {product, company, recommendations} = useLoaderData<typeof loader>();
 
   // Optimistically selects a variant with given available variant information
   const selectedVariant = useOptimisticVariant(
@@ -124,11 +137,36 @@ export default function Product() {
     },
   ];
 
+  const galleryImages = product.images?.nodes?.length
+    ? product.images.nodes
+    : selectedVariant?.image
+      ? [selectedVariant.image]
+      : [];
+
+  const primaryCollection = product.collections?.nodes?.[0];
+
   return (
     <div className="product-page page-shell">
+      <Breadcrumb
+        items={[
+          {label: 'Shop', to: '/collections/all'},
+          ...(primaryCollection
+            ? [
+                {
+                  label: primaryCollection.title,
+                  to: `/collections/${primaryCollection.handle}`,
+                },
+              ]
+            : []),
+          {label: product.title},
+        ]}
+      />
       <div className="product-layout">
         <div className="product-media">
-          <ProductImage image={selectedVariant?.image} />
+          <ProductGallery
+            images={galleryImages}
+            activeImageId={selectedVariant?.image?.id ?? null}
+          />
         </div>
 
         <div className="product-panel">
@@ -184,6 +222,7 @@ export default function Product() {
           </div>
         </div>
       </div>
+      <RelatedProducts recommendations={recommendations} />
       <Analytics.ProductView
         data={{
           products: [
@@ -273,6 +312,21 @@ const PRODUCT_FRAGMENT = `#graphql
     adjacentVariants (selectedOptions: $selectedOptions) {
       ...ProductVariant
     }
+    images(first: 10) {
+      nodes {
+        id
+        url
+        altText
+        width
+        height
+      }
+    }
+    collections(first: 1) {
+      nodes {
+        handle
+        title
+      }
+    }
     seo {
       description
       title
@@ -323,4 +377,35 @@ const PRODUCT_QUERY = `#graphql
     }
   }
   ${PRODUCT_FRAGMENT}
+` as const;
+
+const PRODUCT_RECOMMENDATIONS_QUERY = `#graphql
+  query ProductRecommendations(
+    $country: CountryCode
+    $handle: String!
+    $language: LanguageCode
+  ) @inContext(country: $country, language: $language) {
+    productRecommendations(productHandle: $handle) {
+      id
+      handle
+      title
+      featuredImage {
+        id
+        url
+        altText
+        width
+        height
+      }
+      priceRange {
+        minVariantPrice {
+          amount
+          currencyCode
+        }
+        maxVariantPrice {
+          amount
+          currencyCode
+        }
+      }
+    }
+  }
 ` as const;

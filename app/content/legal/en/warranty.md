@@ -17,6 +17,6 @@ The Dutch version (/warranty) is the legally authoritative text for consumers re
 
 ### How to make a warranty claim
 
-Email [support@incutec.com](mailto:support@incutec.com) with your order number, a description of the defect and photos or a video of the issue. We acknowledge within 5 business days and coordinate return for inspection, repair or replacement where needed.
+Email [stan@incutec.eu](mailto:stan@incutec.eu) with your order number, a description of the defect and photos or a video of the issue. We acknowledge within 5 business days and coordinate return for inspection, repair or replacement where needed.
 
 This page does not replace your rights as a consumer. See also Article 9 of our [General Terms and Conditions](/algemene-voorwaarden).
