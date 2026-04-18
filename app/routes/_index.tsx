@@ -47,24 +47,38 @@ function linearstep(edge0: number, edge1: number, x: number) {
 }
 
 // Hero scroll budget — the 3D scene + phased UI stays pinned for this many
-// screen heights before the page releases and the legal footer becomes
-// reachable. Higher = more work to reach the footer (still reachable, just
-// intentional). 5 screen heights ≈ "scroll-wall" the footer behind the hero.
-const HERO_SPACER_VH = 800;
-// Scroll denominator for 0..1 progress maps to the first 4 screen heights;
-// the final screen height is a quiet buffer so the CTA stays pinned a bit
-// longer before the sticky hero releases.
-const HERO_PROGRESS_VH = 4;
+// screen heights. Mobile gets a much shorter spacer since thumb-scrolling
+// 8 screens to reach the footer is brutal.
+const HERO_SPACER_VH_DESKTOP = 800;
+const HERO_SPACER_VH_MOBILE = 400;
+// Scroll denominator for 0..1 progress — mobile finishes phases earlier
+// so the release-to-footer buffer still fits in a couple swipes.
+const HERO_PROGRESS_VH_DESKTOP = 4;
+const HERO_PROGRESS_VH_MOBILE = 2.5;
 
 export default function Homepage() {
   const scrollRef = useRef(0);
   const rafId = useRef(0);
   const [scrollProgress, setScrollProgress] = useState(0);
   const [splashHidden, setSplashHidden] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
   const tick = useCallback(() => {
     setScrollProgress(scrollRef.current);
     rafId.current = 0;
   }, []);
+
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 768px)');
+    const update = () => setIsMobile(mq.matches);
+    update();
+    mq.addEventListener('change', update);
+    return () => mq.removeEventListener('change', update);
+  }, []);
+
+  const heroSpacerVh = isMobile ? HERO_SPACER_VH_MOBILE : HERO_SPACER_VH_DESKTOP;
+  const heroProgressVh = isMobile
+    ? HERO_PROGRESS_VH_MOBILE
+    : HERO_PROGRESS_VH_DESKTOP;
 
   useEffect(() => {
     if ('scrollRestoration' in history) {
@@ -75,7 +89,7 @@ export default function Homepage() {
     const onScroll = () => {
       scrollRef.current = Math.min(
         1,
-        Math.max(0, window.scrollY / (window.innerHeight * HERO_PROGRESS_VH)),
+        Math.max(0, window.scrollY / (window.innerHeight * heroProgressVh)),
       );
       if (window.scrollY > window.innerHeight * 0.15) {
         setSplashHidden(true);
@@ -89,7 +103,7 @@ export default function Homepage() {
       window.removeEventListener('scroll', onScroll);
       if (rafId.current) cancelAnimationFrame(rafId.current);
     };
-  }, [tick]);
+  }, [tick, heroProgressVh]);
 
   const heroTextOpacity = Math.max(0, 1 - scrollProgress * 4);
   const labelOpacity = linearstep(0.65, 0.75, scrollProgress);
@@ -116,7 +130,7 @@ export default function Homepage() {
         the legal footer (in normal document flow below) comes into view.
         No fade, no dead zone.
       */}
-      <div className="relative" style={{height: `${HERO_SPACER_VH}vh`}}>
+      <div className="relative" style={{height: `${heroSpacerVh}vh`}}>
         <div className="sticky top-0 h-screen overflow-hidden pointer-events-none">
           {/* Full-screen 3D — pinned behind everything via sticky parent */}
           <div
@@ -124,6 +138,13 @@ export default function Homepage() {
             style={{
               transform: `translateY(-${pushUp}vh)`,
               transition: 'none',
+              // Let the browser own vertical panning (page scroll) while
+              // horizontal drags still reach the r3f pointer handlers for
+              // model rotation. Without this, touch-action defaults to
+              // "auto" and the browser cancels the pointer stream as soon
+              // as it decides the gesture is a scroll — so on mobile the
+              // drag-to-rotate stops working entirely.
+              touchAction: 'pan-y',
             }}
           >
             <div
