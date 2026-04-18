@@ -116,26 +116,23 @@ export default function Product() {
   });
 
   const {title, descriptionHtml} = product;
+  const hasRealVariant =
+    !!selectedVariant?.title && selectedVariant.title !== 'Default Title';
   const productFacts = [
     {
       label: 'Availability',
       value: selectedVariant?.availableForSale ? 'In stock' : 'Sold out',
     },
     {label: 'Vendor', value: product.vendor || 'OpenDrone'},
-    {
-      label: 'SKU',
-      value: selectedVariant?.sku || 'Assigned per variant',
-    },
-    {
-      label: 'Variant',
-      value:
-        selectedVariant?.title && selectedVariant.title !== 'Default Title'
-          ? selectedVariant.title
-          : `${productOptions.length} configurable option${
-              productOptions.length === 1 ? '' : 's'
-            }`,
-    },
-  ];
+    selectedVariant?.sku
+      ? {label: 'SKU', value: selectedVariant.sku}
+      : null,
+    hasRealVariant
+      ? {label: 'Variant', value: selectedVariant.title}
+      : null,
+  ].filter(
+    (f): f is {label: string; value: string} => f !== null,
+  );
 
   const galleryImages = product.images?.nodes?.length
     ? product.images.nodes
