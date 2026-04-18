@@ -3,7 +3,6 @@ import {useRef, useState, useEffect, useCallback} from 'react';
 import type {Group} from 'three';
 import * as THREE from 'three';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
-import {DRACOLoader} from 'three/addons/loaders/DRACOLoader.js';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 
 function useScrollProgress() {
@@ -20,17 +19,9 @@ function useScrollProgress() {
   return progressRef;
 }
 
-// Shared Draco decoder — self-hosted from /public/draco/ (copied from
-// three/examples/jsm/libs/draco/gltf at install time). Avoids CORS/CDN
-// flakiness and keeps the hero working offline.
-const dracoLoader = new DRACOLoader();
-dracoLoader.setDecoderPath('/draco/');
-
 function loadModel(url: string): Promise<THREE.Group> {
   return new Promise((resolve, reject) => {
-    const loader = new GLTFLoader();
-    loader.setDRACOLoader(dracoLoader);
-    loader.load(url, (gltf) => resolve(gltf.scene), undefined, reject);
+    new GLTFLoader().load(url, (gltf) => resolve(gltf.scene), undefined, reject);
   });
 }
 
