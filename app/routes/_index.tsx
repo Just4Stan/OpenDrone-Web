@@ -13,7 +13,7 @@ const heroScenePromise =
 function ClientHeroScene() {
   const [Scene, setScene] = useState<React.ComponentType | null>(null);
   useEffect(() => {
-    (heroScenePromise ?? import('~/components/HeroScene')).then((m) => {
+    void (heroScenePromise ?? import('~/components/HeroScene')).then((m) => {
       setScene(() => m.HeroScene);
     });
   }, []);

@@ -938,6 +938,422 @@ button.reset {
   outline-offset: 2px;
 }
 
+/* ============================================
+   Product page — editorial layout
+   ============================================ */
+
+/* Widen the product page shell — the editorial chapters want horizontal
+   room that the default .page-shell (1120px) doesn't give. */
+.product-page {
+  width: min(1560px, calc(100% - 3rem));
+  margin: 0 auto;
+  padding: 2rem 0 4rem;
+}
+
+.product-hero {
+  display: grid;
+  gap: 1.5rem;
+  margin-bottom: 1.5rem;
+  align-items: stretch;
+}
+
+@media (min-width: 960px) {
+  .product-hero {
+    grid-template-columns: minmax(0, 1.1fr) minmax(0, 1.3fr);
+    gap: 2.5rem;
+    /* Keep the hero within one viewport so price + CTA land above the
+       fold without scrolling. Subtract header, breadcrumb, own padding. */
+    min-height: calc(100vh - var(--header-height) - 10rem);
+    max-height: calc(100vh - var(--header-height) - 6rem);
+  }
+}
+
+@media (min-width: 960px) {
+  .product-hero-media {
+    max-height: calc(100vh - var(--header-height) - 18rem);
+  }
+}
+
+.product-hero-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.product-hero-eyebrow {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  color: var(--color-gold);
+  margin: 0;
+}
+
+.product-hero-headline {
+  font-family: var(--font-display);
+  font-weight: 700;
+  line-height: 0.95;
+  letter-spacing: -0.03em;
+  font-size: clamp(2rem, 4.5vw, 4.25rem);
+  margin: 0;
+  color: var(--color-text);
+}
+
+.product-hero-headline span {
+  display: block;
+}
+
+.product-hero-headline em {
+  font-style: italic;
+  color: var(--color-gold);
+}
+
+.product-hero-lead {
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  line-height: 1.7;
+  color: var(--color-text-muted);
+  max-width: 46ch;
+  margin: 0;
+}
+
+.product-hero-right {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  min-width: 0;
+}
+
+.product-hero-media {
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--color-accent) 18%, var(--color-bg-card)),
+    var(--color-bg-card)
+  );
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  overflow: hidden;
+  padding: 0.75rem;
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+@media (min-width: 960px) {
+  .product-hero-media {
+    /* Let the gallery fill whatever the flex column gives it instead of
+       forcing a 1:1 aspect ratio that overflows the viewport on wide
+       desktops. */
+    max-height: calc(100vh - 16rem);
+  }
+  .product-hero-media .product-gallery {
+    flex: 1 1 auto;
+    min-height: 0;
+  }
+  .product-hero-media .product-gallery-main {
+    aspect-ratio: auto;
+    flex: 1 1 auto;
+    min-height: 0;
+  }
+  .product-hero-media .product-gallery-main img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+  }
+}
+
+/* Trust chips */
+.trust-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  padding: 0;
+  margin: 0.5rem 0 0;
+  list-style: none;
+}
+
+.trust-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.35rem 0.75rem;
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+  background: var(--color-bg-card);
+}
+
+.trust-chip-green {
+  color: var(--color-accent-light);
+  border-color: color-mix(in srgb, var(--color-accent-light) 40%, var(--color-border));
+}
+
+.trust-chip-gold {
+  color: var(--color-gold);
+  border-color: color-mix(in srgb, var(--color-gold) 40%, var(--color-border));
+}
+
+/* Buy strip (sits inside the hero right column) */
+.product-buy {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  flex-wrap: wrap;
+  padding: 1rem 1.25rem;
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  margin: 0;
+}
+
+.product-buy-price {
+  display: flex;
+  align-items: baseline;
+  gap: 0.75rem;
+  min-width: 160px;
+}
+
+.product-buy-price .product-price {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 1.75rem;
+  letter-spacing: -0.02em;
+  color: var(--color-text);
+}
+
+.product-buy-sku {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  color: var(--color-text-muted);
+}
+
+.product-buy .product-form {
+  flex: 1 1 280px;
+  max-width: 28rem;
+}
+
+/* Chapters */
+.chapter {
+  display: grid;
+  gap: 1.5rem;
+  padding: 3.5rem 0;
+  border-top: 1px solid var(--color-border);
+  /* Scroll-reveal: the chapter fades + translates up when it enters
+     the viewport. A tiny IntersectionObserver in the PDP component
+     toggles `is-visible`. Without JS the chapter still renders fully. */
+  opacity: 1;
+  transform: translateY(0);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .chapter:not(.is-visible) {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+  .chapter {
+    transition:
+      opacity 0.6s cubic-bezier(0.2, 0.7, 0.2, 1),
+      transform 0.6s cubic-bezier(0.2, 0.7, 0.2, 1);
+  }
+}
+
+@media (min-width: 960px) {
+  .chapter {
+    grid-template-columns: 160px 1fr;
+    gap: 2.5rem;
+  }
+}
+
+.chapter-index {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  align-self: start;
+}
+
+.chapter-number {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 3rem;
+  line-height: 1;
+  color: var(--color-gold);
+  letter-spacing: -0.04em;
+}
+
+.chapter-label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.22em;
+  color: var(--color-text-muted);
+}
+
+.chapter-title {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: clamp(1.5rem, 3vw, 2.25rem);
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  color: var(--color-text);
+  margin: 0 0 1rem;
+}
+
+.chapter-title em {
+  font-style: italic;
+  color: var(--color-gold);
+}
+
+.chapter-body {
+  line-height: 1.7;
+  color: var(--color-text);
+  max-width: 62ch;
+  margin: 0 0 1.25rem;
+}
+
+.chapter-footnote {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  line-height: 1.6;
+  color: var(--color-text-muted);
+  max-width: 56ch;
+  margin: 1.25rem 0 0;
+}
+
+/* Teardown pins list */
+.teardown-pins {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 0.5rem;
+}
+
+.teardown-pins li {
+  display: grid;
+  grid-template-columns: 2rem 1fr auto;
+  align-items: baseline;
+  gap: 0.75rem;
+  padding: 0.65rem 0.85rem;
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+}
+
+.teardown-pin-ref {
+  color: var(--color-gold);
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.1rem;
+  line-height: 1;
+}
+
+.teardown-pin-part {
+  color: var(--color-text);
+  font-size: 0.9rem;
+}
+
+.teardown-pin-cost {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+
+/* Open source cards */
+.open-source-cards {
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+}
+
+.open-source-card {
+  display: block;
+  padding: 1rem 1.15rem;
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  transition: border-color 0.2s ease, background 0.2s ease;
+}
+
+.open-source-card:hover {
+  border-color: color-mix(in srgb, var(--color-gold) 40%, var(--color-border));
+  background: color-mix(in srgb, var(--color-gold) 4%, var(--color-bg-card));
+}
+
+.open-source-card-label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+  margin: 0 0 0.25rem;
+}
+
+.open-source-card-title {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 1.1rem;
+  color: var(--color-text);
+  margin: 0 0 0.5rem;
+}
+
+.open-source-card-sub {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  line-height: 1.6;
+  letter-spacing: 0.04em;
+  color: var(--color-text-muted);
+  margin: 0;
+}
+
+/* Spec table */
+.spec-table {
+  display: grid;
+  column-gap: 2.5rem;
+  row-gap: 0;
+  grid-template-columns: 1fr;
+  border-top: 1px solid var(--color-border);
+  margin: 0;
+}
+
+@media (min-width: 720px) {
+  .spec-table {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.spec-table > div {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 1rem;
+  padding: 0.7rem 0;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.spec-table dt {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+  white-space: nowrap;
+}
+
+.spec-table dd {
+  color: var(--color-text);
+  font-size: 0.9rem;
+  margin: 0;
+  text-align: right;
+}
+
 /* Firmware contribution split */
 .firmware-split {
   position: relative;

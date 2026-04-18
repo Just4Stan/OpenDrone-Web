@@ -19,9 +19,13 @@ const EUR_FORMATTER = new Intl.NumberFormat('en-IE', {
 export function FirmwareSplit({
   price,
   productTitle,
+  firmwareProject,
+  firmwareUrl,
 }: {
   price?: Pick<MoneyV2, 'amount' | 'currencyCode'> | null;
   productTitle: string;
+  firmwareProject?: string;
+  firmwareUrl?: string;
 }) {
   const amount = price ? parseFloat(price.amount) : 0;
   if (
@@ -64,9 +68,19 @@ export function FirmwareSplit({
       </div>
       <p className="firmware-split-tagline">
         {boardAmountText} for the board.{' '}
-        <strong>{contributionText} for the people</strong> who wrote the
-        firmware.
+        <strong>
+          {contributionText} for the {firmwareProject ?? 'firmware'} maintainers
+        </strong>
+        .
       </p>
+      {firmwareProject && firmwareUrl ? (
+        <p className="firmware-split-link">
+          Funded project:{' '}
+          <a href={firmwareUrl} target="_blank" rel="noopener noreferrer">
+            {firmwareProject} ↗
+          </a>
+        </p>
+      ) : null}
     </section>
   );
 }
