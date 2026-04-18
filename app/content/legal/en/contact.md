@@ -1,6 +1,6 @@
 ## Customer support
 
-Email [support@incutec.com](mailto:support@incutec.com). We respond within 2 business days. Include your order number if applicable.
+Email [stan@incutec.eu](mailto:stan@incutec.eu). We respond within 2 business days. Include your order number if applicable.
 
 ## Security issues
 

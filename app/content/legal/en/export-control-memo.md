@@ -2,7 +2,7 @@
 
 **Purpose:** Document that Incutec's products are not dual-use controlled under EU Reg 2021/821. Keep on file for customs/authorities.
 
-**Assessment Date:** [PLACEHOLDER]
+**Assessment Date:** 18 April 2026
 **Assessor:** Stan Coene, Managing Director
 
 ---
@@ -10,11 +10,13 @@
 ## Products Assessed
 
 | Product | Description | Frequency | Max power |
-|---------|-------------|------|-----------|
-| OpenDrone FC | MCU + IMU + OSD, 7–36 VDC | N/A | N/A |
-| OpenDrone ESC 4-in-1 | BLDC motor driver, 7–36 VDC | N/A | See product datasheet |
-| OpenDrone VTX | Analog/digital FPV video TX | 5.8 GHz ISM | See product datasheet |
-| OpenDrone ELRS RX | ExpressLRS radio link RX | 2.4 GHz / 868/915 MHz ISM | See product datasheet |
+|---------|-------------|-----------|-----------|
+| OpenFC-ECO / OpenFC | MCU + IMU + OSD, 7–36 VDC (2–6S) | 2.4 GHz (OpenFC full only, WiFi factory-disabled) | N/A |
+| OpenESC 20x20 | BLDC motor driver, 11.1–25.2 VDC | N/A | 35 A continuous |
+| OpenESC 30x30 | BLDC motor driver, 11.1–25.2 VDC | N/A | 120 A continuous |
+| OpenRX Lite | ExpressLRS RX | 2.4 GHz ISM | ~10 dBm (telemetry) |
+| OpenRX Mono | ExpressLRS RX | 868 MHz (EU) + 2.4 GHz ISM | ≤ 25 mW EIRP (EN 300 220 / EN 300 328 limits) |
+| OpenRX Gemini | ExpressLRS RX (true diversity, 2× RF chain) | 868 MHz (EU) + 2.4 GHz ISM | ≤ 25 mW EIRP per chain |
 
 ## Applicable Regulation
 
@@ -71,7 +73,7 @@ Despite non-classification, Incutec applies the following controls:
 
 Flanders: Departement Kanselarij en Buitenlandse Zaken, Dienst Controle Strategische Goederen (dCSG) — https://www.fdfa.be/en/csg
 
-**Signed:** Stan Coene, Managing Director Incutec BV · **Date:** [PLACEHOLDER]
+**Signed:** Stan Coene, Managing Director Incutec BV · **Date:** 18 April 2026
 
 ## Notes
 
@@ -261,7 +263,7 @@ EU Commission strongly recommends ICPs for potentially sensitive items. Incutec 
 - [ ] Add export control + sanctions compliance warranty to Shopify ToS
 - [ ] Block Russian/Belarusian/Iranian/Syrian/DPRK/Cuban/Crimea/DNR/LNR shipping in Shopify country dropdown
 - [ ] Implement end-user statement form for any B2B order >€5,000 to a non-Annex VIII country
-- [ ] Publish public Export Compliance Policy on incutec.com
+- [ ] Publish public Export Compliance Policy on incutec.eu
 
 ## 10. Summary Matrix
 

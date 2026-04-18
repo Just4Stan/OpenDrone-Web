@@ -1,8 +1,10 @@
 import {Link, useLocation} from 'react-router';
 import {
   LANG_COOKIE,
+  isLegalPath,
   localeFromPathname,
   swapLocale,
+  stripLocale,
   type Locale,
 } from '~/lib/i18n';
 
@@ -14,26 +16,28 @@ function writeLangCookie(locale: Locale) {
 }
 
 /**
- * Global NL/EN language toggle. On legal pages it navigates to the
- * equivalent URL in the other locale (`/en/warranty` ↔ `/nl/warranty`).
- * On pages without a locale prefix (home, products, …) it still writes
- * the preference cookie so the next legal page visit lands in the right
- * language.
+ * NL/EN language toggle for legal/regulatory pages. Renders nothing on
+ * non-legal routes — the rest of the site is English-only.
  *
- * The cookie is also refreshed on navigation so SSR always picks up the
- * latest choice.
+ * On a legal page it swaps `/en/slug` ↔ `/nl/slug` and refreshes the
+ * preference cookie so SSR picks the right language next time.
  */
 export function LangToggle({className}: {className?: string} = {}) {
   const location = useLocation();
+  if (!isLegalPath(location.pathname)) return null;
+
   const currentLocale = localeFromPathname(location.pathname);
   const active: Locale = currentLocale ?? 'en';
 
-  const nlHref = currentLocale
-    ? swapLocale(location.pathname, 'nl') + location.search
-    : location.pathname + location.search;
-  const enHref = currentLocale
-    ? swapLocale(location.pathname, 'en') + location.search
-    : location.pathname + location.search;
+  // For unprefixed legal URLs (/privacy, etc.), target the locale-prefixed
+  // form so clicks actually change the rendered language.
+  const ensurePrefix = (target: Locale) =>
+    currentLocale
+      ? swapLocale(location.pathname, target)
+      : '/' + target + stripLocale(location.pathname);
+
+  const nlHref = ensurePrefix('nl') + location.search;
+  const enHref = ensurePrefix('en') + location.search;
 
   return (
     <div

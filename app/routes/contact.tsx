@@ -1,14 +1,19 @@
 import {useLoaderData} from 'react-router';
 import type {Route} from './+types/contact';
 import {LegalPage} from '~/components/LegalPage';
-import {resolveLegalLoader} from '~/lib/i18n';
+import {legalLabels, resolveLegalLoader} from '~/lib/i18n';
 import {buildSeoMeta} from '~/lib/seo';
 
-export const meta: Route.MetaFunction = () =>
-  buildSeoMeta({
-    title: 'Contact',
-    description: 'How to reach Incutec BV / OpenDrone.',
+export const meta: Route.MetaFunction = ({data}) => {
+  const locale = data?.locale ?? 'en';
+  const labels = legalLabels('contact', locale);
+  return buildSeoMeta({
+    title: labels.title,
+    description: labels.description,
+    locale: locale === 'nl' ? 'nl_BE' : 'en_US',
+    alternateLocales: [locale === 'nl' ? 'en_US' : 'nl_BE'],
   });
+};
 
 export async function loader({request}: Route.LoaderArgs) {
   return resolveLegalLoader(request, 'contact', 'contact');
@@ -16,7 +21,13 @@ export async function loader({request}: Route.LoaderArgs) {
 
 export default function ContactRoute() {
   const {html, locale} = useLoaderData<typeof loader>();
+  const labels = legalLabels('contact', locale);
   return (
-    <LegalPage eyebrow="Company" title="Contact" html={html} locale={locale} />
+    <LegalPage
+      eyebrow={labels.eyebrow}
+      title={labels.title}
+      html={html}
+      locale={locale}
+    />
   );
 }

@@ -94,15 +94,25 @@ function CartEmpty({
 }) {
   const {close} = useAside();
   return (
-    <div hidden={hidden}>
-      <br />
-      <p>
-        Looks like you haven&rsquo;t added anything yet. Start with the full
-        catalog.
+    <div hidden={hidden} className="cart-empty">
+      <div className="cart-empty-icon" aria-hidden="true">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+          <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z" />
+          <line x1="3" y1="6" x2="21" y2="6" />
+          <path d="M16 10a4 4 0 01-8 0" />
+        </svg>
+      </div>
+      <h2 className="cart-empty-title">Your cart is empty</h2>
+      <p className="cart-empty-body">
+        Start with the full catalog — open-source hardware ready to fly.
       </p>
-      <br />
-      <Link to="/collections/all" onClick={close} prefetch="viewport">
-        Continue shopping →
+      <Link
+        to="/collections/all"
+        onClick={close}
+        prefetch="viewport"
+        className="hero-cta-primary"
+      >
+        Shop all
       </Link>
     </div>
   );

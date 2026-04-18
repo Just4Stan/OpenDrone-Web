@@ -17,10 +17,10 @@ export type CompanyIdentity = {
 
 const DEFAULTS: CompanyIdentity = {
   name: 'Incutec BV',
-  address: 'Stapelhuisstraat 13, 3000 Leuven, Belgium',
+  address: 'Stapelhuisstraat 15, 3000 Leuven, Belgium',
   kbo: '[pending]',
   vat: 'BE[pending]',
-  email: 'support@incutec.com',
+  email: 'stan@incutec.eu',
   tel: '[pending]',
 };
 

@@ -1,6 +1,6 @@
 ## Klantenservice
 
-Stuur een e-mail naar [support@incutec.com](mailto:support@incutec.com). Wij reageren binnen 2 werkdagen. Vermeld uw ordernummer indien van toepassing.
+Stuur een e-mail naar [stan@incutec.eu](mailto:stan@incutec.eu). Wij reageren binnen 2 werkdagen. Vermeld uw ordernummer indien van toepassing.
 
 ## Veiligheidsproblemen
 

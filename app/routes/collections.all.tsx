@@ -1,10 +1,13 @@
 import type {Route} from './+types/collections.all';
 import {useLoaderData} from 'react-router';
-import {getPaginationVariables, Image, Money} from '@shopify/hydrogen';
+import {getPaginationVariables} from '@shopify/hydrogen';
 import {PaginatedResourceSection} from '~/components/PaginatedResourceSection';
 import {ProductItem} from '~/components/ProductItem';
 import type {CollectionItemFragment} from 'storefrontapi.generated';
 import {buildSeoMeta} from '~/lib/seo';
+import {Breadcrumb} from '~/components/Breadcrumb';
+import {CollectionSort, resolveSort} from '~/components/CollectionSort';
+import {EmptyState} from '~/components/EmptyState';
 
 export const meta: Route.MetaFunction = () =>
   buildSeoMeta({
@@ -31,14 +34,29 @@ export async function loader(args: Route.LoaderArgs) {
 async function loadCriticalData({context, request}: Route.LoaderArgs) {
   const {storefront} = context;
   const paginationVariables = getPaginationVariables(request, {
-    pageBy: 8,
+    pageBy: 12,
   });
+  const url = new URL(request.url);
+  const sort = resolveSort(url.searchParams.get('sort'));
+
+  // Root products() uses ProductSortKeys which differs from
+  // ProductCollectionSortKeys — MANUAL/COLLECTION_DEFAULT → BEST_SELLING,
+  // CREATED → CREATED_AT.
+  const rootSortKey: 'BEST_SELLING' | 'CREATED_AT' | 'ID' | 'PRICE' | 'RELEVANCE' | 'TITLE' =
+    sort.sortKey === 'MANUAL' || sort.sortKey === 'COLLECTION_DEFAULT'
+      ? 'BEST_SELLING'
+      : sort.sortKey === 'CREATED'
+        ? 'CREATED_AT'
+        : sort.sortKey;
 
   const [{products}] = await Promise.all([
     storefront.query(CATALOG_QUERY, {
-      variables: {...paginationVariables},
+      variables: {
+        ...paginationVariables,
+        sortKey: rootSortKey,
+        reverse: Boolean(sort.reverse),
+      },
     }),
-    // Add other queries here, so that they are loaded in parallel
   ]);
   return {products};
 }
@@ -54,29 +72,51 @@ function loadDeferredData({context}: Route.LoaderArgs) {
 
 export default function Collection() {
   const {products} = useLoaderData<typeof loader>();
+  const hasProducts = products.nodes.length > 0;
 
   return (
     <div className="collection page-shell">
-      <header className="page-header">
-        <p className="page-eyebrow">Storefront</p>
-        <h1 className="page-title">All Products</h1>
-        <p className="page-description">
-          A complete view of the current OpenDrone catalog, from core flight
-          electronics to frame components.
-        </p>
+      <Breadcrumb items={[{label: 'Shop'}]} />
+      <header className="page-header collection-header">
+        <div>
+          <p className="page-eyebrow">Storefront</p>
+          <h1 className="page-title">All Products</h1>
+          <p className="page-description">
+            A complete view of the current OpenDrone catalog, from core flight
+            electronics to frame components.
+          </p>
+        </div>
+        {hasProducts && <CollectionSort />}
       </header>
-      <PaginatedResourceSection<CollectionItemFragment>
-        connection={products}
-        resourcesClassName="products-grid"
-      >
-        {({node: product, index}) => (
-          <ProductItem
-            key={product.id}
-            product={product}
-            loading={index < 8 ? 'eager' : undefined}
-          />
-        )}
-      </PaginatedResourceSection>
+      {hasProducts ? (
+        <PaginatedResourceSection<CollectionItemFragment>
+          connection={products}
+          resourcesClassName="products-grid"
+        >
+          {({node: product, index}) => (
+            <ProductItem
+              key={product.id}
+              product={product}
+              loading={index < 8 ? 'eager' : undefined}
+            />
+          )}
+        </PaginatedResourceSection>
+      ) : (
+        <EmptyState
+          title="Catalog is being stocked"
+          description="Products are not yet listed. Follow along on GitHub for hardware progress."
+          secondary={
+            <a
+              href="https://github.com/Just4Stan"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hero-cta-secondary"
+            >
+              GitHub
+            </a>
+          }
+        />
+      )}
     </div>
   );
 }
@@ -117,8 +157,17 @@ const CATALOG_QUERY = `#graphql
     $last: Int
     $startCursor: String
     $endCursor: String
+    $sortKey: ProductSortKeys
+    $reverse: Boolean
   ) @inContext(country: $country, language: $language) {
-    products(first: $first, last: $last, before: $startCursor, after: $endCursor) {
+    products(
+      first: $first,
+      last: $last,
+      before: $startCursor,
+      after: $endCursor,
+      sortKey: $sortKey,
+      reverse: $reverse
+    ) {
       nodes {
         ...CollectionItem
       }

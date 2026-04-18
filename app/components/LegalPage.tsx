@@ -1,16 +1,17 @@
 import {Link} from 'react-router';
-import type {Locale} from '~/lib/i18n';
+import {LEGAL_UI_STRINGS, type Locale} from '~/lib/i18n';
 
 /**
  * Shared layout for legal/compliance routes. Receives already-rendered
- * HTML for the active locale from the route loader. The NL/EN switch
- * lives in the global site header.
+ * HTML for the active locale from the route loader. Page chrome (title,
+ * eyebrow, back-link, "Last updated") localises via `locale`; the
+ * legal body HTML is rendered as-is from the per-locale Markdown file.
  */
 export function LegalPage({
   title,
   eyebrow = 'Legal',
   html,
-  locale,
+  locale = 'en',
   lastUpdated,
   children,
 }: {
@@ -21,11 +22,12 @@ export function LegalPage({
   lastUpdated?: string;
   children?: React.ReactNode;
 }) {
-  const overviewHref = locale ? `/${locale}/legal` : '/legal';
+  const overviewHref = `/${locale}/legal`;
+  const ui = LEGAL_UI_STRINGS[locale];
   return (
     <article className="legal-page page-shell">
       <div className="policy-back-link">
-        <Link to={overviewHref}>← Back to legal overview</Link>
+        <Link to={overviewHref}>{ui.backToOverview}</Link>
       </div>
       <header className="page-header">
         <p className="page-eyebrow">{eyebrow}</p>
@@ -42,7 +44,9 @@ export function LegalPage({
       {children ? <div className="rich-content legal-body">{children}</div> : null}
 
       {lastUpdated ? (
-        <p className="legal-last-updated">Last updated: {lastUpdated}</p>
+        <p className="legal-last-updated">
+          {ui.lastUpdated}: {lastUpdated}
+        </p>
       ) : null}
     </article>
   );

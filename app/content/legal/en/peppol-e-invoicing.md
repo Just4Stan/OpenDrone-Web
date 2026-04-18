@@ -97,7 +97,7 @@ Sources:
 ### Phase 1: At BV incorporation
 - [ ] Confirm VAT number activation
 - [ ] Open a receive-only Peppol access point until the main e-invoicing platform is live
-- [ ] Configure invoices@incutec.com and route to the accounting inbox
+- [ ] Route Peppol to stan@incutec.eu for now (split to invoices@ once infra is set up)
 - [ ] Test-receive a Peppol invoice
 
 ### Phase 2: Pre-launch

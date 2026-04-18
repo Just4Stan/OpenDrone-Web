@@ -170,12 +170,12 @@ export default function Homepage() {
             </Link>
             <Link to="/collections/all" className="pointer-events-auto text-center group">
               <p className="font-display font-bold group-hover:text-[var(--color-gold)] transition-colors" style={{fontSize: 'clamp(1.25rem, 2.5vw, 2.5rem)'}}>
-                Open<span className="text-[var(--color-gold)]">Frame</span>
+                Open<span className="text-[var(--color-gold)]">ESC</span>
               </p>
             </Link>
             <Link to="/collections/all" className="pointer-events-auto text-center group">
               <p className="font-display font-bold group-hover:text-[var(--color-gold)] transition-colors" style={{fontSize: 'clamp(1.25rem, 2.5vw, 2.5rem)'}}>
-                Open<span className="text-[var(--color-gold)]">ESC</span>
+                Open<span className="text-[var(--color-gold)]">RX</span>
               </p>
             </Link>
           </div>

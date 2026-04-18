@@ -10,14 +10,17 @@ import {
   type Locale,
 } from '~/lib/i18n';
 
-export const meta: Route.MetaFunction = () =>
-  buildSeoMeta({
-    title: 'Legal / Imprint',
-    description:
-      'Legal identification of the seller behind the OpenDrone webshop and an overview of all legal pages.',
-    locale: 'en_US',
-    alternateLocales: ['nl_BE'],
+export const meta: Route.MetaFunction = ({data}) => {
+  const isNl = data?.locale === 'nl';
+  return buildSeoMeta({
+    title: isNl ? 'Juridisch / Colofon' : 'Legal / Imprint',
+    description: isNl
+      ? 'Juridische identificatie van de verkoper achter de OpenDrone-webshop en overzicht van alle juridische pagina\u2019s.'
+      : 'Legal identification of the seller behind the OpenDrone webshop and an overview of all legal pages.',
+    locale: isNl ? 'nl_BE' : 'en_US',
+    alternateLocales: [isNl ? 'en_US' : 'nl_BE'],
   });
+};
 
 export async function loader({context, request}: Route.LoaderArgs) {
   const url = new URL(request.url);
@@ -89,7 +92,7 @@ const PAGES: PageEntry[] = [
   {
     slug: 'export-compliance',
     labelEn: 'Export Compliance',
-    labelNl: 'Export Compliance',
+    labelNl: 'Exportnaleving',
     descEn: 'Export control and sanctions policy.',
     descNl: 'Exportcontrole en sanctiebeleid.',
   },
@@ -103,7 +106,7 @@ const PAGES: PageEntry[] = [
   {
     slug: 'security',
     labelEn: 'Security',
-    labelNl: 'Security',
+    labelNl: 'Beveiliging',
     descEn: 'Coordinated vulnerability disclosure (CRA).',
     descNl: 'Gecoördineerde kwetsbaarheidsmelding (CRA).',
   },
@@ -126,7 +129,9 @@ export default function LegalIndex() {
   return (
     <div className="legal-index page-shell">
       <header className="page-header">
-        <p className="page-eyebrow">Legal · Imprint</p>
+        <p className="page-eyebrow">
+          {isNl ? 'Juridisch · Colofon' : 'Legal · Imprint'}
+        </p>
         <h1 className="page-title">{pageTitle}</h1>
         <p className="page-description">{intro}</p>
       </header>

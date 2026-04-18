@@ -12,13 +12,13 @@
 | | |
 |---|---|
 | Naam | Incutec BV |
-| Zetel | Stapelhuisstraat 13, 3000 Leuven |
-| Ondernemingsnummer | [PLACEHOLDER] |
-| BTW-nummer | BE0[PLACEHOLDER] |
-| E-mail | [PLACEHOLDER] |
-| Telefoon | [PLACEHOLDER] |
-| Website | incutec.com |
-| IBAN | [PLACEHOLDER] |
+| Zetel | Stapelhuisstraat 15, 3000 Leuven |
+| Ondernemingsnummer | wordt gepubliceerd na oprichting (KBO) |
+| BTW-nummer | wordt gepubliceerd na oprichting |
+| E-mail | stan@incutec.eu |
+| Telefoon | wordt gepubliceerd na oprichting |
+| Website | incutec.eu |
+| IBAN | wordt gepubliceerd na oprichting |
 
 ### Artikel 2: Toepassingsgebied
 
@@ -120,7 +120,7 @@
 
 ### Artikel 12: Persoonsgegevens
 
-12.1. Incutec BV verwerkt persoonsgegevens in overeenstemming met de Algemene Verordening Gegevensbescherming (AVG/GDPR). Zie het Privacybeleid op incutec.com/privacy.
+12.1. Incutec BV verwerkt persoonsgegevens in overeenstemming met de Algemene Verordening Gegevensbescherming (AVG/GDPR). Zie het Privacybeleid op incutec.eu/privacy.
 
 ### Artikel 13: Klachten
 
@@ -128,7 +128,7 @@
 
 13.2. Incutec BV reageert binnen **14 dagen** op klachten.
 
-13.3. Indien de consument van oordeel is dat een product een veiligheidsrisico vormt, kan dit gemeld worden via support@incutec.com. Incutec BV onderzoekt elke veiligheidsmelding en neemt zo nodig corrigerende maatregelen.
+13.3. Indien de consument van oordeel is dat een product een veiligheidsrisico vormt, kan dit gemeld worden via stan@incutec.eu. Incutec BV onderzoekt elke veiligheidsmelding en neemt zo nodig corrigerende maatregelen.
 
 ### Artikel 14: Geschillen
 
@@ -202,7 +202,7 @@ Incutec is "manufacturer" under GPSR. For every product listing the webshop must
 
 **GPSR Pre-Sale Listing Checklist (Art. 19 GPSR):**
 - [ ] Manufacturer name + registered trade name + postal address + electronic contact (per product page OR global "manufacturer info" link)
-- [ ] For Incutec products: "Manufacturer: Incutec BV, Stapelhuisstraat 13, 3000 Leuven, Belgium: support@incutec.com"
+- [ ] For Incutec products: "Manufacturer: Incutec BV, Stapelhuisstraat 15, 3000 Leuven, Belgium: stan@incutec.eu"
 - [ ] If selling 3rd-party products where Incutec is importer: also show "Importer: Incutec BV, [address]"
 - [ ] Product identification elements: type, batch, serial or model number (AND product image)
 - [ ] Warnings and safety information in the language of the Member State where offered (NL/FR for BE, DE for DE, etc.)

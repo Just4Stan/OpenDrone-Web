@@ -85,6 +85,7 @@ const STRIP_SECTIONS = [
   'Sources',
   'Notes',
   'Internal notes',
+  'Incutec-Specific Analysis',
 ];
 
 function escapeHtml(s: string) {

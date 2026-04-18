@@ -25,7 +25,7 @@ function loadModel(url: string): Promise<THREE.Group> {
   });
 }
 
-function createCarbonFiberCanvas(size = 64) {
+function createCarbonFiberCanvas(size = 256) {
   const canvas = document.createElement('canvas');
   canvas.width = size;
   canvas.height = size;
@@ -76,12 +76,12 @@ function createCarbonFiberTextures(canvas: HTMLCanvasElement) {
   colorMap.wrapS = colorMap.wrapT = THREE.RepeatWrapping;
   colorMap.repeat.set(2.8, 2.8);
   colorMap.colorSpace = THREE.SRGBColorSpace;
-  colorMap.anisotropy = 4;
+  colorMap.anisotropy = 8;
 
   const detailMap = new THREE.CanvasTexture(canvas);
   detailMap.wrapS = detailMap.wrapT = THREE.RepeatWrapping;
   detailMap.repeat.copy(colorMap.repeat);
-  detailMap.anisotropy = 4;
+  detailMap.anisotropy = 8;
 
   return {colorMap, detailMap};
 }
@@ -243,7 +243,9 @@ function DroneAssembly({scrollRef}: {scrollRef: React.RefObject<number>}) {
           bumpScale: 0.01,
           transparent: true,
           opacity: 0.62,
-          depthWrite: false,
+          // depthWrite stays true to avoid the per-frame z-sort flicker
+          // ("shimmering fire" look) when rotating the transparent frame.
+          depthWrite: true,
         });
         return m;
       };
@@ -409,7 +411,6 @@ function DroneAssembly({scrollRef}: {scrollRef: React.RefObject<number>}) {
     for (const mat of frameMats.current) {
       if (!mat?.transparent) continue;
       mat.opacity = flyOut < 0.5 ? THREE.MathUtils.lerp(0.62, 0.9, frameOpacity) : 0.9;
-      mat.depthWrite = flyOut > 0.8;
       const brightness = THREE.MathUtils.lerp(0x8a, 0xb8, flyOut);
       mat.color.setRGB(brightness / 255, brightness / 255, brightness / 255);
     }
@@ -661,8 +662,12 @@ export function HeroScene() {
         camera={{position: [0, 0.15, 0.7], fov: 40}}
         style={{background: 'transparent'}}
         frameloop="demand"
-        dpr={[0.75, 1]}
-        gl={{antialias: false, alpha: true, powerPreference: 'low-power'}}
+        dpr={[1, 2]}
+        gl={{
+          antialias: true,
+          alpha: true,
+          powerPreference: 'high-performance',
+        }}
         onCreated={({camera, gl}) => {
           camera.lookAt(0, 0, 0);
           gl.toneMappingExposure = 0.95;

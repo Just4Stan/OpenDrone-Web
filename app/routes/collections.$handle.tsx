@@ -6,6 +6,9 @@ import {redirectIfHandleIsLocalized} from '~/lib/redirect';
 import {ProductItem} from '~/components/ProductItem';
 import type {ProductItemFragment} from 'storefrontapi.generated';
 import {buildSeoMeta} from '~/lib/seo';
+import {Breadcrumb} from '~/components/Breadcrumb';
+import {CollectionSort, resolveSort} from '~/components/CollectionSort';
+import {EmptyState} from '~/components/EmptyState';
 
 export const meta: Route.MetaFunction = ({data}) =>
   buildSeoMeta({
@@ -36,17 +39,24 @@ async function loadCriticalData({context, params, request}: Route.LoaderArgs) {
   const {handle} = params;
   const {storefront} = context;
   const paginationVariables = getPaginationVariables(request, {
-    pageBy: 8,
+    pageBy: 12,
   });
 
   if (!handle) {
     throw redirect('/collections');
   }
 
+  const url = new URL(request.url);
+  const sort = resolveSort(url.searchParams.get('sort'));
+
   const [{collection}] = await Promise.all([
     storefront.query(COLLECTION_QUERY, {
-      variables: {handle, ...paginationVariables},
-      // Add other queries here, so that they are loaded in parallel
+      variables: {
+        handle,
+        ...paginationVariables,
+        sortKey: sort.sortKey,
+        reverse: Boolean(sort.reverse),
+      },
     }),
   ]);
 
@@ -75,28 +85,47 @@ function loadDeferredData({context}: Route.LoaderArgs) {
 
 export default function Collection() {
   const {collection} = useLoaderData<typeof loader>();
+  const hasProducts = collection.products.nodes.length > 0;
 
   return (
     <div className="collection page-shell">
-      <header className="page-header">
-        <p className="page-eyebrow">Collection</p>
-        <h1 className="page-title">{collection.title}</h1>
-        {collection.description ? (
-          <p className="page-description">{collection.description}</p>
-        ) : null}
+      <Breadcrumb
+        items={[
+          {label: 'Shop', to: '/collections/all'},
+          {label: collection.title},
+        ]}
+      />
+      <header className="page-header collection-header">
+        <div>
+          <p className="page-eyebrow">Collection</p>
+          <h1 className="page-title">{collection.title}</h1>
+          {collection.description ? (
+            <p className="page-description">{collection.description}</p>
+          ) : null}
+        </div>
+        {hasProducts && <CollectionSort />}
       </header>
-      <PaginatedResourceSection<ProductItemFragment>
-        connection={collection.products}
-        resourcesClassName="products-grid"
-      >
-        {({node: product, index}) => (
-          <ProductItem
-            key={product.id}
-            product={product}
-            loading={index < 8 ? 'eager' : undefined}
-          />
-        )}
-      </PaginatedResourceSection>
+      {hasProducts ? (
+        <PaginatedResourceSection<ProductItemFragment>
+          connection={collection.products}
+          resourcesClassName="products-grid"
+        >
+          {({node: product, index}) => (
+            <ProductItem
+              key={product.id}
+              product={product}
+              loading={index < 8 ? 'eager' : undefined}
+            />
+          )}
+        </PaginatedResourceSection>
+      ) : (
+        <EmptyState
+          title="No products yet"
+          description="This collection is empty. Check back soon or browse the full catalog."
+          ctaLabel="Shop all"
+          ctaTo="/collections/all"
+        />
+      )}
       <Analytics.CollectionView
         data={{
           collection: {
@@ -147,6 +176,8 @@ const COLLECTION_QUERY = `#graphql
     $last: Int
     $startCursor: String
     $endCursor: String
+    $sortKey: ProductCollectionSortKeys
+    $reverse: Boolean
   ) @inContext(country: $country, language: $language) {
     collection(handle: $handle) {
       id
@@ -157,7 +188,9 @@ const COLLECTION_QUERY = `#graphql
         first: $first,
         last: $last,
         before: $startCursor,
-        after: $endCursor
+        after: $endCursor,
+        sortKey: $sortKey,
+        reverse: $reverse
       ) {
         nodes {
           ...ProductItem
