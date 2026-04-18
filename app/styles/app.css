@@ -552,7 +552,10 @@ button.reset {
 }
 
 .products-grid {
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  /* auto-fill keeps tracks at the min size even with a single item
+     (auto-fit would stretch a lone card to the full row). */
+  grid-template-columns: repeat(auto-fill, minmax(220px, 320px));
+  justify-content: start;
 }
 
 .collections-grid,
@@ -933,6 +936,41 @@ button.reset {
 .collection-sort select:focus-visible {
   outline: 1px solid var(--color-gold);
   outline-offset: 2px;
+}
+
+/* Category chips */
+.category-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 0 0 1.5rem;
+}
+
+.category-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.45rem 0.85rem;
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  color: var(--color-text-muted);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: color 0.2s ease, border-color 0.2s ease, background 0.2s ease;
+}
+
+.category-chip:hover {
+  color: var(--color-text);
+  border-color: color-mix(in srgb, var(--color-gold) 40%, var(--color-border));
+}
+
+.category-chip.is-active {
+  color: var(--color-bg);
+  background: var(--color-gold);
+  border-color: var(--color-gold);
 }
 
 /* Empty state */
