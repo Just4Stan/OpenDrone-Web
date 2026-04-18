@@ -3,6 +3,7 @@ import {useRef, useState, useEffect, useCallback} from 'react';
 import type {Group} from 'three';
 import * as THREE from 'three';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
+import {DRACOLoader} from 'three/addons/loaders/DRACOLoader.js';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 
 function useScrollProgress() {
@@ -19,9 +20,19 @@ function useScrollProgress() {
   return progressRef;
 }
 
+// Shared Draco decoder — three bundles the decoder on jsDelivr; the wasm
+// is cached by the browser after the first drone part loads.
+const dracoLoader = new DRACOLoader();
+dracoLoader.setDecoderPath(
+  'https://www.gstatic.com/draco/versioned/decoders/1.5.7/',
+);
+dracoLoader.setDecoderConfig({type: 'js'});
+
 function loadModel(url: string): Promise<THREE.Group> {
   return new Promise((resolve, reject) => {
-    new GLTFLoader().load(url, (gltf) => resolve(gltf.scene), undefined, reject);
+    const loader = new GLTFLoader();
+    loader.setDRACOLoader(dracoLoader);
+    loader.load(url, (gltf) => resolve(gltf.scene), undefined, reject);
   });
 }
 
