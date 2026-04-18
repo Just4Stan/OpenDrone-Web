@@ -14,6 +14,7 @@ import {ProductForm} from '~/components/ProductForm';
 import {ProductCompliance} from '~/components/ProductCompliance';
 import {Breadcrumb} from '~/components/Breadcrumb';
 import {RelatedProducts} from '~/components/RelatedProducts';
+import {FirmwareSplit} from '~/components/FirmwareSplit';
 import {redirectIfHandleIsLocalized} from '~/lib/redirect';
 import {buildSeoMeta} from '~/lib/seo';
 import {getCompanyIdentity} from '~/lib/company';
@@ -193,6 +194,11 @@ export default function Product() {
               </div>
             ))}
           </dl>
+
+          <FirmwareSplit
+            price={selectedVariant?.price}
+            productTitle={product.title}
+          />
 
           <ProductCompliance
             product={{

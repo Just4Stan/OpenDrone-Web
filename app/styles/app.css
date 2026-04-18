@@ -938,6 +938,70 @@ button.reset {
   outline-offset: 2px;
 }
 
+/* Firmware contribution split */
+.firmware-split {
+  position: relative;
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  padding: 1.25rem 1.4rem;
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--color-accent) 10%, var(--color-bg-card)),
+      var(--color-bg-card) 75%
+    );
+}
+
+.firmware-split-eyebrow {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  color: var(--color-gold);
+  margin: 0 0 0.9rem;
+}
+
+.firmware-split-eyebrow span {
+  color: var(--color-text-muted);
+}
+
+.firmware-split-amounts {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.9rem;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: clamp(2rem, 5vw, 3rem);
+  letter-spacing: -0.01em;
+  line-height: 1;
+}
+
+.firmware-split-board {
+  color: var(--color-gold);
+}
+
+.firmware-split-plus {
+  color: var(--color-text-muted);
+  font-weight: 500;
+}
+
+.firmware-split-contrib {
+  color: var(--color-accent-light);
+}
+
+.firmware-split-tagline {
+  font-size: 0.95rem;
+  line-height: 1.45;
+  color: var(--color-text);
+  margin: 0;
+}
+
+.firmware-split-tagline strong {
+  color: var(--color-accent-light);
+  font-weight: 600;
+}
+
 /* Category chips */
 .category-chips {
   display: flex;
