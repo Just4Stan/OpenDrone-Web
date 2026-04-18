@@ -454,7 +454,10 @@ button.reset {
 }
 
 .page-shell {
-  width: min(1120px, calc(100% - 3rem));
+  /* Most pages run 1440px max; product and catalog override for wider
+     editorial layouts. Legal-page text sets its own max-width via
+     .rich-content so long line lengths stay readable. */
+  width: min(1440px, calc(100% - 2.5rem));
   margin: 0 auto;
   padding: 2.5rem 0 4rem;
 }
@@ -942,10 +945,10 @@ button.reset {
    Product page — editorial layout
    ============================================ */
 
-/* Widen the product page shell — the editorial chapters want horizontal
-   room that the default .page-shell (1120px) doesn't give. */
+/* Product page uses the same container width as the rest of the site
+   for a consistent gutter. */
 .product-page {
-  width: min(1560px, calc(100% - 3rem));
+  width: min(1440px, calc(100% - 3rem));
   margin: 0 auto;
   padding: 2rem 0 4rem;
 }
@@ -2319,7 +2322,7 @@ button.reset {
 
 @media (min-width: 768px) {
   .page-shell {
-    width: min(1120px, calc(100% - 5rem));
+    width: min(1440px, calc(100% - 3rem));
   }
 
   .account-form-grid,
@@ -2348,7 +2351,7 @@ button.reset {
 
 @media (max-width: 767px) {
   .page-shell {
-    width: min(1120px, calc(100% - 2rem));
+    width: calc(100% - 1.5rem);
     padding: 1.75rem 0 3rem;
   }
 
