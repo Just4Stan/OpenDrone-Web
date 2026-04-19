@@ -18,15 +18,16 @@ interface HeaderProps {
 
 type Viewport = 'desktop' | 'mobile';
 
-// Product categories shown as the secondary header row. They map to
-// Shopify product_type filters — set the Product Type on each product
-// in Shopify admin so the chips on /collections/all filter correctly.
-const CATEGORY_LINKS = [
-  {label: 'OpenFC', type: 'FC'},
-  {label: 'OpenFrame', type: 'Frame'},
-  {label: 'OpenESC', type: 'ESC'},
-  {label: 'OpenRX', type: 'RX'},
-  {label: 'Accessories', type: 'Accessories'},
+// Category links jump straight to the current PDP for each family.
+// OpenStack + Accessories fall back to the full catalog until those
+// Shopify products exist.
+const CATEGORY_LINKS: Array<{label: string; to: string}> = [
+  {label: 'OpenFC', to: '/products/openfc'},
+  {label: 'OpenFrame', to: '/products/openframe'},
+  {label: 'OpenESC', to: '/products/openesc'},
+  {label: 'OpenRX', to: '/products/openrx'},
+  {label: 'OpenStack', to: '/products/openstack'},
+  {label: 'Accessories', to: '/collections/all'},
 ];
 
 export function Header({
@@ -45,34 +46,35 @@ export function Header({
           to="/"
           end
           className="site-header-logo"
+          aria-label="OpenDrone"
         >
-          Open<span>Drone</span>
+          <img
+            src="/opendrone-wordmark-400.png"
+            alt="OpenDrone"
+            width={400}
+            height={72}
+            decoding="async"
+          />
         </NavLink>
 
-        {/* Center: primary nav */}
+        {/* Center: primary nav + gold category links on the same row */}
         <HeaderMenu
           menu={menu}
           viewport="desktop"
           primaryDomainUrl={header.shop.primaryDomain.url}
           publicStoreDomain={publicStoreDomain}
         />
+        <nav className="site-header-categories" aria-label="Product categories">
+          {CATEGORY_LINKS.map((cat) => (
+            <NavLink key={cat.to} prefetch="intent" to={cat.to}>
+              {cat.label}
+            </NavLink>
+          ))}
+        </nav>
 
         {/* Right: actions */}
         <HeaderCtas isLoggedIn={isLoggedIn} cart={cart} />
       </div>
-      {/* Secondary: category subrow — gold mono, also drives the chip
-          filter on /collections/all. Hidden on mobile (menu covers it). */}
-      <nav className="site-header-categories" aria-label="Product categories">
-        {CATEGORY_LINKS.map((cat) => (
-          <NavLink
-            key={cat.type}
-            prefetch="intent"
-            to={`/collections/all?type=${encodeURIComponent(cat.type)}`}
-          >
-            {cat.label}
-          </NavLink>
-        ))}
-      </nav>
     </header>
   );
 }
@@ -113,12 +115,18 @@ export function HeaderMenu({
       )}
       {(menu || FALLBACK_HEADER_MENU).items.map((item) => {
         if (!item.url) return null;
-        const url =
+        let url =
           item.url.includes('myshopify.com') ||
           item.url.includes(publicStoreDomain) ||
           item.url.includes(primaryDomainUrl)
             ? new URL(item.url).pathname
             : item.url;
+        // Rewrite Shopify Pages handles to our local routes when one
+        // exists. Shopify's main menu defaults Contact to /pages/contact
+        // even though we own a local /contact route with the support
+        // widget; without this rewrite the menu link lands on an empty
+        // Shopify Page.
+        url = LOCAL_PAGE_REWRITES[url] ?? url;
         const className = isMobile
           ? 'text-sm font-mono uppercase tracking-wider text-[var(--color-text-muted)] hover:text-[var(--color-text)] transition-colors'
           : 'font-mono text-[11px] uppercase tracking-[0.15em] transition-colors text-[var(--color-text-muted)] hover:text-[var(--color-text)]';
@@ -267,6 +275,10 @@ function CartBanner() {
   const cart = useOptimisticCart(originalCart);
   return <CartBadge count={cart?.totalQuantity ?? 0} />;
 }
+
+const LOCAL_PAGE_REWRITES: Record<string, string> = {
+  '/pages/contact': '/contact',
+};
 
 const FALLBACK_HEADER_MENU = {
   id: 'gid://shopify/Menu/199655587896',

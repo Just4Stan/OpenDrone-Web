@@ -20,7 +20,7 @@ const DEFAULTS: CompanyIdentity = {
   address: 'Stapelhuisstraat 15, 3000 Leuven, Belgium',
   kbo: '[pending]',
   vat: 'BE[pending]',
-  email: 'stan@incutec.eu',
+  email: 'contact@opendrone.be',
   tel: '[pending]',
 };
 

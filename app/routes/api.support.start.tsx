@@ -1,0 +1,216 @@
+import {data} from 'react-router';
+import type {Route} from './+types/api.support.start';
+import {SUPPORT_CUSTOMER_PREFILL_QUERY} from '~/graphql/customer-account/SupportPrefillQuery';
+import {createSupportThread} from '~/lib/support/discord';
+import {sendResumeLink} from '~/lib/support/email';
+import {
+  buildResumeUrl,
+  signResumeToken,
+} from '~/lib/support/resume-token';
+import {
+  buildSupportSetCookie,
+  randomId,
+  signTicket,
+  type SupportTicket,
+} from '~/lib/support/session';
+import {verifyTurnstile} from '~/lib/support/turnstile';
+import {extractAttachments} from '~/lib/support/uploads';
+import {checkRateLimit, clientIp} from '~/lib/rate-limit';
+
+type StartResult =
+  | {ok: true; ticketId: string}
+  | {
+      ok: false;
+      message: string;
+      field?: 'message' | 'turnstile' | 'files';
+      code?: 'signin-required';
+    };
+
+export async function action({request, context}: Route.ActionArgs) {
+  if (request.method !== 'POST') {
+    return data<StartResult>({ok: false, message: 'Method not allowed.'}, {status: 405});
+  }
+
+  const ip = clientIp(request);
+  const ipLimit = checkRateLimit(`support-start:ip:${ip}`, 3, 60 * 60 * 1000);
+  if (!ipLimit.allowed) {
+    return data<StartResult>(
+      {
+        ok: false,
+        message:
+          'Too many tickets from this network — try again in a bit, or join us on Discord.',
+      },
+      {
+        status: 429,
+        headers: {'Retry-After': String(ipLimit.resetInSeconds)},
+      },
+    );
+  }
+
+  // Opening a ticket requires a Shopify customer account session. Name +
+  // email come from the authenticated customer record, not the form —
+  // that way we always post to Discord with a verified identity and a
+  // customerId staff can click back to the order history. The old anon
+  // flow let random visitors trickle in; gating here keeps the forum
+  // channel signal-heavy.
+  const env = context.env;
+  let customer: {id: string; name: string; email: string} | null = null;
+  try {
+    const {data: prefill} = await context.customerAccount.query(
+      SUPPORT_CUSTOMER_PREFILL_QUERY,
+    );
+    const c = prefill?.customer;
+    const emailAddr = c?.emailAddress?.emailAddress;
+    if (c?.id && emailAddr) {
+      const name = [c.firstName, c.lastName].filter(Boolean).join(' ').trim();
+      customer = {
+        id: c.id,
+        name: name || emailAddr.split('@')[0],
+        email: emailAddr.toLowerCase(),
+      };
+    }
+  } catch {
+    // not signed in / scope missing — fall through to 401 below
+  }
+  if (!customer) {
+    return data<StartResult>(
+      {
+        ok: false,
+        message: 'Sign in to open a support ticket.',
+        code: 'signin-required',
+      },
+      {status: 401},
+    );
+  }
+
+  const form = await request.formData();
+  const message = String(form.get('message') ?? '').trim();
+  const turnstileToken = String(form.get('cf-turnstile-response') ?? '');
+  const subject = String(form.get('subject') ?? '').trim();
+  const honeypot = String(form.get('website') ?? '');
+
+  if (honeypot) {
+    return data<StartResult>({ok: true, ticketId: 'drop'});
+  }
+  if (!message || message.length < 5 || message.length > 4000) {
+    return data<StartResult>(
+      {
+        ok: false,
+        message: 'Tell us a bit more (5–4000 chars).',
+        field: 'message',
+      },
+      {status: 400},
+    );
+  }
+
+  const ua = request.headers.get('User-Agent') ?? undefined;
+
+  const turnstile = await verifyTurnstile(env, turnstileToken, ip);
+  if (!turnstile.ok) {
+    return data<StartResult>(
+      {
+        ok: false,
+        message: 'Could not verify you are human. Refresh and try again.',
+        field: 'turnstile',
+      },
+      {status: 400},
+    );
+  }
+
+  const attachments = await extractAttachments(form);
+  if (!attachments.ok) {
+    return data<StartResult>(
+      {ok: false, message: attachments.message, field: 'files'},
+      {status: 400},
+    );
+  }
+
+  const {id: verifiedCustomerId, name, email} = customer;
+
+  try {
+    const thread = await createSupportThread(env, {
+      title: subject
+        ? `[${name}] ${subject}`
+        : `[${name}] ${message.slice(0, 50)}${message.length > 50 ? '…' : ''}`,
+      userName: name,
+      userEmail: email,
+      firstMessage: message,
+      userAgent: ua,
+      ipHint: ip && ip !== 'unknown' ? anonymizeIp(ip) : undefined,
+      files: attachments.files,
+      customerId: verifiedCustomerId,
+    });
+
+    const ticket: SupportTicket = {
+      v: 1,
+      tid: thread.id,
+      uid: randomId(),
+      name: name.slice(0, 80),
+      email,
+      createdAt: Math.floor(Date.now() / 1000),
+    };
+    const cookie = await signTicket(env, ticket);
+
+    // Magic-link resume — fire-and-forget so the API response isn't blocked
+    // by Resend latency. The email contains a link that survives cookie
+    // wipes / device changes.
+    const ticketSubject = subject || message.slice(0, 60);
+    const emailJob = (async () => {
+      try {
+        const token = await signResumeToken(env, {
+          tid: thread.id,
+          uid: ticket.uid,
+          email,
+          name: ticket.name,
+        });
+        const baseUrl = new URL(request.url).origin;
+        const resumeUrl = buildResumeUrl(baseUrl, token);
+        await sendResumeLink(env, {
+          to: email,
+          name,
+          subject: ticketSubject,
+          resumeUrl,
+        });
+      } catch (err) {
+        console.warn('[support/start] resume-email failed', err);
+      }
+    })();
+    if (context.waitUntil) context.waitUntil(emailJob);
+    else void emailJob;
+
+    return data<StartResult>(
+      {ok: true, ticketId: ticket.uid},
+      {
+        status: 200,
+        headers: {'Set-Cookie': buildSupportSetCookie(cookie)},
+      },
+    );
+  } catch (err) {
+    console.error('[support/start] failed', err);
+    return data<StartResult>(
+      {
+        ok: false,
+        message:
+          'Could not reach support right now. Try again in a moment or join us on Discord.',
+      },
+      {status: 502},
+    );
+  }
+}
+
+export function loader() {
+  return new Response(null, {status: 404});
+}
+
+// IPv4: drop last octet. IPv6: drop last 80 bits. Keeps enough signal for
+// abuse triage without storing a full address in the forum post.
+function anonymizeIp(ip: string): string {
+  if (ip.includes(':')) {
+    const parts = ip.split(':');
+    return parts.slice(0, 3).join(':') + '::/48';
+  }
+  const parts = ip.split('.');
+  if (parts.length === 4) return `${parts[0]}.${parts[1]}.${parts[2]}.x`;
+  return 'unknown';
+}
+

@@ -1,6 +1,6 @@
 ## Customer support
 
-Email [stan@incutec.eu](mailto:stan@incutec.eu). We respond within 2 business days. Include your order number if applicable.
+Call [+32 491 97 83 61](tel:+32000000000) or email [contact@opendrone.be](mailto:contact@opendrone.be). We respond within 2 business days. Include your order number if applicable.
 
 ## Security issues
 

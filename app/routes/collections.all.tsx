@@ -5,7 +5,6 @@ import {PaginatedResourceSection} from '~/components/PaginatedResourceSection';
 import {ProductItem} from '~/components/ProductItem';
 import type {CollectionItemFragment} from 'storefrontapi.generated';
 import {buildSeoMeta} from '~/lib/seo';
-import {Breadcrumb} from '~/components/Breadcrumb';
 import {CollectionSort, resolveSort} from '~/components/CollectionSort';
 import {CategoryChips} from '~/components/CategoryChips';
 import {EmptyState} from '~/components/EmptyState';
@@ -77,16 +76,9 @@ export default function Collection() {
 
   return (
     <div className="collection page-shell">
-      <Breadcrumb items={[{label: 'Shop'}]} />
       <header className="page-header collection-header">
-        <div>
-          <p className="page-eyebrow">Storefront</p>
-          <h1 className="page-title">All Products</h1>
-          <p className="page-description">
-            A complete view of the current OpenDrone catalog, from core flight
-            electronics to frame components.
-          </p>
-        </div>
+        <p className="page-eyebrow">Shop · Storefront</p>
+        <h1 className="page-title">All Products</h1>
         {hasProducts && <CollectionSort />}
       </header>
       {types.length > 0 && <CategoryChips types={types} />}

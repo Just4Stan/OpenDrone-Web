@@ -302,7 +302,12 @@ export async function resolveLegalLoader(
   request: Request,
   legalSlug: LegalSlug,
   urlSlug: string,
-): Promise<{html: string; locale: Locale}> {
+): Promise<{
+  html: string;
+  locale: Locale;
+  canonicalUrl: string;
+  hreflang: Array<{lang: string; href: string}>;
+}> {
   const url = new URL(request.url);
   const segments = url.pathname.split('/').filter(Boolean);
   const first = segments[0];
@@ -310,7 +315,13 @@ export async function resolveLegalLoader(
   if (isLocale(first)) {
     // Already locale-prefixed; render directly.
     const html = loadLegal(legalSlug, first);
-    return {html, locale: first};
+    const canonicalUrl = `${url.origin}/${first}/${urlSlug}`;
+    const hreflang = [
+      {lang: 'en', href: `${url.origin}/en/${urlSlug}`},
+      {lang: 'nl', href: `${url.origin}/nl/${urlSlug}`},
+      {lang: 'x-default', href: `${url.origin}/en/${urlSlug}`},
+    ];
+    return {html, locale: first, canonicalUrl, hreflang};
   }
 
   // Unprefixed legacy URL — redirect to the canonical locale URL and

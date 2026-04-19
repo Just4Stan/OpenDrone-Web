@@ -15,7 +15,7 @@
 | Naam | Incutec BV |
 | Zetel | Stapelhuisstraat 15, 3000 Leuven |
 | Ondernemingsnummer | wordt gepubliceerd na oprichting (KBO) |
-| E-mail | stan@incutec.eu |
+| E-mail | contact@opendrone.be |
 
 Incutec BV heeft geen Functionaris voor Gegevensbescherming (DPO) aangesteld aangezien dit niet verplicht is voor de huidige activiteiten (Art. 37 AVG).
 
@@ -78,7 +78,7 @@ U heeft het recht om:
 - **Overdraagbaarheid** van uw gegevens te vragen (Art. 20)
 - Uw **toestemming** in te trekken (Art. 7.3)
 
-Verzoeken kunt u richten aan: stan@incutec.eu
+Verzoeken kunt u richten aan: privacy@opendrone.be
 Wij reageren binnen **30 dagen** op uw verzoek.
 
 ### 7. Klachten

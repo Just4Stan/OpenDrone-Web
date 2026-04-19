@@ -2,11 +2,13 @@ import {NavLink} from 'react-router';
 import type {HeaderQuery} from 'storefrontapi.generated';
 import type {CompanyIdentity} from '~/lib/company';
 import {CompanyFooterBlock} from '~/components/CompanyFooterBlock';
+import {NewsletterSignup} from '~/components/NewsletterSignup';
 
 interface FooterProps {
   header: HeaderQuery;
   publicStoreDomain: string;
   company: CompanyIdentity;
+  turnstileSiteKey?: string | null;
 }
 
 const SHOP_LINKS: Array<{to: string; label: string}> = [
@@ -21,6 +23,8 @@ const OPEN_SOURCE_LINKS: Array<{href: string; label: string}> = [
 ];
 
 const COMPANY_LINKS: Array<{to: string; label: string}> = [
+  {to: '/open-source', label: 'How we open source'},
+  {to: '/firmware-partners', label: 'Firmware partners'},
   {to: '/legal', label: 'Legal / Imprint'},
   {to: '/contact', label: 'Contact'},
   {to: '/security', label: 'Security'},
@@ -64,10 +68,16 @@ function FooterNavLink({to, children}: {to: string; children: React.ReactNode}) 
   );
 }
 
-export function Footer({company}: FooterProps) {
+export function Footer({company, turnstileSiteKey}: FooterProps) {
   return (
     <footer className="mt-auto border-t border-[var(--color-border)]">
-      <div className="max-w-6xl mx-auto px-6 md:px-10 py-10">
+      <div className="site-footer-inner">
+        <div className="mb-10 pb-10 border-b border-[var(--color-border)]">
+          <NewsletterSignup
+            variant="footer"
+            turnstileSiteKey={turnstileSiteKey ?? null}
+          />
+        </div>
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           {/* Company identity */}
           <div className="md:col-span-1">

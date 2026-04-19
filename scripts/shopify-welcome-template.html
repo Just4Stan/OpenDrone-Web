@@ -1,0 +1,296 @@
+{% comment %}
+  OpenDrone — branded welcome email for new newsletter subscribers.
+
+  Paste this into Shopify admin → Settings → Notifications → Customer
+  account welcome → Edit code (replace the entire contents).
+
+  Fires automatically when app/routes/newsletter.tsx runs customerCreate.
+  Uses Liquid variables Shopify exposes to this notification:
+    {{ shop.name }}, {{ shop.url }}, {{ customer.email }}.
+{% endcomment %}
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="x-apple-disable-message-reformatting" />
+    <meta name="color-scheme" content="dark light" />
+    <meta name="supported-color-schemes" content="dark light" />
+    <title>Welcome to Engineering Essentials</title>
+  </head>
+  <body
+    style="
+      margin: 0;
+      padding: 0;
+      background-color: #0a0a0a;
+      color: #e5e5e5;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    "
+  >
+    <div
+      style="
+        display: none;
+        max-height: 0;
+        overflow: hidden;
+        font-size: 1px;
+        line-height: 1px;
+        color: #0a0a0a;
+        opacity: 0;
+      "
+    >
+      You're in. Monthly product releases and build notes from the bench.
+    </div>
+
+    <table
+      role="presentation"
+      width="100%"
+      cellpadding="0"
+      cellspacing="0"
+      border="0"
+      style="background-color: #0a0a0a;"
+    >
+      <tr>
+        <td align="center" style="padding: 32px 16px;">
+          <table
+            role="presentation"
+            width="600"
+            cellpadding="0"
+            cellspacing="0"
+            border="0"
+            style="
+              width: 100%;
+              max-width: 600px;
+              background-color: #101210;
+              border: 1px solid #1a241a;
+            "
+          >
+            <!-- Header -->
+            <tr>
+              <td style="padding: 28px 32px 20px 32px; border-bottom: 1px solid #1a241a;">
+                <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                  <tr>
+                    <td
+                      style="
+                        font-family: 'Space Grotesk', Helvetica, Arial, sans-serif;
+                        font-size: 18px;
+                        font-weight: 700;
+                        letter-spacing: 0.08em;
+                        text-transform: uppercase;
+                        color: #e5e5e5;
+                      "
+                    >
+                      Open<span style="color: #b8922e;">Drone</span>
+                    </td>
+                    <td
+                      align="right"
+                      style="
+                        font-family: 'JetBrains Mono', 'Courier New', monospace;
+                        font-size: 10px;
+                        letter-spacing: 0.2em;
+                        text-transform: uppercase;
+                        color: #737373;
+                      "
+                    >
+                      Subscription confirmed
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+
+            <!-- Eyebrow + title -->
+            <tr>
+              <td style="padding: 40px 32px 0 32px;">
+                <p
+                  style="
+                    margin: 0 0 14px 0;
+                    font-family: 'JetBrains Mono', 'Courier New', monospace;
+                    font-size: 11px;
+                    letter-spacing: 0.2em;
+                    text-transform: uppercase;
+                    color: #b8922e;
+                  "
+                >
+                  Engineering Essentials
+                </p>
+                <h1
+                  style="
+                    margin: 0 0 20px 0;
+                    font-family: 'Space Grotesk', Helvetica, Arial, sans-serif;
+                    font-size: 32px;
+                    line-height: 1.15;
+                    font-weight: 700;
+                    letter-spacing: -0.01em;
+                    color: #e5e5e5;
+                  "
+                >
+                  You&rsquo;re in.
+                </h1>
+              </td>
+            </tr>
+
+            <!-- Body copy -->
+            <tr>
+              <td style="padding: 0 32px 28px 32px;">
+                <p
+                  style="
+                    margin: 0 0 16px 0;
+                    font-family: Helvetica, Arial, sans-serif;
+                    font-size: 16px;
+                    line-height: 1.6;
+                    color: #c5c5c5;
+                  "
+                >
+                  Thanks for subscribing. You&rsquo;ll get an email from us
+                  when there&rsquo;s actually something to ship &mdash; new
+                  hardware, firmware releases, field notes from the bench.
+                </p>
+                <p
+                  style="
+                    margin: 0 0 16px 0;
+                    font-family: Helvetica, Arial, sans-serif;
+                    font-size: 16px;
+                    line-height: 1.6;
+                    color: #c5c5c5;
+                  "
+                >
+                  Expect roughly one email a month. No marketing fluff, no
+                  sponsored junk. Unsubscribe any time &mdash; the link is
+                  at the bottom of every send.
+                </p>
+              </td>
+            </tr>
+
+            <!-- Specs block — what you get -->
+            <tr>
+              <td style="padding: 0 32px 32px 32px;">
+                <table
+                  role="presentation"
+                  width="100%"
+                  cellpadding="0"
+                  cellspacing="0"
+                  border="0"
+                  style="background-color: #0a0a0a; border: 1px solid #1a241a;"
+                >
+                  <tr>
+                    <td style="padding: 20px 24px;">
+                      <p
+                        style="
+                          margin: 0 0 10px 0;
+                          font-family: 'JetBrains Mono', 'Courier New', monospace;
+                          font-size: 10px;
+                          letter-spacing: 0.2em;
+                          text-transform: uppercase;
+                          color: #737373;
+                        "
+                      >
+                        What to expect
+                      </p>
+                      <table
+                        role="presentation"
+                        width="100%"
+                        cellpadding="0"
+                        cellspacing="0"
+                        border="0"
+                        style="
+                          font-family: 'JetBrains Mono', 'Courier New', monospace;
+                          font-size: 12px;
+                          color: #c5c5c5;
+                        "
+                      >
+                        <tr>
+                          <td style="padding: 4px 0; width: 120px; color: #737373;">Cadence</td>
+                          <td style="padding: 4px 0;">Monthly, give or take</td>
+                        </tr>
+                        <tr>
+                          <td style="padding: 4px 0; color: #737373;">Content</td>
+                          <td style="padding: 4px 0;">Product releases, build notes, bench updates</td>
+                        </tr>
+                        <tr>
+                          <td style="padding: 4px 0; color: #737373;">Unsubscribe</td>
+                          <td style="padding: 4px 0;">Link at the bottom of every email</td>
+                        </tr>
+                      </table>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+
+            <!-- CTA -->
+            <tr>
+              <td style="padding: 0 32px 36px 32px;">
+                <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+                  <tr>
+                    <td
+                      style="
+                        background-color: #b8922e;
+                        border-radius: 4px;
+                      "
+                    >
+                      <a
+                        href="{{ shop.url }}"
+                        style="
+                          display: inline-block;
+                          padding: 14px 28px;
+                          font-family: 'JetBrains Mono', 'Courier New', monospace;
+                          font-size: 13px;
+                          font-weight: 700;
+                          letter-spacing: 0.14em;
+                          text-transform: uppercase;
+                          color: #0a0a0a;
+                          text-decoration: none;
+                        "
+                      >
+                        Browse the hardware &rarr;
+                      </a>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+
+            <!-- Footer -->
+            <tr>
+              <td
+                style="
+                  padding: 24px 32px;
+                  border-top: 1px solid #1a241a;
+                  font-family: Helvetica, Arial, sans-serif;
+                  font-size: 12px;
+                  line-height: 1.6;
+                  color: #737373;
+                "
+              >
+                <p style="margin: 0 0 12px 0;">
+                  OpenDrone &mdash; open source drone electronics designed in
+                  Belgium.
+                </p>
+                <p style="margin: 0 0 16px 0;">
+                  Incutec BV &middot; Stapelhuisstraat 15, 3000 Leuven, Belgium
+                </p>
+                <p
+                  style="
+                    margin: 0;
+                    font-family: 'JetBrains Mono', 'Courier New', monospace;
+                    font-size: 10px;
+                    letter-spacing: 0.1em;
+                  "
+                >
+                  You&rsquo;re receiving this at {{ customer.email }} because
+                  you subscribed on
+                  <a
+                    href="{{ shop.url }}"
+                    style="color: #b8922e; text-decoration: none;"
+                    >opendrone.be</a
+                  >.
+                </p>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>

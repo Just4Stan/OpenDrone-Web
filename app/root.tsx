@@ -17,6 +17,7 @@ import resetStyles from '~/styles/reset.css?url';
 import appStyles from '~/styles/app.css?url';
 import {PageLayout} from './components/PageLayout';
 import {getCompanyIdentity} from '~/lib/company';
+import {localeFromPathname} from '~/lib/i18n';
 import {buildOrgJsonLd} from '~/lib/seo';
 
 export type RootLoader = typeof loader;
@@ -57,16 +58,6 @@ export function links() {
   return [
     {rel: 'preconnect', href: 'https://cdn.shopify.com'},
     {rel: 'preconnect', href: 'https://shop.app'},
-    {rel: 'preconnect', href: 'https://fonts.googleapis.com'},
-    {
-      rel: 'preconnect',
-      href: 'https://fonts.gstatic.com',
-      crossOrigin: 'anonymous' as const,
-    },
-    {
-      rel: 'stylesheet',
-      href: 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&family=Space+Grotesk:wght@400;500;600;700&display=swap',
-    },
     {rel: 'icon', type: 'image/svg+xml', href: favicon},
   ];
 }
@@ -81,7 +72,12 @@ export async function loader(args: Route.LoaderArgs) {
   const {storefront, env} = args.context;
 
   const company = getCompanyIdentity(env as unknown as Record<string, string | undefined>);
-  const locale = `${storefront.i18n.language}_${storefront.i18n.country}`;
+
+  // Derive locale from the URL path so /nl/* actually renders <html lang="nl">.
+  // Hydrogen's storefront.i18n is pinned to EN/US in app/lib/context.ts and
+  // doesn't follow the URL; using it would force every page to en_US.
+  const urlLocale = localeFromPathname(new URL(args.request.url).pathname);
+  const locale = urlLocale === 'nl' ? 'nl_BE' : 'en_US';
 
   return {
     ...deferredData,
@@ -89,6 +85,7 @@ export async function loader(args: Route.LoaderArgs) {
     publicStoreDomain: env.PUBLIC_STORE_DOMAIN,
     company,
     locale,
+    turnstileSiteKey: env.TURNSTILE_SITE_KEY ?? null,
     shop: getShopAnalytics({
       storefront,
       publicStorefrontId: env.PUBLIC_STOREFRONT_ID,
@@ -168,7 +165,7 @@ export function Layout({children}: {children?: React.ReactNode}) {
       <head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width,initial-scale=1" />
-        <meta name="theme-color" content="#0a0a0a" />
+        <meta name="theme-color" content="#0d0d10" />
         <link rel="stylesheet" href={resetStyles}></link>
         <link rel="stylesheet" href={appStyles}></link>
         <Meta />
@@ -179,7 +176,7 @@ export function Layout({children}: {children?: React.ReactNode}) {
             otherwise flag as a hydration mismatch. */}
         <script
           defer
-          data-domain="opendrone.eu"
+          data-domain="opendrone.be"
           src="https://plausible.io/js/script.js"
           nonce={nonce}
           suppressHydrationWarning

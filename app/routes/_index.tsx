@@ -3,33 +3,53 @@ import type {Route} from './+types/_index';
 import {useEffect, useRef, useState, useCallback} from 'react';
 
 // Kick off the HeroScene chunk download at module eval so it races with
-// hydration instead of waiting for useEffect. The same promise is reused
-// from inside the component below.
+// hydration instead of waiting for useEffect — only on desktop and only
+// when the user hasn't asked for reduced motion. Keeps the 14 MB of GLBs
+// and the r3f runtime off the wire for mobile visitors who won't see
+// the scene anyway.
 const heroScenePromise =
-  typeof window !== 'undefined'
+  typeof window !== 'undefined' && shouldLoadHero()
     ? import('~/components/HeroScene')
     : null;
 
-function ClientHeroScene() {
-  const [Scene, setScene] = useState<React.ComponentType | null>(null);
+function shouldLoadHero(): boolean {
+  if (typeof window === 'undefined') return false;
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return false;
+  if (window.matchMedia('(max-width: 768px)').matches) return false;
+  return true;
+}
+
+type LabelRefs = {
+  fc: React.RefObject<HTMLDivElement | null>;
+  frame: React.RefObject<HTMLDivElement | null>;
+  esc: React.RefObject<HTMLDivElement | null>;
+};
+
+function ClientHeroScene({
+  onReady,
+  labelRefs,
+}: {
+  onReady?: () => void;
+  labelRefs?: LabelRefs;
+}) {
+  const [Scene, setScene] = useState<React.ComponentType<{
+    onReady?: () => void;
+    labelRefs?: LabelRefs;
+  }> | null>(null);
   useEffect(() => {
+    if (!shouldLoadHero()) {
+      // Release the splash so the UI isn't stuck behind the dim layer
+      // on devices that skipped the scene entirely.
+      onReady?.();
+      return;
+    }
     void (heroScenePromise ?? import('~/components/HeroScene')).then((m) => {
       setScene(() => m.HeroScene);
     });
-  }, []);
+  }, [onReady]);
   if (!Scene) return null;
-  return <Scene />;
+  return <Scene onReady={onReady} labelRefs={labelRefs} />;
 }
-
-export const links: Route.LinksFunction = () => [
-  // Preload the 3D assets so they download in parallel with JS/CSS
-  // instead of waiting for HeroScene to mount post-hydration. Without
-  // these the GLBs only start fetching once the splash fades and the
-  // scene boots, adding ~1-2s of blank hero.
-  {rel: 'preload', as: 'fetch', href: '/models/frame.glb'},
-  {rel: 'preload', as: 'fetch', href: '/models/esc.glb'},
-  {rel: 'preload', as: 'fetch', href: '/models/fc.glb'},
-];
 
 export const meta: Route.MetaFunction = () => {
   return [
@@ -60,8 +80,18 @@ export default function Homepage() {
   const scrollRef = useRef(0);
   const rafId = useRef(0);
   const [scrollProgress, setScrollProgress] = useState(0);
-  const [splashHidden, setSplashHidden] = useState(false);
+  // Splash starts centered and large. It settles when the 3D scene has
+  // finished loading AND a minimum wait has elapsed (so the wordmark
+  // always gets a readable beat), or when a max timeout fires as a
+  // safety net, or when the user starts scrolling.
+  const [splashSettled, setSplashSettled] = useState(false);
+  const [sceneReady, setSceneReady] = useState(false);
+  const [minWaitElapsed, setMinWaitElapsed] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  const handleSceneReady = useCallback(() => setSceneReady(true), []);
+  const fcLabelRef = useRef<HTMLDivElement>(null);
+  const frameLabelRef = useRef<HTMLDivElement>(null);
+  const escLabelRef = useRef<HTMLDivElement>(null);
   const tick = useCallback(() => {
     setScrollProgress(scrollRef.current);
     rafId.current = 0;
@@ -74,6 +104,37 @@ export default function Homepage() {
     mq.addEventListener('change', update);
     return () => mq.removeEventListener('change', update);
   }, []);
+
+  useEffect(() => {
+    // Minimum splash duration — wordmark always gets this long to read.
+    const minT = window.setTimeout(() => setMinWaitElapsed(true), 600);
+    // Safety cap — if the 3D scene never reports ready (failed fetch,
+    // slow device, etc.), release the splash anyway so the UI isn't
+    // stuck behind a dim layer forever.
+    const maxT = window.setTimeout(() => setSplashSettled(true), 3500);
+    return () => {
+      window.clearTimeout(minT);
+      window.clearTimeout(maxT);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (sceneReady && minWaitElapsed) setSplashSettled(true);
+  }, [sceneReady, minWaitElapsed]);
+
+  // Drive the site-header drop-in animation from splash state. The
+  // header lives outside this component (PageLayout in root.tsx), so
+  // we signal via a class on <html> that the header CSS can key off.
+  // Class is only meaningful inside `.homepage-layout`, so other pages
+  // are unaffected.
+  useEffect(() => {
+    if (!splashSettled) return;
+    const root = document.documentElement;
+    root.classList.add('splash-settled');
+    return () => {
+      root.classList.remove('splash-settled');
+    };
+  }, [splashSettled]);
 
   const heroSpacerVh = isMobile ? HERO_SPACER_VH_MOBILE : HERO_SPACER_VH_DESKTOP;
   const heroProgressVh = isMobile
@@ -91,8 +152,8 @@ export default function Homepage() {
         1,
         Math.max(0, window.scrollY / (window.innerHeight * heroProgressVh)),
       );
-      if (window.scrollY > window.innerHeight * 0.15) {
-        setSplashHidden(true);
+      if (window.scrollY > 8) {
+        setSplashSettled(true);
       }
       if (!rafId.current) {
         rafId.current = requestAnimationFrame(tick);
@@ -112,15 +173,6 @@ export default function Homepage() {
 
   return (
     <div className="homepage">
-      {/* Splash overlay — fades after 1.5s OR on scroll, whichever is first */}
-      <div className={`splash-overlay${splashHidden ? ' splash-hidden' : ''}`}>
-        <h1
-          className="font-display font-bold tracking-tight"
-          style={{fontSize: 'clamp(3rem, 10vw, 8rem)'}}
-        >
-          Open<span className="text-[var(--color-gold)]">Drone</span>
-        </h1>
-      </div>
 
       {/*
         Scroll spacer — gives us HERO_SPACER_VH of scroll to drive the
@@ -128,7 +180,6 @@ export default function Homepage() {
         the viewport while the user scrolls through the spacer. Once the
         user scrolls past the bottom of the spacer the sticky releases and
         the legal footer (in normal document flow below) comes into view.
-        No fade, no dead zone.
       */}
       <div className="relative" style={{height: `${heroSpacerVh}vh`}}>
         <div className="sticky top-0 h-screen overflow-hidden pointer-events-none">
@@ -154,39 +205,70 @@ export default function Homepage() {
                   'radial-gradient(ellipse at 50% 45%, rgba(80, 65, 20, 0.3) 0%, transparent 60%)',
               }}
             />
-            <ClientHeroScene />
+            <ClientHeroScene
+              onReady={handleSceneReady}
+              labelRefs={{
+                fc: fcLabelRef,
+                frame: frameLabelRef,
+                esc: escLabelRef,
+              }}
+            />
+            {/* Dim overlay — only covers the 3D scene, not the wordmark.
+                Fades out once the scene is ready AND the minimum splash
+                beat has elapsed. */}
+            <div
+              className={`scene-dim${splashSettled ? ' is-hidden' : ''}`}
+              aria-hidden="true"
+            />
           </div>
 
-        {/* Phase 1: OpenDrone wordmark */}
-        <div
-          className="absolute bottom-12 left-0 right-0 z-10 px-6 md:px-10"
-          style={{opacity: heroTextOpacity}}
-        >
-          <div className="max-w-7xl mx-auto flex items-end justify-between gap-6">
-            <div className="flex flex-col gap-1">
-              <h1 className="font-display text-3xl md:text-4xl font-bold tracking-tight leading-none">
-                Open<span className="text-[var(--color-gold)]">Drone</span>
-              </h1>
-              <p className="font-mono text-[10px] uppercase tracking-[0.25em] text-[var(--color-text-muted)]">
-                Open Source Drone Parts
-              </p>
-            </div>
-            <div className="hidden md:flex items-center gap-3 pointer-events-auto">
-              <Link to="/collections/all" className="hero-cta-primary">
-                Shop
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                  <line x1="5" y1="12" x2="19" y2="12" />
-                  <polyline points="12 5 19 12 12 19" />
-                </svg>
-              </Link>
-              <a href="https://github.com/Just4Stan" target="_blank" rel="noopener noreferrer" className="hero-cta-secondary pointer-events-auto" aria-label="GitHub">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/>
-                </svg>
-              </a>
-            </div>
+          {/* Single wordmark — starts centered + large, animates to
+              bottom-left at settled size. Inline opacity drives the
+              scroll-based fade once the hero starts scrolling away. */}
+          <h1
+            className={`hero-wordmark${splashSettled ? ' is-settled' : ''}`}
+            style={{opacity: splashSettled ? heroTextOpacity : 1}}
+            aria-label="OpenDrone"
+          >
+            {/* sizes accounts for the 1.5–1.7× splash-state transform,
+                so the browser picks an asset with enough pixels for the
+                largest displayed width, not just the settled size. */}
+            <img
+              src="/opendrone-wordmark-1200.png"
+              srcSet="/opendrone-wordmark-1200.png 1200w, /opendrone-wordmark-2400.png 2400w"
+              sizes="(min-width: 768px) 900px, 500px"
+              alt=""
+              width={1200}
+              height={216}
+              decoding="async"
+              fetchPriority="high"
+            />
+          </h1>
+
+          {/* CTAs bottom-right */}
+          <div
+            className={`hero-actions${splashSettled ? ' is-visible' : ''}`}
+            style={{opacity: splashSettled ? heroTextOpacity : 0}}
+          >
+            <Link to="/collections/all" className="hero-action-primary">
+              Shop
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                <line x1="5" y1="12" x2="19" y2="12" />
+                <polyline points="12 5 19 12 12 19" />
+              </svg>
+            </Link>
+            <a
+              href="https://github.com/Just4Stan"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hero-action-secondary"
+              aria-label="GitHub"
+            >
+              <svg width="26" height="26" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z" />
+              </svg>
+            </a>
           </div>
-        </div>
 
         {/* Scroll hint */}
         <div
@@ -196,26 +278,29 @@ export default function Homepage() {
           <div className="w-px h-5 bg-gradient-to-b from-[var(--color-text-muted)] to-transparent animate-pulse" />
         </div>
 
-        {/* Phase 2: Component labels */}
+        {/* Phase 2: Component labels — each div sits below its 3D model.
+            HeroScene writes `transform: translate(x, y)` imperatively
+            every frame based on the model's world-space bounding box so
+            labels track the geometry even as the assembly rotates.
+            Parent container controls visibility/push-up; children set
+            their own position. */}
         <div
-          className="absolute z-10 left-0 right-0"
-          style={{opacity: labelOpacity, bottom: 'calc(22% - 10px)', transform: `translateY(-${pushUp}vh)`}}
+          className="hero-component-labels"
+          style={{opacity: labelOpacity, transform: `translateY(-${pushUp}vh)`}}
         >
-          <div className="max-w-7xl mx-auto px-6 md:px-10 grid grid-cols-3">
-            <Link to="/collections/all" className="pointer-events-auto text-center group">
-              <p className="font-display font-bold group-hover:text-[var(--color-gold)] transition-colors" style={{fontSize: 'clamp(1.25rem, 2.5vw, 2.5rem)'}}>
-                Open<span className="text-[var(--color-gold)]">FC</span>
-              </p>
+          <div ref={fcLabelRef} className="hero-component-label">
+            <Link to="/products/openfc">
+              Open<span>FC</span>
             </Link>
-            <Link to="/collections/all" className="pointer-events-auto text-center group">
-              <p className="font-display font-bold group-hover:text-[var(--color-gold)] transition-colors" style={{fontSize: 'clamp(1.25rem, 2.5vw, 2.5rem)'}}>
-                Open<span className="text-[var(--color-gold)]">Frame</span>
-              </p>
+          </div>
+          <div ref={frameLabelRef} className="hero-component-label">
+            <Link to="/products/openframe">
+              Open<span>Frame</span>
             </Link>
-            <Link to="/collections/all" className="pointer-events-auto text-center group">
-              <p className="font-display font-bold group-hover:text-[var(--color-gold)] transition-colors" style={{fontSize: 'clamp(1.25rem, 2.5vw, 2.5rem)'}}>
-                Open<span className="text-[var(--color-gold)]">ESC</span>
-              </p>
+          </div>
+          <div ref={escLabelRef} className="hero-component-label">
+            <Link to="/products/openesc">
+              Open<span>ESC</span>
             </Link>
           </div>
         </div>
@@ -230,14 +315,15 @@ export default function Homepage() {
           }}
         >
           <div
-            className="flex items-center justify-center gap-3 px-6 pb-6 pt-2"
+            className="flex items-center justify-center gap-5 px-6 pb-10 pt-4"
             style={{
-              background: 'linear-gradient(to top, rgba(10,10,10,0.95) 60%, rgba(10,10,10,0) 100%)',
+              background: 'linear-gradient(to top, rgba(13,13,16,0.95) 60%, rgba(13,13,16,0) 100%)',
             }}
           >
             <Link
               to="/collections/all"
-              className="inline-flex items-center gap-3 px-14 py-4 bg-[var(--color-gold)] text-[var(--color-bg)] font-mono text-base md:text-lg font-bold uppercase tracking-wider rounded shadow-[0_0_30px_rgba(184,146,46,0.5)] hover:shadow-[0_0_50px_rgba(184,146,46,0.7)] hover:bg-[var(--color-gold-hover)] transition-all duration-300 pointer-events-auto"
+              className="inline-flex items-center gap-3 px-10 py-4 bg-[var(--color-gold)] text-[var(--color-bg)] font-mono font-bold uppercase tracking-wider rounded shadow-[0_0_24px_rgba(184,146,46,0.45)] hover:shadow-[0_0_36px_rgba(184,146,46,0.65)] hover:bg-[var(--color-gold-hover)] transition-all duration-300 pointer-events-auto"
+              style={{fontSize: 'clamp(0.9rem, 1vw, 1.05rem)'}}
             >
               Shop Now
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
@@ -249,7 +335,7 @@ export default function Homepage() {
               href="https://github.com/Just4Stan"
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center justify-center w-[52px] h-[52px] border border-[var(--color-text-muted)]/30 text-[var(--color-text)] rounded hover:border-[var(--color-gold)]/50 hover:shadow-[0_0_15px_rgba(184,146,46,0.2)] transition-all duration-300 pointer-events-auto"
+              className="inline-flex items-center justify-center w-[52px] h-[52px] border border-[var(--color-text-muted)]/30 text-[var(--color-text)] rounded hover:border-[var(--color-gold)]/50 hover:shadow-[0_0_16px_rgba(184,146,46,0.25)] transition-all duration-300 pointer-events-auto"
               aria-label="View source on GitHub"
             >
               <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">

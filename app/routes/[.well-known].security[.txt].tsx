@@ -9,10 +9,10 @@ export async function loader(_args: Route.LoaderArgs) {
   expires.setFullYear(expires.getFullYear() + 1);
 
   const body = [
-    'Contact: mailto:stan@incutec.eu',
+    'Contact: mailto:security@opendrone.be',
     'Preferred-Languages: en, nl',
-    'Canonical: https://opendrone.eu/.well-known/security.txt',
-    'Policy: https://opendrone.eu/security',
+    'Canonical: https://opendrone.be/.well-known/security.txt',
+    'Policy: https://opendrone.be/security',
     `Expires: ${expires.toISOString()}`,
     '',
   ].join('\n');

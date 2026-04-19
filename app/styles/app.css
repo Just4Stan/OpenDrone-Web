@@ -1,11 +1,11 @@
 @import "tailwindcss";
 
 @theme {
-  --color-bg: #0a0a0a;
-  --color-bg-card: #101210;
-  --color-bg-elevated: #141614;
+  --color-bg: #0d0d10;
+  --color-bg-card: #141417;
+  --color-bg-elevated: #1a1a1e;
   --color-text: #e5e5e5;
-  --color-text-muted: #737373;
+  --color-text-muted: #8a8a8a; /* WCAG AA on #0d0d10 = 5.08:1 (was #737373, 4.18:1) */
   --color-accent: #1f4d2c;
   --color-accent-hover: #2a6639;
   --color-accent-light: #347a44;
@@ -14,12 +14,39 @@
   --color-gold-light: #e0be5a;
   --color-border: #1a241a;
 
-  --font-display: "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
-  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
-  --font-mono: "JetBrains Mono", ui-monospace, "Cascadia Code", monospace;
+  /* System font stack — renders as SF Pro on macOS/iOS, Segoe UI on
+     Windows, Roboto on Android. Locked in because the live hero and
+     headers already render this way on macOS and that's the look we
+     want to ship. */
+  --font-display: -apple-system, BlinkMacSystemFont, "SF Pro Display",
+    "SF Pro Text", ui-sans-serif, system-ui, "Segoe UI", Roboto, Helvetica,
+    Arial, sans-serif;
+  --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text",
+    ui-sans-serif, system-ui, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --font-mono: ui-monospace, Menlo, Monaco, "SF Mono", "Cascadia Mono",
+    "Segoe UI Mono", Consolas, "Liberation Mono", monospace;
 
   --header-height: 56px;
   --aside-width: 400px;
+
+  /* Unified horizontal rails. Every top-level container (header inner,
+     page shell, footer inner) uses --rail-width — wider than a classic
+     1440px cap so the design feels immersive on widescreen, but capped
+     at 1800px so text and product grids don't stretch/zoom on ultrawide
+     monitors. Prose-heavy blocks (legal, editorial) cap themselves at
+     --prose-width via the `.reading-column` wrapper. */
+  --rail-gutter: 1.25rem;
+  /* No fixed cap — rail scales with viewport. Prevents dead margins on
+     widescreen. Individual font sizes and grids cap themselves so text
+     doesn't zoom up on ultrawide displays. */
+  --rail-width: calc(100% - (2 * var(--rail-gutter)));
+  --prose-width: 720px;
+}
+
+@media (min-width: 768px) {
+  :root {
+    --rail-gutter: 2rem;
+  }
 }
 
 /* Font utilities */
@@ -34,37 +61,212 @@ html {
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-}
-
-html {
   overscroll-behavior-y: none;
+  /* `clip` (not `hidden`) — prevents horizontal scroll bleed from
+     off-screen fixed elements like the cart aside without creating a
+     scroll container, which would otherwise break position: sticky on
+     the header and the homepage hero pin. */
+  overflow-x: clip;
 }
 
-/* Splash overlay — shows for 1.5s then fades out */
-.splash-overlay {
-  position: fixed;
+/* Scene dim — sits on top of the 3D scene while models load. Sibling
+   of the Canvas (not the wordmark), so the wordmark always reads
+   bright. Fades out once the scene reports ready and the minimum
+   splash beat has elapsed. */
+.scene-dim {
+  position: absolute;
   inset: 0;
-  z-index: 50;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background-color: rgba(10, 10, 10, 0.85);
-  animation: splash-fade 0.6s ease-out 1.5s forwards;
+  background-color: rgba(13, 13, 16, 0.9);
+  pointer-events: none;
+  opacity: 1;
+  transition: opacity 0.7s ease-out 0.1s;
+}
+
+.scene-dim.is-hidden {
+  opacity: 0;
+}
+
+/* Hero component labels — each label is absolutely positioned at 0,0
+   and HeroScene writes `transform: translate(x, y)` per frame to glue
+   it beneath the projected screen position of the matching 3D board.
+   The container supplies opacity + the scroll push-up; children own
+   their transform so we don't fight the per-frame writes. */
+.hero-component-labels {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease-out;
+}
+
+.hero-component-label {
+  position: absolute;
+  top: 0;
+  left: 0;
+  margin-top: 0.75rem;
+  will-change: transform;
   pointer-events: auto;
 }
 
-@keyframes splash-fade {
-  to {
-    opacity: 0;
-    pointer-events: none;
-  }
+.hero-component-label a {
+  display: inline-block;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: clamp(1.75rem, 3.2vw, 3.25rem);
+  line-height: 1;
+  letter-spacing: -0.02em;
+  color: var(--color-text);
+  white-space: nowrap;
+  transition: color 0.15s ease;
 }
 
-.splash-overlay.splash-hidden {
-  animation: none;
-  opacity: 0;
+.hero-component-label a:hover {
+  color: var(--color-gold);
+}
+
+.hero-component-label span {
+  color: var(--color-gold);
+}
+
+/* Hero wordmark — single element that animates from centered-large
+   (splash) to bottom-left-small (settled). Anchor is the settled
+   position; the splash state is a transform that moves+scales it up
+   to viewport center so the motion is a single tween, not a swap. */
+.hero-wordmark {
+  position: absolute;
+  bottom: 2.5rem;
+  left: 2.5rem;
+  z-index: 35;
+  margin: 0;
+  transform-origin: center;
+  transform: translate(calc(50vw - 2.5rem - 50%), calc(-50vh + 2.5rem + 50%))
+    scale(1.7);
+  /* Snappy S-curve — slow to accelerate, quick through the middle,
+     quick to settle. Same timing as the site-header drop-in below so
+     the wordmark and the chrome land together. */
+  transition: transform 0.65s cubic-bezier(0.72, 0, 0.28, 1);
   pointer-events: none;
-  transition: opacity 0.4s ease-out;
+  line-height: 0;
+}
+
+.hero-wordmark img {
+  display: block;
+  height: clamp(2.5rem, 5vw, 4.5rem);
+  width: auto;
+}
+
+.hero-wordmark.is-settled {
+  transform: translate(0, 0) scale(1);
+}
+
+/* Hero tagline — top-left, appears after the wordmark settles */
+.hero-tagline {
+  position: absolute;
+  top: calc(var(--header-height) + 1.5rem);
+  left: 2.5rem;
+  z-index: 20;
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+  transform: translateY(-6px);
+  transition: transform 0.6s ease-out 0.4s;
+  pointer-events: none;
+}
+
+.hero-tagline.is-visible {
+  transform: translateY(0);
+}
+
+/* Hero actions — bottom-right CTAs, appear after the wordmark settles */
+.hero-actions {
+  position: absolute;
+  bottom: 2.5rem;
+  right: 2.5rem;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  transform: translateY(8px);
+  transition: transform 0.6s ease-out 0.5s;
+  pointer-events: none;
+}
+
+.hero-actions.is-visible {
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+.hero-action-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem 2.25rem;
+  background: var(--color-gold);
+  color: var(--color-bg);
+  font-family: var(--font-mono);
+  font-size: 0.95rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  border-radius: 4px;
+  transition: background-color 0.2s ease;
+}
+
+.hero-action-primary:hover {
+  background: var(--color-gold-hover);
+  color: var(--color-bg);
+}
+
+.hero-action-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 54px;
+  height: 54px;
+  border: 1px solid color-mix(in srgb, var(--color-text-muted) 30%, transparent);
+  color: var(--color-text);
+  border-radius: 4px;
+  transition: border-color 0.2s ease, color 0.2s ease;
+}
+
+.hero-action-secondary:hover {
+  border-color: color-mix(in srgb, var(--color-gold) 60%, transparent);
+  color: var(--color-text);
+}
+
+@media (max-width: 640px) {
+  .hero-wordmark {
+    bottom: 1.5rem;
+    left: 1.5rem;
+    transform: translate(calc(50vw - 1.5rem - 50%), calc(-50vh + 1.5rem + 50%))
+      scale(1.5);
+  }
+  .hero-wordmark img {
+    height: clamp(2rem, 9vw, 3.25rem);
+  }
+  .hero-wordmark.is-settled {
+    transform: translate(0, 0) scale(1);
+  }
+  .hero-tagline {
+    top: calc(var(--header-height) + 1rem);
+    left: 1.5rem;
+    font-size: 0.7rem;
+  }
+  .hero-actions {
+    bottom: 1.5rem;
+    right: 1.5rem;
+    gap: 0.5rem;
+  }
+  .hero-action-primary {
+    padding: 0.75rem 1.5rem;
+    font-size: 0.85rem;
+  }
+  .hero-action-secondary {
+    width: 46px;
+    height: 46px;
+  }
 }
 
 body {
@@ -114,7 +316,7 @@ a:hover {
   position: sticky;
   top: 0;
   z-index: 30;
-  background: rgba(10, 10, 10, 0.92);
+  background: rgba(13, 13, 16, 0.92);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   border-bottom: 1px solid var(--color-border);
@@ -124,46 +326,46 @@ a:hover {
   display: flex;
   align-items: center;
   height: var(--header-height);
-  padding: 0 1.5rem;
+  width: var(--rail-width);
+  margin: 0 auto;
+  padding: 0;
 }
 
 .site-header-logo {
-  font-family: var(--font-display);
-  font-weight: 700;
-  font-size: 0.9rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--color-text);
+  display: inline-flex;
+  align-items: center;
   transition: opacity 0.15s ease;
+  line-height: 0;
 }
 
-.site-header-logo span {
-  color: var(--color-gold);
+.site-header-logo img {
+  display: block;
+  height: 1.25rem;
+  width: auto;
 }
 
 .site-header-logo:hover {
-  color: var(--color-text);
   opacity: 0.85;
 }
 
-/* Gold category subrow — sits below the main header. Hidden on
-   narrow screens; the mobile menu carries the same links. */
+/* Gold category links — inline next to the primary nav on desktop.
+   Hidden on mobile; the mobile menu carries the same links. */
 .site-header-categories {
   display: none;
   align-items: center;
-  justify-content: flex-start;
   gap: 1.25rem;
-  padding: 0.5rem 1.5rem 0.6rem;
-  border-top: 1px solid color-mix(in srgb, var(--color-border) 60%, transparent);
+  margin-left: 3rem;
+  padding-left: 2rem;
+  border-left: 1px solid color-mix(in srgb, var(--color-border) 60%, transparent);
 }
 
 .site-header-categories a {
   font-family: var(--font-mono);
-  font-size: 10px;
-  letter-spacing: 0.22em;
+  font-size: 11px;
+  letter-spacing: 0.18em;
   text-transform: uppercase;
   color: var(--color-gold);
-  opacity: 0.75;
+  opacity: 0.8;
   transition: opacity 0.15s ease, color 0.15s ease;
 }
 
@@ -173,24 +375,32 @@ a:hover {
   color: var(--color-gold-hover);
 }
 
-/* On the homepage the header floats over the hero scene. */
+/* On the homepage the header floats over the hero scene. It starts
+   hidden above the viewport while the splash is loading and drops in
+   together with the wordmark settling to bottom-left. Matches the
+   wordmark's duration + easing so both land in sync.
+
+   Default state = hidden (covers SSR + initial hydration + the splash
+   loading window). Homepage toggles `html.splash-settled` once the 3D
+   scene is ready OR the safety timeout fires. */
 .homepage-layout .site-header {
   position: fixed;
   width: 100%;
+  transform: translateY(-100%);
+  opacity: 0;
+  transition:
+    transform 0.65s cubic-bezier(0.72, 0, 0.28, 1),
+    opacity 0.4s ease-out 0.1s;
 }
 
-@media (min-width: 768px) {
-  /* Two-row header on desktop: main (56) + category subrow (~30). */
-  :root {
-    --header-height: 88px;
-  }
-  .site-header-main {
-    padding: 0 2.5rem;
-    height: 56px;
-  }
+html.splash-settled .homepage-layout .site-header {
+  transform: translateY(0);
+  opacity: 1;
+}
+
+@media (min-width: 1180px) {
   .site-header-categories {
     display: flex;
-    padding: 0.5rem 2.5rem 0.6rem;
   }
 }
 
@@ -318,7 +528,10 @@ a:hover {
    Aside (cart / search drawer)
    ============================================ */
 
-aside {
+/* Scoped to the .overlay drawer so plain <aside> elements on other
+   routes (contact-reference, account order sidebar, etc.) don't inherit
+   the off-screen fixed-drawer treatment. */
+.overlay aside {
   background: var(--color-bg-elevated);
   box-shadow: 0 0 50px rgba(0, 0, 0, 0.5);
   height: 100vh;
@@ -330,7 +543,7 @@ aside {
   z-index: 50;
 }
 
-aside header {
+.overlay aside header {
   align-items: center;
   border-bottom: 1px solid var(--color-border);
   display: flex;
@@ -339,18 +552,23 @@ aside header {
   padding: 0 20px;
 }
 
-aside header .close {
+.overlay aside header .close {
   color: var(--color-text-muted);
   font-weight: bold;
   text-decoration: none;
   transition: color 200ms;
 }
-aside header .close:hover {
+.overlay aside header .close:hover {
   color: var(--color-text);
 }
 
-aside main {
-  margin: 1rem;
+.overlay aside main {
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - var(--header-height));
+  padding: 1rem;
+  margin: 0;
+  overflow: hidden;
 }
 
 .overlay {
@@ -413,38 +631,83 @@ button.reset {
    ============================================ */
 
 .cart-main {
-  height: 100%;
-  max-height: calc(100vh - 250px);
-  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
 }
 
 .cart-line {
-  padding: 0.75rem 0;
+  padding: 1rem 0;
   border-bottom: 1px solid var(--color-border);
+  list-style: none;
+}
+
+.cart-line:first-child {
+  padding-top: 0;
 }
 
 .cart-line-inner {
-  display: flex;
+  display: grid;
+  grid-template-columns: 72px 1fr;
+  gap: 0.85rem;
+  align-items: start;
 }
 
 .cart-line img {
-  height: 100%;
+  width: 72px;
+  height: 72px;
+  object-fit: cover;
   display: block;
-  margin-right: 0.75rem;
-  border-radius: 4px;
+  border-radius: 6px;
+  border: 1px solid var(--color-border);
+  background: var(--color-bg-elevated);
 }
 
 .cart-summary-aside {
   background: var(--color-bg-elevated);
   border-top: 1px solid var(--color-border);
-  bottom: 0;
   padding-top: 0.75rem;
-  position: absolute;
-  width: calc(var(--aside-width) - 40px);
+  flex-shrink: 0;
 }
 
-.cart-line-quantity {
+.cart-checkout-cta {
   display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.95rem 1.25rem;
+  margin-top: 0.75rem;
+  background: var(--color-accent);
+  color: var(--color-text);
+  border: 1px solid color-mix(in srgb, var(--color-accent-light) 80%, transparent);
+  border-radius: 8px;
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: 0.9rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  text-decoration: none;
+  transition: background-color 150ms ease, box-shadow 150ms ease,
+    border-color 150ms ease, transform 150ms ease;
+  box-shadow: 0 0 24px rgba(31, 77, 44, 0.35);
+}
+
+.cart-checkout-cta:hover {
+  background: var(--color-accent-hover);
+  border-color: var(--color-accent-light);
+  box-shadow: 0 0 32px rgba(52, 122, 68, 0.5);
+  text-decoration: none;
+  transform: translateY(-1px);
+}
+
+.cart-checkout-cta svg {
+  transition: transform 150ms ease;
+}
+
+.cart-checkout-cta:hover svg {
+  transform: translateX(3px);
 }
 
 /* ============================================
@@ -511,18 +774,37 @@ button.reset {
 }
 
 .page-shell {
-  /* Most pages run 1440px max; product and catalog override for wider
-     editorial layouts. Legal-page text sets its own max-width via
-     .rich-content so long line lengths stay readable. */
-  width: min(1440px, calc(100% - 2.5rem));
+  /* Universal content rail. Every top-level route wrapper sits on
+     --rail-width so left edges align across pages. Prose-heavy pages
+     narrow their body inside this rail with `.reading-column` — the
+     outer rail stays put, only the text column tightens. */
+  width: var(--rail-width);
   margin: 0 auto;
-  padding: 2.5rem 0 4rem;
+  padding: 1rem 0 3rem;
+}
+
+.site-footer-inner {
+  width: var(--rail-width);
+  margin: 0 auto;
+  padding: 2.5rem 0;
+}
+
+@media (min-width: 768px) {
+  .site-footer-inner {
+    padding: 3rem 0;
+  }
+}
+
+/* Prose-column wrapper — constrains long-form text inside the rail
+   without breaking alignment with header/footer/product grids. */
+.reading-column {
+  max-width: var(--prose-width);
 }
 
 .page-header {
   display: grid;
-  gap: 0.75rem;
-  margin-bottom: 2rem;
+  gap: 0.35rem;
+  margin-bottom: 1rem;
   max-width: 44rem;
 }
 
@@ -612,10 +894,10 @@ button.reset {
 }
 
 .products-grid {
-  /* auto-fill keeps tracks at the min size even with a single item
-     (auto-fit would stretch a lone card to the full row). */
-  grid-template-columns: repeat(auto-fill, minmax(220px, 320px));
-  justify-content: start;
+  /* auto-fit + 1fr max: fit as many min-220 tracks as possible, then
+     stretch each to fill remaining width so cards fill the row instead
+     of leaving empty track space that pushes later items to a new row. */
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
 }
 
 .collections-grid,
@@ -830,7 +1112,7 @@ button.reset {
   align-items: center;
   gap: 0.5rem;
   padding: 0.35rem 0.5rem;
-  background: rgba(10, 10, 10, 0.7);
+  background: rgba(13, 13, 16, 0.7);
   border: 1px solid var(--color-border);
   border-radius: 999px;
   backdrop-filter: blur(6px);
@@ -897,7 +1179,7 @@ button.reset {
 
 /* Breadcrumb */
 .breadcrumb {
-  margin-bottom: 1.25rem;
+  margin-bottom: 0.5rem;
 }
 
 .breadcrumb ol {
@@ -949,13 +1231,50 @@ button.reset {
   pointer-events: none;
 }
 
-/* Collection header + sort */
+/* Collection header + sort — horizontal layout so the right-side
+   whitespace isn't wasted. Eyebrow sits on its own row; title,
+   description, and sort share a single row when there's horizontal
+   room, and wrap to stacked on narrow viewports. */
 .collection-header {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: 1.25rem;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  grid-template-areas:
+    "eyebrow eyebrow eyebrow"
+    "title   .       sort";
+  column-gap: 2.5rem;
+  row-gap: 0.25rem;
+  align-items: end;
+  max-width: none;
+  margin-bottom: 1.25rem;
+}
+
+.collection-header .page-eyebrow {
+  grid-area: eyebrow;
+}
+
+.collection-header .page-title {
+  grid-area: title;
+  white-space: nowrap;
+}
+
+.collection-header .collection-sort {
+  grid-area: sort;
+  margin-bottom: 0.35rem;
+  white-space: nowrap;
+}
+
+@media (max-width: 767px) {
+  .collection-header {
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      "eyebrow"
+      "title"
+      "sort";
+    column-gap: 0;
+  }
+  .collection-header .page-title {
+    white-space: normal;
+  }
 }
 
 .collection-sort {
@@ -1006,32 +1325,22 @@ button.reset {
    for a consistent gutter. Top padding kept small — the breadcrumb
    was dropped and the hero is the opening statement. */
 .product-page {
-  width: min(1440px, calc(100% - 3rem));
+  width: var(--rail-width);
   margin: 0 auto;
   padding: 0.75rem 0 4rem;
 }
 
 .product-hero {
   display: grid;
-  gap: 1.5rem;
-  margin-bottom: 1.5rem;
-  align-items: stretch;
+  gap: 2rem;
+  margin-bottom: 2.5rem;
+  align-items: start;
 }
 
 @media (min-width: 960px) {
   .product-hero {
-    grid-template-columns: minmax(0, 1.1fr) minmax(0, 1.3fr);
-    gap: 2.5rem;
-    /* Keep the hero within one viewport so price + CTA land above the
-       fold without scrolling. Subtract header, breadcrumb, own padding. */
-    min-height: calc(100vh - var(--header-height) - 10rem);
-    max-height: calc(100vh - var(--header-height) - 6rem);
-  }
-}
-
-@media (min-width: 960px) {
-  .product-hero-media {
-    max-height: calc(100vh - var(--header-height) - 18rem);
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 3rem;
   }
 }
 
@@ -1085,43 +1394,27 @@ button.reset {
   min-width: 0;
 }
 
-.product-hero-media {
-  background: linear-gradient(
-    180deg,
-    color-mix(in srgb, var(--color-accent) 18%, var(--color-bg-card)),
-    var(--color-bg-card)
-  );
-  border: 1px solid var(--color-border);
-  border-radius: 12px;
-  overflow: hidden;
-  padding: 0.75rem;
-  flex: 1 1 auto;
-  min-height: 0;
-  display: flex;
-  flex-direction: column;
+/* Gallery sticks to the top of the viewport while the copy column
+   scrolls past — kills the "empty gallery column" dead zone when the
+   copy side is taller than the gallery side in the grid row. Only
+   applies on desktop where the hero is 2-column. */
+@media (min-width: 960px) {
+  .product-hero-right {
+    position: sticky;
+    top: calc(var(--header-height) + 1rem);
+    align-self: start;
+  }
 }
 
-@media (min-width: 960px) {
-  .product-hero-media {
-    /* Let the gallery fill whatever the flex column gives it instead of
-       forcing a 1:1 aspect ratio that overflows the viewport on wide
-       desktops. */
-    max-height: calc(100vh - 16rem);
-  }
-  .product-hero-media .product-gallery {
-    flex: 1 1 auto;
-    min-height: 0;
-  }
-  .product-hero-media .product-gallery-main {
-    aspect-ratio: auto;
-    flex: 1 1 auto;
-    min-height: 0;
-  }
-  .product-hero-media .product-gallery-main img {
-    width: 100%;
-    height: 100%;
-    object-fit: contain;
-  }
+/* Product image frame — neutral card, locked 1:1, rounded corners. The
+   old gold gradient background fought with the product photos; the
+   neutral card reads cleaner and lets the 3D render do the talking. */
+.product-hero-media {
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: 16px;
+  overflow: hidden;
+  padding: 1rem;
 }
 
 /* Trust chips */
@@ -1158,32 +1451,36 @@ button.reset {
   border-color: color-mix(in srgb, var(--color-gold) 40%, var(--color-border));
 }
 
-/* Buy strip (sits inside the hero right column) */
+/* Buy strip — price hugs left, Add-to-cart fills the rest with only a
+   tight gap between them. No min-widths — we want the button to claim
+   every pixel the price isn't using. */
 .product-buy {
   display: flex;
   align-items: center;
-  gap: 1.25rem;
+  gap: 1rem;
   flex-wrap: wrap;
   padding: 1rem 1.25rem;
   background: var(--color-bg-card);
   border: 1px solid var(--color-border);
-  border-radius: 10px;
-  margin: 0;
+  border-radius: 12px;
+  margin: 0.5rem 0 0;
 }
 
 .product-buy-price {
   display: flex;
-  align-items: baseline;
-  gap: 0.75rem;
-  min-width: 160px;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.2rem;
+  flex: 0 0 auto;
 }
 
 .product-buy-price .product-price {
   font-family: var(--font-display);
-  font-weight: 600;
-  font-size: 1.75rem;
+  font-weight: 700;
+  font-size: 2rem;
   letter-spacing: -0.02em;
   color: var(--color-text);
+  line-height: 1;
 }
 
 .product-buy-sku {
@@ -1195,8 +1492,62 @@ button.reset {
 }
 
 .product-buy .product-form {
-  flex: 1 1 280px;
-  max-width: 28rem;
+  flex: 1 1 180px;
+}
+
+/* Pair CTA — playful cross-sell that sits under the buy strip. Vertical
+   stack so the product name gets display-size weight; the arrow pins to
+   the bottom-right corner of the card. */
+.pair-cta {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  padding: 1.1rem 3.25rem 1.1rem 1.4rem;
+  margin-top: 0.25rem;
+  background: color-mix(in srgb, var(--color-gold) 6%, var(--color-bg-card));
+  border: 1px solid color-mix(in srgb, var(--color-gold) 35%, var(--color-border));
+  border-radius: 12px;
+  color: var(--color-text);
+  transition: border-color 0.2s ease, background 0.2s ease, transform 0.2s ease;
+}
+
+.pair-cta:hover {
+  border-color: var(--color-gold);
+  background: color-mix(in srgb, var(--color-gold) 10%, var(--color-bg-card));
+  color: var(--color-text);
+  transform: translateY(-1px);
+}
+
+.pair-cta-eyebrow {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--color-gold);
+}
+
+.pair-cta-title {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.25rem;
+  line-height: 1.25;
+  letter-spacing: -0.01em;
+  color: var(--color-text);
+}
+
+.pair-cta-arrow {
+  position: absolute;
+  right: 1.4rem;
+  bottom: 1.1rem;
+  font-family: var(--font-mono);
+  font-size: 1.4rem;
+  color: var(--color-gold);
+  transition: transform 0.2s ease;
+}
+
+.pair-cta:hover .pair-cta-arrow {
+  transform: translateX(4px);
 }
 
 /* Chapters */
@@ -1286,13 +1637,15 @@ button.reset {
   margin: 1.25rem 0 0;
 }
 
-/* Teardown pins list */
+/* Teardown pins list — wraps into 2–3 columns so short part names don't
+   each own a full-width row. */
 .teardown-pins {
   list-style: none;
   padding: 0;
   margin: 0;
   display: grid;
   gap: 0.5rem;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
 }
 
 .teardown-pins li {
@@ -1374,6 +1727,373 @@ button.reset {
   margin: 0;
 }
 
+/* Sub-heading inside a chapter — divider between card groups. */
+.chapter-subhead {
+  margin: 1.75rem 0 0.75rem;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+
+/* Latest commit — live card under the open-source row. Fetched from
+   GitHub in the loader (deferred), with a skeleton while it streams. */
+.latest-commits {
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+}
+
+.latest-commit-card {
+  display: grid;
+  gap: 0.35rem;
+  padding: 0.9rem 1.05rem;
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  color: var(--color-text);
+  text-decoration: none;
+  transition: border-color 0.2s ease, background 0.2s ease;
+}
+
+.latest-commit-card:hover {
+  border-color: color-mix(in srgb, var(--color-gold) 40%, var(--color-border));
+  background: color-mix(in srgb, var(--color-gold) 4%, var(--color-bg-card));
+}
+
+.latest-commit-label {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+
+.latest-commit-label span {
+  color: var(--color-gold);
+}
+
+.latest-commit-message {
+  margin: 0;
+  font-size: 0.95rem;
+  line-height: 1.45;
+  color: var(--color-text);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.latest-commit-meta {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--color-text-muted);
+}
+
+.latest-commit-sha {
+  color: var(--color-gold);
+}
+
+.latest-commit-skeleton {
+  pointer-events: none;
+}
+
+.latest-commit-skeleton-line {
+  background: var(--color-bg-elevated);
+  border-radius: 4px;
+  animation: latest-commit-pulse 1.4s ease-in-out infinite;
+}
+
+.latest-commit-skeleton-label {
+  width: 35%;
+  height: 0.6rem;
+}
+
+.latest-commit-skeleton-message {
+  width: 85%;
+  height: 1rem;
+}
+
+.latest-commit-skeleton-meta {
+  width: 55%;
+  height: 0.7rem;
+}
+
+@keyframes latest-commit-pulse {
+  0%,
+  100% {
+    opacity: 0.5;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+/* Provenance card — Designed / Assembled / Next. Pinned inside the
+   In-the-box chapter so "where is this made" sits next to the parts
+   list, not buried in the legal footer. */
+.provenance-card {
+  margin-top: 1.5rem;
+  padding: 1.25rem 1.4rem;
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-left: 3px solid var(--color-gold);
+  border-radius: 10px;
+}
+
+.provenance-label {
+  margin: 0 0 0.75rem;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--color-gold);
+}
+
+.provenance-rows {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 0.6rem;
+}
+
+.provenance-rows li {
+  display: grid;
+  grid-template-columns: 1.6rem 5.5rem 1fr;
+  column-gap: 0.75rem;
+  align-items: baseline;
+}
+
+.provenance-flag {
+  font-size: 1.05rem;
+  line-height: 1;
+}
+
+.provenance-row-label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+
+.provenance-row-value {
+  color: var(--color-text);
+  font-size: 0.92rem;
+  line-height: 1.5;
+}
+
+.provenance-row-note {
+  color: var(--color-text-muted);
+  font-family: var(--font-mono);
+  font-size: 11px;
+}
+
+.provenance-foot {
+  margin: 1rem 0 0;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  line-height: 1.55;
+  color: var(--color-text-muted);
+}
+
+/* Downloads grid — schematic / STEP / BOM / manual chapter. */
+.downloads-grid {
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+}
+
+.download-card {
+  display: grid;
+  grid-template-columns: 2rem 1fr;
+  grid-template-rows: auto auto auto auto;
+  column-gap: 0.85rem;
+  row-gap: 0.25rem;
+  padding: 1rem 1.15rem;
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  color: var(--color-text);
+  text-decoration: none;
+  transition: border-color 0.2s ease, background 0.2s ease,
+    transform 0.2s ease;
+}
+
+.download-card:hover {
+  border-color: color-mix(in srgb, var(--color-gold) 45%, var(--color-border));
+  background: color-mix(in srgb, var(--color-gold) 4%, var(--color-bg-card));
+  transform: translateY(-1px);
+}
+
+.download-icon {
+  grid-column: 1;
+  grid-row: 1 / span 4;
+  align-self: center;
+  justify-self: center;
+  font-size: 1.2rem;
+  color: var(--color-gold);
+  line-height: 1;
+}
+
+.download-label {
+  grid-column: 2;
+  grid-row: 1;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 1rem;
+  color: var(--color-text);
+}
+
+.download-note {
+  grid-column: 2;
+  grid-row: 2;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  line-height: 1.55;
+  color: var(--color-text-muted);
+}
+
+.download-size {
+  grid-column: 2;
+  grid-row: 3;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+
+.download-cta {
+  grid-column: 2;
+  grid-row: 4;
+  margin-top: 0.35rem;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  color: var(--color-gold);
+}
+
+/* Bundle components — richer cards than the generic open-source cards
+   because this is the "what's in the box" moment on a bundle PDP. */
+.bundle-components {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+}
+
+.bundle-component-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 1.25rem 1.4rem;
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  color: var(--color-text);
+  transition: border-color 0.2s ease, background 0.2s ease, transform 0.2s ease;
+}
+
+.bundle-component-card:hover {
+  border-color: color-mix(in srgb, var(--color-gold) 45%, var(--color-border));
+  background: color-mix(in srgb, var(--color-gold) 4%, var(--color-bg-card));
+  color: var(--color-text);
+  transform: translateY(-1px);
+}
+
+.bundle-component-title {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.25rem;
+  letter-spacing: -0.01em;
+  margin: 0;
+  color: var(--color-text);
+}
+
+.bundle-component-blurb {
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  line-height: 1.6;
+  color: var(--color-text-muted);
+  margin: 0;
+}
+
+.bundle-component-firmware {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+  margin: 0.25rem 0 0;
+}
+
+.bundle-component-firmware span {
+  color: var(--color-gold);
+}
+
+.bundle-component-more {
+  margin-top: 0.5rem;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  color: var(--color-gold);
+}
+
+/* In the box — actual parts list. Engineering-terse, mono font, no
+   stock photo of an open box. Fixed-width qty column so all rows align
+   even when qty is "1–2×" or "kit". */
+.in-the-box {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 1.5rem;
+  display: grid;
+  gap: 0.5rem;
+}
+
+.in-the-box li {
+  display: grid;
+  grid-template-columns: 3rem 1fr;
+  grid-template-rows: auto auto;
+  column-gap: 0.9rem;
+  row-gap: 0.15rem;
+  padding: 0.7rem 0.9rem;
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+}
+
+.in-the-box-qty {
+  grid-column: 1;
+  grid-row: 1 / span 2;
+  align-self: center;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  color: var(--color-gold);
+  text-transform: uppercase;
+}
+
+.in-the-box-item {
+  grid-column: 2;
+  grid-row: 1;
+  color: var(--color-text);
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+
+.in-the-box-note {
+  grid-column: 2;
+  grid-row: 2;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  line-height: 1.55;
+  color: var(--color-text-muted);
+}
+
 /* Spec table */
 .spec-table {
   display: grid;
@@ -1415,7 +2135,9 @@ button.reset {
   text-align: right;
 }
 
-/* Firmware contribution split */
+/* Firmware contribution split — 2-column grid so the big €N + €1 sits
+   left and the tagline + funded-project link fill the right side.
+   Avoids the empty right-half the old vertical layout created. */
 .firmware-split {
   position: relative;
   border: 1px solid var(--color-border);
@@ -1427,15 +2149,21 @@ button.reset {
       color-mix(in srgb, var(--color-accent) 10%, var(--color-bg-card)),
       var(--color-bg-card) 75%
     );
+  display: grid;
+  grid-template-columns: auto 1fr;
+  column-gap: 2.25rem;
+  row-gap: 0.5rem;
+  align-items: center;
 }
 
 .firmware-split-eyebrow {
+  grid-column: 1 / -1;
   font-family: var(--font-mono);
   font-size: 10px;
   letter-spacing: 0.25em;
   text-transform: uppercase;
   color: var(--color-gold);
-  margin: 0 0 0.9rem;
+  margin: 0;
 }
 
 .firmware-split-eyebrow span {
@@ -1443,15 +2171,26 @@ button.reset {
 }
 
 .firmware-split-amounts {
+  grid-row: 2 / span 2;
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  margin-bottom: 0.9rem;
   font-family: var(--font-display);
   font-weight: 700;
   font-size: clamp(2rem, 5vw, 3rem);
   letter-spacing: -0.01em;
   line-height: 1;
+  margin: 0;
+}
+
+@media (max-width: 640px) {
+  .firmware-split {
+    grid-template-columns: 1fr;
+  }
+  .firmware-split-amounts {
+    grid-row: auto;
+    margin-bottom: 0.5rem;
+  }
 }
 
 .firmware-split-board {
@@ -1472,11 +2211,24 @@ button.reset {
   line-height: 1.45;
   color: var(--color-text);
   margin: 0;
+  align-self: end;
 }
 
 .firmware-split-tagline strong {
   color: var(--color-accent-light);
   font-weight: 600;
+}
+
+.firmware-split-link {
+  align-self: start;
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+  margin: 0;
+}
+
+.firmware-split-link a {
+  color: var(--color-gold);
 }
 
 /* Category chips */
@@ -1650,8 +2402,25 @@ button.reset {
 }
 
 .cart-details {
-  display: grid;
-  gap: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  gap: 1.25rem;
+}
+
+/* The line-items UL wrapper scrolls; everything else (donation, summary)
+   sticks below in normal flow so it never covers cart lines. */
+.cart-lines-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.cart-lines-scroll ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
 }
 
 .cart-summary-page,
@@ -1663,9 +2432,7 @@ button.reset {
 }
 
 .cart-summary-aside {
-  bottom: 0;
-  position: absolute;
-  width: calc(var(--aside-width) - 40px);
+  flex-shrink: 0;
 }
 
 .cart-subtotal {
@@ -1684,24 +2451,87 @@ button.reset {
   line-height: 1.6;
 }
 
-.cart-line-inner {
-  gap: 1rem;
-}
-
 .cart-line-inner > div {
-  flex: 1;
   min-width: 0;
   display: grid;
-  gap: 0.5rem;
+  gap: 0.35rem;
+}
+
+.cart-line-inner > div p strong {
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: var(--color-text);
 }
 
 .cart-line-quantity {
+  display: flex;
   align-items: center;
-  gap: 0.5rem;
-  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: 0.25rem;
 }
 
-.cart-line-quantity button,
+.cart-line-quantity small {
+  font-size: 11px;
+  color: var(--color-text-muted);
+  margin-right: 0.25rem;
+  letter-spacing: 0.02em;
+}
+
+/* React Router's CartForm renders a <form>, which defaults to block-
+   level — that's what was stacking the +/- controls vertically. Put
+   the forms back inline so the quantity row stays horizontal. */
+.cart-line-quantity form {
+  display: inline-flex;
+  margin: 0;
+}
+
+/* Override the gold button default for the quantity +/- controls.
+   Keep gold for APPLY buttons in the summary. */
+.cart-line-quantity button {
+  background: transparent;
+  color: var(--color-text-muted);
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  padding: 0;
+  width: 26px;
+  height: 26px;
+  font-size: 14px;
+  line-height: 1;
+  letter-spacing: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cart-line-quantity button:hover {
+  background: var(--color-bg-elevated);
+  color: var(--color-text);
+  border-color: var(--color-gold);
+}
+
+.cart-line-quantity button:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+/* "Remove" button — text-only, subtle */
+.cart-line-quantity form:last-child button {
+  width: auto;
+  padding: 0 0.4rem;
+  border: none;
+  font-size: 10px;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-left: 0.25rem;
+}
+
+.cart-line-quantity form:last-child button:hover {
+  background: transparent;
+  color: #f5b4b4;
+  border: none;
+}
+
 .cart-summary-page button,
 .cart-summary-aside button,
 .search-submit,
@@ -1723,7 +2553,6 @@ button.reset {
     color 150ms ease;
 }
 
-.cart-line-quantity button,
 .cart-summary-page button,
 .cart-summary-aside button {
   padding: 0.5rem 0.8rem;
@@ -1734,7 +2563,6 @@ button.reset {
   color: var(--color-text-muted);
 }
 
-.cart-line-quantity button:hover,
 .cart-summary-page button:hover,
 .cart-summary-aside button:hover,
 .search-submit:hover,
@@ -2210,9 +3038,14 @@ button.reset {
 }
 
 .product-compliance-grid {
-  display: grid;
-  gap: 1rem;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem 3rem;
+}
+
+.product-compliance-grid > div {
+  min-width: 200px;
+  max-width: 420px;
 }
 
 .product-compliance-grid dt {
@@ -2379,10 +3212,6 @@ button.reset {
 }
 
 @media (min-width: 768px) {
-  .page-shell {
-    width: min(1440px, calc(100% - 3rem));
-  }
-
   .account-form-grid,
   .order-search-inputs {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -2410,7 +3239,7 @@ button.reset {
 @media (max-width: 767px) {
   .page-shell {
     width: calc(100% - 1.5rem);
-    padding: 1.75rem 0 3rem;
+    padding: 0.75rem 0 2.5rem;
   }
 
   .product-facts {
@@ -2420,4 +3249,1334 @@ button.reset {
   .predictive-search-form {
     grid-template-columns: 1fr;
   }
+}
+
+/* ============================================
+   Editorial pages (Open source, Firmware partners)
+   Narrow-column reading layout shared between the
+   two JSX-driven explainer pages.
+   ============================================ */
+
+.editorial-page {
+  width: var(--rail-width);
+  margin: 0 auto;
+  padding: 3rem 0 5rem;
+  color: var(--color-text);
+}
+
+.editorial-page > * {
+  max-width: var(--prose-width);
+}
+
+.editorial-hero {
+  margin-bottom: 3rem;
+}
+
+.editorial-eyebrow {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  color: var(--color-gold);
+  margin: 0 0 1rem;
+}
+
+.editorial-title {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: clamp(1.9rem, 4vw, 3rem);
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+  margin: 0 0 1.25rem;
+}
+
+.editorial-title em {
+  font-style: italic;
+  color: var(--color-gold);
+}
+
+.editorial-lead {
+  font-family: var(--font-mono);
+  font-size: 0.95rem;
+  line-height: 1.7;
+  color: var(--color-text-muted);
+  margin: 0;
+}
+
+.editorial-section {
+  margin-top: 2.5rem;
+  font-family: var(--font-mono);
+  font-size: 0.9rem;
+  line-height: 1.75;
+  color: var(--color-text-muted);
+}
+
+.editorial-section p {
+  margin: 0 0 1rem;
+}
+
+.editorial-section strong {
+  color: var(--color-text);
+  font-weight: 600;
+}
+
+.editorial-section em {
+  color: var(--color-gold);
+  font-style: italic;
+}
+
+.editorial-section-title {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  color: var(--color-text);
+  margin: 0 0 1rem;
+}
+
+.editorial-list {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 0.5rem;
+}
+
+.editorial-list li {
+  padding: 0.6rem 0;
+  border-bottom: 1px solid color-mix(in srgb, var(--color-border) 80%, transparent);
+}
+
+.editorial-list li:last-child {
+  border-bottom: none;
+}
+
+.editorial-cta {
+  margin-top: 3rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.editorial-cta-primary {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.9rem 1.5rem;
+  background: var(--color-gold);
+  color: var(--color-bg);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  border-radius: 4px;
+  transition: background-color 0.2s ease;
+}
+
+.editorial-cta-primary:hover {
+  background: var(--color-gold-hover);
+  color: var(--color-bg);
+}
+
+.editorial-cta-secondary {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.9rem 1.5rem;
+  border: 1px solid var(--color-border);
+  color: var(--color-text-muted);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  border-radius: 4px;
+  transition: border-color 0.2s ease, color 0.2s ease;
+}
+
+.editorial-cta-secondary:hover {
+  border-color: var(--color-gold);
+  color: var(--color-text);
+}
+
+/* Firmware partner cards */
+.partners-grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: 1fr;
+  margin-top: 1.25rem;
+}
+
+.partner-card {
+  padding: 1.25rem 1.5rem;
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+}
+
+.partner-label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--color-gold);
+  margin: 0 0 0.4rem;
+}
+
+.partner-project {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.4rem;
+  color: var(--color-text);
+  margin: 0 0 0.6rem;
+}
+
+.partner-blurb {
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  line-height: 1.65;
+  color: var(--color-text-muted);
+  margin: 0 0 0.9rem;
+}
+
+.partner-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.partner-links a {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--color-gold);
+  transition: color 0.2s ease;
+}
+
+.partner-links a:hover {
+  color: var(--color-gold-hover);
+}
+
+/* ============================================
+   Donation upsell in the cart
+   ============================================ */
+
+.donation-upsell {
+  margin: 1.5rem 0;
+  padding: 1.5rem;
+  background: color-mix(in srgb, var(--color-gold) 5%, var(--color-bg-card));
+  border: 1px solid color-mix(in srgb, var(--color-gold) 30%, var(--color-border));
+  border-radius: 12px;
+}
+
+.donation-eyebrow {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--color-gold);
+  margin: 0 0 0.6rem;
+}
+
+.donation-title {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.15rem;
+  line-height: 1.3;
+  color: var(--color-text);
+  margin: 0 0 0.5rem;
+}
+
+.donation-body {
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  line-height: 1.65;
+  color: var(--color-text-muted);
+  margin: 0 0 1rem;
+}
+
+.donation-tiers {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 0.6rem;
+}
+
+.donation-tier {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.2rem;
+  padding: 0.9rem 0.75rem;
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  color: var(--color-text);
+  cursor: pointer;
+  transition: border-color 0.2s ease, background 0.2s ease, color 0.2s ease;
+  width: 100%;
+}
+
+.donation-tier:hover {
+  border-color: var(--color-gold);
+  background: color-mix(in srgb, var(--color-gold) 8%, var(--color-bg-card));
+}
+
+.donation-tier:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.donation-tier-label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+
+.donation-tier-price {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.25rem;
+  color: var(--color-gold);
+}
+
+.donation-tier-active {
+  border-color: var(--color-gold);
+  background: color-mix(in srgb, var(--color-gold) 10%, var(--color-bg-card));
+}
+
+.donation-tier-active .donation-tier-label {
+  color: var(--color-gold);
+}
+
+.donation-tier-remove {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+  margin-top: 0.25rem;
+}
+
+.donation-tier-active:hover .donation-tier-remove {
+  color: var(--color-text);
+}
+
+/* Trust-chip link state — chips can now be clickable. */
+.trust-chip-link {
+  cursor: pointer;
+  transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+}
+
+.trust-chip-link:hover {
+  color: var(--color-text);
+  border-color: color-mix(in srgb, var(--color-gold) 60%, var(--color-border));
+  background: color-mix(in srgb, var(--color-gold) 6%, var(--color-bg-card));
+}
+
+.trust-chip-link.trust-chip-green:hover {
+  color: var(--color-accent-light);
+  border-color: color-mix(in srgb, var(--color-accent-light) 60%, var(--color-border));
+}
+
+.trust-chip-link.trust-chip-gold:hover {
+  color: var(--color-gold-hover);
+}
+
+/* --------------------------------------------------------------------- */
+/* Contact page — tiered visual hierarchy                                  */
+/* Discord first, web ticket second, direct/security third, legal pinned   */
+/* at the bottom for compliance.                                           */
+/* --------------------------------------------------------------------- */
+
+.contact-page {
+  display: flex;
+  flex-direction: column;
+  gap: 2.25rem;
+  max-width: 64rem;
+  margin: 0 auto;
+}
+
+.contact-hero {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-top: 1rem;
+  padding-bottom: 0.5rem;
+}
+
+.contact-hero-eyebrow {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--color-gold);
+  margin: 0;
+}
+
+.contact-hero-title {
+  font-family: var(--font-display);
+  font-size: clamp(2rem, 4.2vw, 3rem);
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+  font-weight: 700;
+  color: var(--color-text);
+  margin: 0;
+}
+
+.contact-hero-lede {
+  font-size: 1rem;
+  line-height: 1.6;
+  color: var(--color-text-muted);
+  margin: 0.5rem 0 0;
+  max-width: 44rem;
+}
+
+/* --- shared tier styling --------------------------------------------- */
+
+.contact-tier {
+  border: 1px solid var(--color-border);
+  background: var(--color-bg-card);
+  border-radius: 3px;
+  padding: 1.75rem;
+  display: grid;
+  gap: 1.5rem;
+  grid-template-columns: 1fr;
+  position: relative;
+}
+
+@media (min-width: 860px) {
+  .contact-tier-discord {
+    grid-template-columns: 1.4fr 1fr;
+    align-items: center;
+    padding: 2.25rem 2.25rem;
+  }
+}
+
+.contact-tier-eyebrow {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+  margin: 0 0 0.5rem;
+}
+
+.contact-tier-title {
+  font-family: var(--font-display);
+  font-size: clamp(1.45rem, 2.4vw, 1.85rem);
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  color: var(--color-text);
+  margin: 0 0 0.6rem;
+}
+
+.contact-tier-lede {
+  font-size: 0.9rem;
+  line-height: 1.6;
+  color: var(--color-text-muted);
+  margin: 0;
+  max-width: 36rem;
+}
+
+.contact-tier-action {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.contact-tier-cta {
+  display: inline-block;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  font-weight: 700;
+  padding: 0.85rem 1.4rem;
+  border-radius: 2px;
+  text-decoration: none;
+  border: 1px solid transparent;
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+.contact-tier-cta-primary {
+  background: var(--color-gold);
+  color: var(--color-bg);
+}
+
+.contact-tier-cta-primary:hover {
+  background: var(--color-gold-hover);
+  color: var(--color-bg);
+}
+
+/* --- tier 1: Discord (gold accent rail, CTA right) ------------------- */
+
+.contact-tier-discord {
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--color-gold) 7%, var(--color-bg-card)) 0%,
+    var(--color-bg-card) 60%
+  );
+  border-color: color-mix(in srgb, var(--color-gold) 30%, var(--color-border));
+}
+
+.contact-tier-discord::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 3px;
+  background: var(--color-gold);
+  border-radius: 2px 0 0 2px;
+}
+
+.contact-tier-discord .contact-tier-eyebrow {
+  color: var(--color-gold);
+}
+
+/* --- tier 2: web ticket --------------------------------------------- */
+
+.contact-tier-ticket {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.contact-tier-ticket .contact-tier-text {
+  max-width: 44rem;
+}
+
+.contact-tier-widget {
+  /* Card-in-card: the widget keeps its own border so the chat log doesn't
+     sprawl to full tier width on desktop. */
+  width: 100%;
+  max-width: 44rem;
+}
+
+.contact-offline-note {
+  border: 1px dashed var(--color-border);
+  background: var(--color-bg);
+  padding: 1.25rem;
+  border-radius: 2px;
+  color: var(--color-text-muted);
+  font-size: 0.85rem;
+  line-height: 1.55;
+  margin: 0;
+}
+
+/* --- tier 3: direct + security row ---------------------------------- */
+
+.contact-tier-row {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.25rem;
+}
+
+@media (min-width: 760px) {
+  .contact-tier-row {
+    grid-template-columns: 1.3fr 1fr;
+  }
+}
+
+.contact-tier-card {
+  border: 1px solid var(--color-border);
+  background: var(--color-bg-card);
+  border-radius: 3px;
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.contact-tier-card-title {
+  font-family: var(--font-display);
+  font-size: 1.15rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--color-text);
+  margin: 0 0 0.35rem;
+}
+
+.contact-direct-list {
+  list-style: none;
+  margin: 0.85rem 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.contact-direct-list li {
+  display: grid;
+  grid-template-columns: 4.5rem 1fr;
+  gap: 0.75rem;
+  align-items: baseline;
+}
+
+.contact-direct-label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+
+.contact-direct-list a {
+  font-family: var(--font-mono);
+  font-size: 0.9rem;
+  color: var(--color-text);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  text-decoration-color: color-mix(in srgb, var(--color-gold) 50%, transparent);
+}
+
+.contact-direct-list a:hover {
+  color: var(--color-gold);
+}
+
+.contact-security-cta {
+  align-self: flex-start;
+  margin-top: 0.85rem;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  font-weight: 700;
+  color: var(--color-text);
+  text-decoration: none;
+  border: 1px solid var(--color-border);
+  padding: 0.6rem 1rem;
+  border-radius: 2px;
+  transition: border-color 0.15s ease, color 0.15s ease;
+}
+
+.contact-security-cta:hover {
+  color: var(--color-gold);
+  border-color: color-mix(in srgb, var(--color-gold) 60%, var(--color-border));
+}
+
+/* --- legal reference (compliance footnote) -------------------------- */
+
+.contact-reference {
+  border-top: 1px solid var(--color-border);
+  padding-top: 1.5rem;
+  margin-top: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.contact-reference-eyebrow {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+  margin: 0;
+}
+
+.contact-reference-body {
+  font-size: 0.82rem;
+  line-height: 1.55;
+  color: var(--color-text-muted);
+  max-width: 44rem;
+}
+
+.contact-reference-body h2 {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+  margin: 1rem 0 0.35rem;
+}
+
+.contact-reference-body h2:first-child {
+  margin-top: 0;
+}
+
+.contact-reference-body p {
+  margin: 0 0 0.5rem;
+}
+
+.contact-reference-body a {
+  color: var(--color-text);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  text-decoration-color: color-mix(in srgb, var(--color-gold) 50%, transparent);
+}
+
+.contact-reference-body a:hover {
+  color: var(--color-gold);
+}
+
+@media (max-width: 720px) {
+  .contact-tier {
+    padding: 1.25rem;
+  }
+  .contact-tier-discord {
+    padding: 1.5rem;
+  }
+  .contact-tier-action {
+    justify-content: flex-start;
+  }
+}
+
+/* --- widget shell ---------------------------------------------------- */
+
+.support-widget {
+  border: 1px solid var(--color-border);
+  background: var(--color-bg-card);
+  border-radius: 2px;
+  display: flex;
+  flex-direction: column;
+  min-height: 26rem;
+}
+
+.support-eyebrow {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--color-gold);
+  margin: 0 0 0.35rem;
+}
+
+.support-title {
+  font-family: var(--font-display);
+  font-size: 1.15rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--color-text);
+  margin: 0 0 0.35rem;
+}
+
+.support-lede {
+  font-size: 0.85rem;
+  line-height: 1.55;
+  color: var(--color-text-muted);
+  margin: 0 0 1rem;
+}
+
+.support-lede a,
+.support-privacy a {
+  color: var(--color-gold);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+/* --- intake form ----------------------------------------------------- */
+
+.support-intake {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 1.5rem;
+}
+
+.support-intro {
+  margin-bottom: 0.25rem;
+}
+
+.support-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.support-label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+
+.support-intake input,
+.support-intake textarea,
+.support-composer textarea {
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  color: var(--color-text);
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  padding: 0.65rem 0.75rem;
+  border-radius: 2px;
+  resize: vertical;
+  min-height: 2.4rem;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.support-intake input:focus,
+.support-intake textarea:focus,
+.support-composer textarea:focus {
+  outline: none;
+  border-color: var(--color-gold);
+}
+
+.support-intake input:disabled,
+.support-intake textarea:disabled,
+.support-composer textarea:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.support-turnstile {
+  min-height: 65px;
+}
+
+.support-error {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: #e06c6c;
+  margin: 0;
+}
+
+.support-submit {
+  align-self: flex-start;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  font-weight: 700;
+  background: var(--color-gold);
+  color: var(--color-bg);
+  border: none;
+  padding: 0.65rem 1.1rem;
+  border-radius: 2px;
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  transition: background 0.15s ease, opacity 0.15s ease;
+}
+
+/* Signed-out branch — shown in place of the intake form when the
+   visitor isn't authenticated with the Customer Account API. */
+.support-signin {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1.25rem 0;
+}
+.support-signin-lede {
+  color: var(--color-text-muted);
+  font-size: 0.9rem;
+  line-height: 1.55;
+  margin: 0;
+}
+.support-signin-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1rem;
+}
+.support-signin-alt {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.support-signin-alt:hover {
+  color: var(--color-text);
+}
+
+.support-submit:hover:not(:disabled) {
+  background: var(--color-gold-hover);
+}
+
+.support-submit:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.support-privacy {
+  font-size: 0.72rem;
+  color: var(--color-text-muted);
+  line-height: 1.5;
+  margin: 0.25rem 0 0;
+}
+
+/* --- active chat ----------------------------------------------------- */
+
+.support-chat {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 26rem;
+}
+
+.support-chat-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.support-close {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+  background: transparent;
+  border: 1px solid var(--color-border);
+  padding: 0.4rem 0.75rem;
+  border-radius: 2px;
+  cursor: pointer;
+  transition: color 0.15s ease, border-color 0.15s ease;
+}
+
+.support-close:hover {
+  color: var(--color-text);
+  border-color: var(--color-text-muted);
+}
+
+.support-log {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1rem 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  min-height: 12rem;
+  max-height: 28rem;
+}
+
+.support-msg {
+  border: 1px solid var(--color-border);
+  border-radius: 2px;
+  padding: 0.65rem 0.85rem;
+  background: var(--color-bg);
+  max-width: 85%;
+}
+
+.support-msg-user {
+  align-self: flex-end;
+  border-color: color-mix(in srgb, var(--color-gold) 40%, var(--color-border));
+}
+
+.support-msg-staff {
+  align-self: flex-start;
+}
+
+.support-msg-pending {
+  opacity: 0.6;
+}
+
+.support-msg-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+  margin-bottom: 0.35rem;
+}
+
+.support-msg-author {
+  color: var(--color-text-muted);
+}
+
+.support-msg-staff .support-msg-author {
+  color: var(--color-gold);
+}
+
+.support-msg-body {
+  font-size: 0.88rem;
+  line-height: 1.5;
+  color: var(--color-text);
+  margin: 0;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+
+.support-msg-attachments {
+  list-style: none;
+  margin: 0.5rem 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.support-msg-attachments a {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--color-gold);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  word-break: break-all;
+}
+
+.support-typing,
+.support-hint {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--color-text-muted);
+  margin: 0.25rem 0 0;
+  font-style: italic;
+}
+
+.support-composer {
+  display: flex;
+  gap: 0.75rem;
+  padding: 1rem 1.25rem;
+  border-top: 1px solid var(--color-border);
+  align-items: flex-end;
+}
+
+.support-composer textarea {
+  flex: 1;
+  min-height: 2.6rem;
+  resize: none;
+}
+
+.support-composer .support-submit {
+  align-self: stretch;
+  padding: 0 1.1rem;
+}
+
+.support-closed-note {
+  font-size: 0.82rem;
+  color: var(--color-text-muted);
+  padding: 1rem 1.25rem;
+  margin: 0;
+  border-top: 1px solid var(--color-border);
+}
+
+.support-boot {
+  padding: 2rem 1.25rem;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+  text-align: center;
+}
+
+@media (max-width: 600px) {
+  .support-intake,
+  .support-chat-head,
+  .support-log,
+  .support-composer {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+  .support-msg {
+    max-width: 100%;
+  }
+}
+
+/* --------------------------------------------------------------------- */
+/* Support widget — file picker + chips                                   */
+/* --------------------------------------------------------------------- */
+
+.support-files {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  align-items: flex-start;
+}
+
+.support-files-compact {
+  flex-direction: row;
+  align-items: stretch;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.support-files-btn {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  font-weight: 700;
+  background: transparent;
+  color: var(--color-text-muted);
+  border: 1px solid var(--color-border);
+  padding: 0.45rem 0.75rem;
+  border-radius: 2px;
+  cursor: pointer;
+  transition: color 0.15s ease, border-color 0.15s ease;
+  white-space: nowrap;
+}
+
+.support-files-btn:hover:not(:disabled) {
+  color: var(--color-text);
+  border-color: color-mix(in srgb, var(--color-gold) 60%, var(--color-border));
+}
+
+.support-files-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.support-files-compact .support-files-btn {
+  padding: 0.4rem 0.55rem;
+  font-size: 13px;
+  align-self: stretch;
+}
+
+.support-files-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  width: 100%;
+}
+
+.support-files-compact .support-files-list {
+  flex-direction: row;
+  flex-wrap: wrap;
+  width: auto;
+}
+
+.support-files-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  border: 1px solid var(--color-border);
+  background: var(--color-bg);
+  padding: 0.3rem 0.5rem;
+  border-radius: 2px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--color-text);
+  max-width: 100%;
+}
+
+.support-files-chip-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 14rem;
+}
+
+.support-files-chip-size {
+  color: var(--color-text-muted);
+  font-size: 10px;
+  letter-spacing: 0.06em;
+}
+
+.support-files-chip button {
+  background: transparent;
+  border: none;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  font-size: 14px;
+  line-height: 1;
+  padding: 0 0.15rem;
+  transition: color 0.15s ease;
+}
+
+.support-files-chip button:hover:not(:disabled) {
+  color: #e06c6c;
+}
+
+/* Composer layout: textarea on top, file row underneath inside the same
+   bordered box; submit button stays to the right. */
+.support-composer-input {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  min-width: 0;
+}
+
+.support-msg-attachment-pending {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--color-text-muted);
+  font-style: italic;
+}
+
+.support-msg-attachments li {
+  word-break: break-all;
+}
+
+/* --------------------------------------------------------------------- */
+/* Support widget — resume-by-email + banner                              */
+/* --------------------------------------------------------------------- */
+
+.support-banner {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin: 1rem 1.25rem 0;
+  padding: 0.75rem 0.85rem;
+  border: 1px solid color-mix(in srgb, var(--color-gold) 50%, var(--color-border));
+  background: color-mix(in srgb, var(--color-gold) 8%, var(--color-bg));
+  border-radius: 2px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 1.55;
+  color: var(--color-text);
+}
+
+.support-banner button {
+  background: transparent;
+  border: none;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  font-size: 16px;
+  line-height: 1;
+  padding: 0 0.25rem;
+}
+
+.support-banner button:hover {
+  color: var(--color-text);
+}
+
+.support-resume {
+  border-top: 1px dashed var(--color-border);
+  margin: 0 1.25rem;
+  padding: 1rem 0 1.25rem;
+}
+
+.support-resume-toggle {
+  background: transparent;
+  border: none;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  padding: 0;
+  transition: color 0.15s ease;
+}
+
+.support-resume-toggle:hover {
+  color: var(--color-gold);
+}
+
+.support-resume-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.support-resume-lede {
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+  margin: 0;
+  line-height: 1.5;
+}
+
+.support-resume-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: stretch;
+}
+
+.support-resume-row input[type="email"] {
+  flex: 1 1 14rem;
+  min-width: 0;
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  color: var(--color-text);
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  padding: 0.55rem 0.75rem;
+  border-radius: 2px;
+}
+
+.support-resume-row input[type="email"]:focus {
+  outline: none;
+  border-color: var(--color-gold);
+}
+
+.support-resume-success {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--color-accent-light);
+  margin: 0;
+  line-height: 1.5;
+}
+
+.support-prefill-note {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--color-text-muted);
+  background: color-mix(in srgb, var(--color-gold) 6%, var(--color-bg));
+  border: 1px solid color-mix(in srgb, var(--color-gold) 35%, var(--color-border));
+  border-radius: 2px;
+  padding: 0.55rem 0.75rem;
+  margin: 0;
+  line-height: 1.55;
+}
+
+.support-prefill-note strong {
+  color: var(--color-text);
+  font-weight: 600;
+}
+
+/* --------------------------------------------------------------------- */
+/* Skip-to-main link (WCAG 2.4.1)                                         */
+/* --------------------------------------------------------------------- */
+
+.skip-link {
+  position: absolute;
+  left: -9999px;
+  top: 0;
+  z-index: 100;
+  padding: 0.75rem 1rem;
+  background: var(--color-gold);
+  color: var(--color-bg);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  font-weight: 700;
+  text-decoration: none;
+  border-radius: 2px;
+}
+
+.skip-link:focus {
+  left: 0.5rem;
+  top: 0.5rem;
+  outline: 2px solid var(--color-text);
+  outline-offset: 2px;
+}
+
+/* --------------------------------------------------------------------- */
+/* Cart action notice (errors / warnings from /cart action)               */
+/* --------------------------------------------------------------------- */
+
+.cart-notice {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  margin-bottom: 1rem;
+  padding: 0.75rem 0.85rem;
+  border-radius: 2px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.cart-notice-error {
+  margin: 0;
+  color: #f1a3a3;
+  border-left: 2px solid #d05050;
+  padding-left: 0.6rem;
+}
+
+.cart-notice-warning {
+  margin: 0;
+  color: var(--color-gold-light);
+  border-left: 2px solid var(--color-gold);
+  padding-left: 0.6rem;
 }

@@ -13,7 +13,7 @@
 Aan:
 **Incutec BV**
 Stapelhuisstraat 15, 3000 Leuven, België
-E-mail: stan@incutec.eu
+E-mail: contact@opendrone.be
 
 ---
 
@@ -45,7 +45,7 @@ ____________________
 ## Instructies voor de consument
 
 1. U heeft **14 kalenderdagen** bedenktijd vanaf de dag nadat u het product heeft ontvangen.
-2. U kunt dit formulier invullen en terugsturen per e-mail naar stan@incutec.eu of per post naar bovenstaand adres.
+2. U kunt dit formulier invullen en terugsturen per e-mail naar contact@opendrone.be of per post naar bovenstaand adres.
 3. U kunt ook op een andere ondubbelzinnige wijze verklaren dat u de overeenkomst wilt herroepen.
 4. Na herroeping heeft u **14 dagen** om het product terug te sturen.
 5. **Terugzendkosten** zijn voor uw rekening.

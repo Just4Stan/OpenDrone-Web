@@ -104,12 +104,25 @@ export async function action({request, context}: Route.ActionArgs) {
 }
 
 export async function loader({context}: Route.LoaderArgs) {
-  const {cart} = context;
-  return await cart.get();
+  const {cart, storefront} = context;
+
+  // Fetch both in parallel. Donation product is optional — if the store
+  // doesn't have a `firmware-donation` product yet the upsell just hides.
+  const [cartData, donationData] = await Promise.all([
+    cart.get(),
+    storefront
+      .query(DONATION_PRODUCT_QUERY, {
+        variables: {handle: 'firmware-donation'},
+        cache: storefront.CacheShort(),
+      })
+      .catch(() => null),
+  ]);
+
+  return {cart: cartData, donationProduct: donationData?.product ?? null};
 }
 
 export default function Cart() {
-  const cart = useLoaderData<typeof loader>();
+  const {cart, donationProduct} = useLoaderData<typeof loader>();
 
   return (
     <div className="cart page-shell">
@@ -120,7 +133,36 @@ export default function Cart() {
           Review your selected hardware before heading to Shopify checkout.
         </p>
       </header>
-      <CartMain layout="page" cart={cart} />
+      <CartMain layout="page" cart={cart} donationProduct={donationProduct} />
     </div>
   );
 }
+
+// Minimal query for the optional `firmware-donation` product. Uses the
+// Storefront API's product-by-handle lookup so a missing product resolves
+// to null instead of erroring. Variants become the tier buttons.
+const DONATION_PRODUCT_QUERY = `#graphql
+  query DonationProduct(
+    $country: CountryCode
+    $language: LanguageCode
+    $handle: String!
+  ) @inContext(country: $country, language: $language) {
+    product(handle: $handle) {
+      id
+      title
+      handle
+      description
+      variants(first: 10) {
+        nodes {
+          id
+          title
+          availableForSale
+          price {
+            amount
+            currencyCode
+          }
+        }
+      }
+    }
+  }
+` as const;

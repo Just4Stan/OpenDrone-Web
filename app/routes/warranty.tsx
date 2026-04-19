@@ -12,6 +12,8 @@ export const meta: Route.MetaFunction = ({data}) => {
     description: labels.description,
     locale: locale === 'nl' ? 'nl_BE' : 'en_US',
     alternateLocales: [locale === 'nl' ? 'en_US' : 'nl_BE'],
+    canonical: data?.canonicalUrl,
+    hreflang: data?.hreflang,
   });
 };
 

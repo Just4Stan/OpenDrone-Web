@@ -15,6 +15,6 @@ Alle producten die door Incutec BV aan consumenten worden verkocht genieten een 
 
 ### Hoe een beroep doen op de garantie
 
-Stuur een e-mail naar [stan@incutec.eu](mailto:stan@incutec.eu) met uw ordernummer, een beschrijving van het defect en foto's/video van de situatie. Wij bevestigen binnen 5 werkdagen en coördineren waar nodig retour voor inspectie, herstel of vervanging.
+Stuur een e-mail naar [contact@opendrone.be](mailto:contact@opendrone.be) met uw ordernummer, een beschrijving van het defect en foto's/video van de situatie. Wij bevestigen binnen 5 werkdagen en coördineren waar nodig retour voor inspectie, herstel of vervanging.
 
 Deze pagina vervangt uw rechten als consument niet. Zie ook onze [Algemene Voorwaarden](/algemene-voorwaarden) artikel 9.

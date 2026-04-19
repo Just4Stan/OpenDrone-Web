@@ -97,6 +97,14 @@ function escapeHtml(s: string) {
     .replace(/'/g, '&#39;');
 }
 
+// Only these schemes are allowed inside Markdown link targets. Anything
+// else (javascript:, data:, vbscript:, file:, etc.) falls back to plain
+// text so a malformed / malicious entry in a committed .md file can't
+// produce a dangerous <a href>. Legal copy is authored in-repo but
+// defensive validation is cheap insurance for an open-source project.
+const SAFE_LINK_RE =
+  /^(?:https?:\/\/|mailto:|tel:|\/|#)[^\s"<>]*$/i;
+
 function inline(s: string) {
   // bold, italic, inline code, links
   let out = escapeHtml(s);
@@ -105,7 +113,11 @@ function inline(s: string) {
   out = out.replace(/\*([^*]+)\*/g, '<em>$1</em>');
   out = out.replace(
     /\[([^\]]+)\]\(([^)]+)\)/g,
-    '<a href="$2" rel="noopener">$1</a>',
+    (_m, text: string, href: string) => {
+      const t = href.trim();
+      if (!SAFE_LINK_RE.test(t)) return text;
+      return `<a href="${t}" rel="noopener">${text}</a>`;
+    },
   );
   return out;
 }
