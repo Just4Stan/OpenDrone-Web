@@ -1,6 +1,6 @@
 # OpenDrone Web — Agent Instructions
 
-Guidance for AI assistants (Claude Code, Cursor, etc.) working on this repo. Human contributors should read [CONTRIBUTING.md](CONTRIBUTING.md) and [SCOPE.md](SCOPE.md) first.
+Guidance for AI assistants (Claude Code, Cursor, etc.) working on this repo. Human contributors: read [README.md](README.md) first — quick start, production workflow, contributing rules, design scope, compliance, and newsletter are all there.
 
 ## What This Is
 
@@ -34,13 +34,13 @@ Storefront and marketing site for OpenDrone — open-source drone electronics. B
 
 ## Compliance
 
-Read [COMPLIANCE.md](COMPLIANCE.md) before touching any legal page or product listing component. Covers mandatory routes, GPSR product requirements, cookie banner spec, Peppol e-invoicing, OSS VAT, country shipping blocks, GDPR, and CRA SBOM downloads.
+Read the [Compliance section of README.md](README.md#compliance) before touching any legal page or product listing component. Covers mandatory routes, GPSR product requirements, cookie banner spec, Peppol e-invoicing, OSS VAT, country shipping blocks, GDPR, and CRA SBOM downloads.
 
 Legal page copy is authored separately and synced into `app/content/legal/` via `npm run sync:legal`. The committed snapshot is the source of truth for what ships. Do not edit the snapshot files by hand — point `COMPLIANCE_SRC` at your authoring source and re-sync.
 
 ## Locked areas
 
-See [SCOPE.md](SCOPE.md) for the full list. Summary:
+See [Design scope in README.md](README.md#design-scope) for the full list. Summary:
 - Legal route files and `app/content/legal/**`
 - `CompanyFooterBlock.tsx`, `ProductCompliance.tsx`, `app/lib/company.ts`
 - Brand design tokens in `app/styles/app.css`
