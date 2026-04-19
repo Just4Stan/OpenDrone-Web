@@ -34,10 +34,15 @@ export function buildMetaDescription(
 }
 
 export function buildCanonicalUrl(path: string, origin?: string) {
-  const base = origin || 'https://opendrone.eu';
+  const base = origin || 'https://opendrone.be';
   if (!path.startsWith('/')) path = `/${path}`;
   return `${base.replace(/\/$/, '')}${path}`;
 }
+
+export type HreflangAlternate = {
+  lang: string; // e.g. 'en', 'nl', 'x-default'
+  href: string; // absolute or origin-relative URL
+};
 
 export function buildSeoMeta({
   title,
@@ -48,6 +53,8 @@ export function buildSeoMeta({
   locale = DEFAULT_LOCALE,
   alternateLocales,
   canonical,
+  url,
+  hreflang,
 }: {
   title?: string | null;
   description?: string | null;
@@ -57,6 +64,17 @@ export function buildSeoMeta({
   locale?: string;
   alternateLocales?: string[];
   canonical?: string;
+  /**
+   * Full request URL (e.g. `request.url`). When provided, the helper
+   * auto-emits `<link rel="canonical">` unless `canonical` is passed
+   * explicitly.
+   */
+  url?: string;
+  /**
+   * Explicit hreflang alternates for i18n-aware pages. Callers should
+   * include an `x-default` entry pointing at the canonical locale.
+   */
+  hreflang?: HreflangAlternate[];
 }) {
   const resolvedTitle = buildPageTitle(title);
   const resolvedDescription = buildMetaDescription(description);
@@ -77,8 +95,31 @@ export function buildSeoMeta({
     meta.push({property: 'og:locale:alternate', content: alt});
   }
 
-  if (canonical) {
-    meta.push({tagName: 'link', rel: 'canonical', href: canonical});
+  // Canonical — either passed in or derived from the request URL. Strips
+  // query + hash so `?foo=bar` variants don't splinter into many canonicals.
+  let resolvedCanonical = canonical;
+  if (!resolvedCanonical && url) {
+    try {
+      const parsed = new URL(url);
+      resolvedCanonical = `${parsed.origin}${parsed.pathname}`;
+    } catch {
+      /* ignore malformed URL */
+    }
+  }
+  if (resolvedCanonical) {
+    meta.push({tagName: 'link', rel: 'canonical', href: resolvedCanonical});
+    meta.push({property: 'og:url', content: resolvedCanonical});
+  }
+
+  if (hreflang?.length) {
+    for (const alt of hreflang) {
+      meta.push({
+        tagName: 'link',
+        rel: 'alternate',
+        hrefLang: alt.lang,
+        href: alt.href,
+      });
+    }
   }
 
   if (robots) {
@@ -89,12 +130,37 @@ export function buildSeoMeta({
 }
 
 /**
+ * For the localised legal routes `/en/<slug>` + `/nl/<slug>`, return the
+ * hreflang alternate list ready to pass into `buildSeoMeta`. Caller must
+ * provide the request URL so the helper can build absolute URLs for the
+ * link tags (Google prefers absolute).
+ */
+export function legalHreflangPairs(
+  slug: string,
+  url: string,
+): HreflangAlternate[] {
+  let origin = 'https://opendrone.be';
+  try {
+    origin = new URL(url).origin;
+  } catch {
+    /* ignore */
+  }
+  const en = `${origin}/en/${slug}`;
+  const nl = `${origin}/nl/${slug}`;
+  return [
+    {lang: 'en', href: en},
+    {lang: 'nl', href: nl},
+    {lang: 'x-default', href: en},
+  ];
+}
+
+/**
  * schema.org Organization JSON-LD — emit in root Layout <head>. Identifies
  * the selling entity (Incutec BV) for search engines, not the OpenDrone
  * product brand.
  */
 export function buildOrgJsonLd(company: CompanyIdentity, siteUrl?: string) {
-  const url = (siteUrl || 'https://opendrone.eu').replace(/\/$/, '');
+  const url = (siteUrl || 'https://opendrone.be').replace(/\/$/, '');
   return {
     '@context': 'https://schema.org',
     '@type': 'Organization',

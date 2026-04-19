@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <style>
+      html, body {
+        margin: 0;
+        padding: 0;
+        background: transparent;
+      }
+      body {
+        display: inline-block;
+      }
+      .wordmark {
+        font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display",
+          "SF Pro Text", ui-sans-serif, system-ui, "Segoe UI", Roboto,
+          Helvetica, Arial, sans-serif;
+        font-weight: 700;
+        font-size: 1600px;
+        line-height: 1.2;
+        letter-spacing: -0.03em;
+        color: #e5e5e5;
+        padding: 40px 80px;
+        display: inline-block;
+        white-space: nowrap;
+        margin: 0;
+      }
+      .wordmark span {
+        color: #b8922e;
+      }
+    </style>
+  </head>
+  <body>
+    <h1 class="wordmark">Open<span>Drone</span></h1>
+    <script>
+      document.fonts.ready.then(() => {
+        document.title = 'READY';
+        document.body.dataset.ready = '1';
+      });
+    </script>
+  </body>
+</html>

@@ -2,6 +2,7 @@ import {Link, useLoaderData} from 'react-router';
 import type {Route} from './+types/blogs._index';
 import {getPaginationVariables} from '@shopify/hydrogen';
 import {PaginatedResourceSection} from '~/components/PaginatedResourceSection';
+import {NewsletterSignup} from '~/components/NewsletterSignup';
 import type {BlogsQuery} from 'storefrontapi.generated';
 import {buildSeoMeta} from '~/lib/seo';
 
@@ -21,7 +22,11 @@ export async function loader(args: Route.LoaderArgs) {
   // Await the critical data required to render initial state of the page
   const criticalData = await loadCriticalData(args);
 
-  return {...deferredData, ...criticalData};
+  return {
+    ...deferredData,
+    ...criticalData,
+    turnstileSiteKey: args.context.env.TURNSTILE_SITE_KEY ?? null,
+  };
 }
 
 /**
@@ -55,7 +60,7 @@ function loadDeferredData({context}: Route.LoaderArgs) {
 }
 
 export default function Blogs() {
-  const {blogs} = useLoaderData<typeof loader>();
+  const {blogs, turnstileSiteKey} = useLoaderData<typeof loader>();
 
   return (
     <div className="blogs page-shell">
@@ -81,6 +86,9 @@ export default function Blogs() {
             </Link>
           )}
         </PaginatedResourceSection>
+      </div>
+      <div className="mt-16">
+        <NewsletterSignup variant="wide" turnstileSiteKey={turnstileSiteKey} />
       </div>
     </div>
   );

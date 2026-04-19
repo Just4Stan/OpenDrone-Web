@@ -163,7 +163,25 @@ function mergeGroupByBucket(
   return {group, meshes};
 }
 
-function DroneAssembly({scrollRef}: {scrollRef: React.RefObject<number>}) {
+export type LabelRefs = {
+  fc: React.RefObject<HTMLDivElement | null>;
+  frame: React.RefObject<HTMLDivElement | null>;
+  esc: React.RefObject<HTMLDivElement | null>;
+};
+
+function DroneAssembly({
+  scrollRef,
+  onReady,
+  labelRefs,
+}: {
+  scrollRef: React.RefObject<number>;
+  onReady?: () => void;
+  labelRefs?: LabelRefs;
+}) {
+  const {camera, size} = useThree();
+  const tmpVec = useRef(new THREE.Vector3()).current;
+  const bboxVec = useRef(new THREE.Vector3()).current;
+  const bbox = useRef(new THREE.Box3()).current;
   const wrapperRef = useRef<Group>(null);
   const frameRef = useRef<Group>(null);
   const escRef = useRef<Group>(null);
@@ -297,8 +315,11 @@ function DroneAssembly({scrollRef}: {scrollRef: React.RefObject<number>}) {
       escRef.current?.add(escPack.group);
       fcRef.current?.add(fcPack.group);
       invalidate();
+      onReady?.();
     }).catch((err) => {
       console.error('Failed to load drone models:', err);
+      // Surface completion even on failure so the splash can release.
+      onReady?.();
     });
 
     return () => {
@@ -466,6 +487,43 @@ function DroneAssembly({scrollRef}: {scrollRef: React.RefObject<number>}) {
     // not "animate" on its own, so we do NOT force glowAnimating=true
     // when it's non-zero.
 
+    // Project model world positions to screen coords and update the
+    // label overlay divs imperatively — keeps labels glued under each
+    // board as the assembly rotates/moves, without triggering React
+    // re-renders every frame.
+    if (labelRefs) {
+      wrapperRef.current.updateMatrixWorld(true);
+      const project = (
+        target: React.RefObject<HTMLDivElement | null>,
+        group: Group | null,
+      ) => {
+        const el = target.current;
+        if (!el || !group) return;
+        // Use each model's actual bounding-box center in world space so
+        // the label sits under the visible geometry, not under the
+        // potentially-off origin the GLB was exported with.
+        bbox.setFromObject(group);
+        if (bbox.isEmpty()) {
+          el.style.opacity = '0';
+          return;
+        }
+        bbox.getCenter(bboxVec);
+        tmpVec.set(bboxVec.x, bbox.min.y, bboxVec.z).project(camera);
+        // Hide labels that are behind the camera or off-screen.
+        if (tmpVec.z > 1) {
+          el.style.opacity = '0';
+          return;
+        }
+        const x = (tmpVec.x * 0.5 + 0.5) * size.width;
+        const y = (-tmpVec.y * 0.5 + 0.5) * size.height;
+        el.style.transform = `translate3d(${x}px, ${y}px, 0) translate(-50%, 0)`;
+        el.style.opacity = '';
+      };
+      project(labelRefs.fc, fcRef.current);
+      project(labelRefs.frame, frameRef.current);
+      project(labelRefs.esc, escRef.current);
+    }
+
     // Keep rendering whenever anything is moving. Now that draw calls
     // are in the single digits the scene is cheap enough to let the
     // browser's RAF drive it at display rate.
@@ -506,7 +564,7 @@ function DroneAssembly({scrollRef}: {scrollRef: React.RefObject<number>}) {
         ref={frameRef}
         onPointerOver={() => hover('frame', true)}
         onPointerOut={() => hover('frame', false)}
-        onClick={() => handleClick('/collections/all')}
+        onClick={() => handleClick('/products/openframe')}
       >
         <pointLight ref={frameLightRef} color={0xb8922e} intensity={0} distance={0.3} position={[0, -0.03, 0]} />
       </group>
@@ -514,7 +572,7 @@ function DroneAssembly({scrollRef}: {scrollRef: React.RefObject<number>}) {
         ref={escRef}
         onPointerOver={() => hover('esc', true)}
         onPointerOut={() => hover('esc', false)}
-        onClick={() => handleClick('/collections/all')}
+        onClick={() => handleClick('/products/openesc')}
       >
         <pointLight ref={escLightRef} color={0xb8922e} intensity={0} distance={0.3} position={[0, -0.03, 0]} />
       </group>
@@ -522,7 +580,7 @@ function DroneAssembly({scrollRef}: {scrollRef: React.RefObject<number>}) {
         ref={fcRef}
         onPointerOver={() => hover('fc', true)}
         onPointerOut={() => hover('fc', false)}
-        onClick={() => handleClick('/collections/all')}
+        onClick={() => handleClick('/products/openfc')}
       >
         <pointLight ref={fcLightRef} color={0xb8922e} intensity={0} distance={0.3} position={[0, -0.03, 0]} />
       </group>
@@ -612,7 +670,10 @@ function CameraRig({scrollRef}: {scrollRef: React.RefObject<number>}) {
 
 const PERF_HUD = false;
 
-export function HeroScene() {
+export function HeroScene({
+  onReady,
+  labelRefs,
+}: {onReady?: () => void; labelRefs?: LabelRefs} = {}) {
   const [mounted, setMounted] = useState(false);
   const [active, setActive] = useState(true);
   const [perf, setPerf] = useState<PerfSample | null>(null);
@@ -679,7 +740,7 @@ export function HeroScene() {
         <directionalLight position={[3.5, 4.5, 6]} intensity={2.0} color="#fffaf0" />
         <directionalLight position={[-5, 2.5, 1.5]} intensity={0.5} color="#b7c6de" />
         <CameraRig scrollRef={scrollRef} />
-        <DroneAssembly scrollRef={scrollRef} />
+        <DroneAssembly scrollRef={scrollRef} onReady={onReady} labelRefs={labelRefs} />
         {PERF_HUD ? <PerfProbe onSample={setPerf} /> : null}
       </Canvas>
       {PERF_HUD && perf ? (

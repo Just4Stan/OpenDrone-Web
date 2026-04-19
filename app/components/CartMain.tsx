@@ -1,15 +1,18 @@
 import {useOptimisticCart} from '@shopify/hydrogen';
-import {Link} from 'react-router';
+import {useMemo} from 'react';
+import {Link, useFetchers} from 'react-router';
 import type {CartApiQueryFragment} from 'storefrontapi.generated';
 import {useAside} from '~/components/Aside';
 import {CartLineItem, type CartLine} from '~/components/CartLineItem';
 import {CartSummary} from './CartSummary';
+import {DonationUpsell, type DonationProduct} from './DonationUpsell';
 
 export type CartLayout = 'page' | 'aside';
 
 export type CartMainProps = {
   cart: CartApiQueryFragment | null;
   layout: CartLayout;
+  donationProduct?: DonationProduct | null;
 };
 
 export type LineItemChildrenMap = {[parentId: string]: CartLine[]};
@@ -36,7 +39,11 @@ function getLineItemChildrenMap(lines: CartLine[]): LineItemChildrenMap {
  * The main cart component that displays the cart items and summary.
  * It is used by both the /cart route and the cart aside dialog.
  */
-export function CartMain({layout, cart: originalCart}: CartMainProps) {
+export function CartMain({
+  layout,
+  cart: originalCart,
+  donationProduct,
+}: CartMainProps) {
   // The useOptimisticCart hook applies pending actions to the cart
   // so the user immediately sees feedback when they modify the cart.
   const cart = useOptimisticCart(originalCart);
@@ -54,12 +61,13 @@ export function CartMain({layout, cart: originalCart}: CartMainProps) {
       className={className}
       aria-label={layout === 'page' ? 'Cart page' : 'Cart drawer'}
     >
+      <CartActionNotice />
       <CartEmpty hidden={linesCount} layout={layout} />
       <div className="cart-details">
         <p id="cart-lines" className="sr-only">
           Line items
         </p>
-        <div>
+        <div className="cart-lines-scroll">
           <ul aria-labelledby="cart-lines">
             {(cart?.lines?.nodes ?? []).map((line) => {
               // we do not render non-parent lines at the root of the cart
@@ -80,9 +88,70 @@ export function CartMain({layout, cart: originalCart}: CartMainProps) {
             })}
           </ul>
         </div>
+        {cartHasItems && donationProduct ? (
+          <DonationUpsell
+            product={donationProduct}
+            cartLines={cart?.lines?.nodes ?? []}
+          />
+        ) : null}
         {cartHasItems && <CartSummary cart={cart} layout={layout} />}
       </div>
     </section>
+  );
+}
+
+type CartActionData = {
+  errors?: Array<{message?: string} | string> | null;
+  warnings?: Array<{message?: string} | string> | null;
+};
+
+/**
+ * Surfaces cart-action errors + warnings (out-of-stock, quantity caps,
+ * unknown variant, etc.). Without this, Shopify's responses are returned
+ * by the action but never read by the UI — failures vanish silently.
+ *
+ * We watch every fetcher targeting the /cart action across the whole app
+ * (the cart aside lives in PageLayout, so cart mutations from anywhere
+ * land here) and render the latest non-empty errors/warnings list.
+ */
+function CartActionNotice() {
+  const fetchers = useFetchers();
+  const messages = useMemo(() => {
+    const errors: string[] = [];
+    const warnings: string[] = [];
+    for (const f of fetchers) {
+      const matches =
+        f.formAction === '/cart' || f.formAction?.startsWith('/cart?');
+      if (!matches || f.state !== 'idle' || !f.data) continue;
+      const data = f.data as CartActionData;
+      for (const e of data.errors ?? []) {
+        const m = typeof e === 'string' ? e : e?.message;
+        if (m) errors.push(m);
+      }
+      for (const w of data.warnings ?? []) {
+        const m = typeof w === 'string' ? w : w?.message;
+        if (m) warnings.push(m);
+      }
+    }
+    return {errors, warnings};
+  }, [fetchers]);
+
+  if (!messages.errors.length && !messages.warnings.length) return null;
+  return (
+    <div className="cart-notice" role="status" aria-live="polite">
+      {messages.errors.map((m, i) => (
+        // eslint-disable-next-line react/no-array-index-key
+        <p key={`err-${i}`} className="cart-notice-error">
+          {m}
+        </p>
+      ))}
+      {messages.warnings.map((m, i) => (
+        // eslint-disable-next-line react/no-array-index-key
+        <p key={`warn-${i}`} className="cart-notice-warning">
+          {m}
+        </p>
+      ))}
+    </div>
   );
 }
 

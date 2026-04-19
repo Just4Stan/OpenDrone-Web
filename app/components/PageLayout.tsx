@@ -23,6 +23,7 @@ interface PageLayoutProps {
   isLoggedIn: Promise<boolean>;
   publicStoreDomain: string;
   company: CompanyIdentity;
+  turnstileSiteKey?: string | null;
   children?: React.ReactNode;
 }
 
@@ -34,6 +35,7 @@ export function PageLayout({
   isLoggedIn,
   publicStoreDomain,
   company,
+  turnstileSiteKey,
 }: PageLayoutProps) {
   const {pathname} = useLocation();
   const isHomepage = pathname === '/';
@@ -44,6 +46,9 @@ export function PageLayout({
       <SearchAside />
       <MobileMenuAside header={header} publicStoreDomain={publicStoreDomain} />
       <div className={isHomepage ? 'homepage-layout' : ''}>
+        <a className="skip-link" href="#main-content">
+          Skip to main content
+        </a>
         {header && (
           <Header
             header={header}
@@ -52,11 +57,14 @@ export function PageLayout({
             publicStoreDomain={publicStoreDomain}
           />
         )}
-        <main className="site-main">{children}</main>
+        <main id="main-content" className="site-main">
+          {children}
+        </main>
         <Footer
           header={header}
           publicStoreDomain={publicStoreDomain}
           company={company}
+          turnstileSiteKey={turnstileSiteKey ?? null}
         />
       </div>
     </Aside.Provider>

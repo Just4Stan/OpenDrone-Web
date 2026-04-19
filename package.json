@@ -1,9 +1,18 @@
 {
   "name": "opendrone-web",
-  "private": true,
+  "private": false,
   "sideEffects": false,
   "version": "2026.1.2",
   "type": "module",
+  "license": "MIT",
+  "homepage": "https://opendrone.be",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Just4Stan/OpenDrone-Web.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Just4Stan/OpenDrone-Web/issues"
+  },
   "scripts": {
     "prebuild": "npm run sync:legal",
     "build": "shopify hydrogen build --codegen",
@@ -12,7 +21,9 @@
     "lint": "eslint --no-error-on-unmatched-pattern .",
     "typecheck": "react-router typegen && tsc --noEmit",
     "codegen": "shopify hydrogen codegen && react-router typegen",
-    "sync:legal": "node scripts/sync-legal.mjs"
+    "sync:legal": "node scripts/sync-legal.mjs",
+    "compose:newsletter": "node scripts/compose-newsletter.mjs",
+    "gen:shopify-templates": "node scripts/shopify-templates/gen.mjs"
   },
   "prettier": "@shopify/prettier-config",
   "dependencies": {

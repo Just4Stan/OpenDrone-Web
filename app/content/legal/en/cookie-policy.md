@@ -48,7 +48,7 @@ You can also manage cookies via your browser settings:
 
 ### Contact
 
-Questions about our cookie policy: stan@incutec.eu
+Questions about our cookie policy: privacy@opendrone.be
 
 ---
 
