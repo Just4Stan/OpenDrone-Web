@@ -11,6 +11,64 @@
 
 export type ChapterPin = {ref: string; part: string; cost?: string};
 
+/**
+ * Physical item that ships in the box. `qty` is free text so entries
+ * can read "1×" or "kit" or "set". Keep items factual — only list
+ * things that genuinely ship. No speculative filler.
+ */
+export type BoxItem = {qty?: string; item: string; note?: string};
+
+/**
+ * Downloadable asset rendered in the Downloads chapter. `kind` picks
+ * the icon/label family; `href` can point anywhere — usually a file
+ * in the product's GitHub repo (raw or releases), occasionally a
+ * standalone CDN URL for heavy CAD.
+ */
+export type DownloadKind =
+  | 'schematic'
+  | 'step'
+  | 'bom'
+  | 'gerber'
+  | 'manual'
+  | 'wiring'
+  | 'flash'
+  | 'changelog'
+  | 'sbom'
+  | 'other';
+
+export type DownloadAsset = {
+  kind: DownloadKind;
+  label: string;
+  href: string;
+  note?: string;
+  size?: string;
+};
+
+/**
+ * Playful cross-sell card rendered under the buy strip. Use it to point
+ * one product at another — e.g. OpenFC ↔ OpenESC both pointing at
+ * OpenStack. Keep line copy short: it's a wink, not a paragraph.
+ */
+export type PairCta = {
+  eyebrow: string;     // small uppercase line above (e.g. "PAIR WITH")
+  title: string;       // main line (e.g. "OpenStack — FC + ESC, one solder-free stack")
+  to: string;          // href to the paired product PDP
+};
+
+/**
+ * A component of a bundle product (OpenStack et al). Each entry points
+ * at an existing PDP and names the firmware that the component carries,
+ * so the bundle PDP can render a "what's in the box" chapter without
+ * duplicating editorial copy.
+ */
+export type BundleComponent = {
+  title: string;
+  handle: string;              // /products/<handle>
+  firmware: string;            // "Betaflight", "AM32", etc.
+  firmwareUrl?: string;
+  blurb: string;               // one-liner used in the bundle card
+};
+
 export type ProductContent = {
   fileNumber: string;           // "01" etc — shown in the eyebrow
   family: string;               // Category shown next to file number
@@ -30,8 +88,14 @@ export type ProductContent = {
     body: string;
     pins: ChapterPin[];
   };
+  inTheBox: BoxItem[];          // physical items shipped
+  downloads: DownloadAsset[];   // schematic PDFs, STEP files, manuals, etc.
   specs: Array<[string, string]>;
   footnote?: string;            // appears under the family card
+  pairCta?: PairCta;            // playful cross-sell under the buy strip
+  bundle?: {                    // when set, the PDP renders as a bundle
+    components: BundleComponent[];
+  };
 };
 
 export const PRODUCT_CONTENT: Record<string, ProductContent> = {
@@ -62,6 +126,57 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
         {ref: '④', part: 'INA186A3 + 0.2 mΩ shunt', cost: '×4'},
       ],
     },
+    inTheBox: [
+      {qty: '1×', item: 'OpenESC 4-in-1 board', note: '20×20 carrier, 30.5×30.5 mount pattern'},
+      {qty: '2×', item: '8-pin Betaflight signal cable', note: 'JST SM08B-SRSS-TB, pre-crimped, 8 cm'},
+      {qty: '1×', item: 'XT60 battery pigtail with 470 µF low-ESR cap'},
+      {qty: '4×', item: 'M3 rubber soft-mount grommets'},
+      {qty: '1×', item: 'Build card', note: 'batch ID, QC initials, firmware flash command, GitHub rev'},
+    ],
+    downloads: [
+      {
+        kind: 'schematic',
+        label: 'Schematic (PDF)',
+        href: 'https://github.com/Just4Stan/Open-4in1-AM32-ESC/raw/main/hardware/schematic.pdf',
+        note: 'Current rev — main sheet + 4× per-channel sub-sheet',
+      },
+      {
+        kind: 'step',
+        label: '3D STEP',
+        href: 'https://github.com/Just4Stan/Open-4in1-AM32-ESC/raw/main/hardware/board.step',
+        note: 'Full board assembly including connectors',
+      },
+      {
+        kind: 'bom',
+        label: 'BOM (CSV)',
+        href: 'https://github.com/Just4Stan/Open-4in1-AM32-ESC/raw/main/hardware/bom.csv',
+        note: 'Manufacturer part numbers, LCSC refs, per-unit price',
+      },
+      {
+        kind: 'gerber',
+        label: 'Gerbers (ZIP)',
+        href: 'https://github.com/Just4Stan/Open-4in1-AM32-ESC/raw/main/hardware/gerbers.zip',
+        note: 'Fabrication package — JLCPCB-ready',
+      },
+      {
+        kind: 'manual',
+        label: 'User manual (PDF)',
+        href: 'https://github.com/Just4Stan/Open-4in1-AM32-ESC/raw/main/docs/manual.pdf',
+        note: 'Installation, wiring, first-flash',
+      },
+      {
+        kind: 'wiring',
+        label: 'Wiring diagram (PDF)',
+        href: 'https://github.com/Just4Stan/Open-4in1-AM32-ESC/raw/main/docs/wiring.pdf',
+        note: 'FC pinout, battery, telemetry',
+      },
+      {
+        kind: 'flash',
+        label: 'Flashing guide',
+        href: 'https://github.com/Just4Stan/Open-4in1-AM32-ESC/blob/main/docs/flashing.md',
+        note: 'AM32 via ESC-Configurator + passthrough',
+      },
+    ],
     specs: [
       ['Firmware', 'AM32'],
       ['Protocol', 'DShot (Betaflight)'],
@@ -78,6 +193,11 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
     ],
     footnote:
       'A 30×30 mount variant with higher-current SP40N01GHNK MOSFETs is a separate product (OpenESC 30×30, coming soon).',
+    pairCta: {
+      eyebrow: 'Better together',
+      title: 'OpenStack — board on board, zero solder, one checkout.',
+      to: '/products/openstack',
+    },
   },
 
   openfc: {
@@ -107,6 +227,53 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
         {ref: '⑤', part: 'Break-off ESP32-C3 ELRS RX'},
       ],
     },
+    inTheBox: [
+      {qty: '1×', item: 'OpenFC board', note: 'break-off 2.4 GHz ELRS RX attached; snap off if you want to relocate it'},
+      {qty: '1×', item: '8-pin Betaflight signal cable', note: 'JST SM08B-SRSS-TB, pre-crimped, FC → ESC'},
+      {qty: '1×', item: 'DJI/HD camera pigtail', note: 'JST-SH1.0 6-pin ↔ GHR 10-pin'},
+      {qty: '4×', item: 'M3 rubber soft-mount grommets'},
+      {qty: '1×', item: 'Build card', note: 'batch ID, QC initials, firmware flash command, GitHub rev'},
+    ],
+    downloads: [
+      {
+        kind: 'schematic',
+        label: 'Schematic (PDF)',
+        href: 'https://github.com/Just4Stan/OpenFC/raw/main/hardware/schematic.pdf',
+        note: 'MCU, IMU, baro, blackbox, break-off RX sub-sheet',
+      },
+      {
+        kind: 'step',
+        label: '3D STEP',
+        href: 'https://github.com/Just4Stan/OpenFC/raw/main/hardware/board.step',
+        note: 'Board with RX attached (before snap-off)',
+      },
+      {
+        kind: 'bom',
+        label: 'BOM (CSV)',
+        href: 'https://github.com/Just4Stan/OpenFC/raw/main/hardware/bom.csv',
+      },
+      {
+        kind: 'gerber',
+        label: 'Gerbers (ZIP)',
+        href: 'https://github.com/Just4Stan/OpenFC/raw/main/hardware/gerbers.zip',
+      },
+      {
+        kind: 'manual',
+        label: 'User manual (PDF)',
+        href: 'https://github.com/Just4Stan/OpenFC/raw/main/docs/manual.pdf',
+      },
+      {
+        kind: 'wiring',
+        label: 'Wiring diagram (PDF)',
+        href: 'https://github.com/Just4Stan/OpenFC/raw/main/docs/wiring.pdf',
+        note: 'ESC, VTX, camera, RX, motor LEDs',
+      },
+      {
+        kind: 'flash',
+        label: 'Betaflight target + flash guide',
+        href: 'https://github.com/Just4Stan/OpenFC/blob/main/docs/flashing.md',
+      },
+    ],
     specs: [
       ['Firmware', 'Betaflight'],
       ['MCU', 'RP2354B (dual M33 @ 150 MHz)'],
@@ -124,6 +291,11 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
     ],
     footnote:
       'The ELRS receiver break-off lets you relocate the RX without cutting traces. Solder onto the pads when reattaching.',
+    pairCta: {
+      eyebrow: 'Better together',
+      title: 'OpenStack — OpenFC + OpenESC, one 30.5 mm stack, one checkout.',
+      to: '/products/openstack',
+    },
   },
 
   openrx: {
@@ -152,6 +324,48 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
         {ref: '④', part: 'U.FL or ceramic antenna'},
       ],
     },
+    inTheBox: [
+      {qty: '1×', item: 'OpenRX board', note: 'variant selected at checkout (Lite, Lite-UFL, Mono, Gemini)'},
+      {qty: '1×', item: 'CRSF servo cable', note: '3-pin JST-SH1.0, pre-crimped, 10 cm'},
+      {qty: '1–2×', item: 'U.FL dipole antenna', note: 'Lite-UFL/Mono: 1×; Gemini: 2× diversity. Lite ships without (ceramic antenna on-board).'},
+      {qty: '1×', item: 'Heat-shrink sleeve + double-sided tape'},
+      {qty: '1×', item: 'Build card', note: 'batch ID, QC initials, ExpressLRS flash target, GitHub rev'},
+    ],
+    downloads: [
+      {
+        kind: 'schematic',
+        label: 'Schematic (PDF)',
+        href: 'https://github.com/Just4Stan/OpenRX/raw/main/hardware/schematic.pdf',
+        note: 'All four variants — Lite / Lite-UFL / Mono / Gemini',
+      },
+      {
+        kind: 'step',
+        label: '3D STEP — all variants',
+        href: 'https://github.com/Just4Stan/OpenRX/raw/main/hardware/boards.step',
+      },
+      {
+        kind: 'bom',
+        label: 'BOM (CSV)',
+        href: 'https://github.com/Just4Stan/OpenRX/raw/main/hardware/bom.csv',
+        note: 'Per-variant — front-end parts only on Mono/Gemini',
+      },
+      {
+        kind: 'gerber',
+        label: 'Gerbers (ZIP)',
+        href: 'https://github.com/Just4Stan/OpenRX/raw/main/hardware/gerbers.zip',
+      },
+      {
+        kind: 'manual',
+        label: 'User manual (PDF)',
+        href: 'https://github.com/Just4Stan/OpenRX/raw/main/docs/manual.pdf',
+      },
+      {
+        kind: 'flash',
+        label: 'ExpressLRS flash targets',
+        href: 'https://github.com/Just4Stan/OpenRX/blob/main/docs/flashing.md',
+        note: 'Unified_ESP32C3_2400_RX (Lite), Unified_ESP32C3_LR1121_RX (Mono/Gemini)',
+      },
+    ],
     specs: [
       ['Firmware', 'ExpressLRS'],
       ['Telemetry', 'CRSF'],
@@ -186,6 +400,34 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
       project: '—',
     },
     repoUrl: 'https://github.com/Just4Stan',
+    inTheBox: [
+      {qty: '1×', item: 'Top plate + bottom plate', note: 'CNC carbon fibre, 5 mm'},
+      {qty: '4×', item: '5" arms', note: 'CNC carbon fibre, 5 mm'},
+      {qty: '1×', item: 'Hardware kit', note: 'M3 bolts + aluminium standoffs + locknuts for a full build'},
+      {qty: '1×', item: 'Camera mount', note: '19 mm micro, TPU-printed'},
+      {qty: '1×', item: 'VTX antenna tube clamp'},
+      {qty: '1×', item: 'Build card', note: 'batch ID, torque spec, GitHub rev (once design files open)'},
+    ],
+    downloads: [
+      {
+        kind: 'manual',
+        label: 'Assembly guide (PDF)',
+        href: 'https://github.com/Just4Stan/OpenFrame/raw/main/docs/assembly.pdf',
+        note: 'Build order, torque spec, camera tilt jig',
+      },
+      {
+        kind: 'step',
+        label: '3D STEP',
+        href: 'https://github.com/Just4Stan/OpenFrame/raw/main/hardware/frame.step',
+        note: 'Plates + arms + hardware — for stack planning',
+      },
+      {
+        kind: 'other',
+        label: 'DXF cutting files',
+        href: 'https://github.com/Just4Stan/OpenFrame/raw/main/hardware/dxf.zip',
+        note: 'Released once the OEM partnership matures',
+      },
+    ],
     specs: [
       ['Class', '5-inch freestyle'],
       ['Mount', '30.5 × 30.5'],
@@ -196,6 +438,92 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
     ],
     footnote:
       'The frame is the one piece of the stack we do not yet source in the EU. Partner selection and design hand-off are underway.',
+  },
+
+  openstack: {
+    fileNumber: '05',
+    family: 'FC + ESC Bundle',
+    hero: {
+      line1: 'The stack,',
+      line2Italic: 'pre-stacked.',
+      line3: 'Two boards, one checkout.',
+      lead:
+        'OpenFC and OpenESC built on the same 30.5 × 30.5 pattern. Buy them together, skip the courier round-trip, and bring-up is soldering headers, flashing once, and bolting it into OpenFrame. Two open firmwares, two maintainers paid — from one order.',
+    },
+    // Firmware set to empty so the single-project €N+€1 chapter is
+    // suppressed. The bundle chapter replaces it with a per-component
+    // breakdown and shows the double contribution explicitly.
+    firmware: {
+      project: '',
+    },
+    repoUrl: 'https://github.com/Just4Stan',
+    inTheBox: [
+      {qty: '1×', item: 'OpenFC board', note: 'break-off 2.4 GHz ELRS RX attached'},
+      {qty: '1×', item: 'OpenESC 4-in-1 board'},
+      {qty: '1×', item: '8-pin Betaflight signal cable', note: 'JST SM08B-SRSS-TB, pre-crimped both ends — FC ↔ ESC, length matched for a 30.5 × 30.5 stack'},
+      {qty: '1×', item: 'DJI/HD camera pigtail', note: 'JST-SH1.0 6-pin ↔ GHR 10-pin'},
+      {qty: '1×', item: 'XT60 battery pigtail with 470 µF low-ESR cap'},
+      {qty: '4×', item: 'M3 rubber soft-mount grommets'},
+      {qty: '1×', item: 'Build card', note: 'batch IDs for both boards, QC initials, firmware flash commands (Betaflight + AM32), GitHub revs'},
+    ],
+    downloads: [
+      {
+        kind: 'schematic',
+        label: 'Schematics — FC + ESC',
+        href: 'https://github.com/Just4Stan/OpenFC/raw/main/hardware/schematic.pdf',
+        note: 'Combined link — individual boards have their own repo',
+      },
+      {
+        kind: 'step',
+        label: '3D STEP — stacked assembly',
+        href: 'https://github.com/Just4Stan/OpenStack/raw/main/hardware/stack.step',
+        note: 'Both boards, 30.5 × 30.5 soft-mounted',
+      },
+      {
+        kind: 'manual',
+        label: 'Stack guide (PDF)',
+        href: 'https://github.com/Just4Stan/OpenStack/raw/main/docs/guide.pdf',
+        note: 'Wire harness routing, first-flash order, UART assignments',
+      },
+      {
+        kind: 'flash',
+        label: 'Flash commands — Betaflight + AM32',
+        href: 'https://github.com/Just4Stan/OpenStack/blob/main/docs/flashing.md',
+      },
+    ],
+    specs: [
+      ['Includes', 'OpenFC + OpenESC'],
+      ['Mount', '30.5 × 30.5'],
+      ['FC firmware', 'Betaflight (RP2354B)'],
+      ['ESC firmware', 'AM32 (AT32F421 × 4)'],
+      ['Continuous', '35 A / channel'],
+      ['Input', '3–6S LiPo'],
+      ['Contribution', '€1 → Betaflight, €1 → AM32'],
+      ['License', 'CERN-OHL-S-2.0'],
+    ],
+    footnote:
+      'Bundle price is OpenFC + OpenESC minus the courier/handling saved by shipping together. Firmware splits stay intact — Betaflight and AM32 each get their €1.',
+    bundle: {
+      components: [
+        {
+          title: 'OpenFC',
+          handle: 'openfc',
+          firmware: 'Betaflight',
+          firmwareUrl: 'https://github.com/betaflight/betaflight',
+          blurb:
+            'RP2354B dual-core M33 with LSM6DSV16X IMU, BMP388 barometer, 16 MB blackbox and a break-off ExpressLRS RX on the same PCB.',
+        },
+        {
+          title: 'OpenESC',
+          handle: 'openesc',
+          firmware: 'AM32',
+          firmwareUrl:
+            'https://github.com/AlkaMotors/AM32-MultiRotor-ESC-firmware',
+          blurb:
+            'Four AT32F421 channels, NSG2065Q gate drivers, 35 A continuous, INA186A3 + 0.2 mΩ current sensing. 20 × 20 carrier, 30.5 × 30.5 mount holes to match OpenFC.',
+        },
+      ],
+    },
   },
 };
 
@@ -211,5 +539,7 @@ export const PRODUCT_CONTENT_FALLBACK: ProductContent = {
   },
   firmware: {project: ''},
   repoUrl: 'https://github.com/Just4Stan',
+  inTheBox: [],
+  downloads: [],
   specs: [],
 };

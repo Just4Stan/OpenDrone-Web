@@ -12,6 +12,8 @@ export const meta: Route.MetaFunction = ({data}) => {
     description: labels.description,
     locale: locale === 'nl' ? 'nl_BE' : 'en_US',
     alternateLocales: [locale === 'nl' ? 'en_US' : 'nl_BE'],
+    canonical: data?.canonicalUrl,
+    hreflang: data?.hreflang,
   });
 };
 
@@ -36,7 +38,7 @@ export default function SecurityRoute() {
     >
       <p>
         {isNl ? 'Meld beveiligingsproblemen aan ' : 'Report security issues to '}
-        <a href="mailto:stan@incutec.eu">stan@incutec.eu</a>.{' '}
+        <a href="mailto:security@opendrone.be">security@opendrone.be</a>.{' '}
         {isNl ? 'Zie ' : 'See '}
         <a href="/.well-known/security.txt">/.well-known/security.txt</a>{' '}
         {isNl

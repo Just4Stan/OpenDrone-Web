@@ -1,6 +1,7 @@
 import {createHydrogenContext} from '@shopify/hydrogen';
 import {AppSession} from '~/lib/session';
 import {CART_QUERY_FRAGMENT} from '~/lib/fragments';
+import {getLocaleFromRequest, localeFromPathname} from '~/lib/i18n';
 
 // Define the additional context object
 const additionalContext = {
@@ -40,6 +41,15 @@ export async function createHydrogenRouterContext(
     AppSession.init(request, [env.SESSION_SECRET]),
   ]);
 
+  // Incutec BV ships from Belgium; product prices live under the BE
+  // market. Language follows the URL (/nl/* → NL, everything else → EN)
+  // with Accept-Language / cookie as a fallback for legacy unprefixed
+  // pages. Currency comes out of the BE storefront context as EUR.
+  const url = new URL(request.url);
+  const urlLocale = localeFromPathname(url.pathname);
+  const resolvedLocale = urlLocale ?? getLocaleFromRequest(request);
+  const language = resolvedLocale === 'nl' ? 'NL' : 'EN';
+
   const hydrogenContext = createHydrogenContext(
     {
       env,
@@ -47,8 +57,7 @@ export async function createHydrogenRouterContext(
       cache,
       waitUntil,
       session,
-      // Or detect from URL path based on locale subpath, cookies, or any other strategy
-      i18n: {language: 'EN', country: 'US'},
+      i18n: {language, country: 'BE'},
       cart: {
         queryFragment: CART_QUERY_FRAGMENT,
       },

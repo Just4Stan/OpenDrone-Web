@@ -26,28 +26,30 @@ export function LegalPage({
   const ui = LEGAL_UI_STRINGS[locale];
   return (
     <article className="legal-page page-shell">
-      <div className="policy-back-link">
-        <Link to={overviewHref}>{ui.backToOverview}</Link>
+      <div className="reading-column">
+        <div className="policy-back-link">
+          <Link to={overviewHref}>{ui.backToOverview}</Link>
+        </div>
+        <header className="page-header">
+          <p className="page-eyebrow">{eyebrow}</p>
+          <h1 className="page-title">{title}</h1>
+        </header>
+
+        {html ? (
+          <div
+            className="rich-content legal-body"
+            dangerouslySetInnerHTML={{__html: html}}
+          />
+        ) : null}
+
+        {children ? <div className="rich-content legal-body">{children}</div> : null}
+
+        {lastUpdated ? (
+          <p className="legal-last-updated">
+            {ui.lastUpdated}: {lastUpdated}
+          </p>
+        ) : null}
       </div>
-      <header className="page-header">
-        <p className="page-eyebrow">{eyebrow}</p>
-        <h1 className="page-title">{title}</h1>
-      </header>
-
-      {html ? (
-        <div
-          className="rich-content legal-body"
-          dangerouslySetInnerHTML={{__html: html}}
-        />
-      ) : null}
-
-      {children ? <div className="rich-content legal-body">{children}</div> : null}
-
-      {lastUpdated ? (
-        <p className="legal-last-updated">
-          {ui.lastUpdated}: {lastUpdated}
-        </p>
-      ) : null}
     </article>
   );
 }

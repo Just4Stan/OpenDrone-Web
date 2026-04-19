@@ -15,7 +15,7 @@
 | Zetel | Stapelhuisstraat 15, 3000 Leuven |
 | Ondernemingsnummer | wordt gepubliceerd na oprichting (KBO) |
 | BTW-nummer | wordt gepubliceerd na oprichting |
-| E-mail | stan@incutec.eu |
+| E-mail | contact@opendrone.be |
 | Telefoon | wordt gepubliceerd na oprichting |
 | Website | incutec.eu |
 | IBAN | wordt gepubliceerd na oprichting |
@@ -128,7 +128,7 @@
 
 13.2. Incutec BV reageert binnen **14 dagen** op klachten.
 
-13.3. Indien de consument van oordeel is dat een product een veiligheidsrisico vormt, kan dit gemeld worden via stan@incutec.eu. Incutec BV onderzoekt elke veiligheidsmelding en neemt zo nodig corrigerende maatregelen.
+13.3. Indien de consument van oordeel is dat een product een veiligheidsrisico vormt, kan dit gemeld worden via contact@opendrone.be. Incutec BV onderzoekt elke veiligheidsmelding en neemt zo nodig corrigerende maatregelen.
 
 ### Artikel 14: Geschillen
 
@@ -202,7 +202,7 @@ Incutec is "manufacturer" under GPSR. For every product listing the webshop must
 
 **GPSR Pre-Sale Listing Checklist (Art. 19 GPSR):**
 - [ ] Manufacturer name + registered trade name + postal address + electronic contact (per product page OR global "manufacturer info" link)
-- [ ] For Incutec products: "Manufacturer: Incutec BV, Stapelhuisstraat 15, 3000 Leuven, Belgium: stan@incutec.eu"
+- [ ] For Incutec products: "Manufacturer: Incutec BV, Stapelhuisstraat 15, 3000 Leuven, Belgium: contact@opendrone.be"
 - [ ] If selling 3rd-party products where Incutec is importer: also show "Importer: Incutec BV, [address]"
 - [ ] Product identification elements: type, batch, serial or model number (AND product image)
 - [ ] Warnings and safety information in the language of the Member State where offered (NL/FR for BE, DE for DE, etc.)

@@ -15,7 +15,7 @@
 | Registered office | Stapelhuisstraat 15, 3000 Leuven |
 | Company number | Published after incorporation (KBO) |
 | VAT number | Published after incorporation |
-| Email | stan@incutec.eu |
+| Email | contact@opendrone.be |
 | Phone | Published after incorporation |
 | Website | incutec.eu |
 | IBAN | Published after incorporation |
@@ -128,7 +128,7 @@
 
 13.2. Incutec BV responds to complaints within **14 days**.
 
-13.3. If the consumer considers that a product constitutes a safety risk, this can be reported to stan@incutec.eu. Incutec BV investigates every safety report and takes corrective measures where necessary.
+13.3. If the consumer considers that a product constitutes a safety risk, this can be reported to contact@opendrone.be. Incutec BV investigates every safety report and takes corrective measures where necessary.
 
 ### Article 14: Disputes
 
