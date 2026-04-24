@@ -276,7 +276,7 @@ function useChapterReveal() {
 }
 
 export default function Product() {
-  const {product, company, recommendations, latestCommits} =
+  const {product, company, recommendations, latestCommits, locale} =
     useLoaderData<typeof loader>();
   useChapterReveal();
 
