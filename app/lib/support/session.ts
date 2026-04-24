@@ -103,12 +103,17 @@ export function readSupportCookie(request: Request): string | null {
 }
 
 export function buildSupportSetCookie(value: string, opts: {clear?: boolean} = {}): string {
+  // SameSite=Strict: the support cookie is never needed on cross-site
+  // navigation. The resume flow carries its token in the URL path, not the
+  // cookie, so Strict doesn't break the email-click entry point. Strict
+  // eliminates the one-click CSRF surface that Lax still allows via
+  // top-level POST/form navigation.
   const parts = [
     `${SUPPORT_COOKIE}=${opts.clear ? '' : value}`,
     'Path=/',
     'HttpOnly',
     'Secure',
-    'SameSite=Lax',
+    'SameSite=Strict',
     `Max-Age=${opts.clear ? 0 : COOKIE_MAX_AGE}`,
   ];
   return parts.join('; ');

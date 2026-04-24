@@ -86,7 +86,7 @@ export async function action({request, context}: Route.ActionArgs) {
   const form = await request.formData();
   const message = String(form.get('message') ?? '').trim();
   const turnstileToken = String(form.get('cf-turnstile-response') ?? '');
-  const subject = String(form.get('subject') ?? '').trim();
+  const subject = String(form.get('subject') ?? '').trim().slice(0, 256);
   const honeypot = String(form.get('website') ?? '');
 
   if (honeypot) {

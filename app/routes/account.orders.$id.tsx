@@ -17,6 +17,7 @@ export const meta: Route.MetaFunction = ({data}) =>
 
 export async function loader({params, context}: Route.LoaderArgs) {
   const {customerAccount} = context;
+  await customerAccount.handleAuthStatus();
   if (!params.id) {
     return redirect('/account/orders');
   }

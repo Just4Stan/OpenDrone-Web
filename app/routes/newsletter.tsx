@@ -157,9 +157,14 @@ export async function action({request, context}: Route.ActionArgs) {
 
     if (userErrors.length) {
       // Shopify user-error messages can reference the internal fields we
-      // use (password, etc.) that aren't visible in the UI. Log the raw
-      // errors for debugging, surface a clean message to the subscriber.
-      console.error('[newsletter] customerUserErrors', userErrors);
+      // use (password, etc.) that aren't visible in the UI. Log only the
+      // error codes — not the raw messages, which can include the
+      // subscriber email or internal field hints we'd rather keep out of
+      // Oxygen's shared log stream.
+      const codes = userErrors
+        .map((e: {code?: string | null}) => e.code ?? 'unknown')
+        .join(',');
+      console.error('[newsletter] customerUserErrors', codes);
       const firstError = userErrors[0];
       const field = firstError.field?.join('.') ?? '';
       const userFacing = /email/i.test(field)

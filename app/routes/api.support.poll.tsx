@@ -58,10 +58,14 @@ export async function loader({request, context}: Route.LoaderArgs) {
   // `?initial=1` ignores the cookie cursor so a returning/refreshed user
   // gets the recent thread history instead of just messages newer than
   // whatever the previous session last delivered.
+  //
+  // We intentionally do NOT honour an `?after=` query param: the cookie
+  // cursor is the only authoritative forward-only position. Accepting a
+  // client-supplied cursor would let a ticket holder rewind to re-read
+  // older messages (e.g. contents they hoped were ephemeral) and replay
+  // staff replies, so the cursor stays server-side.
   const initial = url.searchParams.get('initial') === '1';
-  const after = initial
-    ? undefined
-    : url.searchParams.get('after') || ticket.lastCursor || undefined;
+  const after = initial ? undefined : ticket.lastCursor || undefined;
 
   const {messages, thread} = await fetchThreadMessages(env, ticket.tid, {
     afterId: after,
