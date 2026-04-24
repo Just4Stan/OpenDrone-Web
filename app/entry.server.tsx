@@ -36,12 +36,27 @@ export default async function handleRequest(
     },
     // Turnstile injects a script from challenges.cloudflare.com and renders
     // the challenge UI inside an iframe served from the same host. Without
-    // these directives Hydrogen's default CSP silently drops both and the
-    // support widget shows "Could not verify you are human" because no
-    // token ever comes back.
-    scriptSrc: ['https://challenges.cloudflare.com'],
-    frameSrc: ['https://challenges.cloudflare.com'],
-    connectSrc: ['https://challenges.cloudflare.com'],
+    // these directives Hydrogen's default CSP drops both and the support
+    // widget shows "Could not verify you are human".
+    //
+    // IMPORTANT: Hydrogen's createContentSecurityPolicy REPLACES each
+    // directive with the list you pass — it does not merge. So we have
+    // to include the Hydrogen defaults (`self`, the nonce placeholder,
+    // cdn.shopify.com) explicitly, or the JS bundles served from that
+    // CDN stop loading and the whole site stays in SSR-only mode.
+    scriptSrc: [
+      "'self'",
+      'https://cdn.shopify.com',
+      'https://challenges.cloudflare.com',
+    ],
+    frameSrc: ["'self'", 'https://challenges.cloudflare.com'],
+    connectSrc: [
+      "'self'",
+      'https://cdn.shopify.com',
+      'https://monorail-edge.shopifysvc.com',
+      `https://${context.env.PUBLIC_STORE_DOMAIN}`,
+      'https://challenges.cloudflare.com',
+    ],
   });
 
   const body = await renderToReadableStream(
