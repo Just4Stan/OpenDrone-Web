@@ -153,6 +153,7 @@ const DOWNLOAD_ICONS: Record<DownloadKind, string> = {
   flash: '⚡',
   changelog: '↻',
   sbom: '◫',
+  firmware_manifest: '⌘',
   other: '↓',
 };
 
