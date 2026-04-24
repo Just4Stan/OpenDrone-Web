@@ -68,8 +68,16 @@ export async function action({request, context}: Route.ActionArgs) {
       break;
     }
     case CartForm.ACTIONS.BuyerIdentityUpdate: {
+      // Allowlist the fields a client may set and force the cart's
+      // market to Belgium regardless of what the client sends. Without
+      // this a malicious POST could switch countryCode to a sanctioned
+      // region between server render and checkout, or inject an
+      // arbitrary email/phone into analytics and abandoned-cart flows.
+      const buyer = inputs.buyerIdentity ?? {};
       result = await cart.updateBuyerIdentity({
-        ...inputs.buyerIdentity,
+        countryCode: 'BE',
+        email: buyer.email,
+        phone: buyer.phone,
       });
       break;
     }

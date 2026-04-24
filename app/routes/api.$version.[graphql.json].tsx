@@ -28,8 +28,17 @@ export async function action({params, context, request}: Route.ActionArgs) {
     return new Response('Invalid API version', {status: 400});
   }
 
-  const contentLength = Number(request.headers.get('content-length') ?? '0');
-  if (contentLength > MAX_BODY_BYTES) {
+  // Buffer the body with a hard byte cap. Previously we trusted the
+  // Content-Length header, which a chunked-encoded request can omit —
+  // bypassing the 256 KB cap and turning the proxy into an unbounded
+  // relay. Read into an ArrayBuffer and enforce the limit server-side.
+  let body: ArrayBuffer;
+  try {
+    body = await request.arrayBuffer();
+  } catch {
+    return new Response('Bad request', {status: 400});
+  }
+  if (body.byteLength > MAX_BODY_BYTES) {
     return new Response('Request body too large', {status: 413});
   }
 
@@ -47,7 +56,7 @@ export async function action({params, context, request}: Route.ActionArgs) {
       `https://${checkoutDomain}/api/${version}/graphql.json`,
       {
         method: 'POST',
-        body: request.body,
+        body,
         headers: forwardHeaders,
         signal: AbortSignal.timeout(UPSTREAM_TIMEOUT_MS),
       },
