@@ -14,6 +14,7 @@ import {
   type PublicMessage,
 } from '~/lib/support/scrubber';
 import {filterByApproval} from '~/lib/support/moderation';
+import {AI_DRAFT_PREFIX} from '~/lib/support/ai-draft';
 
 // Trust boundary between Discord and the customer's browser.
 //
@@ -88,9 +89,15 @@ export async function loader({request, context}: Route.LoaderArgs) {
   // Moderation gate (Stage 2). Filter to approved messages before we
   // project into the public shape. Dropped messages are logged (reason
   // only, never content) so staff can watch the gate when tuning it.
-  // The bot's own initial forum-post body is also filtered here so the
-  // downstream projection loop doesn't have to special-case it.
-  const candidates = messages.filter((m) => !m.author.bot);
+  //
+  // Bot authorship rules:
+  //   - Bot messages that start with AI_DRAFT_PREFIX are Stage 4 AI
+  //     drafts — eligible to surface (after moderator ✅).
+  //   - Every other bot message is the thread-starter or a system
+  //     message and must not surface.
+  const candidates = messages.filter(
+    (m) => !m.author.bot || m.content.startsWith(AI_DRAFT_PREFIX),
+  );
   const filtered = await filterByApproval(env, candidates, ticket.tid);
   if (filtered.dropped.length > 0) {
     console.warn(
@@ -108,8 +115,15 @@ export async function loader({request, context}: Route.LoaderArgs) {
   // a single always-blocked message would loop forever.
   const projected: PublicMessage[] = [];
   for (const m of filtered.approved) {
-    if (m.author.bot) continue; // defence-in-depth; filter already did this
-    const scrubbed = scrubForPublic(m.content);
+    const isAiDraft =
+      m.author.bot && m.content.startsWith(AI_DRAFT_PREFIX);
+    if (m.author.bot && !isAiDraft) continue;
+    // Strip the draft marker from content before scrubbing/projecting —
+    // the `role: 'ai'` field replaces the inline prefix in the widget.
+    const rawContent = isAiDraft
+      ? m.content.slice(AI_DRAFT_PREFIX.length).trim()
+      : m.content;
+    const scrubbed = scrubForPublic(rawContent);
     if (scrubbed.blocked) {
       // Log the redaction reasons at warn level so staff can see the
       // Stage-2 moderation UI (once built) surface "this draft was
@@ -124,8 +138,10 @@ export async function loader({request, context}: Route.LoaderArgs) {
     if (!scrubbed.content && !m.attachments.length) continue;
     projected.push({
       id: m.id,
-      role: 'helper',
-      firstName: extractFirstName([m.author.globalName, m.author.username]),
+      role: isAiDraft ? 'ai' : 'helper',
+      firstName: isAiDraft
+        ? 'OpenDrone'
+        : extractFirstName([m.author.globalName, m.author.username]),
       content: scrubbed.content,
       createdAt: m.createdAt,
       attachments: m.attachments.map((a) => ({

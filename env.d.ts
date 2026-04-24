@@ -35,7 +35,18 @@ declare global {
     SUPPORT_SESSION_SECRET?: string;
     TURNSTILE_SITE_KEY?: string;
     TURNSTILE_SECRET_KEY?: string;
+    SUPPORT_TURNSTILE_DEV_SKIP?: string;
     RESEND_API_KEY?: string;
     SUPPORT_FROM_EMAIL?: string;
+
+    // Stage 2 moderation gate
+    SUPPORT_MOD_ROLE_ID?: string;
+    SUPPORT_APPROVE_EMOJI?: string;
+    SUPPORT_MODERATION_MODE?: string;
+
+    // Stage 4 AI first-responder
+    ANTHROPIC_API_KEY?: string;
+    SUPPORT_AI_DRAFTS_ENABLED?: string;
+    SUPPORT_AI_MODEL?: string;
   }
 }

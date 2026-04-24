@@ -17,6 +17,12 @@ import {verifyTurnstile} from '~/lib/support/turnstile';
 import {extractAttachments} from '~/lib/support/uploads';
 import {checkRateLimit, clientIp} from '~/lib/rate-limit';
 import {scrubForDiscord} from '~/lib/support/scrubber';
+import {
+  aiDraftsEnabled,
+  formatDraftForDiscord,
+  generateDraft,
+} from '~/lib/support/ai-draft';
+import {postToThread} from '~/lib/support/discord';
 
 type StartResult =
   | {ok: true; ticketId: string}
@@ -203,6 +209,38 @@ export async function action({request, context}: Route.ActionArgs) {
     })();
     if (context.waitUntil) context.waitUntil(emailJob);
     else void emailJob;
+
+    // Stage 4: AI first-responder. Best-effort and deferred — we don't
+    // want a slow Anthropic call to block the API response. The draft
+    // lands in the Discord thread only; the moderation gate (Stage 2)
+    // decides whether it ever surfaces to the customer.
+    if (aiDraftsEnabled(env)) {
+      const aiJob = (async () => {
+        try {
+          const draft = await generateDraft(env, {
+            subject: cleanSubject,
+            message: cleanMessage.content,
+            customerFirstName: name.split(/\s+/)[0] ?? name,
+          });
+          if (draft.ok) {
+            await postToThread(
+              env,
+              thread.id,
+              formatDraftForDiscord(draft.text),
+            );
+          } else {
+            console.warn('[support/start] ai-draft skipped', draft.reason);
+          }
+        } catch (err) {
+          console.warn(
+            '[support/start] ai-draft crashed',
+            err instanceof Error ? err.name : 'unknown',
+          );
+        }
+      })();
+      if (context.waitUntil) context.waitUntil(aiJob);
+      else void aiJob;
+    }
 
     return data<StartResult>(
       {ok: true, ticketId: ticket.uid},
