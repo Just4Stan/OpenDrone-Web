@@ -1,6 +1,10 @@
 import {describe, it} from 'node:test';
 import assert from 'node:assert/strict';
-import {scrubForPublic, extractFirstName} from './scrubber.ts';
+import {
+  extractFirstName,
+  scrubForDiscord,
+  scrubForPublic,
+} from './scrubber.ts';
 
 // Run with:
 //   node --experimental-strip-types --test app/lib/support/scrubber.test.ts
@@ -142,6 +146,47 @@ describe('extractFirstName', () => {
 
   it('skips nullish candidates and tries next', () => {
     assert.equal(extractFirstName([null, undefined, 'Sarah Jones']), 'Sarah');
+  });
+});
+
+describe('scrubForDiscord — inbound (user -> Discord)', () => {
+  it('preserves email (user may be asking about their own mailbox)', () => {
+    const r = scrubForDiscord('order confirmation never arrived at foo@bar.com');
+    assert.match(r.content, /foo@bar\.com/);
+    assert.equal(r.blocked, false);
+  });
+
+  it('preserves phone number', () => {
+    const r = scrubForDiscord('reach me on +32 475 12 34 56');
+    assert.match(r.content, /\+32 475 12 34 56/);
+  });
+
+  it('preserves IBAN', () => {
+    const r = scrubForDiscord('refund to BE68 5390 0754 7034');
+    assert.match(r.content, /BE68 5390 0754 7034/);
+  });
+
+  it('redacts credit card even inbound', () => {
+    const r = scrubForDiscord('card 4111 1111 1111 1111 got charged twice');
+    assert.match(r.content, /\[card redacted\]/);
+  });
+
+  it('redacts JWT even inbound', () => {
+    const jwt =
+      'eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.dozjgNryP4J3jVmNHl0w5N_XgL0n3I9PlFUP0THsR8U';
+    const r = scrubForDiscord(`api returns ${jwt}`);
+    assert.match(r.content, /\[token redacted\]/);
+  });
+
+  it('strips bidi override from inbound content', () => {
+    const r = scrubForDiscord('harmless‮ text');
+    assert.equal(r.content, 'harmless text');
+  });
+
+  it('short safe message passes through unchanged', () => {
+    const r = scrubForDiscord("my OpenFC flashed but won't bind");
+    assert.equal(r.content, "my OpenFC flashed but won't bind");
+    assert.equal(r.redactionCount, 0);
   });
 });
 

@@ -16,6 +16,7 @@ import {
 import {verifyTurnstile} from '~/lib/support/turnstile';
 import {extractAttachments} from '~/lib/support/uploads';
 import {checkRateLimit, clientIp} from '~/lib/rate-limit';
+import {scrubForDiscord} from '~/lib/support/scrubber';
 
 type StartResult =
   | {ok: true; ticketId: string}
@@ -103,6 +104,29 @@ export async function action({request, context}: Route.ActionArgs) {
     );
   }
 
+  // Inbound scrub: strip credentials / cards / bidi overrides from the
+  // user's message BEFORE it ever hits Discord. Narrower than the
+  // outbound scrubber — users legitimately share their own email,
+  // phone, order number, etc. when asking for help, so those pass
+  // through. Only secrets / cards / control chars get replaced.
+  const cleanMessage = scrubForDiscord(message);
+  if (cleanMessage.blocked) {
+    console.warn(
+      '[support] inbound scrub blocked start message',
+      cleanMessage.reasons.join(','),
+    );
+    return data<StartResult>(
+      {
+        ok: false,
+        message:
+          'Your message was rejected by our safety filter. Try rephrasing without any credentials, tokens, or card numbers.',
+        field: 'message',
+      },
+      {status: 400},
+    );
+  }
+  const cleanSubject = scrubForDiscord(subject).content;
+
   const ua = request.headers.get('User-Agent') ?? undefined;
 
   const turnstile = await verifyTurnstile(env, turnstileToken, ip);
@@ -129,12 +153,14 @@ export async function action({request, context}: Route.ActionArgs) {
 
   try {
     const thread = await createSupportThread(env, {
-      title: subject
-        ? `[${name}] ${subject}`
-        : `[${name}] ${message.slice(0, 50)}${message.length > 50 ? '…' : ''}`,
+      title: cleanSubject
+        ? `[${name}] ${cleanSubject}`
+        : `[${name}] ${cleanMessage.content.slice(0, 50)}${
+            cleanMessage.content.length > 50 ? '…' : ''
+          }`,
       userName: name,
       userEmail: email,
-      firstMessage: message,
+      firstMessage: cleanMessage.content,
       userAgent: ua,
       ipHint: ip && ip !== 'unknown' ? anonymizeIp(ip) : undefined,
       files: attachments.files,
@@ -154,7 +180,7 @@ export async function action({request, context}: Route.ActionArgs) {
     // Magic-link resume — fire-and-forget so the API response isn't blocked
     // by Resend latency. The email contains a link that survives cookie
     // wipes / device changes.
-    const ticketSubject = subject || message.slice(0, 60);
+    const ticketSubject = cleanSubject || cleanMessage.content.slice(0, 60);
     const emailJob = (async () => {
       try {
         const token = await signResumeToken(env, {

@@ -4,6 +4,7 @@ import {postToThread} from '~/lib/support/discord';
 import {readSupportCookie, verifyTicket} from '~/lib/support/session';
 import {extractAttachments} from '~/lib/support/uploads';
 import {checkRateLimit} from '~/lib/rate-limit';
+import {scrubForDiscord} from '~/lib/support/scrubber';
 
 type SendResult =
   | {
@@ -14,7 +15,7 @@ type SendResult =
   | {
       ok: false;
       message: string;
-      code?: 'no-ticket' | 'too-long' | 'files' | 'rate-limited';
+      code?: 'no-ticket' | 'too-long' | 'files' | 'rate-limited' | 'scrubbed';
     };
 
 export async function action({request, context}: Route.ActionArgs) {
@@ -68,8 +69,31 @@ export async function action({request, context}: Route.ActionArgs) {
     );
   }
 
+  // Inbound scrub before the message touches Discord. See api.support.start
+  // for the full rationale — narrower than the outbound Discord->web scrub
+  // because users legitimately share their own contact details in support
+  // threads.
+  const cleanContent = scrubForDiscord(content);
+  if (cleanContent.blocked) {
+    console.warn(
+      '[support] inbound scrub blocked send message',
+      cleanContent.reasons.join(','),
+    );
+    return data<SendResult>(
+      {
+        ok: false,
+        message:
+          'Your message was rejected by our safety filter. Try rephrasing without any credentials, tokens, or card numbers.',
+        code: 'scrubbed',
+      },
+      {status: 400},
+    );
+  }
+
   const prefix = `**${ticket.name}:**`;
-  const body = content ? `${prefix} ${content}` : prefix;
+  const body = cleanContent.content
+    ? `${prefix} ${cleanContent.content}`
+    : prefix;
   const posted = await postToThread(env, ticket.tid, body, attachments.files);
   if (!posted) {
     return data<SendResult>(
