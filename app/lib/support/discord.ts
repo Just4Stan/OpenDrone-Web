@@ -30,7 +30,18 @@ type DiscordEnv = {
   DISCORD_BOT_TOKEN?: string;
   DISCORD_SUPPORT_CHANNEL_ID?: string;
   DISCORD_GUILD_ID?: string;
+  DISCORD_STAFF_METADATA_CHANNEL_ID?: string;
 };
+
+// First whitespace-split token of a name. Used when we need to show
+// attribution in the public support channel without leaking the
+// customer's full name (which includes their last name, address lookup,
+// etc.). Extracted here (not in scrubber.ts) so discord.ts has no
+// cross-module dependency.
+function firstNameOnly(full: string): string {
+  const token = full.trim().split(/\s+/)[0] ?? '';
+  return token.slice(0, 40) || 'Customer';
+}
 
 export type DiscordMessage = {
   id: string;
@@ -99,12 +110,30 @@ export async function createSupportThread(
   if (!env.DISCORD_SUPPORT_CHANNEL_ID) {
     throw new Error('DISCORD_SUPPORT_CHANNEL_ID not set');
   }
-  const body = {
-    name: opts.title.slice(0, 96),
-    auto_archive_duration: 1440, // 24h
-    message: {
-      content: [
-        `**New web-support ticket**`,
+  // When a private metadata channel is configured, the thread-starter
+  // posted in the *public* forum is redacted to first name + message
+  // body only. Email, Shopify customer id, user-agent, and IP hint go
+  // to the metadata channel in a separate bot message (see
+  // postStaffMetadata below). This matches how Ticket Tool /
+  // TicketsBot / HelpDesk split public triage from sensitive context
+  // — Discord itself enforces who can read the metadata channel via
+  // role-based View Channel permissions, which you configure in
+  // Discord UI, not in code.
+  //
+  // If DISCORD_STAFF_METADATA_CHANNEL_ID is unset, the public post
+  // includes everything (legacy behaviour) — this is the failure mode
+  // when the env isn't fully configured, better to still have the
+  // info *somewhere* than to lose it.
+  const redact = !!env.DISCORD_STAFF_METADATA_CHANNEL_ID;
+  const publicContent = redact
+    ? [
+        '**New web-support ticket**',
+        `From: **${firstNameOnly(opts.userName)}**`,
+        '',
+        opts.firstMessage.slice(0, 1800),
+      ].join('\n')
+    : [
+        '**New web-support ticket**',
         `From: **${opts.userName}** <${opts.userEmail}>`,
         opts.customerId
           ? `Shopify customer: \`${opts.customerId}\``
@@ -115,7 +144,12 @@ export async function createSupportThread(
         opts.firstMessage.slice(0, 1800),
       ]
         .filter(Boolean)
-        .join('\n'),
+        .join('\n');
+  const body = {
+    name: opts.title.slice(0, 96),
+    auto_archive_duration: 1440, // 24h
+    message: {
+      content: publicContent,
       // No @everyone / role pings from user content.
       allowed_mentions: {parse: []},
     },
@@ -166,6 +200,69 @@ export async function createSupportThread(
     archived: !!json.thread_metadata?.archived,
     locked: !!json.thread_metadata?.locked,
   };
+}
+
+// Posts the full ticket metadata (email, Shopify customer id, IP hint,
+// user agent) to a staff-only Discord channel, along with a jump URL
+// back to the public thread. Discord-side role permissions on that
+// channel decide who can see it.
+//
+// Silently no-ops when DISCORD_STAFF_METADATA_CHANNEL_ID is unset —
+// caller falls back to including the metadata in the public thread,
+// which is the legacy behaviour and keeps a single-deploy toggle.
+export async function postStaffMetadata(
+  env: DiscordEnv,
+  threadId: string,
+  threadName: string,
+  metadata: {
+    userName: string;
+    userEmail: string;
+    customerId?: string;
+    userAgent?: string;
+    ipHint?: string;
+  },
+): Promise<boolean> {
+  const channel = env.DISCORD_STAFF_METADATA_CHANNEL_ID;
+  if (!channel) return false;
+  // Jump URL format Discord uses for every message-link. When
+  // DISCORD_GUILD_ID isn't set we fall back to `@me`, which renders
+  // as an invalid link; log-worthy but not fatal.
+  const guild = env.DISCORD_GUILD_ID ?? '@me';
+  const jumpUrl = `https://discord.com/channels/${guild}/${threadId}`;
+  const lines = [
+    `🎫 **${threadName}**`,
+    `Thread: ${jumpUrl}`,
+    '',
+    `From: **${metadata.userName}** <${metadata.userEmail}>`,
+    metadata.customerId
+      ? `Shopify customer: \`${metadata.customerId}\``
+      : null,
+    metadata.ipHint ? `IP hint: ${metadata.ipHint}` : null,
+    metadata.userAgent
+      ? `UA: \`${metadata.userAgent.slice(0, 180)}\``
+      : null,
+  ].filter(Boolean);
+  const res = await discordFetch(
+    `${DISCORD_API}/channels/${channel}/messages`,
+    {
+      method: 'POST',
+      headers: authHeaders(env),
+      body: JSON.stringify({
+        content: lines.join('\n').slice(0, 1900),
+        allowed_mentions: {parse: []},
+      }),
+    },
+  );
+  if (!res.ok) {
+    const text = await res.text().catch(() => '');
+    console.warn(
+      '[support] postStaffMetadata failed',
+      res.status,
+      text.slice(0, 160),
+    );
+    return false;
+  }
+  return true;
 }
 
 export async function postToThread(
