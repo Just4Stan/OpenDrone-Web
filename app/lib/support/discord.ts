@@ -43,6 +43,12 @@ export type DiscordMessage = {
   content: string;
   createdAt: string;
   attachments: Array<{id: string; url: string; filename: string}>;
+  // Reactions as Discord returns them in the message payload. `count` is
+  // the total reactor count for that emoji, `me` is whether the bot
+  // itself reacted. We use this in the Stage 2 moderation gate to decide
+  // whether a reactor fetch is worth making (no count = no reaction yet,
+  // skip the round trip).
+  reactions: Array<{emoji: string; count: number; me: boolean}>;
 };
 
 export type DiscordThread = {
@@ -458,6 +464,11 @@ function normalizeMessage(raw: unknown): DiscordMessage {
       bot?: boolean;
     };
     attachments?: Array<{id: string; url: string; filename: string}>;
+    reactions?: Array<{
+      emoji?: {name?: string | null; id?: string | null};
+      count?: number;
+      me?: boolean;
+    }>;
   };
   return {
     id: m.id,
@@ -474,5 +485,87 @@ function normalizeMessage(raw: unknown): DiscordMessage {
       url: a.url,
       filename: a.filename,
     })),
+    reactions: (m.reactions ?? [])
+      .map((r) => ({
+        emoji: r.emoji?.name ?? '',
+        count: r.count ?? 0,
+        me: !!r.me,
+      }))
+      .filter((r) => r.emoji.length > 0),
   };
+}
+
+// Fetches the user IDs that reacted with a given emoji to a specific
+// message. Used by the moderation gate to check whether an allowlisted
+// moderator has approved a message for publishing to the customer.
+//
+// The `emoji` argument for unicode emoji is the character itself
+// (URL-encoded). For custom server emoji Discord expects `name:id`.
+// We only use unicode in Stage 2.
+export async function fetchReactors(
+  env: DiscordEnv,
+  channelId: string,
+  messageId: string,
+  emoji: string,
+  opts: {limit?: number} = {},
+): Promise<string[]> {
+  const limit = Math.min(opts.limit ?? 25, 100);
+  const res = await discordFetch(
+    `${DISCORD_API}/channels/${channelId}/messages/${messageId}/reactions/${encodeURIComponent(emoji)}?limit=${limit}`,
+    {headers: authHeaders(env)},
+  );
+  if (!res.ok) {
+    // 404 means no reactions (or wrong emoji) — treat as empty.
+    if (res.status === 404) return [];
+    console.warn(
+      '[support] fetchReactors failed',
+      res.status,
+      messageId,
+      emoji,
+    );
+    return [];
+  }
+  const raw = (await res.json()) as Array<{id?: string}>;
+  return Array.isArray(raw)
+    ? raw.map((u) => u.id ?? '').filter((id) => id.length > 0)
+    : [];
+}
+
+// Fetches guild members that carry a specific role. Used to build the
+// moderator allowlist cache. One call per cache refresh (not per poll).
+// We page through members up to a reasonable cap — if the server ever
+// has >1000 members, the cache becomes slightly lossy for role holders
+// past position 1000, which is a problem for a later stage.
+export async function fetchGuildRoleMembers(
+  env: DiscordEnv & {DISCORD_GUILD_ID?: string},
+  roleId: string,
+): Promise<string[]> {
+  if (!env.DISCORD_GUILD_ID) {
+    console.warn('[support] DISCORD_GUILD_ID unset — cannot resolve mod role');
+    return [];
+  }
+  const ids: string[] = [];
+  let after: string | undefined;
+  for (let page = 0; page < 10; page++) {
+    const url =
+      `${DISCORD_API}/guilds/${env.DISCORD_GUILD_ID}/members?limit=100` +
+      (after ? `&after=${after}` : '');
+    const res = await discordFetch(url, {headers: authHeaders(env)});
+    if (!res.ok) {
+      console.warn('[support] fetchGuildRoleMembers failed', res.status);
+      break;
+    }
+    const raw = (await res.json()) as Array<{
+      user?: {id?: string};
+      roles?: string[];
+    }>;
+    if (!Array.isArray(raw) || raw.length === 0) break;
+    for (const m of raw) {
+      if (m.user?.id && m.roles?.includes(roleId)) ids.push(m.user.id);
+    }
+    if (raw.length < 100) break;
+    after = raw[raw.length - 1]?.user?.id;
+    if (!after) break;
+  }
+  return ids;
 }

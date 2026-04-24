@@ -13,6 +13,7 @@ import {
   scrubForPublic,
   type PublicMessage,
 } from '~/lib/support/scrubber';
+import {filterByApproval} from '~/lib/support/moderation';
 
 // Trust boundary between Discord and the customer's browser.
 //
@@ -84,13 +85,30 @@ export async function loader({request, context}: Route.LoaderArgs) {
     );
   }
 
+  // Moderation gate (Stage 2). Filter to approved messages before we
+  // project into the public shape. Dropped messages are logged (reason
+  // only, never content) so staff can watch the gate when tuning it.
+  // The bot's own initial forum-post body is also filtered here so the
+  // downstream projection loop doesn't have to special-case it.
+  const candidates = messages.filter((m) => !m.author.bot);
+  const filtered = await filterByApproval(env, candidates, ticket.tid);
+  if (filtered.dropped.length > 0) {
+    console.warn(
+      '[support] moderation',
+      filtered.mode,
+      'dropped',
+      filtered.dropped.length,
+      filtered.dropped.map((d) => `${d.message.id}:${d.reason}`).join(','),
+    );
+  }
+
   // Project each raw Discord message into the public shape. A projection
   // that returns null (blocked by the scrubber, or empty after redaction)
   // is dropped from the response but still advances the cursor — otherwise
   // a single always-blocked message would loop forever.
   const projected: PublicMessage[] = [];
-  for (const m of messages) {
-    if (m.author.bot) continue; // drop the bot's initial forum-post body
+  for (const m of filtered.approved) {
+    if (m.author.bot) continue; // defence-in-depth; filter already did this
     const scrubbed = scrubForPublic(m.content);
     if (scrubbed.blocked) {
       // Log the redaction reasons at warn level so staff can see the
