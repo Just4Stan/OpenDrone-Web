@@ -680,6 +680,8 @@ export default function Product() {
           vendor: product.vendor,
           handle: product.handle,
           safetyWarningsNl: product.safetyWarningsNl,
+          safetyWarningsFr: product.safetyWarningsFr,
+          safetyWarningsEn: product.safetyWarningsEn,
           datasheetUrl: product.datasheetUrl,
           manualUrl: product.manualUrl,
           docUrl: product.docUrl,
@@ -687,8 +689,14 @@ export default function Product() {
           githubRepo: product.githubRepo,
           modelNumber: product.modelNumber,
           batchId: product.batchId,
+          firmwareVersion: product.firmwareVersion,
+          supportEndDate: product.supportEndDate,
+          vulnContactEmail: product.vulnContactEmail,
+          batteryWh: product.batteryWh,
+          batteryUnNumber: product.batteryUnNumber,
         }}
         company={company}
+        locale={locale}
       />
 
       <RelatedProducts recommendations={recommendations} />
