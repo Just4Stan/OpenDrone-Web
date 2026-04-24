@@ -84,9 +84,12 @@ async function loadCriticalData({context, params, request}: Route.LoaderArgs) {
     context.env as unknown as Record<string, string | undefined>,
   );
 
+  const locale = getLocaleFromRequest(request);
+
   return {
     product,
     company,
+    locale,
   };
 }
 
