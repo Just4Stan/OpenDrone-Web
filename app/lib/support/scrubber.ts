@@ -50,10 +50,12 @@ type Pattern = {
 // no-irregular-whitespace / no-control-regex quiet by avoiding literal
 // chars in the source, and the \uXXXX escapes document the ranges.
 const BIDI_RANGE = new RegExp('[\\u202a-\\u202e\\u2066-\\u2069]', 'g');
+/* eslint-disable no-control-regex */
 const CONTROL_RANGE = new RegExp(
   '[\\u0000-\\u0008\\u000b\\u000c\\u000e-\\u001f\\u007f-\\u009f]',
   'g',
 );
+/* eslint-enable no-control-regex */
 
 const PATTERNS: Pattern[] = [
   // JWT (`eyJ` header is base64 for `{"` — strong signal)
