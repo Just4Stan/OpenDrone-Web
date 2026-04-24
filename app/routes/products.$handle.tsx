@@ -23,6 +23,7 @@ import {
 import {redirectIfHandleIsLocalized} from '~/lib/redirect';
 import {buildSeoMeta} from '~/lib/seo';
 import {getCompanyIdentity} from '~/lib/company';
+import {getLocaleFromRequest} from '~/lib/i18n';
 import {fetchLatestCommits} from '~/lib/github';
 import {
   PRODUCT_CONTENT,
