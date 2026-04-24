@@ -94,9 +94,10 @@ export function SupportWidget({
   embedded = false,
   prefill = null,
 }: SupportWidgetProps) {
-  const [phase, setPhase] = useState<'boot' | 'intake' | 'active' | 'closed'>(
-    'boot',
-  );
+  const [phase, setPhase] = useState<
+    'boot' | 'intake' | 'active' | 'closed' | 'error'
+  >('boot');
+  const [bootError, setBootError] = useState<string | null>(null);
   const [intakeError, setIntakeError] = useState<string | null>(null);
   const [intakeBusy, setIntakeBusy] = useState(false);
   const [messages, setMessages] = useState<LocalMessage[]>([]);
@@ -151,13 +152,18 @@ export function SupportWidget({
     window.history.replaceState({}, '', newUrl);
   }, []);
 
-  // Resume check on mount.
+  // Resume check on mount. Bounded by an 8-second timeout so a stalled
+  // fetch (evicted worker, cold isolate, CDN hiccup) doesn't leave the
+  // widget pinned on "Loading support chat…" forever. Any error path
+  // falls through to intake so the user can still open a ticket, and
+  // hard failures flip to the error phase with a retry button.
   useEffect(() => {
     let cancelled = false;
     void (async () => {
       try {
         const res = await fetch('/api/support/status', {
           credentials: 'same-origin',
+          signal: AbortSignal.timeout(8000),
         });
         const json = (await res.json()) as StatusResponse;
         if (cancelled) return;
@@ -167,8 +173,18 @@ export function SupportWidget({
         } else {
           setPhase('intake');
         }
-      } catch {
-        if (!cancelled) setPhase('intake');
+      } catch (err) {
+        if (cancelled) return;
+        const isAbort =
+          err instanceof Error &&
+          (err.name === 'AbortError' || err.name === 'TimeoutError');
+        if (isAbort) {
+          setBootError(
+            'Taking longer than usual to reach the support bridge.',
+          );
+        }
+        // Fall through to intake either way so the user can still try.
+        setPhase('intake');
       }
     })();
     return () => {
@@ -487,6 +503,19 @@ export function SupportWidget({
       data-phase={phase}
     >
       {phase === 'boot' ? <WidgetBoot /> : null}
+
+      {bootError ? (
+        <div className="support-banner" role="status">
+          <span>{bootError}</span>
+          <button
+            type="button"
+            aria-label="Dismiss"
+            onClick={() => setBootError(null)}
+          >
+            ×
+          </button>
+        </div>
+      ) : null}
 
       {linkBanner ? (
         <div className="support-banner" role="status">
