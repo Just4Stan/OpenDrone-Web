@@ -206,11 +206,14 @@ export async function postToThread(
 }
 
 function sanitizeFilename(name: string): string {
-  // Strip path traversal + control chars; cap length. Discord enforces its
-  // own limits but we keep things tidy on the wire.
+  // Strip path traversal + control chars + Unicode bidi overrides; cap
+  // length. The bidi chars (U+202A-E, U+2066-9) are the classic
+  // "doc.pdf<RLO>exe" RTL-override trick that renders `exe.fdp.cod`.
+  // Discord enforces its own limits but we keep things tidy on the wire.
   const cleaned = name
     // eslint-disable-next-line no-control-regex
     .replace(/[\u0000-\u001f\u007f]/g, '')
+    .replace(/[\u202a-\u202e\u2066-\u2069]/g, '')
     .replace(/[\\/]/g, '_')
     .slice(0, 100);
   return cleaned || 'file';
