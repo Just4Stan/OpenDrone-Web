@@ -19,6 +19,14 @@ export default async function handleRequest(
       checkoutDomain: context.env.PUBLIC_CHECKOUT_DOMAIN,
       storeDomain: context.env.PUBLIC_STORE_DOMAIN,
     },
+    // Turnstile injects a script from challenges.cloudflare.com and renders
+    // the challenge UI inside an iframe served from the same host. Without
+    // these directives Hydrogen's default CSP silently drops both and the
+    // support widget shows "Could not verify you are human" because no
+    // token ever comes back.
+    scriptSrc: ['https://challenges.cloudflare.com'],
+    frameSrc: ['https://challenges.cloudflare.com'],
+    connectSrc: ['https://challenges.cloudflare.com'],
   });
 
   const body = await renderToReadableStream(
