@@ -244,6 +244,87 @@ export function extractFirstName(
   return 'Helper';
 }
 
+// Inbound scrub for user -> Discord. Narrower than scrubForPublic:
+// users legitimately share their own email / phone / order numbers
+// when asking for help, so we only redact things that should never be
+// in a support thread no matter who's talking (credentials, bot
+// tokens, payment cards). Bidi/control chars still go.
+//
+// Same block-on-overload semantics as scrubForPublic — >MAX_REDACTIONS
+// or >MAX_POST_SCRUB_LENGTH returns `blocked: true`, caller should
+// tell the user the message was too weird to accept.
+
+const INBOUND_PATTERNS: Pattern[] = [
+  {
+    name: 'jwt',
+    re: /\beyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\b/g,
+    replace: '[token redacted]',
+  },
+  {
+    name: 'discord-token',
+    re: /\b[A-Za-z0-9_-]{23,}\.[A-Za-z0-9_-]{6,7}\.[A-Za-z0-9_-]{27,}\b/g,
+    replace: '[token redacted]',
+  },
+];
+
+export function scrubForDiscord(raw: string): ScrubResult {
+  if (!raw) {
+    return {content: '', blocked: false, redactionCount: 0, reasons: []};
+  }
+  let content = raw;
+  const reasons: string[] = [];
+  let redactions = 0;
+
+  try {
+    content = content.replace(BIDI_RANGE, '');
+    content = content.replace(CONTROL_RANGE, '');
+
+    for (const p of INBOUND_PATTERNS) {
+      content = content.replace(p.re, () => {
+        redactions += 1;
+        reasons.push(p.name);
+        return p.replace;
+      });
+    }
+
+    content = content.replace(CARD_RE, (match) => {
+      const digits = match.replace(/[^0-9]/g, '');
+      if (digits.length < 13 || digits.length > 19) return match;
+      if (!luhnValid(digits)) return match;
+      redactions += 1;
+      reasons.push('card');
+      return '[card redacted]';
+    });
+  } catch (err) {
+    return {
+      content: '',
+      blocked: true,
+      redactionCount: 0,
+      reasons: ['scrubber-exception', String(err)],
+    };
+  }
+
+  content = content.replace(/[ \t]{2,}/g, ' ').replace(/\n{3,}/g, '\n\n').trim();
+
+  if (content.length > MAX_POST_SCRUB_LENGTH) {
+    return {
+      content: '',
+      blocked: true,
+      redactionCount: redactions,
+      reasons: [...reasons, 'too-long'],
+    };
+  }
+  if (redactions > MAX_REDACTIONS) {
+    return {
+      content: '',
+      blocked: true,
+      redactionCount: redactions,
+      reasons: [...reasons, 'too-many-redactions'],
+    };
+  }
+  return {content, blocked: false, redactionCount: redactions, reasons};
+}
+
 function luhnValid(digits: string): boolean {
   let sum = 0;
   let alt = false;
