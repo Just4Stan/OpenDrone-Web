@@ -34,6 +34,7 @@ export type DownloadKind =
   | 'flash'
   | 'changelog'
   | 'sbom'
+  | 'firmware_manifest'
   | 'other';
 
 export type DownloadAsset = {

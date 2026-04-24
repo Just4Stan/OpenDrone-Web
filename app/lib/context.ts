@@ -48,7 +48,8 @@ export async function createHydrogenRouterContext(
   const url = new URL(request.url);
   const urlLocale = localeFromPathname(url.pathname);
   const resolvedLocale = urlLocale ?? getLocaleFromRequest(request);
-  const language = resolvedLocale === 'nl' ? 'NL' : 'EN';
+  const language =
+    resolvedLocale === 'nl' ? 'NL' : resolvedLocale === 'fr' ? 'FR' : 'EN';
 
   const hydrogenContext = createHydrogenContext(
     {

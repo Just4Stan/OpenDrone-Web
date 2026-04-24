@@ -45,33 +45,38 @@ function readCookies(): CookieRow[] {
     });
 }
 
-type CookieEntry = {name: string; en: string; nl: string};
+type CookieEntry = {name: string; en: string; nl: string; fr: string};
 
 const KNOWN: CookieEntry[] = [
   {
     name: 'cart',
     en: 'Links your cart to your browser session. Strictly necessary.',
     nl: 'Koppelt uw winkelwagen aan uw browsersessie. Strikt noodzakelijk.',
+    fr: 'Associe votre panier \u00e0 votre session de navigateur. Strictement n\u00e9cessaire.',
   },
   {
     name: 'cart_sig',
     en: 'Security signature for the cart cookie.',
     nl: 'Beveiligingshandtekening voor de winkelwagen-cookie.',
+    fr: 'Signature de s\u00e9curit\u00e9 pour le cookie du panier.',
   },
   {
     name: '_secure_session_id',
     en: 'Session security for Shopify checkout. Strictly necessary.',
     nl: 'Sessiebeveiliging bij Shopify checkout. Strikt noodzakelijk.',
+    fr: 'S\u00e9curit\u00e9 de session pour le checkout Shopify. Strictement n\u00e9cessaire.',
   },
   {
     name: 'localization',
     en: 'Remembers selected language/region for the storefront.',
     nl: 'Onthoudt de gekozen taal/regio voor de storefront.',
+    fr: 'M\u00e9morise la langue/r\u00e9gion s\u00e9lectionn\u00e9e pour la boutique.',
   },
   {
     name: 'opendrone_lang',
     en: 'Remembers your NL/EN preference for regulatory pages.',
     nl: 'Onthoudt uw NL/EN-voorkeur voor juridische pagina\u2019s.',
+    fr: 'M\u00e9morise votre pr\u00e9f\u00e9rence linguistique pour les pages l\u00e9gales.',
   },
 ];
 
@@ -113,6 +118,25 @@ const STRINGS = {
     clearButton: 'Alle sessiecookies wissen',
     disclaimer:
       'HttpOnly-cookies kunnen niet vanuit de client gewist worden. Gebruik uw browser-privacy-instellingen voor een volledige reset.',
+  },
+  fr: {
+    eyebrow: 'Mentions légales',
+    intro: [
+      'La boutique OpenDrone n’utilise ',
+      {strong: 'aucun cookie marketing'},
+      ' et ne demande pas de consentement — seuls des cookies strictement nécessaires sont utilisés pour le panier et le checkout. Les statistiques passent par Plausible, sans cookies. Voir aussi la ',
+      {link: ['politique en matière de cookies', '/cookies']},
+      '.',
+    ],
+    strictHeading: 'Cookies strictement nécessaires',
+    currentHeading: 'Cookies actuellement dans votre navigateur',
+    colName: 'Nom',
+    colPurpose: 'Usage',
+    colValue: 'Valeur (tronquée)',
+    none: 'Aucun cookie visible pour ce domaine depuis le client.',
+    clearButton: 'Effacer tous les cookies de session',
+    disclaimer:
+      'Les cookies HttpOnly ne peuvent pas être effacés depuis le client. Utilisez les réglages de confidentialité de votre navigateur pour une réinitialisation complète.',
   },
 } as const;
 

@@ -237,6 +237,20 @@ export default [
         ...globals.jest,
       },
     },
+    settings: {
+      // Pin a jest version so eslint-plugin-jest's no-deprecated-functions
+      // rule doesn't try to resolve the jest package at lint time. This
+      // repo has no Jest installed — tests run via node:test — but the
+      // plugin still attaches to *.test.* files and crashes CI without
+      // this hint.
+      jest: {version: 29},
+    },
+    rules: {
+      // node:test's describe()/it() return Promises by design; awaiting
+      // every one would be noise and doesn't match how the Node test
+      // runner is meant to be used.
+      '@typescript-eslint/no-floating-promises': 'off',
+    },
   },
   {
     files: ['**/*.server.*'],
