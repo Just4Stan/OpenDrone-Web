@@ -148,7 +148,9 @@ describe('generateDraft', () => {
       },
       {subject: 's', message: 'm', customerFirstName: 'Jan'},
     );
-    assert.ok(seenBody && JSON.parse(seenBody).model === 'claude-sonnet-4-6');
+    assert.ok(seenBody);
+    const parsed = JSON.parse(seenBody as string) as {model: string};
+    assert.equal(parsed.model, 'claude-sonnet-4-6');
   });
 
   it('sets prompt-caching on the system prompt', async () => {
