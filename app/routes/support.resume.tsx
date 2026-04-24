@@ -7,6 +7,7 @@ import {
   type SupportTicket,
 } from '~/lib/support/session';
 import {verifyResumeToken} from '~/lib/support/resume-token';
+import {checkRateLimit, clientIp} from '~/lib/rate-limit';
 
 /**
  * Cross-device resume endpoint. The user clicks a link from their inbox;
@@ -23,6 +24,17 @@ export async function loader({request, context}: Route.LoaderArgs) {
   const url = new URL(request.url);
   const token = url.searchParams.get('t');
   const env = context.env;
+
+  // Best-effort per-IP cap. If a resume link ever leaks (email archive
+  // scraping, shared screen recording), this keeps it from being turned
+  // into a bulk hijack vector — the legitimate user only needs a handful
+  // of redemptions. `clientIp()` falls back to "unknown" which buckets
+  // all un-identified traffic together, so "unknown" sees the same cap.
+  const ip = clientIp(request);
+  const rl = checkRateLimit(`support-resume:ip:${ip}`, 10, 60 * 60 * 1000);
+  if (!rl.allowed) {
+    return redirect('/contact?support=rate-limited');
+  }
 
   const payload = await verifyResumeToken(env, token);
   if (!payload) {

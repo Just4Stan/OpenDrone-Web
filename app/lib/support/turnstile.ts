@@ -1,11 +1,15 @@
-/**
- * Cloudflare Turnstile server-side verification. Widget posts the token,
- * the Worker verifies it before creating a Discord thread. When
- * TURNSTILE_SECRET_KEY is unset (dev or staging without the secret) the
- * verifier no-ops and returns true so local development isn't blocked.
- */
+// Cloudflare Turnstile server-side verification. Widget posts the token,
+// the Worker verifies it before creating a Discord thread.
+//
+// Fails CLOSED by default if the secret is missing. Local dev can opt out
+// by setting SUPPORT_TURNSTILE_DEV_SKIP=1 in .env — an explicit,
+// greppable flag that can't silently leak into a production deploy the
+// way `process.env.NODE_ENV` can when Workerd doesn't populate it.
 
-type Env = {TURNSTILE_SECRET_KEY?: string};
+type Env = {
+  TURNSTILE_SECRET_KEY?: string;
+  SUPPORT_TURNSTILE_DEV_SKIP?: string;
+};
 
 export async function verifyTurnstile(
   env: Env,
@@ -13,17 +17,11 @@ export async function verifyTurnstile(
   remoteIp?: string | null,
 ): Promise<{ok: boolean; reason?: string}> {
   if (!env.TURNSTILE_SECRET_KEY) {
-    // In development / staging without a secret key we let the request
-    // through so the intake form can still be exercised. In production
-    // a missing secret is a config error — fail CLOSED rather than
-    // silently disable bot protection on every ticket.
-    const inProd =
-      (typeof process !== 'undefined' && process.env?.NODE_ENV === 'production');
-    if (inProd) {
-      console.error('[turnstile] SECRET_KEY unset in production — failing closed');
-      return {ok: false, reason: 'turnstile-misconfigured'};
+    if (env.SUPPORT_TURNSTILE_DEV_SKIP === '1') {
+      return {ok: true, reason: 'turnstile-dev-skip'};
     }
-    return {ok: true, reason: 'turnstile-disabled'};
+    console.error('[turnstile] SECRET_KEY unset — failing closed');
+    return {ok: false, reason: 'turnstile-misconfigured'};
   }
   if (!token) return {ok: false, reason: 'missing-token'};
   const form = new FormData();

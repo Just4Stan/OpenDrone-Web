@@ -169,7 +169,7 @@ export async function postToThread(
   files: OutboundFile[] = [],
 ): Promise<DiscordMessage | null> {
   const payload = {
-    content: content.slice(0, 1900),
+    content: sanitizeMessageContent(content).slice(0, 1900),
     allowed_mentions: {parse: []},
   };
 
@@ -203,6 +203,20 @@ export async function postToThread(
     return null;
   }
   return normalizeMessage(await res.json());
+}
+
+function sanitizeMessageContent(content: string): string {
+  // Strip Unicode bidi overrides (U+202A-U+202E, U+2066-U+2069) from
+  // user-supplied message content before it reaches Discord. A staff
+  // member viewing a ticket should not have their rendered line order
+  // silently reversed by RLO/LRO/PDI/LRI chars — the same class of
+  // trick that landed CVE-2021-42574 ("Trojan Source"). Also strip C0/C1
+  // control chars except tab/newline so log-injection via CR doesn't
+  // spoof Discord command output.
+  return content
+    .replace(/[\u202a-\u202e\u2066-\u2069]/g, '')
+    // eslint-disable-next-line no-control-regex
+    .replace(/[\u0000-\u0008\u000b-\u001f\u007f-\u009f]/g, '');
 }
 
 function sanitizeFilename(name: string): string {
