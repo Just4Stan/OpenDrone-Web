@@ -8,22 +8,27 @@ import {
   verifyTicket,
 } from '~/lib/support/session';
 import {checkRateLimit} from '~/lib/rate-limit';
+import {
+  extractFirstName,
+  scrubForPublic,
+  type PublicMessage,
+} from '~/lib/support/scrubber';
 
-export type PollMessage = {
-  id: string;
-  author: string;
-  isStaff: boolean;
-  content: string;
-  createdAt: string;
-  attachments: Array<{url: string; filename: string}>;
-};
+// Trust boundary between Discord and the customer's browser.
+//
+// Every Discord message passes through scrubForPublic() before it lands
+// in the response. The browser only sees:
+//   - a first name (safe because Discord display names are public),
+//   - a role flag (helper | ai),
+//   - scrubbed content,
+//   - attachments already filtered at upload time.
+//
+// Everything else in the raw Discord payload (author.id, avatar hash,
+// discriminator, global_name, guild_id, roles, embeds, components, …)
+// is dropped here and never reaches JSON.stringify.
 
 type PollResult =
-  | {
-      ok: true;
-      messages: PollMessage[];
-      closed: boolean;
-    }
+  | {ok: true; messages: PublicMessage[]; closed: boolean}
   | {ok: false; message: string; code?: 'no-ticket' | 'thread-gone'};
 
 export async function loader({request, context}: Route.LoaderArgs) {
@@ -79,20 +84,38 @@ export async function loader({request, context}: Route.LoaderArgs) {
     );
   }
 
-  // Hide the bot's own initial forum-post body (the "new web-support ticket"
-  // block). Staff replies in a forum thread are regular messages; the first
-  // post is surfaced as the thread starter with author = the bot. We filter
-  // by bot flag and by "from the bot" identity.
-  const filtered = messages.filter((m) => !m.author.bot);
-
-  const normalized: PollMessage[] = filtered.map((m) => ({
-    id: m.id,
-    author: m.author.globalName || m.author.username,
-    isStaff: true,
-    content: m.content,
-    createdAt: m.createdAt,
-    attachments: m.attachments.map((a) => ({url: a.url, filename: a.filename})),
-  }));
+  // Project each raw Discord message into the public shape. A projection
+  // that returns null (blocked by the scrubber, or empty after redaction)
+  // is dropped from the response but still advances the cursor — otherwise
+  // a single always-blocked message would loop forever.
+  const projected: PublicMessage[] = [];
+  for (const m of messages) {
+    if (m.author.bot) continue; // drop the bot's initial forum-post body
+    const scrubbed = scrubForPublic(m.content);
+    if (scrubbed.blocked) {
+      // Log the redaction reasons at warn level so staff can see the
+      // Stage-2 moderation UI (once built) surface "this draft was
+      // blocked by the scrubber" cleanly. Never log the raw content.
+      console.warn(
+        '[support] scrubber blocked message',
+        m.id,
+        scrubbed.reasons.join(','),
+      );
+      continue;
+    }
+    if (!scrubbed.content && !m.attachments.length) continue;
+    projected.push({
+      id: m.id,
+      role: 'helper',
+      firstName: extractFirstName([m.author.globalName, m.author.username]),
+      content: scrubbed.content,
+      createdAt: m.createdAt,
+      attachments: m.attachments.map((a) => ({
+        url: a.url,
+        filename: a.filename,
+      })),
+    });
+  }
 
   const newestId = messages.length ? messages[messages.length - 1].id : null;
 
@@ -108,7 +131,7 @@ export async function loader({request, context}: Route.LoaderArgs) {
   }
 
   return data<PollResult>(
-    {ok: true, messages: normalized, closed: thread.archived || thread.locked},
+    {ok: true, messages: projected, closed: thread.archived || thread.locked},
     {headers},
   );
 }
