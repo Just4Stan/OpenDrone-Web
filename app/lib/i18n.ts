@@ -20,7 +20,7 @@ import {redirect} from 'react-router';
 import {loadLegal, type LegalSlug} from '~/lib/legal';
 import {LEGAL_SLUGS, type LegalPathSlug} from '~/lib/legal-slugs';
 
-export const LOCALES = ['en', 'nl'] as const;
+export const LOCALES = ['en', 'nl', 'fr'] as const;
 export type Locale = (typeof LOCALES)[number];
 export const DEFAULT_LOCALE: Locale = 'en';
 export const LANG_COOKIE = 'opendrone_lang';
@@ -222,7 +222,7 @@ export function legalLabels(slug: LegalPathSlug, locale: Locale) {
 }
 
 export function isLocale(x: unknown): x is Locale {
-  return x === 'en' || x === 'nl';
+  return x === 'en' || x === 'nl' || x === 'fr';
 }
 
 /**
@@ -231,7 +231,7 @@ export function isLocale(x: unknown): x is Locale {
 export function readLocaleCookie(cookieHeader: string | null): Locale | null {
   if (!cookieHeader) return null;
   const match = cookieHeader.match(
-    new RegExp(`(?:^|;\\s*)${LANG_COOKIE}=(en|nl)(?:;|$)`),
+    new RegExp(`(?:^|;\\s*)${LANG_COOKIE}=(en|nl|fr)(?:;|$)`),
   );
   if (match && isLocale(match[1])) return match[1];
   return null;
@@ -243,8 +243,8 @@ export function readLocaleCookie(cookieHeader: string | null): Locale | null {
  */
 export function detectLocaleFromAccept(accept: string | null): Locale {
   if (!accept) return DEFAULT_LOCALE;
-  // Very simple sniff: nl or nl-BE at the start of the preference list.
   if (/^\s*nl(-[a-z]{2})?\b/i.test(accept)) return 'nl';
+  if (/^\s*fr(-[a-z]{2})?\b/i.test(accept)) return 'fr';
   return DEFAULT_LOCALE;
 }
 
@@ -319,6 +319,7 @@ export async function resolveLegalLoader(
     const hreflang = [
       {lang: 'en', href: `${url.origin}/en/${urlSlug}`},
       {lang: 'nl', href: `${url.origin}/nl/${urlSlug}`},
+      {lang: 'fr', href: `${url.origin}/fr/${urlSlug}`},
       {lang: 'x-default', href: `${url.origin}/en/${urlSlug}`},
     ];
     return {html, locale: first, canonicalUrl, hreflang};
