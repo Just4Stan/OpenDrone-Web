@@ -406,7 +406,11 @@ async function predictiveSearch({
   const {storefront} = context;
   const url = new URL(request.url);
   const term = String(url.searchParams.get('q') || '').trim();
-  const limit = Number(url.searchParams.get('limit') || 10);
+  const rawLimit = url.searchParams.get('limit');
+  const parsedLimit = rawLimit ? Number(rawLimit) : 10;
+  const limit = Number.isFinite(parsedLimit)
+    ? Math.max(1, Math.min(20, Math.floor(parsedLimit)))
+    : 10;
   const type = 'predictive';
 
   if (!term) return {type, term, result: getEmptyPredictiveSearchResult()};
@@ -426,9 +430,11 @@ async function predictiveSearch({
     });
 
   if (errors) {
-    throw new Error(
-      `Shopify API errors: ${errors.map(({message}: {message: string}) => message).join(', ')}`,
+    console.warn(
+      '[search] predictive search failed',
+      errors.map((e: {message: string}) => e.message).join(', '),
     );
+    throw new Error('Search failed');
   }
 
   if (!items) {
