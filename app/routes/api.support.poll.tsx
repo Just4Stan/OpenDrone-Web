@@ -1,6 +1,6 @@
 import {data} from 'react-router';
 import type {Route} from './+types/api.support.poll';
-import {fetchThreadMessages} from '~/lib/support/discord';
+import {fetchThreadMessages, postToThread} from '~/lib/support/discord';
 import {
   buildSupportSetCookie,
   readSupportCookie,
@@ -14,7 +14,14 @@ import {
   type PublicMessage,
 } from '~/lib/support/scrubber';
 import {filterByApproval} from '~/lib/support/moderation';
-import {AI_DRAFT_PREFIX} from '~/lib/support/ai-draft';
+import {
+  AI_DRAFT_PREFIX,
+  AI_SUMMARY_PREFIX,
+  aiDraftsEnabled,
+  formatSummaryForDiscord,
+  generateSummary,
+  parseSummaryCursor,
+} from '~/lib/support/ai-draft';
 
 // Trust boundary between Discord and the customer's browser.
 //
@@ -32,6 +39,13 @@ import {AI_DRAFT_PREFIX} from '~/lib/support/ai-draft';
 type PollResult =
   | {ok: true; messages: PublicMessage[]; closed: boolean}
   | {ok: false; message: string; code?: 'no-ticket' | 'thread-gone'};
+
+// Stage 5 summariser threshold: once a thread has grown by this many
+// non-bot messages past the last summary cursor, kick off a new recap.
+// Tunable — 8 felt right in dry runs: short enough to keep the recap
+// timely, long enough that we're not firing the AI on trivial 2-reply
+// threads.
+const SUMMARY_THRESHOLD_NEW_MESSAGES = 8;
 
 export async function loader({request, context}: Route.LoaderArgs) {
   const env = context.env;
@@ -91,12 +105,15 @@ export async function loader({request, context}: Route.LoaderArgs) {
   // only, never content) so staff can watch the gate when tuning it.
   //
   // Bot authorship rules:
-  //   - Bot messages that start with AI_DRAFT_PREFIX are Stage 4 AI
-  //     drafts — eligible to surface (after moderator ✅).
+  //   - Bot messages that start with AI_DRAFT_PREFIX (Stage 4) or
+  //     AI_SUMMARY_PREFIX (Stage 5) are eligible to surface, pending ✅.
   //   - Every other bot message is the thread-starter or a system
   //     message and must not surface.
   const candidates = messages.filter(
-    (m) => !m.author.bot || m.content.startsWith(AI_DRAFT_PREFIX),
+    (m) =>
+      !m.author.bot ||
+      m.content.startsWith(AI_DRAFT_PREFIX) ||
+      m.content.startsWith(AI_SUMMARY_PREFIX),
   );
   const filtered = await filterByApproval(env, candidates, ticket.tid);
   if (filtered.dropped.length > 0) {
@@ -117,12 +134,20 @@ export async function loader({request, context}: Route.LoaderArgs) {
   for (const m of filtered.approved) {
     const isAiDraft =
       m.author.bot && m.content.startsWith(AI_DRAFT_PREFIX);
-    if (m.author.bot && !isAiDraft) continue;
-    // Strip the draft marker from content before scrubbing/projecting —
+    const isAiSummary =
+      m.author.bot && m.content.startsWith(AI_SUMMARY_PREFIX);
+    if (m.author.bot && !isAiDraft && !isAiSummary) continue;
+    // Strip the bot marker from content before scrubbing/projecting —
     // the `role: 'ai'` field replaces the inline prefix in the widget.
-    const rawContent = isAiDraft
-      ? m.content.slice(AI_DRAFT_PREFIX.length).trim()
-      : m.content;
+    let rawContent = m.content;
+    if (isAiDraft) rawContent = m.content.slice(AI_DRAFT_PREFIX.length).trim();
+    else if (isAiSummary) {
+      // Summary header looks like `🤖 **Recap so far up to msg_id=X:**\n<body>`.
+      // Drop the first line entirely — the customer doesn't care about
+      // the internal cursor.
+      const nl = m.content.indexOf('\n');
+      rawContent = nl >= 0 ? m.content.slice(nl + 1).trim() : '';
+    }
     const scrubbed = scrubForPublic(rawContent);
     if (scrubbed.blocked) {
       // Log the redaction reasons at warn level so staff can see the
@@ -138,10 +163,11 @@ export async function loader({request, context}: Route.LoaderArgs) {
     if (!scrubbed.content && !m.attachments.length) continue;
     projected.push({
       id: m.id,
-      role: isAiDraft ? 'ai' : 'helper',
-      firstName: isAiDraft
-        ? 'OpenDrone'
-        : extractFirstName([m.author.globalName, m.author.username]),
+      role: isAiDraft || isAiSummary ? 'ai' : 'helper',
+      firstName:
+        isAiDraft || isAiSummary
+          ? 'OpenDrone'
+          : extractFirstName([m.author.globalName, m.author.username]),
       content: scrubbed.content,
       createdAt: m.createdAt,
       attachments: m.attachments.map((a) => ({
@@ -164,8 +190,105 @@ export async function loader({request, context}: Route.LoaderArgs) {
     headers['Set-Cookie'] = buildSupportSetCookie(await signTicket(env, rolled));
   }
 
+  // Stage 5 summariser. After the customer's response is ready, we
+  // check whether the thread has drifted far enough past the last
+  // summary cursor to warrant a new recap, and fire the summary in the
+  // background so the poll itself stays snappy. The generated summary
+  // is posted into the Discord thread with AI_SUMMARY_PREFIX and will
+  // surface to the customer only if a moderator ✅'s it (Stage 2 gate).
+  if (aiDraftsEnabled(env) && messages.length > 0) {
+    // Pull the whole thread for the summary context, not just the
+    // post-cursor slice we answered this poll with.
+    const latestNonBotId = [...messages]
+      .reverse()
+      .find((m) => !m.author.bot)?.id;
+    const latestSummary = [...messages]
+      .reverse()
+      .find(
+        (m) => m.author.bot && m.content.startsWith(AI_SUMMARY_PREFIX),
+      );
+    const lastCursor = latestSummary
+      ? parseSummaryCursor(latestSummary.content)
+      : null;
+    const newCount = countMessagesSinceCursor(messages, lastCursor);
+    const hasFreshMessages =
+      latestNonBotId && latestNonBotId !== lastCursor;
+    if (
+      hasFreshMessages &&
+      newCount >= SUMMARY_THRESHOLD_NEW_MESSAGES
+    ) {
+      const job = (async () => {
+        try {
+          const whole = await fetchThreadMessages(env, ticket.tid, {
+            limit: 100,
+          });
+          if (!whole.thread) return;
+          const flat = whole.messages
+            .filter(
+              (m) =>
+                !m.author.bot ||
+                m.content.startsWith(AI_DRAFT_PREFIX) ||
+                m.content.startsWith(AI_SUMMARY_PREFIX),
+            )
+            .map((m) => {
+              const isCustomer = !m.author.bot && m.author.id === '';
+              // We don't have a reliable "is-customer" flag on the
+              // Discord side — the customer's messages are posted by
+              // the bot on their behalf, prefixed `**<name>:**`. Flag
+              // any message that starts with `**` and a colon as
+              // customer-authored so the summariser labels it right.
+              const looksLikeCustomer = /^\*\*[^*]{1,80}:\*\*/.test(
+                m.content,
+              );
+              return {
+                author: looksLikeCustomer
+                  ? ticket.name
+                  : extractFirstName([m.author.globalName, m.author.username]),
+                isCustomer: isCustomer || looksLikeCustomer,
+                content: m.content,
+              };
+            });
+          const summary = await generateSummary(env, {
+            subject: whole.thread.name,
+            customerFirstName: ticket.name.split(/\s+/)[0] ?? ticket.name,
+            messages: flat,
+          });
+          if (!summary.ok) {
+            console.warn('[support/poll] summary skipped', summary.reason);
+            return;
+          }
+          await postToThread(
+            env,
+            ticket.tid,
+            formatSummaryForDiscord(summary.text, latestNonBotId ?? ''),
+          );
+        } catch (err) {
+          console.warn(
+            '[support/poll] summary crashed',
+            err instanceof Error ? err.name : 'unknown',
+          );
+        }
+      })();
+      if (context.waitUntil) context.waitUntil(job);
+      else void job;
+    }
+  }
+
   return data<PollResult>(
     {ok: true, messages: projected, closed: thread.archived || thread.locked},
     {headers},
   );
+}
+
+// Counts non-bot messages in `messages` that come after `cursor`. If
+// cursor is null, counts all non-bot messages. Used to decide whether
+// the summariser should fire this poll.
+function countMessagesSinceCursor(
+  messages: Array<{id: string; author: {bot: boolean}; content: string}>,
+  cursor: string | null,
+): number {
+  if (!cursor) return messages.filter((m) => !m.author.bot).length;
+  const idx = messages.findIndex((m) => m.id === cursor);
+  if (idx < 0) return messages.filter((m) => !m.author.bot).length;
+  return messages.slice(idx + 1).filter((m) => !m.author.bot).length;
 }
