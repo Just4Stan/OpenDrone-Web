@@ -7,17 +7,18 @@
  * versa). The token is opaque base64url and short enough to fit in a
  * regular URL.
  *
- * Lifetime defaults to 60 days. Short enough that a leaked link
- * eventually stops working; long enough that a user can reasonably
- * return to a ticket after a vacation. The token is not single-use —
- * the same URL can resume the same chat any number of times within
- * that window, because the token only re-attaches the existing Discord
- * thread (it does not grant any other privilege).
+ * Lifetime defaults to 14 days — long enough to cover a short holiday,
+ * short enough that an email-archive compromise months later doesn't
+ * hand out live support-thread access. The token is multi-use within
+ * the TTL (the user may click it from a different device, then again
+ * from a browser refresh); single-use would require a persistent
+ * consumed-token set and break the stateless design. Resume endpoint
+ * rate-limits per-IP to blunt bulk replay if a link does leak.
  */
 
 const enc = new TextEncoder();
 const RESUME_AUD = 'support-resume-v1';
-const DEFAULT_TTL_SECONDS = 60 * 60 * 24 * 60; // 60 days
+const DEFAULT_TTL_SECONDS = 60 * 60 * 24 * 14; // 14 days
 
 export type ResumeTokenPayload = {
   v: 1;

@@ -2906,6 +2906,344 @@ button.reset {
   color: var(--color-text-muted);
 }
 
+/* ============================================
+   Account dashboard (account._index)
+   ============================================ */
+
+.account-dashboard {
+  display: grid;
+  gap: 2rem;
+}
+
+.account-dashboard-hero {
+  display: grid;
+  gap: 0.4rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.account-dashboard-eyebrow {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+  margin: 0;
+}
+
+.account-dashboard-title {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: clamp(2rem, 5vw, 3.25rem);
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+  color: var(--color-text);
+  margin: 0;
+}
+
+.account-dashboard-title span {
+  color: var(--color-gold);
+}
+
+.account-dashboard-lede {
+  color: var(--color-text-muted);
+  max-width: 52ch;
+  line-height: 1.6;
+  margin: 0.25rem 0 0;
+}
+
+.account-dashboard-grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+}
+
+.account-dashboard-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 1.25rem 1.35rem;
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  transition: border-color 200ms ease, transform 200ms ease;
+}
+
+.account-dashboard-card:hover {
+  border-color: color-mix(in srgb, var(--color-gold) 50%, transparent);
+}
+
+.account-dashboard-card-accent {
+  background: linear-gradient(
+    145deg,
+    color-mix(in srgb, var(--color-gold) 10%, var(--color-bg-card)) 0%,
+    var(--color-bg-card) 70%
+  );
+}
+
+.account-dashboard-card-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 1rem;
+}
+
+.account-dashboard-eyebrow-mono {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--color-gold);
+  margin: 0;
+}
+
+.account-dashboard-card-link {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+  transition: color 150ms ease;
+}
+
+.account-dashboard-card-link:hover {
+  color: var(--color-text);
+}
+
+.account-dashboard-card-title {
+  font-family: var(--font-display);
+  font-size: 1.15rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  line-height: 1.25;
+  color: var(--color-text);
+  margin: 0;
+}
+
+.account-dashboard-card-lede {
+  color: var(--color-text-muted);
+  line-height: 1.55;
+  font-size: 0.9rem;
+  margin: 0;
+}
+
+.account-dashboard-cta {
+  display: inline-flex;
+  align-items: center;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--color-gold);
+  margin-top: auto;
+  padding-top: 0.25rem;
+  transition: color 150ms ease;
+}
+
+.account-dashboard-cta:hover {
+  color: var(--color-gold-hover);
+}
+
+.account-dashboard-orders {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.account-dashboard-order {
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  transition: border-color 150ms ease, background 150ms ease;
+}
+
+.account-dashboard-order:hover {
+  border-color: color-mix(in srgb, var(--color-gold) 40%, transparent);
+  background: color-mix(in srgb, var(--color-gold) 4%, transparent);
+}
+
+.account-dashboard-order a {
+  display: block;
+  padding: 0.7rem 0.85rem;
+  color: inherit;
+}
+
+.account-dashboard-order-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 1rem;
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+}
+
+.account-dashboard-order-number {
+  font-weight: 700;
+  color: var(--color-text);
+  letter-spacing: 0.04em;
+}
+
+.account-dashboard-order-meta {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--color-text-muted);
+  margin-top: 0.25rem;
+  display: flex;
+  gap: 0.35rem;
+}
+
+.account-dashboard-empty {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  color: var(--color-text-muted);
+  font-size: 0.9rem;
+}
+
+.account-dashboard-address {
+  font-style: normal;
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  color: var(--color-text);
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.account-dashboard-nudge {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.25rem;
+  background: color-mix(in srgb, var(--color-gold) 8%, var(--color-bg-card));
+  border: 1px solid color-mix(in srgb, var(--color-gold) 30%, var(--color-border));
+  border-radius: 8px;
+}
+
+.account-dashboard-nudge p {
+  color: var(--color-text);
+  font-size: 0.9rem;
+  line-height: 1.5;
+  margin: 0.2rem 0 0;
+}
+
+/* ============================================
+   Account welcome / onboarding (account.welcome)
+   ============================================ */
+
+.account-welcome {
+  display: grid;
+  gap: 2rem;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 320px);
+  align-items: start;
+}
+
+@media (max-width: 720px) {
+  .account-welcome {
+    grid-template-columns: 1fr;
+  }
+}
+
+.account-welcome-hero {
+  grid-column: 1 / -1;
+  display: grid;
+  gap: 0.5rem;
+  padding-bottom: 1.25rem;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.account-welcome-eyebrow {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--color-gold);
+  margin: 0;
+}
+
+.account-welcome-title {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: clamp(2rem, 5vw, 3rem);
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+  color: var(--color-text);
+  margin: 0;
+}
+
+.account-welcome-title span {
+  color: var(--color-gold);
+}
+
+.account-welcome-lede {
+  color: var(--color-text-muted);
+  max-width: 56ch;
+  line-height: 1.6;
+  margin: 0.4rem 0 0;
+}
+
+.account-welcome-form {
+  max-width: 460px;
+}
+
+.account-welcome-error {
+  color: #fca5a5;
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  margin: 0;
+}
+
+.account-welcome-actions {
+  margin-top: 0.75rem;
+}
+
+.account-welcome-aside {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 1.25rem;
+  background: color-mix(in srgb, var(--color-gold) 7%, var(--color-bg-card));
+  border: 1px solid color-mix(in srgb, var(--color-gold) 25%, var(--color-border));
+  border-radius: 8px;
+}
+
+.account-welcome-aside-lede {
+  color: var(--color-text-muted);
+  line-height: 1.55;
+  font-size: 0.9rem;
+  margin: 0;
+}
+
+.account-welcome-cta {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--color-gold);
+}
+
+.account-welcome-link {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 400;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+
+.account-welcome-link:hover {
+  color: var(--color-text);
+}
+
 .order-card a {
   color: var(--color-gold);
   font-family: var(--font-mono);

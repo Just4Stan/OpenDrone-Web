@@ -39,6 +39,7 @@ export const meta: Route.MetaFunction = () =>
 
 export async function loader({request, context}: Route.LoaderArgs) {
   const {customerAccount} = context;
+  await customerAccount.handleAuthStatus();
   const paginationVariables = getPaginationVariables(request, {
     pageBy: 20,
   });
