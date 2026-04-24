@@ -811,6 +811,12 @@ const PRODUCT_FRAGMENT = `#graphql
     safetyWarningsNl: metafield(namespace: "custom", key: "safety_warnings_nl") {
       ...ComplianceMetafield
     }
+    safetyWarningsFr: metafield(namespace: "custom", key: "safety_warnings_fr") {
+      ...ComplianceMetafield
+    }
+    safetyWarningsEn: metafield(namespace: "custom", key: "safety_warnings_en") {
+      ...ComplianceMetafield
+    }
     datasheetUrl: metafield(namespace: "custom", key: "datasheet_url") {
       ...ComplianceMetafield
     }
@@ -830,6 +836,21 @@ const PRODUCT_FRAGMENT = `#graphql
       ...ComplianceMetafield
     }
     batchId: metafield(namespace: "custom", key: "batch_id") {
+      ...ComplianceMetafield
+    }
+    firmwareVersion: metafield(namespace: "custom", key: "firmware_version") {
+      ...ComplianceMetafield
+    }
+    supportEndDate: metafield(namespace: "custom", key: "support_end_date") {
+      ...ComplianceMetafield
+    }
+    vulnContactEmail: metafield(namespace: "custom", key: "vuln_contact_email") {
+      ...ComplianceMetafield
+    }
+    batteryWh: metafield(namespace: "custom", key: "battery_wh") {
+      ...ComplianceMetafield
+    }
+    batteryUnNumber: metafield(namespace: "custom", key: "battery_un_number") {
       ...ComplianceMetafield
     }
   }
