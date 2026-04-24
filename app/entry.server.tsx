@@ -7,6 +7,21 @@ import {
 } from '@shopify/hydrogen';
 import type {EntryContext} from 'react-router';
 
+// Minimal ambient declaration for Cloudflare Workers' HTMLRewriter, which
+// Oxygen's edge runtime provides but isn't in the default TS lib and
+// pulling the full @cloudflare/workers-types conflicts with Hydrogen's.
+interface HRElement {
+  getAttribute(name: string): string | null;
+  setAttribute(name: string, value: string): void;
+}
+interface HRHandlers {
+  element?: (element: HRElement) => void;
+}
+declare class HTMLRewriter {
+  on(selector: string, handlers: HRHandlers): HTMLRewriter;
+  transform(response: Response): Response;
+}
+
 export default async function handleRequest(
   request: Request,
   responseStatusCode: number,
@@ -68,8 +83,31 @@ export default async function handleRequest(
   }
   responseHeaders.set('Cross-Origin-Opener-Policy', 'same-origin');
 
-  return new Response(body, {
+  // Oxygen's asset CDN serves cross-origin module bundles (cdn.shopify.com),
+  // and Chrome treats a <link rel="modulepreload"> without a crossorigin
+  // attribute as credentialed — which the CDN rejects with 503 during the
+  // window where a previous deployment's assets are being evicted. Force
+  // crossorigin="anonymous" on every module script/preload so the preload
+  // fetch matches the module fetch and the cached response is reused.
+  const response = new Response(body, {
     headers: responseHeaders,
     status: responseStatusCode,
   });
+
+  return new HTMLRewriter()
+    .on('link[rel="modulepreload"]', {
+      element(el) {
+        if (!el.getAttribute('crossorigin')) {
+          el.setAttribute('crossorigin', 'anonymous');
+        }
+      },
+    })
+    .on('script[type="module"]', {
+      element(el) {
+        if (!el.getAttribute('crossorigin')) {
+          el.setAttribute('crossorigin', 'anonymous');
+        }
+      },
+    })
+    .transform(response);
 }
