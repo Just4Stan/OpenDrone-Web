@@ -115,6 +115,25 @@ function val(m: Metafield): string | null {
   return v;
 }
 
+// Only http(s) URLs are ever rendered into href=. Metafield values
+// come from Shopify admin, and a mis-configured admin entry like
+// `javascript:alert(1)` would otherwise execute on click — React does
+// not block non-http schemes in anchor hrefs.
+function safeUrl(m: Metafield): string | null {
+  const v = val(m);
+  if (!v) return null;
+  return /^https?:\/\//i.test(v) ? v : null;
+}
+
+// Constrain mailto: values to a simple RFC-5321-ish shape so a stray
+// metafield entry can't smuggle extra headers via CRLF or redirect
+// to a non-mailto scheme.
+function safeEmail(m: Metafield): string | null {
+  const v = val(m);
+  if (!v) return null;
+  return /^[^\s<>"@]+@[^\s<>"@]+\.[^\s<>"@]+$/.test(v) ? v : null;
+}
+
 function pickSafety(product: ProductLike, locale: Locale): string | null {
   const nl = val(product.safetyWarningsNl);
   const fr = val(product.safetyWarningsFr);
@@ -160,16 +179,16 @@ export function ProductCompliance({
 }) {
   const ui = UI[locale];
   const safety = pickSafety(product, locale);
-  const datasheet = val(product.datasheetUrl);
-  const manual = val(product.manualUrl);
-  const doc = val(product.docUrl);
-  const sbom = val(product.sbomUrl);
-  const github = val(product.githubRepo);
+  const datasheet = safeUrl(product.datasheetUrl);
+  const manual = safeUrl(product.manualUrl);
+  const doc = safeUrl(product.docUrl);
+  const sbom = safeUrl(product.sbomUrl);
+  const github = safeUrl(product.githubRepo);
   const modelNumber = val(product.modelNumber);
   const batchId = val(product.batchId);
   const firmwareVersion = val(product.firmwareVersion);
   const supportEndDate = val(product.supportEndDate);
-  const vulnContact = val(product.vulnContactEmail);
+  const vulnContact = safeEmail(product.vulnContactEmail);
   const batteryWh = val(product.batteryWh);
   const batteryUn = val(product.batteryUnNumber);
 
