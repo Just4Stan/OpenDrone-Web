@@ -23,6 +23,7 @@ import {
 import {redirectIfHandleIsLocalized} from '~/lib/redirect';
 import {buildSeoMeta} from '~/lib/seo';
 import {getCompanyIdentity} from '~/lib/company';
+import {getLocaleFromRequest} from '~/lib/i18n';
 import {fetchLatestCommits} from '~/lib/github';
 import {
   PRODUCT_CONTENT,
@@ -83,9 +84,12 @@ async function loadCriticalData({context, params, request}: Route.LoaderArgs) {
     context.env as unknown as Record<string, string | undefined>,
   );
 
+  const locale = getLocaleFromRequest(request);
+
   return {
     product,
     company,
+    locale,
   };
 }
 
@@ -153,6 +157,7 @@ const DOWNLOAD_ICONS: Record<DownloadKind, string> = {
   flash: '⚡',
   changelog: '↻',
   sbom: '◫',
+  firmware_manifest: '⌘',
   other: '↓',
 };
 
@@ -271,7 +276,7 @@ function useChapterReveal() {
 }
 
 export default function Product() {
-  const {product, company, recommendations, latestCommits} =
+  const {product, company, recommendations, latestCommits, locale} =
     useLoaderData<typeof loader>();
   useChapterReveal();
 
@@ -675,6 +680,8 @@ export default function Product() {
           vendor: product.vendor,
           handle: product.handle,
           safetyWarningsNl: product.safetyWarningsNl,
+          safetyWarningsFr: product.safetyWarningsFr,
+          safetyWarningsEn: product.safetyWarningsEn,
           datasheetUrl: product.datasheetUrl,
           manualUrl: product.manualUrl,
           docUrl: product.docUrl,
@@ -682,8 +689,14 @@ export default function Product() {
           githubRepo: product.githubRepo,
           modelNumber: product.modelNumber,
           batchId: product.batchId,
+          firmwareVersion: product.firmwareVersion,
+          supportEndDate: product.supportEndDate,
+          vulnContactEmail: product.vulnContactEmail,
+          batteryWh: product.batteryWh,
+          batteryUnNumber: product.batteryUnNumber,
         }}
         company={company}
+        locale={locale}
       />
 
       <RelatedProducts recommendations={recommendations} />
@@ -798,6 +811,12 @@ const PRODUCT_FRAGMENT = `#graphql
     safetyWarningsNl: metafield(namespace: "custom", key: "safety_warnings_nl") {
       ...ComplianceMetafield
     }
+    safetyWarningsFr: metafield(namespace: "custom", key: "safety_warnings_fr") {
+      ...ComplianceMetafield
+    }
+    safetyWarningsEn: metafield(namespace: "custom", key: "safety_warnings_en") {
+      ...ComplianceMetafield
+    }
     datasheetUrl: metafield(namespace: "custom", key: "datasheet_url") {
       ...ComplianceMetafield
     }
@@ -817,6 +836,21 @@ const PRODUCT_FRAGMENT = `#graphql
       ...ComplianceMetafield
     }
     batchId: metafield(namespace: "custom", key: "batch_id") {
+      ...ComplianceMetafield
+    }
+    firmwareVersion: metafield(namespace: "custom", key: "firmware_version") {
+      ...ComplianceMetafield
+    }
+    supportEndDate: metafield(namespace: "custom", key: "support_end_date") {
+      ...ComplianceMetafield
+    }
+    vulnContactEmail: metafield(namespace: "custom", key: "vuln_contact_email") {
+      ...ComplianceMetafield
+    }
+    batteryWh: metafield(namespace: "custom", key: "battery_wh") {
+      ...ComplianceMetafield
+    }
+    batteryUnNumber: metafield(namespace: "custom", key: "battery_un_number") {
       ...ComplianceMetafield
     }
   }

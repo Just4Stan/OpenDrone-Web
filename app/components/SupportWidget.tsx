@@ -19,19 +19,26 @@ const MAX_FILES = 5;
 const MAX_PER_FILE_BYTES = 8 * 1024 * 1024;
 const MAX_TOTAL_BYTES = 24 * 1024 * 1024;
 
+// Shape coming back from /api/support/poll — projected through the
+// scrubber. Discord identity is already flattened to `firstName`; no
+// handle, avatar, or user ID is ever sent over the wire.
 type PollMessage = {
   id: string;
-  author: string;
-  isStaff: boolean;
+  role: 'helper' | 'ai';
+  firstName: string;
   content: string;
   createdAt: string;
   attachments: Array<{url: string; filename: string}>;
 };
 
+// In-widget representation. `isSelf` tracks the user's own optimistic
+// sends (never present in poll responses). For replies, `firstName` and
+// `role` come from the scrubbed poll projection.
 type LocalMessage = {
   id: string;
-  author: string;
-  isStaff: boolean;
+  isSelf: boolean;
+  firstName: string;
+  role: 'helper' | 'ai' | 'you';
   content: string;
   createdAt: string;
   attachments?: Array<{url: string; filename: string}>;
@@ -283,8 +290,9 @@ export function SupportWidget({
         setMessages([
           {
             id: `local-${Date.now()}`,
-            author: name,
-            isStaff: false,
+            isSelf: true,
+            firstName: name,
+            role: 'you',
             content: message,
             createdAt: new Date().toISOString(),
             attachments: intakeFiles.map((f) => ({
@@ -325,8 +333,9 @@ export function SupportWidget({
     const pendingId = `local-${Date.now()}`;
     const optimistic: LocalMessage = {
       id: pendingId,
-      author: userName || 'You',
-      isStaff: false,
+      isSelf: true,
+      firstName: userName || 'You',
+      role: 'you',
       content,
       createdAt: new Date().toISOString(),
       pending: true,
@@ -783,16 +792,17 @@ function MessageBubble({message}: {message: LocalMessage}) {
     <article
       className={[
         'support-msg',
-        message.isStaff ? 'support-msg-staff' : 'support-msg-user',
+        // CSS class naming kept stable (support-msg-staff / -user) so the
+        // existing stylesheet keeps working. The underlying "them vs you"
+        // distinction is what matters; "staff" is a legacy name.
+        message.isSelf ? 'support-msg-user' : 'support-msg-staff',
         message.pending ? 'support-msg-pending' : '',
       ]
         .filter(Boolean)
         .join(' ')}
     >
       <header className="support-msg-head">
-        <span className="support-msg-author">
-          {message.isStaff ? `${message.author} · support` : message.author}
-        </span>
+        <span className="support-msg-author">{authorLabel(message)}</span>
         <time dateTime={message.createdAt}>
           {formatTime(message.createdAt)}
         </time>
@@ -820,6 +830,12 @@ function MessageBubble({message}: {message: LocalMessage}) {
       ) : null}
     </article>
   );
+}
+
+function authorLabel(m: LocalMessage): string {
+  if (m.isSelf) return 'You';
+  if (m.role === 'ai') return `${m.firstName} · assistant`;
+  return m.firstName;
 }
 
 function iconForFilename(name: string): string {
@@ -941,8 +957,9 @@ function mergeMessages(
     if (seen.has(m.id)) continue;
     additions.push({
       id: m.id,
-      author: m.author,
-      isStaff: m.isStaff,
+      isSelf: false,
+      firstName: m.firstName,
+      role: m.role,
       content: m.content,
       createdAt: m.createdAt,
       attachments: m.attachments,

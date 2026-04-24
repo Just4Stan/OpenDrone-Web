@@ -15,6 +15,7 @@ import {LEGAL_SLUGS} from './lib/legal-slugs';
 const localeRoutes = LEGAL_SLUGS.flatMap((slug) => [
   route(`/en/${slug}`, `routes/${slug}.tsx`, {id: `${slug}-en`}),
   route(`/nl/${slug}`, `routes/${slug}.tsx`, {id: `${slug}-nl`}),
+  route(`/fr/${slug}`, `routes/${slug}.tsx`, {id: `${slug}-fr`}),
 ]);
 
 export default hydrogenRoutes([

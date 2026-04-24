@@ -29,6 +29,17 @@ import warrantyNl from '~/content/legal/nl/warranty.md?raw';
 import shippingNl from '~/content/legal/nl/shipping.md?raw';
 import contactNl from '~/content/legal/nl/contact.md?raw';
 
+import algemeneVoorwaardenFr from '~/content/legal/fr/algemene-voorwaarden.md?raw';
+import privacyPolicyFr from '~/content/legal/fr/privacy-policy.md?raw';
+import cookiePolicyFr from '~/content/legal/fr/cookie-policy.md?raw';
+import herroepingFr from '~/content/legal/fr/herroepingsformulier.md?raw';
+import peppolFr from '~/content/legal/fr/peppol-e-invoicing.md?raw';
+import exportControlFr from '~/content/legal/fr/export-control-memo.md?raw';
+import vulnPolicyFr from '~/content/legal/fr/vulnerability-handling-policy.md?raw';
+import warrantyFr from '~/content/legal/fr/warranty.md?raw';
+import shippingFr from '~/content/legal/fr/shipping.md?raw';
+import contactFr from '~/content/legal/fr/contact.md?raw';
+
 import algemeneVoorwaardenEn from '~/content/legal/en/algemene-voorwaarden.md?raw';
 import privacyPolicyEn from '~/content/legal/en/privacy-policy.md?raw';
 import cookiePolicyEn from '~/content/legal/en/cookie-policy.md?raw';
@@ -76,6 +87,19 @@ const SOURCES_EN: Record<LegalSlug, string> = {
   warranty: warrantyEn,
   shipping: shippingEn,
   contact: contactEn,
+};
+
+const SOURCES_FR: Record<LegalSlug, string> = {
+  'algemene-voorwaarden': algemeneVoorwaardenFr,
+  'privacy-policy': privacyPolicyFr,
+  'cookie-policy': cookiePolicyFr,
+  herroepingsformulier: herroepingFr,
+  'peppol-e-invoicing': peppolFr,
+  'export-control-memo': exportControlFr,
+  'vulnerability-handling-policy': vulnPolicyFr,
+  warranty: warrantyFr,
+  shipping: shippingFr,
+  contact: contactFr,
 };
 
 const STRIP_SECTIONS = [
@@ -285,7 +309,15 @@ function cleanSource(src: string): string {
  * build time via Vite's `?raw` imports so they work on Oxygen's edge
  * runtime without filesystem access.
  */
-export function loadLegal(slug: LegalSlug, locale: 'en' | 'nl'): string {
-  const src = locale === 'nl' ? SOURCES_NL[slug] : SOURCES_EN[slug];
+export function loadLegal(
+  slug: LegalSlug,
+  locale: 'en' | 'nl' | 'fr',
+): string {
+  const src =
+    locale === 'nl'
+      ? SOURCES_NL[slug]
+      : locale === 'fr'
+        ? SOURCES_FR[slug]
+        : SOURCES_EN[slug];
   return mdToHtml(cleanSource(src));
 }

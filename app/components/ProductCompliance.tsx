@@ -1,4 +1,5 @@
 import type {CompanyIdentity} from '~/lib/company';
+import type {Locale} from '~/lib/i18n';
 
 type Metafield =
   | {
@@ -15,6 +16,8 @@ type ProductLike = {
   vendor?: string | null;
   handle?: string | null;
   safetyWarningsNl?: Metafield;
+  safetyWarningsFr?: Metafield;
+  safetyWarningsEn?: Metafield;
   datasheetUrl?: Metafield;
   manualUrl?: Metafield;
   docUrl?: Metafield;
@@ -22,12 +25,103 @@ type ProductLike = {
   githubRepo?: Metafield;
   modelNumber?: Metafield;
   batchId?: Metafield;
+  firmwareVersion?: Metafield;
+  supportEndDate?: Metafield;
+  vulnContactEmail?: Metafield;
+  batteryWh?: Metafield;
+  batteryUnNumber?: Metafield;
+};
+
+const UI: Record<
+  Locale,
+  {
+    heading: string;
+    manufacturer: string;
+    productIdentifier: string;
+    modelLabel: string;
+    batchLabel: string;
+    safetyHeading: string;
+    downloadDatasheet: string;
+    downloadManual: string;
+    downloadDoc: string;
+    downloadSbom: string;
+    sourceLabel: string;
+    firmwareLabel: string;
+    supportUntilLabel: string;
+    vulnContactLabel: string;
+    batteryLabel: string;
+    ariaLabel: string;
+  }
+> = {
+  en: {
+    heading: 'Manufacturer · Safety · Documentation',
+    manufacturer: 'Manufacturer',
+    productIdentifier: 'Product identifier',
+    modelLabel: 'Model',
+    batchLabel: 'Batch',
+    safetyHeading: 'Safety warnings',
+    downloadDatasheet: 'Datasheet',
+    downloadManual: 'User manual',
+    downloadDoc: 'Declaration of Conformity',
+    downloadSbom: 'SBOM',
+    sourceLabel: 'Source & design files',
+    firmwareLabel: 'Firmware',
+    supportUntilLabel: 'Security updates until',
+    vulnContactLabel: 'Security contact',
+    batteryLabel: 'Battery',
+    ariaLabel: 'Manufacturer and safety information',
+  },
+  nl: {
+    heading: 'Fabrikant · Veiligheid · Documentatie',
+    manufacturer: 'Fabrikant',
+    productIdentifier: 'Productidentificatie',
+    modelLabel: 'Model',
+    batchLabel: 'Batch',
+    safetyHeading: 'Veiligheidswaarschuwingen',
+    downloadDatasheet: 'Datasheet',
+    downloadManual: 'Gebruikershandleiding',
+    downloadDoc: 'Conformiteitsverklaring',
+    downloadSbom: 'SBOM',
+    sourceLabel: 'Broncode & ontwerpbestanden',
+    firmwareLabel: 'Firmware',
+    supportUntilLabel: 'Beveiligingsupdates tot',
+    vulnContactLabel: 'Beveiligingscontact',
+    batteryLabel: 'Batterij',
+    ariaLabel: 'Fabrikant- en veiligheidsinformatie',
+  },
+  fr: {
+    heading: 'Fabricant · Sécurité · Documentation',
+    manufacturer: 'Fabricant',
+    productIdentifier: 'Identifiant du produit',
+    modelLabel: 'Modèle',
+    batchLabel: 'Lot',
+    safetyHeading: 'Avertissements de sécurité',
+    downloadDatasheet: 'Fiche technique',
+    downloadManual: 'Manuel d’utilisation',
+    downloadDoc: 'Déclaration de conformité',
+    downloadSbom: 'SBOM',
+    sourceLabel: 'Sources & fichiers de conception',
+    firmwareLabel: 'Firmware',
+    supportUntilLabel: 'Mises à jour de sécurité jusqu’au',
+    vulnContactLabel: 'Contact sécurité',
+    batteryLabel: 'Batterie',
+    ariaLabel: 'Informations sur le fabricant et la sécurité',
+  },
 };
 
 function val(m: Metafield): string | null {
   const v = m?.value;
   if (!v) return null;
   return v;
+}
+
+function pickSafety(product: ProductLike, locale: Locale): string | null {
+  const nl = val(product.safetyWarningsNl);
+  const fr = val(product.safetyWarningsFr);
+  const en = val(product.safetyWarningsEn);
+  if (locale === 'nl') return nl ?? en ?? fr;
+  if (locale === 'fr') return fr ?? en ?? nl;
+  return en ?? nl ?? fr;
 }
 
 function DownloadButton({href, label}: {href: string; label: string}) {
@@ -55,21 +149,17 @@ function DownloadButton({href, label}: {href: string; label: string}) {
   );
 }
 
-/**
- * GPSR pre-sale info block. Renders manufacturer identity, product
- * identifier, safety warnings and downloadable documentation. Each section
- * is conditionally rendered so a freshly seeded product without metafields
- * still has a minimal, legally-valid block (manufacturer identity + product
- * identifier from the Shopify product itself).
- */
 export function ProductCompliance({
   product,
   company,
+  locale = 'en',
 }: {
   product: ProductLike;
   company: CompanyIdentity;
+  locale?: Locale;
 }) {
-  const safety = val(product.safetyWarningsNl);
+  const ui = UI[locale];
+  const safety = pickSafety(product, locale);
   const datasheet = val(product.datasheetUrl);
   const manual = val(product.manualUrl);
   const doc = val(product.docUrl);
@@ -77,19 +167,23 @@ export function ProductCompliance({
   const github = val(product.githubRepo);
   const modelNumber = val(product.modelNumber);
   const batchId = val(product.batchId);
+  const firmwareVersion = val(product.firmwareVersion);
+  const supportEndDate = val(product.supportEndDate);
+  const vulnContact = val(product.vulnContactEmail);
+  const batteryWh = val(product.batteryWh);
+  const batteryUn = val(product.batteryUnNumber);
 
   const hasDownloads = datasheet || manual || doc || sbom;
+  const hasFirmwareBlock = firmwareVersion || supportEndDate || vulnContact;
+  const hasBatteryBlock = batteryWh || batteryUn;
 
   return (
-    <section
-      className="product-compliance"
-      aria-label="Manufacturer and safety information"
-    >
-      <h2 className="section-heading">Manufacturer · Safety · Documentation</h2>
+    <section className="product-compliance" aria-label={ui.ariaLabel}>
+      <h2 className="section-heading">{ui.heading}</h2>
 
       <dl className="product-compliance-grid">
         <div>
-          <dt>Manufacturer</dt>
+          <dt>{ui.manufacturer}</dt>
           <dd>
             <strong>{company.name}</strong>
             <br />
@@ -99,14 +193,16 @@ export function ProductCompliance({
           </dd>
         </div>
         <div>
-          <dt>Product identifier</dt>
+          <dt>{ui.productIdentifier}</dt>
           <dd>
             {product.title}
-            {modelNumber ? <> — Model {modelNumber}</> : null}
+            {modelNumber ? <> — {ui.modelLabel} {modelNumber}</> : null}
             {batchId ? (
               <>
                 <br />
-                <span className="product-compliance-muted">Batch {batchId}</span>
+                <span className="product-compliance-muted">
+                  {ui.batchLabel} {batchId}
+                </span>
               </>
             ) : null}
           </dd>
@@ -115,19 +211,61 @@ export function ProductCompliance({
 
       {safety ? (
         <div className="product-compliance-safety" role="note">
-          <strong>Veiligheidswaarschuwingen</strong>
+          <strong>{ui.safetyHeading}</strong>
           <p>{safety}</p>
         </div>
       ) : null}
 
+      {hasBatteryBlock ? (
+        <dl className="product-compliance-grid">
+          <div>
+            <dt>{ui.batteryLabel}</dt>
+            <dd>
+              {batteryUn ? <>UN {batteryUn}</> : null}
+              {batteryUn && batteryWh ? ' · ' : null}
+              {batteryWh ? <>{batteryWh} Wh</> : null}
+            </dd>
+          </div>
+        </dl>
+      ) : null}
+
+      {hasFirmwareBlock ? (
+        <dl className="product-compliance-grid">
+          {firmwareVersion ? (
+            <div>
+              <dt>{ui.firmwareLabel}</dt>
+              <dd>{firmwareVersion}</dd>
+            </div>
+          ) : null}
+          {supportEndDate ? (
+            <div>
+              <dt>{ui.supportUntilLabel}</dt>
+              <dd>{supportEndDate}</dd>
+            </div>
+          ) : null}
+          {vulnContact ? (
+            <div>
+              <dt>{ui.vulnContactLabel}</dt>
+              <dd>
+                <a href={`mailto:${vulnContact}`}>{vulnContact}</a>
+              </dd>
+            </div>
+          ) : null}
+        </dl>
+      ) : null}
+
       {hasDownloads ? (
         <div className="product-compliance-downloads">
-          {datasheet ? <DownloadButton href={datasheet} label="Datasheet" /> : null}
-          {manual ? <DownloadButton href={manual} label="User manual" /> : null}
-          {doc ? (
-            <DownloadButton href={doc} label="Declaration of Conformity" />
+          {datasheet ? (
+            <DownloadButton href={datasheet} label={ui.downloadDatasheet} />
           ) : null}
-          {sbom ? <DownloadButton href={sbom} label="SBOM" /> : null}
+          {manual ? (
+            <DownloadButton href={manual} label={ui.downloadManual} />
+          ) : null}
+          {doc ? <DownloadButton href={doc} label={ui.downloadDoc} /> : null}
+          {sbom ? (
+            <DownloadButton href={sbom} label={ui.downloadSbom} />
+          ) : null}
         </div>
       ) : null}
 
@@ -141,7 +279,7 @@ export function ProductCompliance({
 
       {github ? (
         <p className="product-compliance-repo">
-          Source &amp; design files:{' '}
+          {ui.sourceLabel}:{' '}
           <a href={github} target="_blank" rel="noopener noreferrer">
             {github.replace(/^https?:\/\//, '')}
           </a>
