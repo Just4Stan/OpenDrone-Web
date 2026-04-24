@@ -67,6 +67,11 @@ export const LEGAL_LABELS: Record<
       eyebrow: 'Juridisch',
       description: 'Verkoopvoorwaarden tussen Incutec BV en OpenDrone-klanten.',
     },
+    fr: {
+      title: 'Conditions Générales de Vente',
+      eyebrow: 'Juridique',
+      description: 'Conditions de vente entre Incutec BV et les clients OpenDrone.',
+    },
   },
   privacy: {
     en: {
@@ -78,6 +83,11 @@ export const LEGAL_LABELS: Record<
       title: 'Privacybeleid',
       eyebrow: 'Juridisch · AVG',
       description: 'Hoe Incutec BV persoonsgegevens verwerkt voor de OpenDrone-webshop — AVG-conform.',
+    },
+    fr: {
+      title: 'Politique de Confidentialité',
+      eyebrow: 'Juridique · RGPD',
+      description: 'Comment Incutec BV traite les données personnelles pour la boutique OpenDrone — conforme au RGPD.',
     },
   },
   cookies: {
@@ -91,6 +101,11 @@ export const LEGAL_LABELS: Record<
       eyebrow: 'Juridisch',
       description: 'Welke cookies de OpenDrone-webshop gebruikt en waarvoor.',
     },
+    fr: {
+      title: 'Politique de Cookies',
+      eyebrow: 'Juridique',
+      description: 'Quels cookies la boutique OpenDrone utilise et pourquoi.',
+    },
   },
   herroepingsrecht: {
     en: {
@@ -102,6 +117,11 @@ export const LEGAL_LABELS: Record<
       title: 'Herroepingsrecht',
       eyebrow: 'Juridisch',
       description: 'Herroepingstermijn van 14 dagen en modelformulier.',
+    },
+    fr: {
+      title: 'Droit de Rétractation',
+      eyebrow: 'Juridique',
+      description: 'Délai de rétractation de 14 jours et formulaire type.',
     },
   },
   shipping: {
@@ -115,6 +135,11 @@ export const LEGAL_LABELS: Record<
       eyebrow: 'Juridisch',
       description: 'Verzendopties, leveringstermijnen en landbeperkingen.',
     },
+    fr: {
+      title: 'Expédition & Livraison',
+      eyebrow: 'Juridique',
+      description: 'Options d’expédition, délais de livraison et restrictions par pays.',
+    },
   },
   warranty: {
     en: {
@@ -126,6 +151,11 @@ export const LEGAL_LABELS: Record<
       title: 'Garantie',
       eyebrow: 'Juridisch',
       description: 'Wettelijke conformiteitsgarantie van 2 jaar op OpenDrone-hardware verkocht door Incutec BV.',
+    },
+    fr: {
+      title: 'Garantie',
+      eyebrow: 'Juridique',
+      description: 'Garantie légale de conformité de 2 ans sur le matériel OpenDrone vendu par Incutec BV.',
     },
   },
   contact: {
@@ -139,6 +169,11 @@ export const LEGAL_LABELS: Record<
       eyebrow: 'Onderneming',
       description: 'Contacteer Incutec BV over OpenDrone-producten, bestellingen of beveiligingsmeldingen.',
     },
+    fr: {
+      title: 'Contact',
+      eyebrow: 'Entreprise',
+      description: 'Contactez Incutec BV pour les produits OpenDrone, les commandes ou les signalements de sécurité.',
+    },
   },
   security: {
     en: {
@@ -150,6 +185,11 @@ export const LEGAL_LABELS: Record<
       title: 'Beveiliging — Kwetsbaarheidsmelding',
       eyebrow: 'Beveiliging',
       description: 'Hoe u een kwetsbaarheid kunt melden in OpenDrone-hardware, firmware of de webshop.',
+    },
+    fr: {
+      title: 'Sécurité — Divulgation de Vulnérabilités',
+      eyebrow: 'Sécurité',
+      description: 'Comment signaler une vulnérabilité dans le matériel, le firmware ou la boutique OpenDrone.',
     },
   },
   'export-compliance': {
@@ -163,6 +203,11 @@ export const LEGAL_LABELS: Record<
       eyebrow: 'Juridisch',
       description: 'Zelfclassificatie exportcontrole en beleid rond gesanctioneerde landen.',
     },
+    fr: {
+      title: 'Conformité à l’Exportation',
+      eyebrow: 'Juridique',
+      description: 'Auto-classification du contrôle des exportations et politique sur les pays sous sanction.',
+    },
   },
   legal: {
     en: {
@@ -174,6 +219,11 @@ export const LEGAL_LABELS: Record<
       title: 'Juridisch / Colofon',
       eyebrow: 'Juridisch · Colofon',
       description: 'Identiteit van de verkoper, verplichte pagina\u2019s en externe verwijzingen.',
+    },
+    fr: {
+      title: 'Mentions L\u00e9gales',
+      eyebrow: 'Juridique \u00b7 Mentions',
+      description: 'Identit\u00e9 du vendeur, pages obligatoires et r\u00e9f\u00e9rences externes.',
     },
   },
   'cookie-settings': {
@@ -187,6 +237,11 @@ export const LEGAL_LABELS: Record<
       eyebrow: 'Juridisch',
       description: 'Beheer uw cookievoorkeuren voor de OpenDrone-webshop.',
     },
+    fr: {
+      title: 'Paramètres des Cookies',
+      eyebrow: 'Juridique',
+      description: 'Gérez vos préférences de cookies pour la boutique OpenDrone.',
+    },
   },
   terms: {
     en: {
@@ -198,6 +253,11 @@ export const LEGAL_LABELS: Record<
       title: 'Algemene Voorwaarden',
       eyebrow: 'Juridisch',
       description: 'Verkoopvoorwaarden tussen Incutec BV en OpenDrone-klanten.',
+    },
+    fr: {
+      title: 'Conditions Générales de Vente',
+      eyebrow: 'Juridique',
+      description: 'Conditions de vente entre Incutec BV et les clients OpenDrone.',
     },
   },
 };
@@ -214,6 +274,10 @@ export const LEGAL_UI_STRINGS: Record<
   nl: {
     backToOverview: '← Terug naar juridisch overzicht',
     lastUpdated: 'Laatst bijgewerkt',
+  },
+  fr: {
+    backToOverview: '← Retour à l’aperçu juridique',
+    lastUpdated: 'Dernière mise à jour',
   },
 };
 
