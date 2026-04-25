@@ -1349,7 +1349,12 @@ button.reset {
 .product-page {
   width: var(--rail-width);
   margin: 0 auto;
-  padding: 2rem 0 4rem;
+  /* PDP starts with a small fileNumber eyebrow then the very large
+     hero headline — the headline's leading creates an extra ~16px of
+     perceived space above the eyebrow, so the wrapper padding here is
+     half what other routes use to keep the visible gap below the top
+     bar consistent with .od-page-frame / .page-shell. */
+  padding: 1rem 0 4rem;
 }
 
 .product-hero {
