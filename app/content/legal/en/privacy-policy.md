@@ -63,7 +63,7 @@ Incutec BV has not appointed a Data Protection Officer (DPO) because this is not
 | Stripe Payments Europe Ltd. | Card processing and fraud prevention | Ireland (EU) |
 | Sendcloud B.V. | Shipping labels and tracking | Netherlands (EU) |
 | Bpost / DHL / DPD (carrier depending on order) | Parcel delivery | EU |
-| Plausible Analytics | Cookieless website analytics | Germany (EU) |
+| Plausible Analytics | Cookieless website analytics | Plausible Insights OÜ — Estonia (EU); hosting in Germany |
 | Polar Advisory BV (accountant) | Invoicing and annual accounts | Belgium |
 
 Incutec BV does not transfer personal data to countries outside the EEA unless adequate safeguards have been put in place (Art. 46 GDPR).
@@ -80,7 +80,7 @@ You have the right to:
 - **Withdraw** your consent (Art. 7.3)
 
 Requests can be sent to: privacy@opendrone.be
-We respond to your request within **30 days**.
+We respond to your request within **one month** (Art. 12(3) GDPR), extensible by a further two months for complex or numerous requests.
 
 ### 7. Complaints
 
@@ -115,4 +115,4 @@ In the event of a data breach presenting a risk to your rights and freedoms, we 
 
 ### 11. Amendments
 
-Incutec BV may amend this privacy policy. The most recent version is always available at incutec.eu/privacy. In the event of material changes, you will be notified by email.
+Incutec BV may amend this privacy policy. The most recent version is always available at opendrone.be/privacy. In the event of material changes, you will be notified by email.

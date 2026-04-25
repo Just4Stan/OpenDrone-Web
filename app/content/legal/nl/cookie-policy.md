@@ -19,7 +19,7 @@ Cookies zijn kleine tekstbestanden die door een website op uw apparaat worden ge
 |--------|------|--------------|
 | `cart`, `cart_sig`, `cart_ts`, `_secure_session_id`, `_shopify_tm` | Winkelwagen- en sessiebeheer (Shopify) | Sessie |
 | `_tracking_consent`, `_cmp_a` | Uw cookievoorkeuren onthouden (Shopify Customer Privacy API) | 6 maanden |
-| `__stripe_mid`, `__stripe_sid` | Fraudepreventie bij betaling (Stripe, Art. 6.1(f) AVG + Art. 129 WEC) | 1 jaar / sessie |
+| `__stripe_mid`, `__stripe_sid` | Fraudepreventie bij betaling (Stripe, Art. 129 §1 LCE — Wet 13 juni 2005, tweede streepje: strikt noodzakelijk voor de gevraagde dienst; ePrivacy Richtlijn 2002/58/EG) | 1 jaar / sessie |
 
 #### Analytische cookies
 
@@ -84,7 +84,7 @@ Source: https://www.dataprotectionauthority.be/publications/recommendation-no-01
 | `_tracking_consent`, `_cmp_a` (Customer Privacy API) | Strictly necessary | No |
 | `_shopify_s`, `_shopify_y` (Shopify analytics) | Analytics | Yes, opt-in |
 | `_shopify_sa_t`, `_shopify_sa_p`, `_shopify_d`, `_orig_referrer`, `_landing_page` | Marketing | Yes, opt-in |
-| Stripe `__stripe_mid`, `__stripe_sid` | Strictly necessary (fraud prevention, Art. 6.1(f) AVG + Art. 129 WEC) | No |
+| Stripe `__stripe_mid`, `__stripe_sid` | Strictly necessary (fraud prevention, Art. 129 §1 LCE — Wet 13 juni 2005, tweede streepje: strikt noodzakelijk; ePrivacy 2002/58/EG) | No |
 
 ### Policy text updates before publishing
 - Replace the analytics placeholder with the actual Shopify + Plausible entries above.

@@ -20,7 +20,7 @@ Cookies are small text files placed on your device by a website when you visit i
 |--------|---------|-----------|
 | `cart`, `cart_sig`, `cart_ts`, `_secure_session_id`, `_shopify_tm` | Cart and session handling (Shopify) | Session |
 | `_tracking_consent`, `_cmp_a` | Remember your cookie preferences (Shopify Customer Privacy API) | 6 months |
-| `__stripe_mid`, `__stripe_sid` | Payment fraud prevention (Stripe, Art. 6.1(f) GDPR + Art. 129 WEC) | 1 year / session |
+| `__stripe_mid`, `__stripe_sid` | Payment fraud prevention (Stripe, Art. 129 §1 LCE — Belgian Electronic Communications Act of 13 June 2005, second indent: strictly necessary for the provision of the service explicitly requested; ePrivacy Directive 2002/58/EC) | 1 year / session |
 
 #### Analytics
 

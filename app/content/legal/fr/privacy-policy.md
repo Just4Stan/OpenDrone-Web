@@ -63,7 +63,7 @@ Incutec BV n’a pas désigné de Délégué à la Protection des Données (DPD)
 | Stripe Payments Europe Ltd. | Traitement des cartes et prévention de la fraude | Irlande (UE) |
 | Sendcloud B.V. | Étiquettes d’expédition et suivi | Pays-Bas (UE) |
 | Bpost / DHL / DPD (transporteur selon commande) | Livraison des colis | UE |
-| Plausible Analytics | Analyse de site sans cookies | Allemagne (UE) |
+| Plausible Analytics | Analyse de site sans cookies | Plausible Insights OÜ — Estonie (UE) ; hébergement en Allemagne |
 | Polar Advisory BV (comptable) | Facturation et comptes annuels | Belgique |
 
 Incutec BV ne transfère pas de données personnelles vers des pays en dehors de l’EEE à moins que des garanties adéquates n’aient été mises en place (Art. 46 RGPD).
@@ -80,7 +80,7 @@ Vous avez le droit :
 - **De retirer** votre consentement (Art. 7.3)
 
 Les demandes peuvent être envoyées à : privacy@opendrone.be
-Nous répondons à votre demande dans un délai de **30 jours**.
+Nous répondons à votre demande dans un délai d’**un mois** (Art. 12(3) RGPD, prolongeable de 2 mois en cas de demandes complexes ou nombreuses).
 
 ### 7. Plaintes
 
@@ -115,4 +115,4 @@ En cas de violation de données présentant un risque pour vos droits et libert�
 
 ### 11. Modifications
 
-Incutec BV peut modifier cette politique de confidentialité. La version la plus récente est toujours disponible sur incutec.eu/privacy. En cas de modifications substantielles, vous serez informé par courriel.
+Incutec BV peut modifier cette politique de confidentialité. La version la plus récente est toujours disponible sur opendrone.be/privacy. En cas de modifications substantielles, vous serez informé par courriel.
