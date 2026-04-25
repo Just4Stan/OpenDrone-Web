@@ -799,7 +799,7 @@ button.reset {
      outer rail stays put, only the text column tightens. */
   width: var(--rail-width);
   margin: 0 auto;
-  padding: 0 0 3rem;
+  padding: 2rem 0 3rem;
 }
 
 .site-footer-inner {
@@ -1349,7 +1349,7 @@ button.reset {
 .product-page {
   width: var(--rail-width);
   margin: 0 auto;
-  padding: 0 0 4rem;
+  padding: 2rem 0 4rem;
 }
 
 .product-hero {
@@ -4966,7 +4966,7 @@ button.reset {
 .od-page-frame {
   width: var(--rail-width);
   margin: 0 auto;
-  padding: 0 0 80px;
+  padding: 2rem 0 80px;
 }
 .od-page-narrow {max-width: 760px;}
 .od-page-wide {max-width: 1320px;}
@@ -6074,7 +6074,7 @@ button.reset {
 
 /* ---------- Mobile breakpoints --------------------------- */
 @media (max-width: 720px) {
-  .od-page-frame {padding: 0 0 60px;}
+  .od-page-frame {padding: 1.5rem 0 60px;}
   .contact-grid {grid-template-columns: 1fr;}
   .contact-tile-discord,
   .contact-tile-ticket,
