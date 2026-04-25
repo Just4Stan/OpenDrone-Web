@@ -31,6 +31,7 @@ declare global {
     DISCORD_BOT_TOKEN?: string;
     DISCORD_SUPPORT_CHANNEL_ID?: string;
     DISCORD_GUILD_ID?: string;
+    DISCORD_STAFF_METADATA_CHANNEL_ID?: string;
     DISCORD_SUPPORT_INVITE?: string;
     SUPPORT_SESSION_SECRET?: string;
     TURNSTILE_SITE_KEY?: string;

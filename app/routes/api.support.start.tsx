@@ -1,7 +1,11 @@
 import {data} from 'react-router';
 import type {Route} from './+types/api.support.start';
 import {SUPPORT_CUSTOMER_PREFILL_QUERY} from '~/graphql/customer-account/SupportPrefillQuery';
-import {createSupportThread} from '~/lib/support/discord';
+import {
+  createSupportThread,
+  firstNameOnly,
+  postStaffMetadata,
+} from '~/lib/support/discord';
 import {sendResumeLink} from '~/lib/support/email';
 import {
   buildResumeUrl,
@@ -158,10 +162,18 @@ export async function action({request, context}: Route.ActionArgs) {
   const {id: verifiedCustomerId, name, email} = customer;
 
   try {
+    // When a private staff-metadata channel is configured, the public
+    // forum thread (which any helper can read) gets a first-name-only
+    // title and a redacted body. Email / Shopify GID / UA / IP go to
+    // the staff channel below. Same toggle on both sides so they stay
+    // consistent. The `redact` flag mirrors what createSupportThread
+    // looks at internally — keeps the title and body in sync.
+    const redact = !!env.DISCORD_STAFF_METADATA_CHANNEL_ID;
+    const titleName = redact ? firstNameOnly(name) : name;
     const thread = await createSupportThread(env, {
       title: cleanSubject
-        ? `[${name}] ${cleanSubject}`
-        : `[${name}] ${cleanMessage.content.slice(0, 50)}${
+        ? `[${titleName}] ${cleanSubject}`
+        : `[${titleName}] ${cleanMessage.content.slice(0, 50)}${
             cleanMessage.content.length > 50 ? '…' : ''
           }`,
       userName: name,
@@ -172,6 +184,29 @@ export async function action({request, context}: Route.ActionArgs) {
       files: attachments.files,
       customerId: verifiedCustomerId,
     });
+
+    // Staff metadata: full PII + jump-URL go to the role-restricted
+    // channel only. No-op when DISCORD_STAFF_METADATA_CHANNEL_ID is
+    // unset (legacy mode keeps the metadata in the public thread).
+    // Fire-and-forget so a Discord hiccup here doesn't block the
+    // ticket creation API response.
+    if (redact) {
+      const metaJob = (async () => {
+        try {
+          await postStaffMetadata(env, thread.id, thread.name, {
+            userName: name,
+            userEmail: email,
+            customerId: verifiedCustomerId,
+            userAgent: ua,
+            ipHint: ip && ip !== 'unknown' ? anonymizeIp(ip) : undefined,
+          });
+        } catch (err) {
+          console.warn('[support/start] staff-metadata post failed', err);
+        }
+      })();
+      if (context.waitUntil) context.waitUntil(metaJob);
+      else void metaJob;
+    }
 
     const ticket: SupportTicket = {
       v: 1,

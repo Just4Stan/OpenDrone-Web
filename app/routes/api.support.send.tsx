@@ -1,6 +1,6 @@
 import {data} from 'react-router';
 import type {Route} from './+types/api.support.send';
-import {postToThread} from '~/lib/support/discord';
+import {firstNameOnly, postToThread} from '~/lib/support/discord';
 import {readSupportCookie, verifyTicket} from '~/lib/support/session';
 import {extractAttachments} from '~/lib/support/uploads';
 import {checkRateLimit} from '~/lib/rate-limit';
@@ -90,7 +90,10 @@ export async function action({request, context}: Route.ActionArgs) {
     );
   }
 
-  const prefix = `**${ticket.name}:**`;
+  // First-name only in the public thread. Helpers see who replied
+  // without leaking the customer's last name. Full name + email
+  // already live on the staff-metadata channel for the ticket.
+  const prefix = `**${firstNameOnly(ticket.name)}:**`;
   const body = cleanContent.content
     ? `${prefix} ${cleanContent.content}`
     : prefix;
