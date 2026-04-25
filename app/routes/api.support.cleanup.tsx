@@ -6,13 +6,16 @@ import {listAllTickets, removeTicket} from '~/lib/support/ticket-index';
 // Stale-ticket sweeper. Triggered on a daily cron (GitHub Actions →
 // curl POST). Walks every ticket meta and deletes the Discord thread +
 // index entry for tickets that:
-//   - are already closed (the close handler also deletes inline; this
-//     catches anything that slipped through), OR
+//   - have been closed for at least CLOSED_GRACE_DAYS days. The grace
+//     window lets a customer re-open a ticket they accidentally
+//     ended via /account/support before the thread is gone for good.
 //   - have had no activity for STALE_DAYS days.
 //
 // Auth: bearer token matching SUPPORT_CLEANUP_SECRET. Without that env
 // var set, the endpoint is disabled (503).
 
+const CLOSED_GRACE_DAYS = 1;
+const CLOSED_GRACE_SECONDS = CLOSED_GRACE_DAYS * 24 * 60 * 60;
 const STALE_DAYS = 7;
 const STALE_SECONDS = STALE_DAYS * 24 * 60 * 60;
 
@@ -54,7 +57,13 @@ export async function action({request, context}: Route.ActionArgs) {
   for (const meta of tickets) {
     let reason: 'closed' | 'stale' | null = null;
     if (meta.status === 'closed') {
-      reason = 'closed';
+      // closedAt should always be set when status===closed. Fall back
+      // to lastActivityAt if it isn't (legacy entries) so we never
+      // treat 0 as "closed years ago" and burn through the grace.
+      const closedAt = meta.closedAt || meta.lastActivityAt;
+      if (closedAt > 0 && nowSec - closedAt >= CLOSED_GRACE_SECONDS) {
+        reason = 'closed';
+      }
     } else if (
       meta.lastActivityAt > 0 &&
       nowSec - meta.lastActivityAt > STALE_SECONDS
