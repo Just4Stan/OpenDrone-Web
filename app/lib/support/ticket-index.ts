@@ -322,7 +322,27 @@ async function updateInIndex(
     keys.map(async (key) => {
       const list = parseIndex(await kv.get(key));
       const idx = list.findIndex((e) => e.tid === meta.tid);
-      if (idx < 0) return;
+      if (idx < 0) {
+        // Self-heal: ticket isn't in this index (race during create, or
+        // an addTicket write that lost to a concurrent prepend). Insert
+        // a fresh entry built from the current meta + the mutator —
+        // closing a ticket should never silently fail to mark the
+        // index entry as closed because the entry happened to be
+        // missing.
+        const entry: TicketIndexEntry = {
+          tid: meta.tid,
+          pid: meta.pid,
+          subject: meta.subject,
+          openedAt: meta.openedAt,
+          closedAt: meta.closedAt,
+          lastActivityAt: meta.lastActivityAt,
+          status: meta.status,
+        };
+        mutate(entry);
+        const next = [entry, ...list].slice(0, MAX_INDEX_ENTRIES);
+        await kv.put(key, JSON.stringify(next));
+        return;
+      }
       mutate(list[idx]);
       await kv.put(key, JSON.stringify(list));
     }),
