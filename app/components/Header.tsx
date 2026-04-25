@@ -127,6 +127,11 @@ export function HeaderMenu({
         // widget; without this rewrite the menu link lands on an empty
         // Shopify Page.
         url = LOCAL_PAGE_REWRITES[url] ?? url;
+        // Drop any menu item that resolves to "/" — the wordmark logo
+        // on the left already links there, so a separate "Home" entry
+        // is duplicated chrome. This skips it in code so we don't have
+        // to keep the Shopify admin menu in sync.
+        if (url === '/' || url === '') return null;
         const className = isMobile
           ? 'text-sm font-mono uppercase tracking-wider text-[var(--color-text-muted)] hover:text-[var(--color-text)] transition-colors'
           : 'font-mono text-[11px] uppercase tracking-[0.15em] transition-colors text-[var(--color-text-muted)] hover:text-[var(--color-text)]';
