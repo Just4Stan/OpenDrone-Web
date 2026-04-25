@@ -39,9 +39,18 @@ type LoaderData =
 export async function loader({request, context}: Route.LoaderArgs) {
   const env = context.env;
 
+  // `?new=1` is the explicit "open another ticket" entry point from the
+  // /contact page when the user already has an active ticket. Skip the
+  // cookie-active redirect so the intake form is reachable; the new
+  // ticket will replace the cookie focus on submission. The previous
+  // ticket continues to live in the Discord thread + Upstash index and
+  // remains visible in /account/support.
+  const url = new URL(request.url);
+  const forceNew = url.searchParams.get('new') === '1';
+
   // Cookie-bound active ticket takes precedence — that's the live thread.
   const cookie = readSupportCookie(request);
-  const cookieTicket = await verifyTicket(env, cookie);
+  const cookieTicket = forceNew ? null : await verifyTicket(env, cookie);
   if (cookieTicket) {
     const meta = await getMeta(env, cookieTicket.tid);
     return {
