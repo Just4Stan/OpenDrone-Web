@@ -43,7 +43,7 @@ const LEGAL_LINKS: Array<{to: string; label: string}> = [
 
 function ColumnHeading({children}: {children: React.ReactNode}) {
   return (
-    <h4 className="font-mono text-[10px] uppercase tracking-[0.2em] text-[var(--color-text-muted)] mb-3">
+    <h4 className="font-mono text-[11px] uppercase tracking-[0.2em] text-[var(--color-text-muted)] mb-3">
       {children}
     </h4>
   );
@@ -73,10 +73,8 @@ export function Footer({company, turnstileSiteKey}: FooterProps) {
     <footer className="mt-auto border-t border-[var(--color-border)]">
       <div className="site-footer-inner">
         {/* Newsletter card — visually separated with bg-card + border so
-            it reads as its own surface, not as a stretch of empty footer.
-            Padding tightened to drop the previous block of dead vertical
-            space the bare hr/border layout left behind. */}
-        <div className="mb-8 rounded-sm border border-[var(--color-border)] bg-[var(--color-bg-card)] p-5 md:p-6">
+            it reads as its own surface, not as a stretch of empty footer. */}
+        <div className="mb-4 rounded-sm border border-[var(--color-border)] bg-[var(--color-bg-card)] px-5 py-2.5 md:px-6 md:py-3">
           <NewsletterSignup
             variant="footer"
             turnstileSiteKey={turnstileSiteKey ?? null}
@@ -88,7 +86,7 @@ export function Footer({company, turnstileSiteKey}: FooterProps) {
             <h3 className="font-display text-sm font-bold tracking-[0.08em] uppercase text-[var(--color-gold)] mb-3">
               OpenDrone
             </h3>
-            <p className="text-[11px] text-[var(--color-text-muted)] mb-3 leading-relaxed">
+            <p className="text-[12px] text-[var(--color-text-muted)] mb-3 leading-relaxed">
               OpenDrone is a product brand of
             </p>
             <CompanyFooterBlock company={company} />
@@ -147,7 +145,7 @@ export function Footer({company, turnstileSiteKey}: FooterProps) {
 
         {/* Bottom bar */}
         <div className="mt-8 pt-5 border-t border-[var(--color-border)] flex flex-col md:flex-row items-center justify-between gap-3">
-          <p className="text-[10px] text-[var(--color-text-muted)] font-mono tracking-wide">
+          <p className="text-[11px] text-[var(--color-text-muted)] font-mono tracking-wide">
             &copy; {new Date().getFullYear()} {company.name}. Hardware:
             CERN-OHL-S. Firmware: GPL/MIT. Open Source Hardware.
           </p>

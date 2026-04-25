@@ -10,6 +10,7 @@ import {Aside} from '~/components/Aside';
 import {Footer} from '~/components/Footer';
 import {Header, HeaderMenu} from '~/components/Header';
 import {CartMain} from '~/components/CartMain';
+import {PlaceholderBanner} from '~/components/PlaceholderBanner';
 import {
   SearchFormPredictive,
 } from '~/components/SearchFormPredictive';
@@ -49,6 +50,7 @@ export function PageLayout({
         <a className="skip-link" href="#main-content">
           Skip to main content
         </a>
+        <PlaceholderBanner />
         {header && (
           <Header
             header={header}
