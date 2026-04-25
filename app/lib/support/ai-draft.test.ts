@@ -234,9 +234,13 @@ describe('generateSummary', () => {
     );
     const body = seenBody as {messages: Array<{content: string}>};
     const prompt = body.messages[0].content;
-    assert.match(prompt, /Subject: ESC beeps/);
+    assert.match(prompt, /<ticket_subject>ESC beeps<\/ticket_subject>/);
     assert.match(prompt, /\[Customer \(Jan\)\] my ESC beeps/);
     assert.match(prompt, /\[Sarah\] what firmware\?/);
+    // Injection-resistance bookend: thread tags + reminder are present.
+    assert.match(prompt, /<thread>/);
+    assert.match(prompt, /<\/thread>/);
+    assert.match(prompt, /untrusted data/i);
   });
 
   it('returns network-exception when fetch throws', async () => {
