@@ -161,11 +161,7 @@ export default function ContactRoute() {
           copy={t}
         />
         <div className="contact-side-stack">
-          {!openTicket ? (
-            <TicketPointerTile copy={t} />
-          ) : (
-            <TicketContinueTile pid={openTicket.pid} copy={t} />
-          )}
+          {!openTicket ? <TicketPointerTile copy={t} /> : null}
           <DirectContactTile
             contactTel={contactTel}
             contactEmail={contactEmail}
@@ -306,24 +302,6 @@ function TicketPointerTile({copy}: {copy: Copy}) {
       <p>{copy.ticketLede}</p>
       <Link to="/support" className="od-btn od-btn-secondary">
         {copy.ticketCta}
-      </Link>
-    </div>
-  );
-}
-
-function TicketContinueTile({pid, copy}: {pid: string; copy: Copy}) {
-  return (
-    <div className="od-tile od-tile-gold contact-tile-ticket">
-      <p
-        className="od-tile-eyebrow"
-        style={{color: 'var(--od-pcb-gold-2)'}}
-      >
-        → YOUR OPEN TICKET
-      </p>
-      <h2>#{pid}</h2>
-      <p>{copy.bannerText}.</p>
-      <Link to="/account/support" className="od-btn od-btn-primary">
-        {copy.bannerCta}
       </Link>
     </div>
   );

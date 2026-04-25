@@ -43,9 +43,28 @@ export async function loader({request, context}: Route.LoaderArgs) {
   const activeCookieTid = cookieTicket?.tid ?? null;
   const activeCookiePid = cookieTicket?.pid ?? null;
 
-  const tickets: TicketIndexEntry[] = customerId
+  const indexed: TicketIndexEntry[] = customerId
     ? await listByCustomer(env, customerId, {status: 'all', limit: 100})
     : [];
+
+  // Without TICKETS_KV bound the customer index is empty even when a
+  // live ticket exists in the cookie. Synthesise a single entry from
+  // the cookie so the page reflects reality and the live thread is
+  // reachable from the list.
+  const tickets: TicketIndexEntry[] =
+    indexed.length === 0 && cookieTicket
+      ? [
+          {
+            tid: cookieTicket.tid,
+            pid: cookieTicket.pid ?? '',
+            subject: 'Support ticket',
+            openedAt: cookieTicket.createdAt,
+            closedAt: null,
+            lastActivityAt: cookieTicket.createdAt,
+            status: 'open' as const,
+          },
+        ]
+      : indexed;
 
   return {
     tickets,
