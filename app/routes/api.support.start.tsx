@@ -45,7 +45,10 @@ export async function action({request, context}: Route.ActionArgs) {
   }
 
   const ip = clientIp(request);
-  const ipLimit = checkRateLimit(`support-start:ip:${ip}`, 3, 60 * 60 * 1000);
+  // Generous IP cap — abuse defence only. Per-customer throttling and
+  // the auth gate below are the real protections; signed-in users
+  // testing the flow shouldn't trip this.
+  const ipLimit = checkRateLimit(`support-start:ip:${ip}`, 12, 60 * 60 * 1000);
   if (!ipLimit.allowed) {
     return data<StartResult>(
       {

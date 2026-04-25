@@ -88,6 +88,12 @@ declare global {
     // scaling beyond a few hundred tickets.
     UPSTASH_REDIS_REST_URL?: string;
     UPSTASH_REDIS_REST_TOKEN?: string;
+
+    // Bearer token for /api/support/cleanup. The daily GitHub Actions
+    // cron (.github/workflows/support-cleanup.yml) sends this in the
+    // Authorization header. Without it the endpoint returns 503 — set
+    // it to enable automatic stale-ticket sweeping.
+    SUPPORT_CLEANUP_SECRET?: string;
     DISCORD_FEEDBACK_CHANNEL_ID?: string;
 
     // Newsletter / release-notes auto-dispatch

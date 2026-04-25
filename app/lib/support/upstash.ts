@@ -23,6 +23,12 @@ export type UpstashEnv = {
 export type TicketStore = {
   get(key: string): Promise<string | null>;
   put(key: string, value: string, opts?: {expirationTtl?: number}): Promise<void>;
+  // Iterate keys matching `pattern` (Redis glob — e.g. "tk:*"). Returns
+  // every match in one batch; suitable for bounded indexes (we cap each
+  // per-customer list at 200 and don't expect more than a few thousand
+  // tickets globally). Wraps SCAN so we don't depend on the cursor
+  // being exposed to callers.
+  scan(pattern: string): Promise<string[]>;
 };
 
 export function getTicketStore(env: UpstashEnv): TicketStore | null {
@@ -42,6 +48,28 @@ export function getTicketStore(env: UpstashEnv): TicketStore | null {
           ? ['SET', key, value, 'EX', String(ttl)]
           : ['SET', key, value];
       await call(url, token, cmd);
+    },
+    async scan(pattern) {
+      const out = new Set<string>();
+      let cursor = '0';
+      // Hard cap to avoid runaway SCAN loops if a misconfigured pattern
+      // somehow hits a huge keyspace. 50 iterations × 100 ≈ 5k keys.
+      for (let i = 0; i < 50; i++) {
+        const r = (await call(url, token, [
+          'SCAN',
+          cursor,
+          'MATCH',
+          pattern,
+          'COUNT',
+          '100',
+        ])) as [string, string[]] | unknown;
+        if (!Array.isArray(r) || r.length < 2) break;
+        cursor = String(r[0]);
+        const batch = Array.isArray(r[1]) ? (r[1] as string[]) : [];
+        for (const k of batch) out.add(k);
+        if (cursor === '0') break;
+      }
+      return Array.from(out);
     },
   };
 }
