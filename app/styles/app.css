@@ -6105,6 +6105,24 @@ button.reset {
   color: var(--od-ink-faint);
   text-align: center;
 }
+.account-support-active-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 16px;
+  margin: 0 0 12px;
+  border: 1.5px solid var(--od-pcb-gold);
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--od-pcb-gold) 8%, transparent);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--od-ink);
+}
+.account-support-active-banner > span {
+  flex: 1;
+  min-width: 0;
+}
 .account-support-list-empty {
   padding: 40px 24px;
   text-align: center;
