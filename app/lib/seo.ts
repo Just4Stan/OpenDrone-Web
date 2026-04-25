@@ -130,31 +130,6 @@ export function buildSeoMeta({
 }
 
 /**
- * For the localised legal routes `/en/<slug>` + `/nl/<slug>`, return the
- * hreflang alternate list ready to pass into `buildSeoMeta`. Caller must
- * provide the request URL so the helper can build absolute URLs for the
- * link tags (Google prefers absolute).
- */
-export function legalHreflangPairs(
-  slug: string,
-  url: string,
-): HreflangAlternate[] {
-  let origin = 'https://opendrone.be';
-  try {
-    origin = new URL(url).origin;
-  } catch {
-    /* ignore */
-  }
-  const en = `${origin}/en/${slug}`;
-  const nl = `${origin}/nl/${slug}`;
-  return [
-    {lang: 'en', href: en},
-    {lang: 'nl', href: nl},
-    {lang: 'x-default', href: en},
-  ];
-}
-
-/**
  * schema.org Organization JSON-LD — emit in root Layout <head>. Identifies
  * the selling entity (Incutec BV) for search engines, not the OpenDrone
  * product brand.
