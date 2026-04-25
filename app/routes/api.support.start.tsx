@@ -169,16 +169,6 @@ export async function action({request, context}: Route.ActionArgs) {
     // consistent. The `redact` flag mirrors what createSupportThread
     // looks at internally — keeps the title and body in sync.
     const redact = !!env.DISCORD_STAFF_METADATA_CHANNEL_ID;
-    // Diagnostic: confirm runtime sees the env var. Strip the suffix
-    // to a 4-char prefix so we don't log the channel ID itself.
-    console.warn(
-      '[support/start] redact=',
-      redact,
-      'channel-prefix=',
-      env.DISCORD_STAFF_METADATA_CHANNEL_ID?.slice(0, 4) ?? 'unset',
-      'guild-set=',
-      !!env.DISCORD_GUILD_ID,
-    );
     const titleName = redact ? firstNameOnly(name) : name;
     const thread = await createSupportThread(env, {
       title: cleanSubject
