@@ -63,6 +63,24 @@ export default async function handleRequest(
       `https://${context.env.PUBLIC_STORE_DOMAIN}`,
       'https://challenges.cloudflare.com',
     ],
+    // Support-thread attachments (images, video, audio) are hosted on
+    // Discord's CDN. Without these the inline <img>/<video>/<audio> tags
+    // in SupportThread fail to load because Hydrogen's default img-src /
+    // media-src don't include the Discord hosts. cdn.discordapp.com is
+    // the raw upload host; media.discordapp.net is the transcoded /
+    // resized variant Discord rewrites large media to.
+    imgSrc: [
+      "'self'",
+      'data:',
+      'https://cdn.shopify.com',
+      'https://cdn.discordapp.com',
+      'https://media.discordapp.net',
+    ],
+    mediaSrc: [
+      "'self'",
+      'https://cdn.discordapp.com',
+      'https://media.discordapp.net',
+    ],
   });
 
   const body = await renderToReadableStream(
