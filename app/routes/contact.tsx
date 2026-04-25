@@ -161,7 +161,7 @@ export default function ContactRoute() {
           copy={t}
         />
         <div className="contact-side-stack">
-          {!openTicket ? <TicketPointerTile copy={t} /> : null}
+          <TicketPointerTile copy={t} hasOpenTicket={!!openTicket} />
           <DirectContactTile
             contactTel={contactTel}
             contactEmail={contactEmail}
@@ -301,14 +301,34 @@ function DiscordInviteCard({
   );
 }
 
-function TicketPointerTile({copy}: {copy: Copy}) {
+function TicketPointerTile({
+  copy,
+  hasOpenTicket,
+}: {
+  copy: Copy;
+  hasOpenTicket: boolean;
+}) {
+  // When the user already has an active ticket, the banner above offers
+  // a "continue thread" CTA. This tile then becomes the way to open a
+  // *separate* unrelated ticket — `?new=1` skips the cookie-active
+  // redirect on /support so the intake form is reachable. The new
+  // ticket replaces the cookie focus on submission; the previous ticket
+  // remains in /account/support history.
+  const to = hasOpenTicket ? '/support?new=1' : '/support';
+  const title = hasOpenTicket
+    ? 'Open a separate ticket'
+    : copy.ticketTitle;
+  const lede = hasOpenTicket
+    ? 'Different problem? Start a new thread instead of mixing it into the active one. Your current ticket stays open.'
+    : copy.ticketLede;
+  const cta = hasOpenTicket ? 'Open a new ticket' : copy.ticketCta;
   return (
     <div className="od-tile contact-tile-ticket">
       <p className="od-tile-eyebrow">{copy.ticketEyebrow}</p>
-      <h2>{copy.ticketTitle}</h2>
-      <p>{copy.ticketLede}</p>
-      <Link to="/support" className="od-btn od-btn-secondary">
-        {copy.ticketCta}
+      <h2>{title}</h2>
+      <p>{lede}</p>
+      <Link to={to} className="od-btn od-btn-secondary">
+        {cta}
       </Link>
     </div>
   );
