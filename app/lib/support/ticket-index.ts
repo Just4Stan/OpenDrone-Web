@@ -141,6 +141,37 @@ export async function closeTicket(env: Env, tid: string): Promise<void> {
   ]);
 }
 
+// Drop a ticket from every index it appears in. Idempotent — safe to
+// call when the ticket was never indexed (no-op).
+export async function removeTicket(env: Env, tid: string): Promise<void> {
+  const kv = getTicketStore(env);
+  if (!kv) return;
+  const meta = await getMeta(env, tid);
+  // Remove from per-customer + per-email indexes first so list views
+  // stop returning the ticket even if the meta delete races.
+  if (meta) {
+    const indexKeys: string[] = [];
+    if (meta.customerId) indexKeys.push(`idx:cust:${meta.customerId}`);
+    if (meta.email) indexKeys.push(`idx:email:${await emailKey(meta.email)}`);
+    await Promise.all(
+      indexKeys.map(async (key) => {
+        const list = parseIndex(await kv.get(key));
+        const next = list.filter((e) => e.tid !== tid);
+        if (next.length !== list.length) {
+          await kv.put(key, JSON.stringify(next));
+        }
+      }),
+    );
+  }
+  // Tombstone the meta + feedback records by writing empty strings with
+  // a 1-day TTL — Upstash REST doesn't expose DEL via this client, but
+  // a short-lived empty value is functionally equivalent for getMeta.
+  await Promise.all([
+    kv.put(`tk:${tid}`, '', {expirationTtl: 60 * 60 * 24}),
+    kv.put(`fb:${tid}`, '', {expirationTtl: 60 * 60 * 24}),
+  ]);
+}
+
 export async function markFeedback(env: Env, tid: string): Promise<void> {
   const kv = getTicketStore(env);
   if (!kv) return;
@@ -221,6 +252,27 @@ export async function countOpenForCustomer(
 ): Promise<number> {
   const list = await listByCustomer(env, customerId, {status: 'open'});
   return list.length;
+}
+
+// Walk every ticket in the store. Used by /api/support/cleanup to find
+// stale threads. Bounded by the SCAN cap in the Upstash client.
+export async function listAllTickets(env: Env): Promise<TicketMeta[]> {
+  const kv = getTicketStore(env);
+  if (!kv) return [];
+  const keys = await kv.scan('tk:*');
+  const out: TicketMeta[] = [];
+  await Promise.all(
+    keys.map(async (k) => {
+      const raw = await kv.get(k);
+      if (!raw) return;
+      try {
+        out.push(JSON.parse(raw) as TicketMeta);
+      } catch {
+        /* tombstone or malformed — skip */
+      }
+    }),
+  );
+  return out;
 }
 
 function parseIndex(raw: string | null): TicketIndexEntry[] {
