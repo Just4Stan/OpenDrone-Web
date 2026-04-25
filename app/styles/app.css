@@ -805,12 +805,12 @@ button.reset {
 .site-footer-inner {
   width: var(--rail-width);
   margin: 0 auto;
-  padding: 2.5rem 0;
+  padding: 1.25rem 0 2.5rem;
 }
 
 @media (min-width: 768px) {
   .site-footer-inner {
-    padding: 3rem 0;
+    padding: 1.5rem 0 3rem;
   }
 }
 
@@ -6320,17 +6320,24 @@ button.reset {
   background: #2b2d31;
   border: 1px solid var(--od-line-strong);
   box-shadow: 0 1px 0 rgba(0, 0, 0, 0.4);
+  /* override the global `section { padding: 1rem 0; }` rule that
+     would otherwise insert a 32px gray strip above + below the iframe. */
+  padding: 0;
 }
 .contact-discord-widget iframe {
   display: block;
   width: 100%;
-  height: 620px;
+  height: 500px;
   border: 0;
   background: transparent;
 }
 
-/* Tighten the legacy fallback card now that it's the secondary path */
-.discord-invite-card {max-width: 420px; margin-left: 0; margin-right: 0;}
+/* Fallback invite card (only shown when guildId is missing) — uncap
+   width so it doesn't leave a dead strip on wide viewports. */
+.contact-main-grid .discord-invite-card {
+  max-width: none;
+  margin: 0;
+}
 
 /* Mobile: stack everything */
 @media (max-width: 720px) {
