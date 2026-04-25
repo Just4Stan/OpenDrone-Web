@@ -3,7 +3,7 @@
 **Purpose:** Document that Incutec's products are not dual-use controlled under EU Reg 2021/821. Keep on file for customs/authorities.
 
 **Assessment Date:** 18 April 2026
-**Assessor:** Stan Coene, Bestuurder
+**Assessor:** Bestuurder, Incutec BV
 
 ---
 
@@ -67,7 +67,7 @@ Despite non-classification:
 
 Flanders: Departement Kanselarij en Buitenlandse Zaken, Dienst Controle Strategische Goederen (CSG) — https://www.fdfa.be/en/csg
 
-**Signed:** Stan Coene, Bestuurder Incutec BV · **Date:** 18 April 2026
+**Signed:** Bestuurder, Incutec BV · **Date:** 18 April 2026
 
 ## Notes
 
@@ -227,13 +227,13 @@ EU Commission strongly recommends ICPs for potentially sensitive items. Incutec 
 [EU Recommendation 2019/1318](https://eur-lex.europa.eu/eli/reco/2019/1318/oj)
 
 **Minimal ICP skeleton:**
-1. Top-level management commitment (signed statement by Stan)
-2. Responsibility assignment (Stan = export compliance officer)
+1. Top-level management commitment (signed statement by the Bestuurder)
+2. Responsibility assignment (Bestuurder = export compliance officer)
 3. Item classification (this memo, update annually)
 4. Customer/transaction screening (see sanctions-screening.md)
 5. End-use/end-user screening (red flag checklist, EUS for bulk orders)
 6. Record-keeping (5 years order/screening records)
-7. Training (Stan reads updates annually; staff trained before first export work)
+7. Training (compliance officer reads updates annually; staff trained before first export work)
 8. Audit & review (annual self-audit)
 9. Reporting (escalation path to Flanders CSG)
 
@@ -241,7 +241,7 @@ EU Commission strongly recommends ICPs for potentially sensitive items. Incutec 
 
 - **Immediately** if Flanders CSG sends catch-all notice (Art. 4 letter)
 - **Before first wholesale** to high-risk country (Turkey, UAE, Kazakhstan, China): one-time €500-1500 legal review of Shopify ToS + wholesale templates
-- **Order >€10K** suspicious and Stan can't decide alone
+- **Order >€10K** suspicious and the compliance officer can't decide alone
 - **Customs stops shipment** anywhere in EU
 - **Firms:** Belgian export control/sanctions specialists — NautaDutilh Brussels, Van Bael & Bellis, Baker McKenzie Brussels. Startup budget: solo practitioners or boutique firms.
 
