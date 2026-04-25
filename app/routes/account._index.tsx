@@ -4,8 +4,14 @@ import {
   useLoaderData,
   useOutletContext,
   useSearchParams,
+  type HeadersFunction,
 } from 'react-router';
 import type {Route} from './+types/account._index';
+
+// Account dashboard PII — block intermediate + bfcache.
+export const headers: HeadersFunction = () => ({
+  'Cache-Control': 'private, no-store',
+});
 import type {
   CustomerFragment,
   OrderItemFragment,
