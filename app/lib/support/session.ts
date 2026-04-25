@@ -19,6 +19,10 @@ export type SupportTicket = {
   email: string;
   createdAt: number; // unix seconds
   lastCursor?: string; // Discord message id of last seen staff reply
+  // 10-digit public-facing ticket reference. Optional because cookies
+  // minted before this field existed don't carry one — widget falls
+  // back to no display in that case.
+  pid?: string;
 };
 
 type Env = {SUPPORT_SESSION_SECRET?: string; SESSION_SECRET?: string};
@@ -123,4 +127,22 @@ export function randomId(bytes = 12): string {
   const arr = new Uint8Array(bytes);
   crypto.getRandomValues(arr);
   return b64urlEncode(arr);
+}
+
+// Public 10-digit ticket reference. Six digits are seconds-of-cycle
+// (the unix-second clock modulo 10^6, rolls every ~11.6 days), four
+// are CSPRNG random. Two tickets opened in the same second collide
+// 1-in-10000; with low support volume that's effectively never.
+//
+// We deliberately don't dedupe against an external set — that would
+// need KV/D1 and the value-add is theoretical at this volume. If you
+// see a collision in the wild, swap this for a KV-backed counter.
+export function randomTicketId(): string {
+  const seconds = Math.floor(Date.now() / 1000) % 1_000_000;
+  const arr = new Uint8Array(2);
+  crypto.getRandomValues(arr);
+  const rand = ((arr[0] << 8) | arr[1]) % 10_000;
+  return (
+    String(seconds).padStart(6, '0') + String(rand).padStart(4, '0')
+  );
 }

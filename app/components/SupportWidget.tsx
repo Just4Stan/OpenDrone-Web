@@ -53,10 +53,11 @@ type StatusResponse =
       name: string;
       email: string;
       createdAt: number;
+      pid?: string;
     };
 
 type StartResponse =
-  | {ok: true; ticketId: string}
+  | {ok: true; ticketId: string; pid?: string}
   | {ok: false; message: string; field?: string; code?: string};
 
 type PollResponse =
@@ -103,6 +104,7 @@ export function SupportWidget({
   const [messages, setMessages] = useState<LocalMessage[]>([]);
   const [sendBusy, setSendBusy] = useState(false);
   const [userName, setUserName] = useState('');
+  const [ticketPid, setTicketPid] = useState<string | null>(null);
   const [draft, setDraft] = useState('');
   const [staffIsTyping] = useState(false); // reserved for future typing indicator
   const [intakeFiles, setIntakeFiles] = useState<File[]>([]);
@@ -169,6 +171,7 @@ export function SupportWidget({
         if (cancelled) return;
         if (json.ok && json.active) {
           setUserName(json.name);
+          if (json.pid) setTicketPid(json.pid);
           setPhase('active');
         } else {
           setPhase('intake');
@@ -303,6 +306,7 @@ export function SupportWidget({
         const name = prefill?.name || prefill?.email?.split('@')[0] || 'You';
         const message = String(fd.get('message') ?? '').trim();
         setUserName(name);
+        if (json.pid) setTicketPid(json.pid);
         setMessages([
           {
             id: `local-${Date.now()}`,
@@ -456,6 +460,7 @@ export function SupportWidget({
     }
     setMessages([]);
     setUserName('');
+    setTicketPid(null);
     setIntakeFiles([]);
     setComposerFiles([]);
     setPhase('intake');
@@ -730,6 +735,12 @@ export function SupportWidget({
             <div>
               <p className="support-eyebrow">
                 {phase === 'closed' ? 'Ticket closed' : 'Live with support'}
+                {ticketPid ? (
+                  <>
+                    {' · '}
+                    <span className="support-ticket-id">#{ticketPid}</span>
+                  </>
+                ) : null}
               </p>
               <h3 className="support-title">
                 {phase === 'closed'

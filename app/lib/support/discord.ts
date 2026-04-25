@@ -105,6 +105,7 @@ export async function createSupportThread(
     ipHint?: string;
     files?: OutboundFile[];
     customerId?: string;
+    pid?: string;
   },
 ): Promise<DiscordThread> {
   if (!env.DISCORD_SUPPORT_CHANNEL_ID) {
@@ -125,15 +126,20 @@ export async function createSupportThread(
   // when the env isn't fully configured, better to still have the
   // info *somewhere* than to lose it.
   const redact = !!env.DISCORD_STAFF_METADATA_CHANNEL_ID;
+  const ticketRef = opts.pid ? `Ticket #${opts.pid}` : null;
   const publicContent = redact
     ? [
         '**New web-support ticket**',
+        ticketRef,
         `From: **${firstNameOnly(opts.userName)}**`,
         '',
         opts.firstMessage.slice(0, 1800),
-      ].join('\n')
+      ]
+        .filter(Boolean)
+        .join('\n')
     : [
         '**New web-support ticket**',
+        ticketRef,
         `From: **${opts.userName}** <${opts.userEmail}>`,
         opts.customerId
           ? `Shopify customer: \`${opts.customerId}\``
@@ -220,6 +226,7 @@ export async function postStaffMetadata(
     customerId?: string;
     userAgent?: string;
     ipHint?: string;
+    pid?: string;
   },
 ): Promise<boolean> {
   const channel = env.DISCORD_STAFF_METADATA_CHANNEL_ID;
@@ -231,6 +238,7 @@ export async function postStaffMetadata(
   const jumpUrl = `https://discord.com/channels/${guild}/${threadId}`;
   const lines = [
     `🎫 **${threadName}**`,
+    metadata.pid ? `Ticket: \`#${metadata.pid}\`` : null,
     `Thread: ${jumpUrl}`,
     '',
     `From: **${metadata.userName}** <${metadata.userEmail}>`,
@@ -626,6 +634,108 @@ export async function fetchReactors(
   return Array.isArray(raw)
     ? raw.map((u) => u.id ?? '').filter((id) => id.length > 0)
     : [];
+}
+
+export type GuildPreview = {
+  id: string;
+  name: string;
+  iconUrl: string | null;
+  description: string | null;
+  memberCount: number;
+  presenceCount: number;
+  createdAt: string; // ISO; derived from snowflake
+};
+
+const DISCORD_EPOCH_MS = 1420070400000n;
+
+function snowflakeToDate(id: string): string {
+  try {
+    const ms = (BigInt(id) >> 22n) + DISCORD_EPOCH_MS;
+    return new Date(Number(ms)).toISOString();
+  } catch {
+    return '';
+  }
+}
+
+// Fetches a public-facing snapshot of the guild for the contact-page
+// banner: name, icon, member/online counts, description, creation date.
+// Uses the bot token because the unauthenticated /widget.json endpoint
+// requires the server widget to be enabled and omits description and
+// member count. Cached on the Cloudflare edge for 5 minutes — counts are
+// approximate anyway, no point hammering Discord on every page view.
+export async function fetchGuildPreview(
+  env: DiscordEnv,
+  guildId: string | undefined,
+): Promise<GuildPreview | null> {
+  if (!env.DISCORD_BOT_TOKEN || !guildId) return null;
+
+  const cache =
+    typeof caches !== 'undefined' && 'default' in caches
+      ? (caches as unknown as {default: Cache}).default
+      : null;
+  const cacheKey = `https://opendrone.local/_discord-guild-preview/${guildId}`;
+  if (cache) {
+    const hit = await cache.match(cacheKey).catch(() => null);
+    if (hit) {
+      try {
+        return (await hit.json()) as GuildPreview;
+      } catch {
+        // fall through to refetch
+      }
+    }
+  }
+
+  let res: Response;
+  try {
+    res = await discordFetch(
+      `${DISCORD_API}/guilds/${guildId}?with_counts=true`,
+      {headers: authHeaders(env)},
+    );
+  } catch (err) {
+    console.warn('[support] fetchGuildPreview network', err);
+    return null;
+  }
+  if (!res.ok) {
+    console.warn('[support] fetchGuildPreview', res.status);
+    return null;
+  }
+  const json = (await res.json()) as {
+    id: string;
+    name: string;
+    icon?: string | null;
+    description?: string | null;
+    approximate_member_count?: number;
+    approximate_presence_count?: number;
+  };
+  const iconHash = json.icon ?? null;
+  const ext = iconHash?.startsWith('a_') ? 'gif' : 'png';
+  const preview: GuildPreview = {
+    id: json.id,
+    name: json.name,
+    iconUrl: iconHash
+      ? `https://cdn.discordapp.com/icons/${json.id}/${iconHash}.${ext}?size=128`
+      : null,
+    description: json.description ?? null,
+    memberCount: json.approximate_member_count ?? 0,
+    presenceCount: json.approximate_presence_count ?? 0,
+    createdAt: snowflakeToDate(json.id),
+  };
+
+  if (cache) {
+    await cache
+      .put(
+        cacheKey,
+        new Response(JSON.stringify(preview), {
+          headers: {
+            'content-type': 'application/json',
+            'cache-control': 'public, max-age=300',
+          },
+        }),
+      )
+      .catch(() => {});
+  }
+
+  return preview;
 }
 
 // Fetches guild members that carry a specific role. Used to build the

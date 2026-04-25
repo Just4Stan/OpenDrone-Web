@@ -29,6 +29,7 @@ export type ResumeTokenPayload = {
   name: string;
   iat: number; // unix seconds
   exp: number; // unix seconds
+  pid?: string; // 10-digit public ticket ref; optional for tokens minted before this field existed
 };
 
 type Env = {SUPPORT_SESSION_SECRET?: string; SESSION_SECRET?: string};
@@ -76,7 +77,14 @@ function constantTimeEqual(a: string, b: string): boolean {
 
 export async function signResumeToken(
   env: Env,
-  input: {tid: string; uid: string; email: string; name: string; ttlSeconds?: number},
+  input: {
+    tid: string;
+    uid: string;
+    email: string;
+    name: string;
+    pid?: string;
+    ttlSeconds?: number;
+  },
 ): Promise<string> {
   const now = Math.floor(Date.now() / 1000);
   const payload: ResumeTokenPayload = {
@@ -88,6 +96,7 @@ export async function signResumeToken(
     name: input.name.slice(0, 80),
     iat: now,
     exp: now + (input.ttlSeconds ?? DEFAULT_TTL_SECONDS),
+    ...(input.pid ? {pid: input.pid} : {}),
   };
   const body = b64urlEncode(enc.encode(JSON.stringify(payload)));
   const sig = await hmac(secret(env), body);
