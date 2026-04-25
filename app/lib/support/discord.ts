@@ -464,6 +464,51 @@ export async function fetchThreadMessages(
   return {messages, thread};
 }
 
+/**
+ * Walk the entire message history of a thread, oldest-first. Used by
+ * the cleanup archiver — fetchThreadMessages only does forward-paging
+ * from a known cursor, this paginates backward from the latest message
+ * so we capture everything regardless of how long the thread is.
+ *
+ * Caps at MAX_PAGES * 100 messages. Drone-support threads should never
+ * approach that, but a runaway thread shouldn't be able to OOM the
+ * worker either.
+ */
+export async function fetchAllThreadMessages(
+  env: DiscordEnv,
+  threadId: string,
+): Promise<DiscordMessage[]> {
+  const MAX_PAGES = 20; // 2000 messages
+  const all: DiscordMessage[] = [];
+  let before: string | null = null;
+  for (let i = 0; i < MAX_PAGES; i++) {
+    const params = new URLSearchParams({limit: '100'});
+    if (before) params.set('before', before);
+    const res = await discordFetch(
+      `${DISCORD_API}/channels/${threadId}/messages?${params.toString()}`,
+      {headers: authHeaders(env)},
+    );
+    if (!res.ok) {
+      console.warn(
+        '[support] fetchAllThreadMessages',
+        res.status,
+        (await res.text().catch(() => '')).slice(0, 160),
+      );
+      break;
+    }
+    const raw = (await res.json()) as unknown[];
+    if (!Array.isArray(raw) || raw.length === 0) break;
+    const page = raw.map(normalizeMessage);
+    all.push(...page);
+    if (page.length < 100) break;
+    // Discord returns newest-first; the oldest of the batch is the
+    // cursor for the next backward page.
+    before = page[page.length - 1]!.id;
+  }
+  all.sort((a, b) => (a.createdAt < b.createdAt ? -1 : 1));
+  return all;
+}
+
 export type SupportThreadMatch = {
   id: string;
   name: string;

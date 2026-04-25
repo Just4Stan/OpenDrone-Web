@@ -352,3 +352,79 @@ export async function saveFeedback(
   });
   await markFeedback(env, feedback.tid);
 }
+
+export async function getFeedback(
+  env: Env,
+  tid: string,
+): Promise<Feedback | null> {
+  const kv = getTicketStore(env);
+  if (!kv) return null;
+  const raw = await kv.get(`fb:${tid}`);
+  if (!raw) return null;
+  try {
+    return JSON.parse(raw) as Feedback;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Long-term archive of a closed ticket. Written by the cleanup cron
+ * before the Discord thread is deleted, so we keep a durable corpus of
+ * (subject, conversation, feedback) tuples for AI training without
+ * keeping the live Discord thread or the Upstash live index entry
+ * around.
+ *
+ * Stored at archive:{tid} with NO TTL. Free-tier Upstash (256 MB)
+ * holds ~25k–50k of these records assuming 5–10 KB per ticket; bump
+ * the plan or rotate to object storage when that ceiling is in sight.
+ */
+export type ArchivedMessage = {
+  // Discord author id is intentionally dropped; we only need the role
+  // (staff vs customer vs bot/AI) and a display first name.
+  role: 'staff' | 'customer' | 'bot';
+  authorFirstName: string;
+  content: string; // PII-scrubbed via scrubForPublic before write
+  createdAt: string; // ISO from Discord
+};
+
+export type TicketArchive = {
+  tid: string;
+  pid: string;
+  subject: string;
+  product?: string;
+  firmware?: string;
+  customerId?: string;
+  openedAt: number;
+  closedAt: number;
+  lastActivityAt: number;
+  archivedAt: number;
+  removalReason: 'closed' | 'stale';
+  messages: ArchivedMessage[];
+  feedback: Feedback | null;
+};
+
+export async function archiveTicket(
+  env: Env,
+  archive: TicketArchive,
+): Promise<void> {
+  const kv = getTicketStore(env);
+  if (!kv) return;
+  // No expirationTtl → permanent.
+  await kv.put(`archive:${archive.tid}`, JSON.stringify(archive));
+}
+
+export async function getArchive(
+  env: Env,
+  tid: string,
+): Promise<TicketArchive | null> {
+  const kv = getTicketStore(env);
+  if (!kv) return null;
+  const raw = await kv.get(`archive:${tid}`);
+  if (!raw) return null;
+  try {
+    return JSON.parse(raw) as TicketArchive;
+  } catch {
+    return null;
+  }
+}
