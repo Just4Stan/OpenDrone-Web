@@ -130,31 +130,6 @@ export function buildSeoMeta({
 }
 
 /**
- * For the localised legal routes `/en/<slug>` + `/nl/<slug>`, return the
- * hreflang alternate list ready to pass into `buildSeoMeta`. Caller must
- * provide the request URL so the helper can build absolute URLs for the
- * link tags (Google prefers absolute).
- */
-export function legalHreflangPairs(
-  slug: string,
-  url: string,
-): HreflangAlternate[] {
-  let origin = 'https://opendrone.be';
-  try {
-    origin = new URL(url).origin;
-  } catch {
-    /* ignore */
-  }
-  const en = `${origin}/en/${slug}`;
-  const nl = `${origin}/nl/${slug}`;
-  return [
-    {lang: 'en', href: en},
-    {lang: 'nl', href: nl},
-    {lang: 'x-default', href: en},
-  ];
-}
-
-/**
  * schema.org Organization JSON-LD — emit in root Layout <head>. Identifies
  * the selling entity (Incutec BV) for search engines, not the OpenDrone
  * product brand.
@@ -182,4 +157,61 @@ export function buildOrgJsonLd(company: CompanyIdentity, siteUrl?: string) {
       name: STORE_NAME,
     },
   };
+}
+
+/**
+ * schema.org Product JSON-LD — emit on PDP. Drives Google rich-result
+ * cards for product listings (price, availability, brand). Skipped when
+ * the variant has no price (combined-listing parents) so we don't post
+ * a malformed offer.
+ */
+type ProductJsonLdInput = {
+  title: string;
+  description?: string | null;
+  imageUrl?: string | null;
+  url: string;
+  vendor?: string | null;
+  sku?: string | null;
+  gtin?: string | null;
+  price?: {amount: string; currencyCode: string} | null;
+  availableForSale: boolean;
+  productHandle: string;
+};
+
+export function buildProductJsonLd(input: ProductJsonLdInput) {
+  const product: Record<string, unknown> = {
+    '@context': 'https://schema.org',
+    '@type': 'Product',
+    name: input.title,
+    url: input.url,
+    productID: input.productHandle,
+  };
+  if (input.description) {
+    product.description = stripHtml(input.description).slice(0, 5000);
+  }
+  if (input.imageUrl) product.image = input.imageUrl;
+  if (input.vendor) {
+    product.brand = {'@type': 'Brand', name: input.vendor};
+  }
+  if (input.sku) product.sku = input.sku;
+  if (input.gtin) product.gtin = input.gtin;
+  if (input.price) {
+    product.offers = {
+      '@type': 'Offer',
+      url: input.url,
+      price: input.price.amount,
+      priceCurrency: input.price.currencyCode,
+      availability: input.availableForSale
+        ? 'https://schema.org/InStock'
+        : 'https://schema.org/OutOfStock',
+      priceValidUntil: nextYearIso(),
+    };
+  }
+  return product;
+}
+
+function nextYearIso(): string {
+  const d = new Date();
+  d.setFullYear(d.getFullYear() + 1);
+  return d.toISOString().slice(0, 10);
 }

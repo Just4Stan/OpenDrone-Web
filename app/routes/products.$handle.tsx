@@ -20,7 +20,7 @@ import {
   LatestCommitSkeleton,
 } from '~/components/LatestCommit';
 import {redirectIfHandleIsLocalized} from '~/lib/redirect';
-import {buildSeoMeta} from '~/lib/seo';
+import {buildSeoMeta, buildProductJsonLd} from '~/lib/seo';
 import {getCompanyIdentity} from '~/lib/company';
 import {getLocaleFromRequest} from '~/lib/i18n';
 import {fetchLatestCommits} from '~/lib/github';
@@ -325,8 +325,30 @@ export default function Product() {
   // the "File 0N · Family" eyebrow is the navigation clue instead.
   void primaryCollection;
 
+  const productJsonLd = buildProductJsonLd({
+    title: product.title,
+    description: product.description,
+    imageUrl: selectedVariant?.image?.url ?? galleryImages[0]?.url ?? null,
+    url: `https://opendrone.be/products/${product.handle}`,
+    vendor: product.vendor,
+    sku: selectedVariant?.sku ?? null,
+    price: selectedVariant?.price
+      ? {
+          amount: selectedVariant.price.amount,
+          currencyCode: selectedVariant.price.currencyCode,
+        }
+      : null,
+    availableForSale: selectedVariant?.availableForSale ?? false,
+    productHandle: product.handle,
+  });
+
   return (
     <div className="product-page">
+      <script
+        type="application/ld+json"
+        // eslint-disable-next-line react/no-danger
+        dangerouslySetInnerHTML={{__html: JSON.stringify(productJsonLd)}}
+      />
       {/* === HERO: headline left, gallery right === */}
       <section className="product-hero">
         <div className="product-hero-copy">
