@@ -38,7 +38,7 @@ type DiscordEnv = {
 // customer's full name (which includes their last name, address lookup,
 // etc.). Extracted here (not in scrubber.ts) so discord.ts has no
 // cross-module dependency.
-function firstNameOnly(full: string): string {
+export function firstNameOnly(full: string): string {
   const token = full.trim().split(/\s+/)[0] ?? '';
   return token.slice(0, 40) || 'Customer';
 }
