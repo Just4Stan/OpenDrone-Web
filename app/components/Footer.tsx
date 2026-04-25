@@ -74,7 +74,7 @@ export function Footer({company, turnstileSiteKey}: FooterProps) {
       <div className="site-footer-inner">
         {/* Newsletter card — visually separated with bg-card + border so
             it reads as its own surface, not as a stretch of empty footer. */}
-        <div className="mb-4 rounded-sm border border-[var(--color-border)] bg-[var(--color-bg-card)] px-5 py-2.5 md:px-6 md:py-3">
+        <div className="mb-4 rounded-sm border border-[var(--color-border)] bg-[var(--color-bg-card)] px-5 py-0 md:px-6">
           <NewsletterSignup
             variant="footer"
             turnstileSiteKey={turnstileSiteKey ?? null}
