@@ -132,6 +132,9 @@ export function HeaderMenu({
         // is duplicated chrome. This skips it in code so we don't have
         // to keep the Shopify admin menu in sync.
         if (url === '/' || url === '') return null;
+        // Catalog + Contact render in the right-side CTA group; skip
+        // them here to avoid duplicate links in the center menu.
+        if (!isMobile && (url === '/collections/all' || url === '/contact')) return null;
         const className = isMobile
           ? 'text-sm font-mono uppercase tracking-wider text-[var(--color-text-muted)] hover:text-[var(--color-text)] transition-colors'
           : 'font-mono text-[11px] uppercase tracking-[0.15em] transition-colors text-[var(--color-text-muted)] hover:text-[var(--color-text)]';
@@ -181,6 +184,32 @@ function HeaderCtas({
   return (
     <nav className="flex items-center gap-5 ml-auto" role="navigation">
       <LangToggle className="header-lang-toggle" />
+      <NavLink
+        prefetch="intent"
+        to="/collections/all"
+        className={({isActive}) =>
+          `font-mono text-[11px] uppercase tracking-[0.15em] transition-colors hidden md:block ${
+            isActive
+              ? 'text-[var(--color-text)]'
+              : 'text-[var(--color-text-muted)] hover:text-[var(--color-text)]'
+          }`
+        }
+      >
+        Catalog
+      </NavLink>
+      <NavLink
+        prefetch="intent"
+        to="/contact"
+        className={({isActive}) =>
+          `font-mono text-[11px] uppercase tracking-[0.15em] transition-colors hidden md:block ${
+            isActive
+              ? 'text-[var(--color-text)]'
+              : 'text-[var(--color-text-muted)] hover:text-[var(--color-text)]'
+          }`
+        }
+      >
+        Contact
+      </NavLink>
       <NavLink
         prefetch="intent"
         to="/account"

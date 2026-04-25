@@ -76,6 +76,13 @@ const HERO_SPACER_VH_MOBILE = 400;
 const HERO_PROGRESS_VH_DESKTOP = 4;
 const HERO_PROGRESS_VH_MOBILE = 2.5;
 
+// Module-scoped flag that survives across remounts of the homepage during
+// a single browser session. Hard refresh tears down the JS module and
+// resets this back to false → splash plays again. Client-side nav back
+// into "/" preserves it → splash + header-hide are skipped so the header
+// doesn't blink out and back in.
+let splashHasPlayedThisSession = false;
+
 export default function Homepage() {
   const scrollRef = useRef(0);
   const rafId = useRef(0);
@@ -84,9 +91,9 @@ export default function Homepage() {
   // finished loading AND a minimum wait has elapsed (so the wordmark
   // always gets a readable beat), or when a max timeout fires as a
   // safety net, or when the user starts scrolling.
-  const [splashSettled, setSplashSettled] = useState(false);
-  const [sceneReady, setSceneReady] = useState(false);
-  const [minWaitElapsed, setMinWaitElapsed] = useState(false);
+  const [splashSettled, setSplashSettled] = useState(splashHasPlayedThisSession);
+  const [sceneReady, setSceneReady] = useState(splashHasPlayedThisSession);
+  const [minWaitElapsed, setMinWaitElapsed] = useState(splashHasPlayedThisSession);
   const [isMobile, setIsMobile] = useState(false);
   const handleSceneReady = useCallback(() => setSceneReady(true), []);
   const fcLabelRef = useRef<HTMLDivElement>(null);
@@ -127,13 +134,17 @@ export default function Homepage() {
   // we signal via a class on <html> that the header CSS can key off.
   // Class is only meaningful inside `.homepage-layout`, so other pages
   // are unaffected.
+  //
+  // No cleanup on unmount: once the splash has played in this browser
+  // session, the class stays on <html>. Removing it on navigation away
+  // caused the header to briefly re-hide when the user came back to "/"
+  // via client-side nav (e.g. clicking the wordmark). The class only
+  // matters inside `.homepage-layout`, so leaving it set has no effect
+  // on other routes.
   useEffect(() => {
     if (!splashSettled) return;
-    const root = document.documentElement;
-    root.classList.add('splash-settled');
-    return () => {
-      root.classList.remove('splash-settled');
-    };
+    splashHasPlayedThisSession = true;
+    document.documentElement.classList.add('splash-settled');
   }, [splashSettled]);
 
   const heroSpacerVh = isMobile ? HERO_SPACER_VH_MOBILE : HERO_SPACER_VH_DESKTOP;

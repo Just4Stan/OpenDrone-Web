@@ -200,7 +200,7 @@ function DiscordWidget({
           title="OpenDrone on Discord"
           src={`https://discord.com/widget?id=${guildId}&theme=dark`}
           width="100%"
-          height="500"
+          height="620"
           loading="lazy"
           sandbox="allow-popups allow-popups-to-escape-sandbox allow-same-origin allow-scripts"
         />
