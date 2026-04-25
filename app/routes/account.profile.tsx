@@ -9,7 +9,16 @@ import {
   useOutletContext,
 } from 'react-router';
 import type {Route} from './+types/account.profile';
+import type {HeadersFunction} from 'react-router';
 import {buildSeoMeta} from '~/lib/seo';
+
+// Customer PII rendered into HTML — never let an intermediate cache or
+// bfcache hold this. React Router v7 only honours leaf-route headers on
+// data requests during navigation, so each authenticated leaf must
+// declare its own Cache-Control even if the parent already does.
+export const headers: HeadersFunction = () => ({
+  'Cache-Control': 'private, no-store',
+});
 
 export type ActionResponse = {
   error: string | null;
