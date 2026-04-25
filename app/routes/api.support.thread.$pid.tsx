@@ -2,7 +2,7 @@ import {data} from 'react-router';
 import type {Route} from './+types/api.support.thread.$pid';
 import {fetchThreadMessages} from '~/lib/support/discord';
 import {SUPPORT_CUSTOMER_PREFILL_QUERY} from '~/graphql/customer-account/SupportPrefillQuery';
-import {listByCustomer, getMeta} from '~/lib/support/ticket-index';
+import {hasTicketStore, listByCustomer, getMeta} from '~/lib/support/ticket-index';
 import {checkRateLimit} from '~/lib/rate-limit';
 import {
   extractFirstName,
@@ -36,7 +36,7 @@ const SELF_PREFIX_RE = /^\*\*([^*]{1,80}?):\*\*(?:\s+([\s\S]*))?$/;
 // Read-only fetch of a specific ticket the signed-in customer owns.
 // Used by /account/support to show closed/non-current threads without
 // needing the support cookie. Auth: customer ID must match the ticket
-// in the KV index. Without TICKETS_KV bound we can't verify ownership
+// in the index. Without the ticket store bound we can't verify ownership
 // safely, so we 404 in that case rather than risk leaking a thread.
 export async function loader({request, context, params}: Route.LoaderArgs) {
   const env = context.env;
@@ -64,7 +64,7 @@ export async function loader({request, context, params}: Route.LoaderArgs) {
     );
   }
 
-  if (!env.TICKETS_KV) {
+  if (!hasTicketStore(env)) {
     return data<ThreadResult>(
       {ok: false, message: 'Ticket history unavailable.', code: 'no-kv'},
       {status: 503},

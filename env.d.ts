@@ -81,11 +81,13 @@ declare global {
     SUPPORT_AI_DRAFTS_ENABLED?: string;
     SUPPORT_AI_MODEL?: string;
 
-    // Stage 6 ticket index — KV binding (provisioned in Oxygen
-    // dashboard). When unset, list operations degrade to a Discord
+    // Stage 6 ticket index — Upstash Redis REST credentials. Oxygen
+    // does not expose Cloudflare KV bindings, so we hit Upstash over
+    // HTTPS instead. When unset, list operations degrade to a Discord
     // forum scan (slow, fine at <100 tickets total). Required before
     // scaling beyond a few hundred tickets.
-    TICKETS_KV?: KVNamespace;
+    UPSTASH_REDIS_REST_URL?: string;
+    UPSTASH_REDIS_REST_TOKEN?: string;
     DISCORD_FEEDBACK_CHANNEL_ID?: string;
 
     // Newsletter / release-notes auto-dispatch
