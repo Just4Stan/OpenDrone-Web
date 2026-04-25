@@ -13,7 +13,7 @@ function stubFetch(impl: FetchStub) {
 
 describe('firstNameOnly', () => {
   it('takes the first whitespace-split token', () => {
-    assert.equal(firstNameOnly('Stefaan Coene'), 'Stefaan');
+    assert.equal(firstNameOnly('Jane Doe'), 'Jane');
   });
 
   it('caps at 40 chars', () => {
@@ -42,8 +42,8 @@ describe('postStaffMetadata', () => {
     const ok = await postStaffMetadata(
       {DISCORD_BOT_TOKEN: 't'},
       'thread-1',
-      '[Stefaan] check',
-      {userName: 'Stefaan Coene', userEmail: 's@example.com'},
+      '[Jane] check',
+      {userName: 'Jane Doe', userEmail: 's@example.com'},
     );
     assert.equal(ok, false);
     assert.equal(calls, 0);
@@ -64,7 +64,7 @@ describe('postStaffMetadata', () => {
         DISCORD_GUILD_ID: 'g1',
       },
       'thread-42',
-      '[Stefaan] check',
+      '[Jane] check',
       {
         userName: 'Test Customer',
         userEmail: 'customer@example.com',
