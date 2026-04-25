@@ -1,6 +1,6 @@
 ## Service client
 
-Appelez le [+32 491 97 83 61](tel:+32491978361) ou envoyez un courriel à [contact@opendrone.be](mailto:contact@opendrone.be). Nous répondons dans les 2 jours ouvrables. Indiquez votre numéro de commande le cas échéant.
+Envoyez un courriel à [contact@opendrone.be](mailto:contact@opendrone.be). Nous répondons dans les 2 jours ouvrables. Indiquez votre numéro de commande le cas échéant. Une ligne téléphonique d’entreprise sera publiée dès qu’Incutec BV aura achevé sa constitution.
 
 ## Problèmes de sécurité
 

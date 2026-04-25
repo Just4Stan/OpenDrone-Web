@@ -97,7 +97,7 @@ Sources :
 ### Phase 1 : À la constitution de la BV
 - [ ] Confirmer l'activation du numéro de TVA
 - [ ] Ouvrir un point d'accès Peppol uniquement en réception jusqu'à ce que la plateforme principale de facturation électronique soit en ligne
-- [ ] Router Peppol vers stan@incutec.eu pour l'instant (scinder vers invoices@ une fois l'infrastructure en place)
+- [ ] Router Peppol vers invoices@incutec.eu (ou un alias temporaire) jusqu’à ce qu’une infrastructure dédiée soit en place
 - [ ] Tester la réception d'une facture Peppol
 
 ### Phase 2 : Pré-lancement

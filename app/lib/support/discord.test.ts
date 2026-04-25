@@ -66,8 +66,8 @@ describe('postStaffMetadata', () => {
       'thread-42',
       '[Stefaan] check',
       {
-        userName: 'Stefaan Coene',
-        userEmail: 'stan.coene@gmail.com',
+        userName: 'Test Customer',
+        userEmail: 'customer@example.com',
         customerId: 'gid://shopify/Customer/24852411842905',
         userAgent: 'Mozilla/5.0 (Macintosh)',
         ipHint: '203.0.113.x',
@@ -76,8 +76,8 @@ describe('postStaffMetadata', () => {
     assert.equal(ok, true);
     assert.match(seenUrl, /\/channels\/staff-channel\/messages$/);
     const payload = JSON.parse(seenBody) as {content: string};
-    assert.match(payload.content, /Stefaan Coene/);
-    assert.match(payload.content, /stan\.coene@gmail\.com/);
+    assert.match(payload.content, /Test Customer/);
+    assert.match(payload.content, /customer@example\.com/);
     assert.match(payload.content, /gid:\/\/shopify\/Customer\/24852411842905/);
     assert.match(payload.content, /Mozilla\/5\.0 \(Macintosh\)/);
     assert.match(payload.content, /203\.0\.113\.x/);

@@ -1,6 +1,6 @@
 ## Customer support
 
-Call [+32 491 97 83 61](tel:+32491978361) or email [contact@opendrone.be](mailto:contact@opendrone.be). We respond within 2 business days. Include your order number if applicable.
+Email [contact@opendrone.be](mailto:contact@opendrone.be). We respond within 2 business days. Include your order number if applicable. A business phone line will be published once Incutec BV completes incorporation.
 
 ## Security issues
 

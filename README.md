@@ -84,7 +84,7 @@ Prerequisites: Node 22/24, npm 10+, Shopify dev-store credentials (ask in `#open
 3. Commit with DCO sign-off: `git commit -s -m "subject"`. Subject ≤60 chars, imperative mood.
 4. Run `npm run lint && npm run typecheck && npm run build` locally.
 5. `gh pr create --web` — CI and Oxygen preview run automatically.
-6. Address feedback with new commits. Stan squash-merges.
+6. Address feedback with new commits. Maintainers squash-merge.
 
 Forgot `-s`? `git commit --amend -s --no-edit && git push --force-with-lease`.
 
