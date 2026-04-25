@@ -43,7 +43,7 @@ const LEGAL_LINKS: Array<{to: string; label: string}> = [
 
 function ColumnHeading({children}: {children: React.ReactNode}) {
   return (
-    <h4 className="font-mono text-[10px] uppercase tracking-[0.2em] text-[var(--color-text-muted)] mb-3">
+    <h4 className="font-mono text-[11px] uppercase tracking-[0.2em] text-[var(--color-text-muted)] mb-3">
       {children}
     </h4>
   );
@@ -86,7 +86,7 @@ export function Footer({company, turnstileSiteKey}: FooterProps) {
             <h3 className="font-display text-sm font-bold tracking-[0.08em] uppercase text-[var(--color-gold)] mb-3">
               OpenDrone
             </h3>
-            <p className="text-[11px] text-[var(--color-text-muted)] mb-3 leading-relaxed">
+            <p className="text-[12px] text-[var(--color-text-muted)] mb-3 leading-relaxed">
               OpenDrone is a product brand of
             </p>
             <CompanyFooterBlock company={company} />
@@ -145,7 +145,7 @@ export function Footer({company, turnstileSiteKey}: FooterProps) {
 
         {/* Bottom bar */}
         <div className="mt-8 pt-5 border-t border-[var(--color-border)] flex flex-col md:flex-row items-center justify-between gap-3">
-          <p className="text-[10px] text-[var(--color-text-muted)] font-mono tracking-wide">
+          <p className="text-[11px] text-[var(--color-text-muted)] font-mono tracking-wide">
             &copy; {new Date().getFullYear()} {company.name}. Hardware:
             CERN-OHL-S. Firmware: GPL/MIT. Open Source Hardware.
           </p>

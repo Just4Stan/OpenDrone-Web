@@ -137,7 +137,7 @@ export function HeaderMenu({
         if (!isMobile && (url === '/collections/all' || url === '/contact')) return null;
         const className = isMobile
           ? 'text-sm font-mono uppercase tracking-wider text-[var(--color-text-muted)] hover:text-[var(--color-text)] transition-colors'
-          : 'font-mono text-[11px] uppercase tracking-[0.15em] transition-colors text-[var(--color-text-muted)] hover:text-[var(--color-text)]';
+          : 'font-mono text-[12px] uppercase tracking-[0.15em] transition-colors text-[var(--color-text-muted)] hover:text-[var(--color-text)]';
 
         if (!url.startsWith('/')) {
           return (
@@ -162,7 +162,7 @@ export function HeaderMenu({
             prefetch="intent"
             to={url}
             className={({isActive}) =>
-              `${isMobile ? 'text-sm tracking-wider' : 'text-[11px] tracking-[0.15em]'} font-mono uppercase transition-colors ${
+              `${isMobile ? 'text-sm tracking-wider' : 'text-[12px] tracking-[0.15em]'} font-mono uppercase transition-colors ${
                 isActive
                   ? 'text-[var(--color-text)]'
                   : 'text-[var(--color-text-muted)] hover:text-[var(--color-text)]'
@@ -188,7 +188,7 @@ function HeaderCtas({
         prefetch="intent"
         to="/collections/all"
         className={({isActive}) =>
-          `font-mono text-[11px] uppercase tracking-[0.15em] transition-colors hidden md:block ${
+          `font-mono text-[12px] uppercase tracking-[0.15em] transition-colors hidden md:block ${
             isActive
               ? 'text-[var(--color-text)]'
               : 'text-[var(--color-text-muted)] hover:text-[var(--color-text)]'
@@ -201,7 +201,7 @@ function HeaderCtas({
         prefetch="intent"
         to="/contact"
         className={({isActive}) =>
-          `font-mono text-[11px] uppercase tracking-[0.15em] transition-colors hidden md:block ${
+          `font-mono text-[12px] uppercase tracking-[0.15em] transition-colors hidden md:block ${
             isActive
               ? 'text-[var(--color-text)]'
               : 'text-[var(--color-text-muted)] hover:text-[var(--color-text)]'
@@ -213,7 +213,7 @@ function HeaderCtas({
       <NavLink
         prefetch="intent"
         to="/account"
-        className="font-mono text-[11px] uppercase tracking-[0.15em] text-[var(--color-text-muted)] hover:text-[var(--color-text)] transition-colors hidden md:block"
+        className="font-mono text-[12px] uppercase tracking-[0.15em] text-[var(--color-text-muted)] hover:text-[var(--color-text)] transition-colors hidden md:block"
       >
         <Suspense fallback="Sign in">
           <Await resolve={isLoggedIn} errorElement="Sign in">
@@ -286,7 +286,7 @@ function CartBadge({count}: {count: number}) {
         <path d="M16 10a4 4 0 01-8 0" />
       </svg>
       {count > 0 && (
-        <span className="absolute -top-1 -right-1.5 bg-[var(--color-gold)] text-[var(--color-bg)] text-[9px] font-bold rounded-full w-3.5 h-3.5 flex items-center justify-center leading-none">
+        <span className="absolute -top-1 -right-1.5 bg-[var(--color-gold)] text-[var(--color-bg)] text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center leading-none">
           {count}
         </span>
       )}
