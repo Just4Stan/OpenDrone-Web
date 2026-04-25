@@ -796,9 +796,12 @@ button.reset {
 }
 
 /* Prose-column wrapper — constrains long-form text inside the rail
-   without breaking alignment with header/footer/product grids. */
+   without breaking alignment with header/footer/product grids.
+   Centred horizontally so legal/contact/search pages don't sit
+   awkwardly against the left edge of the wider rail on desktop. */
 .reading-column {
   max-width: var(--prose-width);
+  margin-inline: auto;
 }
 
 .page-header {
