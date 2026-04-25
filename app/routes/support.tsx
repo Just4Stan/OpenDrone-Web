@@ -509,7 +509,9 @@ function ActiveView({
     } catch {
       /* still navigate away — the cookie cleared if the call landed */
     }
-    void navigate('/support', {replace: true});
+    // Send the user to their account history — the closed thread now
+    // appears under "Resolved" so the conversation isn't lost.
+    void navigate('/account/support', {replace: true});
   }
 
   return (
