@@ -1,7 +1,14 @@
 import {data} from 'react-router';
 import type {Route} from './+types/api.support.cleanup';
-import {deleteThread} from '~/lib/support/discord';
-import {listAllTickets, removeTicket} from '~/lib/support/ticket-index';
+import {deleteThread, fetchAllThreadMessages} from '~/lib/support/discord';
+import {scrubForPublic} from '~/lib/support/scrubber';
+import {
+  archiveTicket,
+  getFeedback,
+  listAllTickets,
+  removeTicket,
+  type ArchivedMessage,
+} from '~/lib/support/ticket-index';
 
 // Stale-ticket sweeper. Triggered on a daily cron (GitHub Actions →
 // curl POST). Walks every ticket meta and deletes the Discord thread +
@@ -71,6 +78,63 @@ export async function action({request, context}: Route.ActionArgs) {
       reason = 'stale';
     }
     if (!reason) continue;
+
+    // Archive the conversation + feedback to Upstash (archive:{tid},
+    // no TTL) before we tear down Discord + the live index. Failure
+    // here is logged but does NOT block deletion — better to lose one
+    // archive record than to leave the thread + index growing forever.
+    const messages = await fetchAllThreadMessages(env, meta.tid).catch(
+      (err) => {
+        console.warn(
+          '[support/cleanup] fetchAllThreadMessages failed',
+          meta.tid,
+          err,
+        );
+        return [];
+      },
+    );
+    const feedback = await getFeedback(env, meta.tid).catch(() => null);
+    const archived: ArchivedMessage[] = messages.map((m) => {
+      const role: 'staff' | 'customer' | 'bot' = m.author.bot
+        ? 'bot'
+        : // Customer-side messages are posted by the bot impersonating
+          // the customer, so they show up as bot=true here. Staff is
+          // any non-bot author. The thread starter (first message,
+          // bot=true) is the customer's intake. We don't have a
+          // reliable role flag in DiscordMessage, so we fall back to
+          // 'bot' for bot-authored and 'staff' for everything else.
+          'staff';
+      return {
+        role,
+        authorFirstName: (
+          m.author.globalName ||
+          m.author.username ||
+          ''
+        )
+          .trim()
+          .split(/\s+/)[0]
+          ?.slice(0, 40) || 'Unknown',
+        content: scrubForPublic(m.content || '').content,
+        createdAt: m.createdAt,
+      };
+    });
+    await archiveTicket(env, {
+      tid: meta.tid,
+      pid: meta.pid,
+      subject: meta.subject,
+      product: meta.product,
+      firmware: meta.firmware,
+      customerId: meta.customerId,
+      openedAt: meta.openedAt,
+      closedAt: meta.closedAt ?? 0,
+      lastActivityAt: meta.lastActivityAt,
+      archivedAt: nowSec,
+      removalReason: reason,
+      messages: archived,
+      feedback,
+    }).catch((err) =>
+      console.warn('[support/cleanup] archive write failed', meta.tid, err),
+    );
 
     const del = await deleteThread(env, meta.tid).catch((err) => {
       console.warn('[support/cleanup] delete failed', meta.tid, err);
