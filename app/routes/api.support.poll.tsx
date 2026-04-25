@@ -38,8 +38,23 @@ import {
 // discriminator, global_name, guild_id, roles, embeds, components, …)
 // is dropped here and never reaches JSON.stringify.
 
+export type PollStats = {
+  // Helper-authored messages delivered in this poll (post-moderation,
+  // post-scrubber). Widget accumulates across polls.
+  deltaVisible: number;
+  // Helper-authored messages held back by the moderation gate or
+  // dropped by the scrubber in this poll. Surfaced as "X awaiting
+  // confirmation" so the customer knows replies exist even if held.
+  deltaPending: number;
+};
+
 type PollResult =
-  | {ok: true; messages: PublicMessage[]; closed: boolean}
+  | {
+      ok: true;
+      messages: PublicMessage[];
+      closed: boolean;
+      stats: PollStats;
+    }
   | {ok: false; message: string; code?: 'no-ticket' | 'thread-gone'};
 
 // Stage 5 summariser threshold: once a thread has grown by this many
@@ -356,8 +371,21 @@ export async function loader({request, context}: Route.LoaderArgs) {
     }
   }
 
+  // Stats for the sidebar. Visible = scrubber-passed helper messages;
+  // pending = held by moderation gate OR dropped by scrubber. Both are
+  // delta values for *this* poll — the widget accumulates across polls.
+  const deltaVisible = projected.filter((m) => m.role === 'helper').length;
+  const deltaPending = filtered.dropped.filter(
+    (d) => !d.message.author.bot,
+  ).length;
+
   return data<PollResult>(
-    {ok: true, messages: projected, closed: thread.archived || thread.locked},
+    {
+      ok: true,
+      messages: projected,
+      closed: thread.archived || thread.locked,
+      stats: {deltaVisible, deltaPending},
+    },
     {headers},
   );
 }

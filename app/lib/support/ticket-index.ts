@@ -34,6 +34,9 @@ export type TicketIndexEntry = {
   lastActivityAt: number; // unix seconds; bumped on every send
   status: TicketStatus;
   feedbackSubmitted?: boolean;
+  // Optional intake fields surfaced in the active-ticket sidebar.
+  product?: string;
+  firmware?: string;
 };
 
 export type TicketMeta = TicketIndexEntry & {
