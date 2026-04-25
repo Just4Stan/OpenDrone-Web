@@ -5,7 +5,7 @@
  * indexes ticket *metadata* so list/count/feedback queries don't require
  * scanning Discord. Built for thousands of tickets per customer.
  *
- * Storage layout (when TICKETS_KV is bound):
+ * Storage layout (when the Upstash store is configured):
  *   tk:{tid}                 -> per-ticket meta (single source of truth)
  *   idx:cust:{customerId}    -> JSON list of {tid, pid, openedAt, closedAt}
  *   idx:email:{emailHashHex} -> same, for anon/email-resume path
@@ -15,13 +15,14 @@
  * still resolvable by tid via tk:{tid}; we just don't paginate further
  * back from the index. At our volume (per-customer), 200 covers years.
  *
- * Fallback: when TICKETS_KV is missing, list operations degrade to a
- * Discord forum scan via findThreadsByEmail. add/close/feedback writes
- * become no-ops on the index side; the Discord thread itself still gets
- * the close marker and feedback post.
+ * Fallback: when UPSTASH_REDIS_REST_URL/TOKEN are unset, list operations
+ * degrade to a Discord forum scan via findThreadsByEmail. add/close/
+ * feedback writes become no-ops on the index side; the Discord thread
+ * itself still gets the close marker and feedback post.
  */
 
 import {findThreadsByEmail} from './discord';
+import {getTicketStore, type TicketStore, type UpstashEnv} from './upstash';
 
 export type TicketStatus = 'open' | 'closed';
 
@@ -48,12 +49,15 @@ export type TicketMeta = TicketIndexEntry & {
 const MAX_INDEX_ENTRIES = 200;
 const META_TTL_SECONDS = 60 * 60 * 24 * 365 * 2; // 2 years
 
-type Env = {
-  TICKETS_KV?: KVNamespace;
+type Env = UpstashEnv & {
   DISCORD_BOT_TOKEN?: string;
   DISCORD_SUPPORT_CHANNEL_ID?: string;
   DISCORD_GUILD_ID?: string;
 };
+
+export function hasTicketStore(env: UpstashEnv): boolean {
+  return getTicketStore(env) !== null;
+}
 
 // Stable, lowercase, no PII leakage in the key itself. Keys are not
 // secrets but emails as raw KV keys would leak via list operations and
@@ -71,7 +75,7 @@ export async function addTicket(
   env: Env,
   meta: TicketMeta,
 ): Promise<void> {
-  const kv = env.TICKETS_KV;
+  const kv = getTicketStore(env);
   if (!kv) return;
   const entry: TicketIndexEntry = {
     tid: meta.tid,
@@ -101,7 +105,7 @@ export async function bumpActivity(
   env: Env,
   tid: string,
 ): Promise<void> {
-  const kv = env.TICKETS_KV;
+  const kv = getTicketStore(env);
   if (!kv) return;
   const meta = await getMeta(env, tid);
   if (!meta) return;
@@ -117,7 +121,7 @@ export async function bumpActivity(
 }
 
 export async function closeTicket(env: Env, tid: string): Promise<void> {
-  const kv = env.TICKETS_KV;
+  const kv = getTicketStore(env);
   if (!kv) return;
   const meta = await getMeta(env, tid);
   if (!meta) return;
@@ -138,7 +142,7 @@ export async function closeTicket(env: Env, tid: string): Promise<void> {
 }
 
 export async function markFeedback(env: Env, tid: string): Promise<void> {
-  const kv = env.TICKETS_KV;
+  const kv = getTicketStore(env);
   if (!kv) return;
   const meta = await getMeta(env, tid);
   if (!meta) return;
@@ -157,7 +161,7 @@ export async function getMeta(
   env: Env,
   tid: string,
 ): Promise<TicketMeta | null> {
-  const kv = env.TICKETS_KV;
+  const kv = getTicketStore(env);
   if (!kv) return null;
   const raw = await kv.get(`tk:${tid}`);
   if (!raw) return null;
@@ -178,7 +182,7 @@ export async function listByCustomer(
   customerId: string,
   opts: ListOpts = {},
 ): Promise<TicketIndexEntry[]> {
-  const kv = env.TICKETS_KV;
+  const kv = getTicketStore(env);
   if (!kv) return [];
   const raw = await kv.get(`idx:cust:${customerId}`);
   return filterAndLimit(parseIndex(raw), opts);
@@ -189,7 +193,7 @@ export async function listByEmail(
   email: string,
   opts: ListOpts = {},
 ): Promise<TicketIndexEntry[]> {
-  const kv = env.TICKETS_KV;
+  const kv = getTicketStore(env);
   if (kv) {
     const ek = await emailKey(email);
     const raw = await kv.get(`idx:email:${ek}`);
@@ -243,7 +247,7 @@ function filterAndLimit(
 }
 
 async function prependIndex(
-  kv: KVNamespace,
+  kv: TicketStore,
   key: string,
   entry: TicketIndexEntry,
 ): Promise<void> {
@@ -255,7 +259,7 @@ async function prependIndex(
 }
 
 async function updateInIndex(
-  kv: KVNamespace,
+  kv: TicketStore,
   meta: TicketMeta,
   mutate: (entry: TicketIndexEntry) => void,
 ): Promise<void> {
@@ -289,7 +293,7 @@ export async function saveFeedback(
   env: Env,
   feedback: Feedback,
 ): Promise<void> {
-  const kv = env.TICKETS_KV;
+  const kv = getTicketStore(env);
   if (!kv) return;
   await kv.put(`fb:${feedback.tid}`, JSON.stringify(feedback), {
     expirationTtl: META_TTL_SECONDS,

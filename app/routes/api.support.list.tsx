@@ -17,10 +17,10 @@ type ListResult =
   | {ok: false; message: string; code?: 'signin-required'};
 
 // Lists tickets for the currently signed-in customer. KV-fast: one
-// indexed read per call. Falls back to an empty list when TICKETS_KV
-// is unbound (tickets still exist in Discord; staff can find them
-// via the forum, the customer-facing /account/support view just
-// won't list them until KV is provisioned).
+// indexed read per call. Falls back to an empty list when the Upstash
+// store is unbound (tickets still exist in Discord; staff can find
+// them via the forum, the customer-facing /account/support view just
+// won't list them until storage is provisioned).
 export async function loader({request, context}: Route.LoaderArgs) {
   const env = context.env;
 

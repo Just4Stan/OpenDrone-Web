@@ -256,8 +256,8 @@ export async function action({request, context}: Route.ActionArgs) {
     const cookie = await signTicket(env, ticket);
 
     // Write ticket meta + per-customer/email index. Fire-and-forget so
-    // a slow KV write doesn't tail the API response. No-op when
-    // TICKETS_KV is unbound.
+    // a slow store write doesn't tail the API response. No-op when the
+    // Upstash store is unbound.
     const indexJob = addTicket(env, {
       tid: thread.id,
       pid,
