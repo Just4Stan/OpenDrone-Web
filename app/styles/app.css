@@ -6272,7 +6272,10 @@ button.reset {
   display: grid;
   grid-template-columns: 1fr;
   gap: 22px;
-  align-items: start;
+  /* stretch so the side-stack matches the Discord widget height — kills
+     the dead space that otherwise opens below the right column on wide
+     viewports where the iframe is taller than two tiles. */
+  align-items: stretch;
 }
 
 @media (min-width: 960px) {
@@ -6285,6 +6288,9 @@ button.reset {
   display: grid;
   gap: 22px;
   grid-template-columns: 1fr;
+  /* fill the row height set by the Discord iframe so the two tiles
+     expand evenly instead of leaving a hole below the second tile. */
+  grid-auto-rows: 1fr;
 }
 
 @media (min-width: 1200px) {
@@ -6305,7 +6311,9 @@ button.reset {
 .contact-discord-widget iframe {
   display: block;
   width: 100%;
-  height: 500px;
+  /* Slightly shorter than before so the right-column tiles can match
+     the iframe height without leaving a gap. */
+  height: 440px;
   border: 0;
   background: transparent;
 }
@@ -6393,4 +6401,1039 @@ button.reset {
    bordered card so it sits inside the two-pane shell. */
 .account-support-detail .support-thread {
   border: none;
+}
+
+/* =========================================================
+   Release notes / newsletter (Apr 2026)
+   /releases archive · /releases/<handle> · /newsletter/unsubscribed
+   <LatestReleaseStrip /> homepage cell. Email template inline-CSS lives
+   in app/lib/newsletter/render.ts. rn- prefix scopes everything cleanly.
+   Tokens: existing --od-* aliases; only fonts on the page (no Caveat).
+   ========================================================= */
+
+:root {
+  --rn-gold-tint: rgba(184, 146, 46, 0.06);
+  --rn-copper: var(--od-pcb-copper);
+}
+
+/* /releases archive ----------------------------------------------- */
+.rn-archive-head {
+  display: grid;
+  grid-template-columns: 1fr 320px;
+  gap: 32px;
+  align-items: end;
+  padding: 12px 0 28px;
+  border-bottom: 1.5px solid var(--od-line-strong);
+  margin-bottom: 28px;
+}
+.rn-archive-head .rn-eyebrow {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--od-ink-dim);
+  margin: 0 0 10px;
+  display: flex;
+  gap: 14px;
+  align-items: center;
+}
+.rn-archive-head .rn-eyebrow .rn-rss {
+  display: inline-flex;
+  gap: 6px;
+  color: var(--od-pcb-gold-2);
+  text-decoration: none;
+}
+.rn-archive-head h1 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: clamp(40px, 5.4vw, 72px);
+  line-height: 0.95;
+  letter-spacing: -0.02em;
+  margin: 0 0 14px;
+}
+.rn-archive-head h1 em {
+  font-style: normal;
+  color: var(--od-pcb-gold-2);
+}
+.rn-archive-head .rn-sub {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  line-height: 1.7;
+  color: var(--od-ink-dim);
+  max-width: 56ch;
+  margin: 0;
+}
+@media (max-width: 768px) {
+  .rn-archive-head {
+    grid-template-columns: 1fr;
+    gap: 18px;
+  }
+}
+
+.rn-sub-cta {
+  border: 1.5px solid var(--od-pcb-gold);
+  background: var(--rn-gold-tint);
+  border-radius: 4px;
+  padding: 16px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.rn-sub-cta .rn-k {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--od-pcb-gold-2);
+}
+.rn-sub-cta p {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--od-ink);
+  line-height: 1.55;
+  margin: 0;
+}
+.rn-sub-cta-link {
+  display: inline-block;
+  background: var(--od-pcb-gold);
+  color: #1b1400;
+  padding: 10px 14px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  text-decoration: none;
+  border-radius: 3px;
+  text-align: center;
+}
+.rn-sub-cta-link:hover {
+  background: var(--od-pcb-gold-2);
+}
+
+.rn-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 18px;
+  padding-bottom: 18px;
+  border-bottom: 1.5px dashed var(--od-line);
+}
+.rn-filters .rn-k {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--od-ink-faint);
+  margin-right: 4px;
+}
+.rn-filter {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 11px;
+  border: 1.5px solid var(--od-line-strong);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--od-ink-dim);
+  cursor: pointer;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  text-decoration: none;
+}
+.rn-filter:hover {
+  color: var(--od-ink);
+  border-color: var(--od-ink-dim);
+}
+.rn-filter.is-on {
+  color: var(--od-pcb-gold-2);
+  border-color: var(--od-pcb-gold);
+  background: var(--rn-gold-tint);
+}
+.rn-filter .rn-n {
+  color: var(--od-ink-faint);
+  font-size: 9px;
+  margin-left: 2px;
+}
+.rn-filter.is-on .rn-n {
+  color: var(--od-pcb-gold);
+}
+
+.rn-list {
+  display: flex;
+  flex-direction: column;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.rn-row {
+  display: grid;
+  grid-template-columns: 110px 92px 1fr 96px;
+  gap: 24px;
+  padding: 22px 0;
+  border-bottom: 1.5px solid var(--od-line);
+  align-items: start;
+  list-style: none;
+}
+.rn-row .rn-row-link {
+  display: contents;
+  color: inherit;
+  text-decoration: none;
+}
+.rn-row:hover {
+  background: rgba(255, 255, 255, 0.015);
+}
+.rn-row .rn-date {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--od-ink-dim);
+  letter-spacing: 0.04em;
+  padding-top: 2px;
+}
+.rn-row .rn-body {
+  min-width: 0;
+}
+.rn-row .rn-headline {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 19px;
+  line-height: 1.25;
+  color: var(--od-ink);
+  margin: 0 0 6px;
+  letter-spacing: -0.005em;
+}
+.rn-row:hover .rn-headline {
+  color: var(--od-pcb-gold-2);
+}
+.rn-row .rn-summary {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 1.65;
+  color: var(--od-ink-dim);
+  margin: 0 0 8px;
+  max-width: 68ch;
+}
+.rn-row .rn-tagrow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.rn-row .rn-thumb {
+  aspect-ratio: 4/3;
+  border-radius: 3px;
+  background: var(--od-bg-2);
+  border: 1.5px dashed var(--od-line-strong);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--od-ink-faint);
+  overflow: hidden;
+}
+.rn-row .rn-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.rn-row .rn-thumb.is-empty {
+  visibility: hidden;
+}
+@media (max-width: 768px) {
+  .rn-row {
+    grid-template-columns: 1fr;
+    gap: 8px;
+    padding: 18px 0;
+  }
+  .rn-row .rn-thumb {
+    display: none;
+  }
+  .rn-row .rn-date-version {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+  .rn-row .rn-headline {
+    font-size: 17px;
+  }
+}
+
+.rn-version {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 9px;
+  border: 1.5px solid var(--od-pcb-gold);
+  border-radius: 3px;
+  background: var(--rn-gold-tint);
+  color: var(--od-pcb-gold-2);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  line-height: 1.4;
+  width: fit-content;
+}
+.rn-version.is-empty {
+  visibility: hidden;
+}
+
+.rn-tag {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--od-ink-faint);
+  padding: 2px 7px;
+  border: 1px solid var(--od-line);
+  border-radius: 2px;
+}
+.rn-tag.is-firmware {
+  color: var(--od-pcb-green-glow);
+  border-color: var(--od-pcb-green-2);
+}
+.rn-tag.is-hardware {
+  color: var(--od-pcb-gold-2);
+  border-color: var(--od-pcb-gold);
+}
+.rn-tag.is-software {
+  color: var(--od-ink-dim);
+  border-color: var(--od-ink-faint);
+}
+.rn-tag.is-logistics,
+.rn-tag.is-milestone {
+  color: var(--rn-copper);
+  border-color: var(--rn-copper);
+}
+
+.rn-year {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin: 32px 0 8px;
+}
+.rn-year:first-of-type {
+  margin-top: 0;
+}
+.rn-year .rn-year-n {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 28px;
+  color: var(--od-ink-faint);
+  letter-spacing: 0.02em;
+}
+.rn-year .rn-year-rule {
+  flex: 1;
+  height: 1px;
+  background: var(--od-line);
+}
+.rn-year .rn-year-count {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--od-ink-faint);
+}
+
+.rn-empty {
+  margin: 48px auto;
+  max-width: 480px;
+  text-align: center;
+  padding: 40px 24px;
+  border: 1.5px dashed var(--od-line-strong);
+  border-radius: 6px;
+}
+.rn-empty .rn-empty-icon {
+  font-family: var(--font-mono);
+  font-size: 28px;
+  color: var(--od-pcb-gold-2);
+  margin-bottom: 14px;
+}
+.rn-empty h3 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 22px;
+  margin: 0 0 8px;
+  letter-spacing: -0.01em;
+}
+.rn-empty p {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 1.7;
+  color: var(--od-ink-dim);
+  margin: 0 0 18px;
+}
+
+/* /releases/<handle> ---------------------------------------------- */
+.rn-post-page {
+  max-width: 920px;
+  margin: 0 auto;
+}
+.rn-post-crumb {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--od-ink-dim);
+  margin-bottom: 28px;
+}
+.rn-post-crumb a {
+  color: inherit;
+  text-decoration: none;
+}
+.rn-post-crumb a:hover {
+  color: var(--od-pcb-gold-2);
+}
+.rn-post-crumb .rn-sep {
+  color: var(--od-ink-faint);
+  margin: 0 8px;
+}
+.rn-post-meta {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  flex-wrap: wrap;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--od-ink-dim);
+  margin-bottom: 14px;
+}
+.rn-post-meta .rn-dot {
+  color: var(--od-ink-faint);
+}
+.rn-post-title {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: clamp(36px, 4.6vw, 60px);
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+  margin: 0 0 18px;
+  text-wrap: pretty;
+}
+.rn-post-title em {
+  font-style: normal;
+  color: var(--od-pcb-gold-2);
+}
+.rn-post-deck {
+  font-family: var(--font-mono);
+  font-size: 14px;
+  line-height: 1.7;
+  color: var(--od-ink-dim);
+  max-width: 64ch;
+  margin: 0 0 36px;
+}
+.rn-post-hero {
+  aspect-ratio: 16 / 9;
+  margin: 0 0 40px;
+  border: 1.5px solid var(--od-line-strong);
+  border-radius: 4px;
+  background: var(--od-bg-2);
+  overflow: hidden;
+}
+.rn-post-hero img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.rn-post-body {
+  font-family: var(--font-mono);
+  font-size: 14px;
+  line-height: 1.75;
+  color: var(--od-ink);
+}
+.rn-post-body > * + * {
+  margin-top: 18px;
+}
+.rn-post-body h2 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 28px;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+  margin: 56px 0 14px;
+  padding-top: 22px;
+  border-top: 1.5px solid var(--od-line-strong);
+}
+.rn-post-body h2:first-child {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: 0;
+}
+.rn-post-body h3 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 18px;
+  line-height: 1.3;
+  margin: 28px 0 10px;
+}
+.rn-post-body p {
+  margin: 0 0 14px;
+  max-width: 70ch;
+}
+.rn-post-body a {
+  color: var(--od-pcb-gold-2);
+  text-decoration: underline;
+}
+.rn-post-body ul,
+.rn-post-body ol {
+  margin: 0 0 14px;
+  padding-left: 22px;
+  max-width: 70ch;
+}
+.rn-post-body li {
+  margin-bottom: 6px;
+}
+.rn-post-body code {
+  font-family: var(--font-mono);
+  font-size: 0.92em;
+  background: rgba(255, 255, 255, 0.04);
+  padding: 1px 6px;
+  border-radius: 2px;
+  color: var(--od-pcb-green-glow);
+  border: 1px solid var(--od-line);
+}
+.rn-post-body pre {
+  background: #06080a;
+  border: 1.5px solid var(--od-pcb-green-2);
+  border-radius: 4px;
+  padding: 14px 18px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--od-pcb-green-glow);
+  line-height: 1.7;
+  overflow-x: auto;
+}
+.rn-post-body pre code {
+  background: transparent;
+  border: 0;
+  padding: 0;
+  color: inherit;
+  font-size: inherit;
+}
+.rn-post-body table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  border-top: 1.5px solid var(--od-line-strong);
+}
+.rn-post-body th,
+.rn-post-body td {
+  padding: 9px 12px 9px 0;
+  border-bottom: 1px solid var(--od-line);
+  text-align: left;
+  vertical-align: top;
+}
+.rn-post-body th {
+  color: var(--od-ink-dim);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+.rn-post-body img {
+  max-width: 100%;
+  height: auto;
+  border: 1.5px solid var(--od-line-strong);
+  border-radius: 3px;
+}
+.rn-post-body blockquote {
+  margin: 0 0 14px;
+  padding-left: 14px;
+  border-left: 2px solid var(--od-pcb-gold);
+  color: var(--od-ink-dim);
+}
+
+.rn-post-footer {
+  margin-top: 56px;
+  padding-top: 24px;
+  border-top: 1.5px solid var(--od-line-strong);
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+@media (max-width: 768px) {
+  .rn-post-footer {
+    grid-template-columns: 1fr;
+  }
+}
+.rn-pn {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 16px 18px;
+  border: 1.5px solid var(--od-line-strong);
+  border-radius: 4px;
+  text-decoration: none;
+  color: var(--od-ink);
+  cursor: pointer;
+  transition: border-color 0.12s, background 0.12s;
+}
+.rn-pn:hover {
+  border-color: var(--od-pcb-gold);
+  background: var(--rn-gold-tint);
+}
+.rn-pn .rn-k {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--od-ink-faint);
+}
+.rn-pn.rn-next {
+  text-align: right;
+  align-items: flex-end;
+}
+@media (max-width: 768px) {
+  .rn-pn.rn-next {
+    text-align: left;
+    align-items: flex-start;
+  }
+}
+.rn-pn .rn-pn-title {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 14px;
+  line-height: 1.3;
+}
+.rn-pn .rn-pn-date {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--od-ink-faint);
+}
+
+.rn-post-subscribe {
+  margin-top: 28px;
+  padding: 22px 24px;
+  border: 1.5px solid var(--od-pcb-gold);
+  background: var(--rn-gold-tint);
+  border-radius: 4px;
+  display: flex;
+  gap: 24px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.rn-post-subscribe .rn-ps-text {
+  flex: 1 1 280px;
+  min-width: 0;
+}
+.rn-post-subscribe h4 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 18px;
+  margin: 0 0 6px;
+  letter-spacing: -0.005em;
+}
+.rn-post-subscribe p {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--od-ink-dim);
+  margin: 0;
+}
+
+/* /newsletter/unsubscribed ---------------------------------------- */
+.rn-unsub-page {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 60vh;
+  padding: 40px 24px;
+}
+.rn-unsub-card {
+  width: 100%;
+  max-width: 480px;
+  text-align: center;
+  border: 1.5px solid var(--od-line-strong);
+  border-radius: 4px;
+  padding: 40px 32px;
+  background: var(--od-bg-2);
+}
+.rn-unsub-mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  border: 1.5px solid var(--od-pcb-green-2);
+  border-radius: 4px;
+  background: rgba(31, 77, 44, 0.18);
+  color: var(--od-pcb-green-glow);
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 22px;
+  margin-bottom: 18px;
+}
+.rn-unsub-card h1 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 28px;
+  line-height: 1.15;
+  letter-spacing: -0.01em;
+  margin: 0 0 10px;
+}
+.rn-unsub-card p {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  line-height: 1.7;
+  color: var(--od-ink-dim);
+  margin: 0 0 22px;
+}
+.rn-unsub-resub {
+  display: inline-block;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--od-pcb-gold-2);
+  border-bottom: 1px solid var(--od-pcb-gold);
+  padding-bottom: 2px;
+  text-decoration: none;
+}
+.rn-unsub-resub:hover {
+  color: var(--od-pcb-gold);
+}
+.rn-unsub-id {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--od-ink-faint);
+  letter-spacing: 0.04em;
+  margin-top: 18px;
+  padding-top: 14px;
+  border-top: 1px dashed var(--od-line);
+}
+
+/* Homepage strip — three variants --------------------------------- */
+.rn-strip {
+  border: 1.5px solid var(--od-line-strong);
+  border-radius: 4px;
+  background: var(--od-bg-2);
+  padding: 18px 22px;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 22px;
+  align-items: center;
+  text-decoration: none;
+  color: inherit;
+}
+.rn-strip:hover {
+  border-color: var(--od-pcb-gold);
+}
+.rn-strip-eyebrow {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--od-pcb-gold-2);
+  border-right: 1.5px solid var(--od-line);
+  padding-right: 22px;
+  white-space: nowrap;
+}
+.rn-strip-eyebrow .rn-strip-date {
+  color: var(--od-ink-faint);
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  text-transform: none;
+}
+.rn-strip-body {
+  min-width: 0;
+}
+.rn-strip-headline {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 18px;
+  line-height: 1.25;
+  letter-spacing: -0.005em;
+  margin: 0 0 4px;
+}
+.rn-strip-summary {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 1.55;
+  color: var(--od-ink-dim);
+  margin: 0;
+  max-width: 64ch;
+}
+.rn-strip-cta {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--od-ink-dim);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.rn-strip:hover .rn-strip-cta {
+  color: var(--od-pcb-gold-2);
+}
+.rn-strip.is-card {
+  grid-template-columns: 1fr;
+  padding: 22px;
+}
+.rn-strip.is-card .rn-strip-eyebrow {
+  border-right: 0;
+  padding-right: 0;
+  flex-direction: row;
+  gap: 14px;
+}
+.rn-strip.is-card .rn-strip-headline {
+  font-size: 22px;
+  margin-top: 8px;
+}
+.rn-strip.is-rail {
+  display: block;
+  padding: 0;
+  background: transparent;
+  border: 0;
+}
+.rn-strip.is-rail .rn-strip-rail-head {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--od-ink-dim);
+  margin-bottom: 10px;
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+.rn-strip.is-rail .rn-strip-rail-head a {
+  color: var(--od-pcb-gold-2);
+  text-decoration: none;
+}
+.rn-strip.is-rail .rn-strip-row {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 18px;
+  align-items: baseline;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--od-line);
+  text-decoration: none;
+  color: inherit;
+}
+.rn-strip.is-rail .rn-strip-row:first-of-type {
+  border-top: 1.5px solid var(--od-line-strong);
+}
+.rn-strip.is-rail .rn-strip-row:last-of-type {
+  border-bottom: 1.5px solid var(--od-line-strong);
+}
+.rn-strip.is-rail .rn-strip-row:hover {
+  background: rgba(255, 255, 255, 0.015);
+}
+.rn-strip.is-rail .rn-rail-date {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--od-ink-faint);
+  letter-spacing: 0.04em;
+}
+.rn-strip.is-rail .rn-rail-headline {
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: 14px;
+  color: var(--od-ink);
+  line-height: 1.3;
+}
+.rn-strip.is-rail .rn-rail-version {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--od-pcb-gold-2);
+  letter-spacing: 0.06em;
+}
+@media (max-width: 768px) {
+  .rn-strip {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+  .rn-strip-eyebrow {
+    border-right: 0;
+    padding-right: 0;
+    flex-direction: row;
+    gap: 14px;
+  }
+}
+
+/* =========================================================
+   /support active state — sidebar + main layout (Apr 2026)
+   Two-col grid: ticket meta + replies sidebar on the left,
+   chat thread on the right. The .support-thread keeps its
+   original bordered card so it visually anchors. Composer
+   spans the full main-column width.
+   ========================================================= */
+
+.support-active-layout {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 22px;
+  align-items: start;
+  width: 100%;
+}
+
+@media (min-width: 1024px) {
+  .support-active-layout {
+    grid-template-columns: minmax(280px, 340px) 1fr;
+  }
+}
+
+@media (min-width: 1480px) {
+  .support-active-layout {
+    grid-template-columns: minmax(320px, 380px) 1fr;
+  }
+}
+
+/* Cancel the earlier "drop the outer card" override now that the
+   thread lives inside the sidebar layout. The default .support-thread
+   bordered card is the right look here. */
+.support-active-layout > .support-thread {
+  height: calc(100vh - var(--header-height) - 80px);
+  max-height: 880px;
+}
+.support-active-layout > .support-thread .support-thread-head,
+.support-active-layout > .support-thread .support-thread-log,
+.support-active-layout > .support-thread .support-composer {
+  max-width: none;
+  margin: 0;
+  width: auto;
+  padding-left: 22px;
+  padding-right: 22px;
+}
+.support-active-layout > .support-thread .support-composer {
+  padding-top: 12px;
+  padding-bottom: 14px;
+  background: var(--od-bg-2);
+  border-top: 1.5px solid var(--od-line-strong);
+  position: static;
+}
+.support-active-layout > .support-thread .support-composer-row {
+  width: 100%;
+}
+.support-active-layout > .support-thread .support-composer-textarea {
+  flex: 1 1 0%;
+  min-width: 0;
+  width: auto;
+}
+
+/* Sidebar (cards stacked vertically, sticky on tall viewports) */
+.support-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  position: sticky;
+  top: calc(var(--header-height) + 16px);
+  align-self: start;
+  max-height: calc(100vh - var(--header-height) - 32px);
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--od-line-strong) transparent;
+  padding-right: 4px;
+}
+@media (max-width: 1023px) {
+  .support-sidebar {
+    position: static;
+    max-height: none;
+    overflow: visible;
+  }
+}
+
+.support-sidebar-card {
+  background: var(--od-bg-2);
+  border: 1.5px solid var(--od-line-strong);
+  border-radius: 4px;
+  padding: 16px 18px;
+}
+.support-sidebar-card .od-tile-eyebrow {margin: 0 0 12px;}
+
+.support-sidebar-rows {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.support-sidebar-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+  font-size: 12px;
+  line-height: 1.45;
+}
+.support-sidebar-row dt {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--od-ink-dim);
+  margin: 0;
+  flex-shrink: 0;
+}
+.support-sidebar-row dd {
+  margin: 0;
+  color: var(--od-ink);
+  text-align: right;
+  word-break: break-word;
+}
+.support-sidebar-mono {font-family: var(--font-mono);}
+
+.support-sidebar-counts {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+.support-sidebar-count {
+  background: var(--od-bg);
+  border: 1.5px solid var(--od-line-strong);
+  border-radius: 4px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.support-sidebar-count-num {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 26px;
+  line-height: 1;
+  color: var(--od-pcb-gold-2);
+  letter-spacing: -0.01em;
+}
+.support-sidebar-count-label {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--od-ink-dim);
+}
+.support-sidebar-help {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--od-ink-faint);
+  margin: 0;
+}
+
+.support-sidebar-faq .support-sidebar-links {
+  list-style: none;
+  margin: 0 0 12px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.support-sidebar-faq .support-sidebar-links a {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--od-ink);
+  text-decoration: none;
+  border-bottom: 1px dashed var(--od-line-strong);
+  padding-bottom: 6px;
+  display: inline-block;
+}
+.support-sidebar-faq .support-sidebar-links a:hover {
+  color: var(--od-pcb-gold-2);
+  border-bottom-color: var(--od-pcb-gold);
 }

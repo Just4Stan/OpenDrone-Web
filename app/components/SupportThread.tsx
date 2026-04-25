@@ -34,8 +34,15 @@ type LocalMessage = ThreadMessage & {
   pending?: boolean;
 };
 
+type PollStats = {deltaVisible: number; deltaPending: number};
+
 type PollResponse =
-  | {ok: true; messages: ThreadMessage[]; closed: boolean}
+  | {
+      ok: true;
+      messages: ThreadMessage[];
+      closed: boolean;
+      stats?: PollStats;
+    }
   | {ok: false; message: string; code?: string};
 
 type SendResponse =
@@ -62,6 +69,10 @@ export type SupportThreadInitial = {
   subject: string;
   status: 'open' | 'awaiting' | 'progress' | 'resolved';
   customerName: string;
+  // Optional intake metadata surfaced in the active-ticket sidebar.
+  product?: string;
+  firmware?: string;
+  openedAt?: number; // unix seconds
 };
 
 export interface SupportThreadProps {
@@ -95,6 +106,11 @@ export function SupportThread({
   const [dropActive, setDropActive] = useState(false);
   const [closed, setClosed] = useState(ticket.status === 'resolved');
   const [error, setError] = useState<string | null>(null);
+  // Pending replies = staff messages held by the moderation gate or
+  // dropped by the scrubber. They never appear in `messages` (that's
+  // post-projection) so we have to track them via the poll's stats.
+  // Visible reply count is derived from messages directly via useMemo.
+  const [pendingReplies, setPendingReplies] = useState<number>(0);
 
   const logRef = useRef<HTMLDivElement | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -155,6 +171,9 @@ export function SupportThread({
         const json = (await res.json()) as PollResponse;
         if (json.ok && json.messages.length) {
           setMessages((prev) => mergeMessages(prev, json.messages));
+        }
+        if (json.ok && json.stats?.deltaPending) {
+          setPendingReplies((n) => n + json.stats!.deltaPending);
         }
         if (json.ok && json.closed && !closed) {
           setClosed(true);
@@ -290,9 +309,22 @@ export function SupportThread({
   }
 
   const hasMessages = messages.length > 0;
+  const visibleReplies = useMemo(
+    () => messages.filter((m) => m.role === 'helper').length,
+    [messages],
+  );
   const status = closed ? 'resolved' : ticket.status;
 
-  return (
+  const sidebar =
+    mode === 'live' && !embedded ? (
+      <SupportThreadSidebar
+        ticket={ticket}
+        visibleReplies={visibleReplies}
+        pendingReplies={pendingReplies}
+      />
+    ) : null;
+
+  const main = (
     <section
       aria-label="Support ticket"
       className="support-thread"
@@ -335,10 +367,12 @@ export function SupportThread({
             <div className="od-icon-big" aria-hidden="true">
               ⌗
             </div>
-            <h3>Ticket opened — we&rsquo;ve got it.</h3>
+            <h3>Sent to our Discord — members will reply ASAP.</h3>
             <p>
-              We&rsquo;ll reply here when someone&rsquo;s on it, and email you
-              so you don&rsquo;t need to keep this tab open.
+              Your message was posted as a private thread. The first
+              member to grab it will reply here. We&rsquo;ll email you the
+              moment a moderator confirms an answer, so you don&rsquo;t
+              need to keep this tab open.
             </p>
           </div>
         ) : (
@@ -359,7 +393,12 @@ export function SupportThread({
       </div>
 
       {mode === 'live' && !closed ? (
-        <form className="support-composer" onSubmit={handleSend}>
+        <form
+          className="support-composer"
+          onSubmit={(e) => {
+            void handleSend(e);
+          }}
+        >
           <div className="support-composer-row">
             <label className="sr-only" htmlFor={composerId}>
               Reply to ticket
@@ -445,6 +484,112 @@ export function SupportThread({
         </div>
       ) : null}
     </section>
+  );
+
+  // Embedded inside /account/support detail pane → no sidebar, just the
+  // main column. Otherwise wrap main + sidebar in the layout grid.
+  if (embedded || !sidebar) return main;
+  return (
+    <div className="support-active-layout">
+      {sidebar}
+      {main}
+    </div>
+  );
+}
+
+function SupportThreadSidebar({
+  ticket,
+  visibleReplies,
+  pendingReplies,
+}: {
+  ticket: SupportThreadInitial;
+  visibleReplies: number;
+  pendingReplies: number;
+}) {
+  const opened = ticket.openedAt
+    ? new Date(ticket.openedAt * 1000).toLocaleString(undefined, {
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+      })
+    : null;
+  return (
+    <aside className="support-sidebar" aria-label="Ticket details">
+      <section className="support-sidebar-card">
+        <p className="od-tile-eyebrow">→ TICKET DETAILS</p>
+        <dl className="support-sidebar-rows">
+          <div className="support-sidebar-row">
+            <dt>Ticket</dt>
+            <dd className="support-sidebar-mono">#{ticket.pid || '—'}</dd>
+          </div>
+          {opened ? (
+            <div className="support-sidebar-row">
+              <dt>Opened</dt>
+              <dd className="support-sidebar-mono">{opened}</dd>
+            </div>
+          ) : null}
+          {ticket.product ? (
+            <div className="support-sidebar-row">
+              <dt>Product</dt>
+              <dd>{ticket.product}</dd>
+            </div>
+          ) : null}
+          {ticket.firmware ? (
+            <div className="support-sidebar-row">
+              <dt>Firmware</dt>
+              <dd className="support-sidebar-mono">{ticket.firmware}</dd>
+            </div>
+          ) : null}
+        </dl>
+      </section>
+
+      <section className="support-sidebar-card">
+        <p className="od-tile-eyebrow">⌘ REPLIES</p>
+        <div className="support-sidebar-counts">
+          <div className="support-sidebar-count">
+            <span className="support-sidebar-count-num">{visibleReplies}</span>
+            <span className="support-sidebar-count-label">visible</span>
+          </div>
+          <div className="support-sidebar-count">
+            <span className="support-sidebar-count-num">{pendingReplies}</span>
+            <span className="support-sidebar-count-label">
+              awaiting confirmation
+            </span>
+          </div>
+        </div>
+        {pendingReplies > 0 ? (
+          <p className="support-sidebar-help">
+            A moderator approves replies before you see them — protects you
+            from drive-by misinformation.
+          </p>
+        ) : null}
+      </section>
+
+      <section className="support-sidebar-card support-sidebar-faq">
+        <p className="od-tile-eyebrow">↗ WHILE YOU WAIT</p>
+        <ul className="support-sidebar-links">
+          <li>
+            <a href="https://discord.gg/ABajnacUsS" target="_blank" rel="noreferrer noopener">
+              Search the Discord — someone may have asked already →
+            </a>
+          </li>
+          <li>
+            <a href="/blogs/releases" target="_blank" rel="noreferrer noopener">
+              Latest release notes →
+            </a>
+          </li>
+          <li>
+            <a href="/firmware-partners" target="_blank" rel="noreferrer noopener">
+              Firmware partner docs →
+            </a>
+          </li>
+        </ul>
+        <p className="support-sidebar-help">
+          AI suggestions land here once the bot has read your ticket.
+        </p>
+      </section>
+    </aside>
   );
 }
 

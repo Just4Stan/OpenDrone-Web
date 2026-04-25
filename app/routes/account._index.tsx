@@ -272,9 +272,8 @@ function CommunityCard() {
         The work happens on Discord.
       </h3>
       <p className="account-dashboard-card-lede">
-        Firmware help, build logs, release threads. A real answer in
-        minutes, usually from someone who&rsquo;s shipped the exact thing
-        you&rsquo;re debugging.
+        Firmware help, build logs, release threads. Same engineers who
+        designed the boards answer there.
       </p>
       <a
         href="https://discord.gg/ABajnacUsS"

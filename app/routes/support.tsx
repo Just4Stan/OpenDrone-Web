@@ -30,6 +30,9 @@ type LoaderData =
         subject: string;
         status: 'open' | 'awaiting' | 'progress' | 'resolved';
         customerName: string;
+        product?: string;
+        firmware?: string;
+        openedAt: number;
       };
     };
 
@@ -52,6 +55,9 @@ export async function loader({request, context}: Route.LoaderArgs) {
           ? S
           : never,
         customerName: cookieTicket.name,
+        product: meta?.product,
+        firmware: meta?.firmware,
+        openedAt: meta?.openedAt ?? cookieTicket.createdAt,
       },
     } satisfies LoaderData;
   }
@@ -255,7 +261,7 @@ function IntakeView({
         | {ok: false; message: string; code?: string};
       if (json.ok) {
         // Loader on /support will see the new cookie and render the active state.
-        navigate('/support', {replace: true});
+        void navigate('/support', {replace: true});
       } else {
         if ('code' in json && json.code === 'signin-required') {
           window.location.href = `/account/login?return_to=${encodeURIComponent('/support')}`;
@@ -291,7 +297,9 @@ function IntakeView({
           <form
             id={formId}
             className="support-intake-form"
-            onSubmit={handleSubmit}
+            onSubmit={(e) => {
+              void handleSubmit(e);
+            }}
             noValidate
           >
             <div className="od-field-row">
@@ -333,15 +341,20 @@ function IntakeView({
 
             <div className="od-field">
               <label htmlFor="sup-subj">
-                Subject <span className="od-opt">— optional</span>
+                Subject{' '}
+                <span className="od-req" aria-label="required">
+                  *
+                </span>
               </label>
               <input
                 id="sup-subj"
                 name="subject"
                 type="text"
                 className="od-input"
+                required
+                minLength={4}
                 maxLength={120}
-                placeholder="A short title helps us route it"
+                placeholder="A short title — what's the issue in 5 words?"
                 disabled={busy}
               />
             </div>
@@ -498,7 +511,7 @@ function ActiveView({
     } catch {
       /* still navigate away — the cookie cleared if the call landed */
     }
-    navigate('/support', {replace: true});
+    void navigate('/support', {replace: true});
   }
 
   return (

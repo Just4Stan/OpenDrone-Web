@@ -94,7 +94,7 @@ const COPY = {
   discordEyebrow: '↗ PRIMARY · LIVE NOW',
   discordTitle: 'Join the OpenDrone Discord',
   discordLede:
-    'Direct line to the people building the boards. Show your bench, post your logs, get answers in minutes.',
+    'Direct line to the people building the boards. Show your bench, post your logs, get feedback.',
   discordCta: 'Go to server →',
   onlineLabel: 'online',
   membersLabel: 'members',

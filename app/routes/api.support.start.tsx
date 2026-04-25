@@ -5,6 +5,7 @@ import {
   createSupportThread,
   firstNameOnly,
   postStaffMetadata,
+  postToThread,
 } from '~/lib/support/discord';
 import {sendResumeLink} from '~/lib/support/email';
 import {
@@ -27,7 +28,6 @@ import {
   formatDraftForDiscord,
   generateDraft,
 } from '~/lib/support/ai-draft';
-import {postToThread} from '~/lib/support/discord';
 import {addTicket} from '~/lib/support/ticket-index';
 
 type StartResult =
@@ -106,6 +106,16 @@ export async function action({request, context}: Route.ActionArgs) {
 
   if (honeypot) {
     return data<StartResult>({ok: true, ticketId: 'drop'});
+  }
+  if (!subject || subject.length < 4) {
+    return data<StartResult>(
+      {
+        ok: false,
+        message: 'Add a short subject so we can find your ticket later.',
+        field: 'message',
+      },
+      {status: 400},
+    );
   }
   if (!message || message.length < 5 || message.length > 4000) {
     return data<StartResult>(
@@ -259,6 +269,8 @@ export async function action({request, context}: Route.ActionArgs) {
       customerId: verifiedCustomerId,
       email,
       name: ticket.name,
+      product: cleanProduct || undefined,
+      firmware: cleanFirmware || undefined,
     }).catch((err) =>
       console.warn('[support/start] ticket-index write failed', err),
     );

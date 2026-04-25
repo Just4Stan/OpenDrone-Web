@@ -126,6 +126,9 @@ export function FeedbackModal({open, onSkip, onSubmitted}: FeedbackModalProps) {
   }
 
   return (
+    /* eslint-disable jsx-a11y/no-noninteractive-element-interactions */
+    /* Backdrop click + Escape is the standard modal-dismissal pattern.
+       Focus trap is established on overlayRef in the effect above. */
     <div
       ref={overlayRef}
       className="feedback-overlay"
@@ -135,6 +138,10 @@ export function FeedbackModal({open, onSkip, onSubmitted}: FeedbackModalProps) {
       onClick={(e) => {
         if (e.target === e.currentTarget) onSkip();
       }}
+      onKeyDown={(e) => {
+        if (e.key === 'Escape') onSkip();
+      }}
+      tabIndex={-1}
     >
       <div className="feedback-modal">
         <div className="feedback-head">
@@ -210,7 +217,9 @@ export function FeedbackModal({open, onSkip, onSubmitted}: FeedbackModalProps) {
           <button
             type="button"
             className="od-btn od-btn-primary"
-            onClick={handleSubmit}
+            onClick={() => {
+              void handleSubmit();
+            }}
             disabled={!ready || busy}
           >
             {busy ? 'Submitting…' : 'Submit & close ticket →'}
@@ -218,5 +227,6 @@ export function FeedbackModal({open, onSkip, onSubmitted}: FeedbackModalProps) {
         </div>
       </div>
     </div>
+    /* eslint-enable jsx-a11y/no-noninteractive-element-interactions */
   );
 }
