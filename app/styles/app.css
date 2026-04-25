@@ -799,7 +799,7 @@ button.reset {
      outer rail stays put, only the text column tightens. */
   width: var(--rail-width);
   margin: 0 auto;
-  padding: 2rem 0 3rem;
+  padding: 1.5rem 0 3rem;
 }
 
 .site-footer-inner {
@@ -1349,12 +1349,7 @@ button.reset {
 .product-page {
   width: var(--rail-width);
   margin: 0 auto;
-  /* PDP starts with a small fileNumber eyebrow then the very large
-     hero headline — the headline's leading creates an extra ~16px of
-     perceived space above the eyebrow, so the wrapper padding here is
-     half what other routes use to keep the visible gap below the top
-     bar consistent with .od-page-frame / .page-shell. */
-  padding: 1rem 0 4rem;
+  padding: 1.5rem 0 4rem;
 }
 
 .product-hero {
@@ -1362,6 +1357,11 @@ button.reset {
   gap: 2rem;
   margin-bottom: 2.5rem;
   align-items: start;
+  /* Override the global `section { padding: 1rem 0 / 2rem 0 }` rule in
+     reset.css — without this the eyebrow drops 32px below the wrapper
+     edge on desktop, making the PDP gap above the eyebrow inconsistent
+     with .od-page-frame routes which use <article>. */
+  padding: 0;
 }
 
 @media (min-width: 960px) {
@@ -4971,7 +4971,7 @@ button.reset {
 .od-page-frame {
   width: var(--rail-width);
   margin: 0 auto;
-  padding: 2rem 0 80px;
+  padding: 1.5rem 0 80px;
 }
 .od-page-narrow {max-width: 760px;}
 .od-page-wide {max-width: 1320px;}
@@ -6079,7 +6079,7 @@ button.reset {
 
 /* ---------- Mobile breakpoints --------------------------- */
 @media (max-width: 720px) {
-  .od-page-frame {padding: 1.5rem 0 60px;}
+  .od-page-frame {padding: 1.25rem 0 60px;}
   .contact-grid {grid-template-columns: 1fr;}
   .contact-tile-discord,
   .contact-tile-ticket,
