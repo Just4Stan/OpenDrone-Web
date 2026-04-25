@@ -92,6 +92,9 @@ function AccountMenu() {
       <NavLink className="account-nav-link" to="/account/addresses" style={isActiveStyle}>
         Addresses
       </NavLink>
+      <NavLink className="account-nav-link" to="/account/support" style={isActiveStyle}>
+        Support
+      </NavLink>
       <Logout />
     </nav>
   );

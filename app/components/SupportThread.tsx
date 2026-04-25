@@ -18,7 +18,21 @@ const MAX_FILES = 5;
 const MAX_PER_FILE_BYTES = 8 * 1024 * 1024;
 const MAX_TOTAL_BYTES = 24 * 1024 * 1024;
 
-const IMAGE_EXT = new Set(['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg', 'bmp']);
+const IMAGE_EXT = new Set(['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg', 'bmp', 'heic', 'avif']);
+const VIDEO_EXT = new Set(['mp4', 'mov', 'webm', 'm4v']);
+const AUDIO_EXT = new Set(['mp3', 'wav', 'ogg', 'm4a', 'flac']);
+const ARCHIVE_EXT = new Set(['zip', 'rar', '7z', 'tar', 'gz']);
+const CODE_EXT = new Set(['js', 'ts', 'tsx', 'jsx', 'py', 'c', 'cpp', 'h', 'hex', 'bin', 'json', 'yml', 'yaml', 'toml']);
+
+function fileIcon(ext: string): string {
+  if (IMAGE_EXT.has(ext)) return '🖼';
+  if (VIDEO_EXT.has(ext)) return '🎞';
+  if (AUDIO_EXT.has(ext)) return '🎧';
+  if (ARCHIVE_EXT.has(ext)) return '🗜';
+  if (CODE_EXT.has(ext)) return '⌨';
+  if (ext === 'pdf') return '📕';
+  return '📄';
+}
 
 export type ThreadMessage = {
   id: string;
@@ -686,11 +700,28 @@ function Attachments({
       {items.map((a, i) => {
         const ext = a.filename.split('.').pop()?.toLowerCase() ?? '';
         const isImage = IMAGE_EXT.has(ext);
-        if (isImage && a.url) {
+        const isVideo = VIDEO_EXT.has(ext);
+        const isAudio = AUDIO_EXT.has(ext);
+        const key = `${a.filename}-${i}`;
+
+        if (!a.url) {
+          return (
+            <span
+              key={key}
+              className="support-msg-file is-pending"
+              aria-label={`Pending: ${a.filename}`}
+            >
+              <span className="od-icon" aria-hidden="true">
+                {fileIcon(ext)}
+              </span>
+              <span className="support-msg-file-name">{a.filename}</span>
+            </span>
+          );
+        }
+        if (isImage) {
           return (
             <a
-              // eslint-disable-next-line react/no-array-index-key
-              key={`${a.filename}-${i}`}
+              key={key}
               className="support-msg-image"
               href={a.url}
               target="_blank"
@@ -702,35 +733,59 @@ function Attachments({
             </a>
           );
         }
-        if (!a.url) {
+        if (isVideo) {
           return (
-            <span
-              // eslint-disable-next-line react/no-array-index-key
-              key={`${a.filename}-${i}`}
-              className="support-msg-file"
-              aria-label={`Pending: ${a.filename}`}
-            >
-              <span className="od-icon" aria-hidden="true">
-                {isImage ? '🖼' : '📄'}
-              </span>
-              <span>{a.filename}</span>
-            </span>
+            <div key={key} className="support-msg-video">
+              {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
+              <video
+                controls
+                preload="metadata"
+                src={a.url}
+                aria-label={a.filename}
+              />
+              <a
+                className="support-msg-video-name"
+                href={a.url}
+                target="_blank"
+                rel="noreferrer noopener"
+                download
+              >
+                {a.filename}
+              </a>
+            </div>
+          );
+        }
+        if (isAudio) {
+          return (
+            <div key={key} className="support-msg-audio">
+              {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
+              <audio controls preload="metadata" src={a.url} aria-label={a.filename} />
+              <a
+                className="support-msg-file-name"
+                href={a.url}
+                target="_blank"
+                rel="noreferrer noopener"
+                download
+              >
+                {a.filename}
+              </a>
+            </div>
           );
         }
         return (
           <a
-            // eslint-disable-next-line react/no-array-index-key
-            key={`${a.filename}-${i}`}
+            key={key}
             className="support-msg-file"
             href={a.url}
             target="_blank"
             rel="noreferrer noopener"
             aria-label={`Download ${a.filename}`}
+            download
           >
             <span className="od-icon" aria-hidden="true">
-              📄
+              {fileIcon(ext)}
             </span>
-            <span>{a.filename}</span>
+            <span className="support-msg-file-name">{a.filename}</span>
           </a>
         );
       })}
