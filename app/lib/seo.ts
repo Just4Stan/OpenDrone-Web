@@ -183,3 +183,60 @@ export function buildOrgJsonLd(company: CompanyIdentity, siteUrl?: string) {
     },
   };
 }
+
+/**
+ * schema.org Product JSON-LD — emit on PDP. Drives Google rich-result
+ * cards for product listings (price, availability, brand). Skipped when
+ * the variant has no price (combined-listing parents) so we don't post
+ * a malformed offer.
+ */
+type ProductJsonLdInput = {
+  title: string;
+  description?: string | null;
+  imageUrl?: string | null;
+  url: string;
+  vendor?: string | null;
+  sku?: string | null;
+  gtin?: string | null;
+  price?: {amount: string; currencyCode: string} | null;
+  availableForSale: boolean;
+  productHandle: string;
+};
+
+export function buildProductJsonLd(input: ProductJsonLdInput) {
+  const product: Record<string, unknown> = {
+    '@context': 'https://schema.org',
+    '@type': 'Product',
+    name: input.title,
+    url: input.url,
+    productID: input.productHandle,
+  };
+  if (input.description) {
+    product.description = stripHtml(input.description).slice(0, 5000);
+  }
+  if (input.imageUrl) product.image = input.imageUrl;
+  if (input.vendor) {
+    product.brand = {'@type': 'Brand', name: input.vendor};
+  }
+  if (input.sku) product.sku = input.sku;
+  if (input.gtin) product.gtin = input.gtin;
+  if (input.price) {
+    product.offers = {
+      '@type': 'Offer',
+      url: input.url,
+      price: input.price.amount,
+      priceCurrency: input.price.currencyCode,
+      availability: input.availableForSale
+        ? 'https://schema.org/InStock'
+        : 'https://schema.org/OutOfStock',
+      priceValidUntil: nextYearIso(),
+    };
+  }
+  return product;
+}
+
+function nextYearIso(): string {
+  const d = new Date();
+  d.setFullYear(d.getFullYear() + 1);
+  return d.toISOString().slice(0, 10);
+}
