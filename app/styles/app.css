@@ -6362,6 +6362,7 @@ button.reset {
 .od-page-narrow .od-page-head h1 {max-width: 14ch;}
 .contact-page-frame .od-page-head h1 {max-width: 26ch;}
 .contact-page-frame .od-page-head p {max-width: none;}
+.support-page-frame .od-page-head p {max-width: none;}
 
 /* =========================================================
    Support thread — Apr 2026 dead-space pass.
