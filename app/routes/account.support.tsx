@@ -264,7 +264,7 @@ function DetailPane({
       /* cookie already cleared if call landed; ignore */
     }
     setFeedbackOpen(false);
-    revalidator.revalidate();
+    void revalidator.revalidate();
   }
 
   if (!pid || !ticket) {
@@ -291,8 +291,8 @@ function DetailPane({
         />
         <FeedbackModal
           open={feedbackOpen}
-          onSkip={closeAndStay}
-          onSubmitted={closeAndStay}
+          onSkip={() => void closeAndStay()}
+          onSubmitted={() => void closeAndStay()}
         />
       </>
     );

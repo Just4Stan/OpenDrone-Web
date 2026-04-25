@@ -736,6 +736,7 @@ function Attachments({
         if (isVideo) {
           return (
             <div key={key} className="support-msg-video">
+              {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
               <video
                 controls
                 preload="metadata"
@@ -757,6 +758,7 @@ function Attachments({
         if (isAudio) {
           return (
             <div key={key} className="support-msg-audio">
+              {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
               <audio controls preload="metadata" src={a.url} aria-label={a.filename} />
               <a
                 className="support-msg-file-name"
