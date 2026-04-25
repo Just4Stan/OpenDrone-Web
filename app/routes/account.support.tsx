@@ -1,11 +1,10 @@
 import {useEffect, useMemo, useState} from 'react';
-import {Link, useLoaderData, useRevalidator, type HeadersFunction} from 'react-router';
+import {Link, useLoaderData, type HeadersFunction} from 'react-router';
 import type {Route} from './+types/account.support';
 import {SUPPORT_CUSTOMER_PREFILL_QUERY} from '~/graphql/customer-account/SupportPrefillQuery';
 import {readSupportCookie, verifyTicket} from '~/lib/support/session';
 import {listByCustomer, type TicketIndexEntry} from '~/lib/support/ticket-index';
 import {SupportThread, type ThreadMessage} from '~/components/SupportThread';
-import {FeedbackModal} from '~/components/FeedbackModal';
 import {buildSeoMeta} from '~/lib/seo';
 
 export const headers: HeadersFunction = () => ({
@@ -251,53 +250,30 @@ function DetailPane({
   isCookieActive: boolean;
   customerName: string;
 }) {
-  const [feedbackOpen, setFeedbackOpen] = useState(false);
-  const revalidator = useRevalidator();
-
-  async function closeAndStay() {
-    try {
-      await fetch('/api/support/close', {
-        method: 'POST',
-        credentials: 'same-origin',
-      });
-    } catch {
-      /* cookie already cleared if call landed; ignore */
-    }
-    setFeedbackOpen(false);
-    void revalidator.revalidate();
-  }
-
   if (!pid || !ticket) {
     return (
       <div className="account-support-empty">Pick a ticket on the left.</div>
     );
   }
-  // The cookie-bound ticket (= the one currently in the live cookie)
-  // gets the live <SupportThread mode="live">. Any other ticket gets a
-  // read-only fetch via /api/support/thread/:pid.
-  if (isCookieActive) {
-    return (
-      <>
-        <SupportThread
-          mode="live"
-          embedded
-          ticket={{
-            pid: ticket.pid,
-            subject: ticket.subject || 'Support ticket',
-            status: mapStatus(ticket),
-            customerName,
-          }}
-          onEnd={() => setFeedbackOpen(true)}
-        />
-        <FeedbackModal
-          open={feedbackOpen}
-          onSkip={() => void closeAndStay()}
-          onSubmitted={() => void closeAndStay()}
-        />
-      </>
-    );
-  }
-  return <ReadOnlyThread pid={pid} customerName={customerName} ticket={ticket} />;
+  // /account/support is the read-only history view. Live interaction
+  // (composer, attachments, end-ticket) lives on /support — having two
+  // places to type into the same Discord thread is split-brain UX. When
+  // the selected ticket is the cookie-bound one, surface a "Continue"
+  // CTA that jumps to /support; everything else just renders the
+  // read-only message log.
+  return (
+    <>
+      {isCookieActive ? (
+        <div className="account-support-active-banner">
+          <span>This ticket is open. Continue the conversation here:</span>
+          <Link to="/support" className="od-btn od-btn-primary od-btn-sm">
+            Continue thread →
+          </Link>
+        </div>
+      ) : null}
+      <ReadOnlyThread pid={pid} customerName={customerName} ticket={ticket} />
+    </>
+  );
 }
 
 function ReadOnlyThread({
