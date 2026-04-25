@@ -2,12 +2,7 @@ import {useEffect, useState} from 'react';
 import {useLoaderData} from 'react-router';
 import type {Route} from './+types/cookie-settings';
 import {buildSeoMeta} from '~/lib/seo';
-import {
-  getLocaleFromRequest,
-  legalLabels,
-  localeFromPathname,
-  type Locale,
-} from '~/lib/i18n';
+import {alternateLocaleTags, getLocaleFromRequest, legalLabels, localeFromPathname, seoLocaleTag, type Locale} from '~/lib/i18n';
 
 export const meta: Route.MetaFunction = ({data}) => {
   const locale = data?.locale ?? 'en';
@@ -15,8 +10,8 @@ export const meta: Route.MetaFunction = ({data}) => {
   return buildSeoMeta({
     title: labels.title,
     description: labels.description,
-    locale: locale === 'nl' ? 'nl_BE' : 'en_US',
-    alternateLocales: [locale === 'nl' ? 'en_US' : 'nl_BE'],
+    locale: seoLocaleTag(locale),
+    alternateLocales: alternateLocaleTags(locale),
     robots: 'noindex',
   });
 };
@@ -74,8 +69,8 @@ const KNOWN: CookieEntry[] = [
   },
   {
     name: 'opendrone_lang',
-    en: 'Remembers your NL/EN preference for regulatory pages.',
-    nl: 'Onthoudt uw NL/EN-voorkeur voor juridische pagina\u2019s.',
+    en: 'Remembers your NL/FR/EN preference for regulatory pages.',
+    nl: 'Onthoudt uw NL/FR/EN-voorkeur voor juridische pagina\u2019s.',
     fr: 'M\u00e9morise votre pr\u00e9f\u00e9rence linguistique pour les pages l\u00e9gales.',
   },
 ];

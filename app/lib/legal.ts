@@ -27,7 +27,6 @@ import exportControlNl from '~/content/legal/nl/export-control-memo.md?raw';
 import vulnPolicyNl from '~/content/legal/nl/vulnerability-handling-policy.md?raw';
 import warrantyNl from '~/content/legal/nl/warranty.md?raw';
 import shippingNl from '~/content/legal/nl/shipping.md?raw';
-import contactNl from '~/content/legal/nl/contact.md?raw';
 
 import algemeneVoorwaardenFr from '~/content/legal/fr/algemene-voorwaarden.md?raw';
 import privacyPolicyFr from '~/content/legal/fr/privacy-policy.md?raw';
@@ -38,7 +37,6 @@ import exportControlFr from '~/content/legal/fr/export-control-memo.md?raw';
 import vulnPolicyFr from '~/content/legal/fr/vulnerability-handling-policy.md?raw';
 import warrantyFr from '~/content/legal/fr/warranty.md?raw';
 import shippingFr from '~/content/legal/fr/shipping.md?raw';
-import contactFr from '~/content/legal/fr/contact.md?raw';
 
 import algemeneVoorwaardenEn from '~/content/legal/en/algemene-voorwaarden.md?raw';
 import privacyPolicyEn from '~/content/legal/en/privacy-policy.md?raw';
@@ -49,7 +47,6 @@ import exportControlEn from '~/content/legal/en/export-control-memo.md?raw';
 import vulnPolicyEn from '~/content/legal/en/vulnerability-handling-policy.md?raw';
 import warrantyEn from '~/content/legal/en/warranty.md?raw';
 import shippingEn from '~/content/legal/en/shipping.md?raw';
-import contactEn from '~/content/legal/en/contact.md?raw';
 
 export type LegalSlug =
   | 'algemene-voorwaarden'
@@ -60,8 +57,7 @@ export type LegalSlug =
   | 'export-control-memo'
   | 'vulnerability-handling-policy'
   | 'warranty'
-  | 'shipping'
-  | 'contact';
+  | 'shipping';
 
 const SOURCES_NL: Record<LegalSlug, string> = {
   'algemene-voorwaarden': algemeneVoorwaardenNl,
@@ -73,7 +69,6 @@ const SOURCES_NL: Record<LegalSlug, string> = {
   'vulnerability-handling-policy': vulnPolicyNl,
   warranty: warrantyNl,
   shipping: shippingNl,
-  contact: contactNl,
 };
 
 const SOURCES_EN: Record<LegalSlug, string> = {
@@ -86,7 +81,6 @@ const SOURCES_EN: Record<LegalSlug, string> = {
   'vulnerability-handling-policy': vulnPolicyEn,
   warranty: warrantyEn,
   shipping: shippingEn,
-  contact: contactEn,
 };
 
 const SOURCES_FR: Record<LegalSlug, string> = {
@@ -99,7 +93,6 @@ const SOURCES_FR: Record<LegalSlug, string> = {
   'vulnerability-handling-policy': vulnPolicyFr,
   warranty: warrantyFr,
   shipping: shippingFr,
-  contact: contactFr,
 };
 
 const STRIP_SECTIONS = [

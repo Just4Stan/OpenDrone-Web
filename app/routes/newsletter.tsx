@@ -1,7 +1,14 @@
-import {data} from 'react-router';
+import {data, redirect} from 'react-router';
 import type {Route} from './+types/newsletter';
 import {checkRateLimit, clientIp} from '~/lib/rate-limit';
 import {verifyTurnstile} from '~/lib/support/turnstile';
+
+// Direct GET visits land on /releases where the signup form lives.
+// Without this loader the route 404s on GET because Hydrogen treats
+// action-only routes as POST-only.
+export function loader() {
+  return redirect('/releases#subscribe');
+}
 
 // Engineering Essentials — newsletter signup handler.
 //
@@ -189,6 +196,3 @@ export async function action({request, context}: Route.ActionArgs) {
   }
 }
 
-export function loader() {
-  return new Response(null, {status: 404});
-}

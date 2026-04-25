@@ -17,7 +17,7 @@ import resetStyles from '~/styles/reset.css?url';
 import appStyles from '~/styles/app.css?url';
 import {PageLayout} from './components/PageLayout';
 import {getCompanyIdentity} from '~/lib/company';
-import {localeFromPathname} from '~/lib/i18n';
+import {localeFromPathname, seoLocaleTag} from '~/lib/i18n';
 import {buildOrgJsonLd} from '~/lib/seo';
 
 export type RootLoader = typeof loader;
@@ -77,7 +77,7 @@ export async function loader(args: Route.LoaderArgs) {
   // Hydrogen's storefront.i18n is pinned to EN/US in app/lib/context.ts and
   // doesn't follow the URL; using it would force every page to en_US.
   const urlLocale = localeFromPathname(new URL(args.request.url).pathname);
-  const locale = urlLocale === 'nl' ? 'nl_BE' : 'en_US';
+  const locale = urlLocale ? seoLocaleTag(urlLocale) : 'en_US';
 
   return {
     ...deferredData,

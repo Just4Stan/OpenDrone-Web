@@ -1,4 +1,4 @@
-import {Link, useNavigate, useRouteLoaderData} from 'react-router';
+import {Link, useNavigate} from 'react-router';
 import {type MappedProductOptions} from '@shopify/hydrogen';
 import type {
   Maybe,
@@ -7,12 +7,6 @@ import type {
 import {AddToCartButton} from './AddToCartButton';
 import {useAside} from './Aside';
 import type {ProductFragment} from 'storefrontapi.generated';
-import type {RootLoader} from '~/root';
-
-function isNlLocale(locale?: string) {
-  if (!locale) return false;
-  return locale.toUpperCase().startsWith('NL');
-}
 
 export function ProductForm({
   productOptions,
@@ -23,10 +17,8 @@ export function ProductForm({
 }) {
   const navigate = useNavigate();
   const {open} = useAside();
-  const rootData = useRouteLoaderData<RootLoader>('root');
-  const nl = isNlLocale(rootData?.locale);
-  const ctaLabelAvailable = nl ? 'Bestelling met betalingsverplichting' : 'Add to cart';
-  const ctaLabelSoldOut = nl ? 'Uitverkocht' : 'Sold out';
+  const ctaLabelAvailable = 'Add to cart';
+  const ctaLabelSoldOut = 'Sold out';
   return (
     <div className="product-form">
       {productOptions.map((option) => {

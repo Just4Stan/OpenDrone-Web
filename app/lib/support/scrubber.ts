@@ -10,7 +10,7 @@
 // Related files: `api.support.poll.tsx` (caller), `discord.ts` (raw
 // fetcher), `scrubber.test.ts` (test suite).
 
-export type PublicRole = 'helper' | 'ai';
+export type PublicRole = 'helper' | 'ai' | 'self';
 
 export type PublicMessage = {
   id: string;

@@ -6,7 +6,7 @@ The Dutch version (/shipping) is the legally authoritative text for consumers re
 
 ### Delivery time
 
-Orders are normally shipped within 2 business days of payment receipt. The final delivery deadline is 30 calendar days after the order, unless explicitly agreed otherwise (Art. VI.43 of the Belgian Code of Economic Law, Art. 7 of our General Terms and Conditions). If the final delivery deadline is not met, the consumer has the right to rescind the contract free of charge.
+Orders are normally shipped within 2 business days of payment receipt. The final delivery deadline is 30 calendar days after the order, unless explicitly agreed otherwise (Art. VI.43 of the Belgian Code of Economic Law, Art. 7 of our General Terms and Conditions). If Incutec BV fails to deliver within the 30-day deadline, the consumer may set a reasonable additional period. If Incutec BV still fails to deliver within that additional period, the consumer is entitled to terminate the contract free of charge (Art. VI.43 §2 WER), unless the original delivery deadline was essential or Incutec BV has already refused to deliver.
 
 ### Shipping rates and countries
 

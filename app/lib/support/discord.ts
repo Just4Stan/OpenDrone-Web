@@ -31,6 +31,7 @@ type DiscordEnv = {
   DISCORD_SUPPORT_CHANNEL_ID?: string;
   DISCORD_GUILD_ID?: string;
   DISCORD_STAFF_METADATA_CHANNEL_ID?: string;
+  DISCORD_FEEDBACK_CHANNEL_ID?: string;
 };
 
 // First whitespace-split token of a name. Used when we need to show
@@ -268,6 +269,65 @@ export async function postStaffMetadata(
       res.status,
       text.slice(0, 160),
     );
+    return false;
+  }
+  return true;
+}
+
+// Posts a structured feedback message to the dedicated feedback
+// channel (or falls back to the staff-metadata channel). Best-effort —
+// failures are logged but never bubble up, so a Discord hiccup can't
+// block the customer's ack response.
+export async function postFeedback(
+  env: DiscordEnv,
+  payload: {
+    pid: string;
+    threadId: string;
+    customerName: string;
+    customerEmail: string;
+    customerId?: string;
+    speed: number;
+    helpfulness: number;
+    overall: number;
+    notes: string;
+  },
+): Promise<boolean> {
+  const channel =
+    env.DISCORD_FEEDBACK_CHANNEL_ID ?? env.DISCORD_STAFF_METADATA_CHANNEL_ID;
+  if (!channel || !env.DISCORD_BOT_TOKEN) return false;
+  const guild = env.DISCORD_GUILD_ID ?? '@me';
+  const jumpUrl = `https://discord.com/channels/${guild}/${payload.threadId}`;
+  const star = (n: number) => '★'.repeat(n) + '☆'.repeat(Math.max(0, 5 - n));
+  const lines = [
+    `📝 **Ticket feedback** · #${payload.pid}`,
+    `Thread: ${jumpUrl}`,
+    `From: **${payload.customerName}** <${payload.customerEmail}>`,
+    payload.customerId
+      ? `Shopify customer: \`${payload.customerId}\``
+      : null,
+    '',
+    `Response speed:  ${star(payload.speed)} (${payload.speed}/5)`,
+    `Helpfulness:     ${star(payload.helpfulness)} (${payload.helpfulness}/5)`,
+    `Overall:         ${star(payload.overall)} (${payload.overall}/5)`,
+    payload.notes ? '' : null,
+    payload.notes ? `> ${payload.notes.replace(/\n/g, '\n> ').slice(0, 1500)}` : null,
+  ].filter(Boolean);
+  const res = await discordFetch(`${DISCORD_API}/channels/${channel}/messages`, {
+    method: 'POST',
+    headers: authHeaders(env),
+    body: JSON.stringify({
+      content: lines.join('\n').slice(0, 1900),
+      allowed_mentions: {parse: []},
+    }),
+  }).catch((err) => {
+    console.warn('[support] postFeedback network', err);
+    return null;
+  });
+  if (!res || !res.ok) {
+    if (res) {
+      const text = await res.text().catch(() => '');
+      console.warn('[support] postFeedback failed', res.status, text.slice(0, 160));
+    }
     return false;
   }
   return true;

@@ -15,12 +15,15 @@ function writeLangCookie(locale: Locale) {
   document.cookie = `${LANG_COOKIE}=${locale}; Path=/; Max-Age=${COOKIE_MAX_AGE}; SameSite=Lax`;
 }
 
+const LABELS: Record<Locale, string> = {nl: 'NL', fr: 'FR', en: 'EN'};
+const ORDER: readonly Locale[] = ['nl', 'fr', 'en'];
+
 /**
- * NL/EN language toggle for legal/regulatory pages. Renders nothing on
- * non-legal routes — the rest of the site is English-only.
+ * NL/FR/EN language toggle for legal/regulatory pages. Renders nothing
+ * on non-legal routes — the rest of the site is English-only.
  *
- * On a legal page it swaps `/en/slug` ↔ `/nl/slug` and refreshes the
- * preference cookie so SSR picks the right language next time.
+ * On a legal page it swaps the locale segment of the URL and refreshes
+ * the preference cookie so SSR picks the right language next time.
  */
 export function LangToggle({className}: {className?: string} = {}) {
   const location = useLocation();
@@ -29,15 +32,10 @@ export function LangToggle({className}: {className?: string} = {}) {
   const currentLocale = localeFromPathname(location.pathname);
   const active: Locale = currentLocale ?? 'en';
 
-  // For unprefixed legal URLs (/privacy, etc.), target the locale-prefixed
-  // form so clicks actually change the rendered language.
   const ensurePrefix = (target: Locale) =>
     currentLocale
       ? swapLocale(location.pathname, target)
       : '/' + target + stripLocale(location.pathname);
-
-  const nlHref = ensurePrefix('nl') + location.search;
-  const enHref = ensurePrefix('en') + location.search;
 
   return (
     <div
@@ -45,26 +43,19 @@ export function LangToggle({className}: {className?: string} = {}) {
       role="group"
       aria-label="Language"
     >
-      <Link
-        to={nlHref}
-        preventScrollReset
-        prefetch="intent"
-        aria-pressed={active === 'nl'}
-        onClick={() => writeLangCookie('nl')}
-        data-active={active === 'nl' ? 'true' : undefined}
-      >
-        NL
-      </Link>
-      <Link
-        to={enHref}
-        preventScrollReset
-        prefetch="intent"
-        aria-pressed={active === 'en'}
-        onClick={() => writeLangCookie('en')}
-        data-active={active === 'en' ? 'true' : undefined}
-      >
-        EN
-      </Link>
+      {ORDER.map((loc) => (
+        <Link
+          key={loc}
+          to={ensurePrefix(loc) + location.search}
+          preventScrollReset
+          prefetch="intent"
+          aria-pressed={active === loc}
+          onClick={() => writeLangCookie(loc)}
+          data-active={active === loc ? 'true' : undefined}
+        >
+          {LABELS[loc]}
+        </Link>
+      ))}
     </div>
   );
 }

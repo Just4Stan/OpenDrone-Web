@@ -31,13 +31,13 @@ const COMPANY_LINKS: Array<{to: string; label: string}> = [
 ];
 
 const LEGAL_LINKS: Array<{to: string; label: string}> = [
-  {to: '/algemene-voorwaarden', label: 'Algemene Voorwaarden'},
+  {to: '/algemene-voorwaarden', label: 'Terms & Conditions'},
   {to: '/privacy', label: 'Privacy'},
   {to: '/cookies', label: 'Cookies'},
-  {to: '/herroepingsrecht', label: 'Herroepingsrecht'},
+  {to: '/herroepingsrecht', label: 'Right of withdrawal'},
   {to: '/shipping', label: 'Shipping'},
   {to: '/warranty', label: 'Warranty'},
-  {to: '/export-compliance', label: 'Export Compliance'},
+  {to: '/export-compliance', label: 'Export compliance'},
   {to: '/cookie-settings', label: 'Cookie settings'},
 ];
 

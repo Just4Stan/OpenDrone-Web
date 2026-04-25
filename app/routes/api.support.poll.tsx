@@ -7,6 +7,8 @@ import {
   signTicket,
   verifyTicket,
 } from '~/lib/support/session';
+import {sendReplyNotification} from '~/lib/support/email';
+import {buildResumeUrl, signResumeToken} from '~/lib/support/resume-token';
 import {checkRateLimit} from '~/lib/rate-limit';
 import {
   extractFirstName,
@@ -36,8 +38,23 @@ import {
 // discriminator, global_name, guild_id, roles, embeds, components, …)
 // is dropped here and never reaches JSON.stringify.
 
+export type PollStats = {
+  // Helper-authored messages delivered in this poll (post-moderation,
+  // post-scrubber). Widget accumulates across polls.
+  deltaVisible: number;
+  // Helper-authored messages held back by the moderation gate or
+  // dropped by the scrubber in this poll. Surfaced as "X awaiting
+  // confirmation" so the customer knows replies exist even if held.
+  deltaPending: number;
+};
+
 type PollResult =
-  | {ok: true; messages: PublicMessage[]; closed: boolean}
+  | {
+      ok: true;
+      messages: PublicMessage[];
+      closed: boolean;
+      stats: PollStats;
+    }
   | {ok: false; message: string; code?: 'no-ticket' | 'thread-gone'};
 
 // Stage 5 summariser threshold: once a thread has grown by this many
@@ -107,13 +124,18 @@ export async function loader({request, context}: Route.LoaderArgs) {
   // Bot authorship rules:
   //   - Bot messages that start with AI_DRAFT_PREFIX (Stage 4) or
   //     AI_SUMMARY_PREFIX (Stage 5) are eligible to surface, pending ✅.
+  //   - Bot messages that start with `**<Name>:**` are customer-relayed
+  //     messages from /api/support/send. Project as role:'self' so the
+  //     customer sees their own history on refresh — without these the
+  //     log appears empty until staff replies.
   //   - Every other bot message is the thread-starter or a system
   //     message and must not surface.
   const candidates = messages.filter(
     (m) =>
       !m.author.bot ||
       m.content.startsWith(AI_DRAFT_PREFIX) ||
-      m.content.startsWith(AI_SUMMARY_PREFIX),
+      m.content.startsWith(AI_SUMMARY_PREFIX) ||
+      isSelfRelayedMessage(m.content),
   );
   const filtered = await filterByApproval(env, candidates, ticket.tid);
   if (filtered.dropped.length > 0) {
@@ -136,10 +158,16 @@ export async function loader({request, context}: Route.LoaderArgs) {
       m.author.bot && m.content.startsWith(AI_DRAFT_PREFIX);
     const isAiSummary =
       m.author.bot && m.content.startsWith(AI_SUMMARY_PREFIX);
-    if (m.author.bot && !isAiDraft && !isAiSummary) continue;
+    const isSelfRelayed =
+      m.author.bot && !isAiDraft && !isAiSummary && isSelfRelayedMessage(m.content);
+    if (m.author.bot && !isAiDraft && !isAiSummary && !isSelfRelayed) continue;
     // Strip the bot marker from content before scrubbing/projecting —
-    // the `role: 'ai'` field replaces the inline prefix in the widget.
+    // the `role` field replaces the inline prefix in the widget.
     let rawContent = m.content;
+    let projectedFirstName = extractFirstName([
+      m.author.globalName,
+      m.author.username,
+    ]);
     if (isAiDraft) rawContent = m.content.slice(AI_DRAFT_PREFIX.length).trim();
     else if (isAiSummary) {
       // Summary header looks like `🤖 **Recap so far up to msg_id=X:**\n<body>`.
@@ -147,6 +175,10 @@ export async function loader({request, context}: Route.LoaderArgs) {
       // the internal cursor.
       const nl = m.content.indexOf('\n');
       rawContent = nl >= 0 ? m.content.slice(nl + 1).trim() : '';
+    } else if (isSelfRelayed) {
+      const stripped = stripSelfPrefix(m.content);
+      rawContent = stripped.body;
+      projectedFirstName = stripped.firstName || ticket.name;
     }
     const scrubbed = scrubForPublic(rawContent);
     if (scrubbed.blocked) {
@@ -163,11 +195,9 @@ export async function loader({request, context}: Route.LoaderArgs) {
     if (!scrubbed.content && !m.attachments.length) continue;
     projected.push({
       id: m.id,
-      role: isAiDraft || isAiSummary ? 'ai' : 'helper',
+      role: isAiDraft || isAiSummary ? 'ai' : isSelfRelayed ? 'self' : 'helper',
       firstName:
-        isAiDraft || isAiSummary
-          ? 'OpenDrone'
-          : extractFirstName([m.author.globalName, m.author.username]),
+        isAiDraft || isAiSummary ? 'OpenDrone' : projectedFirstName,
       content: scrubbed.content,
       createdAt: m.createdAt,
       attachments: m.attachments.map((a) => ({
@@ -183,10 +213,77 @@ export async function loader({request, context}: Route.LoaderArgs) {
     'Cache-Control': 'no-store',
   };
 
+  // Reply notification email. Fires only when staff has explicitly
+  // marked a message as the final/conclusive answer by reacting with
+  // SUPPORT_EMAIL_EMOJI (default 📧). This avoids spamming the
+  // customer's inbox on every back-and-forth — the live web widget
+  // surfaces every message regardless. The 5-min debounce is a
+  // belt-and-braces guard against double-sends if the same message
+  // gets toggled on/off, or if multiple tabs poll at once.
+  const REPLY_EMAIL_DEBOUNCE_S = 5 * 60;
+  const EMAIL_EMOJI = env.SUPPORT_EMAIL_EMOJI?.trim() || '📧';
+  const nowSec = Math.floor(Date.now() / 1000);
+  // The new-helper match works against the raw filtered set rather
+  // than the projected one because we need the original `reactions`
+  // array, which the public scrubber strips.
+  const flaggedHelper = filtered.approved.find(
+    (m) =>
+      !m.author.bot &&
+      m.reactions.some(
+        (r) => r.emoji === EMAIL_EMOJI && r.count > (r.me ? 1 : 0),
+      ),
+  );
+  // Match the flagged Discord message back to its public projection so
+  // the email contains the scrubbed body, not the raw Discord content.
+  const newHelper = flaggedHelper
+    ? projected.find((p) => p.id === flaggedHelper.id) ?? null
+    : null;
+  let cookieReplyEmailAt = ticket.lastReplyEmailAt ?? 0;
+  if (
+    newHelper &&
+    ticket.email &&
+    nowSec - cookieReplyEmailAt > REPLY_EMAIL_DEBOUNCE_S
+  ) {
+    cookieReplyEmailAt = nowSec;
+    const job = (async () => {
+      try {
+        const token = await signResumeToken(env, {
+          tid: ticket.tid,
+          uid: ticket.uid,
+          email: ticket.email,
+          name: ticket.name,
+          pid: ticket.pid,
+        });
+        const baseUrl = new URL(request.url).origin;
+        const resumeUrl = buildResumeUrl(baseUrl, token);
+        await sendReplyNotification(env, {
+          to: ticket.email,
+          name: ticket.name,
+          subject:
+            thread.name?.replace(/^#\d+\s*\[[^\]]+\]\s*/, '') ||
+            'Your support ticket',
+          resumeUrl,
+          preview: newHelper.content,
+          staffFirstName: newHelper.firstName || 'OpenDrone',
+        });
+      } catch (err) {
+        console.warn('[support/poll] reply-email failed', err);
+      }
+    })();
+    if (context.waitUntil) context.waitUntil(job);
+    else void job;
+  }
+
   // Roll the cursor forward into the signed cookie so the next poll asks
   // only for what's newer than what we just delivered.
-  if (newestId && newestId !== ticket.lastCursor) {
-    const rolled = {...ticket, lastCursor: newestId};
+  const cursorChanged = newestId && newestId !== ticket.lastCursor;
+  const replyAtChanged = cookieReplyEmailAt !== (ticket.lastReplyEmailAt ?? 0);
+  if (cursorChanged || replyAtChanged) {
+    const rolled = {
+      ...ticket,
+      lastCursor: cursorChanged ? newestId : ticket.lastCursor,
+      lastReplyEmailAt: cookieReplyEmailAt,
+    };
     headers['Set-Cookie'] = buildSupportSetCookie(await signTicket(env, rolled));
   }
 
@@ -274,10 +371,43 @@ export async function loader({request, context}: Route.LoaderArgs) {
     }
   }
 
+  // Stats for the sidebar. Visible = scrubber-passed helper messages;
+  // pending = held by moderation gate OR dropped by scrubber. Both are
+  // delta values for *this* poll — the widget accumulates across polls.
+  const deltaVisible = projected.filter((m) => m.role === 'helper').length;
+  const deltaPending = filtered.dropped.filter(
+    (d) => !d.message.author.bot,
+  ).length;
+
   return data<PollResult>(
-    {ok: true, messages: projected, closed: thread.archived || thread.locked},
+    {
+      ok: true,
+      messages: projected,
+      closed: thread.archived || thread.locked,
+      stats: {deltaVisible, deltaPending},
+    },
     {headers},
   );
+}
+
+// Recognises a customer-relayed message posted by the bot on behalf of
+// the customer. Format from /api/support/send: `**<First>:**` optionally
+// followed by a space + body. Conservative — caps the captured name at
+// 80 chars and disallows asterisks in the name to avoid matching bold
+// runs in arbitrary helper replies.
+const SELF_PREFIX_RE = /^\*\*([^*]{1,80}?):\*\*(?:\s+([\s\S]*))?$/;
+
+function isSelfRelayedMessage(content: string): boolean {
+  return SELF_PREFIX_RE.test(content);
+}
+
+function stripSelfPrefix(content: string): {
+  firstName: string;
+  body: string;
+} {
+  const match = SELF_PREFIX_RE.exec(content);
+  if (!match) return {firstName: '', body: content};
+  return {firstName: match[1].trim(), body: (match[2] ?? '').trim()};
 }
 
 // Counts non-bot messages in `messages` that come after `cursor`. If

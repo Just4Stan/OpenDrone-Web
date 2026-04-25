@@ -6,6 +6,7 @@ import {
   readSupportCookie,
   verifyTicket,
 } from '~/lib/support/session';
+import {closeTicket} from '~/lib/support/ticket-index';
 
 type CloseResult = {ok: true} | {ok: false; message: string};
 
@@ -20,11 +21,16 @@ export async function action({request, context}: Route.ActionArgs) {
   const cookie = readSupportCookie(request);
   const ticket = await verifyTicket(env, cookie);
   if (ticket) {
-    await postToThread(
-      env,
-      ticket.tid,
-      `_${ticket.name} ended the web-support session._`,
-    ).catch(() => null);
+    await Promise.all([
+      postToThread(
+        env,
+        ticket.tid,
+        `_${ticket.name} ended the web-support session._`,
+      ).catch(() => null),
+      closeTicket(env, ticket.tid).catch((err) =>
+        console.warn('[support/close] index update failed', err),
+      ),
+    ]);
   }
   return data<CloseResult>(
     {ok: true},

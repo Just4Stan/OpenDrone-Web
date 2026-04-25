@@ -1,6 +1,6 @@
 ## Wettelijke conformiteitsgarantie
 
-Alle producten die door Incutec BV aan consumenten worden verkocht genieten een wettelijke garantie van **2 jaar** op basis van conformiteit met de overeenkomst (Boek VII, Art. 1649bis e.v. BW, omgezet uit Richtlijn 2019/771). Deze garantie staat los van en komt bovenop elke commerciële garantie die eventueel wordt verstrekt.
+Alle producten die door Incutec BV aan consumenten worden verkocht genieten een wettelijke garantie van **2 jaar** op basis van conformiteit met de overeenkomst (art. 1701/1 e.v. oud Burgerlijk Wetboek + Boek VI WER, Art. VI.83 octies e.v. — Wet van 20 maart 2022, omzetting Richtlijn (EU) 2019/771). Tijdens de volledige periode van 2 jaar wordt elk gebrek dat aan het licht komt geacht reeds bij levering aanwezig te zijn (Belgische omkering van de bewijslast). Deze garantie staat los van en komt bovenop elke commerciële garantie die eventueel wordt verstrekt.
 
 ### Wat valt onder de garantie
 
@@ -11,7 +11,7 @@ Alle producten die door Incutec BV aan consumenten worden verkocht genieten een 
 
 - Schade door crash, oneigenlijk gebruik, overbelasting of modificatie.
 - Slijtage van onderdelen met natuurlijke levensduur (bv. connectoren na herhaaldelijk gebruik).
-- Schade door niet-officiële firmware of hardwareaanpassingen.
+- Schade die aantoonbaar het gevolg is van wijzigingen aan firmware of hardware door de consument; defecten zonder causaal verband met dergelijke wijzigingen blijven gedekt.
 
 ### Hoe een beroep doen op de garantie
 

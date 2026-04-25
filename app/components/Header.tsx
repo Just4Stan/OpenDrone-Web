@@ -19,8 +19,8 @@ interface HeaderProps {
 type Viewport = 'desktop' | 'mobile';
 
 // Category links jump straight to the current PDP for each family.
-// OpenStack + Accessories fall back to the full catalog until those
-// Shopify products exist.
+// "Accessories" falls back to the full catalog because it isn't a
+// single product family — clicking the label shouldn't 404.
 const CATEGORY_LINKS: Array<{label: string; to: string}> = [
   {label: 'OpenFC', to: '/products/openfc'},
   {label: 'OpenFrame', to: '/products/openframe'},
@@ -66,7 +66,7 @@ export function Header({
         />
         <nav className="site-header-categories" aria-label="Product categories">
           {CATEGORY_LINKS.map((cat) => (
-            <NavLink key={cat.to} prefetch="intent" to={cat.to}>
+            <NavLink key={cat.label} prefetch="intent" to={cat.to}>
               {cat.label}
             </NavLink>
           ))}

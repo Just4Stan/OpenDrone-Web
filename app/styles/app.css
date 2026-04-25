@@ -4921,3 +4921,2519 @@ button.reset {
   border-left: 2px solid var(--color-gold);
   padding-left: 0.6rem;
 }
+
+/* =========================================================
+   Support redesign (Apr 2026) — contact, /support, /account/support,
+   feedback modal. Token aliases below map handoff names onto the
+   project's existing variables; no new tokens are introduced.
+   ========================================================= */
+
+:root {
+  --od-bg: var(--color-bg);
+  --od-bg-2: var(--color-bg-card);
+  --od-ink: var(--color-text);
+  --od-ink-dim: var(--color-text-muted);
+  --od-ink-faint: #4a4d44;
+  --od-line: #2a2e26;
+  --od-line-strong: #3a3f33;
+  --od-pcb-gold: var(--color-gold);
+  --od-pcb-gold-2: var(--color-gold-hover);
+  --od-pcb-green-2: var(--color-accent-light);
+  --od-pcb-green-glow: #9fbf7a;
+  --od-pcb-copper: #b87333;
+}
+
+/* ---------- shared primitives (od-*) ---------------------- */
+.od-page-frame {
+  width: var(--rail-width);
+  margin: 0 auto;
+  padding: 32px 0 80px;
+}
+.od-page-narrow {max-width: 760px;}
+.od-page-wide {max-width: 1320px;}
+
+.od-page-head {
+  padding: 24px 0 32px;
+  border-bottom: 1.5px solid var(--od-line-strong);
+  margin-bottom: 32px;
+}
+.od-page-head .od-eyebrow {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--od-ink-dim);
+  margin: 0 0 12px;
+}
+.od-page-head h1 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: clamp(40px, 5vw, 72px);
+  line-height: 0.95;
+  letter-spacing: -0.02em;
+  margin: 0 0 14px;
+}
+.od-page-head h1 em {font-style: normal; color: var(--od-pcb-gold-2);}
+.od-page-head p {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  line-height: 1.7;
+  color: var(--od-ink-dim);
+  max-width: 60ch;
+  margin: 0;
+}
+
+.od-tile {
+  background: var(--od-bg-2);
+  border: 1.5px solid var(--od-line-strong);
+  border-radius: 4px;
+  padding: 24px;
+}
+.od-tile-gold {
+  border-color: var(--od-pcb-gold);
+  background: rgba(184, 146, 46, 0.04);
+}
+.od-tile h2 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 22px;
+  margin: 0 0 8px;
+  letter-spacing: -0.01em;
+}
+.od-tile h3 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 16px;
+  margin: 0 0 6px;
+}
+.od-tile p {
+  margin: 0 0 12px;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--od-ink-dim);
+}
+.od-tile p:last-child {margin-bottom: 0;}
+.od-tile-eyebrow {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--od-ink-dim);
+  margin: 0 0 14px;
+}
+
+/* Buttons */
+.od-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 18px;
+  border-radius: 4px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+  border: 1.5px solid transparent;
+  transition: background-color 0.12s, border-color 0.12s, color 0.12s;
+}
+.od-btn-primary {
+  background: var(--od-pcb-gold);
+  color: #1b1400;
+  border-color: var(--od-pcb-gold);
+}
+.od-btn-primary:hover {background: var(--od-pcb-gold-2);}
+.od-btn-secondary {
+  background: transparent;
+  color: var(--od-ink);
+  border-color: var(--od-line-strong);
+}
+.od-btn-secondary:hover {border-color: var(--od-ink-dim);}
+.od-btn-ghost {
+  background: transparent;
+  color: var(--od-ink-dim);
+  border-color: transparent;
+  padding: 10px 12px;
+}
+.od-btn-ghost:hover {color: var(--od-ink);}
+.od-btn-danger {
+  background: transparent;
+  color: var(--od-ink);
+  border-color: var(--od-line-strong);
+}
+.od-btn-danger:hover {
+  border-color: var(--od-pcb-copper);
+  color: var(--od-pcb-copper);
+}
+.od-btn-sm {padding: 8px 12px; font-size: 10px; letter-spacing: 0.14em;}
+.od-btn[disabled] {opacity: 0.55; cursor: not-allowed;}
+.od-btn-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  background: transparent;
+  border: 1.5px solid var(--od-line-strong);
+  border-radius: 4px;
+  color: var(--od-ink-dim);
+  cursor: pointer;
+  font-size: 14px;
+}
+.od-btn-icon:hover {color: var(--od-ink); border-color: var(--od-ink-dim);}
+
+/* Status badges */
+.od-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 3px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  line-height: 1.2;
+}
+.od-status::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+.od-status.is-open {
+  color: var(--od-pcb-gold-2);
+  background: rgba(184, 146, 46, 0.1);
+  border: 1px solid var(--od-pcb-gold);
+}
+.od-status.is-awaiting {
+  color: var(--od-pcb-green-glow);
+  background: rgba(31, 77, 44, 0.18);
+  border: 1px solid var(--od-pcb-green-2);
+}
+.od-status.is-progress {
+  color: var(--od-pcb-gold-2);
+  background: rgba(184, 146, 46, 0.06);
+  border: 1px dashed var(--od-pcb-gold);
+}
+.od-status.is-resolved {
+  color: var(--od-ink-dim);
+  background: transparent;
+  border: 1px solid var(--od-line-strong);
+}
+.od-status.is-resolved::before {background: var(--od-ink-dim);}
+
+/* Form controls */
+.od-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+.od-field label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--od-ink-dim);
+}
+.od-field label .od-req {color: var(--od-pcb-gold-2); margin-left: 4px;}
+.od-field label .od-opt {
+  color: var(--od-ink-faint);
+  margin-left: 6px;
+  text-transform: none;
+  letter-spacing: 0.04em;
+  font-size: 10px;
+}
+.od-input,
+.od-textarea,
+.od-select {
+  width: 100%;
+  background: var(--od-bg);
+  color: var(--od-ink);
+  border: 1.5px solid var(--od-line-strong);
+  border-radius: 4px;
+  padding: 10px 12px;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  line-height: 1.5;
+  transition: border-color 0.12s;
+}
+.od-input:focus,
+.od-textarea:focus,
+.od-select:focus {outline: none; border-color: var(--od-pcb-gold);}
+.od-textarea {resize: vertical; min-height: 96px;}
+.od-help {font-size: 11px; color: var(--od-ink-faint); line-height: 1.5;}
+
+/* ---------- /contact (new design) ------------------------- */
+.contact-grid {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr;
+  grid-template-rows: auto auto;
+  gap: 20px;
+  align-items: stretch;
+}
+.contact-tile-discord {grid-column: 1; grid-row: 1 / 3; padding: 28px;}
+.contact-tile-ticket {grid-column: 2; grid-row: 1;}
+.contact-tile-direct {grid-column: 2; grid-row: 2;}
+
+.contact-discord-banner {display: flex; gap: 18px; align-items: flex-start;}
+.contact-discord-icon {
+  width: 64px;
+  height: 64px;
+  border-radius: 4px;
+  background: linear-gradient(135deg, #5865f2 0%, #404eed 100%);
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 28px;
+}
+.contact-discord-icon img {
+  width: 100%;
+  height: 100%;
+  border-radius: 4px;
+  object-fit: cover;
+}
+.contact-discord-meta {flex: 1; min-width: 0;}
+.contact-discord-meta .od-tile-eyebrow {color: var(--od-pcb-gold-2);}
+.contact-discord-meta h2 {margin-bottom: 4px;}
+.contact-discord-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 18px;
+  margin: 14px 0 18px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--od-ink-dim);
+}
+.contact-discord-stats span {display: inline-flex; align-items: center; gap: 6px;}
+.contact-discord-stats .od-dot-online {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--od-pcb-green-glow);
+}
+.contact-discord-stats .od-dot-idle {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--od-ink-faint);
+}
+.contact-channels {
+  margin-top: 22px;
+  padding-top: 18px;
+  border-top: 1.5px dashed var(--od-line-strong);
+}
+.contact-channels-title {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--od-ink-dim);
+  margin: 0 0 12px;
+}
+.contact-channel-list {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 6px;
+}
+.contact-channel {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 0;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--od-ink);
+}
+.contact-channel .od-hash {color: var(--od-ink-faint);}
+
+.contact-direct-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1.5px dashed var(--od-line-strong);
+  font-size: 12px;
+}
+.contact-direct-row:last-child {border-bottom: none;}
+.contact-direct-row .od-k {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--od-ink-dim);
+}
+.contact-direct-row .od-v {font-family: var(--font-mono); color: var(--od-ink);}
+.contact-direct-row a {
+  color: var(--od-ink);
+  text-decoration: none;
+  border-bottom: 1px solid var(--od-line-strong);
+}
+.contact-direct-row a:hover {
+  border-color: var(--od-pcb-gold);
+  color: var(--od-pcb-gold-2);
+}
+
+.contact-banner-active {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 16px 22px;
+  margin-bottom: 22px;
+  background: rgba(184, 146, 46, 0.06);
+  border: 1.5px solid var(--od-pcb-gold);
+  border-radius: 4px;
+}
+.contact-banner-active .od-banner-meta {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+.contact-banner-active .od-banner-text {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: var(--od-ink);
+}
+.contact-banner-active .od-banner-text strong {
+  font-family: var(--font-display);
+  font-weight: 600;
+  color: var(--od-pcb-gold-2);
+  margin-left: 4px;
+}
+.contact-banner-active .od-banner-id {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--od-ink-dim);
+  letter-spacing: 0.04em;
+}
+
+/* ---------- /support: signed-out + intake ---------------- */
+.support-signed-out {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr;
+  gap: 20px;
+  align-items: stretch;
+}
+.support-signin {padding: 36px 32px;}
+.support-signin h2 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 32px;
+  line-height: 1.1;
+  margin: 0 0 12px;
+  letter-spacing: -0.01em;
+}
+.support-signin p {
+  font-size: 13px;
+  line-height: 1.7;
+  color: var(--od-ink-dim);
+  margin: 0 0 18px;
+  max-width: 48ch;
+}
+.support-signin-reasons {
+  list-style: none;
+  padding: 0;
+  margin: 18px 0 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.support-signin-reasons li {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--od-ink);
+}
+.support-signin-reasons li::before {
+  content: "→";
+  color: var(--od-pcb-gold-2);
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+.support-signin-actions-row {display: flex; gap: 10px; flex-wrap: wrap;}
+
+.support-intake-shell {max-width: 720px; margin: 0 auto;}
+.support-intake-shell .od-tile {padding: 28px 32px;}
+.support-intake-form .od-field-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+.support-intake-form .od-field-row .od-field {margin-bottom: 14px;}
+.support-intake-form-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin-top: 18px;
+  padding-top: 18px;
+  border-top: 1.5px dashed var(--od-line-strong);
+  flex-wrap: wrap;
+}
+.support-intake-form-actions .od-turnstile {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--od-ink-faint);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.support-intake-form-actions .od-turnstile-box {
+  width: 14px;
+  height: 14px;
+  border: 1.5px solid var(--od-line-strong);
+  border-radius: 2px;
+  display: inline-block;
+}
+.support-error {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--od-pcb-copper);
+  margin: 8px 0 0;
+}
+
+/* Attachment chip strip (intake + composer) */
+.support-attach-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+  align-items: center;
+}
+.support-attach-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  background: var(--od-bg);
+  border: 1.5px solid var(--od-line-strong);
+  border-radius: 3px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--od-ink);
+}
+.support-attach-chip .od-x {
+  color: var(--od-ink-faint);
+  cursor: pointer;
+  padding: 0 2px;
+  background: none;
+  border: none;
+  font-size: 14px;
+}
+.support-attach-chip .od-x:hover {color: var(--od-pcb-copper);}
+.support-attach-chip.is-image {padding: 4px 10px 4px 4px;}
+.support-attach-chip .od-thumb {
+  width: 22px;
+  height: 22px;
+  border-radius: 2px;
+  background: var(--od-line-strong);
+  flex-shrink: 0;
+  object-fit: cover;
+}
+
+/* ---------- Active ticket thread ------------------------- */
+.support-thread {
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - var(--header-height) - 16px);
+  max-height: 880px;
+  background: var(--od-bg-2);
+  border: 1.5px solid var(--od-line-strong);
+  border-radius: 4px;
+  overflow: hidden;
+}
+.support-thread-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding: 16px 22px;
+  border-bottom: 1.5px solid var(--od-line-strong);
+  background: var(--od-bg-2);
+  flex-shrink: 0;
+}
+.support-thread-head-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  flex: 1;
+}
+.support-thread-head-meta .od-eyebrow-row {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+.support-thread-head-meta .od-id {
+  font-family: var(--font-mono);
+  color: var(--od-ink-faint);
+  letter-spacing: 0.04em;
+  font-size: 11px;
+}
+.support-thread-head-meta h1 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 20px;
+  line-height: 1.2;
+  margin: 0;
+  letter-spacing: -0.005em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.support-thread-head-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.support-thread-log {
+  flex: 1;
+  overflow-y: auto;
+  padding: 24px 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--od-line-strong) transparent;
+  position: relative;
+}
+.support-thread-log::-webkit-scrollbar {width: 8px;}
+.support-thread-log::-webkit-scrollbar-thumb {
+  background: var(--od-line-strong);
+  border-radius: 4px;
+}
+.support-thread-log[data-dropzone-active="true"] {
+  background: rgba(184, 146, 46, 0.04);
+  outline: 1.5px dashed var(--od-pcb-gold);
+  outline-offset: -8px;
+}
+
+.support-thread-day {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 6px 0 -2px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--od-ink-faint);
+}
+.support-thread-day::before,
+.support-thread-day::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--od-line);
+}
+
+.support-thread .support-msg {display: flex; gap: 10px; max-width: 78%;}
+.support-thread .support-msg.is-staff {align-self: flex-start;}
+.support-thread .support-msg.is-user {
+  align-self: flex-end;
+  flex-direction: row-reverse;
+}
+.support-thread .support-msg-avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 4px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
+}
+.support-thread .support-msg.is-staff .support-msg-avatar {
+  background: rgba(31, 77, 44, 0.25);
+  color: var(--od-pcb-green-glow);
+  border: 1px solid var(--od-pcb-green-2);
+}
+.support-thread .support-msg.is-user .support-msg-avatar {
+  background: rgba(184, 146, 46, 0.15);
+  color: var(--od-pcb-gold-2);
+  border: 1px solid var(--od-pcb-gold);
+}
+.support-thread .support-msg-body {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+.support-thread .support-msg-meta {
+  display: flex;
+  gap: 8px;
+  align-items: baseline;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  color: var(--od-ink-faint);
+}
+.support-thread .support-msg.is-user .support-msg-meta {justify-content: flex-end;}
+.support-thread .support-msg-meta .od-author {color: var(--od-ink); letter-spacing: 0;}
+.support-thread .support-msg-meta .od-role {color: var(--od-pcb-green-glow);}
+.support-thread .support-msg-bubble {
+  padding: 10px 14px;
+  border-radius: 4px;
+  font-size: 13px;
+  line-height: 1.6;
+  background: var(--od-bg);
+  border: 1.5px solid var(--od-line-strong);
+  color: var(--od-ink);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.support-thread .support-msg.is-user .support-msg-bubble {
+  background: rgba(184, 146, 46, 0.06);
+  border-color: var(--od-pcb-gold);
+}
+.support-thread .support-msg.is-staff .support-msg-bubble {
+  background: rgba(31, 77, 44, 0.08);
+  border-color: var(--od-pcb-green-2);
+}
+.support-msg-pending .support-msg-bubble {opacity: 0.6;}
+
+.support-msg-attachments {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 4px;
+}
+.support-msg-image {
+  display: block;
+  max-width: 300px;
+  max-height: 240px;
+  width: auto;
+  border: 1.5px solid var(--od-line-strong);
+  border-radius: 3px;
+  cursor: zoom-in;
+  transition: border-color 0.12s;
+  background: #000;
+}
+.support-msg-image:hover {border-color: var(--od-pcb-gold);}
+.support-msg-image img {
+  display: block;
+  max-width: 100%;
+  max-height: 240px;
+  border-radius: 3px;
+}
+.support-msg-file {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  background: var(--od-bg);
+  border: 1.5px solid var(--od-line-strong);
+  border-radius: 3px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--od-ink);
+  text-decoration: none;
+}
+.support-msg-file:hover {
+  border-color: var(--od-pcb-gold);
+  color: var(--od-pcb-gold-2);
+}
+.support-msg-file .od-icon {color: var(--od-ink-faint);}
+.support-msg-file .od-size {
+  color: var(--od-ink-faint);
+  font-size: 10px;
+  margin-left: 4px;
+}
+
+.support-thread-empty {
+  margin: auto;
+  max-width: 380px;
+  text-align: center;
+  padding: 32px 24px;
+  border: 1.5px dashed var(--od-line-strong);
+  border-radius: 4px;
+}
+.support-thread-empty .od-icon-big {
+  font-size: 32px;
+  color: var(--od-pcb-green-glow);
+  margin-bottom: 14px;
+  opacity: 0.7;
+}
+.support-thread-empty h3 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 18px;
+  margin: 0 0 8px;
+}
+.support-thread-empty p {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 1.7;
+  color: var(--od-ink-dim);
+  margin: 0;
+}
+
+.support-typing {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 12px;
+  background: rgba(31, 77, 44, 0.08);
+  border: 1.5px solid var(--od-pcb-green-2);
+  border-radius: 4px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--od-ink-dim);
+  align-self: flex-start;
+}
+.support-typing-dots {display: inline-flex; gap: 3px; margin-left: 4px;}
+.support-typing-dots span {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--od-pcb-green-glow);
+  animation: od-typing 1.2s infinite ease-in-out;
+}
+.support-typing-dots span:nth-child(2) {animation-delay: 0.15s;}
+.support-typing-dots span:nth-child(3) {animation-delay: 0.3s;}
+@keyframes od-typing {
+  0%, 60%, 100% {opacity: 0.3; transform: translateY(0);}
+  30% {opacity: 1; transform: translateY(-2px);}
+}
+
+.support-composer {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px 14px;
+  border-top: 1.5px solid var(--od-line-strong);
+  background: var(--od-bg-2);
+  flex-shrink: 0;
+}
+.support-composer-row {display: flex; align-items: flex-end; gap: 8px;}
+.support-composer-textarea {
+  flex: 1;
+  background: var(--od-bg);
+  color: var(--od-ink);
+  border: 1.5px solid var(--od-line-strong);
+  border-radius: 4px;
+  padding: 10px 12px;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  line-height: 1.5;
+  resize: none;
+  min-height: 44px;
+  max-height: 200px;
+}
+.support-composer-textarea:focus {outline: none; border-color: var(--od-pcb-gold);}
+.support-composer-actions {display: flex; gap: 6px; align-items: center;}
+.support-composer-hint {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  color: var(--od-ink-faint);
+  padding: 0 4px;
+}
+.support-composer-hint kbd {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  padding: 1px 5px;
+  background: var(--od-bg);
+  border: 1px solid var(--od-line-strong);
+  border-radius: 2px;
+  color: var(--od-ink-dim);
+}
+
+.support-dropzone-overlay {
+  position: absolute;
+  inset: 8px;
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--od-pcb-gold-2);
+  opacity: 0;
+  transition: opacity 0.12s;
+}
+.support-thread-log[data-dropzone-active="true"] .support-dropzone-overlay {
+  opacity: 1;
+}
+
+/* ---------- Feedback modal ------------------------------- */
+.feedback-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(10, 13, 10, 0.86);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  z-index: 100;
+}
+.feedback-modal {
+  width: 100%;
+  max-width: 560px;
+  background: var(--od-bg-2);
+  border: 1.5px solid var(--od-pcb-gold);
+  border-radius: 4px;
+  padding: 32px;
+}
+.feedback-head {margin-bottom: 24px;}
+.feedback-head .od-eyebrow {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--od-pcb-gold-2);
+  margin: 0 0 8px;
+}
+.feedback-head h2 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 28px;
+  line-height: 1.15;
+  margin: 0 0 10px;
+  letter-spacing: -0.01em;
+}
+.feedback-head p {
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--od-ink-dim);
+  margin: 0;
+}
+.feedback-q {padding: 14px 0; border-bottom: 1.5px dashed var(--od-line-strong);}
+.feedback-q:last-of-type {border-bottom: none;}
+.feedback-q-label {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+.feedback-q-label .od-q {
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: 14px;
+  color: var(--od-ink);
+}
+.feedback-q-label .od-scale-hint {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--od-ink-faint);
+}
+.feedback-rating {display: flex; gap: 4px;}
+.feedback-rating-dot {
+  flex: 1;
+  height: 36px;
+  background: transparent;
+  border: 1.5px solid var(--od-line-strong);
+  border-radius: 3px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.12s;
+  font-family: var(--font-display);
+  font-size: 14px;
+  color: var(--od-ink-dim);
+  font-weight: 500;
+}
+.feedback-rating-dot:hover {border-color: var(--od-ink-dim); color: var(--od-ink);}
+.feedback-rating-dot.is-on {
+  background: rgba(184, 146, 46, 0.1);
+  border-color: var(--od-pcb-gold);
+  color: var(--od-pcb-gold-2);
+}
+.feedback-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 22px;
+  padding-top: 18px;
+  border-top: 1.5px solid var(--od-line-strong);
+}
+
+/* ---------- /account/support: two-pane ------------------- */
+.account-support {
+  display: grid;
+  grid-template-columns: 340px 1fr;
+  gap: 0;
+  height: calc(100vh - var(--header-height) - 16px);
+  max-height: 880px;
+  border: 1.5px solid var(--od-line-strong);
+  border-radius: 4px;
+  overflow: hidden;
+  background: var(--od-bg-2);
+}
+.account-support-list {
+  border-right: 1.5px solid var(--od-line-strong);
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+.account-support-list-head {
+  padding: 16px 18px;
+  border-bottom: 1.5px solid var(--od-line-strong);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: var(--od-bg-2);
+  position: sticky;
+  top: 0;
+  z-index: 2;
+}
+.account-support-list-head h3 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 16px;
+  margin: 0;
+}
+.account-support-list-section {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--od-ink-faint);
+  padding: 14px 18px 6px;
+}
+.account-ticket-row {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 14px 18px;
+  border-bottom: 1.5px solid var(--od-line);
+  cursor: pointer;
+  transition: background 0.1s;
+  position: relative;
+  background: none;
+  border-left: none;
+  border-right: none;
+  border-top: none;
+  text-align: left;
+  width: 100%;
+  color: inherit;
+  font: inherit;
+}
+.account-ticket-row:hover {background: rgba(255, 255, 255, 0.02);}
+.account-ticket-row.is-active {
+  background: rgba(184, 146, 46, 0.05);
+  border-left: 3px solid var(--od-pcb-gold);
+  padding-left: 15px;
+}
+.account-ticket-row .od-row-top {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  align-items: baseline;
+}
+.account-ticket-row .od-subj {
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: 13px;
+  color: var(--od-ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex: 1;
+}
+.account-ticket-row .od-time {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--od-ink-faint);
+  flex-shrink: 0;
+}
+.account-ticket-row .od-row-bot {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  align-items: center;
+}
+.account-ticket-row .od-pid {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--od-ink-dim);
+  letter-spacing: 0.04em;
+}
+.account-ticket-row .od-unread {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--od-pcb-gold);
+  position: absolute;
+  top: 18px;
+  right: 14px;
+}
+.account-support-detail {
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+.account-support-detail .support-thread {
+  border: none;
+  border-radius: 0;
+  height: 100%;
+  max-height: none;
+}
+.account-support-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  padding: 40px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--od-ink-faint);
+  text-align: center;
+}
+.account-support-list-empty {
+  padding: 40px 24px;
+  text-align: center;
+}
+.account-support-list-empty p {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--od-ink-dim);
+  margin: 0 0 14px;
+  line-height: 1.6;
+}
+
+/* ---------- /account dashboard: support tile ------------- */
+.account-dash-support {min-height: 130px;}
+.account-dash-support.is-active {border-color: var(--od-pcb-gold);}
+.account-dash-support .od-count {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 28px;
+  color: var(--od-pcb-gold-2);
+  line-height: 1;
+  margin-top: 4px;
+  display: inline-flex;
+  align-items: baseline;
+  gap: 8px;
+}
+.account-dash-support .od-count-label {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  color: var(--od-ink-dim);
+}
+.account-dash-support .od-tile-link {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--od-pcb-gold-2);
+  text-decoration: none;
+  margin-top: auto;
+  padding-top: 8px;
+}
+.account-dash-support .od-tile-link:hover {color: var(--od-pcb-gold);}
+
+/* ---------- Mobile breakpoints --------------------------- */
+@media (max-width: 720px) {
+  .od-page-frame {padding: 20px 0 60px;}
+  .contact-grid {grid-template-columns: 1fr;}
+  .contact-tile-discord,
+  .contact-tile-ticket,
+  .contact-tile-direct {grid-column: 1; grid-row: auto;}
+  .contact-banner-active {flex-direction: column; align-items: flex-start;}
+  .contact-discord-banner {flex-direction: column;}
+  .contact-channel-list {grid-template-columns: 1fr;}
+
+  .support-signed-out {grid-template-columns: 1fr;}
+  .support-signin {padding: 24px 20px;}
+  .support-intake-form .od-field-row {grid-template-columns: 1fr;}
+
+  .support-thread {
+    height: calc(100vh - var(--header-height));
+    max-height: none;
+    border-radius: 0;
+    border-left: none;
+    border-right: none;
+  }
+  .support-thread-head {padding: 12px 16px;}
+  .support-thread-head h1 {font-size: 16px;}
+  .support-thread-log {padding: 16px 14px;}
+  .support-thread .support-msg {max-width: 92%;}
+  .support-msg-image {max-width: 100%;}
+
+  .feedback-modal {padding: 22px 20px;}
+  .feedback-head h2 {font-size: 22px;}
+
+  .account-support {
+    grid-template-columns: 1fr;
+    height: auto;
+    max-height: none;
+  }
+  .account-support-list {
+    border-right: none;
+    border-bottom: 1.5px solid var(--od-line-strong);
+    max-height: 50vh;
+  }
+  .account-support-detail {min-height: 60vh;}
+}
+
+/* Focus rings */
+.od-btn:focus-visible,
+.od-btn-icon:focus-visible,
+.od-input:focus-visible,
+.od-textarea:focus-visible,
+.od-select:focus-visible,
+.support-composer-textarea:focus-visible,
+.feedback-rating-dot:focus-visible,
+.account-ticket-row:focus-visible {
+  outline: 2px solid var(--od-pcb-gold);
+  outline-offset: 2px;
+}
+.account-ticket-row:focus-visible {outline-offset: -2px;}
+
+/* ---------- /contact: Discord invite card (Apr 2026) -------- */
+.discord-invite-card {
+  max-width: 600px;
+  margin: 0 auto 28px;
+  background: var(--od-bg-2);
+  border: 1px solid var(--od-line-strong);
+  border-radius: 12px;
+  overflow: hidden;
+  position: relative;
+}
+.discord-invite-banner {
+  height: 80px;
+  background: linear-gradient(
+    135deg,
+    var(--od-pcb-gold) 0%,
+    var(--od-pcb-gold-2) 100%
+  );
+}
+.discord-invite-body {
+  position: relative;
+  padding: 0 22px 20px;
+}
+.discord-invite-icon {
+  width: 64px;
+  height: 64px;
+  border-radius: 14px;
+  background: var(--od-bg);
+  border: 4px solid var(--od-bg-2);
+  margin-top: -32px;
+  margin-bottom: 14px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 18px;
+  color: var(--od-pcb-gold-2);
+  position: relative;
+  z-index: 1;
+}
+.discord-invite-icon img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.discord-invite-name {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 22px;
+  color: var(--od-ink);
+  margin: 0 0 10px;
+  letter-spacing: -0.01em;
+}
+.discord-invite-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--od-ink-dim);
+  margin: 0 0 6px;
+}
+.discord-invite-stats span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.discord-invite-stats strong {
+  color: var(--od-ink);
+  font-weight: 600;
+}
+.discord-invite-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+}
+.discord-invite-dot-online {background: #23a55a;}
+.discord-invite-dot-idle {
+  background: var(--od-ink-faint);
+  opacity: 0.7;
+}
+.discord-invite-est {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--od-ink-faint);
+  margin: 0 0 14px;
+  letter-spacing: 0.04em;
+}
+.discord-invite-desc {
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--od-ink-dim);
+  margin: 0 0 16px;
+  max-height: 96px;
+  overflow: hidden;
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    #000 60%,
+    transparent 100%
+  );
+  mask-image: linear-gradient(to bottom, #000 60%, transparent 100%);
+}
+.discord-invite-desc-fallback {
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--od-ink-dim);
+  margin: 0 0 16px;
+}
+.discord-invite-cta {
+  display: block;
+  width: 100%;
+  text-align: center;
+  background: #23a55a;
+  color: #fff;
+  padding: 12px 16px;
+  border-radius: 8px;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 14px;
+  letter-spacing: 0;
+  text-transform: none;
+  text-decoration: none;
+  border: 1px solid transparent;
+  transition: background 0.15s, box-shadow 0.15s;
+}
+.discord-invite-cta:hover {background: #1f8b4c;}
+.discord-invite-cta:focus-visible {
+  outline: 2px solid var(--od-pcb-gold);
+  outline-offset: 2px;
+}
+
+.contact-secondary-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  align-items: stretch;
+}
+
+@media (max-width: 720px) {
+  .discord-invite-card {margin-left: 0; margin-right: 0;}
+  .contact-secondary-grid {grid-template-columns: 1fr;}
+}
+
+/* =========================================================
+   /contact — Apr 2026 layout pass: widget + side-stack on
+   wide viewports, single column on narrow. Caps page-frame
+   so dead zones disappear on ultrawide. Re-uses --od-* tokens.
+   ========================================================= */
+
+.contact-page-frame {
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.contact-main-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 22px;
+  /* stretch so the side-stack matches the Discord widget height — kills
+     the dead space that otherwise opens below the right column on wide
+     viewports where the iframe is taller than two tiles. */
+  align-items: stretch;
+}
+
+@media (min-width: 960px) {
+  .contact-main-grid {
+    grid-template-columns: minmax(360px, 440px) 1fr;
+  }
+}
+
+.contact-side-stack {
+  display: grid;
+  gap: 22px;
+  grid-template-columns: 1fr;
+  /* fill the row height set by the Discord iframe so the two tiles
+     expand evenly instead of leaving a hole below the second tile. */
+  grid-auto-rows: 1fr;
+}
+
+@media (min-width: 1200px) {
+  .contact-side-stack {
+    grid-template-columns: 1fr 1fr;
+    align-items: stretch;
+  }
+}
+
+.contact-discord-widget {
+  width: 100%;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #2b2d31;
+  border: 1px solid var(--od-line-strong);
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.4);
+}
+.contact-discord-widget iframe {
+  display: block;
+  width: 100%;
+  /* Slightly shorter than before so the right-column tiles can match
+     the iframe height without leaving a gap. */
+  height: 440px;
+  border: 0;
+  background: transparent;
+}
+
+/* Tighten the legacy fallback card now that it's the secondary path */
+.discord-invite-card {max-width: 420px; margin-left: 0; margin-right: 0;}
+
+/* Mobile: stack everything */
+@media (max-width: 720px) {
+  .contact-page-frame {max-width: 100%;}
+  .contact-discord-widget iframe {height: 460px;}
+  .contact-side-stack {grid-template-columns: 1fr;}
+}
+
+/* Wide-viewport refinements for support surfaces */
+@media (min-width: 1280px) {
+  .account-support {grid-template-columns: 380px 1fr;}
+  .support-thread {max-height: 920px;}
+}
+@media (min-width: 1600px) {
+  .account-support {grid-template-columns: 420px 1fr;}
+  .od-page-wide {max-width: 1480px;}
+}
+
+/* Cap the h1 on /support so the gold "support ticket" line wraps onto
+   a tight column instead of stretching across the full grid width. */
+.od-page-frame .od-page-head h1 {max-width: 18ch;}
+.od-page-narrow .od-page-head h1 {max-width: 14ch;}
+.contact-page-frame .od-page-head h1 {max-width: 26ch;}
+
+/* =========================================================
+   Support thread — Apr 2026 dead-space pass.
+   Drop the outer card on the standalone /support page so
+   the chat lives in the page rhythm. Centre inner content
+   at a chat-friendly column (max 880px) so the log + bubbles
+   don't stretch across an ultrawide viewport. The thread
+   still lives inside the embedded /account/support pane
+   without the centring (parent column already constrains).
+   ========================================================= */
+.od-page-frame > .support-thread {
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  overflow: visible;
+  height: auto;
+  max-height: none;
+  min-height: calc(100vh - var(--header-height) - 80px);
+}
+.od-page-frame > .support-thread .support-thread-head {
+  background: transparent;
+  border-bottom: 1.5px solid var(--od-line-strong);
+  padding: 16px 0;
+  max-width: 880px;
+  margin: 0 auto;
+  width: 100%;
+}
+.od-page-frame > .support-thread .support-thread-log {
+  max-width: 880px;
+  margin: 0 auto;
+  width: 100%;
+  padding: 24px 0;
+  flex: 1;
+  min-height: 320px;
+}
+.od-page-frame > .support-thread .support-composer {
+  max-width: 880px;
+  margin: 0 auto;
+  width: 100%;
+  padding: 12px 0 0;
+  background: transparent;
+  border-top: 1.5px solid var(--od-line-strong);
+  position: sticky;
+  bottom: 0;
+}
+.od-page-frame > .support-thread .support-thread-empty {
+  margin: auto;
+  max-width: 460px;
+}
+
+/* Empty state should never expand to dominate when messages arrive —
+   the log itself is a flex column, the empty card auto-margins. Once
+   the messages render we align them top-down naturally. */
+
+/* Embedded variant (account/support detail pane) keeps the previous
+   bordered card so it sits inside the two-pane shell. */
+.account-support-detail .support-thread {
+  border: none;
+}
+
+/* =========================================================
+   Release notes / newsletter (Apr 2026)
+   /releases archive · /releases/<handle> · /newsletter/unsubscribed
+   <LatestReleaseStrip /> homepage cell. Email template inline-CSS lives
+   in app/lib/newsletter/render.ts. rn- prefix scopes everything cleanly.
+   Tokens: existing --od-* aliases; only fonts on the page (no Caveat).
+   ========================================================= */
+
+:root {
+  --rn-gold-tint: rgba(184, 146, 46, 0.06);
+  --rn-copper: var(--od-pcb-copper);
+}
+
+/* /releases archive ----------------------------------------------- */
+.rn-archive-head {
+  display: grid;
+  grid-template-columns: 1fr 320px;
+  gap: 32px;
+  align-items: end;
+  padding: 12px 0 28px;
+  border-bottom: 1.5px solid var(--od-line-strong);
+  margin-bottom: 28px;
+}
+.rn-archive-head .rn-eyebrow {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--od-ink-dim);
+  margin: 0 0 10px;
+  display: flex;
+  gap: 14px;
+  align-items: center;
+}
+.rn-archive-head .rn-eyebrow .rn-rss {
+  display: inline-flex;
+  gap: 6px;
+  color: var(--od-pcb-gold-2);
+  text-decoration: none;
+}
+.rn-archive-head h1 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: clamp(40px, 5.4vw, 72px);
+  line-height: 0.95;
+  letter-spacing: -0.02em;
+  margin: 0 0 14px;
+}
+.rn-archive-head h1 em {
+  font-style: normal;
+  color: var(--od-pcb-gold-2);
+}
+.rn-archive-head .rn-sub {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  line-height: 1.7;
+  color: var(--od-ink-dim);
+  max-width: 56ch;
+  margin: 0;
+}
+@media (max-width: 768px) {
+  .rn-archive-head {
+    grid-template-columns: 1fr;
+    gap: 18px;
+  }
+}
+
+.rn-sub-cta {
+  border: 1.5px solid var(--od-pcb-gold);
+  background: var(--rn-gold-tint);
+  border-radius: 4px;
+  padding: 16px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.rn-sub-cta .rn-k {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--od-pcb-gold-2);
+}
+.rn-sub-cta p {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--od-ink);
+  line-height: 1.55;
+  margin: 0;
+}
+.rn-sub-cta-link {
+  display: inline-block;
+  background: var(--od-pcb-gold);
+  color: #1b1400;
+  padding: 10px 14px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  text-decoration: none;
+  border-radius: 3px;
+  text-align: center;
+}
+.rn-sub-cta-link:hover {
+  background: var(--od-pcb-gold-2);
+}
+
+.rn-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 18px;
+  padding-bottom: 18px;
+  border-bottom: 1.5px dashed var(--od-line);
+}
+.rn-filters .rn-k {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--od-ink-faint);
+  margin-right: 4px;
+}
+.rn-filter {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 11px;
+  border: 1.5px solid var(--od-line-strong);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--od-ink-dim);
+  cursor: pointer;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  text-decoration: none;
+}
+.rn-filter:hover {
+  color: var(--od-ink);
+  border-color: var(--od-ink-dim);
+}
+.rn-filter.is-on {
+  color: var(--od-pcb-gold-2);
+  border-color: var(--od-pcb-gold);
+  background: var(--rn-gold-tint);
+}
+.rn-filter .rn-n {
+  color: var(--od-ink-faint);
+  font-size: 9px;
+  margin-left: 2px;
+}
+.rn-filter.is-on .rn-n {
+  color: var(--od-pcb-gold);
+}
+
+.rn-list {
+  display: flex;
+  flex-direction: column;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.rn-row {
+  display: grid;
+  grid-template-columns: 110px 92px 1fr 96px;
+  gap: 24px;
+  padding: 22px 0;
+  border-bottom: 1.5px solid var(--od-line);
+  align-items: start;
+  list-style: none;
+}
+.rn-row .rn-row-link {
+  display: contents;
+  color: inherit;
+  text-decoration: none;
+}
+.rn-row:hover {
+  background: rgba(255, 255, 255, 0.015);
+}
+.rn-row .rn-date {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--od-ink-dim);
+  letter-spacing: 0.04em;
+  padding-top: 2px;
+}
+.rn-row .rn-body {
+  min-width: 0;
+}
+.rn-row .rn-headline {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 19px;
+  line-height: 1.25;
+  color: var(--od-ink);
+  margin: 0 0 6px;
+  letter-spacing: -0.005em;
+}
+.rn-row:hover .rn-headline {
+  color: var(--od-pcb-gold-2);
+}
+.rn-row .rn-summary {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 1.65;
+  color: var(--od-ink-dim);
+  margin: 0 0 8px;
+  max-width: 68ch;
+}
+.rn-row .rn-tagrow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.rn-row .rn-thumb {
+  aspect-ratio: 4/3;
+  border-radius: 3px;
+  background: var(--od-bg-2);
+  border: 1.5px dashed var(--od-line-strong);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--od-ink-faint);
+  overflow: hidden;
+}
+.rn-row .rn-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.rn-row .rn-thumb.is-empty {
+  visibility: hidden;
+}
+@media (max-width: 768px) {
+  .rn-row {
+    grid-template-columns: 1fr;
+    gap: 8px;
+    padding: 18px 0;
+  }
+  .rn-row .rn-thumb {
+    display: none;
+  }
+  .rn-row .rn-date-version {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+  .rn-row .rn-headline {
+    font-size: 17px;
+  }
+}
+
+.rn-version {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 9px;
+  border: 1.5px solid var(--od-pcb-gold);
+  border-radius: 3px;
+  background: var(--rn-gold-tint);
+  color: var(--od-pcb-gold-2);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  line-height: 1.4;
+  width: fit-content;
+}
+.rn-version.is-empty {
+  visibility: hidden;
+}
+
+.rn-tag {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--od-ink-faint);
+  padding: 2px 7px;
+  border: 1px solid var(--od-line);
+  border-radius: 2px;
+}
+.rn-tag.is-firmware {
+  color: var(--od-pcb-green-glow);
+  border-color: var(--od-pcb-green-2);
+}
+.rn-tag.is-hardware {
+  color: var(--od-pcb-gold-2);
+  border-color: var(--od-pcb-gold);
+}
+.rn-tag.is-software {
+  color: var(--od-ink-dim);
+  border-color: var(--od-ink-faint);
+}
+.rn-tag.is-logistics,
+.rn-tag.is-milestone {
+  color: var(--rn-copper);
+  border-color: var(--rn-copper);
+}
+
+.rn-year {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin: 32px 0 8px;
+}
+.rn-year:first-of-type {
+  margin-top: 0;
+}
+.rn-year .rn-year-n {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 28px;
+  color: var(--od-ink-faint);
+  letter-spacing: 0.02em;
+}
+.rn-year .rn-year-rule {
+  flex: 1;
+  height: 1px;
+  background: var(--od-line);
+}
+.rn-year .rn-year-count {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--od-ink-faint);
+}
+
+.rn-empty {
+  margin: 48px auto;
+  max-width: 480px;
+  text-align: center;
+  padding: 40px 24px;
+  border: 1.5px dashed var(--od-line-strong);
+  border-radius: 6px;
+}
+.rn-empty .rn-empty-icon {
+  font-family: var(--font-mono);
+  font-size: 28px;
+  color: var(--od-pcb-gold-2);
+  margin-bottom: 14px;
+}
+.rn-empty h3 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 22px;
+  margin: 0 0 8px;
+  letter-spacing: -0.01em;
+}
+.rn-empty p {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 1.7;
+  color: var(--od-ink-dim);
+  margin: 0 0 18px;
+}
+
+/* /releases/<handle> ---------------------------------------------- */
+.rn-post-page {
+  max-width: 920px;
+  margin: 0 auto;
+}
+.rn-post-crumb {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--od-ink-dim);
+  margin-bottom: 28px;
+}
+.rn-post-crumb a {
+  color: inherit;
+  text-decoration: none;
+}
+.rn-post-crumb a:hover {
+  color: var(--od-pcb-gold-2);
+}
+.rn-post-crumb .rn-sep {
+  color: var(--od-ink-faint);
+  margin: 0 8px;
+}
+.rn-post-meta {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  flex-wrap: wrap;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--od-ink-dim);
+  margin-bottom: 14px;
+}
+.rn-post-meta .rn-dot {
+  color: var(--od-ink-faint);
+}
+.rn-post-title {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: clamp(36px, 4.6vw, 60px);
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+  margin: 0 0 18px;
+  text-wrap: pretty;
+}
+.rn-post-title em {
+  font-style: normal;
+  color: var(--od-pcb-gold-2);
+}
+.rn-post-deck {
+  font-family: var(--font-mono);
+  font-size: 14px;
+  line-height: 1.7;
+  color: var(--od-ink-dim);
+  max-width: 64ch;
+  margin: 0 0 36px;
+}
+.rn-post-hero {
+  aspect-ratio: 16 / 9;
+  margin: 0 0 40px;
+  border: 1.5px solid var(--od-line-strong);
+  border-radius: 4px;
+  background: var(--od-bg-2);
+  overflow: hidden;
+}
+.rn-post-hero img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.rn-post-body {
+  font-family: var(--font-mono);
+  font-size: 14px;
+  line-height: 1.75;
+  color: var(--od-ink);
+}
+.rn-post-body > * + * {
+  margin-top: 18px;
+}
+.rn-post-body h2 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 28px;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+  margin: 56px 0 14px;
+  padding-top: 22px;
+  border-top: 1.5px solid var(--od-line-strong);
+}
+.rn-post-body h2:first-child {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: 0;
+}
+.rn-post-body h3 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 18px;
+  line-height: 1.3;
+  margin: 28px 0 10px;
+}
+.rn-post-body p {
+  margin: 0 0 14px;
+  max-width: 70ch;
+}
+.rn-post-body a {
+  color: var(--od-pcb-gold-2);
+  text-decoration: underline;
+}
+.rn-post-body ul,
+.rn-post-body ol {
+  margin: 0 0 14px;
+  padding-left: 22px;
+  max-width: 70ch;
+}
+.rn-post-body li {
+  margin-bottom: 6px;
+}
+.rn-post-body code {
+  font-family: var(--font-mono);
+  font-size: 0.92em;
+  background: rgba(255, 255, 255, 0.04);
+  padding: 1px 6px;
+  border-radius: 2px;
+  color: var(--od-pcb-green-glow);
+  border: 1px solid var(--od-line);
+}
+.rn-post-body pre {
+  background: #06080a;
+  border: 1.5px solid var(--od-pcb-green-2);
+  border-radius: 4px;
+  padding: 14px 18px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--od-pcb-green-glow);
+  line-height: 1.7;
+  overflow-x: auto;
+}
+.rn-post-body pre code {
+  background: transparent;
+  border: 0;
+  padding: 0;
+  color: inherit;
+  font-size: inherit;
+}
+.rn-post-body table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  border-top: 1.5px solid var(--od-line-strong);
+}
+.rn-post-body th,
+.rn-post-body td {
+  padding: 9px 12px 9px 0;
+  border-bottom: 1px solid var(--od-line);
+  text-align: left;
+  vertical-align: top;
+}
+.rn-post-body th {
+  color: var(--od-ink-dim);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+.rn-post-body img {
+  max-width: 100%;
+  height: auto;
+  border: 1.5px solid var(--od-line-strong);
+  border-radius: 3px;
+}
+.rn-post-body blockquote {
+  margin: 0 0 14px;
+  padding-left: 14px;
+  border-left: 2px solid var(--od-pcb-gold);
+  color: var(--od-ink-dim);
+}
+
+.rn-post-footer {
+  margin-top: 56px;
+  padding-top: 24px;
+  border-top: 1.5px solid var(--od-line-strong);
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+@media (max-width: 768px) {
+  .rn-post-footer {
+    grid-template-columns: 1fr;
+  }
+}
+.rn-pn {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 16px 18px;
+  border: 1.5px solid var(--od-line-strong);
+  border-radius: 4px;
+  text-decoration: none;
+  color: var(--od-ink);
+  cursor: pointer;
+  transition: border-color 0.12s, background 0.12s;
+}
+.rn-pn:hover {
+  border-color: var(--od-pcb-gold);
+  background: var(--rn-gold-tint);
+}
+.rn-pn .rn-k {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--od-ink-faint);
+}
+.rn-pn.rn-next {
+  text-align: right;
+  align-items: flex-end;
+}
+@media (max-width: 768px) {
+  .rn-pn.rn-next {
+    text-align: left;
+    align-items: flex-start;
+  }
+}
+.rn-pn .rn-pn-title {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 14px;
+  line-height: 1.3;
+}
+.rn-pn .rn-pn-date {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--od-ink-faint);
+}
+
+.rn-post-subscribe {
+  margin-top: 28px;
+  padding: 22px 24px;
+  border: 1.5px solid var(--od-pcb-gold);
+  background: var(--rn-gold-tint);
+  border-radius: 4px;
+  display: flex;
+  gap: 24px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.rn-post-subscribe .rn-ps-text {
+  flex: 1 1 280px;
+  min-width: 0;
+}
+.rn-post-subscribe h4 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 18px;
+  margin: 0 0 6px;
+  letter-spacing: -0.005em;
+}
+.rn-post-subscribe p {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--od-ink-dim);
+  margin: 0;
+}
+
+/* /newsletter/unsubscribed ---------------------------------------- */
+.rn-unsub-page {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 60vh;
+  padding: 40px 24px;
+}
+.rn-unsub-card {
+  width: 100%;
+  max-width: 480px;
+  text-align: center;
+  border: 1.5px solid var(--od-line-strong);
+  border-radius: 4px;
+  padding: 40px 32px;
+  background: var(--od-bg-2);
+}
+.rn-unsub-mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  border: 1.5px solid var(--od-pcb-green-2);
+  border-radius: 4px;
+  background: rgba(31, 77, 44, 0.18);
+  color: var(--od-pcb-green-glow);
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 22px;
+  margin-bottom: 18px;
+}
+.rn-unsub-card h1 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 28px;
+  line-height: 1.15;
+  letter-spacing: -0.01em;
+  margin: 0 0 10px;
+}
+.rn-unsub-card p {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  line-height: 1.7;
+  color: var(--od-ink-dim);
+  margin: 0 0 22px;
+}
+.rn-unsub-resub {
+  display: inline-block;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--od-pcb-gold-2);
+  border-bottom: 1px solid var(--od-pcb-gold);
+  padding-bottom: 2px;
+  text-decoration: none;
+}
+.rn-unsub-resub:hover {
+  color: var(--od-pcb-gold);
+}
+.rn-unsub-id {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--od-ink-faint);
+  letter-spacing: 0.04em;
+  margin-top: 18px;
+  padding-top: 14px;
+  border-top: 1px dashed var(--od-line);
+}
+
+/* Homepage strip — three variants --------------------------------- */
+.rn-strip {
+  border: 1.5px solid var(--od-line-strong);
+  border-radius: 4px;
+  background: var(--od-bg-2);
+  padding: 18px 22px;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 22px;
+  align-items: center;
+  text-decoration: none;
+  color: inherit;
+}
+.rn-strip:hover {
+  border-color: var(--od-pcb-gold);
+}
+.rn-strip-eyebrow {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--od-pcb-gold-2);
+  border-right: 1.5px solid var(--od-line);
+  padding-right: 22px;
+  white-space: nowrap;
+}
+.rn-strip-eyebrow .rn-strip-date {
+  color: var(--od-ink-faint);
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  text-transform: none;
+}
+.rn-strip-body {
+  min-width: 0;
+}
+.rn-strip-headline {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 18px;
+  line-height: 1.25;
+  letter-spacing: -0.005em;
+  margin: 0 0 4px;
+}
+.rn-strip-summary {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 1.55;
+  color: var(--od-ink-dim);
+  margin: 0;
+  max-width: 64ch;
+}
+.rn-strip-cta {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--od-ink-dim);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.rn-strip:hover .rn-strip-cta {
+  color: var(--od-pcb-gold-2);
+}
+.rn-strip.is-card {
+  grid-template-columns: 1fr;
+  padding: 22px;
+}
+.rn-strip.is-card .rn-strip-eyebrow {
+  border-right: 0;
+  padding-right: 0;
+  flex-direction: row;
+  gap: 14px;
+}
+.rn-strip.is-card .rn-strip-headline {
+  font-size: 22px;
+  margin-top: 8px;
+}
+.rn-strip.is-rail {
+  display: block;
+  padding: 0;
+  background: transparent;
+  border: 0;
+}
+.rn-strip.is-rail .rn-strip-rail-head {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--od-ink-dim);
+  margin-bottom: 10px;
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+.rn-strip.is-rail .rn-strip-rail-head a {
+  color: var(--od-pcb-gold-2);
+  text-decoration: none;
+}
+.rn-strip.is-rail .rn-strip-row {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 18px;
+  align-items: baseline;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--od-line);
+  text-decoration: none;
+  color: inherit;
+}
+.rn-strip.is-rail .rn-strip-row:first-of-type {
+  border-top: 1.5px solid var(--od-line-strong);
+}
+.rn-strip.is-rail .rn-strip-row:last-of-type {
+  border-bottom: 1.5px solid var(--od-line-strong);
+}
+.rn-strip.is-rail .rn-strip-row:hover {
+  background: rgba(255, 255, 255, 0.015);
+}
+.rn-strip.is-rail .rn-rail-date {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--od-ink-faint);
+  letter-spacing: 0.04em;
+}
+.rn-strip.is-rail .rn-rail-headline {
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: 14px;
+  color: var(--od-ink);
+  line-height: 1.3;
+}
+.rn-strip.is-rail .rn-rail-version {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--od-pcb-gold-2);
+  letter-spacing: 0.06em;
+}
+@media (max-width: 768px) {
+  .rn-strip {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+  .rn-strip-eyebrow {
+    border-right: 0;
+    padding-right: 0;
+    flex-direction: row;
+    gap: 14px;
+  }
+}
+
+/* =========================================================
+   /support active state — sidebar + main layout (Apr 2026)
+   Two-col grid: ticket meta + replies sidebar on the left,
+   chat thread on the right. The .support-thread keeps its
+   original bordered card so it visually anchors. Composer
+   spans the full main-column width.
+   ========================================================= */
+
+.support-active-layout {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 22px;
+  align-items: start;
+  width: 100%;
+}
+
+@media (min-width: 1024px) {
+  .support-active-layout {
+    grid-template-columns: minmax(280px, 340px) 1fr;
+  }
+}
+
+@media (min-width: 1480px) {
+  .support-active-layout {
+    grid-template-columns: minmax(320px, 380px) 1fr;
+  }
+}
+
+/* Cancel the earlier "drop the outer card" override now that the
+   thread lives inside the sidebar layout. The default .support-thread
+   bordered card is the right look here. */
+.support-active-layout > .support-thread {
+  height: calc(100vh - var(--header-height) - 80px);
+  max-height: 880px;
+}
+.support-active-layout > .support-thread .support-thread-head,
+.support-active-layout > .support-thread .support-thread-log,
+.support-active-layout > .support-thread .support-composer {
+  max-width: none;
+  margin: 0;
+  width: auto;
+  padding-left: 22px;
+  padding-right: 22px;
+}
+.support-active-layout > .support-thread .support-composer {
+  padding-top: 12px;
+  padding-bottom: 14px;
+  background: var(--od-bg-2);
+  border-top: 1.5px solid var(--od-line-strong);
+  position: static;
+}
+.support-active-layout > .support-thread .support-composer-row {
+  width: 100%;
+}
+.support-active-layout > .support-thread .support-composer-textarea {
+  flex: 1 1 0%;
+  min-width: 0;
+  width: auto;
+}
+
+/* Sidebar (cards stacked vertically, sticky on tall viewports) */
+.support-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  position: sticky;
+  top: calc(var(--header-height) + 16px);
+  align-self: start;
+  max-height: calc(100vh - var(--header-height) - 32px);
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--od-line-strong) transparent;
+  padding-right: 4px;
+}
+@media (max-width: 1023px) {
+  .support-sidebar {
+    position: static;
+    max-height: none;
+    overflow: visible;
+  }
+}
+
+.support-sidebar-card {
+  background: var(--od-bg-2);
+  border: 1.5px solid var(--od-line-strong);
+  border-radius: 4px;
+  padding: 16px 18px;
+}
+.support-sidebar-card .od-tile-eyebrow {margin: 0 0 12px;}
+
+.support-sidebar-rows {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.support-sidebar-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+  font-size: 12px;
+  line-height: 1.45;
+}
+.support-sidebar-row dt {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--od-ink-dim);
+  margin: 0;
+  flex-shrink: 0;
+}
+.support-sidebar-row dd {
+  margin: 0;
+  color: var(--od-ink);
+  text-align: right;
+  word-break: break-word;
+}
+.support-sidebar-mono {font-family: var(--font-mono);}
+
+.support-sidebar-counts {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+.support-sidebar-count {
+  background: var(--od-bg);
+  border: 1.5px solid var(--od-line-strong);
+  border-radius: 4px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.support-sidebar-count-num {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 26px;
+  line-height: 1;
+  color: var(--od-pcb-gold-2);
+  letter-spacing: -0.01em;
+}
+.support-sidebar-count-label {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--od-ink-dim);
+}
+.support-sidebar-help {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--od-ink-faint);
+  margin: 0;
+}
+
+.support-sidebar-faq .support-sidebar-links {
+  list-style: none;
+  margin: 0 0 12px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.support-sidebar-faq .support-sidebar-links a {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--od-ink);
+  text-decoration: none;
+  border-bottom: 1px dashed var(--od-line-strong);
+  padding-bottom: 6px;
+  display: inline-block;
+}
+.support-sidebar-faq .support-sidebar-links a:hover {
+  color: var(--od-pcb-gold-2);
+  border-bottom-color: var(--od-pcb-gold);
+}

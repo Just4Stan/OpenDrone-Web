@@ -1,6 +1,6 @@
 ## Garantie légale de conformité
 
-Tous les produits vendus aux consommateurs par Incutec BV bénéficient d’une garantie légale de **2 ans** fondée sur la conformité au contrat (Livre VII, Art. 1649bis et suivants du Code civil belge, transposant la Directive 2019/771). Cette garantie est indépendante et s’ajoute à toute garantie commerciale éventuellement offerte.
+Tous les produits vendus aux consommateurs par Incutec BV bénéficient d’une garantie légale de **2 ans** fondée sur la conformité au contrat (art. 1701/1 et suivants de l’ancien Code civil + Livre VI CDE, Art. VI.83 octies et s. — Loi du 20 mars 2022, transposition de la Directive (UE) 2019/771). Pendant l’intégralité de la période de 2 ans, tout défaut qui apparaît est présumé avoir existé au moment de la livraison (renversement belge de la charge de la preuve). Cette garantie est indépendante et s’ajoute à toute garantie commerciale éventuellement offerte.
 
 La version néerlandaise (/warranty) constitue le texte juridiquement faisant foi pour les consommateurs résidant en Belgique. Cette traduction française est fournie à titre informatif uniquement.
 
@@ -13,7 +13,7 @@ La version néerlandaise (/warranty) constitue le texte juridiquement faisant fo
 
 - Les dommages causés par un crash, une mauvaise utilisation, une surcharge ou une modification.
 - L’usure normale de pièces à durée de vie limitée (par ex. connecteurs après usages répétés).
-- Les dommages causés par un firmware non officiel ou des modifications matérielles.
+- Les dommages résultant manifestement de modifications du firmware ou du matériel par le consommateur ; les défauts sans lien causal avec ces modifications restent couverts.
 
 ### Comment introduire une réclamation de garantie
 

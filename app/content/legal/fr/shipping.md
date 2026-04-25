@@ -6,7 +6,7 @@ La version néerlandaise (/shipping) constitue le texte juridiquement faisant fo
 
 ### Délai de livraison
 
-Les commandes sont normalement expédiées dans les 2 jours ouvrables suivant la réception du paiement. Le délai final de livraison est de 30 jours calendrier après la commande, sauf accord exprès contraire (Art. VI.43 du Code de droit économique belge, Art. 7 de nos Conditions Générales de Vente). Si le délai final de livraison n’est pas respecté, le consommateur a le droit de résilier le contrat sans frais.
+Les commandes sont normalement expédiées dans les 2 jours ouvrables suivant la réception du paiement. Le délai final de livraison est de 30 jours calendrier après la commande, sauf accord exprès contraire (Art. VI.43 du Code de droit économique belge, Art. 7 de nos Conditions Générales de Vente). Si Incutec BV ne respecte pas le délai de livraison de 30 jours, le consommateur peut proposer un délai supplémentaire raisonnable. À défaut de livraison dans ce délai supplémentaire, le consommateur peut résilier le contrat sans frais (Art. VI.43 §2 CDE), à moins que le délai de livraison initial ait été essentiel ou qu’Incutec BV ait déjà refusé de livrer.
 
 ### Tarifs et pays d’expédition
 

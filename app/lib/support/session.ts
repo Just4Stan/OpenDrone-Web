@@ -23,6 +23,12 @@ export type SupportTicket = {
   // minted before this field existed don't carry one — widget falls
   // back to no display in that case.
   pid?: string;
+  // Unix seconds of the last reply-notification email we sent for
+  // this ticket. Used in /api/support/poll to throttle "you got a
+  // reply" emails to one per ticket per 5-minute window — covers the
+  // case where the customer's tab is open in the background AND the
+  // case where the customer reopens the page after a long break.
+  lastReplyEmailAt?: number;
 };
 
 type Env = {SUPPORT_SESSION_SECRET?: string; SESSION_SECRET?: string};

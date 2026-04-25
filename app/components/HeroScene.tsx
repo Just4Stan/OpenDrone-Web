@@ -723,7 +723,10 @@ export function HeroScene({
         camera={{position: [0, 0.15, 0.7], fov: 40}}
         style={{background: 'transparent'}}
         frameloop="demand"
-        dpr={[1, 2]}
+        // Cap pixel ratio at 1.5 — at 2× on a Retina mobile screen the
+        // canvas is rasterised at 4× the pixel count for no perceivable
+        // gain. 1.5 is the sweet spot between sharpness and battery.
+        dpr={[1, 1.5]}
         gl={{
           antialias: true,
           alpha: true,

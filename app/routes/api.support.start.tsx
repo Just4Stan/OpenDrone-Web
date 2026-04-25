@@ -5,6 +5,7 @@ import {
   createSupportThread,
   firstNameOnly,
   postStaffMetadata,
+  postToThread,
 } from '~/lib/support/discord';
 import {sendResumeLink} from '~/lib/support/email';
 import {
@@ -27,7 +28,7 @@ import {
   formatDraftForDiscord,
   generateDraft,
 } from '~/lib/support/ai-draft';
-import {postToThread} from '~/lib/support/discord';
+import {addTicket} from '~/lib/support/ticket-index';
 
 type StartResult =
   | {ok: true; ticketId: string; pid?: string}
@@ -99,10 +100,22 @@ export async function action({request, context}: Route.ActionArgs) {
   const message = String(form.get('message') ?? '').trim();
   const turnstileToken = String(form.get('cf-turnstile-response') ?? '');
   const subject = String(form.get('subject') ?? '').trim().slice(0, 256);
+  const product = String(form.get('product') ?? '').trim().slice(0, 80);
+  const firmware = String(form.get('firmware') ?? '').trim().slice(0, 80);
   const honeypot = String(form.get('website') ?? '');
 
   if (honeypot) {
     return data<StartResult>({ok: true, ticketId: 'drop'});
+  }
+  if (!subject || subject.length < 4) {
+    return data<StartResult>(
+      {
+        ok: false,
+        message: 'Add a short subject so we can find your ticket later.',
+        field: 'message',
+      },
+      {status: 400},
+    );
   }
   if (!message || message.length < 5 || message.length > 4000) {
     return data<StartResult>(
@@ -137,6 +150,20 @@ export async function action({request, context}: Route.ActionArgs) {
     );
   }
   const cleanSubject = scrubForDiscord(subject).content;
+  const cleanProduct = scrubForDiscord(product).content;
+  const cleanFirmware = scrubForDiscord(firmware).content;
+  // Prepend a metadata line into the customer's first message body so
+  // staff see Product / Firmware up front in the Discord thread without
+  // adding new fields to the cookie or wire schema.
+  const metaLine = [
+    cleanProduct ? `Product: ${cleanProduct}` : null,
+    cleanFirmware ? `Firmware: ${cleanFirmware}` : null,
+  ]
+    .filter(Boolean)
+    .join(' · ');
+  const messageWithMeta = metaLine
+    ? `${metaLine}\n\n${cleanMessage.content}`
+    : cleanMessage.content;
 
   const ua = request.headers.get('User-Agent') ?? undefined;
 
@@ -185,7 +212,7 @@ export async function action({request, context}: Route.ActionArgs) {
       title: `#${pid} [${titleName}] ${subjectFragment}`,
       userName: name,
       userEmail: email,
-      firstMessage: cleanMessage.content,
+      firstMessage: messageWithMeta,
       userAgent: ua,
       ipHint: ip && ip !== 'unknown' ? anonymizeIp(ip) : undefined,
       files: attachments.files,
@@ -227,6 +254,28 @@ export async function action({request, context}: Route.ActionArgs) {
       createdAt: Math.floor(Date.now() / 1000),
     };
     const cookie = await signTicket(env, ticket);
+
+    // Write ticket meta + per-customer/email index. Fire-and-forget so
+    // a slow KV write doesn't tail the API response. No-op when
+    // TICKETS_KV is unbound.
+    const indexJob = addTicket(env, {
+      tid: thread.id,
+      pid,
+      subject: cleanSubject || cleanMessage.content.slice(0, 80),
+      openedAt: ticket.createdAt,
+      closedAt: null,
+      lastActivityAt: ticket.createdAt,
+      status: 'open',
+      customerId: verifiedCustomerId,
+      email,
+      name: ticket.name,
+      product: cleanProduct || undefined,
+      firmware: cleanFirmware || undefined,
+    }).catch((err) =>
+      console.warn('[support/start] ticket-index write failed', err),
+    );
+    if (context.waitUntil) context.waitUntil(indexJob);
+    else void indexJob;
 
     // Magic-link resume — fire-and-forget so the API response isn't blocked
     // by Resend latency. The email contains a link that survives cookie
