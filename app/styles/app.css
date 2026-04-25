@@ -4974,7 +4974,10 @@ button.reset {
   padding: 1.5rem 0 80px;
 }
 .od-page-narrow {max-width: 760px;}
-.od-page-wide {max-width: 1320px;}
+/* .od-page-wide intentionally inherits the global rail-width so the
+   horizontal gutter matches the header, footer, and PDP. Was previously
+   capped at 1320px which left a 60px gutter at 1440 viewport while the
+   header used 32px — caused inconsistent left edges across routes. */
 
 .od-page-head {
   padding: 0 0 32px;
@@ -6288,7 +6291,9 @@ button.reset {
    ========================================================= */
 
 .contact-page-frame {
-  max-width: 1400px;
+  /* Inherit the rail-width from .od-page-frame so the contact page lines
+     up with the header/footer/PDP left edge. The previous 1400px cap
+     left a 20px gutter at 1440 viewport vs the 32px header gutter. */
   margin: 0 auto;
 }
 
@@ -6346,7 +6351,6 @@ button.reset {
 
 /* Mobile: stack everything */
 @media (max-width: 720px) {
-  .contact-page-frame {max-width: 100%;}
   .contact-discord-widget iframe {height: 480px;}
   .contact-side-stack {grid-template-columns: 1fr;}
 }
@@ -6358,7 +6362,6 @@ button.reset {
 }
 @media (min-width: 1600px) {
   .account-support {grid-template-columns: 420px 1fr;}
-  .od-page-wide {max-width: 1480px;}
 }
 
 /* Cap the h1 on /support so the gold "support ticket" line wraps onto
