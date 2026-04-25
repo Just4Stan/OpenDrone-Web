@@ -140,7 +140,6 @@ function SignedOutView({discordInvite}: {discordInvite: string}) {
           <ul className="support-signin-reasons">
             <li>We see exactly which SKU and firmware rev you have.</li>
             <li>You can attach order files without typing the order number.</li>
-            <li>Refresh-safe — your thread persists across reloads.</li>
           </ul>
           <div className="support-signin-actions-row">
             <a
