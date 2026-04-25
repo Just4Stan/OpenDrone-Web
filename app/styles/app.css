@@ -805,12 +805,12 @@ button.reset {
 .site-footer-inner {
   width: var(--rail-width);
   margin: 0 auto;
-  padding: 0.5rem 0 2.5rem;
+  padding: 0.5rem 0 1.25rem;
 }
 
 @media (min-width: 768px) {
   .site-footer-inner {
-    padding: 0.75rem 0 3rem;
+    padding: 0.75rem 0 1.5rem;
   }
 }
 
@@ -1242,10 +1242,14 @@ button.reset {
   color: color-mix(in srgb, var(--color-text-muted) 50%, transparent);
 }
 
-/* Related products */
+/* Related products. The element is a <section>, so reset.css adds
+   another 32px of vertical padding on top of these values — keep the
+   internal spacing modest so the row of cards doesn't sit in a stack
+   of dead space. */
 .related-products {
-  margin-top: 3rem;
-  padding-top: 2rem;
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  padding-bottom: 0;
   border-top: 1px solid var(--color-border);
 }
 
@@ -1355,13 +1359,26 @@ button.reset {
 .product-hero {
   display: grid;
   gap: 2rem;
-  margin-bottom: 2.5rem;
-  align-items: start;
+  /* The next chapter <section> already gets 32px from the global section
+     reset in reset.css, so no extra margin needed below the hero. */
+  margin-bottom: 0;
+  /* align-items: stretch (grid default) so the left copy column fills
+     the same height as the gallery on the right. Without it the copy
+     ends short and leaves a dead block below the BETTER TOGETHER /
+     ADD TO CART card while the gallery extends further. */
+  align-items: stretch;
   /* Override the global `section { padding: 1rem 0 / 2rem 0 }` rule in
      reset.css — without this the eyebrow drops 32px below the wrapper
      edge on desktop, making the PDP gap above the eyebrow inconsistent
      with .od-page-frame routes which use <article>. */
   padding: 0;
+}
+
+/* Push the last item of the copy column (pair-cta or AddToCart) to the
+   bottom of the column so it lines up with the bottom of the gallery
+   instead of leaving dead space below it. */
+.product-hero-copy > :last-child {
+  margin-top: auto;
 }
 
 @media (min-width: 960px) {
