@@ -333,6 +333,22 @@ export async function postFeedback(
   return true;
 }
 
+// Permanently delete a Discord thread (forum post). Used when a ticket
+// is closed or has gone stale — the bridge keeps a copy in our index;
+// Discord doesn't need to retain the original.
+export async function deleteThread(
+  env: DiscordEnv,
+  threadId: string,
+): Promise<{ok: boolean; status: number}> {
+  const res = await discordFetch(`${DISCORD_API}/channels/${threadId}`, {
+    method: 'DELETE',
+    headers: authHeaders(env),
+  });
+  // Treat 404 as success — already gone is the goal state.
+  if (res.status === 404) return {ok: true, status: 404};
+  return {ok: res.ok, status: res.status};
+}
+
 export async function postToThread(
   env: DiscordEnv,
   threadId: string,
