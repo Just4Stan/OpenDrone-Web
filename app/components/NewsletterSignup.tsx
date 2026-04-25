@@ -152,7 +152,7 @@ export function NewsletterSignup({
           ? 'border border-[var(--color-border)] bg-[var(--color-bg-card)] p-8 md:p-10 rounded-sm'
           : '',
         isFooter
-          ? 'grid grid-cols-1 md:grid-cols-[1fr_minmax(0,28rem)] gap-6 md:gap-10 md:items-start'
+          ? 'grid grid-cols-1 md:grid-cols-[1fr_minmax(0,28rem)] gap-4 md:gap-8 md:items-center'
           : '',
         className,
       ]
@@ -160,15 +160,15 @@ export function NewsletterSignup({
         .join(' ')}
     >
       <div>
-        <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-[var(--color-gold)] mb-2">
-          Engineering Essentials
+        <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-[var(--color-gold)] mb-1.5">
+          Newsletter · Engineering Essentials
         </p>
         <h3
           id={`${emailId}-heading`}
           className={
             isWide
               ? 'font-display text-2xl md:text-3xl font-bold tracking-tight text-[var(--color-text)] mb-2'
-              : 'font-display text-sm font-bold tracking-[0.04em] uppercase text-[var(--color-text)] mb-2'
+              : 'font-display text-sm font-bold tracking-[0.04em] uppercase text-[var(--color-text)] mb-1.5'
           }
         >
           Product releases. Build notes.
@@ -177,7 +177,7 @@ export function NewsletterSignup({
           className={
             isWide
               ? 'text-sm text-[var(--color-text-muted)] mb-6 max-w-prose leading-relaxed'
-              : 'text-[11px] text-[var(--color-text-muted)] mb-3 leading-relaxed'
+              : 'text-[11px] text-[var(--color-text-muted)] leading-snug'
           }
         >
           Only when there&rsquo;s something to ship. No marketing fluff.
