@@ -130,14 +130,24 @@ export async function loader({request, context}: Route.LoaderArgs) {
   //     log appears empty until staff replies.
   //   - Every other bot message is the thread-starter or a system
   //     message and must not surface.
+  // Self-relayed messages bypass the moderation gate — the customer
+  // wrote them, so requiring a staff ✅ to surface them on refresh
+  // would erase the customer's own history.
+  const selfRelayed = messages.filter(
+    (m) => m.author.bot && isSelfRelayedMessage(m.content),
+  );
   const candidates = messages.filter(
     (m) =>
       !m.author.bot ||
       m.content.startsWith(AI_DRAFT_PREFIX) ||
-      m.content.startsWith(AI_SUMMARY_PREFIX) ||
-      isSelfRelayedMessage(m.content),
+      m.content.startsWith(AI_SUMMARY_PREFIX),
   );
   const filtered = await filterByApproval(env, candidates, ticket.tid);
+  // Re-merge self-relayed back into approved, preserving Discord's
+  // chronological order (messages come back oldest→newest).
+  filtered.approved = [...filtered.approved, ...selfRelayed].sort((a, b) =>
+    a.id.localeCompare(b.id),
+  );
   if (filtered.dropped.length > 0) {
     console.warn(
       '[support] moderation',

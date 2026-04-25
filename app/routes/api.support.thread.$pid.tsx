@@ -104,14 +104,21 @@ export async function loader({request, context, params}: Route.LoaderArgs) {
 
   // Same projection rules as /api/support/poll. Customer-relayed
   // bot messages surface as role:'self'. Staff/AI surface as helper/ai.
+  // Self-relayed bot messages (the customer's own posts) bypass the
+  // moderation gate — same reasoning as in /api/support/poll.
+  const selfRelayed = messages.filter(
+    (m) => m.author.bot && SELF_PREFIX_RE.test(m.content),
+  );
   const candidates = messages.filter(
     (m) =>
       !m.author.bot ||
       m.content.startsWith(AI_DRAFT_PREFIX) ||
-      m.content.startsWith(AI_SUMMARY_PREFIX) ||
-      SELF_PREFIX_RE.test(m.content),
+      m.content.startsWith(AI_SUMMARY_PREFIX),
   );
   const filtered = await filterByApproval(env, candidates, indexEntry.tid);
+  filtered.approved = [...filtered.approved, ...selfRelayed].sort((a, b) =>
+    a.id.localeCompare(b.id),
+  );
   const projected: PublicMessage[] = [];
   for (const m of filtered.approved) {
     const isAiDraft = m.author.bot && m.content.startsWith(AI_DRAFT_PREFIX);
