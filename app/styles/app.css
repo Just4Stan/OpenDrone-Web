@@ -361,18 +361,37 @@ a:hover {
 
 .site-header-categories a {
   font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: 12px;
   letter-spacing: 0.18em;
   text-transform: uppercase;
   color: var(--color-gold);
-  opacity: 0.8;
-  transition: opacity 0.15s ease, color 0.15s ease;
+  opacity: 0.7;
+  font-weight: 500;
+  position: relative;
+  padding-bottom: 4px;
+  transition: opacity 0.15s ease, color 0.15s ease, font-weight 0.15s ease;
 }
 
-.site-header-categories a:hover,
-.site-header-categories a.active {
+.site-header-categories a:hover {
   opacity: 1;
   color: var(--color-gold-hover);
+}
+
+.site-header-categories a.active {
+  opacity: 1;
+  color: var(--color-gold-light);
+  font-weight: 700;
+}
+
+.site-header-categories a.active::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -2px;
+  height: 2px;
+  background: var(--color-gold-light);
+  border-radius: 1px;
 }
 
 /* On the homepage the header floats over the hero scene. It starts
@@ -410,7 +429,7 @@ html.splash-settled .homepage-layout .site-header {
 
 .section-label {
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 11px;
   text-transform: uppercase;
   letter-spacing: 0.25em;
   color: var(--color-accent-light);
@@ -429,7 +448,7 @@ html.splash-settled .homepage-layout .site-header {
   background: var(--color-gold);
   color: var(--color-bg);
   font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.1em;
@@ -450,7 +469,7 @@ html.splash-settled .homepage-layout .site-header {
   border: 1px solid var(--color-border);
   color: var(--color-text-muted);
   font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: 12px;
   text-transform: uppercase;
   letter-spacing: 0.1em;
   border-radius: 3px;
@@ -485,7 +504,7 @@ html.splash-settled .homepage-layout .site-header {
   background: var(--color-bg);
   border-radius: 3px;
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 11px;
   color: var(--color-text-muted);
   letter-spacing: 0.02em;
 }
@@ -780,18 +799,18 @@ button.reset {
      outer rail stays put, only the text column tightens. */
   width: var(--rail-width);
   margin: 0 auto;
-  padding: 1rem 0 3rem;
+  padding: 1.5rem 0 3rem;
 }
 
 .site-footer-inner {
   width: var(--rail-width);
   margin: 0 auto;
-  padding: 2.5rem 0;
+  padding: 0.5rem 0 1.25rem;
 }
 
 @media (min-width: 768px) {
   .site-footer-inner {
-    padding: 3rem 0;
+    padding: 0.75rem 0 1.5rem;
   }
 }
 
@@ -813,7 +832,7 @@ button.reset {
 
 .page-eyebrow {
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 11px;
   text-transform: uppercase;
   letter-spacing: 0.24em;
   color: var(--color-accent-light);
@@ -835,7 +854,7 @@ button.reset {
 
 .section-heading {
   font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: 12px;
   text-transform: uppercase;
   letter-spacing: 0.18em;
   color: var(--color-text-muted);
@@ -999,7 +1018,7 @@ button.reset {
 
 .product-eyebrow {
   font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: 12px;
   text-transform: uppercase;
   letter-spacing: 0.22em;
   color: var(--color-accent-light);
@@ -1026,7 +1045,7 @@ button.reset {
 
 .product-facts dt {
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 11px;
   text-transform: uppercase;
   letter-spacing: 0.16em;
   color: var(--color-text-muted);
@@ -1083,7 +1102,7 @@ button.reset {
   background: var(--color-bg-elevated);
   color: var(--color-text-muted);
   font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: 12px;
   text-transform: uppercase;
   letter-spacing: 0.2em;
 }
@@ -1139,7 +1158,7 @@ button.reset {
 
 .product-gallery-counter {
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 11px;
   letter-spacing: 0.18em;
   text-transform: uppercase;
   color: var(--color-text-muted);
@@ -1194,7 +1213,7 @@ button.reset {
   margin: 0;
   list-style: none;
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 11px;
   text-transform: uppercase;
   letter-spacing: 0.18em;
   color: var(--color-text-muted);
@@ -1223,10 +1242,14 @@ button.reset {
   color: color-mix(in srgb, var(--color-text-muted) 50%, transparent);
 }
 
-/* Related products */
+/* Related products. The element is a <section>, so reset.css adds
+   another 32px of vertical padding on top of these values — keep the
+   internal spacing modest so the row of cards doesn't sit in a stack
+   of dead space. */
 .related-products {
-  margin-top: 3rem;
-  padding-top: 2rem;
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  padding-bottom: 0;
   border-top: 1px solid var(--color-border);
 }
 
@@ -1288,7 +1311,7 @@ button.reset {
 
 .collection-sort-label {
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 11px;
   text-transform: uppercase;
   letter-spacing: 0.18em;
   color: var(--color-text-muted);
@@ -1300,7 +1323,7 @@ button.reset {
   border: 1px solid var(--color-border);
   color: var(--color-text);
   font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: 12px;
   letter-spacing: 0.08em;
   padding: 0.55rem 2rem 0.55rem 0.75rem;
   border-radius: 6px;
@@ -1330,14 +1353,32 @@ button.reset {
 .product-page {
   width: var(--rail-width);
   margin: 0 auto;
-  padding: 0.75rem 0 4rem;
+  padding: 1.5rem 0 4rem;
 }
 
 .product-hero {
   display: grid;
   gap: 2rem;
-  margin-bottom: 2.5rem;
-  align-items: start;
+  /* The next chapter <section> already gets 32px from the global section
+     reset in reset.css, so no extra margin needed below the hero. */
+  margin-bottom: 0;
+  /* align-items: stretch (grid default) so the left copy column fills
+     the same height as the gallery on the right. Without it the copy
+     ends short and leaves a dead block below the BETTER TOGETHER /
+     ADD TO CART card while the gallery extends further. */
+  align-items: stretch;
+  /* Override the global `section { padding: 1rem 0 / 2rem 0 }` rule in
+     reset.css — without this the eyebrow drops 32px below the wrapper
+     edge on desktop, making the PDP gap above the eyebrow inconsistent
+     with .od-page-frame routes which use <article>. */
+  padding: 0;
+}
+
+/* Push the last item of the copy column (pair-cta or AddToCart) to the
+   bottom of the column so it lines up with the bottom of the gallery
+   instead of leaving dead space below it. */
+.product-hero-copy > :last-child {
+  margin-top: auto;
 }
 
 @media (min-width: 960px) {
@@ -1355,7 +1396,7 @@ button.reset {
 
 .product-hero-eyebrow {
   font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: 12px;
   letter-spacing: 0.25em;
   text-transform: uppercase;
   color: var(--color-gold);
@@ -1437,7 +1478,7 @@ button.reset {
   border: 1px solid var(--color-border);
   border-radius: 999px;
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 11px;
   letter-spacing: 0.16em;
   text-transform: uppercase;
   color: var(--color-text-muted);
@@ -1488,7 +1529,7 @@ button.reset {
 
 .product-buy-sku {
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 11px;
   text-transform: uppercase;
   letter-spacing: 0.16em;
   color: var(--color-text-muted);
@@ -1524,7 +1565,7 @@ button.reset {
 
 .pair-cta-eyebrow {
   font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: 12px;
   letter-spacing: 0.24em;
   text-transform: uppercase;
   color: var(--color-gold);
@@ -1603,7 +1644,7 @@ button.reset {
 
 .chapter-label {
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 11px;
   text-transform: uppercase;
   letter-spacing: 0.22em;
   color: var(--color-text-muted);
@@ -1633,7 +1674,7 @@ button.reset {
 
 .chapter-footnote {
   font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: 12px;
   line-height: 1.6;
   color: var(--color-text-muted);
   max-width: 56ch;
@@ -1677,7 +1718,7 @@ button.reset {
 
 .teardown-pin-cost {
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 11px;
   letter-spacing: 0.16em;
   text-transform: uppercase;
   color: var(--color-text-muted);
@@ -1706,7 +1747,7 @@ button.reset {
 
 .open-source-card-label {
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 11px;
   letter-spacing: 0.2em;
   text-transform: uppercase;
   color: var(--color-text-muted);
@@ -1723,7 +1764,7 @@ button.reset {
 
 .open-source-card-sub {
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 11px;
   line-height: 1.6;
   letter-spacing: 0.04em;
   color: var(--color-text-muted);
@@ -1734,7 +1775,7 @@ button.reset {
 .chapter-subhead {
   margin: 1.75rem 0 0.75rem;
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 11px;
   letter-spacing: 0.2em;
   text-transform: uppercase;
   color: var(--color-text-muted);
@@ -1768,7 +1809,7 @@ button.reset {
 .latest-commit-label {
   margin: 0;
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 11px;
   letter-spacing: 0.2em;
   text-transform: uppercase;
   color: var(--color-text-muted);
@@ -1792,7 +1833,7 @@ button.reset {
 .latest-commit-meta {
   margin: 0;
   font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: 12px;
   color: var(--color-text-muted);
 }
 
@@ -1850,7 +1891,7 @@ button.reset {
 .provenance-label {
   margin: 0 0 0.75rem;
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 11px;
   letter-spacing: 0.2em;
   text-transform: uppercase;
   color: var(--color-gold);
@@ -1878,7 +1919,7 @@ button.reset {
 
 .provenance-row-label {
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 11px;
   letter-spacing: 0.18em;
   text-transform: uppercase;
   color: var(--color-text-muted);
@@ -1893,13 +1934,13 @@ button.reset {
 .provenance-row-note {
   color: var(--color-text-muted);
   font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: 12px;
 }
 
 .provenance-foot {
   margin: 1rem 0 0;
   font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: 12px;
   line-height: 1.55;
   color: var(--color-text-muted);
 }
@@ -1956,7 +1997,7 @@ button.reset {
   grid-column: 2;
   grid-row: 2;
   font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: 12px;
   line-height: 1.55;
   color: var(--color-text-muted);
 }
@@ -1965,7 +2006,7 @@ button.reset {
   grid-column: 2;
   grid-row: 3;
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 11px;
   letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--color-text-muted);
@@ -1976,7 +2017,7 @@ button.reset {
   grid-row: 4;
   margin-top: 0.35rem;
   font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: 12px;
   letter-spacing: 0.12em;
   color: var(--color-gold);
 }
@@ -2027,7 +2068,7 @@ button.reset {
 
 .bundle-component-firmware {
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 11px;
   letter-spacing: 0.2em;
   text-transform: uppercase;
   color: var(--color-text-muted);
@@ -2041,7 +2082,7 @@ button.reset {
 .bundle-component-more {
   margin-top: 0.5rem;
   font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: 12px;
   letter-spacing: 0.08em;
   color: var(--color-gold);
 }
@@ -2074,7 +2115,7 @@ button.reset {
   grid-row: 1 / span 2;
   align-self: center;
   font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: 12px;
   letter-spacing: 0.08em;
   color: var(--color-gold);
   text-transform: uppercase;
@@ -2092,7 +2133,7 @@ button.reset {
   grid-column: 2;
   grid-row: 2;
   font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: 12px;
   line-height: 1.55;
   color: var(--color-text-muted);
 }
@@ -2124,7 +2165,7 @@ button.reset {
 
 .spec-table dt {
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 11px;
   letter-spacing: 0.18em;
   text-transform: uppercase;
   color: var(--color-text-muted);
@@ -2162,7 +2203,7 @@ button.reset {
 .firmware-split-eyebrow {
   grid-column: 1 / -1;
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 11px;
   letter-spacing: 0.25em;
   text-transform: uppercase;
   color: var(--color-gold);
@@ -2251,7 +2292,7 @@ button.reset {
   border-radius: 999px;
   color: var(--color-text-muted);
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 11px;
   letter-spacing: 0.18em;
   text-transform: uppercase;
   cursor: pointer;
@@ -2352,7 +2393,7 @@ button.reset {
 
 .route-error-status {
   font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: 12px;
   letter-spacing: 0.25em;
   text-transform: uppercase;
   color: var(--color-gold);
@@ -2379,7 +2420,7 @@ button.reset {
   border-radius: 8px;
   padding: 0.75rem 1rem;
   font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: 12px;
   color: var(--color-text-muted);
   max-width: 40rem;
   width: 100%;
@@ -2474,7 +2515,7 @@ button.reset {
 }
 
 .cart-line-quantity small {
-  font-size: 11px;
+  font-size: 12px;
   color: var(--color-text-muted);
   margin-right: 0.25rem;
   letter-spacing: 0.02em;
@@ -2522,7 +2563,7 @@ button.reset {
   width: auto;
   padding: 0 0.4rem;
   border: none;
-  font-size: 10px;
+  font-size: 11px;
   color: var(--color-text-muted);
   text-transform: uppercase;
   letter-spacing: 0.1em;
@@ -2547,7 +2588,7 @@ button.reset {
   border-radius: 6px;
   padding: 0.75rem 1rem;
   font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.12em;
   text-transform: uppercase;
@@ -2681,7 +2722,7 @@ button.reset {
 .predictive-search-result h5 {
   margin-bottom: 0.75rem;
   font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: 12px;
   text-transform: uppercase;
   letter-spacing: 0.14em;
   color: var(--color-text-muted);
@@ -2749,7 +2790,7 @@ button.reset {
 .account-form-grid legend,
 .order-search-legend {
   font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: 12px;
   text-transform: uppercase;
   letter-spacing: 0.12em;
   color: var(--color-text-muted);
@@ -2927,7 +2968,7 @@ button.reset {
 
 .account-dashboard-eyebrow {
   font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: 12px;
   letter-spacing: 0.22em;
   text-transform: uppercase;
   color: var(--color-text-muted);
@@ -2994,7 +3035,7 @@ button.reset {
 
 .account-dashboard-eyebrow-mono {
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 11px;
   letter-spacing: 0.22em;
   text-transform: uppercase;
   color: var(--color-gold);
@@ -3003,7 +3044,7 @@ button.reset {
 
 .account-dashboard-card-link {
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 11px;
   letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--color-text-muted);
@@ -3035,7 +3076,7 @@ button.reset {
   display: inline-flex;
   align-items: center;
   font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.14em;
   text-transform: uppercase;
@@ -3092,7 +3133,7 @@ button.reset {
 
 .account-dashboard-order-meta {
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 11px;
   text-transform: uppercase;
   letter-spacing: 0.14em;
   color: var(--color-text-muted);
@@ -3165,7 +3206,7 @@ button.reset {
 
 .account-welcome-eyebrow {
   font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: 12px;
   letter-spacing: 0.22em;
   text-transform: uppercase;
   color: var(--color-gold);
@@ -3227,7 +3268,7 @@ button.reset {
 
 .account-welcome-cta {
   font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.14em;
   text-transform: uppercase;
@@ -3236,7 +3277,7 @@ button.reset {
 
 .account-welcome-link {
   font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 400;
   letter-spacing: 0.14em;
   text-transform: uppercase;
@@ -3284,7 +3325,7 @@ button.reset {
   padding: 0.4rem 0.85rem;
   font-family: var(--font-mono);
   text-decoration: none;
-  font-size: 11px;
+  font-size: 12px;
   letter-spacing: 0.12em;
   text-transform: uppercase;
   cursor: pointer;
@@ -3306,7 +3347,7 @@ button.reset {
 .lang-toggle.header-lang-toggle button,
 .lang-toggle.header-lang-toggle a {
   padding: 0.25rem 0.55rem;
-  font-size: 10px;
+  font-size: 11px;
   letter-spacing: 0.15em;
 }
 
@@ -3354,7 +3395,7 @@ button.reset {
 .legal-last-updated {
   margin-top: 2.5rem;
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 11px;
   letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--color-text-muted);
@@ -3391,7 +3432,7 @@ button.reset {
 
 .product-compliance-grid dt {
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 11px;
   text-transform: uppercase;
   letter-spacing: 0.16em;
   color: var(--color-text-muted);
@@ -3419,7 +3460,7 @@ button.reset {
 .product-compliance-safety strong {
   display: block;
   font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: 12px;
   text-transform: uppercase;
   letter-spacing: 0.12em;
   color: var(--color-gold);
@@ -3441,7 +3482,7 @@ button.reset {
   background: var(--color-bg);
   color: var(--color-text);
   font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: 12px;
   text-transform: uppercase;
   letter-spacing: 0.08em;
   border-radius: 4px;
@@ -3467,7 +3508,7 @@ button.reset {
   border: 1px solid var(--color-border);
   border-radius: 3px;
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 11px;
   text-transform: uppercase;
   letter-spacing: 0.1em;
   color: var(--color-text-muted);
@@ -3500,7 +3541,7 @@ button.reset {
 .cookie-settings-table th {
   background: var(--color-bg-card);
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 11px;
   text-transform: uppercase;
   letter-spacing: 0.12em;
   color: var(--color-text-muted);
@@ -3615,7 +3656,7 @@ button.reset {
 
 .editorial-eyebrow {
   font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: 12px;
   letter-spacing: 0.25em;
   text-transform: uppercase;
   color: var(--color-gold);
@@ -3668,7 +3709,7 @@ button.reset {
 
 .editorial-section-title {
   font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: 12px;
   letter-spacing: 0.25em;
   text-transform: uppercase;
   color: var(--color-text);
@@ -3704,7 +3745,7 @@ button.reset {
   background: var(--color-gold);
   color: var(--color-bg);
   font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.14em;
   text-transform: uppercase;
@@ -3724,7 +3765,7 @@ button.reset {
   border: 1px solid var(--color-border);
   color: var(--color-text-muted);
   font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: 12px;
   letter-spacing: 0.14em;
   text-transform: uppercase;
   border-radius: 4px;
@@ -3753,7 +3794,7 @@ button.reset {
 
 .partner-label {
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 11px;
   letter-spacing: 0.2em;
   text-transform: uppercase;
   color: var(--color-gold);
@@ -3784,7 +3825,7 @@ button.reset {
 
 .partner-links a {
   font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: 12px;
   letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--color-gold);
@@ -3809,7 +3850,7 @@ button.reset {
 
 .donation-eyebrow {
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 11px;
   letter-spacing: 0.22em;
   text-transform: uppercase;
   color: var(--color-gold);
@@ -3867,7 +3908,7 @@ button.reset {
 
 .donation-tier-label {
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 11px;
   letter-spacing: 0.2em;
   text-transform: uppercase;
   color: var(--color-text-muted);
@@ -3891,7 +3932,7 @@ button.reset {
 
 .donation-tier-remove {
   font-family: var(--font-mono);
-  font-size: 9px;
+  font-size: 10px;
   letter-spacing: 0.16em;
   text-transform: uppercase;
   color: var(--color-text-muted);
@@ -3947,7 +3988,7 @@ button.reset {
 
 .contact-hero-eyebrow {
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 11px;
   letter-spacing: 0.22em;
   text-transform: uppercase;
   color: var(--color-gold);
@@ -3995,7 +4036,7 @@ button.reset {
 
 .contact-tier-eyebrow {
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 11px;
   letter-spacing: 0.2em;
   text-transform: uppercase;
   color: var(--color-text-muted);
@@ -4154,7 +4195,7 @@ button.reset {
 
 .contact-direct-label {
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 11px;
   letter-spacing: 0.16em;
   text-transform: uppercase;
   color: var(--color-text-muted);
@@ -4177,7 +4218,7 @@ button.reset {
   align-self: flex-start;
   margin-top: 0.85rem;
   font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: 12px;
   letter-spacing: 0.14em;
   text-transform: uppercase;
   font-weight: 700;
@@ -4207,7 +4248,7 @@ button.reset {
 
 .contact-reference-eyebrow {
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 11px;
   letter-spacing: 0.2em;
   text-transform: uppercase;
   color: var(--color-text-muted);
@@ -4223,7 +4264,7 @@ button.reset {
 
 .contact-reference-body h2 {
   font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: 12px;
   letter-spacing: 0.16em;
   text-transform: uppercase;
   color: var(--color-text-muted);
@@ -4274,7 +4315,7 @@ button.reset {
 
 .support-eyebrow {
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 11px;
   letter-spacing: 0.2em;
   text-transform: uppercase;
   color: var(--color-gold);
@@ -4325,7 +4366,7 @@ button.reset {
 
 .support-label {
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 11px;
   letter-spacing: 0.16em;
   text-transform: uppercase;
   color: var(--color-text-muted);
@@ -4367,7 +4408,7 @@ button.reset {
 
 .support-error {
   font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: 12px;
   color: #e06c6c;
   margin: 0;
 }
@@ -4375,7 +4416,7 @@ button.reset {
 .support-submit {
   align-self: flex-start;
   font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: 12px;
   letter-spacing: 0.14em;
   text-transform: uppercase;
   font-weight: 700;
@@ -4414,7 +4455,7 @@ button.reset {
 }
 .support-signin-alt {
   font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: 12px;
   letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--color-text-muted);
@@ -4461,7 +4502,7 @@ button.reset {
 
 .support-close {
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 11px;
   letter-spacing: 0.16em;
   text-transform: uppercase;
   color: var(--color-text-muted);
@@ -4515,7 +4556,7 @@ button.reset {
   justify-content: space-between;
   gap: 0.75rem;
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 11px;
   letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--color-text-muted);
@@ -4550,7 +4591,7 @@ button.reset {
 
 .support-msg-attachments a {
   font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: 12px;
   color: var(--color-gold);
   text-decoration: underline;
   text-underline-offset: 2px;
@@ -4560,7 +4601,7 @@ button.reset {
 .support-typing,
 .support-hint {
   font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: 12px;
   color: var(--color-text-muted);
   margin: 0.25rem 0 0;
   font-style: italic;
@@ -4596,7 +4637,7 @@ button.reset {
 .support-boot {
   padding: 2rem 1.25rem;
   font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: 12px;
   letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--color-text-muted);
@@ -4636,7 +4677,7 @@ button.reset {
 
 .support-files-btn {
   font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: 12px;
   letter-spacing: 0.14em;
   text-transform: uppercase;
   font-weight: 700;
@@ -4691,7 +4732,7 @@ button.reset {
   padding: 0.3rem 0.5rem;
   border-radius: 2px;
   font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: 12px;
   color: var(--color-text);
   max-width: 100%;
 }
@@ -4705,7 +4746,7 @@ button.reset {
 
 .support-files-chip-size {
   color: var(--color-text-muted);
-  font-size: 10px;
+  font-size: 11px;
   letter-spacing: 0.06em;
 }
 
@@ -4736,7 +4777,7 @@ button.reset {
 
 .support-msg-attachment-pending {
   font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: 12px;
   color: var(--color-text-muted);
   font-style: italic;
 }
@@ -4789,7 +4830,7 @@ button.reset {
   background: transparent;
   border: none;
   font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: 12px;
   letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--color-text-muted);
@@ -4841,7 +4882,7 @@ button.reset {
 
 .support-resume-success {
   font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: 12px;
   color: var(--color-accent-light);
   margin: 0;
   line-height: 1.5;
@@ -4849,7 +4890,7 @@ button.reset {
 
 .support-prefill-note {
   font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: 12px;
   color: var(--color-text-muted);
   background: color-mix(in srgb, var(--color-gold) 6%, var(--color-bg));
   border: 1px solid color-mix(in srgb, var(--color-gold) 35%, var(--color-border));
@@ -4947,19 +4988,22 @@ button.reset {
 .od-page-frame {
   width: var(--rail-width);
   margin: 0 auto;
-  padding: 32px 0 80px;
+  padding: 1.5rem 0 80px;
 }
 .od-page-narrow {max-width: 760px;}
-.od-page-wide {max-width: 1320px;}
+/* .od-page-wide intentionally inherits the global rail-width so the
+   horizontal gutter matches the header, footer, and PDP. Was previously
+   capped at 1320px which left a 60px gutter at 1440 viewport while the
+   header used 32px — caused inconsistent left edges across routes. */
 
 .od-page-head {
-  padding: 24px 0 32px;
+  padding: 0 0 32px;
   border-bottom: 1.5px solid var(--od-line-strong);
   margin-bottom: 32px;
 }
 .od-page-head .od-eyebrow {
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 11px;
   letter-spacing: 0.2em;
   text-transform: uppercase;
   color: var(--od-ink-dim);
@@ -5015,7 +5059,7 @@ button.reset {
 .od-tile p:last-child {margin-bottom: 0;}
 .od-tile-eyebrow {
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 11px;
   letter-spacing: 0.18em;
   text-transform: uppercase;
   color: var(--od-ink-dim);
@@ -5030,7 +5074,7 @@ button.reset {
   padding: 12px 18px;
   border-radius: 4px;
   font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: 12px;
   letter-spacing: 0.18em;
   text-transform: uppercase;
   font-weight: 600;
@@ -5067,7 +5111,7 @@ button.reset {
   border-color: var(--od-pcb-copper);
   color: var(--od-pcb-copper);
 }
-.od-btn-sm {padding: 8px 12px; font-size: 10px; letter-spacing: 0.14em;}
+.od-btn-sm {padding: 8px 12px; font-size: 11px; letter-spacing: 0.14em;}
 .od-btn[disabled] {opacity: 0.55; cursor: not-allowed;}
 .od-btn-icon {
   display: inline-flex;
@@ -5093,7 +5137,7 @@ button.reset {
   padding: 4px 10px;
   border-radius: 3px;
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 11px;
   letter-spacing: 0.16em;
   text-transform: uppercase;
   line-height: 1.2;
@@ -5136,7 +5180,7 @@ button.reset {
 }
 .od-field label {
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 11px;
   letter-spacing: 0.18em;
   text-transform: uppercase;
   color: var(--od-ink-dim);
@@ -5147,7 +5191,7 @@ button.reset {
   margin-left: 6px;
   text-transform: none;
   letter-spacing: 0.04em;
-  font-size: 10px;
+  font-size: 11px;
 }
 .od-input,
 .od-textarea,
@@ -5167,7 +5211,7 @@ button.reset {
 .od-textarea:focus,
 .od-select:focus {outline: none; border-color: var(--od-pcb-gold);}
 .od-textarea {resize: vertical; min-height: 96px;}
-.od-help {font-size: 11px; color: var(--od-ink-faint); line-height: 1.5;}
+.od-help {font-size: 12px; color: var(--od-ink-faint); line-height: 1.5;}
 
 /* ---------- /contact (new design) ------------------------- */
 .contact-grid {
@@ -5211,7 +5255,7 @@ button.reset {
   gap: 18px;
   margin: 14px 0 18px;
   font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: 12px;
   color: var(--od-ink-dim);
 }
 .contact-discord-stats span {display: inline-flex; align-items: center; gap: 6px;}
@@ -5234,7 +5278,7 @@ button.reset {
 }
 .contact-channels-title {
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 11px;
   letter-spacing: 0.18em;
   text-transform: uppercase;
   color: var(--od-ink-dim);
@@ -5268,7 +5312,7 @@ button.reset {
 .contact-direct-row:last-child {border-bottom: none;}
 .contact-direct-row .od-k {
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 11px;
   letter-spacing: 0.16em;
   text-transform: uppercase;
   color: var(--od-ink-dim);
@@ -5314,7 +5358,7 @@ button.reset {
 }
 .contact-banner-active .od-banner-id {
   font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: 12px;
   color: var(--od-ink-dim);
   letter-spacing: 0.04em;
 }
@@ -5387,7 +5431,7 @@ button.reset {
 }
 .support-intake-form-actions .od-turnstile {
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 11px;
   letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--od-ink-faint);
@@ -5426,7 +5470,7 @@ button.reset {
   border: 1.5px solid var(--od-line-strong);
   border-radius: 3px;
   font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: 12px;
   color: var(--od-ink);
 }
 .support-attach-chip .od-x {
@@ -5486,7 +5530,7 @@ button.reset {
   font-family: var(--font-mono);
   color: var(--od-ink-faint);
   letter-spacing: 0.04em;
-  font-size: 11px;
+  font-size: 12px;
 }
 .support-thread-head-meta h1 {
   font-family: var(--font-display);
@@ -5534,7 +5578,7 @@ button.reset {
   gap: 12px;
   margin: 6px 0 -2px;
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 11px;
   letter-spacing: 0.18em;
   text-transform: uppercase;
   color: var(--od-ink-faint);
@@ -5562,7 +5606,7 @@ button.reset {
   align-items: center;
   justify-content: center;
   font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 600;
 }
 .support-thread .support-msg.is-staff .support-msg-avatar {
@@ -5586,7 +5630,7 @@ button.reset {
   gap: 8px;
   align-items: baseline;
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 11px;
   letter-spacing: 0.06em;
   color: var(--od-ink-faint);
 }
@@ -5647,7 +5691,7 @@ button.reset {
   border: 1.5px solid var(--od-line-strong);
   border-radius: 3px;
   font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: 12px;
   color: var(--od-ink);
   text-decoration: none;
 }
@@ -5658,7 +5702,7 @@ button.reset {
 .support-msg-file .od-icon {color: var(--od-ink-faint);}
 .support-msg-file .od-size {
   color: var(--od-ink-faint);
-  font-size: 10px;
+  font-size: 11px;
   margin-left: 4px;
 }
 
@@ -5699,7 +5743,7 @@ button.reset {
   border: 1.5px solid var(--od-pcb-green-2);
   border-radius: 4px;
   font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: 12px;
   color: var(--od-ink-dim);
   align-self: flex-start;
 }
@@ -5746,14 +5790,14 @@ button.reset {
 .support-composer-actions {display: flex; gap: 6px; align-items: center;}
 .support-composer-hint {
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 11px;
   letter-spacing: 0.06em;
   color: var(--od-ink-faint);
   padding: 0 4px;
 }
 .support-composer-hint kbd {
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 11px;
   padding: 1px 5px;
   background: var(--od-bg);
   border: 1px solid var(--od-line-strong);
@@ -5802,7 +5846,7 @@ button.reset {
 .feedback-head {margin-bottom: 24px;}
 .feedback-head .od-eyebrow {
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 11px;
   letter-spacing: 0.2em;
   text-transform: uppercase;
   color: var(--od-pcb-gold-2);
@@ -5839,7 +5883,7 @@ button.reset {
 }
 .feedback-q-label .od-scale-hint {
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 11px;
   letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--od-ink-faint);
@@ -5914,7 +5958,7 @@ button.reset {
 }
 .account-support-list-section {
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 11px;
   letter-spacing: 0.18em;
   text-transform: uppercase;
   color: var(--od-ink-faint);
@@ -5962,7 +6006,7 @@ button.reset {
 }
 .account-ticket-row .od-time {
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 11px;
   color: var(--od-ink-faint);
   flex-shrink: 0;
 }
@@ -5974,7 +6018,7 @@ button.reset {
 }
 .account-ticket-row .od-pid {
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 11px;
   color: var(--od-ink-dim);
   letter-spacing: 0.04em;
 }
@@ -6037,13 +6081,13 @@ button.reset {
 }
 .account-dash-support .od-count-label {
   font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: 12px;
   letter-spacing: 0.14em;
   color: var(--od-ink-dim);
 }
 .account-dash-support .od-tile-link {
   font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: 12px;
   letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--od-pcb-gold-2);
@@ -6055,7 +6099,7 @@ button.reset {
 
 /* ---------- Mobile breakpoints --------------------------- */
 @media (max-width: 720px) {
-  .od-page-frame {padding: 20px 0 60px;}
+  .od-page-frame {padding: 1.25rem 0 60px;}
   .contact-grid {grid-template-columns: 1fr;}
   .contact-tile-discord,
   .contact-tile-ticket,
@@ -6197,7 +6241,7 @@ button.reset {
 }
 .discord-invite-est {
   font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: 12px;
   color: var(--od-ink-faint);
   margin: 0 0 14px;
   letter-spacing: 0.04em;
@@ -6264,7 +6308,9 @@ button.reset {
    ========================================================= */
 
 .contact-page-frame {
-  max-width: 1400px;
+  /* Inherit the rail-width from .od-page-frame so the contact page lines
+     up with the header/footer/PDP left edge. The previous 1400px cap
+     left a 20px gutter at 1440 viewport vs the 32px header gutter. */
   margin: 0 auto;
 }
 
@@ -6280,7 +6326,10 @@ button.reset {
 
 @media (min-width: 960px) {
   .contact-main-grid {
-    grid-template-columns: minmax(360px, 440px) 1fr;
+    /* Discord widget is the primary CTA — let it take the wide column
+       and pin the side rail to a fixed narrow width so we don't get a
+       blank middle on big monitors. */
+    grid-template-columns: 1fr minmax(320px, 380px);
   }
 }
 
@@ -6288,16 +6337,7 @@ button.reset {
   display: grid;
   gap: 22px;
   grid-template-columns: 1fr;
-  /* fill the row height set by the Discord iframe so the two tiles
-     expand evenly instead of leaving a hole below the second tile. */
   grid-auto-rows: 1fr;
-}
-
-@media (min-width: 1200px) {
-  .contact-side-stack {
-    grid-template-columns: 1fr 1fr;
-    align-items: stretch;
-  }
 }
 
 .contact-discord-widget {
@@ -6307,24 +6347,28 @@ button.reset {
   background: #2b2d31;
   border: 1px solid var(--od-line-strong);
   box-shadow: 0 1px 0 rgba(0, 0, 0, 0.4);
+  /* override the global `section { padding: 1rem 0; }` rule that
+     would otherwise insert a 32px gray strip above + below the iframe. */
+  padding: 0;
 }
 .contact-discord-widget iframe {
   display: block;
   width: 100%;
-  /* Slightly shorter than before so the right-column tiles can match
-     the iframe height without leaving a gap. */
-  height: 440px;
+  height: 500px;
   border: 0;
   background: transparent;
 }
 
-/* Tighten the legacy fallback card now that it's the secondary path */
-.discord-invite-card {max-width: 420px; margin-left: 0; margin-right: 0;}
+/* Fallback invite card (only shown when guildId is missing) — uncap
+   width so it doesn't leave a dead strip on wide viewports. */
+.contact-main-grid .discord-invite-card {
+  max-width: none;
+  margin: 0;
+}
 
 /* Mobile: stack everything */
 @media (max-width: 720px) {
-  .contact-page-frame {max-width: 100%;}
-  .contact-discord-widget iframe {height: 460px;}
+  .contact-discord-widget iframe {height: 480px;}
   .contact-side-stack {grid-template-columns: 1fr;}
 }
 
@@ -6335,7 +6379,6 @@ button.reset {
 }
 @media (min-width: 1600px) {
   .account-support {grid-template-columns: 420px 1fr;}
-  .od-page-wide {max-width: 1480px;}
 }
 
 /* Cap the h1 on /support so the gold "support ticket" line wraps onto
@@ -6343,6 +6386,8 @@ button.reset {
 .od-page-frame .od-page-head h1 {max-width: 18ch;}
 .od-page-narrow .od-page-head h1 {max-width: 14ch;}
 .contact-page-frame .od-page-head h1 {max-width: 26ch;}
+.contact-page-frame .od-page-head p {max-width: none;}
+.support-page-frame .od-page-head p {max-width: none;}
 
 /* =========================================================
    Support thread — Apr 2026 dead-space pass.
@@ -6428,7 +6473,7 @@ button.reset {
 }
 .rn-archive-head .rn-eyebrow {
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 11px;
   letter-spacing: 0.22em;
   text-transform: uppercase;
   color: var(--od-ink-dim);
@@ -6481,7 +6526,7 @@ button.reset {
 }
 .rn-sub-cta .rn-k {
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 11px;
   letter-spacing: 0.2em;
   text-transform: uppercase;
   color: var(--od-pcb-gold-2);
@@ -6499,7 +6544,7 @@ button.reset {
   color: #1b1400;
   padding: 10px 14px;
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 600;
   letter-spacing: 0.18em;
   text-transform: uppercase;
@@ -6522,7 +6567,7 @@ button.reset {
 }
 .rn-filters .rn-k {
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 11px;
   letter-spacing: 0.2em;
   text-transform: uppercase;
   color: var(--od-ink-faint);
@@ -6539,7 +6584,7 @@ button.reset {
   color: var(--od-ink-dim);
   cursor: pointer;
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 11px;
   letter-spacing: 0.16em;
   text-transform: uppercase;
   text-decoration: none;
@@ -6555,7 +6600,7 @@ button.reset {
 }
 .rn-filter .rn-n {
   color: var(--od-ink-faint);
-  font-size: 9px;
+  font-size: 10px;
   margin-left: 2px;
 }
 .rn-filter.is-on .rn-n {
@@ -6671,7 +6716,7 @@ button.reset {
   background: var(--rn-gold-tint);
   color: var(--od-pcb-gold-2);
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 11px;
   letter-spacing: 0.08em;
   line-height: 1.4;
   width: fit-content;
@@ -6682,7 +6727,7 @@ button.reset {
 
 .rn-tag {
   font-family: var(--font-mono);
-  font-size: 9px;
+  font-size: 10px;
   letter-spacing: 0.18em;
   text-transform: uppercase;
   color: var(--od-ink-faint);
@@ -6731,7 +6776,7 @@ button.reset {
 }
 .rn-year .rn-year-count {
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 11px;
   letter-spacing: 0.18em;
   text-transform: uppercase;
   color: var(--od-ink-faint);
@@ -6773,7 +6818,7 @@ button.reset {
 }
 .rn-post-crumb {
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 11px;
   letter-spacing: 0.2em;
   text-transform: uppercase;
   color: var(--od-ink-dim);
@@ -6796,7 +6841,7 @@ button.reset {
   align-items: center;
   flex-wrap: wrap;
   font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: 12px;
   color: var(--od-ink-dim);
   margin-bottom: 14px;
 }
@@ -6977,7 +7022,7 @@ button.reset {
 }
 .rn-pn .rn-k {
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 11px;
   letter-spacing: 0.2em;
   text-transform: uppercase;
   color: var(--od-ink-faint);
@@ -7000,7 +7045,7 @@ button.reset {
 }
 .rn-pn .rn-pn-date {
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 11px;
   color: var(--od-ink-faint);
 }
 
@@ -7083,7 +7128,7 @@ button.reset {
 .rn-unsub-resub {
   display: inline-block;
   font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: 12px;
   letter-spacing: 0.16em;
   text-transform: uppercase;
   color: var(--od-pcb-gold-2);
@@ -7096,7 +7141,7 @@ button.reset {
 }
 .rn-unsub-id {
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 11px;
   color: var(--od-ink-faint);
   letter-spacing: 0.04em;
   margin-top: 18px;
@@ -7125,7 +7170,7 @@ button.reset {
   flex-direction: column;
   gap: 4px;
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 11px;
   letter-spacing: 0.2em;
   text-transform: uppercase;
   color: var(--od-pcb-gold-2);
@@ -7135,7 +7180,7 @@ button.reset {
 }
 .rn-strip-eyebrow .rn-strip-date {
   color: var(--od-ink-faint);
-  font-size: 10px;
+  font-size: 11px;
   letter-spacing: 0.04em;
   text-transform: none;
 }
@@ -7160,7 +7205,7 @@ button.reset {
 }
 .rn-strip-cta {
   font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: 12px;
   letter-spacing: 0.18em;
   text-transform: uppercase;
   color: var(--od-ink-dim);
@@ -7193,7 +7238,7 @@ button.reset {
 }
 .rn-strip.is-rail .rn-strip-rail-head {
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 11px;
   letter-spacing: 0.22em;
   text-transform: uppercase;
   color: var(--od-ink-dim);
@@ -7227,7 +7272,7 @@ button.reset {
 }
 .rn-strip.is-rail .rn-rail-date {
   font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: 12px;
   color: var(--od-ink-faint);
   letter-spacing: 0.04em;
 }
@@ -7240,7 +7285,7 @@ button.reset {
 }
 .rn-strip.is-rail .rn-rail-version {
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 11px;
   color: var(--od-pcb-gold-2);
   letter-spacing: 0.06em;
 }
@@ -7363,7 +7408,7 @@ button.reset {
 }
 .support-sidebar-row dt {
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 11px;
   letter-spacing: 0.16em;
   text-transform: uppercase;
   color: var(--od-ink-dim);
@@ -7403,14 +7448,14 @@ button.reset {
 }
 .support-sidebar-count-label {
   font-family: var(--font-mono);
-  font-size: 9px;
+  font-size: 10px;
   letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--od-ink-dim);
 }
 .support-sidebar-help {
   font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: 12px;
   line-height: 1.5;
   color: var(--od-ink-faint);
   margin: 0;
@@ -7426,7 +7471,7 @@ button.reset {
 }
 .support-sidebar-faq .support-sidebar-links a {
   font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: 12px;
   color: var(--od-ink);
   text-decoration: none;
   border-bottom: 1px dashed var(--od-line-strong);
@@ -7436,4 +7481,96 @@ button.reset {
 .support-sidebar-faq .support-sidebar-links a:hover {
   color: var(--od-pcb-gold-2);
   border-bottom-color: var(--od-pcb-gold);
+}
+
+/* --------------------------------------------------------------------- */
+/* Pre-launch placeholder badge — sitewide, fixed bottom-right pill.      */
+/* All copy/numbers on the site are AI-generated placeholders. Badge     */
+/* must remain until real copy lands. Removing it requires deleting the  */
+/* <PlaceholderBanner /> in PageLayout.tsx (intentional friction).       */
+/*                                                                        */
+/* Fixed positioning (not sticky) so it never pushes document flow,      */
+/* never overlaps the header, and never breaks the homepage hero.        */
+/* --------------------------------------------------------------------- */
+.placeholder-banner {
+  position: fixed;
+  bottom: 16px;
+  right: 16px;
+  z-index: 80;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.4rem 0.7rem 0.4rem 0.55rem;
+  background: rgba(185, 28, 28, 0.95);
+  color: #fff;
+  font-family: var(--font-sans);
+  font-size: 12px;
+  line-height: 1.3;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.45),
+    0 1px 2px rgba(185, 28, 28, 0.4);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  pointer-events: none;
+  user-select: none;
+  max-width: calc(100vw - 32px);
+}
+
+.placeholder-banner__dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #fff;
+  flex-shrink: 0;
+  box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.55);
+  animation: placeholder-banner-pulse 2.4s ease-out infinite;
+}
+
+@keyframes placeholder-banner-pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.55);
+  }
+  70% {
+    box-shadow: 0 0 0 8px rgba(255, 255, 255, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(255, 255, 255, 0);
+  }
+}
+
+.placeholder-banner__tag {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  flex-shrink: 0;
+}
+
+.placeholder-banner__msg {
+  font-weight: 500;
+  font-size: 12px;
+  opacity: 0.95;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .placeholder-banner__dot {
+    animation: none;
+  }
+}
+
+@media (max-width: 640px) {
+  .placeholder-banner {
+    bottom: 12px;
+    right: 12px;
+    padding: 0.35rem 0.6rem 0.35rem 0.5rem;
+    font-size: 12px;
+  }
+  .placeholder-banner__msg {
+    display: none;
+  }
 }

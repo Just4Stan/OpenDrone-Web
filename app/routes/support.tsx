@@ -116,7 +116,7 @@ function SignedOutView({discordInvite}: {discordInvite: string}) {
   const returnTo =
     typeof window !== 'undefined' ? encodeURIComponent('/support') : '%2Fsupport';
   return (
-    <article className="od-page-frame">
+    <article className="od-page-frame support-page-frame">
       <header className="od-page-head">
         <p className="od-eyebrow">FILE 09.A · SUPPORT</p>
         <h1>
@@ -135,13 +135,11 @@ function SignedOutView({discordInvite}: {discordInvite: string}) {
           <p className="od-tile-eyebrow">→ SIGN IN REQUIRED</p>
           <h2>Continue with your OpenDrone account</h2>
           <p>
-            One ticket, one thread. Resume from desktop or phone — your
-            conversation comes with you.
+            One ticket, one thread. Resume from desktop or phone.
           </p>
           <ul className="support-signin-reasons">
             <li>We see exactly which SKU and firmware rev you have.</li>
             <li>You can attach order files without typing the order number.</li>
-            <li>Refresh-safe — your thread persists across reloads.</li>
           </ul>
           <div className="support-signin-actions-row">
             <a

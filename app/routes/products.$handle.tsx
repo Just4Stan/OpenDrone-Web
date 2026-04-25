@@ -254,11 +254,20 @@ function Chapter({
 /**
  * Scroll-reveal: walk every `.chapter` on the PDP and toggle `.is-visible`
  * when it enters the viewport. CSS handles the fade/translate.
+ *
+ * Keyed on the product handle: React Router reuses this Product component
+ * across PDP navigations (only `:handle` changes), so a `[]`-dep effect
+ * never re-runs and the new product's chapters never get observed → they
+ * stay opacity 0. Re-running on handle change rebinds the IO to the new
+ * DOM and also clears any `is-visible` left over from the prior product.
  */
-function useChapterReveal() {
+function useChapterReveal(key: string) {
   useEffect(() => {
     if (typeof IntersectionObserver === 'undefined') return;
     const chapters = document.querySelectorAll('.chapter');
+    // Reset any stale `is-visible` from a prior PDP so chapters above the
+    // fold actually animate in instead of being pre-flagged visible.
+    chapters.forEach((el) => el.classList.remove('is-visible'));
     const io = new IntersectionObserver(
       (entries) => {
         for (const e of entries) {
@@ -272,13 +281,13 @@ function useChapterReveal() {
     );
     chapters.forEach((el) => io.observe(el));
     return () => io.disconnect();
-  }, []);
+  }, [key]);
 }
 
 export default function Product() {
   const {product, company, recommendations, latestCommits, locale} =
     useLoaderData<typeof loader>();
-  useChapterReveal();
+  useChapterReveal(product.handle);
 
   // Optimistically selects a variant with given available variant information
   const selectedVariant = useOptimisticVariant(

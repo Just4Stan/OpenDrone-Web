@@ -38,7 +38,7 @@ export function ProductItem({
         <h4 className="text-xs font-medium mb-0.5 group-hover:text-[var(--color-gold)] transition-colors leading-snug">
           {product.title}
         </h4>
-        <p className="font-mono text-[11px] text-[var(--color-text-muted)]">
+        <p className="font-mono text-[12px] text-[var(--color-text-muted)]">
           <Money data={product.priceRange.minVariantPrice} />
         </p>
       </div>

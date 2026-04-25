@@ -160,7 +160,7 @@ export function NewsletterSignup({
         .join(' ')}
     >
       <div>
-        <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-[var(--color-gold)] mb-1.5">
+        <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-[var(--color-gold)] mb-0.5">
           Newsletter · Engineering Essentials
         </p>
         <h3
@@ -168,7 +168,7 @@ export function NewsletterSignup({
           className={
             isWide
               ? 'font-display text-2xl md:text-3xl font-bold tracking-tight text-[var(--color-text)] mb-2'
-              : 'font-display text-sm font-bold tracking-[0.04em] uppercase text-[var(--color-text)] mb-1.5'
+              : 'font-display text-sm font-bold tracking-[0.04em] uppercase text-[var(--color-text)] mb-0.5'
           }
         >
           Product releases. Build notes.
@@ -177,7 +177,7 @@ export function NewsletterSignup({
           className={
             isWide
               ? 'text-sm text-[var(--color-text-muted)] mb-6 max-w-prose leading-relaxed'
-              : 'text-[11px] text-[var(--color-text-muted)] leading-snug'
+              : 'text-[12px] text-[var(--color-text-muted)] leading-snug'
           }
         >
           Only when there&rsquo;s something to ship. No marketing fluff.
@@ -257,7 +257,7 @@ export function NewsletterSignup({
 
         <label
           htmlFor={consentId}
-          className="flex items-start gap-2 text-[11px] text-[var(--color-text-muted)] leading-snug cursor-pointer select-none"
+          className="flex items-start gap-2 text-[12px] text-[var(--color-text-muted)] leading-snug cursor-pointer select-none"
         >
           <input
             id={consentId}
@@ -293,7 +293,7 @@ export function NewsletterSignup({
             id={statusId}
             role={messageTone === 'error' ? 'alert' : 'status'}
             className={[
-              'font-mono text-[11px] mt-1',
+              'font-mono text-[12px] mt-1',
               messageTone === 'success'
                 ? 'text-[var(--color-accent-light)]'
                 : messageTone === 'error'
