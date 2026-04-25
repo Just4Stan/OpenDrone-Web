@@ -72,7 +72,11 @@ export function Footer({company, turnstileSiteKey}: FooterProps) {
   return (
     <footer className="mt-auto border-t border-[var(--color-border)]">
       <div className="site-footer-inner">
-        <div className="mb-10 pb-10 border-b border-[var(--color-border)]">
+        {/* Newsletter card — visually separated with bg-card + border so
+            it reads as its own surface, not as a stretch of empty footer.
+            Padding tightened to drop the previous block of dead vertical
+            space the bare hr/border layout left behind. */}
+        <div className="mb-8 rounded-sm border border-[var(--color-border)] bg-[var(--color-bg-card)] p-5 md:p-6">
           <NewsletterSignup
             variant="footer"
             turnstileSiteKey={turnstileSiteKey ?? null}
