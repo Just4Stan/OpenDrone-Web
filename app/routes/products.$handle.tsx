@@ -12,7 +12,6 @@ import {
 import {ProductPrice} from '~/components/ProductPrice';
 import {ProductGallery} from '~/components/ProductGallery';
 import {ProductForm} from '~/components/ProductForm';
-import {ProductCompliance} from '~/components/ProductCompliance';
 import {RelatedProducts} from '~/components/RelatedProducts';
 import {FirmwareSplit} from '~/components/FirmwareSplit';
 import {ProvenanceCard} from '~/components/ProvenanceCard';
@@ -285,7 +284,7 @@ function useChapterReveal(key: string) {
 }
 
 export default function Product() {
-  const {product, company, recommendations, latestCommits, locale} =
+  const {product, recommendations, latestCommits} =
     useLoaderData<typeof loader>();
   useChapterReveal(product.handle);
 
@@ -681,32 +680,6 @@ export default function Product() {
           <DownloadsGrid downloads={content.downloads} />
         </Chapter>
       ) : null}
-
-      {/* === Compliance: SCOPE-locked, unmoved === */}
-      <ProductCompliance
-        product={{
-          title: product.title,
-          vendor: product.vendor,
-          handle: product.handle,
-          safetyWarningsNl: product.safetyWarningsNl,
-          safetyWarningsFr: product.safetyWarningsFr,
-          safetyWarningsEn: product.safetyWarningsEn,
-          datasheetUrl: product.datasheetUrl,
-          manualUrl: product.manualUrl,
-          docUrl: product.docUrl,
-          sbomUrl: product.sbomUrl,
-          githubRepo: product.githubRepo,
-          modelNumber: product.modelNumber,
-          batchId: product.batchId,
-          firmwareVersion: product.firmwareVersion,
-          supportEndDate: product.supportEndDate,
-          vulnContactEmail: product.vulnContactEmail,
-          batteryWh: product.batteryWh,
-          batteryUnNumber: product.batteryUnNumber,
-        }}
-        company={company}
-        locale={locale}
-      />
 
       <RelatedProducts recommendations={recommendations} />
       <Analytics.ProductView
