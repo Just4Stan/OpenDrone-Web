@@ -14,6 +14,7 @@ import {
 import {
   buildSupportSetCookie,
   randomId,
+  randomTicketId,
   signTicket,
   type SupportTicket,
 } from '~/lib/support/session';
@@ -29,7 +30,7 @@ import {
 import {postToThread} from '~/lib/support/discord';
 
 type StartResult =
-  | {ok: true; ticketId: string}
+  | {ok: true; ticketId: string; pid?: string}
   | {
       ok: false;
       message: string;
@@ -170,12 +171,18 @@ export async function action({request, context}: Route.ActionArgs) {
     // looks at internally — keeps the title and body in sync.
     const redact = !!env.DISCORD_STAFF_METADATA_CHANNEL_ID;
     const titleName = redact ? firstNameOnly(name) : name;
+    // Public 10-digit reference. Goes into the thread title, the staff
+    // metadata post, the cookie, and the widget header so customer +
+    // staff can reference the ticket without mentioning the Discord
+    // thread id.
+    const pid = randomTicketId();
+    const subjectFragment = cleanSubject
+      ? cleanSubject
+      : `${cleanMessage.content.slice(0, 50)}${
+          cleanMessage.content.length > 50 ? '…' : ''
+        }`;
     const thread = await createSupportThread(env, {
-      title: cleanSubject
-        ? `[${titleName}] ${cleanSubject}`
-        : `[${titleName}] ${cleanMessage.content.slice(0, 50)}${
-            cleanMessage.content.length > 50 ? '…' : ''
-          }`,
+      title: `#${pid} [${titleName}] ${subjectFragment}`,
       userName: name,
       userEmail: email,
       firstMessage: cleanMessage.content,
@@ -183,6 +190,7 @@ export async function action({request, context}: Route.ActionArgs) {
       ipHint: ip && ip !== 'unknown' ? anonymizeIp(ip) : undefined,
       files: attachments.files,
       customerId: verifiedCustomerId,
+      pid,
     });
 
     // Staff metadata: full PII + jump-URL go to the role-restricted
@@ -199,6 +207,7 @@ export async function action({request, context}: Route.ActionArgs) {
             customerId: verifiedCustomerId,
             userAgent: ua,
             ipHint: ip && ip !== 'unknown' ? anonymizeIp(ip) : undefined,
+            pid,
           });
         } catch (err) {
           console.warn('[support/start] staff-metadata post failed', err);
@@ -212,6 +221,7 @@ export async function action({request, context}: Route.ActionArgs) {
       v: 1,
       tid: thread.id,
       uid: randomId(),
+      pid,
       name: name.slice(0, 80),
       email,
       createdAt: Math.floor(Date.now() / 1000),
@@ -229,6 +239,7 @@ export async function action({request, context}: Route.ActionArgs) {
           uid: ticket.uid,
           email,
           name: ticket.name,
+          pid,
         });
         const baseUrl = new URL(request.url).origin;
         const resumeUrl = buildResumeUrl(baseUrl, token);
@@ -278,7 +289,7 @@ export async function action({request, context}: Route.ActionArgs) {
     }
 
     return data<StartResult>(
-      {ok: true, ticketId: ticket.uid},
+      {ok: true, ticketId: ticket.uid, pid},
       {
         status: 200,
         headers: {'Set-Cookie': buildSupportSetCookie(cookie)},

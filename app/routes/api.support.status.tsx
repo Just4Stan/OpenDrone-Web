@@ -10,6 +10,7 @@ type StatusResult =
       name: string;
       email: string;
       createdAt: number;
+      pid?: string;
     };
 
 export async function loader({request, context}: Route.LoaderArgs) {
@@ -28,6 +29,7 @@ export async function loader({request, context}: Route.LoaderArgs) {
       name: ticket.name,
       email: ticket.email,
       createdAt: ticket.createdAt,
+      pid: ticket.pid,
     },
     {headers: {'Cache-Control': 'no-store'}},
   );

@@ -57,6 +57,7 @@ export async function loader({request, context}: Route.LoaderArgs) {
     name: payload.name,
     email: payload.email,
     createdAt: payload.iat,
+    ...(payload.pid ? {pid: payload.pid} : {}),
   };
   const cookie = await signTicket(env, ticket);
   return redirect('/contact?support=resumed', {
