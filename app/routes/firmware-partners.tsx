@@ -26,7 +26,7 @@ const PARTNERS: Partner[] = [
     project: 'Betaflight',
     runsOn: 'OpenFC',
     blurb:
-      'Betaflight is the flight controller firmware that made mini-quad freestyle what it is. OpenFC is a Betaflight-target board — the RP2354B port is actively being upstreamed.',
+      'Betaflight is the flight controller firmware used in most mini-quad freestyle builds. OpenFC is a Betaflight-target board — the RP2354B port is being upstreamed.',
     repoUrl: 'https://github.com/betaflight/betaflight',
     donationUrl: 'https://opencollective.com/betaflight',
   },
@@ -34,7 +34,7 @@ const PARTNERS: Partner[] = [
     project: 'AM32',
     runsOn: 'OpenESC',
     blurb:
-      'AM32 is the permissive, multi-MCU BLHeli alternative. OpenESC runs AM32 on AT32F421 channels — the same firmware thousands of pilots fly on other ESCs, no custom fork, no vendor lock-in.',
+      'AM32 is a multi-MCU ESC firmware alternative to BLHeli, MIT-licensed. OpenESC runs AM32 on AT32F421 channels — same firmware as other AM32 ESCs, no custom fork, no vendor lock-in.',
     repoUrl:
       'https://github.com/AlkaMotors/AM32-MultiRotor-ESC-firmware',
   },

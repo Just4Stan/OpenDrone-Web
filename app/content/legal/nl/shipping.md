@@ -4,7 +4,7 @@ Incutec BV verzendt bestellingen vanuit België naar de meeste landen van de Eur
 
 ### Leveringstermijn
 
-Bestellingen worden in principe verzonden binnen 2 werkdagen na ontvangst van de betaling. De uiterste leveringstermijn bedraagt 30 kalenderdagen na bestelling, tenzij expliciet anders overeengekomen (Art. VI.43 WER, Art. 7 Algemene Voorwaarden). Indien de uiterste leveringstermijn niet wordt gehaald heeft de consument het recht de overeenkomst kosteloos te ontbinden.
+Bestellingen worden in principe verzonden binnen 2 werkdagen na ontvangst van de betaling. De uiterste leveringstermijn bedraagt 30 kalenderdagen na bestelling, tenzij expliciet anders overeengekomen (Art. VI.43 WER, Art. 7 Algemene Voorwaarden). Indien Incutec BV de uiterste leveringstermijn van 30 dagen niet haalt, kan de consument een redelijke aanvullende termijn voorstellen. Wordt ook deze niet gehaald, dan kan de consument de overeenkomst kosteloos ontbinden (Art. VI.43 §2 WER), tenzij de leveringstermijn essentieel was of Incutec BV reeds heeft geweigerd te leveren.
 
 ### Verzendkosten en landen
 

@@ -4,21 +4,40 @@ import {getCompanyIdentity} from '~/lib/company';
 import {CompanyFooterBlock} from '~/components/CompanyFooterBlock';
 import {buildSeoMeta} from '~/lib/seo';
 import {
+  alternateLocaleTags,
   getLocaleFromRequest,
   langCookieHeader,
   localeFromPathname,
+  seoLocaleTag,
   type Locale,
 } from '~/lib/i18n';
 
+const META = {
+  en: {
+    title: 'Legal / Imprint',
+    description:
+      'Legal identification of the seller behind the OpenDrone webshop and an overview of all legal pages.',
+  },
+  nl: {
+    title: 'Juridisch / Colofon',
+    description:
+      'Juridische identificatie van de verkoper achter de OpenDrone-webshop en overzicht van alle juridische pagina’s.',
+  },
+  fr: {
+    title: 'Mentions légales',
+    description:
+      'Identification juridique du vendeur derrière la boutique OpenDrone et aperçu de toutes les pages légales.',
+  },
+} as const;
+
 export const meta: Route.MetaFunction = ({data}) => {
-  const isNl = data?.locale === 'nl';
+  const locale: Locale = data?.locale ?? 'en';
+  const m = META[locale];
   return buildSeoMeta({
-    title: isNl ? 'Juridisch / Colofon' : 'Legal / Imprint',
-    description: isNl
-      ? 'Juridische identificatie van de verkoper achter de OpenDrone-webshop en overzicht van alle juridische pagina\u2019s.'
-      : 'Legal identification of the seller behind the OpenDrone webshop and an overview of all legal pages.',
-    locale: isNl ? 'nl_BE' : 'en_US',
-    alternateLocales: [isNl ? 'en_US' : 'nl_BE'],
+    title: m.title,
+    description: m.description,
+    locale: seoLocaleTag(locale),
+    alternateLocales: alternateLocaleTags(locale),
   });
 };
 
@@ -40,117 +59,147 @@ export async function loader({context, request}: Route.LoaderArgs) {
 
 type PageEntry = {
   slug: string;
-  labelEn: string;
-  labelNl: string;
-  descEn: string;
-  descNl: string;
+  label: Record<Locale, string>;
+  desc: Record<Locale, string>;
 };
 
 const PAGES: PageEntry[] = [
   {
     slug: 'algemene-voorwaarden',
-    labelEn: 'Terms & Conditions',
-    labelNl: 'Algemene Voorwaarden',
-    descEn: 'B2C sale terms, ordering, delivery, warranty, complaints.',
-    descNl: 'Verkoopvoorwaarden B2C, bestelproces, levering, garantie, klachten.',
+    label: {en: 'Terms & Conditions', nl: 'Algemene Voorwaarden', fr: 'Conditions Générales'},
+    desc: {
+      en: 'B2C sale terms, ordering, delivery, warranty, complaints.',
+      nl: 'Verkoopvoorwaarden B2C, bestelproces, levering, garantie, klachten.',
+      fr: 'Conditions de vente B2C, commande, livraison, garantie, plaintes.',
+    },
   },
   {
     slug: 'privacy',
-    labelEn: 'Privacy Policy',
-    labelNl: 'Privacybeleid',
-    descEn: 'GDPR — which personal data we process and why.',
-    descNl: 'GDPR — welke persoonsgegevens wij verwerken en waarom.',
+    label: {en: 'Privacy Policy', nl: 'Privacybeleid', fr: 'Politique de Confidentialité'},
+    desc: {
+      en: 'GDPR — which personal data we process and why.',
+      nl: 'GDPR — welke persoonsgegevens wij verwerken en waarom.',
+      fr: 'RGPD — quelles données personnelles nous traitons et pourquoi.',
+    },
   },
   {
     slug: 'cookies',
-    labelEn: 'Cookie Policy',
-    labelNl: 'Cookiebeleid',
-    descEn: 'List of cookies the webshop sets.',
-    descNl: 'Lijst van cookies die de webshop plaatst.',
+    label: {en: 'Cookie Policy', nl: 'Cookiebeleid', fr: 'Politique de Cookies'},
+    desc: {
+      en: 'List of cookies the webshop sets.',
+      nl: 'Lijst van cookies die de webshop plaatst.',
+      fr: 'Liste des cookies utilisés par la boutique.',
+    },
   },
   {
     slug: 'herroepingsrecht',
-    labelEn: 'Right of Withdrawal',
-    labelNl: 'Herroepingsrecht',
-    descEn: '14-day cooling-off period and model withdrawal form.',
-    descNl: '14-dagen bedenktijd + modelformulier voor herroeping.',
+    label: {en: 'Right of Withdrawal', nl: 'Herroepingsrecht', fr: 'Droit de Rétractation'},
+    desc: {
+      en: '14-day cooling-off period and model withdrawal form.',
+      nl: '14-dagen bedenktijd + modelformulier voor herroeping.',
+      fr: 'Délai de rétractation de 14 jours + formulaire type.',
+    },
   },
   {
     slug: 'shipping',
-    labelEn: 'Shipping & Delivery',
-    labelNl: 'Verzending & Levering',
-    descEn: 'Shipping zones, times and responsibility.',
-    descNl: 'Verzendzones, leveringstermijnen en risico.',
+    label: {en: 'Shipping & Delivery', nl: 'Verzending & Levering', fr: 'Expédition & Livraison'},
+    desc: {
+      en: 'Shipping zones, times and responsibility.',
+      nl: 'Verzendzones, leveringstermijnen en risico.',
+      fr: 'Zones d’expédition, délais et responsabilité.',
+    },
   },
   {
     slug: 'warranty',
-    labelEn: 'Warranty',
-    labelNl: 'Garantie',
-    descEn: '2-year legal guarantee of conformity.',
-    descNl: '2-jarige wettelijke conformiteitsgarantie.',
+    label: {en: 'Warranty', nl: 'Garantie', fr: 'Garantie'},
+    desc: {
+      en: '2-year legal guarantee of conformity.',
+      nl: '2-jarige wettelijke conformiteitsgarantie.',
+      fr: 'Garantie légale de conformité de 2 ans.',
+    },
   },
   {
     slug: 'export-compliance',
-    labelEn: 'Export Compliance',
-    labelNl: 'Exportnaleving',
-    descEn: 'Export control and sanctions policy.',
-    descNl: 'Exportcontrole en sanctiebeleid.',
-  },
-  {
-    slug: 'contact',
-    labelEn: 'Contact',
-    labelNl: 'Contact',
-    descEn: 'How to reach us.',
-    descNl: 'Hoe ons bereiken.',
+    label: {en: 'Export Compliance', nl: 'Exportnaleving', fr: 'Conformité à l’Exportation'},
+    desc: {
+      en: 'Export control and sanctions policy.',
+      nl: 'Exportcontrole en sanctiebeleid.',
+      fr: 'Contrôle des exportations et politique de sanctions.',
+    },
   },
   {
     slug: 'security',
-    labelEn: 'Security',
-    labelNl: 'Beveiliging',
-    descEn: 'Coordinated vulnerability disclosure (CRA).',
-    descNl: 'Gecoördineerde kwetsbaarheidsmelding (CRA).',
+    label: {en: 'Security', nl: 'Beveiliging', fr: 'Sécurité'},
+    desc: {
+      en: 'Coordinated vulnerability disclosure (CRA).',
+      nl: 'Gecoördineerde kwetsbaarheidsmelding (CRA).',
+      fr: 'Divulgation coordonnée des vulnérabilités (CRA).',
+    },
   },
   {
     slug: 'cookie-settings',
-    labelEn: 'Cookie settings',
-    labelNl: 'Cookie-instellingen',
-    descEn: 'Overview and reset of session cookies.',
-    descNl: 'Overzicht en reset van sessie cookies.',
+    label: {en: 'Cookie settings', nl: 'Cookie-instellingen', fr: 'Paramètres des cookies'},
+    desc: {
+      en: 'Overview and reset of session cookies.',
+      nl: 'Overzicht en reset van sessie-cookies.',
+      fr: 'Aperçu et réinitialisation des cookies de session.',
+    },
   },
 ];
 
+const CHROME = {
+  en: {
+    pageTitle: 'Legal',
+    eyebrow: 'Legal · Imprint',
+    seller: 'Seller',
+    pages: 'Pages',
+    intro: (companyName: string) =>
+      `OpenDrone is a product brand operated by ${companyName}. All orders are sold by the legal entity below.`,
+  },
+  nl: {
+    pageTitle: 'Juridisch',
+    eyebrow: 'Juridisch · Colofon',
+    seller: 'Verkoper',
+    pages: 'Pagina’s',
+    intro: (companyName: string) =>
+      `OpenDrone is een merk uitgebaat door ${companyName}. Alle bestellingen worden verkocht door onderstaande juridische entiteit.`,
+  },
+  fr: {
+    pageTitle: 'Mentions légales',
+    eyebrow: 'Juridique · Mentions',
+    seller: 'Vendeur',
+    pages: 'Pages',
+    intro: (companyName: string) =>
+      `OpenDrone est une marque exploitée par ${companyName}. Toutes les commandes sont vendues par l’entité juridique ci-dessous.`,
+  },
+} as const;
+
 export default function LegalIndex() {
   const {company, locale} = useLoaderData<typeof loader>();
-  const isNl = locale === 'nl';
-  const pageTitle = isNl ? 'Juridisch' : 'Legal';
-  const intro = isNl
-    ? `OpenDrone is een merk uitgebaat door ${company.name}. Alle bestellingen worden verkocht door onderstaande juridische entiteit.`
-    : `OpenDrone is a product brand operated by ${company.name}. All orders are sold by the legal entity below.`;
+  const t = CHROME[locale];
   return (
     <div className="legal-index page-shell">
       <header className="page-header">
-        <p className="page-eyebrow">
-          {isNl ? 'Juridisch · Colofon' : 'Legal · Imprint'}
-        </p>
-        <h1 className="page-title">{pageTitle}</h1>
-        <p className="page-description">{intro}</p>
+        <p className="page-eyebrow">{t.eyebrow}</p>
+        <h1 className="page-title">{t.pageTitle}</h1>
+        <p className="page-description">{t.intro(company.name)}</p>
       </header>
 
       <section className="legal-identity" style={{marginBottom: '2.5rem'}}>
-        <h2 className="section-heading">{isNl ? 'Verkoper' : 'Seller'}</h2>
+        <h2 className="section-heading">{t.seller}</h2>
         <CompanyFooterBlock company={company} />
       </section>
 
       <section>
-        <h2 className="section-heading">{isNl ? 'Pagina\u2019s' : 'Pages'}</h2>
+        <h2 className="section-heading">{t.pages}</h2>
         <div className="policies-grid">
           {PAGES.map((p) => (
             <article className="policy-card" key={p.slug}>
               <Link to={`/${locale}/${p.slug}`}>
-                <strong>{isNl ? p.labelNl : p.labelEn}</strong>
+                <strong>{p.label[locale]}</strong>
               </Link>
               <p style={{marginTop: '0.35rem', fontSize: '0.75rem'}}>
-                {isNl ? p.descNl : p.descEn}
+                {p.desc[locale]}
               </p>
             </article>
           ))}

@@ -107,7 +107,7 @@ export default function AccountWelcome() {
             required
             minLength={1}
             maxLength={80}
-            placeholder="Stan"
+            placeholder="First name"
             disabled={busy}
           />
           <label htmlFor="lastName">Last name (optional)</label>
@@ -117,7 +117,7 @@ export default function AccountWelcome() {
             type="text"
             autoComplete="family-name"
             maxLength={80}
-            placeholder="Coene"
+            placeholder="Last name"
             disabled={busy}
           />
         </fieldset>

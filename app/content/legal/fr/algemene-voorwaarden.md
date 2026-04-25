@@ -76,7 +76,7 @@
 
 7.3. Le risque de dommage et/ou de perte des produits incombe à Incutec BV jusqu’au moment de la livraison au consommateur.
 
-7.4. Incutec BV propose au moins **deux modes de livraison** (Art. VI.45/2 CDE : Loi du 9 février 2024, applicable depuis le 21 septembre 2024 à toutes les boutiques en ligne belges). Les deux modes doivent être sensiblement différents (par ex. livraison à domicile + point relais ; recourir à deux transporteurs qui proposent tous deux uniquement la livraison à domicile ne suffit pas).
+7.4. Incutec BV propose au moins **deux modes de livraison** (Art. VI.45/3 CDE : Loi du 9 février 2024, applicable depuis le 21 septembre 2024 à toutes les boutiques en ligne belges). Les deux modes doivent être sensiblement différents (par ex. livraison à domicile + point relais ; recourir à deux transporteurs qui proposent tous deux uniquement la livraison à domicile ne suffit pas).
 
 > **Note :** Les start-ups de moins de 3 ans sont exemptées de cette obligation. Incutec peut invoquer cette exemption dans sa phase initiale.
 
@@ -94,7 +94,7 @@
 
 9.2bis. **Biens comportant des éléments numériques :** Les produits d’Incutec BV contiennent un firmware (éléments numériques) nécessaire à leur fonctionnement, au sens de la Directive (UE) 2019/771 Art. 2(5b). Incutec BV veille à informer le consommateur des mises à jour de firmware disponibles nécessaires au maintien de la conformité du produit pendant la période de garantie de 2 ans. Les mises à jour de firmware sont mises à disposition via les projets open source sur lesquels les produits sont basés (Betaflight, AM32, ExpressLRS). Incutec BV maintient le support hardware spécifique (définitions de cibles) nécessaire à l’installation de ces mises à jour.
 
-9.2ter. **Hiérarchie des remèdes :** En cas de défaut de conformité, le consommateur a le droit de demander, à son choix, la réparation ou le remplacement du produit. Ce n’est que lorsque la réparation et le remplacement sont impossibles ou disproportionnés que le consommateur peut demander une réduction de prix ou la résolution du contrat (Art. 1649quinquies de l’ancien Code civil).
+9.2ter. **Hiérarchie des remèdes :** En cas de défaut de conformité, le consommateur a le droit de demander, à son choix, la réparation ou le remplacement du produit. Ce n’est que lorsque la réparation et le remplacement sont impossibles ou disproportionnés que le consommateur peut demander une réduction de prix ou la résolution du contrat (art. 1701/1 et suivants de l’ancien Code civil + Livre VI CDE, Art. VI.83 octies et s. — Loi du 20 mars 2022, transposition de la Directive (UE) 2019/771).
 
 9.3. La garantie ne couvre pas les dommages causés par :
 - Une utilisation ou installation incorrecte (dérogation au manuel d’utilisation)
@@ -120,7 +120,7 @@
 
 ### Article 12 : Données personnelles
 
-12.1. Incutec BV traite les données personnelles conformément au Règlement Général sur la Protection des Données (RGPD). Voir la Politique de confidentialité sur incutec.eu/privacy.
+12.1. Incutec BV traite les données personnelles conformément au Règlement Général sur la Protection des Données (RGPD). Voir la Politique de confidentialité sur opendrone.be/privacy.
 
 ### Article 13 : Plaintes
 
@@ -136,7 +136,7 @@
 
 14.2. Le consommateur peut introduire une plainte auprès du Service de Médiation pour le Consommateur / *Consumentenombudsdienst* (https://consumentenombudsdienst.be).
 
-14.3. Pour les litiges avec les consommateurs, le tribunal du lieu de résidence du consommateur est compétent (Art. VI.83, 23° CDE). Pour les litiges avec des entreprises, le Tribunal de l’entreprise de Louvain est compétent.
+14.3. Pour les litiges avec les consommateurs, le tribunal du lieu de résidence du consommateur est compétent (Art. 17–18 Règlement (UE) 1215/2012 — Bruxelles I bis ; Art. 624 Code judiciaire). Pour les litiges avec des entreprises, le Tribunal de l’entreprise de Louvain est compétent.
 
 ### Article 15 : Modifications
 

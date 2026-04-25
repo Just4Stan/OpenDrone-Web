@@ -10,19 +10,19 @@ import {
   useNavigation,
   useOutletContext,
   type Fetcher,
+  type HeadersFunction,
 } from 'react-router';
 import type {Route} from './+types/account.addresses';
-import type {HeadersFunction} from 'react-router';
-
-// Customer addresses — block intermediate + bfcache.
-export const headers: HeadersFunction = () => ({
-  'Cache-Control': 'private, no-store',
-});
 import {
   UPDATE_ADDRESS_MUTATION,
   DELETE_ADDRESS_MUTATION,
   CREATE_ADDRESS_MUTATION,
 } from '~/graphql/customer-account/CustomerAddressMutations';
+
+// Customer addresses — block intermediate + bfcache.
+export const headers: HeadersFunction = () => ({
+  'Cache-Control': 'private, no-store',
+});
 import {buildSeoMeta} from '~/lib/seo';
 
 export type ActionResponse = {

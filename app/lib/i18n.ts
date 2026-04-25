@@ -3,10 +3,10 @@
  *
  * URL scheme
  * ----------
- * Legal pages are served at `/en/<slug>` and `/nl/<slug>`. Unprefixed
- * legacy URLs like `/warranty` redirect to the user's cached language.
- * Non-legal pages (home, products, cart, …) remain unprefixed and are
- * English-only for now.
+ * Legal pages are served at `/en/<slug>`, `/nl/<slug>`, and `/fr/<slug>`.
+ * Unprefixed legacy URLs like `/warranty` redirect to the user's cached
+ * language. Non-legal pages (home, products, cart, contact, …) remain
+ * unprefixed and are English-only.
  *
  * Caching
  * -------
@@ -158,23 +158,6 @@ export const LEGAL_LABELS: Record<
       description: 'Garantie légale de conformité de 2 ans sur le matériel OpenDrone vendu par Incutec BV.',
     },
   },
-  contact: {
-    en: {
-      title: 'Contact',
-      eyebrow: 'Company',
-      description: 'Contact Incutec BV about OpenDrone products, orders, or security issues.',
-    },
-    nl: {
-      title: 'Contact',
-      eyebrow: 'Onderneming',
-      description: 'Contacteer Incutec BV over OpenDrone-producten, bestellingen of beveiligingsmeldingen.',
-    },
-    fr: {
-      title: 'Contact',
-      eyebrow: 'Entreprise',
-      description: 'Contactez Incutec BV pour les produits OpenDrone, les commandes ou les signalements de sécurité.',
-    },
-  },
   security: {
     en: {
       title: 'Security — Vulnerability Disclosure',
@@ -302,8 +285,8 @@ export function readLocaleCookie(cookieHeader: string | null): Locale | null {
 }
 
 /**
- * Best-effort detection from the Accept-Language header. Only honours
- * Dutch — everything else falls back to the default locale (en).
+ * Best-effort detection from the Accept-Language header. Honours nl
+ * and fr — everything else falls back to the default locale (en).
  */
 export function detectLocaleFromAccept(accept: string | null): Locale {
   if (!accept) return DEFAULT_LOCALE;
@@ -311,6 +294,27 @@ export function detectLocaleFromAccept(accept: string | null): Locale {
   if (/^\s*fr(-[a-z]{2})?\b/i.test(accept)) return 'fr';
   return DEFAULT_LOCALE;
 }
+
+/**
+ * Map a locale to the BCP-47 / OG locale tag used in <html lang> and
+ * Open Graph meta. Belgian variants for nl and fr; en stays as en_US.
+ */
+export function seoLocaleTag(locale: Locale): 'nl_BE' | 'fr_BE' | 'en_US' {
+  if (locale === 'nl') return 'nl_BE';
+  if (locale === 'fr') return 'fr_BE';
+  return 'en_US';
+}
+
+/**
+ * The other two locale tags, for `<link rel="alternate" hreflang>` /
+ * Open Graph alternateLocales.
+ */
+export function alternateLocaleTags(
+  locale: Locale,
+): Array<'nl_BE' | 'fr_BE' | 'en_US'> {
+  return (LOCALES.filter((l) => l !== locale) as Locale[]).map(seoLocaleTag);
+}
+
 
 /**
  * Resolve the effective locale for a request: cookie first, then

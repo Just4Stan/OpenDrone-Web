@@ -9,6 +9,25 @@ import '@total-typescript/ts-reset';
 // Extend the Oxygen-provided Env interface with project env vars so
 // context.env.* is strongly typed in routes.
 declare global {
+  // Minimal KVNamespace shape — Oxygen provides the binding at runtime
+  // but doesn't re-export Cloudflare's type definition. Only the
+  // methods we actually call are declared. Replace with the full
+  // @cloudflare/workers-types KVNamespace if that package gets added.
+  interface KVNamespace {
+    get(key: string): Promise<string | null>;
+    put(
+      key: string,
+      value: string,
+      options?: {expirationTtl?: number; expiration?: number; metadata?: unknown},
+    ): Promise<void>;
+    delete(key: string): Promise<void>;
+    list(options?: {prefix?: string; limit?: number; cursor?: string}): Promise<{
+      keys: Array<{name: string; expiration?: number; metadata?: unknown}>;
+      list_complete: boolean;
+      cursor?: string;
+    }>;
+  }
+
   interface Env {
     SESSION_SECRET: string;
     PUBLIC_STORE_DOMAIN: string;
@@ -33,6 +52,11 @@ declare global {
     DISCORD_GUILD_ID?: string;
     DISCORD_STAFF_METADATA_CHANNEL_ID?: string;
     DISCORD_SUPPORT_INVITE?: string;
+    // Public-facing guild identifiers used by the /contact invite card.
+    // Distinct from the bridge-side bindings so the public card can be
+    // wired without exposing support-bridge state.
+    PUBLIC_DISCORD_GUILD_ID?: string;
+    PUBLIC_DISCORD_INVITE?: string;
     SUPPORT_SESSION_SECRET?: string;
     TURNSTILE_SITE_KEY?: string;
     TURNSTILE_SECRET_KEY?: string;
@@ -45,9 +69,56 @@ declare global {
     SUPPORT_APPROVE_EMOJI?: string;
     SUPPORT_MODERATION_MODE?: string;
 
+    // Email-on-final-answer marker. Staff reacts to a Discord message
+    // with this emoji to flag it as the conclusive reply that should
+    // notify the customer via email. Without this reaction, no email
+    // is sent — every message still surfaces in the live web widget.
+    // Default: 📧 when unset.
+    SUPPORT_EMAIL_EMOJI?: string;
+
     // Stage 4 AI first-responder
     ANTHROPIC_API_KEY?: string;
     SUPPORT_AI_DRAFTS_ENABLED?: string;
     SUPPORT_AI_MODEL?: string;
+
+    // Stage 6 ticket index — KV binding (provisioned in Oxygen
+    // dashboard). When unset, list operations degrade to a Discord
+    // forum scan (slow, fine at <100 tickets total). Required before
+    // scaling beyond a few hundred tickets.
+    TICKETS_KV?: KVNamespace;
+    DISCORD_FEEDBACK_CHANNEL_ID?: string;
+
+    // Newsletter / release-notes auto-dispatch
+    // - SHOPIFY_ADMIN_API_TOKEN: custom-app Admin API token. Required
+    //   scopes: read_customers, write_customers, read_content,
+    //   write_content (metafields). Server-only — never exposed.
+    // - SHOPIFY_ADMIN_API_VERSION: defaults to 2026-01 when unset.
+    // - SHOPIFY_WEBHOOK_SECRET: shared secret configured on the
+    //   articles/update webhook in Shopify admin. Verifies inbound
+    //   X-Shopify-Hmac-Sha256 header.
+    // - NEWSLETTER_DISPATCH_SECRET: bearer token for manual dispatch
+    //   trigger (CLI/curl) AND HMAC key for per-recipient unsubscribe
+    //   tokens. Rotate together — old unsubscribe links die on rotate.
+    // - NEWSLETTER_FROM_EMAIL: sender address, e.g. news@opendrone.be.
+    //   Domain must be verified in Resend (SPF/DKIM/DMARC).
+    // - NEWSLETTER_BLOG_HANDLE: defaults to `releases`. Articles in
+    //   any other blog never trigger an email.
+    // - NEWSLETTER_DISPATCH_KV: dedup ledger so a redelivered webhook
+    //   doesn't double-send during the window before the metafield
+    //   write lands. Optional but recommended.
+    //
+    // Webhook URL to register in Shopify admin:
+    //   POST https://opendrone.be/api/newsletter/dispatch
+    //   topic: articles/update  (Stan also create a one-shot
+    //   articles/create subscription if desired)
+    //   format: JSON
+    //   secret: same value as SHOPIFY_WEBHOOK_SECRET
+    SHOPIFY_ADMIN_API_TOKEN?: string;
+    SHOPIFY_ADMIN_API_VERSION?: string;
+    SHOPIFY_WEBHOOK_SECRET?: string;
+    NEWSLETTER_DISPATCH_SECRET?: string;
+    NEWSLETTER_FROM_EMAIL?: string;
+    NEWSLETTER_BLOG_HANDLE?: string;
+    NEWSLETTER_DISPATCH_KV?: KVNamespace;
   }
 }

@@ -76,7 +76,7 @@
 
 7.3. Het risico van beschadiging en/of vermissing van producten berust tot het moment van bezorging aan de consument bij Incutec BV.
 
-7.4. Incutec BV biedt ten minste **twee leveringswijzen** aan (Art. VI.45/2 WER: Wet van 9 februari 2024, van toepassing sinds 21 september 2024 voor alle Belgische webshops). De twee methoden moeten wezenlijk verschillend zijn (bijv. thuislevering + pakketpunt; twee vervoerders met enkel thuislevering volstaat niet).
+7.4. Incutec BV biedt ten minste **twee leveringswijzen** aan (Art. VI.45/3 WER: Wet van 9 februari 2024, van toepassing sinds 21 september 2024 voor alle Belgische webshops). De twee methoden moeten wezenlijk verschillend zijn (bijv. thuislevering + pakketpunt; twee vervoerders met enkel thuislevering volstaat niet).
 
 > **Noot:** Startups jonger dan 3 jaar zijn vrijgesteld van deze verplichting. Incutec kan hier in de beginfase een beroep op doen.
 
@@ -94,7 +94,7 @@
 
 9.2bis. **Goederen met digitale elementen:** De producten van Incutec BV bevatten firmware (digitale elementen) die noodzakelijk is voor de werking ervan, in de zin van Richtlijn (EU) 2019/771 Art. 2(5b). Incutec BV zorgt ervoor dat de consument in kennis wordt gesteld van beschikbare firmware-updates die nodig zijn om de conformiteit van het product te behouden gedurende de garantieperiode van 2 jaar. Firmware-updates worden beschikbaar gesteld via de open source projecten waarop de producten gebaseerd zijn (Betaflight, AM32, ExpressLRS). Incutec BV onderhoudt de hardware-specifieke ondersteuning (board target definitions) die nodig is om deze updates te installeren.
 
-9.2ter. **Volgorde van remedies:** Bij gebrek aan overeenstemming heeft de consument het recht om naar keuze herstelling of vervanging van het product te vragen. Alleen wanneer herstelling en vervanging onmogelijk of onevenredig zijn, kan de consument een prijsvermindering of ontbinding van de overeenkomst vragen (Art. 1649quinquies oud BW).
+9.2ter. **Volgorde van remedies:** Bij gebrek aan overeenstemming heeft de consument het recht om naar keuze herstelling of vervanging van het product te vragen. Alleen wanneer herstelling en vervanging onmogelijk of onevenredig zijn, kan de consument een prijsvermindering of ontbinding van de overeenkomst vragen (art. 1701/1 e.v. oud Burgerlijk Wetboek + Boek VI WER, Art. VI.83 octies e.v. — Wet van 20 maart 2022, omzetting Richtlijn (EU) 2019/771).
 
 9.3. Garantie dekt geen schade veroorzaakt door:
 - Verkeerd gebruik of installatie (afwijking van de gebruikshandleiding)
@@ -120,7 +120,7 @@
 
 ### Artikel 12: Persoonsgegevens
 
-12.1. Incutec BV verwerkt persoonsgegevens in overeenstemming met de Algemene Verordening Gegevensbescherming (AVG/GDPR). Zie het Privacybeleid op incutec.eu/privacy.
+12.1. Incutec BV verwerkt persoonsgegevens in overeenstemming met de Algemene Verordening Gegevensbescherming (AVG/GDPR). Zie het Privacybeleid op opendrone.be/privacy.
 
 ### Artikel 13: Klachten
 
@@ -136,7 +136,7 @@
 
 14.2. De consument kan een klacht indienen bij de Consumentenombudsdienst (https://consumentenombudsdienst.be).
 
-14.3. Bij geschillen met consumenten is de rechtbank van de woonplaats van de consument bevoegd (Art. VI.83, 23° WER). Bij geschillen met ondernemingen is de ondernemingsrechtbank Leuven bevoegd.
+14.3. Bij geschillen met consumenten is de rechtbank van de woonplaats van de consument bevoegd (Art. 17–18 Verordening (EU) 1215/2012 — Brussel I-bis; Art. 624 Gerechtelijk Wetboek). Bij geschillen met ondernemingen is de ondernemingsrechtbank Leuven bevoegd.
 
 ### Artikel 15: Wijzigingen
 
