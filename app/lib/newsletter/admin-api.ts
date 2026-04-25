@@ -85,7 +85,7 @@ async function adminFetch<T>(
 
 // --- Article ---------------------------------------------------------
 
-const ARTICLE_BY_ID_QUERY = `#graphql
+const ARTICLE_BY_ID_QUERY = /* GraphQL: Shopify Admin API — not Storefront, skip codegen */ `
   query NewsletterArticleById($id: ID!) {
     article(id: $id) {
       id
@@ -147,7 +147,7 @@ export async function getArticleStatus(
 
 // --- Subscribers (paginated) -----------------------------------------
 
-const SUBSCRIBERS_QUERY = `#graphql
+const SUBSCRIBERS_QUERY = /* GraphQL: Shopify Admin API — not Storefront, skip codegen */ `
   query NewsletterSubscribers($cursor: String) {
     customers(
       first: 250
@@ -210,7 +210,7 @@ export async function* iterateSubscribers(
 
 // --- Unsubscribe (write) ---------------------------------------------
 
-const CUSTOMER_UNSUBSCRIBE_MUTATION = `#graphql
+const CUSTOMER_UNSUBSCRIBE_MUTATION = /* GraphQL: Shopify Admin API — not Storefront, skip codegen */ `
   mutation NewsletterUnsubscribe($input: CustomerEmailMarketingConsentUpdateInput!) {
     customerEmailMarketingConsentUpdate(input: $input) {
       customer { id }
@@ -247,7 +247,7 @@ export async function unsubscribeCustomer(
 
 // --- Article metafield (dedup ledger) --------------------------------
 
-const METAFIELDS_SET_MUTATION = `#graphql
+const METAFIELDS_SET_MUTATION = /* GraphQL: Shopify Admin API — not Storefront, skip codegen */ `
   mutation NewsletterArticleMetafields($metafields: [MetafieldsSetInput!]!) {
     metafieldsSet(metafields: $metafields) {
       metafields { id namespace key }
