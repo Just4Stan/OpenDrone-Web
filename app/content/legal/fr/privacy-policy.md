@@ -64,7 +64,6 @@ Incutec BV n’a pas désigné de Délégué à la Protection des Données (DPD)
 | Sendcloud B.V. | Étiquettes d’expédition et suivi | Pays-Bas (UE) |
 | Bpost / DHL / DPD (transporteur selon commande) | Livraison des colis | UE |
 | Plausible Analytics | Analyse de site sans cookies | Plausible Insights OÜ — Estonie (UE) ; hébergement en Allemagne |
-| Polar Advisory BV (comptable) | Facturation et comptes annuels | Belgique |
 
 Incutec BV ne transfère pas de données personnelles vers des pays en dehors de l’EEE à moins que des garanties adéquates n’aient été mises en place (Art. 46 RGPD).
 

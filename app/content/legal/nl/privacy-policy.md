@@ -63,7 +63,6 @@ Incutec BV heeft geen Functionaris voor Gegevensbescherming (DPO) aangesteld aan
 | Sendcloud B.V. | Verzendlabels en trackinginformatie | Nederland (EU) |
 | Bpost / DHL / DPD (drager afhankelijk van orde) | Pakketbezorging | EU |
 | Plausible Analytics | Cookieloze websitestatistieken | Plausible Insights OÜ — Estland (EU); hosting in Duitsland |
-| Polar Advisory BV (boekhouder) | Facturatie en jaarrekening | België |
 
 Incutec BV draagt geen persoonsgegevens over naar landen buiten de EER, tenzij adequate waarborgen zijn getroffen (Art. 46 AVG).
 
@@ -132,7 +131,6 @@ No DPO required. Art. 37(1) GDPR triggers none of the conditions: Incutec is not
 | Shopify International Ltd (IE) | Webshop platform | https://www.shopify.com/legal/dpa | EU → CA adequacy decision + EU 2021 SCCs (Module 3) for US/SG sub-processors |
 | Stripe Payments Europe Ltd (IE) | Payments | https://stripe.com/legal/dpa | Stripe: joint controller for fraud/AML, processor for payment processing |
 | Sendcloud BV (NL) | Shipping aggregator | sendcloud.com/legal | EU-only; list bpost, DPD, DHL, PostNL as sub-processors |
-| Polar Advisory / Exact Online (BE/NL) | Bookkeeping | Via Polar engagement letter | EU-only |
 | Plausible (EU) | Website analytics | plausible.io/dpa | EU-hosted, cookieless; avoids GA4 SCC+TIA overhead |
 | Klaviyo / Mailchimp (US) | Email marketing, if used | Per-provider DPA | Only if DPF-certified at signup, otherwise SCCs + TIA |
 
@@ -140,7 +138,7 @@ Default stance: use Plausible instead of Google Analytics. Only add Klaviyo/Mail
 
 ### Policy text updates before publishing
 - Section 1: replace the generic DPO sentence with the documented reasoning above.
-- Section 5: replace placeholders with the processor table above (Shopify IE, Stripe IE, Sendcloud NL, Polar/Exact Online, carrier list, Plausible).
+- Section 5: replace placeholders with the processor table above (Shopify IE, Stripe IE, Sendcloud NL, accountant, carrier list, Plausible).
 - Section 5: add the international-transfer paragraph: "Shopify kan gegevens verwerken in Canada (adequaatheidsbesluit EU-Commissie) en via subverwerkers in de VS en Singapore onder Standaard Contractuele Clausules (Besluit 2021/914)."
 - Section 5: add the Stripe dual-role disclosure: "Betalingsgegevens worden verwerkt door Stripe Payments Europe Ltd als zelfstandige verwerkingsverantwoordelijke voor fraudepreventie en als verwerker namens Incutec BV voor de afhandeling van de transactie."
 - Section 8: add 2FA on admin accounts, encrypted backups, vulnerability management, incident response procedure.

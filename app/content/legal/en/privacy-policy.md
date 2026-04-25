@@ -64,7 +64,6 @@ Incutec BV has not appointed a Data Protection Officer (DPO) because this is not
 | Sendcloud B.V. | Shipping labels and tracking | Netherlands (EU) |
 | Bpost / DHL / DPD (carrier depending on order) | Parcel delivery | EU |
 | Plausible Analytics | Cookieless website analytics | Plausible Insights OÜ — Estonia (EU); hosting in Germany |
-| Polar Advisory BV (accountant) | Invoicing and annual accounts | Belgium |
 
 Incutec BV does not transfer personal data to countries outside the EEA unless adequate safeguards have been put in place (Art. 46 GDPR).
 

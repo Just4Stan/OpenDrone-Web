@@ -38,28 +38,28 @@ Belgium will add near-real-time e-reporting (5-day rule) starting 2028. Not a co
 
 ## Incutec stack
 
-Polar Advisory ships the bookkeeping + invoicing backbone.
+Bookkeeping + invoicing backbone (provider TBD pre-launch).
 
 | Layer | Tool | Purpose |
 |---|---|---|
-| Bookkeeping + e-invoice engine | Exact Online Basic (part of Polar's Comfort package) | Issues and receives Peppol BIS 3.0 invoices, handles archival |
-| Banking → bookkeeping | CODA (1 zicht + 1 spaar via Polar) | Automatic bank transaction feed into Exact Online |
+| Bookkeeping + e-invoice engine | Exact Online Basic | Issues and receives Peppol BIS 3.0 invoices, handles archival |
+| Banking → bookkeeping | CODA bank-feed (1 current + 1 savings) | Automatic bank transaction feed into Exact Online |
 | Webshop checkout → invoice | **Sufio** for Shopify | Generates invoices from Shopify orders; routes B2B invoices into the Exact Online / Peppol path |
 | Webshop receive-only fallback | **Billit** basic account | Cheap standalone Peppol access point during the BV-incorporation window before Exact Online is fully live |
 
-Pricing moves. Re-check Polar's current Comfort package, Sufio plan, and Billit tier before launch instead of hard-coding numbers here.
+Pricing moves. Re-check the accountant's current package, Sufio plan, and Billit tier before launch instead of hard-coding numbers here.
 
 ## Receiving Peppol invoices: Incutec must be reachable
 
-Even before sending any Belgian B2B invoice, Incutec must be able to **receive** structured invoices from Belgian suppliers. This is configured via Exact Online (through Polar) and, optionally, a standalone Billit account for the window between BV incorporation and the Exact Online flow being fully live.
+Even before sending any Belgian B2B invoice, Incutec must be able to **receive** structured invoices from Belgian suppliers. This is configured via Exact Online (through the accountant) and, optionally, a standalone Billit account for the window between BV incorporation and the Exact Online flow being fully live.
 
-**Action:** Confirm receive capability with Polar at BTW activation, test-receive a Peppol invoice from Polar or Billit before webshop launch.
+**Action:** Confirm receive capability with the accountant at BTW activation, test-receive a Peppol invoice from the accountant or Billit before webshop launch.
 
 ---
 
 ## Shopify → Peppol integration path
 
-Shopify core does not natively generate Peppol BIS 3.0 XML. Incutec's chosen path is **Sufio on Shopify → Exact Online (Polar) → Peppol**. Sufio generates the invoice from the Shopify order and hands it to Exact Online for numbering, archival, and Peppol delivery for Belgian B2B orders; B2C orders stay on PDF.
+Shopify core does not natively generate Peppol BIS 3.0 XML. Incutec's chosen path is **Sufio on Shopify → Exact Online (via accountant) → Peppol**. Sufio generates the invoice from the Shopify order and hands it to Exact Online for numbering, archival, and Peppol delivery for Belgian B2B orders; B2C orders stay on PDF.
 
 If Sufio ever fails to cover Belgian structured invoicing cleanly, fall back to:
 
@@ -114,11 +114,11 @@ Sources:
 - [ ] Confirm BTW number activation via Acerta
 - [ ] Open Billit basic account for receive-only Peppol access until Exact Online is live
 - [ ] Route Peppol to invoices@incutec.eu (or temporary alias) until dedicated infra is set up
-- [ ] Test-receive a Peppol invoice from Polar or Billit
+- [ ] Test-receive a Peppol invoice from the accountant or Billit
 
 ### Phase 2: Pre-launch (Jun-Jul 2026)
 - [ ] Install Sufio on the Shopify dev store
-- [ ] Connect Sufio to Exact Online (via Polar) so B2B invoices flow into the Peppol path
+- [ ] Connect Sufio to Exact Online (via accountant) so B2B invoices flow into the Peppol path
 - [ ] Configure VAT number field on Shopify B2B checkout with VIES validation
 - [ ] Test: place B2B test order → verify Peppol XML generated → verify delivered to test recipient
 - [ ] Test: place B2C test order → verify PDF invoice only (no Peppol)
@@ -126,7 +126,7 @@ Sources:
 
 ### Phase 3: Go-live (Q3 2026)
 - [ ] Monitor first 10 B2B invoices for Peppol delivery confirmation
-- [ ] Reconcile Shopify orders ↔ Peppol invoices sent ↔ Polar monthly books
+- [ ] Reconcile Shopify orders ↔ Peppol invoices sent ↔ accountant's monthly books
 - [ ] Review Sufio + Billit + Exact Online pricing annually
 
 ---
