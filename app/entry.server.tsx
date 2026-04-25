@@ -49,7 +49,13 @@ export default async function handleRequest(
       'https://cdn.shopify.com',
       'https://challenges.cloudflare.com',
     ],
-    frameSrc: ["'self'", 'https://challenges.cloudflare.com'],
+    frameSrc: [
+      "'self'",
+      'https://challenges.cloudflare.com',
+      // Official Discord server widget iframe used on /contact.
+      // Server admin must enable widget in Server Settings → Widget.
+      'https://discord.com',
+    ],
     connectSrc: [
       "'self'",
       'https://cdn.shopify.com',

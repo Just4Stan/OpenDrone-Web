@@ -110,6 +110,59 @@ export async function sendResumeLink(
   });
 }
 
+export async function sendReplyNotification(
+  env: Env,
+  opts: {
+    to: string;
+    name: string;
+    subject: string;
+    resumeUrl: string;
+    preview: string;
+    staffFirstName: string;
+  },
+): Promise<boolean> {
+  const previewLine = opts.preview.slice(0, 240);
+  const text = [
+    `Hi ${opts.name || 'there'},`,
+    '',
+    `${opts.staffFirstName} replied to your OpenDrone support ticket.`,
+    '',
+    `Ticket: ${opts.subject}`,
+    previewLine ? `> ${previewLine}` : null,
+    '',
+    `Continue here: ${opts.resumeUrl}`,
+    '',
+    `— OpenDrone support`,
+  ]
+    .filter((line) => line !== null)
+    .join('\n');
+
+  const html = renderEmail({
+    heading: `${escapeHtml(opts.staffFirstName)} replied to your ticket`,
+    body: `
+      <p>Hi ${escapeHtml(opts.name || 'there')},</p>
+      <p>${escapeHtml(opts.staffFirstName)} just replied to your support ticket.</p>
+      <p style="margin-top:18px"><strong>${escapeHtml(opts.subject)}</strong></p>
+      ${
+        previewLine
+          ? `<blockquote style="margin:12px 0 0;padding:10px 14px;border-left:2px solid #b8922e;background:#141417;color:#cfcfcf;font-size:13px;line-height:1.6">${escapeHtml(previewLine)}</blockquote>`
+          : ''
+      }
+      <p style="margin:24px 0 32px">
+        <a href="${escapeAttr(opts.resumeUrl)}" style="display:inline-block;background:#b8922e;color:#0a0a0a;text-decoration:none;font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:0.14em;text-transform:uppercase;font-weight:700;padding:12px 18px;border-radius:2px">Continue chat →</a>
+      </p>
+      <p style="color:#737373;font-size:13px;line-height:1.6">You're receiving this because you opened a support ticket with us. The link above restores your conversation from any device.</p>
+    `,
+  });
+
+  return send(env, {
+    to: opts.to,
+    subject: `Re: ${opts.subject}`,
+    text,
+    html,
+  });
+}
+
 export async function sendTicketIndex(
   env: Env,
   opts: {

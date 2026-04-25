@@ -5,6 +5,7 @@ import {readSupportCookie, verifyTicket} from '~/lib/support/session';
 import {extractAttachments} from '~/lib/support/uploads';
 import {checkRateLimit} from '~/lib/rate-limit';
 import {scrubForDiscord} from '~/lib/support/scrubber';
+import {bumpActivity} from '~/lib/support/ticket-index';
 
 type SendResult =
   | {
@@ -104,6 +105,13 @@ export async function action({request, context}: Route.ActionArgs) {
       {status: 502},
     );
   }
+  // Bump lastActivityAt so the ticket sorts to the top of the index list.
+  // Fire-and-forget — KV write isn't on the response path.
+  const bumpJob = bumpActivity(env, ticket.tid).catch((err) =>
+    console.warn('[support/send] index bump failed', err),
+  );
+  if (context.waitUntil) context.waitUntil(bumpJob);
+  else void bumpJob;
   return data<SendResult>({
     ok: true,
     id: posted.id,

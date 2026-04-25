@@ -18,7 +18,9 @@ import type {
 } from 'customer-accountapi.generated';
 import {CUSTOMER_DETAILS_QUERY} from '~/graphql/customer-account/CustomerDetailsQuery';
 import {CUSTOMER_ORDERS_QUERY} from '~/graphql/customer-account/CustomerOrdersQuery';
+import {SUPPORT_CUSTOMER_PREFILL_QUERY} from '~/graphql/customer-account/SupportPrefillQuery';
 import {buildSeoMeta} from '~/lib/seo';
+import {countOpenForCustomer} from '~/lib/support/ticket-index';
 import {Money, flattenConnection} from '@shopify/hydrogen';
 
 // Dashboard that greets the signed-in customer with a time-aware hello,
@@ -67,11 +69,27 @@ export async function loader({request, context}: Route.LoaderArgs) {
     .catch(() => null);
 
   const orders = recentOrders?.data?.customer?.orders?.nodes ?? [];
-  return {orders, justOnboarded};
+
+  // Open ticket count for the support tile. Customer ID lookup is a
+  // second cheap GraphQL roundtrip but we already fetched details
+  // above; reuse-by-extra-query keeps this isolated and avoids
+  // touching the existing CUSTOMER_DETAILS_QUERY shape.
+  let openTicketCount = 0;
+  try {
+    const {data: prefill} = await customerAccount.query(
+      SUPPORT_CUSTOMER_PREFILL_QUERY,
+    );
+    const cid = prefill?.customer?.id;
+    if (cid) openTicketCount = await countOpenForCustomer(context.env, cid);
+  } catch {
+    /* fail open — tile renders the no-tickets variant */
+  }
+
+  return {orders, justOnboarded, openTicketCount};
 }
 
 export default function AccountIndex() {
-  const {orders, justOnboarded} = useLoaderData<typeof loader>();
+  const {orders, justOnboarded, openTicketCount} = useLoaderData<typeof loader>();
   const {customer} = useOutletContext<{customer: CustomerFragment}>();
   const [searchParams, setSearchParams] = useSearchParams();
   const firstName = customer.firstName?.trim();
@@ -119,10 +137,45 @@ export default function AccountIndex() {
       <div className="account-dashboard-grid">
         <OrdersCard orders={orders} />
         <AddressCard customer={customer} />
+        <SupportCard openCount={openTicketCount} />
         <CommunityCard />
         <BuildCard />
       </div>
     </div>
+  );
+}
+
+function SupportCard({openCount}: {openCount: number}) {
+  const isActive = openCount > 0;
+  return (
+    <section
+      className={`account-dashboard-card account-dash-support${
+        isActive ? ' is-active' : ''
+      }`}
+    >
+      <p className="account-dashboard-eyebrow-mono">
+        {isActive ? '→ SUPPORT · ACTIVE' : '→ SUPPORT'}
+      </p>
+      <h3 className="account-dashboard-card-title">Support</h3>
+      {isActive ? (
+        <span className="od-count">
+          {openCount}
+          <span className="od-count-label">
+            {openCount === 1 ? 'OPEN TICKET' : 'OPEN TICKETS'}
+          </span>
+        </span>
+      ) : (
+        <p className="account-dashboard-card-lede">
+          No open tickets — need help?
+        </p>
+      )}
+      <Link
+        to={isActive ? '/account/support' : '/support'}
+        className="od-tile-link"
+      >
+        {isActive ? 'Continue thread →' : 'Open a ticket →'}
+      </Link>
+    </section>
   );
 }
 

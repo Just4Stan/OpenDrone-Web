@@ -1,208 +1,415 @@
-import {Link, useLoaderData} from 'react-router';
+import {Link, useLoaderData, type HeadersFunction} from 'react-router';
 import type {Route} from './+types/contact';
-import {SupportWidget} from '~/components/SupportWidget';
 import {SUPPORT_CUSTOMER_PREFILL_QUERY} from '~/graphql/customer-account/SupportPrefillQuery';
-import {legalLabels, resolveLegalLoader} from '~/lib/i18n';
 import {buildSeoMeta} from '~/lib/seo';
+import {fetchGuildPreview, type GuildPreview} from '~/lib/support/discord';
+import {
+  countOpenForCustomer,
+  listByCustomer,
+  type TicketIndexEntry,
+} from '~/lib/support/ticket-index';
+import {readSupportCookie, verifyTicket} from '~/lib/support/session';
 
-export const meta: Route.MetaFunction = ({data}) => {
-  const locale = data?.locale ?? 'en';
-  const labels = legalLabels('contact', locale);
+export const meta: Route.MetaFunction = () => {
   return buildSeoMeta({
-    title: labels.title,
-    description: labels.description,
-    locale: locale === 'nl' ? 'nl_BE' : 'en_US',
-    alternateLocales: [locale === 'nl' ? 'en_US' : 'nl_BE'],
-    canonical: data?.canonicalUrl,
-    hreflang: data?.hreflang,
+    title: 'Contact',
+    description:
+      'Reach the OpenDrone team via Discord, a support ticket, or direct phone/email.',
   });
 };
 
-export async function loader({request, context}: Route.LoaderArgs) {
-  const legal = await resolveLegalLoader(request, 'contact', 'contact');
+// Cap loader cache at 60 s so the Discord widget stats don't tail every
+// page render. Public — the marketing copy doesn't vary by user, only
+// the open-ticket banner does (which lives in a logged-in state we
+// gate client-side via the cookie/index already, so caching is fine).
+export const headers: HeadersFunction = () => ({
+  'Cache-Control': 'public, max-age=60, s-maxage=60',
+});
 
-  // If the visitor is signed into Shopify customer accounts, prefill the
-  // ticket form with their name + email and tag the Discord post with
-  // their customer id. We swallow auth errors so anonymous visitors get
-  // an empty form, not a 401.
-  let prefill: {name: string; email: string; customerId: string} | null = null;
+export async function loader({request, context}: Route.LoaderArgs) {
+  const env = context.env;
+
+  // Customer auth — optional. Determines whether we can show the
+  // open-ticket banner that dissuades duplicate tickets.
+  let customerId: string | null = null;
   try {
     const {data} = await context.customerAccount.query(
       SUPPORT_CUSTOMER_PREFILL_QUERY,
     );
-    const c = data?.customer;
-    if (c) {
-      const name = [c.firstName, c.lastName].filter(Boolean).join(' ').trim();
-      const email = c.emailAddress?.emailAddress ?? '';
-      if (email) {
-        prefill = {name, email, customerId: c.id};
-      }
-    }
+    customerId = data?.customer?.id ?? null;
   } catch {
-    // Not logged in, or scope missing — fine, fall through to anon flow.
+    /* anon */
   }
 
+  // Active-ticket lookup. Two sources:
+  //   1. The cookie-bound ticket (the one currently in the live widget).
+  //      Always renders the banner if present, regardless of KV.
+  //   2. KV index for the customer — picks up any open ticket on a
+  //      different device/cookie.
+  const cookie = readSupportCookie(request);
+  const cookieTicket = await verifyTicket(env, cookie);
+
+  let openTicket: {pid: string; subject: string; lastActivityAt: number} | null =
+    null;
+  if (cookieTicket?.pid) {
+    openTicket = {
+      pid: cookieTicket.pid,
+      subject: '',
+      lastActivityAt: cookieTicket.createdAt,
+    };
+  }
+  if (customerId && !openTicket) {
+    const openCount = await countOpenForCustomer(env, customerId);
+    if (openCount > 0) {
+      const list: TicketIndexEntry[] = await listByCustomer(env, customerId, {
+        status: 'open',
+        limit: 1,
+      });
+      if (list[0]) {
+        openTicket = {
+          pid: list[0].pid,
+          subject: list[0].subject,
+          lastActivityAt: list[0].lastActivityAt,
+        };
+      }
+    }
+  }
+
+  // Public guild ID takes precedence; falls back to the bridge-side
+  // binding. The official Discord widget iframe needs only the guild
+  // ID — it fetches its own server name + member list. We still pull
+  // the preview so the fallback (when widget is disabled in Server
+  // Settings) can render with stats from the bot-token API call.
+  const guildId = env.PUBLIC_DISCORD_GUILD_ID ?? env.DISCORD_GUILD_ID ?? null;
+  const guildPreview = await fetchGuildPreview(env, guildId ?? undefined).catch(
+    () => null,
+  );
+
   return {
-    ...legal,
-    contactEmail: context.env.PUBLIC_COMPANY_EMAIL ?? 'contact@opendrone.be',
-    contactTel: context.env.PUBLIC_COMPANY_TEL ?? null,
-    turnstileSiteKey: context.env.TURNSTILE_SITE_KEY ?? null,
+    contactEmail: env.PUBLIC_COMPANY_EMAIL ?? 'contact@opendrone.be',
+    contactTel: env.PUBLIC_COMPANY_TEL ?? null,
     discordInvite:
-      context.env.DISCORD_SUPPORT_INVITE ?? 'https://discord.gg/ABajnacUsS',
-    supportEnabled: Boolean(
-      context.env.DISCORD_BOT_TOKEN && context.env.DISCORD_SUPPORT_CHANNEL_ID,
-    ),
-    prefill,
+      env.PUBLIC_DISCORD_INVITE ??
+      env.DISCORD_SUPPORT_INVITE ??
+      'https://discord.gg/ABajnacUsS',
+    discordGuildId: guildId,
+    guildPreview,
+    openTicket,
   };
 }
 
 const COPY = {
-  en: {
-    eyebrow: 'Contact',
-    title: 'Talk to us',
-    lede: 'Built in the open — and supported in the open. Discord is the fastest path; engineers and builders hang out there every day. No Discord? Open a ticket. For order issues or anything that needs a human, call or email.',
-    discordEyebrow: 'Community · primary path',
-    discordTitle: 'Join the Discord',
-    discordLede:
-      'Firmware help, build logs, debugging, release notes — it all happens here first. You usually get a real answer in minutes.',
-    discordCta: 'Open Discord',
-    ticketEyebrow: 'No Discord?',
-    ticketTitle: 'Open a support ticket here',
-    ticketLede:
-      'Same team, just slower. Your ticket lands in our Discord as a private thread; replies come straight back to this chat in seconds.',
-    directEyebrow: 'Escalations · order issues',
-    directTitle: 'Talk to us directly',
-    directLede:
-      'For order issues, business questions, or anything that needs a phone call. We respond within two business days.',
-    callLabel: 'Call',
-    emailLabel: 'Email',
-    securityEyebrow: 'Security disclosure',
-    securityTitle: 'Found a vulnerability?',
-    securityLede:
-      'Coordinated disclosure has its own channel — please don’t use the support inbox.',
-    securityCta: 'See /security',
-    referenceEyebrow: 'On record',
-    offlineNote:
-      'The web-chat bridge isn’t configured on this environment yet. Use Discord, email, or phone for now.',
-  },
-  nl: {
-    eyebrow: 'Contact',
-    title: 'Neem contact op',
-    lede: 'We bouwen in de open — en helpen in de open. Discord is de snelste weg; ingenieurs en bouwers hangen er elke dag rond. Geen Discord? Open een ticket. Voor bestellingen of iets dat een mens nodig heeft, bel of mail.',
-    discordEyebrow: 'Community · primaire weg',
-    discordTitle: 'Kom op Discord',
-    discordLede:
-      'Firmware-hulp, build logs, debugging, release notes — alles gebeurt hier eerst. Meestal krijg je binnen enkele minuten een echt antwoord.',
-    discordCta: 'Open Discord',
-    ticketEyebrow: 'Geen Discord?',
-    ticketTitle: 'Open hier een support ticket',
-    ticketLede:
-      'Zelfde team, iets trager. Je ticket komt bij ons binnen als een privé thread op Discord; antwoorden komen meteen terug naar deze chat.',
-    directEyebrow: 'Escalaties · bestellingen',
-    directTitle: 'Ons rechtstreeks bereiken',
-    directLede:
-      'Voor bestellingen, zakelijke vragen, of iets dat een telefoongesprek vereist. We reageren binnen twee werkdagen.',
-    callLabel: 'Bel',
-    emailLabel: 'E-mail',
-    securityEyebrow: 'Veiligheidsmelding',
-    securityTitle: 'Een kwetsbaarheid gevonden?',
-    securityLede:
-      'Gecoördineerde melding heeft een eigen kanaal — gebruik de support-inbox niet.',
-    securityCta: 'Naar /security',
-    referenceEyebrow: 'Wettelijk',
-    offlineNote:
-      'De web-chat-brug is nog niet geconfigureerd op deze omgeving. Gebruik voorlopig Discord, e-mail of telefoon.',
-  },
+  eyebrow: 'FILE 09 · CONTACT',
+  title: 'Talk to ',
+  titleEm: 'builders',
+  titleSuffix: ', not a help desk.',
+  lede: 'OpenDrone is run by a small team. Most questions get answered fastest in our Discord — that’s where the engineers live. If Discord isn’t your thing, open a ticket and we’ll thread it back to the same crew.',
+  bannerText: 'You have an active support ticket',
+  bannerLastReply: 'continue where you left off',
+  bannerCta: 'Continue thread →',
+  discordEyebrow: '↗ PRIMARY · LIVE NOW',
+  discordTitle: 'Join the OpenDrone Discord',
+  discordLede:
+    'Direct line to the people building the boards. Show your bench, post your logs, get answers in minutes.',
+  discordCta: 'Go to server →',
+  onlineLabel: 'online',
+  membersLabel: 'members',
+  estLabel: 'Est.',
+  ticketEyebrow: '→ SECONDARY',
+  ticketTitle: 'No Discord? Open a ticket.',
+  ticketLede:
+    'Goes to the same Discord crew via a private thread. Sign in so we can link it to your order.',
+  ticketCta: 'Open a ticket',
+  directEyebrow: '⌖ DIRECT',
+  phoneLabel: 'Phone',
+  emailLabel: 'Email',
+  securityLabel: 'Security',
+  securityValue: 'Responsible disclosure ↗',
+  hoursLabel: 'Hours · CET',
+  hoursValue: 'Mon–Fri · 09:00–18:00',
 } as const;
 
 export default function ContactRoute() {
   const {
-    locale,
     contactEmail,
     contactTel,
-    turnstileSiteKey,
     discordInvite,
-    supportEnabled,
-    prefill,
+    discordGuildId,
+    guildPreview,
+    openTicket,
   } = useLoaderData<typeof loader>();
-  const t = COPY[locale === 'nl' ? 'nl' : 'en'];
+  const t = COPY;
 
   return (
-    <article className="contact-page page-shell">
-      <header className="contact-hero">
-        <p className="contact-hero-eyebrow">{t.eyebrow}</p>
-        <h1 className="contact-hero-title">{t.title}</h1>
-        <p className="contact-hero-lede">{t.lede}</p>
+    <article className="od-page-frame contact-page-frame">
+      <header className="od-page-head">
+        <p className="od-eyebrow">{t.eyebrow}</p>
+        <h1>
+          {t.title}
+          <em>{t.titleEm}</em>
+          {t.titleSuffix}
+        </h1>
+        <p>{t.lede}</p>
       </header>
 
-      <section className="contact-tier contact-tier-discord">
-        <div className="contact-tier-text">
-          <p className="contact-tier-eyebrow">{t.discordEyebrow}</p>
-          <h2 className="contact-tier-title">{t.discordTitle}</h2>
-          <p className="contact-tier-lede">{t.discordLede}</p>
+      {openTicket ? (
+        <div className="contact-banner-active" role="status" aria-live="polite">
+          <div className="od-banner-meta">
+            <span className="od-status is-open" aria-hidden="true">
+              Open
+            </span>
+            <span className="od-banner-text">
+              {t.bannerText} <strong>#{openTicket.pid}</strong>
+            </span>
+            <span className="od-banner-id">— {t.bannerLastReply}</span>
+          </div>
+          <Link to="/account/support" className="od-btn od-btn-primary">
+            {t.bannerCta}
+          </Link>
         </div>
-        <div className="contact-tier-action">
+      ) : null}
+
+      <div className="contact-main-grid">
+        <DiscordWidget
+          guildId={discordGuildId}
+          discordInvite={discordInvite}
+          guildPreview={guildPreview}
+          copy={t}
+        />
+        <div className="contact-side-stack">
+          {!openTicket ? (
+            <TicketPointerTile copy={t} />
+          ) : (
+            <TicketContinueTile pid={openTicket.pid} copy={t} />
+          )}
+          <DirectContactTile
+            contactTel={contactTel}
+            contactEmail={contactEmail}
+            copy={t}
+          />
+        </div>
+      </div>
+    </article>
+  );
+}
+
+type Copy = typeof COPY;
+
+// Renders Discord's official server-widget iframe when a guild ID is
+// available. Falls back to the custom card when no guild ID is wired
+// (so the page never breaks on misconfigured envs). The widget itself
+// will display "Widget Disabled" inside the iframe when the server
+// admin hasn't enabled it under Server Settings → Widget — that's a
+// Discord-side setup step the customer-facing page can't fix.
+function DiscordWidget({
+  guildId,
+  discordInvite,
+  guildPreview,
+  copy,
+}: {
+  guildId: string | null;
+  discordInvite: string;
+  guildPreview: GuildPreview | null;
+  copy: Copy;
+}) {
+  // Prefer the bot-API-backed invite card whenever we have a preview —
+  // Discord's `/widget` iframe needs Server Settings → Widget enabled to
+  // render counts, and silently shows "0 Members Online" forever when
+  // it isn't (or while it's still loading on a cold edge). The card uses
+  // approximate_member_count/approximate_presence_count from the
+  // authenticated /guilds endpoint and is styled to match the page.
+  if (guildPreview) {
+    return (
+      <DiscordInviteCard
+        discordInvite={discordInvite}
+        guildPreview={guildPreview}
+        copy={copy}
+      />
+    );
+  }
+  // No preview (no bot token, or fetch failed) but we still have a guild
+  // ID — use the embeddable widget as a last-resort fallback.
+  if (guildId) {
+    return (
+      <section
+        className="contact-discord-widget"
+        aria-label="Join the OpenDrone Discord"
+      >
+        <iframe
+          title="OpenDrone on Discord"
+          src={`https://discord.com/widget?id=${guildId}&theme=dark`}
+          width="100%"
+          height="500"
+          loading="lazy"
+          sandbox="allow-popups allow-popups-to-escape-sandbox allow-same-origin allow-scripts"
+        />
+      </section>
+    );
+  }
+  return (
+    <DiscordInviteCard
+      discordInvite={discordInvite}
+      guildPreview={null}
+      copy={copy}
+    />
+  );
+}
+
+function DiscordInviteCard({
+  discordInvite,
+  guildPreview,
+  copy,
+}: {
+  discordInvite: string;
+  guildPreview: GuildPreview | null;
+  copy: Copy;
+}) {
+  // Fallback path: Discord API failed or token/guild ID unset. Render a
+  // simpler banner with just the invite link so the page never breaks
+  // on a Discord outage.
+  if (!guildPreview) {
+    return (
+      <section className="discord-invite-card discord-invite-fallback" aria-label="Discord">
+        <div className="discord-invite-banner" aria-hidden="true" />
+        <div className="discord-invite-body">
+          <div className="discord-invite-icon" aria-hidden="true">
+            <span>OD</span>
+          </div>
+          <h2 className="discord-invite-name">{copy.discordTitle}</h2>
+          <p className="discord-invite-desc-fallback">{copy.discordLede}</p>
           <a
-            className="contact-tier-cta contact-tier-cta-primary"
             href={discordInvite}
+            className="discord-invite-cta"
             target="_blank"
-            rel="noreferrer noopener"
+            rel="noopener noreferrer"
           >
-            {t.discordCta} →
+            {copy.discordCta}
           </a>
         </div>
       </section>
+    );
+  }
 
-      <section className="contact-tier contact-tier-ticket">
-        <div className="contact-tier-text">
-          <p className="contact-tier-eyebrow">{t.ticketEyebrow}</p>
-          <h2 className="contact-tier-title">{t.ticketTitle}</h2>
-          <p className="contact-tier-lede">{t.ticketLede}</p>
-        </div>
-        <div className="contact-tier-widget">
-          {supportEnabled ? (
-            <SupportWidget
-              turnstileSiteKey={turnstileSiteKey}
-              discordInvite={discordInvite}
-              embedded
-              prefill={prefill}
-            />
+  const initials = guildPreview.name
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((w) => w[0])
+    .join('')
+    .toUpperCase();
+  return (
+    <section className="discord-invite-card" aria-label={`${guildPreview.name} on Discord`}>
+      <div className="discord-invite-banner" aria-hidden="true" />
+      <div className="discord-invite-body">
+        <div className="discord-invite-icon" aria-hidden="true">
+          {guildPreview.iconUrl ? (
+            <img src={guildPreview.iconUrl} alt="" loading="lazy" decoding="async" />
           ) : (
-            <p className="contact-offline-note">{t.offlineNote}</p>
+            <span>{initials || 'OD'}</span>
           )}
         </div>
-      </section>
-
-      <section className="contact-tier-row">
-        <div className="contact-tier-card">
-          <p className="contact-tier-eyebrow">{t.directEyebrow}</p>
-          <h3 className="contact-tier-card-title">{t.directTitle}</h3>
-          <p className="contact-tier-lede">{t.directLede}</p>
-          <ul className="contact-direct-list">
-            {contactTel ? (
-              <li>
-                <span className="contact-direct-label">{t.callLabel}</span>
-                <a href={`tel:${contactTel.replace(/[^+\d]/g, '')}`}>
-                  {contactTel}
-                </a>
-              </li>
-            ) : null}
-            <li>
-              <span className="contact-direct-label">{t.emailLabel}</span>
-              <a href={`mailto:${contactEmail}`}>{contactEmail}</a>
-            </li>
-          </ul>
+        <h2 className="discord-invite-name">{guildPreview.name}</h2>
+        <div className="discord-invite-stats">
+          <span>
+            <span className="discord-invite-dot discord-invite-dot-online" aria-hidden="true" />
+            <strong>{guildPreview.presenceCount.toLocaleString()}</strong>{' '}
+            {copy.onlineLabel}
+          </span>
+          <span>
+            <span className="discord-invite-dot discord-invite-dot-idle" aria-hidden="true" />
+            <strong>{guildPreview.memberCount.toLocaleString()}</strong>{' '}
+            {copy.membersLabel}
+          </span>
         </div>
-        <div className="contact-tier-card contact-tier-card-security">
-          <p className="contact-tier-eyebrow">{t.securityEyebrow}</p>
-          <h3 className="contact-tier-card-title">{t.securityTitle}</h3>
-          <p className="contact-tier-lede">{t.securityLede}</p>
-          <Link className="contact-security-cta" to="/security">
-            {t.securityCta} →
-          </Link>
-        </div>
-      </section>
+        <p className="discord-invite-est">{copy.estLabel} Apr 2026</p>
+        {guildPreview.description ? (
+          <p className="discord-invite-desc">{guildPreview.description}</p>
+        ) : (
+          <p className="discord-invite-desc">{copy.discordLede}</p>
+        )}
+        <a
+          href={discordInvite}
+          className="discord-invite-cta"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          {copy.discordCta.replace(/\s*→\s*$/, '')}
+        </a>
+      </div>
+    </section>
+  );
+}
 
-    </article>
+function TicketPointerTile({copy}: {copy: Copy}) {
+  return (
+    <div className="od-tile contact-tile-ticket">
+      <p className="od-tile-eyebrow">{copy.ticketEyebrow}</p>
+      <h2>{copy.ticketTitle}</h2>
+      <p>{copy.ticketLede}</p>
+      <Link to="/support" className="od-btn od-btn-secondary">
+        {copy.ticketCta}
+      </Link>
+    </div>
+  );
+}
+
+function TicketContinueTile({pid, copy}: {pid: string; copy: Copy}) {
+  return (
+    <div className="od-tile od-tile-gold contact-tile-ticket">
+      <p
+        className="od-tile-eyebrow"
+        style={{color: 'var(--od-pcb-gold-2)'}}
+      >
+        → YOUR OPEN TICKET
+      </p>
+      <h2>#{pid}</h2>
+      <p>{copy.bannerText}.</p>
+      <Link to="/account/support" className="od-btn od-btn-primary">
+        {copy.bannerCta}
+      </Link>
+    </div>
+  );
+}
+
+function DirectContactTile({
+  contactTel,
+  contactEmail,
+  copy,
+}: {
+  contactTel: string | null;
+  contactEmail: string;
+  copy: Copy;
+}) {
+  return (
+    <div className="od-tile contact-tile-direct">
+      <p className="od-tile-eyebrow">{copy.directEyebrow}</p>
+      {contactTel ? (
+        <div className="contact-direct-row">
+          <span className="od-k">{copy.phoneLabel}</span>
+          <a
+            href={`tel:${contactTel.replace(/[^+\d]/g, '')}`}
+            className="od-v"
+          >
+            {contactTel}
+          </a>
+        </div>
+      ) : null}
+      <div className="contact-direct-row">
+        <span className="od-k">{copy.emailLabel}</span>
+        <a href={`mailto:${contactEmail}`} className="od-v">
+          {contactEmail}
+        </a>
+      </div>
+      <div className="contact-direct-row">
+        <span className="od-k">{copy.securityLabel}</span>
+        <Link to="/security" className="od-v">
+          {copy.securityValue}
+        </Link>
+      </div>
+      <div className="contact-direct-row">
+        <span className="od-k">{copy.hoursLabel}</span>
+        <span className="od-v">{copy.hoursValue}</span>
+      </div>
+    </div>
   );
 }
