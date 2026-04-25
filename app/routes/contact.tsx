@@ -18,10 +18,6 @@ export const meta: Route.MetaFunction = () => {
   });
 };
 
-// Cap loader cache at 60 s so the Discord widget stats don't tail every
-// page render. Public — the marketing copy doesn't vary by user, only
-// the open-ticket banner does (which lives in a logged-in state we
-// gate client-side via the cookie/index already, so caching is fine).
 export const headers: HeadersFunction = () => ({
   'Cache-Control': 'public, max-age=60, s-maxage=60',
 });
@@ -29,8 +25,6 @@ export const headers: HeadersFunction = () => ({
 export async function loader({request, context}: Route.LoaderArgs) {
   const env = context.env;
 
-  // Customer auth — optional. Determines whether we can show the
-  // open-ticket banner that dissuades duplicate tickets.
   let customerId: string | null = null;
   try {
     const {data} = await context.customerAccount.query(
@@ -41,11 +35,6 @@ export async function loader({request, context}: Route.LoaderArgs) {
     /* anon */
   }
 
-  // Active-ticket lookup. Two sources:
-  //   1. The cookie-bound ticket (the one currently in the live widget).
-  //      Always renders the banner if present, regardless of KV.
-  //   2. KV index for the customer — picks up any open ticket on a
-  //      different device/cookie.
   const cookie = readSupportCookie(request);
   const cookieTicket = await verifyTicket(env, cookie);
 
@@ -75,11 +64,6 @@ export async function loader({request, context}: Route.LoaderArgs) {
     }
   }
 
-  // Public guild ID takes precedence; falls back to the bridge-side
-  // binding. The official Discord widget iframe needs only the guild
-  // ID — it fetches its own server name + member list. We still pull
-  // the preview so the fallback (when widget is disabled in Server
-  // Settings) can render with stats from the bot-token API call.
   const guildId = env.PUBLIC_DISCORD_GUILD_ID ?? env.DISCORD_GUILD_ID ?? null;
   const guildPreview = await fetchGuildPreview(env, guildId ?? undefined).catch(
     () => null,
@@ -195,12 +179,6 @@ export default function ContactRoute() {
 
 type Copy = typeof COPY;
 
-// Renders Discord's official server-widget iframe when a guild ID is
-// available. Falls back to the custom card when no guild ID is wired
-// (so the page never breaks on misconfigured envs). The widget itself
-// will display "Widget Disabled" inside the iframe when the server
-// admin hasn't enabled it under Server Settings → Widget — that's a
-// Discord-side setup step the customer-facing page can't fix.
 function DiscordWidget({
   guildId,
   discordInvite,
@@ -212,23 +190,6 @@ function DiscordWidget({
   guildPreview: GuildPreview | null;
   copy: Copy;
 }) {
-  // Prefer the bot-API-backed invite card whenever we have a preview —
-  // Discord's `/widget` iframe needs Server Settings → Widget enabled to
-  // render counts, and silently shows "0 Members Online" forever when
-  // it isn't (or while it's still loading on a cold edge). The card uses
-  // approximate_member_count/approximate_presence_count from the
-  // authenticated /guilds endpoint and is styled to match the page.
-  if (guildPreview) {
-    return (
-      <DiscordInviteCard
-        discordInvite={discordInvite}
-        guildPreview={guildPreview}
-        copy={copy}
-      />
-    );
-  }
-  // No preview (no bot token, or fetch failed) but we still have a guild
-  // ID — use the embeddable widget as a last-resort fallback.
   if (guildId) {
     return (
       <section
@@ -249,7 +210,7 @@ function DiscordWidget({
   return (
     <DiscordInviteCard
       discordInvite={discordInvite}
-      guildPreview={null}
+      guildPreview={guildPreview}
       copy={copy}
     />
   );
@@ -264,9 +225,6 @@ function DiscordInviteCard({
   guildPreview: GuildPreview | null;
   copy: Copy;
 }) {
-  // Fallback path: Discord API failed or token/guild ID unset. Render a
-  // simpler banner with just the invite link so the page never breaks
-  // on a Discord outage.
   if (!guildPreview) {
     return (
       <section className="discord-invite-card discord-invite-fallback" aria-label="Discord">
