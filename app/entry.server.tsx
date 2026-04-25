@@ -77,7 +77,18 @@ export default async function handleRequest(
       nonce,
       signal: request.signal,
       onError(error) {
-        console.error(error);
+        // Surface request context alongside the stack so the Oxygen
+        // log line is enough to triage without cross-referencing CF
+        // request IDs. Method + URL are usually all you need to know
+        // which loader/action threw.
+        const ray = request.headers.get('cf-ray') ?? null;
+        console.error(
+          '[ssr]',
+          request.method,
+          request.url,
+          ray ? `cf-ray=${ray}` : '',
+          error,
+        );
         responseStatusCode = 500;
       },
     },

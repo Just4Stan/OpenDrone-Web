@@ -17,7 +17,15 @@ export async function verifyTurnstile(
   remoteIp?: string | null,
 ): Promise<{ok: boolean; reason?: string}> {
   if (!env.TURNSTILE_SECRET_KEY) {
-    if (env.SUPPORT_TURNSTILE_DEV_SKIP === '1') {
+    // The dev-skip flag is only ever honored in non-production builds.
+    // `process.env.NODE_ENV` is replaced at build time by Vite, so a
+    // production bundle hard-codes `false` here regardless of what
+    // SUPPORT_TURNSTILE_DEV_SKIP is set to in Oxygen secrets — closes
+    // the "operator accidentally pastes the dev flag into prod" hole.
+    if (
+      env.SUPPORT_TURNSTILE_DEV_SKIP === '1' &&
+      process.env.NODE_ENV !== 'production'
+    ) {
       return {ok: true, reason: 'turnstile-dev-skip'};
     }
     console.error('[turnstile] SECRET_KEY unset — failing closed');

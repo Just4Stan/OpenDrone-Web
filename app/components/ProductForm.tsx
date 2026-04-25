@@ -27,9 +27,9 @@ export function ProductForm({
 
         return (
           <div key={option.name} className="mb-4">
-            <h5 className="font-mono text-xs uppercase tracking-wider text-[var(--color-text-muted)] mb-3">
+            <h3 className="font-mono text-xs uppercase tracking-wider text-[var(--color-text-muted)] mb-3">
               {option.name}
-            </h5>
+            </h3>
             <div className="product-options-grid">
               {option.optionValues.map((value) => {
                 const {
@@ -146,7 +146,9 @@ function ProductOptionSwatch({
         backgroundColor: color || 'transparent',
       }}
     >
-      {!!image && <img src={image} alt="" />}
+      {!!image && (
+        <img src={image} alt="" width={20} height={20} loading="lazy" decoding="async" />
+      )}
     </div>
   );
 }

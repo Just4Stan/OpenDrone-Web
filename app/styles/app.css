@@ -308,6 +308,15 @@ a:hover {
   color: var(--color-accent);
 }
 
+/* Global keyboard-focus baseline. Most components ship their own ring;
+   this picks up everything else (raw <button>, <a>, <summary>, etc.) so
+   keyboard users always see where focus lives, even on elements that
+   never grew a custom focus style. */
+:where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
+  outline: 2px solid var(--color-gold, #b8922e);
+  outline-offset: 2px;
+}
+
 /* ============================================
    Header
    ============================================ */

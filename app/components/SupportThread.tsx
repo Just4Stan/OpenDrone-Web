@@ -729,7 +729,7 @@ function Attachments({
               aria-label={`Open image ${a.filename}`}
               title={a.filename}
             >
-              <img src={a.url} alt={a.filename} loading="lazy" />
+              <img src={a.url} alt={a.filename} loading="lazy" decoding="async" />
             </a>
           );
         }
@@ -812,7 +812,13 @@ function ComposerChip({
   return (
     <span className={`support-attach-chip${isImage ? ' is-image' : ''}`}>
       {isImage && thumb ? (
-        <img className="od-thumb" src={thumb} alt="" />
+        <img
+          className="od-thumb"
+          src={thumb}
+          alt=""
+          loading="lazy"
+          decoding="async"
+        />
       ) : null}
       <span>📎 {file.name}</span>
       <span className="od-help" style={{fontSize: '10px'}}>

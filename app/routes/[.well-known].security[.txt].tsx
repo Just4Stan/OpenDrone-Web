@@ -10,7 +10,7 @@ export async function loader(_args: Route.LoaderArgs) {
 
   const body = [
     'Contact: mailto:security@opendrone.be',
-    'Preferred-Languages: en, nl',
+    'Preferred-Languages: en, nl, fr',
     'Canonical: https://opendrone.be/.well-known/security.txt',
     'Policy: https://opendrone.be/security',
     `Expires: ${expires.toISOString()}`,

@@ -470,7 +470,15 @@ function IntakeChip({file, onRemove}: {file: File; onRemove: () => void}) {
   }, [file, isImage]);
   return (
     <span className={`support-attach-chip${isImage ? ' is-image' : ''}`}>
-      {isImage && thumb ? <img className="od-thumb" src={thumb} alt="" /> : null}
+      {isImage && thumb ? (
+        <img
+          className="od-thumb"
+          src={thumb}
+          alt=""
+          loading="lazy"
+          decoding="async"
+        />
+      ) : null}
       <span>📎 {file.name}</span>
       <span className="od-help" style={{fontSize: 10}}>
         {formatBytes(file.size)}
