@@ -117,7 +117,6 @@ const COPY = {
 
 export default function ContactRoute() {
   const {
-    html,
     locale,
     contactEmail,
     contactTel,
@@ -204,15 +203,6 @@ export default function ContactRoute() {
         </div>
       </section>
 
-      {html ? (
-        <aside className="contact-reference" aria-label={t.referenceEyebrow}>
-          <p className="contact-reference-eyebrow">{t.referenceEyebrow}</p>
-          <div
-            className="contact-reference-body"
-            dangerouslySetInnerHTML={{__html: html}}
-          />
-        </aside>
-      ) : null}
     </article>
   );
 }
