@@ -1,10 +1,11 @@
 import {useEffect, useMemo, useState} from 'react';
-import {Link, useLoaderData, type HeadersFunction} from 'react-router';
+import {Link, useLoaderData, useRevalidator, type HeadersFunction} from 'react-router';
 import type {Route} from './+types/account.support';
 import {SUPPORT_CUSTOMER_PREFILL_QUERY} from '~/graphql/customer-account/SupportPrefillQuery';
 import {readSupportCookie, verifyTicket} from '~/lib/support/session';
 import {listByCustomer, type TicketIndexEntry} from '~/lib/support/ticket-index';
 import {SupportThread, type ThreadMessage} from '~/components/SupportThread';
+import {FeedbackModal} from '~/components/FeedbackModal';
 import {buildSeoMeta} from '~/lib/seo';
 
 export const headers: HeadersFunction = () => ({
@@ -250,6 +251,22 @@ function DetailPane({
   isCookieActive: boolean;
   customerName: string;
 }) {
+  const [feedbackOpen, setFeedbackOpen] = useState(false);
+  const revalidator = useRevalidator();
+
+  async function closeAndStay() {
+    try {
+      await fetch('/api/support/close', {
+        method: 'POST',
+        credentials: 'same-origin',
+      });
+    } catch {
+      /* cookie already cleared if call landed; ignore */
+    }
+    setFeedbackOpen(false);
+    revalidator.revalidate();
+  }
+
   if (!pid || !ticket) {
     return (
       <div className="account-support-empty">Pick a ticket on the left.</div>
@@ -260,16 +277,24 @@ function DetailPane({
   // read-only fetch via /api/support/thread/:pid.
   if (isCookieActive) {
     return (
-      <SupportThread
-        mode="live"
-        embedded
-        ticket={{
-          pid: ticket.pid,
-          subject: ticket.subject || 'Support ticket',
-          status: mapStatus(ticket),
-          customerName,
-        }}
-      />
+      <>
+        <SupportThread
+          mode="live"
+          embedded
+          ticket={{
+            pid: ticket.pid,
+            subject: ticket.subject || 'Support ticket',
+            status: mapStatus(ticket),
+            customerName,
+          }}
+          onEnd={() => setFeedbackOpen(true)}
+        />
+        <FeedbackModal
+          open={feedbackOpen}
+          onSkip={closeAndStay}
+          onSubmitted={closeAndStay}
+        />
+      </>
     );
   }
   return <ReadOnlyThread pid={pid} customerName={customerName} ticket={ticket} />;

@@ -5703,6 +5703,51 @@ button.reset {
   font-size: 11px;
   margin-left: 4px;
 }
+.support-msg-file.is-pending {opacity: 0.55;}
+.support-msg-file-name {
+  max-width: 220px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.support-msg-video {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-width: 340px;
+}
+.support-msg-video video {
+  display: block;
+  width: 100%;
+  max-height: 280px;
+  border: 1.5px solid var(--od-line-strong);
+  border-radius: 3px;
+  background: #000;
+}
+.support-msg-video-name {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--od-ink-faint);
+  text-decoration: none;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.support-msg-video-name:hover {color: var(--od-pcb-gold-2);}
+
+.support-msg-audio {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-width: 340px;
+}
+.support-msg-audio audio {
+  display: block;
+  width: 100%;
+  height: 36px;
+}
 
 .support-thread-empty {
   margin: auto;
