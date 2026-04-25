@@ -1,5 +1,10 @@
-import {redirect, useLoaderData} from 'react-router';
+import {redirect, useLoaderData, type HeadersFunction} from 'react-router';
 import type {Route} from './+types/account.orders.$id';
+
+// Order detail PII — block intermediate + bfcache.
+export const headers: HeadersFunction = () => ({
+  'Cache-Control': 'private, no-store',
+});
 import {Money, Image} from '@shopify/hydrogen';
 import type {
   OrderLineItemFullFragment,

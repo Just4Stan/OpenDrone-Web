@@ -88,8 +88,9 @@ export default async function handleRequest(
   responseHeaders.set('Referrer-Policy', 'strict-origin-when-cross-origin');
   responseHeaders.set(
     'Permissions-Policy',
-    'camera=(), microphone=(), geolocation=(), payment=(self), usb=(), interest-cohort=()',
+    'accelerometer=(), autoplay=(), browsing-topics=(), camera=(), display-capture=(), fullscreen=(self), geolocation=(), gyroscope=(), hid=(), interest-cohort=(), magnetometer=(), microphone=(), midi=(), payment=(self), picture-in-picture=(), screen-wake-lock=(), serial=(), usb=(), xr-spatial-tracking=()',
   );
+  responseHeaders.set('Cross-Origin-Resource-Policy', 'same-site');
   if (new URL(request.url).protocol === 'https:') {
     responseHeaders.set(
       'Strict-Transport-Security',

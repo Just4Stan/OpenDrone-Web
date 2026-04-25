@@ -5,7 +5,13 @@ import {
   useSearchParams,
 } from 'react-router';
 import type {Route} from './+types/account.orders._index';
+import type {HeadersFunction} from 'react-router';
 import {useRef} from 'react';
+
+// Order-history PII — block intermediate + bfcache.
+export const headers: HeadersFunction = () => ({
+  'Cache-Control': 'private, no-store',
+});
 import {
   Money,
   getPaginationVariables,
