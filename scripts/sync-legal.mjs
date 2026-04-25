@@ -13,7 +13,10 @@ const repoRoot = path.resolve(__dirname, '..');
 
 const ICLOUD_DEFAULT = path.join(
   process.env.HOME || '',
-  'Library/Mobile Documents/com~apple~CloudDocs/incutec/compliance',
+  // Optional default — override with COMPLIANCE_SRC env var. Looks for
+  // a sibling `compliance` checkout next to this repo on the maintainer's
+  // machine; falls through to a no-op when not present.
+  '../compliance',
 );
 
 const SRC_ROOT = process.env.COMPLIANCE_SRC || ICLOUD_DEFAULT;

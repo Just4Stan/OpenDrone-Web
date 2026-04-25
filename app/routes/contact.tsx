@@ -45,7 +45,7 @@ export async function loader({request, context}: Route.LoaderArgs) {
   return {
     ...legal,
     contactEmail: context.env.PUBLIC_COMPANY_EMAIL ?? 'contact@opendrone.be',
-    contactTel: context.env.PUBLIC_COMPANY_TEL ?? '+32 491 97 83 61',
+    contactTel: context.env.PUBLIC_COMPANY_TEL ?? null,
     turnstileSiteKey: context.env.TURNSTILE_SITE_KEY ?? null,
     discordInvite:
       context.env.DISCORD_SUPPORT_INVITE ?? 'https://discord.gg/ABajnacUsS',
@@ -180,12 +180,14 @@ export default function ContactRoute() {
           <h3 className="contact-tier-card-title">{t.directTitle}</h3>
           <p className="contact-tier-lede">{t.directLede}</p>
           <ul className="contact-direct-list">
-            <li>
-              <span className="contact-direct-label">{t.callLabel}</span>
-              <a href={`tel:${contactTel.replace(/[^+\d]/g, '')}`}>
-                {contactTel}
-              </a>
-            </li>
+            {contactTel ? (
+              <li>
+                <span className="contact-direct-label">{t.callLabel}</span>
+                <a href={`tel:${contactTel.replace(/[^+\d]/g, '')}`}>
+                  {contactTel}
+                </a>
+              </li>
+            ) : null}
             <li>
               <span className="contact-direct-label">{t.emailLabel}</span>
               <a href={`mailto:${contactEmail}`}>{contactEmail}</a>

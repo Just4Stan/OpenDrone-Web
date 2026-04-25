@@ -3,7 +3,7 @@
 **Objet :** Documenter que les produits d'Incutec ne sont pas soumis au contrôle des biens à double usage au titre du règlement (UE) 2021/821. À conserver pour les douanes et les autorités.
 
 **Date d'évaluation :** 18 avril 2026
-**Évaluateur :** Stan Coene, Administrateur délégué
+**Évaluateur :** Administrateur délégué, Incutec BV
 
 ---
 
@@ -73,7 +73,7 @@ Malgré la non-classification, Incutec applique les contrôles suivants :
 
 Flandre : Departement Kanselarij en Buitenlandse Zaken, Dienst Controle Strategische Goederen (dCSG) — https://www.fdfa.be/en/csg
 
-**Signé :** Stan Coene, Administrateur délégué d'Incutec BV · **Date :** 18 avril 2026
+**Signé :** Administrateur délégué, Incutec BV · **Date :** 18 avril 2026
 
 ## Notes
 

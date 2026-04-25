@@ -113,7 +113,7 @@ Sources:
 ### Phase 1: At BV incorporation (Apr 2026)
 - [ ] Confirm BTW number activation via Acerta
 - [ ] Open Billit basic account for receive-only Peppol access until Exact Online is live
-- [ ] Route Peppol to stan@incutec.eu for now (split to invoices@ once infra is set up)
+- [ ] Route Peppol to invoices@incutec.eu (or temporary alias) until dedicated infra is set up
 - [ ] Test-receive a Peppol invoice from Polar or Billit
 
 ### Phase 2: Pre-launch (Jun-Jul 2026)

@@ -3,7 +3,7 @@
 **Purpose:** Document that Incutec's products are not dual-use controlled under EU Reg 2021/821. Keep on file for customs/authorities.
 
 **Assessment Date:** 18 April 2026
-**Assessor:** Stan Coene, Managing Director
+**Assessor:** Managing Director, Incutec BV
 
 ---
 
@@ -73,7 +73,7 @@ Despite non-classification, Incutec applies the following controls:
 
 Flanders: Departement Kanselarij en Buitenlandse Zaken, Dienst Controle Strategische Goederen (dCSG) — https://www.fdfa.be/en/csg
 
-**Signed:** Stan Coene, Managing Director Incutec BV · **Date:** 18 April 2026
+**Signed:** Managing Director, Incutec BV · **Date:** 18 April 2026
 
 ## Notes
 
