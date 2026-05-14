@@ -132,7 +132,8 @@ export function buildSeoMeta({
 /**
  * schema.org Organization JSON-LD — emit in root Layout <head>. Identifies
  * the selling entity (Incutec BV) for search engines, not the OpenDrone
- * product brand.
+ * product brand. We deliberately omit `email`: scrapers harvest it from
+ * JSON-LD as readily as from a mailto. Customers reach us via /support.
  */
 export function buildOrgJsonLd(company: CompanyIdentity, siteUrl?: string) {
   const url = (siteUrl || 'https://opendrone.be').replace(/\/$/, '');
@@ -141,7 +142,11 @@ export function buildOrgJsonLd(company: CompanyIdentity, siteUrl?: string) {
     '@type': 'Organization',
     name: company.name,
     url,
-    email: company.email,
+    contactPoint: {
+      '@type': 'ContactPoint',
+      contactType: 'customer support',
+      url: `${url}/support`,
+    },
     telephone: company.tel,
     address: {
       '@type': 'PostalAddress',
