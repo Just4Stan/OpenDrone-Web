@@ -26,7 +26,7 @@ const COMPANY_LINKS: Array<{to: string; label: string}> = [
   {to: '/open-source', label: 'How we open source'},
   {to: '/firmware-partners', label: 'Firmware partners'},
   {to: '/legal', label: 'Legal / Imprint'},
-  {to: '/contact', label: 'Contact'},
+  {to: '/support', label: 'Contact'},
   {to: '/security', label: 'Security'},
 ];
 
