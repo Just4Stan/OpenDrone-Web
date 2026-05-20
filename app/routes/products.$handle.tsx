@@ -225,6 +225,64 @@ function computeChapterNumbers(content: ProductContent): ChapterNumbers {
   return out;
 }
 
+/** Placeholder media slot. Renders a soft card with a geometric icon
+ *  picked from `kind` until real images are wired in. */
+function ChapterMediaPlaceholder({kind}: {kind: string}) {
+  return (
+    <div className="chapter-media-frame" aria-hidden="true">
+      <svg
+        viewBox="0 0 120 120"
+        className="chapter-media-glyph"
+        xmlns="http://www.w3.org/2000/svg"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
+        {kind === '01' ? (
+          <>
+            <rect x="22" y="22" width="76" height="76" rx="6" />
+            <circle cx="36" cy="36" r="3" />
+            <circle cx="84" cy="36" r="3" />
+            <circle cx="36" cy="84" r="3" />
+            <circle cx="84" cy="84" r="3" />
+            <path d="M44 60h32M60 44v32" />
+          </>
+        ) : kind === '02' ? (
+          <>
+            <path d="M30 32h60v56H30z" />
+            <path d="M30 32l30 18 30-18" />
+            <path d="M60 50v38" />
+          </>
+        ) : kind === '03' ? (
+          <>
+            <path d="M24 38l36-14 36 14v44L60 96 24 82z" />
+            <path d="M24 38l36 14 36-14" />
+            <path d="M60 52v44" />
+          </>
+        ) : kind === '04' ? (
+          <>
+            <circle cx="60" cy="60" r="34" />
+            <path d="M50 50h20M50 70h20M55 50v20M65 50v20" />
+          </>
+        ) : kind === '05' ? (
+          <>
+            <rect x="26" y="26" width="68" height="68" rx="4" />
+            <path d="M26 46h68M26 66h68M26 86h68" />
+            <path d="M46 26v68M66 26v68" />
+          </>
+        ) : (
+          <>
+            <path d="M30 32h60v56H30z" />
+            <path d="M40 56l12 12 28-28" />
+          </>
+        )}
+      </svg>
+    </div>
+  );
+}
+
 function Chapter({
   number,
   label,
@@ -239,13 +297,16 @@ function Chapter({
   return (
     <section className="chapter" data-chapter={number}>
       <div className="chapter-index">
-        <div className="chapter-number">{number}</div>
-        <div className="chapter-label">{label}</div>
+        <span className="chapter-number">{number}</span>
+        <span className="chapter-label">{label}</span>
       </div>
       <div className="chapter-body-col">
         <h2 className="chapter-title">{title}</h2>
         {children}
       </div>
+      <aside className="chapter-media">
+        <ChapterMediaPlaceholder kind={number} />
+      </aside>
     </section>
   );
 }
@@ -349,18 +410,27 @@ export default function Product() {
         // eslint-disable-next-line react/no-danger
         dangerouslySetInnerHTML={{__html: JSON.stringify(productJsonLd)}}
       />
-      {/* === HERO: headline left, gallery right === */}
+      {/* === HERO: gallery left, copy + sticky buy module right === */}
       <section className="product-hero">
+        <div className="product-hero-gallery-col">
+          <div className="product-hero-media">
+            <ProductGallery
+              images={galleryImages}
+              activeImageId={selectedVariant?.image?.id ?? null}
+            />
+          </div>
+        </div>
+
         <div className="product-hero-copy">
           <p className="product-hero-eyebrow">
             File {content.fileNumber} · {content.family}
           </p>
           {hasHeroCopy ? (
             <h1 className="product-hero-headline">
-              <span>{content.hero.line1}</span>
+              <span>{content.hero.line1}</span>{' '}
               <span>
                 <em>{content.hero.line2Italic}</em>
-              </span>
+              </span>{' '}
               <span>{content.hero.line3}</span>
             </h1>
           ) : (
@@ -379,7 +449,7 @@ export default function Product() {
                 prefetch="intent"
                 className="trust-chip trust-chip-green trust-chip-link"
               >
-                ● Open source · CERN-OHL-S-2.0
+                Open source · CERN-OHL-S-2.0
               </Link>
             </li>
             {content.bundle ? (
@@ -404,12 +474,9 @@ export default function Product() {
                 </Link>
               </li>
             ) : null}
-            <li className="trust-chip">
-              {selectedVariant?.availableForSale ? 'In stock' : 'Sold out'}
-            </li>
           </ul>
 
-          <div className="product-buy">
+          <div className="product-buy" data-buy-module>
             <div className="product-buy-price">
               <ProductPrice
                 price={selectedVariant?.price}
@@ -419,14 +486,17 @@ export default function Product() {
                 <span className="product-buy-sku">SKU {selectedVariant.sku}</span>
               ) : null}
             </div>
+            <span
+              className={`product-buy-stock${selectedVariant?.availableForSale ? '' : ' is-out'}`}
+            >
+              {selectedVariant?.availableForSale
+                ? 'In stock · ships from Belgium'
+                : 'Sold out'}
+            </span>
             <ProductForm
               productOptions={productOptions}
               selectedVariant={selectedVariant}
             />
-            <p className="product-buy-civilian">
-              Civilian use only. Shipping restricted to permitted destinations
-              per the <Link to="/end-use" prefetch="intent">End-Use Policy</Link>.
-            </p>
           </div>
 
           {content.pairCta ? (
@@ -437,16 +507,8 @@ export default function Product() {
             </Link>
           ) : null}
         </div>
-
-        <div className="product-hero-right">
-          <div className="product-hero-media">
-            <ProductGallery
-              images={galleryImages}
-              activeImageId={selectedVariant?.image?.id ?? null}
-            />
-          </div>
-        </div>
       </section>
+
 
       {/* === Chapter: Teardown === */}
       {content.teardown && chapterNums.teardown ? (

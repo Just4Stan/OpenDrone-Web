@@ -69,18 +69,17 @@ export function FirmwareSplit({
       <p className="firmware-split-tagline">
         {boardAmountText} for the board.{' '}
         <strong>
-          {contributionText} for the {firmwareProject ?? 'firmware'} maintainers
+          {contributionText} for the{' '}
+          {firmwareProject && firmwareUrl ? (
+            <a href={firmwareUrl} target="_blank" rel="noopener noreferrer">
+              {firmwareProject} ↗
+            </a>
+          ) : (
+            firmwareProject ?? 'firmware'
+          )}{' '}
+          maintainers.
         </strong>
-        .
       </p>
-      {firmwareProject && firmwareUrl ? (
-        <p className="firmware-split-link">
-          Funded project:{' '}
-          <a href={firmwareUrl} target="_blank" rel="noopener noreferrer">
-            {firmwareProject} ↗
-          </a>
-        </p>
-      ) : null}
     </section>
   );
 }
