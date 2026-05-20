@@ -108,7 +108,7 @@ export default function Collection() {
           secondary={
             activeType ? undefined : (
               <a
-                href="https://github.com/Just4Stan"
+                href="https://github.com/incutec-hw"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="hero-cta-secondary"

@@ -19,9 +19,23 @@ function useScrollProgress() {
   return progressRef;
 }
 
-function loadModel(url: string): Promise<THREE.Group> {
+function loadModel(
+  url: string,
+  onProgress?: (loaded: number, total: number) => void,
+): Promise<THREE.Group> {
   return new Promise((resolve, reject) => {
-    new GLTFLoader().load(url, (gltf) => resolve(gltf.scene), undefined, reject);
+    new GLTFLoader().load(
+      url,
+      (gltf) => resolve(gltf.scene),
+      (event) => {
+        // Content-Length may be missing for cached responses or when the
+        // server doesn't set it — `lengthComputable` is the canonical
+        // signal. Caller treats unknown totals as a synthetic 0..1 ramp.
+        if (event.lengthComputable) onProgress?.(event.loaded, event.total);
+        else onProgress?.(event.loaded, 0);
+      },
+      reject,
+    );
   });
 }
 
@@ -89,6 +103,94 @@ function createCarbonFiberTextures(canvas: HTMLCanvasElement) {
 function smoothstep(edge0: number, edge1: number, x: number) {
   const t = Math.max(0, Math.min(1, (x - edge0) / (edge1 - edge0)));
   return t * t * (3 - 2 * t);
+}
+
+// Module-level reusable Color instances — saves two allocations per
+// useFrame tick (which at 120Hz is ~14k allocs/min into the GC).
+const GOLD_TINT = new THREE.Color(0xb8922e);
+const BLACK = new THREE.Color(0x000000);
+
+/**
+ * KiCad/Blender GLB exports typically produce a fresh material instance
+ * per mesh, even when many meshes share identical colour/map/PBR settings.
+ * `mergeByMaterialRef` buckets by uuid so each of those duplicates becomes
+ * its own draw call. Walk the scene first and collapse materials with
+ * matching visual fingerprints into a single shared instance — buckets
+ * then collapse with them, dropping the draw-call count substantially.
+ */
+function dedupeMaterialsByFingerprint(scene: THREE.Group) {
+  const pool = new Map<string, THREE.Material>();
+  const fp = (m: any) => {
+    const c = m.color?.getHexString?.() ?? '_';
+    const e = m.emissive?.getHexString?.() ?? '_';
+    const map = m.map?.uuid ?? '_';
+    const norm = m.normalMap?.uuid ?? '_';
+    const meta = (m.metalness ?? 0).toFixed(3);
+    const rough = (m.roughness ?? 0).toFixed(3);
+    const opa = (m.opacity ?? 1).toFixed(3);
+    return `${m.type}|${c}|${e}|${map}|${norm}|${meta}|${rough}|${m.transparent ? 1 : 0}|${opa}|${m.side}`;
+  };
+  const swap = (m: THREE.Material | null | undefined) => {
+    if (!m) return m;
+    const key = fp(m);
+    const existing = pool.get(key);
+    if (existing && existing !== m) {
+      m.dispose?.();
+      return existing;
+    }
+    pool.set(key, m);
+    return m;
+  };
+  scene.traverse((child) => {
+    const mesh = child as THREE.Mesh;
+    if (!mesh.isMesh) return;
+    if (Array.isArray(mesh.material)) {
+      mesh.material = mesh.material.map((m) => swap(m)!).filter(Boolean) as THREE.Material[];
+    } else {
+      const next = swap(mesh.material);
+      if (next) mesh.material = next;
+    }
+  });
+}
+
+/**
+ * GLB exports from PCB tooling often ship as MeshBasicMaterial (unlit) so
+ * the boards look the same under any lighting — bright, flat, no shading.
+ * Replace any non-PBR material with a MeshStandardMaterial that preserves
+ * the colour/map but actually responds to scene lights.
+ */
+function upgradeNonPBRMaterials(scene: THREE.Group) {
+  const replaced = new Map<string, THREE.MeshStandardMaterial>();
+  scene.traverse((child) => {
+    const mesh = child as THREE.Mesh;
+    if (!mesh.isMesh) return;
+    const mats = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+    const swap = (m: THREE.Material | null | undefined) => {
+      if (!m) return m;
+      const any = m as any;
+      if (any.isMeshStandardMaterial || any.isMeshPhysicalMaterial) return m;
+      const existing = replaced.get(m.uuid);
+      if (existing) return existing;
+      const upgraded = new THREE.MeshStandardMaterial({
+        color: any.color?.clone?.() ?? new THREE.Color(0xffffff),
+        map: any.map ?? null,
+        normalMap: any.normalMap ?? null,
+        roughness: 0.78,
+        metalness: 0.0,
+        transparent: !!any.transparent,
+        opacity: any.opacity ?? 1,
+        side: any.side ?? THREE.FrontSide,
+      });
+      replaced.set(m.uuid, upgraded);
+      return upgraded;
+    };
+    if (Array.isArray(mesh.material)) {
+      mesh.material = mats.map((m) => swap(m)).filter(Boolean) as THREE.Material[];
+    } else {
+      const next = swap(mesh.material);
+      if (next) mesh.material = next;
+    }
+  });
 }
 
 /**
@@ -172,10 +274,12 @@ export type LabelRefs = {
 function DroneAssembly({
   scrollRef,
   onReady,
+  onProgress,
   labelRefs,
 }: {
   scrollRef: React.RefObject<number>;
   onReady?: () => void;
+  onProgress?: (progress: number) => void;
   labelRefs?: LabelRefs;
 }) {
   const {camera, size} = useThree();
@@ -198,9 +302,12 @@ function DroneAssembly({
   const fcMats = useRef<any[]>([]);
   const hoverState = useRef({frame: 0, esc: 0, fc: 0});
   const hoverTarget = useRef({frame: 0, esc: 0, fc: 0});
-  const frameLightRef = useRef<THREE.PointLight>(null);
-  const escLightRef = useRef<THREE.PointLight>(null);
-  const fcLightRef = useRef<THREE.PointLight>(null);
+  // Per-board key light that fades in on hover — sits above the board in
+  // its local frame so it follows the assembly's rotation.
+  const frameTopLightRef = useRef<THREE.PointLight>(null);
+  const escTopLightRef = useRef<THREE.PointLight>(null);
+  const fcTopLightRef = useRef<THREE.PointLight>(null);
+
 
   useEffect(() => {
     let cancelled = false;
@@ -218,10 +325,47 @@ function DroneAssembly({
     // keep these so the effect cleanup can drop them from the refs.
     const mergedGroups: THREE.Group[] = [];
 
+    // Per-model byte progress. Cached responses often omit Content-Length
+    // entirely; for those models `total` stays 0 and the parent component
+    // falls back to a synthetic time-based ramp. Models with known total
+    // contribute their actual byte fraction.
+    const loaded = [0, 0, 0];
+    const total = [0, 0, 0];
+    const reportProgress = () => {
+      if (!onProgress) return;
+      // Sum bytes only across models that reported a known total. If
+      // none of the three is computable we report -1 to signal "use the
+      // time-based ramp".
+      let l = 0;
+      let t = 0;
+      let knownCount = 0;
+      for (let i = 0; i < 3; i++) {
+        if (total[i] > 0) {
+          l += loaded[i];
+          t += total[i];
+          knownCount += 1;
+        }
+      }
+      if (knownCount === 0) onProgress(-1);
+      else onProgress(Math.min(1, l / t));
+    };
+
     Promise.all([
-      loadModel('/models/frame.glb'),
-      loadModel('/models/esc.glb'),
-      loadModel('/models/fc.glb'),
+      loadModel('/models/frame.glb', (l, t) => {
+        loaded[0] = l;
+        total[0] = t;
+        reportProgress();
+      }),
+      loadModel('/models/esc.glb', (l, t) => {
+        loaded[1] = l;
+        total[1] = t;
+        reportProgress();
+      }),
+      loadModel('/models/fc.glb', (l, t) => {
+        loaded[2] = l;
+        total[2] = t;
+        reportProgress();
+      }),
     ]).then(([frameScene, escScene, fcScene]) => {
       if (cancelled) return;
 
@@ -235,6 +379,19 @@ function DroneAssembly({
       frameScene.updateMatrixWorld(true);
       escScene.updateMatrixWorld(true);
       fcScene.updateMatrixWorld(true);
+
+      // The PCB GLBs ship with unlit materials (MeshBasic). Convert to PBR
+      // so scene lights actually shade the boards instead of letting the
+      // baked albedo show through at full brightness.
+      upgradeNonPBRMaterials(escScene);
+      upgradeNonPBRMaterials(fcScene);
+
+      // Collapse property-identical materials onto a shared instance. The
+      // GLB exporter creates a fresh material per mesh even when colour
+      // and map match — this dedup cuts the post-merge bucket count, so
+      // many more meshes coalesce into the same draw call.
+      dedupeMaterialsByFingerprint(escScene);
+      dedupeMaterialsByFingerprint(fcScene);
 
       const baseCanvas = createCarbonFiberCanvas();
       const armCanvas = createRotatedCarbonCanvas(baseCanvas, Math.PI / 4);
@@ -308,6 +465,16 @@ function DroneAssembly({
       fcMats.current = Array.from(
         new Set(fcPack.group.children.map((m) => (m as THREE.Mesh).material)),
       ).filter(Boolean) as THREE.Material[];
+
+      // PCB exports from KiCad/Blender often ship with a non-zero emissive
+      // on copper/silkscreen, which makes the boards look self-lit under any
+      // scene lighting. Force-zero it so the boards only show what the
+      // spotlight actually puts on them.
+      for (const m of [...escMats.current, ...fcMats.current]) {
+        if (!m || !('emissive' in m)) continue;
+        (m as any).emissive.setHex(0x000000);
+        (m as any).emissiveIntensity = 0;
+      }
 
       mergedGroups.push(framePack.group, escPack.group, fcPack.group);
 
@@ -437,27 +604,35 @@ function DroneAssembly({
     }
     frameRef.current.scale.setScalar(THREE.MathUtils.lerp(1, 0.45, flyOut));
 
+    // Spread the side-boards wider on wider viewports. The multiplier
+    // grows with aspect — ultrawide gets the most spread, near-square
+    // stays tight so cards don't run off the edges.
+    const aspect = size.width / Math.max(1, size.height);
+    const spreadMul = THREE.MathUtils.clamp(0.55 + (aspect - 1.3) * 0.55, 0.85, 1.5);
+    const spread = 0.05 * spreadMul;
+
     // FC — slides left (closer to center)
     fcRef.current.position.set(
-      THREE.MathUtils.lerp(0, -0.05, flyOut),
+      THREE.MathUtils.lerp(0, -spread, flyOut),
       THREE.MathUtils.lerp(0, 0.008, flyOut),
       THREE.MathUtils.lerp(0, 0.04, flyOut),
     );
 
     // ESC — slides right (closer to center)
     escRef.current.position.set(
-      THREE.MathUtils.lerp(0, 0.05, flyOut),
+      THREE.MathUtils.lerp(0, spread, flyOut),
       THREE.MathUtils.lerp(0, 0.008, flyOut),
       THREE.MathUtils.lerp(0, 0.04, flyOut),
     );
 
-    // Hover effect — subtle gold tint + brightness boost on object, backglow via point light
-    const goldTint = new THREE.Color(0xb8922e);
-    const black = new THREE.Color(0x000000);
+    // Hover effect — subtle gold tint, controlled via material emissive
+    // plus a per-board top key light that fades in.
     let glowAnimating = false;
-    const lights = {frame: frameLightRef, esc: escLightRef, fc: fcLightRef};
-    // Default glow when stacked, fades out during flyout, hover-only after
-    const defaultGlow = 1 - flyOut; // 1 when stacked, 0 after flyout
+    const topLights = {
+      frame: frameTopLightRef,
+      esc: escTopLightRef,
+      fc: fcTopLightRef,
+    };
     // Clear hover when scrolled back before interactive threshold
     if (p < 0.65) {
       hoverTarget.current.frame = 0;
@@ -470,22 +645,21 @@ function DroneAssembly({
       const prev = hoverState.current[key];
       hoverState.current[key] += (target - prev) * Math.min(1, 8 * dt);
       if (Math.abs(hoverState.current[key] - target) > 0.01) glowAnimating = true;
-      const baseGlow = key === 'frame' ? 0 : defaultGlow;
-      const intensity = Math.max(baseGlow, hoverState.current[key]);
-      // Subtle gold emissive tint on the object
+      const intensity = hoverState.current[key];
+      // Subtle gold emissive tint on the object (hover only)
       const mats = key === 'frame' ? frameMats : key === 'esc' ? escMats : fcMats;
       for (const m of mats.current) {
         if (!m || !('emissive' in m)) continue;
-        (m as any).emissive.copy(black).lerp(goldTint, intensity * 0.1);
-        (m as any).emissiveIntensity = 1 + intensity * 0.5;
+        (m as any).emissive.copy(BLACK).lerp(GOLD_TINT, intensity * 0.12);
+        (m as any).emissiveIntensity = intensity * 0.6;
       }
-      // Backglow point light
-      const light = lights[key].current;
-      if (light) light.intensity = intensity * 2.5;
+      // Hover key — a tight warm "spotlight" pool above the board.
+      // Distance is in world units; the board is ~1 world unit across once
+      // wrapper scale is applied, so 0.55 covers the hovered board but
+      // doesn't bleed onto its neighbours.
+      const topLight = topLights[key].current;
+      if (topLight) topLight.intensity = intensity * 7;
     }
-    // Note: defaultGlow is a pure function of scroll progress; it does
-    // not "animate" on its own, so we do NOT force glowAnimating=true
-    // when it's non-zero.
 
     // Project model world positions to screen coords and update the
     // label overlay divs imperatively — keeps labels glued under each
@@ -499,9 +673,6 @@ function DroneAssembly({
       ) => {
         const el = target.current;
         if (!el || !group) return;
-        // Use each model's actual bounding-box center in world space so
-        // the label sits under the visible geometry, not under the
-        // potentially-off origin the GLB was exported with.
         bbox.setFromObject(group);
         if (bbox.isEmpty()) {
           el.style.opacity = '0';
@@ -509,7 +680,6 @@ function DroneAssembly({
         }
         bbox.getCenter(bboxVec);
         tmpVec.set(bboxVec.x, bbox.min.y, bboxVec.z).project(camera);
-        // Hide labels that are behind the camera or off-screen.
         if (tmpVec.z > 1) {
           el.style.opacity = '0';
           return;
@@ -566,7 +736,7 @@ function DroneAssembly({
         onPointerOut={() => hover('frame', false)}
         onClick={() => handleClick('/products/openframe')}
       >
-        <pointLight ref={frameLightRef} color={0xb8922e} intensity={0} distance={0.3} position={[0, -0.03, 0]} />
+        <pointLight ref={frameTopLightRef} color="#ffd9b0" intensity={0} distance={0.55} decay={1.6} position={[0, 0.04, 0.05]} />
       </group>
       <group
         ref={escRef}
@@ -574,7 +744,7 @@ function DroneAssembly({
         onPointerOut={() => hover('esc', false)}
         onClick={() => handleClick('/products/openesc')}
       >
-        <pointLight ref={escLightRef} color={0xb8922e} intensity={0} distance={0.3} position={[0, -0.03, 0]} />
+        <pointLight ref={escTopLightRef} color="#ffd9b0" intensity={0} distance={0.55} decay={1.6} position={[0, 0.04, 0.05]} />
       </group>
       <group
         ref={fcRef}
@@ -582,7 +752,7 @@ function DroneAssembly({
         onPointerOut={() => hover('fc', false)}
         onClick={() => handleClick('/products/openfc')}
       >
-        <pointLight ref={fcLightRef} color={0xb8922e} intensity={0} distance={0.3} position={[0, -0.03, 0]} />
+        <pointLight ref={fcTopLightRef} color="#ffd9b0" intensity={0} distance={0.55} decay={1.6} position={[0, 0.04, 0.05]} />
       </group>
     </group>
   );
@@ -647,6 +817,55 @@ function PerfProbe({
   return null;
 }
 
+/**
+ * Drives the global scene lights from scroll progress. Bright during the
+ * intro (boards stacked + auto-rotating, so the lighting acts as a
+ * showcase) and dimmer once they fan out to the interactive state, where
+ * the per-board hover spotlights take over.
+ */
+function SceneLights({scrollRef}: {scrollRef: React.RefObject<number>}) {
+  const keyRef = useRef<THREE.SpotLight>(null);
+  const rimRef = useRef<THREE.SpotLight>(null);
+  const ambRef = useRef<THREE.AmbientLight>(null);
+  const hemiRef = useRef<THREE.HemisphereLight>(null);
+
+  useFrame(() => {
+    const fade = smoothstep(0.5, 0.85, scrollRef.current);
+    const t = 1 - fade;
+    if (keyRef.current) keyRef.current.intensity = THREE.MathUtils.lerp(14, 32, t);
+    if (rimRef.current) rimRef.current.intensity = THREE.MathUtils.lerp(3, 6.5, t);
+    if (hemiRef.current) hemiRef.current.intensity = THREE.MathUtils.lerp(0.32, 0.72, t);
+    if (ambRef.current) ambRef.current.intensity = THREE.MathUtils.lerp(0.04, 0.1, t);
+  });
+
+  return (
+    <>
+      <hemisphereLight ref={hemiRef} args={['#cfdaeb', '#1a1d22', 0.72]} />
+      <ambientLight ref={ambRef} intensity={0.1} />
+      <spotLight
+        ref={keyRef}
+        position={[0, 2.4, 0.9]}
+        angle={0.58}
+        penumbra={0.7}
+        decay={1.6}
+        distance={7}
+        intensity={32}
+        color="#ffe8cc"
+      />
+      <spotLight
+        ref={rimRef}
+        position={[-1.4, 0.35, -0.7]}
+        angle={0.85}
+        penumbra={0.95}
+        decay={2}
+        distance={5}
+        intensity={6.5}
+        color="#7891b6"
+      />
+    </>
+  );
+}
+
 function CameraRig({scrollRef}: {scrollRef: React.RefObject<number>}) {
   const {camera} = useThree();
 
@@ -672,8 +891,13 @@ const PERF_HUD = false;
 
 export function HeroScene({
   onReady,
+  onProgress,
   labelRefs,
-}: {onReady?: () => void; labelRefs?: LabelRefs} = {}) {
+}: {
+  onReady?: () => void;
+  onProgress?: (progress: number) => void;
+  labelRefs?: LabelRefs;
+} = {}) {
   const [mounted, setMounted] = useState(false);
   const [active, setActive] = useState(true);
   const [perf, setPerf] = useState<PerfSample | null>(null);
@@ -730,20 +954,28 @@ export function HeroScene({
         gl={{
           antialias: true,
           alpha: true,
-          powerPreference: 'high-performance',
+          // 'default' lets macOS pick an efficient GPU schedule.
+          // 'high-performance' previously forced the GPU into its
+          // always-on max-perf mode even for a slow showcase rotation,
+          // burning power without any visual benefit.
+          powerPreference: 'default',
         }}
         onCreated={({camera, gl}) => {
           camera.lookAt(0, 0, 0);
-          gl.toneMappingExposure = 0.95;
+          // Exposure pulled down so the spotlight key doesn't push the
+          // pastel-green PCB albedo into pure white.
+          gl.toneMappingExposure = 0.78;
           invalidate();
         }}
       >
-        <ambientLight intensity={0.22} />
-        <hemisphereLight args={['#d9e2f2', '#0d120f', 0.8]} />
-        <directionalLight position={[3.5, 4.5, 6]} intensity={2.0} color="#fffaf0" />
-        <directionalLight position={[-5, 2.5, 1.5]} intensity={0.5} color="#b7c6de" />
+        <SceneLights scrollRef={scrollRef} />
         <CameraRig scrollRef={scrollRef} />
-        <DroneAssembly scrollRef={scrollRef} onReady={onReady} labelRefs={labelRefs} />
+        <DroneAssembly
+          scrollRef={scrollRef}
+          onReady={onReady}
+          onProgress={onProgress}
+          labelRefs={labelRefs}
+        />
         {PERF_HUD ? <PerfProbe onSample={setPerf} /> : null}
       </Canvas>
       {PERF_HUD && perf ? (

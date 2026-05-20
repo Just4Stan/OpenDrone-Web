@@ -17,9 +17,9 @@ const SHOP_LINKS: Array<{to: string; label: string}> = [
 ];
 
 const OPEN_SOURCE_LINKS: Array<{href: string; label: string}> = [
-  {href: 'https://github.com/Just4Stan', label: 'GitHub'},
-  {href: 'https://github.com/Just4Stan/OpenFC', label: 'OpenFC'},
-  {href: 'https://github.com/Just4Stan/Open-4in1-AM32-ESC', label: 'OpenESC'},
+  {href: 'https://github.com/incutec-hw', label: 'GitHub'},
+  {href: 'https://github.com/incutec-hw/OpenFC', label: 'OpenFC'},
+  {href: 'https://github.com/incutec-hw/Open-4in1-AM32-ESC', label: 'OpenESC'},
 ];
 
 const COMPANY_LINKS: Array<{to: string; label: string}> = [
@@ -150,7 +150,7 @@ export function Footer({company, turnstileSiteKey}: FooterProps) {
             CERN-OHL-S. Firmware: GPL/MIT. Open Source Hardware.
           </p>
           <a
-            href="https://github.com/Just4Stan"
+            href="https://github.com/incutec-hw"
             target="_blank"
             rel="noopener noreferrer"
             className="text-[var(--color-text-muted)] hover:text-[var(--color-text)] transition-colors"

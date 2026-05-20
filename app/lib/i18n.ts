@@ -192,6 +192,23 @@ export const LEGAL_LABELS: Record<
       description: 'Auto-classification du contrôle des exportations et politique sur les pays sous sanction.',
     },
   },
+  'end-use': {
+    en: {
+      title: 'End-Use Policy',
+      eyebrow: 'Legal',
+      description: 'Permitted and excluded end-uses for goods supplied by Incutec BV.',
+    },
+    nl: {
+      title: 'End-Use Beleid',
+      eyebrow: 'Juridisch',
+      description: 'Toegestaan en uitgesloten eindgebruik voor goederen geleverd door Incutec BV.',
+    },
+    fr: {
+      title: 'Politique d’Usage Final',
+      eyebrow: 'Juridique',
+      description: 'Usages finaux autorisés et exclus pour les biens fournis par Incutec BV.',
+    },
+  },
   legal: {
     en: {
       title: 'Legal / Imprint',

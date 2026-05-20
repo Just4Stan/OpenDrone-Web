@@ -25,7 +25,7 @@ Node 22 or 24, npm 10+. Engines pinned in `package.json`.
 ## Quick start
 
 ```sh
-git clone https://github.com/Just4Stan/OpenDrone-Web.git
+git clone https://github.com/incutec-hw/OpenDrone-Web.git
 cd OpenDrone-Web
 npm install
 cp .env.example .env       # fill in tokens, see Environment below
@@ -308,4 +308,4 @@ Forgot `-s`? `git commit --amend -s --no-edit && git push --force-with-lease`.
 
 ## License
 
-[MIT](LICENSE) for this repo. Hardware repos are CERN-OHL-S — see [OpenFC](https://github.com/Just4Stan/OpenFC) and [OpenESC](https://github.com/Just4Stan/Open-4in1-AM32-ESC).
+[MIT](LICENSE) for this repo. Hardware repos are CERN-OHL-S — see [OpenFC](https://github.com/incutec-hw/OpenFC) and [OpenESC](https://github.com/incutec-hw/Open-4in1-AM32-ESC).

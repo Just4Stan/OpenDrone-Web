@@ -13,6 +13,7 @@ export const LEGAL_SLUGS = [
   'warranty',
   'security',
   'export-compliance',
+  'end-use',
   'legal',
   'cookie-settings',
   'terms',

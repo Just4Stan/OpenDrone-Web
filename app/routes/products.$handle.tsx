@@ -423,6 +423,10 @@ export default function Product() {
               productOptions={productOptions}
               selectedVariant={selectedVariant}
             />
+            <p className="product-buy-civilian">
+              Civilian use only. Shipping restricted to permitted destinations
+              per the <Link to="/end-use" prefetch="intent">End-Use Policy</Link>.
+            </p>
           </div>
 
           {content.pairCta ? (

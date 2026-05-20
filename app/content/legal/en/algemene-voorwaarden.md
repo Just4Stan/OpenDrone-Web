@@ -156,9 +156,13 @@
 
 17.2. In the event of force majeure, Incutec BV notifies the customer as soon as possible and offers, at the customer's choice, an alternative delivery date or full reimbursement.
 
-### Article 18: Language
+### Article 18: Acceptable End-Use
 
-18.1. The Dutch-language version of these terms is the authentic text. Translations into French, English or other languages are informative and not binding.
+18.1. By placing an order, the Customer accepts the Incutec End-Use Policy published at /end-use, and warrants that the goods will not be used for any of the excluded end-uses set out in §3 of that policy. Breach of this warranty constitutes a material breach of contract and entitles Incutec BV to cancel the order, refuse delivery, and pursue any remedy available under Belgian law and applicable EU regulations.
+
+### Article 19: Language
+
+19.1. The Dutch-language version of these terms is the authentic text. Translations into French, English or other languages are informative and not binding.
 
 ---
 

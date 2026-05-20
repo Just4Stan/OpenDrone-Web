@@ -154,8 +154,200 @@ html {
   width: auto;
 }
 
+/* SVG wordmark — same height as the img variant, width auto-scales from
+   the viewBox. overflow:visible so the fly-in transforms don't get
+   clipped at the SVG edge during the draw phase. */
+.hero-wordmark-svg {
+  display: block;
+  height: clamp(2.5rem, 5vw, 4.5rem);
+  width: auto;
+  overflow: visible;
+}
+
+/*
+  Phase 1 — stroke draws. Each <path> in .hw-strokes has pathLength=100
+  so a single 100→0 dashoffset keyframe works for every letter. Letters
+  start with a small random translate+rotate offset (set per-letter via
+  --dx, --dy, --rot in JS) so they "fly in" while the outline draws.
+*/
+/*
+  Stroke layer. Two parallel animations:
+    - hw-draw-shape: backwards + forwards on stroke-dashoffset and the
+      fly-in transform — locks the drawn shape after the keyframe ends.
+    - hw-draw-opacity: backwards-only on opacity — fades the stroke in
+      during Phase A, then RELEASES so the inline `opacity: 1 - fill`
+      value takes over once Phase B (fill) starts. This is how the
+      per-letter outline-to-fill handoff stays smooth: as each letter's
+      fill ramps up, its stroke ramps down by the same amount.
+*/
+.hw-strokes .hw-stroke {
+  fill: none;
+  stroke: currentColor;
+  /* vector-effect="non-scaling-stroke" on the path means this width is
+     interpreted in viewport pixels rather than the path's local coord
+     system, so the wireframe stays a consistent thin line regardless
+     of how the SVG is sized or how the inner group is scaled. */
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-dasharray: 100;
+  transform-box: fill-box;
+  transform-origin: center;
+  /* Base opacity = (1 - per-letter fill progress). The draw animation
+     uses fill-mode: backwards (not forwards/both) so the keyframes
+     control opacity ONLY during the run; afterward this calc takes
+     over and the stroke fades as the fill ramps. */
+  opacity: calc(1 - var(--fill-opacity, 0));
+  animation:
+    hw-draw-shape 700ms cubic-bezier(0.22, 1, 0.36, 1) forwards,
+    hw-draw-opacity 700ms cubic-bezier(0.22, 1, 0.36, 1) backwards;
+  animation-delay: calc(var(--letter-index, 0) * 55ms);
+  will-change: transform, stroke-dashoffset, opacity;
+  transition: opacity 280ms ease-out;
+}
+
+/* Once the parent flags the wordmark as fully filled, kill any
+   remaining stroke wireframe completely — no flicker if a per-letter
+   calc rounds to non-zero. */
+.hero-wordmark-svg.is-filled .hw-stroke {
+  opacity: 0 !important;
+  animation: none !important;
+}
+
+.hw-strokes .hw-stroke--open,
+.hw-strokes .hw-stroke--drone {
+  color: #ffffff;
+}
+
+@keyframes hw-draw-shape {
+  0% {
+    stroke-dashoffset: 100;
+    transform: translate(var(--dx, 0), var(--dy, 0)) rotate(var(--rot, 0));
+  }
+  100% {
+    stroke-dashoffset: 0;
+    transform: translate(0, 0) rotate(0deg);
+  }
+}
+
+@keyframes hw-draw-opacity {
+  0% {
+    opacity: 0;
+  }
+  20%,
+  100% {
+    opacity: 1;
+  }
+}
+
+/*
+  Phase 2 — fill layer. Each glyph has its own per-letter opacity set
+  inline from the React side, computed as a ramp around its progress
+  threshold (letter-index / N). No SVG mask: the letters fade in one at
+  a time as `progress` advances. CSS transition smooths the per-frame
+  jumps coming from the parent's JS lerp.
+*/
+.hw-fills .hw-fill {
+  transition: opacity 240ms ease-out;
+}
+
+.hw-fills .hw-fill--open {
+  fill: #e5e5e5;
+}
+.hw-fills .hw-fill--drone {
+  fill: #b8922e;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hw-strokes .hw-stroke {
+    animation: none;
+    opacity: 0;
+    transform: none;
+  }
+  .hw-fills .hw-fill {
+    opacity: 1 !important;
+    transition: none;
+  }
+}
+
 .hero-wordmark.is-settled {
   transform: translate(0, 0) scale(1);
+}
+
+/* Hero load overflow — appears below the centered wordmark only when
+   the 3D scene is taking longer than the expected animation budget.
+   Sits at the centered-splash position; once the splash settles (or
+   the user clicks Skip) it fades away. */
+.hero-load-overflow {
+  position: absolute;
+  top: calc(50vh + clamp(2.5rem, 5vw, 4.5rem) * 1.4);
+  left: 50vw;
+  transform: translateX(-50%);
+  z-index: 35;
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+  pointer-events: none;
+  opacity: 0;
+  animation: hero-overflow-in 420ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  white-space: nowrap;
+  transition: opacity 0.5s ease-out;
+}
+
+.hero-load-overflow.is-hidden {
+  opacity: 0 !important;
+}
+
+.hero-load-overflow__text {
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.hero-load-overflow__skip {
+  pointer-events: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.45rem 0.95rem;
+  border: 1px solid color-mix(in srgb, var(--color-text-muted) 35%, transparent);
+  color: var(--color-text);
+  border-radius: 4px;
+  font-size: 0.7rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  transition:
+    border-color 0.2s ease,
+    color 0.2s ease,
+    background-color 0.2s ease;
+}
+
+.hero-load-overflow__skip:hover {
+  border-color: color-mix(in srgb, var(--color-gold) 55%, transparent);
+  color: var(--color-gold);
+}
+
+@keyframes hero-overflow-in {
+  to {
+    opacity: 1;
+  }
+}
+
+@media (max-width: 640px) {
+  .hero-load-overflow {
+    flex-direction: column;
+    gap: 0.85rem;
+    font-size: 0.7rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-load-overflow {
+    animation: none;
+    opacity: 1;
+  }
 }
 
 /* Hero tagline — top-left, appears after the wordmark settles */
@@ -1544,6 +1736,28 @@ button.reset {
 
 .product-buy .product-form {
   flex: 1 1 180px;
+}
+
+.product-buy-civilian {
+  flex: 1 1 100%;
+  margin-top: 0.5rem;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  color: var(--color-text-muted);
+  line-height: 1.5;
+}
+
+.product-buy-civilian a {
+  color: var(--color-text-muted);
+  text-decoration: underline;
+  text-decoration-color: color-mix(in srgb, var(--color-text-muted) 50%, transparent);
+  text-underline-offset: 2px;
+}
+
+.product-buy-civilian a:hover {
+  color: var(--color-text);
+  text-decoration-color: var(--color-text);
 }
 
 /* Pair CTA — playful cross-sell that sits under the buy strip. Vertical

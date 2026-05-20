@@ -115,7 +115,7 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
       projectUrl:
         'https://github.com/AlkaMotors/AM32-MultiRotor-ESC-firmware',
     },
-    repoUrl: 'https://github.com/Just4Stan/Open-4in1-AM32-ESC',
+    repoUrl: 'https://github.com/incutec-hw/Open-4in1-AM32-ESC',
     teardown: {
       title: 'Four chips. One sheet, used four times.',
       body:
@@ -138,43 +138,43 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
       {
         kind: 'schematic',
         label: 'Schematic (PDF)',
-        href: 'https://github.com/Just4Stan/Open-4in1-AM32-ESC/raw/main/hardware/schematic.pdf',
+        href: 'https://github.com/incutec-hw/Open-4in1-AM32-ESC/raw/main/hardware/schematic.pdf',
         note: 'Current rev — main sheet + 4× per-channel sub-sheet',
       },
       {
         kind: 'step',
         label: '3D STEP',
-        href: 'https://github.com/Just4Stan/Open-4in1-AM32-ESC/raw/main/hardware/board.step',
+        href: 'https://github.com/incutec-hw/Open-4in1-AM32-ESC/raw/main/hardware/board.step',
         note: 'Full board assembly including connectors',
       },
       {
         kind: 'bom',
         label: 'BOM (CSV)',
-        href: 'https://github.com/Just4Stan/Open-4in1-AM32-ESC/raw/main/hardware/bom.csv',
+        href: 'https://github.com/incutec-hw/Open-4in1-AM32-ESC/raw/main/hardware/bom.csv',
         note: 'Manufacturer part numbers, LCSC refs, per-unit price',
       },
       {
         kind: 'gerber',
         label: 'Gerbers (ZIP)',
-        href: 'https://github.com/Just4Stan/Open-4in1-AM32-ESC/raw/main/hardware/gerbers.zip',
+        href: 'https://github.com/incutec-hw/Open-4in1-AM32-ESC/raw/main/hardware/gerbers.zip',
         note: 'Fabrication package — JLCPCB-ready',
       },
       {
         kind: 'manual',
         label: 'User manual (PDF)',
-        href: 'https://github.com/Just4Stan/Open-4in1-AM32-ESC/raw/main/docs/manual.pdf',
+        href: 'https://github.com/incutec-hw/Open-4in1-AM32-ESC/raw/main/docs/manual.pdf',
         note: 'Installation, wiring, first-flash',
       },
       {
         kind: 'wiring',
         label: 'Wiring diagram (PDF)',
-        href: 'https://github.com/Just4Stan/Open-4in1-AM32-ESC/raw/main/docs/wiring.pdf',
+        href: 'https://github.com/incutec-hw/Open-4in1-AM32-ESC/raw/main/docs/wiring.pdf',
         note: 'FC pinout, battery, telemetry',
       },
       {
         kind: 'flash',
         label: 'Flashing guide',
-        href: 'https://github.com/Just4Stan/Open-4in1-AM32-ESC/blob/main/docs/flashing.md',
+        href: 'https://github.com/incutec-hw/Open-4in1-AM32-ESC/blob/main/docs/flashing.md',
         note: 'AM32 via ESC-Configurator + passthrough',
       },
     ],
@@ -215,7 +215,7 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
       project: 'Betaflight',
       projectUrl: 'https://github.com/betaflight/betaflight',
     },
-    repoUrl: 'https://github.com/Just4Stan/OpenFC',
+    repoUrl: 'https://github.com/incutec-hw/OpenFC',
     teardown: {
       title: 'An MCU, an IMU, a radio, and enough UARTs for the rest.',
       body:
@@ -239,40 +239,40 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
       {
         kind: 'schematic',
         label: 'Schematic (PDF)',
-        href: 'https://github.com/Just4Stan/OpenFC/raw/main/hardware/schematic.pdf',
+        href: 'https://github.com/incutec-hw/OpenFC/raw/main/hardware/schematic.pdf',
         note: 'MCU, IMU, baro, blackbox, break-off RX sub-sheet',
       },
       {
         kind: 'step',
         label: '3D STEP',
-        href: 'https://github.com/Just4Stan/OpenFC/raw/main/hardware/board.step',
+        href: 'https://github.com/incutec-hw/OpenFC/raw/main/hardware/board.step',
         note: 'Board with RX attached (before snap-off)',
       },
       {
         kind: 'bom',
         label: 'BOM (CSV)',
-        href: 'https://github.com/Just4Stan/OpenFC/raw/main/hardware/bom.csv',
+        href: 'https://github.com/incutec-hw/OpenFC/raw/main/hardware/bom.csv',
       },
       {
         kind: 'gerber',
         label: 'Gerbers (ZIP)',
-        href: 'https://github.com/Just4Stan/OpenFC/raw/main/hardware/gerbers.zip',
+        href: 'https://github.com/incutec-hw/OpenFC/raw/main/hardware/gerbers.zip',
       },
       {
         kind: 'manual',
         label: 'User manual (PDF)',
-        href: 'https://github.com/Just4Stan/OpenFC/raw/main/docs/manual.pdf',
+        href: 'https://github.com/incutec-hw/OpenFC/raw/main/docs/manual.pdf',
       },
       {
         kind: 'wiring',
         label: 'Wiring diagram (PDF)',
-        href: 'https://github.com/Just4Stan/OpenFC/raw/main/docs/wiring.pdf',
+        href: 'https://github.com/incutec-hw/OpenFC/raw/main/docs/wiring.pdf',
         note: 'ESC, VTX, camera, RX, motor LEDs',
       },
       {
         kind: 'flash',
         label: 'Betaflight target + flash guide',
-        href: 'https://github.com/Just4Stan/OpenFC/blob/main/docs/flashing.md',
+        href: 'https://github.com/incutec-hw/OpenFC/blob/main/docs/flashing.md',
       },
     ],
     specs: [
@@ -313,7 +313,7 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
       project: 'ExpressLRS',
       projectUrl: 'https://github.com/ExpressLRS/ExpressLRS',
     },
-    repoUrl: 'https://github.com/Just4Stan/OpenRX',
+    repoUrl: 'https://github.com/incutec-hw/OpenRX',
     teardown: {
       title: 'One ESP32-C3, one (or two) radios, careful RF.',
       body:
@@ -336,34 +336,34 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
       {
         kind: 'schematic',
         label: 'Schematic (PDF)',
-        href: 'https://github.com/Just4Stan/OpenRX/raw/main/hardware/schematic.pdf',
+        href: 'https://github.com/incutec-hw/OpenRX/raw/main/hardware/schematic.pdf',
         note: 'All four variants — Lite / Lite-UFL / Mono / Gemini',
       },
       {
         kind: 'step',
         label: '3D STEP — all variants',
-        href: 'https://github.com/Just4Stan/OpenRX/raw/main/hardware/boards.step',
+        href: 'https://github.com/incutec-hw/OpenRX/raw/main/hardware/boards.step',
       },
       {
         kind: 'bom',
         label: 'BOM (CSV)',
-        href: 'https://github.com/Just4Stan/OpenRX/raw/main/hardware/bom.csv',
+        href: 'https://github.com/incutec-hw/OpenRX/raw/main/hardware/bom.csv',
         note: 'Per-variant — front-end parts only on Mono/Gemini',
       },
       {
         kind: 'gerber',
         label: 'Gerbers (ZIP)',
-        href: 'https://github.com/Just4Stan/OpenRX/raw/main/hardware/gerbers.zip',
+        href: 'https://github.com/incutec-hw/OpenRX/raw/main/hardware/gerbers.zip',
       },
       {
         kind: 'manual',
         label: 'User manual (PDF)',
-        href: 'https://github.com/Just4Stan/OpenRX/raw/main/docs/manual.pdf',
+        href: 'https://github.com/incutec-hw/OpenRX/raw/main/docs/manual.pdf',
       },
       {
         kind: 'flash',
         label: 'ExpressLRS flash targets',
-        href: 'https://github.com/Just4Stan/OpenRX/blob/main/docs/flashing.md',
+        href: 'https://github.com/incutec-hw/OpenRX/blob/main/docs/flashing.md',
         note: 'Unified_ESP32C3_2400_RX (Lite), Unified_ESP32C3_LR1121_RX (Mono/Gemini)',
       },
     ],
@@ -400,7 +400,7 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
     firmware: {
       project: '—',
     },
-    repoUrl: 'https://github.com/Just4Stan',
+    repoUrl: 'https://github.com/incutec-hw',
     inTheBox: [
       {qty: '1×', item: 'Top plate + bottom plate', note: 'CNC carbon fibre, 5 mm'},
       {qty: '4×', item: '5" arms', note: 'CNC carbon fibre, 5 mm'},
@@ -413,19 +413,19 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
       {
         kind: 'manual',
         label: 'Assembly guide (PDF)',
-        href: 'https://github.com/Just4Stan/OpenFrame/raw/main/docs/assembly.pdf',
+        href: 'https://github.com/incutec-hw/OpenFrame/raw/main/docs/assembly.pdf',
         note: 'Build order, torque spec, camera tilt jig',
       },
       {
         kind: 'step',
         label: '3D STEP',
-        href: 'https://github.com/Just4Stan/OpenFrame/raw/main/hardware/frame.step',
+        href: 'https://github.com/incutec-hw/OpenFrame/raw/main/hardware/frame.step',
         note: 'Plates + arms + hardware — for stack planning',
       },
       {
         kind: 'other',
         label: 'DXF cutting files',
-        href: 'https://github.com/Just4Stan/OpenFrame/raw/main/hardware/dxf.zip',
+        href: 'https://github.com/incutec-hw/OpenFrame/raw/main/hardware/dxf.zip',
         note: 'Released once the OEM partnership matures',
       },
     ],
@@ -457,7 +457,7 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
     firmware: {
       project: '',
     },
-    repoUrl: 'https://github.com/Just4Stan',
+    repoUrl: 'https://github.com/incutec-hw',
     inTheBox: [
       {qty: '1×', item: 'OpenFC board', note: 'break-off 2.4 GHz ELRS RX attached'},
       {qty: '1×', item: 'OpenESC 4-in-1 board'},
@@ -471,25 +471,25 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
       {
         kind: 'schematic',
         label: 'Schematics — FC + ESC',
-        href: 'https://github.com/Just4Stan/OpenFC/raw/main/hardware/schematic.pdf',
+        href: 'https://github.com/incutec-hw/OpenFC/raw/main/hardware/schematic.pdf',
         note: 'Combined link — individual boards have their own repo',
       },
       {
         kind: 'step',
         label: '3D STEP — stacked assembly',
-        href: 'https://github.com/Just4Stan/OpenStack/raw/main/hardware/stack.step',
+        href: 'https://github.com/incutec-hw/OpenStack/raw/main/hardware/stack.step',
         note: 'Both boards, 30.5 × 30.5 soft-mounted',
       },
       {
         kind: 'manual',
         label: 'Stack guide (PDF)',
-        href: 'https://github.com/Just4Stan/OpenStack/raw/main/docs/guide.pdf',
+        href: 'https://github.com/incutec-hw/OpenStack/raw/main/docs/guide.pdf',
         note: 'Wire harness routing, first-flash order, UART assignments',
       },
       {
         kind: 'flash',
         label: 'Flash commands — Betaflight + AM32',
-        href: 'https://github.com/Just4Stan/OpenStack/blob/main/docs/flashing.md',
+        href: 'https://github.com/incutec-hw/OpenStack/blob/main/docs/flashing.md',
       },
     ],
     specs: [
@@ -539,7 +539,7 @@ export const PRODUCT_CONTENT_FALLBACK: ProductContent = {
     lead: '',
   },
   firmware: {project: ''},
-  repoUrl: 'https://github.com/Just4Stan',
+  repoUrl: 'https://github.com/incutec-hw',
   inTheBox: [],
   downloads: [],
   specs: [],

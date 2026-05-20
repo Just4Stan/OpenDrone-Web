@@ -2,6 +2,7 @@ import type {CartApiQueryFragment} from 'storefrontapi.generated';
 import type {CartLayout} from '~/components/CartMain';
 import {Money, type OptimisticCart} from '@shopify/hydrogen';
 import {useId} from 'react';
+import {Link} from 'react-router';
 
 type CartSummaryProps = {
   cart: OptimisticCart<CartApiQueryFragment | null>;
@@ -32,6 +33,11 @@ export function CartSummary({cart, layout}: CartSummaryProps) {
       <p className="cart-summary-note">
         Taxes, shipping, and any discount or gift-card codes are
         applied on the next page.
+      </p>
+      <p className="cart-summary-note">
+        By completing this order you accept the Incutec{' '}
+        <Link to="/end-use">End-Use Policy</Link> and the{' '}
+        <Link to="/algemene-voorwaarden">General Terms and Conditions</Link>.
       </p>
     </div>
   );
