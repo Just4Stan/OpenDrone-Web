@@ -360,7 +360,7 @@ html {
   jumps coming from the parent's JS lerp.
 */
 .hw-fills .hw-fill {
-  transition: opacity 110ms ease-out;
+  transition: opacity 70ms ease-out;
 }
 
 .hw-fills .hw-fill--open {
@@ -1851,13 +1851,25 @@ button.reset {
 }
 
 /* Product image frame. Neutral card, 1:1, tighter padding so the
-   render gets max real estate. */
+   render gets max real estate. On desktop the frame is capped to a
+   viewport-height-derived square so the gallery never spills below
+   the fold on 16:9 / 16:10 / 21:9. */
 .product-hero-media {
   background: var(--color-bg-card);
   border: 1px solid var(--color-border);
   border-radius: var(--r-lg);
   overflow: hidden;
   padding: var(--sp-3);
+}
+
+@media (min-width: 960px) {
+  .product-hero-media {
+    /* Cap to a viewport-height-bound square — the gallery never falls
+       below the fold on 16:9. Width = min(column width, vh-bound). */
+    width: min(100%, calc(100vh - var(--header-height) - var(--sp-6)));
+    aspect-ratio: 1 / 1;
+    margin-inline: auto;
+  }
 }
 
 /* Trust chips — denser, no uppercase-with-wide-letterspacing. Status
