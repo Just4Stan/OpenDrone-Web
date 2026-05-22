@@ -34,9 +34,13 @@ const GROUPS = [
   {key: 'base', match: (n: string) => n.startsWith('base')},
 ] as const;
 
-// Explode travel as a fraction of the assembly's largest dimension.
+// Explode travel as a fraction of the assembly's largest dimension. These set
+// the spread at e = 1 (the "fully exploded" hero look as chapter 2 arrives).
 const PLATE_TRAVEL = 0.4;
 const ARM_TRAVEL = 0.78;
+// e keeps growing past 1 as you scroll further, so the parts fly off screen.
+// At e = 1 arms are ~at the frame edge; ~e = 2.5–3 takes everything off.
+const EXPLODE_MAX = 3;
 
 type Part = {obj: THREE.Object3D; groupIndex: number; base: THREE.Vector3; explode: THREE.Vector3};
 
@@ -84,10 +88,16 @@ function FrameModel({
           }
           const box = new THREE.Box3().setFromObject(o);
           if (box.isEmpty()) return;
+          // Translate the part in the assembly's frame, not the mesh's local
+          // frame: some OnShape "occurrence" wrappers carry a 180° flip that
+          // would negate the world-space explode direction (collapsing arm
+          // pairs onto one corner). The occurrence sits directly under the
+          // identity Assembly root, so moving IT applies the explode cleanly.
+          const moveNode = o.parent && o.parent !== scene ? o.parent : o;
           found.push({
-            obj: o,
+            obj: moveNode,
             groupIndex: idx,
-            base: o.position.clone(),
+            base: moveNode.position.clone(),
             explode: box.getCenter(new THREE.Vector3()),
           });
         });
@@ -109,8 +119,14 @@ function FrameModel({
             ? topC.clone().sub(baseC).normalize()
             : new THREE.Vector3(0, 1, 0);
 
-        const sz = new THREE.Box3().setFromObject(scene).getSize(new THREE.Vector3());
+        const sceneBox = new THREE.Box3().setFromObject(scene);
+        const sz = sceneBox.getSize(new THREE.Vector3());
         const unit = Math.max(sz.x, sz.y, sz.z) || 1;
+        // Fan the arms out from the stack centreline (the plate centres), not
+        // the bounding-box centre — the arms are asymmetric, so the bbox centre
+        // is skewed and would bias every arm the same way.
+        const axisPoint =
+          baseC ?? topC ?? sceneBox.getCenter(new THREE.Vector3());
 
         for (const f of found) {
           const centroid = f.explode.clone();
@@ -119,9 +135,10 @@ function FrameModel({
           } else if (f.groupIndex === 2) {
             f.explode = stackDir.clone().multiplyScalar(-unit * PLATE_TRAVEL);
           } else {
-            const radial = centroid
-              .clone()
-              .sub(stackDir.clone().multiplyScalar(centroid.dot(stackDir)));
+            const rel = centroid.sub(axisPoint);
+            const radial = rel.sub(
+              stackDir.clone().multiplyScalar(rel.dot(stackDir)),
+            );
             if (radial.lengthSq() < 1e-6) radial.set(1, 0, 0);
             f.explode = radial.normalize().multiplyScalar(unit * ARM_TRAVEL);
           }
@@ -211,8 +228,9 @@ function FrameModel({
         const r2 = next.getBoundingClientRect();
         const c2 = r2.top + r2.height / 2;
         // (vh/2 − c1) is how far ch.1's centre has risen past the viewport
-        // centre; (c2 − c1) is the centre-to-centre distance to ch.2.
-        e = THREE.MathUtils.clamp((vh / 2 - c1) / (c2 - c1 || vh), 0, 1);
+        // centre; (c2 − c1) is the centre-to-centre distance to ch.2. e = 1 at
+        // ch.2; it keeps climbing past 1 as you scroll on, so the parts fly off.
+        e = THREE.MathUtils.clamp((vh / 2 - c1) / (c2 - c1 || vh), 0, EXPLODE_MAX);
       } else {
         // No following chapter — fall back to a single-pass scrub.
         e = THREE.MathUtils.clamp(1 - c1 / vh, 0, 1);

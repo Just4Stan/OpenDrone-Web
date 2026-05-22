@@ -2590,6 +2590,14 @@ button.reset {
   content: none;
 }
 
+/* Firmware project wordmark in the "The €1" chapter media slot. */
+.firmware-logo {
+  width: 100%;
+  max-width: 320px;
+  height: auto;
+  display: block;
+}
+
 .board-art {
   position: relative;
   width: 180%;
@@ -2697,7 +2705,8 @@ button.reset {
 .chapter-backdrop {
   position: absolute;
   top: -6vh; /* barely above the section — keep clear of the hero / buy button */
-  bottom: -70vh; /* flow well down into chapter 2 */
+  bottom: -160vh; /* flow far past chapter 2 so the canvas stays mounted while
+                     the exploded parts keep travelling off screen */
   left: -10vw;
   right: -4vw;
   z-index: 0;
@@ -3336,22 +3345,8 @@ button.reset {
   align-items: center;
 }
 
-.firmware-split-eyebrow {
-  grid-column: 1 / -1;
-  font-family: var(--font-mono);
-  font-size: 11px;
-  letter-spacing: 0.25em;
-  text-transform: uppercase;
-  color: var(--color-gold);
-  margin: 0;
-}
-
-.firmware-split-eyebrow span {
-  color: var(--color-text-muted);
-}
-
 .firmware-split-amounts {
-  grid-row: 2 / span 2;
+  grid-row: 1 / span 2;
   display: flex;
   align-items: center;
   gap: 0.75rem;
@@ -4559,124 +4554,6 @@ button.reset {
   font-size: 11px;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: var(--color-text-muted);
-}
-
-/* ============================================
-   Product compliance block (GPSR)
-   ============================================ */
-
-.product-compliance {
-  margin-top: 1.5rem;
-  padding: 1.1rem;
-  background: var(--color-bg-card);
-  border: 1px solid var(--color-border);
-  border-radius: 10px;
-  display: grid;
-  gap: 1rem;
-}
-
-.product-compliance .section-heading {
-  margin-bottom: 0;
-}
-
-.product-compliance-grid {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 1rem 3rem;
-}
-
-.product-compliance-grid > div {
-  min-width: 200px;
-  max-width: 420px;
-}
-
-.product-compliance-grid dt {
-  font-family: var(--font-mono);
-  font-size: 11px;
-  text-transform: uppercase;
-  letter-spacing: 0.16em;
-  color: var(--color-text-muted);
-  margin-bottom: 0.35rem;
-}
-
-.product-compliance-grid dd {
-  color: var(--color-text);
-  font-size: 0.85rem;
-  line-height: 1.5;
-}
-
-.product-compliance-muted {
-  color: var(--color-text-muted);
-  font-size: 0.75rem;
-}
-
-.product-compliance-safety {
-  border-left: 3px solid var(--color-gold);
-  padding: 0.6rem 0.85rem;
-  background: color-mix(in srgb, var(--color-gold) 8%, var(--color-bg));
-  border-radius: 4px;
-}
-
-.product-compliance-safety strong {
-  display: block;
-  font-family: var(--font-mono);
-  font-size: 12px;
-  text-transform: uppercase;
-  letter-spacing: 0.12em;
-  color: var(--color-gold);
-  margin-bottom: 0.35rem;
-}
-
-.product-compliance-downloads {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-}
-
-.product-compliance-download {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
-  padding: 0.45rem 0.8rem;
-  border: 1px solid var(--color-border);
-  background: var(--color-bg);
-  color: var(--color-text);
-  font-family: var(--font-mono);
-  font-size: 12px;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  border-radius: 4px;
-  transition: border-color 150ms ease, color 150ms ease;
-}
-
-.product-compliance-download:hover {
-  border-color: var(--color-gold);
-  color: var(--color-gold);
-}
-
-.product-compliance-marks {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-  list-style: none;
-  padding: 0;
-  margin: 0;
-}
-
-.product-compliance-marks li {
-  padding: 0.25rem 0.55rem;
-  border: 1px solid var(--color-border);
-  border-radius: 3px;
-  font-family: var(--font-mono);
-  font-size: 11px;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  color: var(--color-text-muted);
-}
-
-.product-compliance-repo {
-  font-size: 0.8rem;
   color: var(--color-text-muted);
 }
 
