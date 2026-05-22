@@ -58,6 +58,10 @@ function FrameModel({
   const rot = {x: 0.42, y: -0.5};
   const offsetX = 1.0;
   const parts = useRef<Part[]>([]);
+  // The chapter following the teardown ("Open for learning"). The explode is
+  // scrubbed across the gap between the two chapters' centres, so we need its
+  // box too. Resolved lazily and cached (re-resolved if it drops out of DOM).
+  const nextChapter = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -173,20 +177,38 @@ function FrameModel({
     };
   }, [src]);
 
-  // Recompute the explode amount from the section's viewport position each
-  // rendered frame (frames are scheduled by the scroll listener via
-  // invalidate()). e = 0 when the section's centre is at the viewport bottom,
-  // 1 once it has scrolled to the top — so it animates across the whole pass.
+  // Recompute the explode amount from scroll position each rendered frame.
+  // The throw spans chapter 1 (teardown) → chapter 2: e = 0 when the teardown
+  // chapter's centre sits at the viewport centre (assembled, in view), and
+  // e = 1 once the next chapter's centre reaches the viewport centre (fully
+  // exploded). Normalised by the centre-to-centre distance, so it's stable
+  // regardless of section heights or the gap between them.
   useFrame(() => {
     if (!parts.current.length) return;
     let e = 0;
     const el = containerRef.current;
     if (el) {
       const section = (el.closest('.chapter') as HTMLElement | null) ?? el;
-      const r = section.getBoundingClientRect();
+      let next = nextChapter.current;
+      if (!next || !next.isConnected) {
+        let n = section.nextElementSibling as HTMLElement | null;
+        while (n && !n.classList.contains('chapter'))
+          n = n.nextElementSibling as HTMLElement | null;
+        nextChapter.current = next = n;
+      }
       const vh = window.innerHeight || 1;
-      const center = r.top + r.height / 2;
-      e = THREE.MathUtils.clamp(1 - center / vh, 0, 1);
+      const r1 = section.getBoundingClientRect();
+      const c1 = r1.top + r1.height / 2;
+      if (next) {
+        const r2 = next.getBoundingClientRect();
+        const c2 = r2.top + r2.height / 2;
+        // (vh/2 − c1) is how far ch.1's centre has risen past the viewport
+        // centre; (c2 − c1) is the centre-to-centre distance to ch.2.
+        e = THREE.MathUtils.clamp((vh / 2 - c1) / (c2 - c1 || vh), 0, 1);
+      } else {
+        // No following chapter — fall back to a single-pass scrub.
+        e = THREE.MathUtils.clamp(1 - c1 / vh, 0, 1);
+      }
     }
     for (const p of parts.current) {
       p.obj.position.set(
@@ -207,14 +229,17 @@ export function FrameViewer({src}: FrameViewerProps) {
 
   useEffect(() => setMounted(true), []);
 
-  // Mount the canvas only while the teardown section is near the viewport
-  // (observe the chapter, not the tall over-bleeding backdrop). While mounted
-  // the canvas runs frameloop="always" so the explode tracks scroll every
-  // frame; off-screen it unmounts and costs nothing.
+  // Mount the canvas while the over-bleeding backdrop is near the viewport.
+  // The explode now spans chapter 1 → chapter 2, so observing the teardown
+  // chapter alone would unmount the canvas mid-throw once that chapter scrolls
+  // up out of view. The backdrop layer (.frame-viewer fills it, -6vh→-70vh)
+  // covers both sections, so observing it keeps the canvas alive for exactly
+  // as long as it's visible. While mounted the canvas runs frameloop="always"
+  // so the explode tracks scroll every frame; off-screen it unmounts.
   useEffect(() => {
     const el = wrapRef.current;
     if (!el || typeof IntersectionObserver === 'undefined') return;
-    const target = (el.closest('.chapter') as HTMLElement | null) ?? el;
+    const target = el;
     const io = new IntersectionObserver(
       (entries) => {
         for (const e of entries) setOnScreen(e.isIntersecting);
