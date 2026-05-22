@@ -207,41 +207,23 @@ export function FrameViewer({src}: FrameViewerProps) {
 
   useEffect(() => setMounted(true), []);
 
+  // Mount the canvas only while the teardown section is near the viewport
+  // (observe the chapter, not the tall over-bleeding backdrop). While mounted
+  // the canvas runs frameloop="always" so the explode tracks scroll every
+  // frame; off-screen it unmounts and costs nothing.
   useEffect(() => {
     const el = wrapRef.current;
     if (!el || typeof IntersectionObserver === 'undefined') return;
+    const target = (el.closest('.chapter') as HTMLElement | null) ?? el;
     const io = new IntersectionObserver(
       (entries) => {
         for (const e of entries) setOnScreen(e.isIntersecting);
-        invalidate();
       },
-      {rootMargin: '200px 0px', threshold: 0.01},
+      {rootMargin: '300px 0px', threshold: 0},
     );
-    io.observe(el);
+    io.observe(target);
     return () => io.disconnect();
   }, [mounted]);
-
-  // Schedule a render on scroll/resize; the model reads its progress from the
-  // DOM inside useFrame. rAF-throttled, only while on-screen.
-  useEffect(() => {
-    if (!mounted || !onScreen) return;
-    let raf = 0;
-    const tick = () => {
-      raf = 0;
-      invalidate();
-    };
-    const onScroll = () => {
-      if (!raf) raf = requestAnimationFrame(tick);
-    };
-    invalidate();
-    window.addEventListener('scroll', onScroll, {passive: true});
-    window.addEventListener('resize', onScroll, {passive: true});
-    return () => {
-      if (raf) cancelAnimationFrame(raf);
-      window.removeEventListener('scroll', onScroll);
-      window.removeEventListener('resize', onScroll);
-    };
-  }, [mounted, onScreen]);
 
   return (
     <div ref={wrapRef} className="frame-viewer" data-loaded={mounted} aria-hidden="true">
@@ -249,10 +231,9 @@ export function FrameViewer({src}: FrameViewerProps) {
         <Canvas
           camera={{position: [0, 0.3, 4.4], fov: 38}}
           style={{background: 'transparent'}}
-          frameloop="demand"
+          frameloop="always"
           dpr={[1, 1.75]}
           gl={{antialias: true, alpha: true, powerPreference: 'default'}}
-          onCreated={() => invalidate()}
         >
           {/* Edge-outline parts are unlit — no lights or shadows needed. */}
           <FrameModel src={src} containerRef={wrapRef} />

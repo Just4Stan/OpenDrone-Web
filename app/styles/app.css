@@ -2696,8 +2696,8 @@ button.reset {
    the page. Purely decorative. */
 .chapter-backdrop {
   position: absolute;
-  top: -45vh;
-  bottom: -45vh;
+  top: -6vh; /* barely above the section — keep clear of the hero / buy button */
+  bottom: -70vh; /* flow well down into chapter 2 */
   left: -10vw;
   right: -4vw;
   z-index: 0;
