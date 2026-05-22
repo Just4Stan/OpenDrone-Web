@@ -128,7 +128,13 @@ function FrameModel({
         }
         parts.current = found;
 
-        // Vector edge outlines instead of solid fills.
+        // Vector edge outlines instead of solid fills. The outline is added as
+        // a CHILD of its mesh so it inherits the mesh's transform — and crucially
+        // travels with the part when the explode moves the mesh node. The solid
+        // surface is suppressed via the material's `visible`, NOT the object's
+        // `visible` (which would also hide the child outline, leaving nothing on
+        // screen). Hiding the object was the bug: the outline used to be a
+        // sibling on the parent "occurrence" node, so it never moved.
         const lineMat = new THREE.LineBasicMaterial({
           color: 0xc8b27a,
           transparent: true,
@@ -141,9 +147,11 @@ function FrameModel({
         });
         for (const m of meshes) {
           const ls = new THREE.LineSegments(new THREE.EdgesGeometry(m.geometry, 24), lineMat);
-          ls.applyMatrix4(m.matrix);
-          m.parent?.add(ls);
-          m.visible = false;
+          m.add(ls);
+          const mats = Array.isArray(m.material) ? m.material : [m.material];
+          mats.forEach((mat) => {
+            if (mat) mat.visible = false;
+          });
         }
 
         const box = new THREE.Box3().setFromObject(scene);
