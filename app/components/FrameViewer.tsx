@@ -17,16 +17,15 @@ export type FrameViewerProps = {
  * revealing flat PCB layers it pulls its parts apart as the user scrolls:
  * top plate lifts, bottom plates drop, arms fan out.
  *
- * It is purely decorative and NON-interactive: a big, full-bleed layer of
- * gold vector outlines sitting behind the teardown text, scrubbed entirely
- * by scroll position. No drag, no auto-rotation. `frameloop="demand"` with
- * no self-invalidation means the GPU only works while the user is actually
- * scrolling; off-screen the canvas unmounts.
+ * Purely decorative and NON-interactive: a big over-bleeding layer of gold
+ * vector outlines that flows over the neighbouring sections, behind the
+ * teardown text. The explode amount is recomputed from the section's
+ * viewport position every rendered frame, and a scroll listener invalidates
+ * (frameloop="demand") — so it animates smoothly while scrolling and the GPU
+ * idles otherwise; off-screen the canvas unmounts entirely.
  *
  * Parts are classified by node name ("top", "base"/"base.001",
- * "arm"/"arm.001"…) from the OnShape glTF export. Asset hand-exported for
- * now; scripts/export-frame-cad.mjs (OnShape translations API) is the
- * planned analogue of scripts/export-board-art.mjs.
+ * "arm"/"arm.001"…) from the OnShape glTF export.
  */
 
 const GROUPS = [
@@ -46,13 +45,18 @@ function classify(name: string): number {
   return GROUPS.findIndex((g) => g.match(lower));
 }
 
-function FrameModel({src, progressRef}: {src: string; progressRef: React.RefObject<number>}) {
+function FrameModel({
+  src,
+  containerRef,
+}: {
+  src: string;
+  containerRef: React.RefObject<HTMLDivElement | null>;
+}) {
   const groupRef = useRef<THREE.Group>(null);
-  // Fixed three-quarter top view — no rotation interaction. Shift right in
-  // its own local x so the model sits off to the right; on explode the
-  // left-going arms fan back into the text.
+  // Fixed three-quarter top view; shifted right in its own local x so the
+  // model sits off to the right and the left arms fan into the text.
   const rot = {x: 0.42, y: -0.5};
-  const offsetX = 1.5;
+  const offsetX = 1.0;
   const parts = useRef<Part[]>([]);
 
   useEffect(() => {
@@ -64,9 +68,6 @@ function FrameModel({src, progressRef}: {src: string; progressRef: React.RefObje
         if (cancelled || !groupRef.current) return;
         const scene = gltf.scene;
 
-        // Explode vectors in RAW model space, before scaling (the model is
-        // symmetric about its origin, so raw coords share a frame with each
-        // node's local position).
         scene.updateMatrixWorld(true);
         const found: Part[] = [];
         scene.traverse((o) => {
@@ -104,8 +105,8 @@ function FrameModel({src, progressRef}: {src: string; progressRef: React.RefObje
             ? topC.clone().sub(baseC).normalize()
             : new THREE.Vector3(0, 1, 0);
 
-        const span = new THREE.Box3().setFromObject(scene).getSize(new THREE.Vector3());
-        const unit = Math.max(span.x, span.y, span.z) || 1;
+        const sz = new THREE.Box3().setFromObject(scene).getSize(new THREE.Vector3());
+        const unit = Math.max(sz.x, sz.y, sz.z) || 1;
 
         for (const f of found) {
           const centroid = f.explode.clone();
@@ -172,9 +173,21 @@ function FrameModel({src, progressRef}: {src: string; progressRef: React.RefObje
     };
   }, [src]);
 
-  // Only runs when invalidate() is called (scroll, load) — no self-loop.
+  // Recompute the explode amount from the section's viewport position each
+  // rendered frame (frames are scheduled by the scroll listener via
+  // invalidate()). e = 0 when the section's centre is at the viewport bottom,
+  // 1 once it has scrolled to the top — so it animates across the whole pass.
   useFrame(() => {
-    const e = THREE.MathUtils.clamp(progressRef.current ?? 0, 0, 1);
+    if (!parts.current.length) return;
+    let e = 0;
+    const el = containerRef.current;
+    if (el) {
+      const section = (el.closest('.chapter') as HTMLElement | null) ?? el;
+      const r = section.getBoundingClientRect();
+      const vh = window.innerHeight || 1;
+      const center = r.top + r.height / 2;
+      e = THREE.MathUtils.clamp(1 - center / vh, 0, 1);
+    }
     for (const p of parts.current) {
       p.obj.position.set(
         p.base.x + p.explode.x * e,
@@ -191,7 +204,6 @@ export function FrameViewer({src}: FrameViewerProps) {
   const wrapRef = useRef<HTMLDivElement | null>(null);
   const [mounted, setMounted] = useState(false);
   const [onScreen, setOnScreen] = useState(false);
-  const progressRef = useRef(0);
 
   useEffect(() => setMounted(true), []);
 
@@ -203,41 +215,25 @@ export function FrameViewer({src}: FrameViewerProps) {
         for (const e of entries) setOnScreen(e.isIntersecting);
         invalidate();
       },
-      {rootMargin: '300px 0px', threshold: 0.01},
+      {rootMargin: '200px 0px', threshold: 0.01},
     );
     io.observe(el);
     return () => io.disconnect();
   }, [mounted]);
 
-  // Scroll-scrub: scrub off the parent chapter's top edge so the frame is
-  // assembled when it scrolls into view, then fans apart as the section rises.
+  // Schedule a render on scroll/resize; the model reads its progress from the
+  // DOM inside useFrame. rAF-throttled, only while on-screen.
   useEffect(() => {
     if (!mounted || !onScreen) return;
     let raf = 0;
-    const compute = () => {
+    const tick = () => {
       raf = 0;
-      const el = wrapRef.current;
-      if (!el) return;
-      const section = el.closest('.chapter') as HTMLElement | null;
-      const target = section ?? el;
-      const r = target.getBoundingClientRect();
-      const vh = window.innerHeight || 1;
-      // Pinned-scroll scrub: while the (tall) chapter scrolls past its sticky
-      // frame, progress = how far its top has travelled above the viewport
-      // top, normalised by the chapter's scroll distance. Assembled on entry,
-      // fully exploded by the time the chapter is scrolling out.
-      const total = (target as HTMLElement).offsetHeight - vh;
-      const p = total > 0 ? -r.top / total : (vh * 0.6 - r.top) / (vh * 0.6);
-      const clamped = Math.max(0, Math.min(1, p));
-      if (Math.abs(clamped - progressRef.current) > 0.001) {
-        progressRef.current = clamped;
-        invalidate();
-      }
+      invalidate();
     };
     const onScroll = () => {
-      if (!raf) raf = requestAnimationFrame(compute);
+      if (!raf) raf = requestAnimationFrame(tick);
     };
-    compute();
+    invalidate();
     window.addEventListener('scroll', onScroll, {passive: true});
     window.addEventListener('resize', onScroll, {passive: true});
     return () => {
@@ -251,7 +247,7 @@ export function FrameViewer({src}: FrameViewerProps) {
     <div ref={wrapRef} className="frame-viewer" data-loaded={mounted} aria-hidden="true">
       {mounted && onScreen ? (
         <Canvas
-          camera={{position: [0, 0.15, 4.2], fov: 38}}
+          camera={{position: [0, 0.3, 4.4], fov: 38}}
           style={{background: 'transparent'}}
           frameloop="demand"
           dpr={[1, 1.75]}
@@ -259,7 +255,7 @@ export function FrameViewer({src}: FrameViewerProps) {
           onCreated={() => invalidate()}
         >
           {/* Edge-outline parts are unlit — no lights or shadows needed. */}
-          <FrameModel src={src} progressRef={progressRef} />
+          <FrameModel src={src} containerRef={wrapRef} />
         </Canvas>
       ) : null}
     </div>
