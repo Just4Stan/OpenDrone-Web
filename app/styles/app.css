@@ -3268,6 +3268,13 @@ button.reset {
   border-bottom: 1px solid var(--color-border);
 }
 
+/* Cap card width and use auto-fill so a single-product category renders a
+   normal card (with empty tracks) instead of one card stretched full-width. */
+.catalog-category .products-grid {
+  grid-template-columns: repeat(auto-fill, minmax(260px, 300px));
+  justify-content: start;
+}
+
 /* Empty state */
 .empty-state-icon {
   display: flex;
