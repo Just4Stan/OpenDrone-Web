@@ -173,12 +173,12 @@ export function HeaderMenu({
           </NavLink>
         );
       })}
-      {/* Guarantee a Journal link in the primary nav. The Shopify main menu
-          (Home / Catalog / Contact) doesn't include the blog, and Home is
-          dropped + Catalog/Contact move to the CTA group, so without this the
-          desktop center nav would be empty. Skipped only if the menu already
-          links somewhere under /blog. */}
-      {!(menu || FALLBACK_HEADER_MENU).items.some((it) =>
+      {/* Mobile aside only: a Journal link in the slide-out menu. On desktop
+          Journal lives in the right-side CTA group (left of Catalog), so it's
+          omitted here to avoid duplicating it. Skipped if the Shopify menu
+          already links somewhere under /blog. */}
+      {isMobile &&
+      !(menu || FALLBACK_HEADER_MENU).items.some((it) =>
         it.url?.includes('/blog'),
       ) ? (
         <NavLink
@@ -208,6 +208,19 @@ function HeaderCtas({
   return (
     <nav className="flex items-center gap-5 ml-auto" role="navigation">
       <LangToggle className="header-lang-toggle" />
+      <NavLink
+        prefetch="intent"
+        to="/blog"
+        className={({isActive}) =>
+          `font-mono text-[12px] uppercase tracking-[0.15em] transition-colors hidden md:block ${
+            isActive
+              ? 'text-[var(--color-text)]'
+              : 'text-[var(--color-text-muted)] hover:text-[var(--color-text)]'
+          }`
+        }
+      >
+        Journal
+      </NavLink>
       <NavLink
         prefetch="intent"
         to="/collections/all"
