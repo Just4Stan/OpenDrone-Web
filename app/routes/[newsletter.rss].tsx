@@ -27,6 +27,7 @@ export async function loader({context, request}: Route.LoaderArgs) {
   try {
     const {blog} = await context.storefront.query(FEED_QUERY, {
       variables: {blogHandle, first: FEED_LIMIT},
+      cache: context.storefront.CacheLong(),
     });
     articles = (blog?.articles?.nodes ?? []).map((n: any) => ({
       handle: n.handle,
