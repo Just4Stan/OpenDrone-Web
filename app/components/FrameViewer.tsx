@@ -1,0 +1,299 @@
+import {Canvas, useFrame, invalidate} from '@react-three/fiber';
+import {useEffect, useRef, useState} from 'react';
+import * as THREE from 'three';
+import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
+
+export type FrameViewerProps = {
+  /** Public path to the GLB, e.g. /models/frame.glb */
+  src: string;
+  /** Optional "inspect" deep-dive link (kept for API parity; unused while
+   *  the viewer renders as a decorative backdrop). */
+  inspectUrl?: string;
+};
+
+/**
+ * Exploded-assembly backdrop for the carbon frame — the CAD analogue of
+ * {@link BoardArt}. The frame is a 3D OnShape assembly, so instead of
+ * revealing flat PCB layers it pulls its parts apart as the user scrolls:
+ * top plate lifts, bottom plates drop, arms fan out.
+ *
+ * Purely decorative and NON-interactive: a big over-bleeding layer of gold
+ * vector outlines that flows over the neighbouring sections, behind the
+ * teardown text. The explode amount is recomputed from the section's
+ * viewport position every rendered frame, and a scroll listener invalidates
+ * (frameloop="demand") — so it animates smoothly while scrolling and the GPU
+ * idles otherwise; off-screen the canvas unmounts entirely.
+ *
+ * Parts are classified by node name ("top", "base"/"base.001",
+ * "arm"/"arm.001"…) from the OnShape glTF export.
+ */
+
+const GROUPS = [
+  {key: 'top', match: (n: string) => n.startsWith('top')},
+  {key: 'arm', match: (n: string) => n.startsWith('arm')},
+  {key: 'base', match: (n: string) => n.startsWith('base')},
+] as const;
+
+// Explode travel as a fraction of the assembly's largest dimension. These set
+// the spread at e = 1 (the "fully exploded" hero look as chapter 2 arrives).
+const PLATE_TRAVEL = 0.4;
+const ARM_TRAVEL = 0.78;
+// e keeps growing past 1 as you scroll further, so the parts fly off screen.
+// At e = 1 arms are ~at the frame edge; ~e = 2.5–3 takes everything off.
+const EXPLODE_MAX = 3;
+
+type Part = {obj: THREE.Object3D; groupIndex: number; base: THREE.Vector3; explode: THREE.Vector3};
+
+function classify(name: string): number {
+  const lower = name.toLowerCase();
+  return GROUPS.findIndex((g) => g.match(lower));
+}
+
+function FrameModel({
+  src,
+  containerRef,
+}: {
+  src: string;
+  containerRef: React.RefObject<HTMLDivElement | null>;
+}) {
+  const groupRef = useRef<THREE.Group>(null);
+  // Fixed three-quarter top view; shifted right in its own local x so the
+  // model sits off to the right and the left arms fan into the text.
+  const rot = {x: 0.42, y: -0.5};
+  const offsetX = 1.0;
+  const parts = useRef<Part[]>([]);
+  // The chapter following the teardown ("Open for learning"). The explode is
+  // scrubbed across the gap between the two chapters' centres, so we need its
+  // box too. Resolved lazily and cached (re-resolved if it drops out of DOM).
+  const nextChapter = useRef<HTMLElement | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    const loader = new GLTFLoader();
+    loader.load(
+      src,
+      (gltf) => {
+        if (cancelled || !groupRef.current) return;
+        const scene = gltf.scene;
+
+        scene.updateMatrixWorld(true);
+        const found: Part[] = [];
+        scene.traverse((o) => {
+          const idx = classify(o.name);
+          if (idx === -1) return;
+          let p = o.parent;
+          while (p && p !== scene) {
+            if (classify(p.name) !== -1) return;
+            p = p.parent;
+          }
+          const box = new THREE.Box3().setFromObject(o);
+          if (box.isEmpty()) return;
+          // Translate the part in the assembly's frame, not the mesh's local
+          // frame: some OnShape "occurrence" wrappers carry a 180° flip that
+          // would negate the world-space explode direction (collapsing arm
+          // pairs onto one corner). The occurrence sits directly under the
+          // identity Assembly root, so moving IT applies the explode cleanly.
+          const moveNode = o.parent && o.parent !== scene ? o.parent : o;
+          found.push({
+            obj: moveNode,
+            groupIndex: idx,
+            base: moveNode.position.clone(),
+            explode: box.getCenter(new THREE.Vector3()),
+          });
+        });
+
+        const groupCentroid = (gi: number) => {
+          const c = new THREE.Vector3();
+          let n = 0;
+          for (const f of found)
+            if (f.groupIndex === gi) {
+              c.add(f.explode);
+              n++;
+            }
+          return n ? c.divideScalar(n) : null;
+        };
+        const topC = groupCentroid(0);
+        const baseC = groupCentroid(2);
+        const stackDir =
+          topC && baseC
+            ? topC.clone().sub(baseC).normalize()
+            : new THREE.Vector3(0, 1, 0);
+
+        const sceneBox = new THREE.Box3().setFromObject(scene);
+        const sz = sceneBox.getSize(new THREE.Vector3());
+        const unit = Math.max(sz.x, sz.y, sz.z) || 1;
+        // Fan the arms out from the stack centreline (the plate centres), not
+        // the bounding-box centre — the arms are asymmetric, so the bbox centre
+        // is skewed and would bias every arm the same way.
+        const axisPoint =
+          baseC ?? topC ?? sceneBox.getCenter(new THREE.Vector3());
+
+        for (const f of found) {
+          const centroid = f.explode.clone();
+          if (f.groupIndex === 0) {
+            f.explode = stackDir.clone().multiplyScalar(unit * PLATE_TRAVEL);
+          } else if (f.groupIndex === 2) {
+            f.explode = stackDir.clone().multiplyScalar(-unit * PLATE_TRAVEL);
+          } else {
+            const rel = centroid.sub(axisPoint);
+            const radial = rel.sub(
+              stackDir.clone().multiplyScalar(rel.dot(stackDir)),
+            );
+            if (radial.lengthSq() < 1e-6) radial.set(1, 0, 0);
+            f.explode = radial.normalize().multiplyScalar(unit * ARM_TRAVEL);
+          }
+        }
+        parts.current = found;
+
+        // Vector edge outlines instead of solid fills. The outline is added as
+        // a CHILD of its mesh so it inherits the mesh's transform — and crucially
+        // travels with the part when the explode moves the mesh node. The solid
+        // surface is suppressed via the material's `visible`, NOT the object's
+        // `visible` (which would also hide the child outline, leaving nothing on
+        // screen). Hiding the object was the bug: the outline used to be a
+        // sibling on the parent "occurrence" node, so it never moved.
+        const lineMat = new THREE.LineBasicMaterial({
+          color: 0xc8b27a,
+          transparent: true,
+          opacity: 0.55,
+        });
+        const meshes: THREE.Mesh[] = [];
+        scene.traverse((o) => {
+          const m = o as THREE.Mesh;
+          if (m.isMesh && m.geometry) meshes.push(m);
+        });
+        for (const m of meshes) {
+          const ls = new THREE.LineSegments(new THREE.EdgesGeometry(m.geometry, 24), lineMat);
+          m.add(ls);
+          const mats = Array.isArray(m.material) ? m.material : [m.material];
+          mats.forEach((mat) => {
+            if (mat) mat.visible = false;
+          });
+        }
+
+        const box = new THREE.Box3().setFromObject(scene);
+        scene.position.sub(box.getCenter(new THREE.Vector3()));
+        const size = box.getSize(new THREE.Vector3());
+        scene.scale.setScalar(2.2 / (Math.max(size.x, size.y, size.z) || 1));
+        groupRef.current.rotation.set(rot.x, rot.y, 0);
+        groupRef.current.position.x = offsetX;
+        groupRef.current.add(scene);
+        invalidate();
+      },
+      undefined,
+      (err) => console.error('[FrameViewer] failed to load', src, err),
+    );
+    return () => {
+      cancelled = true;
+      parts.current = [];
+      const g = groupRef.current;
+      if (!g) return;
+      while (g.children.length) {
+        const child = g.children[0];
+        g.remove(child);
+        child.traverse((o: any) => {
+          if (o.isMesh || o.isLineSegments) {
+            o.geometry?.dispose();
+            const mats = Array.isArray(o.material) ? o.material : [o.material];
+            mats.forEach((m: any) => m?.dispose());
+          }
+        });
+      }
+    };
+  }, [src]);
+
+  // Recompute the explode amount from scroll position each rendered frame.
+  // The throw spans chapter 1 (teardown) → chapter 2: e = 0 when the teardown
+  // chapter's centre sits at the viewport centre (assembled, in view), and
+  // e = 1 once the next chapter's centre reaches the viewport centre (fully
+  // exploded). Normalised by the centre-to-centre distance, so it's stable
+  // regardless of section heights or the gap between them.
+  useFrame(() => {
+    if (!parts.current.length) return;
+    let e = 0;
+    const el = containerRef.current;
+    if (el) {
+      const section = (el.closest('.chapter') as HTMLElement | null) ?? el;
+      let next = nextChapter.current;
+      if (!next || !next.isConnected) {
+        let n = section.nextElementSibling as HTMLElement | null;
+        while (n && !n.classList.contains('chapter'))
+          n = n.nextElementSibling as HTMLElement | null;
+        nextChapter.current = next = n;
+      }
+      const vh = window.innerHeight || 1;
+      const r1 = section.getBoundingClientRect();
+      const c1 = r1.top + r1.height / 2;
+      if (next) {
+        const r2 = next.getBoundingClientRect();
+        const c2 = r2.top + r2.height / 2;
+        // Hold the frame assembled (e = 0) through chapter 1 — it only starts
+        // coming apart once chapter 2 reaches the viewport centre. (vh/2 − c2)
+        // is how far ch.2's centre has risen past the centre; normalise by the
+        // ch.1→ch.2 centre distance so e ≈ 1 about one chapter later, then it
+        // keeps climbing to EXPLODE_MAX so the parts fly off as you scroll on.
+        e = THREE.MathUtils.clamp((vh / 2 - c2) / (c2 - c1 || vh), 0, EXPLODE_MAX);
+      } else {
+        // No following chapter — fall back to a single-pass scrub.
+        e = THREE.MathUtils.clamp(1 - c1 / vh, 0, 1);
+      }
+    }
+    for (const p of parts.current) {
+      p.obj.position.set(
+        p.base.x + p.explode.x * e,
+        p.base.y + p.explode.y * e,
+        p.base.z + p.explode.z * e,
+      );
+    }
+  });
+
+  return <group ref={groupRef} />;
+}
+
+export function FrameViewer({src}: FrameViewerProps) {
+  const wrapRef = useRef<HTMLDivElement | null>(null);
+  const [mounted, setMounted] = useState(false);
+  const [onScreen, setOnScreen] = useState(false);
+
+  useEffect(() => setMounted(true), []);
+
+  // Mount the canvas while the over-bleeding backdrop is near the viewport.
+  // The explode now spans chapter 1 → chapter 2, so observing the teardown
+  // chapter alone would unmount the canvas mid-throw once that chapter scrolls
+  // up out of view. The backdrop layer (.frame-viewer fills it, -6vh→-70vh)
+  // covers both sections, so observing it keeps the canvas alive for exactly
+  // as long as it's visible. While mounted the canvas runs frameloop="always"
+  // so the explode tracks scroll every frame; off-screen it unmounts.
+  useEffect(() => {
+    const el = wrapRef.current;
+    if (!el || typeof IntersectionObserver === 'undefined') return;
+    const target = el;
+    const io = new IntersectionObserver(
+      (entries) => {
+        for (const e of entries) setOnScreen(e.isIntersecting);
+      },
+      {rootMargin: '300px 0px', threshold: 0},
+    );
+    io.observe(target);
+    return () => io.disconnect();
+  }, [mounted]);
+
+  return (
+    <div ref={wrapRef} className="frame-viewer" data-loaded={mounted} aria-hidden="true">
+      {mounted && onScreen ? (
+        <Canvas
+          camera={{position: [0, 0.3, 4.4], fov: 38}}
+          style={{background: 'transparent'}}
+          frameloop="always"
+          dpr={[1, 1.75]}
+          gl={{antialias: true, alpha: true, powerPreference: 'default'}}
+        >
+          {/* Edge-outline parts are unlit — no lights or shadows needed. */}
+          <FrameModel src={src} containerRef={wrapRef} />
+        </Canvas>
+      ) : null}
+    </div>
+  );
+}
+
+export default FrameViewer;

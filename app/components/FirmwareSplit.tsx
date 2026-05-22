@@ -18,12 +18,10 @@ const EUR_FORMATTER = new Intl.NumberFormat('en-IE', {
  */
 export function FirmwareSplit({
   price,
-  productTitle,
   firmwareProject,
   firmwareUrl,
 }: {
   price?: Pick<MoneyV2, 'amount' | 'currencyCode'> | null;
-  productTitle: string;
   firmwareProject?: string;
   firmwareUrl?: string;
 }) {
@@ -52,9 +50,6 @@ export function FirmwareSplit({
 
   return (
     <section className="firmware-split" aria-label="Open-source firmware contribution">
-      <p className="firmware-split-eyebrow">
-        {productTitle} · <span>Open source hardware</span>
-      </p>
       <div className="firmware-split-amounts">
         <span className="firmware-split-board">
           <Money data={boardAmountData} />
@@ -67,7 +62,8 @@ export function FirmwareSplit({
         </span>
       </div>
       <p className="firmware-split-tagline">
-        {boardAmountText} for the board.{' '}
+        {boardAmountText} for the board.
+        <br />
         <strong>
           {contributionText} for the{' '}
           {firmwareProject && firmwareUrl ? (

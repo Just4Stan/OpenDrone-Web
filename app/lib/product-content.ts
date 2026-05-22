@@ -87,8 +87,10 @@ export type VariantContent = {
   tagline: string;
   /** The 3–4 cells that differ between tiers, shown in the card body. */
   highlights: Array<[string, string]>;
-  /** Spec rows specific to this tier, appended under the shared specs. */
-  specs?: Array<[string, string]>;
+  /** Per-tier spec deltas merged over the shared `specs` by row key: a
+   *  value replaces the base row, `null` hides it (a cost-down tier dropping
+   *  a sensor), and an unknown key appends. See `mergeSpecs` in the PDP. */
+  specs?: Array<[string, string | null]>;
   /** Box lines specific to this tier, appended to the shared inTheBox. */
   inTheBox?: BoxItem[];
   /** Per-tier layered board SVG (same shape as `teardown.boardArt`). When the
@@ -115,6 +117,10 @@ export type ProductContent = {
   firmware: {
     project: string;            // "AM32" / "Betaflight" / "ExpressLRS" / null
     projectUrl?: string;
+    /** Optional project wordmark shown in the "The €1" chapter media slot
+     *  (public path, e.g. `/logos/betaflight.svg`). Falls back to the
+     *  geometric placeholder glyph when unset. */
+    logo?: string;
   };
   repoUrl: string;
   teardown?: {
@@ -127,6 +133,13 @@ export type ProductContent = {
      *  layers on scroll. Set `inspectUrl` to link out to KiCanvas's
      *  hosted viewer for users who want pan/zoom. */
     boardArt?: {src: string; inspectUrl?: string};
+    /** Optional exploded 3D model — the CAD analogue of `boardArt`, for
+     *  products that are an OnShape assembly rather than a KiCad board
+     *  (the frame, later motors). `src` is a public GLB whose nodes follow
+     *  the top/base/arm naming the {@link FrameViewer} explodes by; set
+     *  `inspectUrl` to the public OnShape document. When present the
+     *  teardown renders FrameViewer instead of BoardArt. */
+    frameViewer?: {src: string; inspectUrl?: string};
   };
   inTheBox: BoxItem[];          // physical items shipped
   downloads: DownloadAsset[];   // schematic PDFs, STEP files, manuals, etc.
@@ -250,6 +263,7 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
     firmware: {
       project: 'Betaflight',
       projectUrl: 'https://github.com/betaflight/betaflight',
+      logo: '/logos/betaflight.svg',
     },
     repoUrl: 'https://github.com/incutec-hw/OpenFC',
     teardown: {
@@ -495,6 +509,23 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
       project: '—',
     },
     repoUrl: 'https://github.com/incutec-hw',
+    // TODO(copy): placeholder teardown editorial. The exploded viewer is the
+    // CAD analogue of the boards' KiCanvas layer reveal; pin text reflects
+    // only known specs (5 mm arms, 30.5 × 30.5 pattern) — no invented
+    // material grades. inspectUrl omitted until the OnShape doc is public.
+    teardown: {
+      title: 'It comes apart the way it goes together.',
+      body: '',
+      pins: [
+        {ref: '①', part: 'Top plate — carbon, carries the camera + VTX bay'},
+        {ref: '②', part: 'Arms — 5 mm carbon, replaced individually', cost: '×4'},
+        {ref: '③', part: 'Bottom plate — 30.5 × 30.5 stack pattern'},
+        {ref: '④', part: 'M3 aluminium standoffs + hardware kit'},
+      ],
+      frameViewer: {
+        src: '/models/frame.glb',
+      },
+    },
     inTheBox: [
       {qty: '1×', item: 'Top plate + bottom plate'},
       {qty: '4×', item: '5" arms'},
