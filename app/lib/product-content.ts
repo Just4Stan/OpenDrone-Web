@@ -315,6 +315,25 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
     ],
     footnote:
       'The ELRS receiver break-off lets you relocate the RX without cutting traces. Solder onto the pads when reattaching.',
+    // TODO(copy): variant taglines/highlights are placeholders so the
+    // comparison ladder + Shopify "Model" axis wire up. Stan to refine prose
+    // and per-tier specs. OpenFC standard is the only board in both mounts;
+    // Lite (formerly OpenFC-ECO) is single-mount.
+    optionAxis: 'Model',
+    variants: {
+      Lite: {
+        tagline: 'OpenFC Lite — the cost-down board (formerly OpenFC-ECO).',
+        highlights: [['Tier', 'Lite']],
+      },
+      '20×20': {
+        tagline: 'OpenFC on the 20×20 / 30.5 mount — the compact stack size.',
+        highlights: [['Mount', '20×20 · 30.5 holes']],
+      },
+      '30×30': {
+        tagline: 'OpenFC on the 30×30 mount.',
+        highlights: [['Mount', '30×30']],
+      },
+    },
     pairCta: {
       eyebrow: 'Better together',
       title: 'OpenStack — OpenFC + OpenESC, one 30.5 mm stack, one checkout.',
@@ -494,6 +513,23 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
     ],
     footnote:
       'The frame is the one piece of the stack we do not yet source in the EU. Partner selection and design hand-off are underway.',
+    // TODO(copy): placeholder variant editorial — wires the "Size" axis +
+    // ladder. Shared specs above still read 5-inch; reconcile once the 3"
+    // (OpenFrame3) specs land.
+    optionAxis: 'Size',
+    variants: {
+      '5"': {
+        tagline: '5-inch freestyle — the OpenStack reference build.',
+        highlights: [
+          ['Class', '5-inch'],
+          ['Mount', '30.5 × 30.5'],
+        ],
+      },
+      '3"': {
+        tagline: '3-inch build — lighter and tighter.',
+        highlights: [['Class', '3-inch']],
+      },
+    },
   },
 
   openstack: {
