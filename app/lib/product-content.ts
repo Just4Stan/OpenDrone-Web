@@ -489,65 +489,52 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
       line2Italic: 'the rest',
       line3: 'bolts into.',
       lead:
-        'CNC carbon-fibre 5" freestyle frame with a 30.5×30.5 stack pattern. OEM-built from a Chinese partner to start; the design files open up once the partnership matures. OpenFC and OpenESC drop in without spacers.',
+        'CNC carbon-fibre freestyle frame on a 30.5×30.5 stack pattern. Designed in-house and OEM-built to start, with our own machining planned for 2027. OpenFC and OpenESC drop in without spacers.',
     },
     firmware: {
       project: '—',
     },
     repoUrl: 'https://github.com/incutec-hw',
     inTheBox: [
-      {qty: '1×', item: 'Top plate + bottom plate', note: 'CNC carbon fibre, 5 mm'},
-      {qty: '4×', item: '5" arms', note: 'CNC carbon fibre, 5 mm'},
-      {qty: '1×', item: 'Hardware kit', note: 'M3 bolts + aluminium standoffs + locknuts for a full build'},
-      {qty: '1×', item: 'Camera mount', note: '19 mm micro, TPU-printed'},
+      {qty: '1×', item: 'Top plate + bottom plate'},
+      {qty: '4×', item: '5" arms'},
+      {qty: '1×', item: 'Hardware kit'},
+      {qty: '1×', item: 'Camera mount'},
       {qty: '1×', item: 'VTX antenna tube clamp'},
-      {qty: '1×', item: 'Build card', note: 'batch ID, torque spec, GitHub rev (once design files open)'},
+      {qty: '1×', item: 'Build card'},
     ],
-    downloads: [
-      {
-        kind: 'manual',
-        label: 'Assembly guide (PDF)',
-        href: 'https://github.com/incutec-hw/OpenFrame/raw/main/docs/assembly.pdf',
-        note: 'Build order, torque spec, camera tilt jig',
-      },
-      {
-        kind: 'step',
-        label: '3D STEP',
-        href: 'https://github.com/incutec-hw/OpenFrame/raw/main/hardware/frame.step',
-        note: 'Plates + arms + hardware — for stack planning',
-      },
-      {
-        kind: 'other',
-        label: 'DXF cutting files',
-        href: 'https://github.com/incutec-hw/OpenFrame/raw/main/hardware/dxf.zip',
-        note: 'Released once the OEM partnership matures',
-      },
-    ],
+    // TODO(onshape): the frame is an OnShape document, not a GitHub repo. The
+    // STEP/DXF/assembly links above were placeholders pointing at a non-existent
+    // GitHub repo and have been removed. Wire real artifacts (OnShape embedded
+    // viewer + STEP export) once the OnShape integration lands. We do not
+    // release DXF cutting files.
+    downloads: [],
     specs: [
-      ['Class', '5-inch freestyle'],
-      ['Mount', '30.5 × 30.5'],
       ['Arm thickness', '5 mm carbon'],
       ['Camera', '19 mm micro'],
       ['VTX bay', '20 × 20'],
-      ['Status', 'OEM partnership, design files pending'],
+      ['Video systems', 'Analog · DJI O3/O4 · Walksnail · HDZero'],
     ],
     footnote:
-      'The frame is the one piece of the stack we do not yet source in the EU. Partner selection and design hand-off are underway.',
+      "We're looking into setting up our own in-house machining for 2027.",
     // TODO(copy): placeholder variant editorial — wires the "Model" axis +
     // ladder. Shared specs above still read 5-inch; reconcile once the 3"
     // (OpenFrame3) specs land.
     optionAxis: 'Model',
     variants: {
       '5" Freestyle': {
-        tagline: '5-inch freestyle — the OpenStack reference build.',
+        tagline: '',
         highlights: [
-          ['Class', '5-inch freestyle'],
-          ['Mount', '30.5 × 30.5'],
+          ['Stack mounts', '20×20 · 25×25 · 30×30'],
+          ['Motor mount', '16×16 · 19×19 (M3)'],
         ],
       },
       '3" Freestyle': {
-        tagline: '3-inch freestyle — lighter and tighter.',
-        highlights: [['Class', '3-inch freestyle']],
+        tagline: '',
+        highlights: [
+          ['Stack mounts', '20×20 · 25×25'],
+          ['Motor mount', '9×9 · 12×12 (M2)'],
+        ],
       },
     },
   },

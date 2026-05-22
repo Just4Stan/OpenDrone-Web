@@ -95,7 +95,9 @@ export function VariantLadder({
                   </span>
                 ) : null}
               </span>
-              <span className="variant-tier-tagline">{content.tagline}</span>
+              {content.tagline ? (
+                <span className="variant-tier-tagline">{content.tagline}</span>
+              ) : null}
               <span className="variant-tier-cells">
                 {content.highlights.map(([k, v]) => (
                   <span className="variant-tier-cell" key={k}>
