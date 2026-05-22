@@ -118,9 +118,11 @@ function slugify(s) {
 
 function toPublishDate(date) {
   if (!date) return new Date().toISOString();
-  // `YYYY-MM-DD` → midday UTC so the displayed date doesn't slip a day.
+  // `YYYY-MM-DD` → start of day UTC. The site formats publishedAt in UTC,
+  // so this displays the intended date without slipping, and stays in the
+  // past for "today" (Shopify rejects a future date on a published post).
   const d = /^\d{4}-\d{2}-\d{2}$/.test(String(date))
-    ? new Date(`${date}T12:00:00Z`)
+    ? new Date(`${date}T00:00:00Z`)
     : new Date(date);
   if (Number.isNaN(d.getTime())) throw new Error(`invalid date: ${date}`);
   return d.toISOString();
@@ -310,8 +312,14 @@ async function main() {
   const tags = toTags(fm.tags);
   const author = fm.author || DEFAULT_AUTHOR;
   const blogHandle = fm.blog || DEFAULT_BLOG_HANDLE;
-  const publishDate = toPublishDate(fm.date);
+  let publishDate = toPublishDate(fm.date);
   const isPublished = !draft && fm.published !== false;
+  // Shopify forbids isPublished:true with a future publishDate. If a live
+  // post's date is still ahead of now, publish it now instead. (To schedule,
+  // set `published: false` and a future date — Shopify auto-publishes.)
+  if (isPublished && new Date(publishDate).getTime() > Date.now()) {
+    publishDate = new Date().toISOString();
+  }
 
   marked.setOptions({gfm: true, breaks: false});
   let html = marked.parse(body).trim();

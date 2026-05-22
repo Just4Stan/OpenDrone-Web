@@ -71,30 +71,18 @@ const MIRROR_SLUGS = new Set(['b-copper']);
 const NUM_RE = /-?\d+(?:\.\d+)?/g;
 
 /**
- * Parse a KiCad-emitted Edge.Cuts `d` attribute, returning the segment's
- * start and end coords. KiCad concatenates the command letter with its
- * first number (e.g. `M8.4070 … A2.5000 …`), so we don't bind on
- * whitespace — the first number after `M` is the start coord, the last
- * pair is the end coord. Used only to bound the board in the kicad-cli
- * page frame; the clip shape itself comes from pcbnew.
- */
-function parseSegment(d) {
-  const s = d.trim();
-  if (!s.startsWith('M')) return null;
-  const nums = s.match(NUM_RE);
-  if (!nums || nums.length < 4) return null;
-  return {
-    start: [+nums[0], +nums[1]],
-    end: [+nums[nums.length - 2], +nums[nums.length - 1]],
-  };
-}
-
-/**
  * Tight bounding box of the actual Edge.Cuts geometry in the kicad-cli
  * page frame. `--fit-page-to-board` inflates the emitted viewBox to
  * include pads that overshoot the routed edge, so we recompute the true
  * board extent here for use as the master viewBox and as the alignment
  * anchor for the pcbnew outline.
+ *
+ * KiCad's SVG plotter tessellates every curve into line segments and emits
+ * the whole outline as one polyline `d` ("M x,y" then bare "x,y" pairs, then
+ * Z) — no arc/curve commands that would interleave non-coordinate numbers.
+ * So every number in each `d` is a coordinate; we scan them all as x,y pairs
+ * and take the extent. Boards with cutouts emit several `<path>` elements;
+ * walking all of them gives the overall bbox.
  */
 function edgeCutsBBox(edgeCutsSvg) {
   const re = /d="([^"]+)"/g;
@@ -104,9 +92,11 @@ function edgeCutsBBox(edgeCutsSvg) {
   let maxX = -Infinity;
   let maxY = -Infinity;
   while ((m = re.exec(edgeCutsSvg))) {
-    const seg = parseSegment(m[1]);
-    if (!seg) continue;
-    for (const [x, y] of [seg.start, seg.end]) {
+    const nums = m[1].match(NUM_RE);
+    if (!nums) continue;
+    for (let i = 0; i + 1 < nums.length; i += 2) {
+      const x = +nums[i];
+      const y = +nums[i + 1];
       if (x < minX) minX = x;
       if (y < minY) minY = y;
       if (x > maxX) maxX = x;

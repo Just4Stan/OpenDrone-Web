@@ -173,6 +173,30 @@ export function HeaderMenu({
           </NavLink>
         );
       })}
+      {/* Guarantee a Journal link in the primary nav. The Shopify main menu
+          (Home / Catalog / Contact) doesn't include the blog, and Home is
+          dropped + Catalog/Contact move to the CTA group, so without this the
+          desktop center nav would be empty. Skipped only if the menu already
+          links somewhere under /blog. */}
+      {!(menu || FALLBACK_HEADER_MENU).items.some((it) =>
+        it.url?.includes('/blog'),
+      ) ? (
+        <NavLink
+          end
+          onClick={close}
+          prefetch="intent"
+          to="/blog"
+          className={({isActive}) =>
+            `${isMobile ? 'text-sm tracking-wider' : 'text-[12px] tracking-[0.15em]'} font-mono uppercase transition-colors ${
+              isActive
+                ? 'text-[var(--color-text)]'
+                : 'text-[var(--color-text-muted)] hover:text-[var(--color-text)]'
+            }`
+          }
+        >
+          Journal
+        </NavLink>
+      ) : null}
     </nav>
   );
 }
