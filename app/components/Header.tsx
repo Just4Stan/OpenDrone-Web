@@ -23,10 +23,10 @@ type Viewport = 'desktop' | 'mobile';
 // Accessory category (productType=Accessory).
 const CATEGORY_LINKS: Array<{label: string; to: string}> = [
   {label: 'FC', to: '/products/openfc'},
-  {label: 'Frame', to: '/products/openframe'},
   {label: 'ESC', to: '/products/openesc'},
-  {label: 'RX', to: '/products/openrx'},
   {label: 'Stack', to: '/products/openstack'},
+  {label: 'RX', to: '/products/openrx'},
+  {label: 'Frame', to: '/products/openframe'},
   {label: 'Accessories', to: '/collections/all?type=Accessory'},
 ];
 
