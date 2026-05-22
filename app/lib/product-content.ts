@@ -227,6 +227,7 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
           ['MOSFETs', 'SP40N01GHNK'],
           ['PCB', '6-layer, 30×30 mount'],
         ],
+        boardArt: {src: '/boards/openesc-30x30/board.svg'},
       },
     },
     pairCta: {
@@ -336,6 +337,7 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
       Lite: {
         tagline: 'OpenFC Lite — the cost-down board (formerly OpenFC-ECO).',
         highlights: [['Model', 'Lite']],
+        boardArt: {src: '/boards/openfc-lite/board.svg'},
       },
       '20×20': {
         comingSoon: true,
@@ -440,6 +442,7 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
           ['Band', '2.4 GHz'],
           ['Antenna', 'Ceramic, on-board'],
         ],
+        boardArt: {src: '/boards/openrx-lite/board.svg'},
       },
       'Lite-UFL': {
         tagline: 'Same SX1281 radio, swapped to a U.FL pigtail for an external antenna.',
@@ -449,6 +452,7 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
           ['Antenna', 'U.FL × 1'],
         ],
         inTheBox: [{qty: '1×', item: 'U.FL dipole antenna'}],
+        boardArt: {src: '/boards/openrx-lite-ufl/board.svg'},
       },
       Mono: {
         tagline: 'Single LR1121 for multi-band links, with the RF front-end.',
@@ -459,6 +463,7 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
           ['Antenna', 'U.FL × 1'],
         ],
         inTheBox: [{qty: '1×', item: 'U.FL dipole antenna'}],
+        boardArt: {src: '/boards/openrx-mono/board.svg'},
       },
       Gemini: {
         tagline: 'Dual LR1121 in ExpressLRS Xrossband mode for frequency-diverse links.',
@@ -471,6 +476,7 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
         inTheBox: [
           {qty: '2×', item: 'U.FL dipole antenna', note: 'diversity pair'},
         ],
+        boardArt: {src: '/boards/openrx-gemini/board.svg'},
       },
     },
   },
