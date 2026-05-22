@@ -48,8 +48,11 @@ function classify(name: string): number {
 
 function FrameModel({src, progressRef}: {src: string; progressRef: React.RefObject<number>}) {
   const groupRef = useRef<THREE.Group>(null);
-  // Fixed three-quarter top view — no rotation interaction.
-  const rot = {x: 0.46, y: -0.55};
+  // Fixed three-quarter top view — no rotation interaction. Shift right in
+  // its own local x so the model sits off to the right; on explode the
+  // left-going arms fan back into the text.
+  const rot = {x: 0.42, y: -0.5};
+  const offsetX = 1.5;
   const parts = useRef<Part[]>([]);
 
   useEffect(() => {
@@ -143,6 +146,7 @@ function FrameModel({src, progressRef}: {src: string; progressRef: React.RefObje
         const size = box.getSize(new THREE.Vector3());
         scene.scale.setScalar(2.2 / (Math.max(size.x, size.y, size.z) || 1));
         groupRef.current.rotation.set(rot.x, rot.y, 0);
+        groupRef.current.position.x = offsetX;
         groupRef.current.add(scene);
         invalidate();
       },
@@ -214,10 +218,16 @@ export function FrameViewer({src}: FrameViewerProps) {
       raf = 0;
       const el = wrapRef.current;
       if (!el) return;
-      const section = el.closest('.chapter') ?? el;
-      const r = section.getBoundingClientRect();
+      const section = el.closest('.chapter') as HTMLElement | null;
+      const target = section ?? el;
+      const r = target.getBoundingClientRect();
       const vh = window.innerHeight || 1;
-      const p = (vh * 0.7 - r.top) / (vh * 0.62);
+      // Pinned-scroll scrub: while the (tall) chapter scrolls past its sticky
+      // frame, progress = how far its top has travelled above the viewport
+      // top, normalised by the chapter's scroll distance. Assembled on entry,
+      // fully exploded by the time the chapter is scrolling out.
+      const total = (target as HTMLElement).offsetHeight - vh;
+      const p = total > 0 ? -r.top / total : (vh * 0.6 - r.top) / (vh * 0.6);
       const clamped = Math.max(0, Math.min(1, p));
       if (Math.abs(clamped - progressRef.current) > 0.001) {
         progressRef.current = clamped;
@@ -241,9 +251,7 @@ export function FrameViewer({src}: FrameViewerProps) {
     <div ref={wrapRef} className="frame-viewer" data-loaded={mounted} aria-hidden="true">
       {mounted && onScreen ? (
         <Canvas
-          // Camera panned left of origin → the model sits right-of-centre;
-          // as it explodes, the left-going arms fan back into the text.
-          camera={{position: [-1.05, 0.1, 3.7], fov: 40}}
+          camera={{position: [0, 0.15, 4.2], fov: 38}}
           style={{background: 'transparent'}}
           frameloop="demand"
           dpr={[1, 1.75]}
