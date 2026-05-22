@@ -83,18 +83,18 @@ export async function loader({request, context}: Route.LoaderArgs) {
     ua,
   );
 
-  // Flagship line for the mobile showcase — same three the desktop hero
-  // labels point at. Catalogue changes rarely, so cache long.
+  // Flagship line for the mobile showcase. Catalogue changes rarely, so
+  // cache long.
   let featured: CollectionItemFragment[] = [];
   try {
     const data = (await context.storefront.query(HOME_FEATURED_QUERY, {
       cache: context.storefront.CacheLong(),
     })) as {
-      fc: CollectionItemFragment | null;
       frame: CollectionItemFragment | null;
-      esc: CollectionItemFragment | null;
+      stack: CollectionItemFragment | null;
+      rx: CollectionItemFragment | null;
     };
-    featured = [data.fc, data.frame, data.esc].filter(
+    featured = [data.frame, data.stack, data.rx].filter(
       (p): p is CollectionItemFragment => Boolean(p),
     );
   } catch {
@@ -615,8 +615,8 @@ function DesktopHome() {
   );
 }
 
-// Three flagship products for the mobile showcase, fetched by handle so the
-// cards mirror the desktop hero's OpenFC / OpenFrame / OpenESC labels.
+// Three flagship products for the mobile showcase, fetched by handle:
+// OpenFrame / OpenStack / OpenRX.
 const HOME_FEATURED_QUERY = `#graphql
   fragment HomeMoney on MoneyV2 {
     amount
@@ -645,13 +645,13 @@ const HOME_FEATURED_QUERY = `#graphql
   }
   query HomeFeatured($country: CountryCode, $language: LanguageCode)
   @inContext(country: $country, language: $language) {
-    fc: product(handle: "openfc") {
-      ...HomeProductCard
-    }
     frame: product(handle: "openframe") {
       ...HomeProductCard
     }
-    esc: product(handle: "openesc") {
+    stack: product(handle: "openstack") {
+      ...HomeProductCard
+    }
+    rx: product(handle: "openrx") {
       ...HomeProductCard
     }
   }
