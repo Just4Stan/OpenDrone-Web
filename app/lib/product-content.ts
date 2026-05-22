@@ -87,8 +87,10 @@ export type VariantContent = {
   tagline: string;
   /** The 3–4 cells that differ between tiers, shown in the card body. */
   highlights: Array<[string, string]>;
-  /** Spec rows specific to this tier, appended under the shared specs. */
-  specs?: Array<[string, string]>;
+  /** Per-tier spec deltas merged over the shared `specs` by row key: a
+   *  value replaces the base row, `null` hides it (a cost-down tier dropping
+   *  a sensor), and an unknown key appends. See `mergeSpecs` in the PDP. */
+  specs?: Array<[string, string | null]>;
   /** Box lines specific to this tier, appended to the shared inTheBox. */
   inTheBox?: BoxItem[];
   /** Per-tier layered board SVG (same shape as `teardown.boardArt`). When the
@@ -115,6 +117,10 @@ export type ProductContent = {
   firmware: {
     project: string;            // "AM32" / "Betaflight" / "ExpressLRS" / null
     projectUrl?: string;
+    /** Optional project wordmark shown in the "The €1" chapter media slot
+     *  (public path, e.g. `/logos/betaflight.svg`). Falls back to the
+     *  geometric placeholder glyph when unset. */
+    logo?: string;
   };
   repoUrl: string;
   teardown?: {
@@ -257,6 +263,7 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
     firmware: {
       project: 'Betaflight',
       projectUrl: 'https://github.com/betaflight/betaflight',
+      logo: '/logos/betaflight.svg',
     },
     repoUrl: 'https://github.com/incutec-hw/OpenFC',
     teardown: {
