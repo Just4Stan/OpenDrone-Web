@@ -316,6 +316,7 @@ function Chapter({
   title,
   children,
   media,
+  backdrop,
 }: {
   number: string;
   label: string;
@@ -324,9 +325,18 @@ function Chapter({
   /** Optional live media node — when omitted, the chapter renders the
    *  geometric placeholder glyph for this chapter number. */
   media?: React.ReactNode;
+  /** Optional full-bleed, non-interactive layer rendered behind the chapter
+   *  content (the exploded frame viewer). When set, the right-hand media
+   *  slot is dropped and the text sits on top of this layer. */
+  backdrop?: React.ReactNode;
 }) {
   return (
-    <section className="chapter" data-chapter={number}>
+    <section
+      className="chapter"
+      data-chapter={number}
+      data-backdrop={backdrop ? '' : undefined}
+    >
+      {backdrop ? <div className="chapter-backdrop">{backdrop}</div> : null}
       <div className="chapter-index">
         <span className="chapter-number">{number}</span>
         <span className="chapter-label">{label}</span>
@@ -335,15 +345,17 @@ function Chapter({
         <h2 className="chapter-title">{title}</h2>
         {children}
       </div>
-      <aside className="chapter-media">
-        {media ? (
-          <div className="chapter-media-frame chapter-media-frame--live">
-            {media}
-          </div>
-        ) : (
-          <ChapterMediaPlaceholder kind={number} />
-        )}
-      </aside>
+      {backdrop ? null : (
+        <aside className="chapter-media">
+          {media ? (
+            <div className="chapter-media-frame chapter-media-frame--live">
+              {media}
+            </div>
+          ) : (
+            <ChapterMediaPlaceholder kind={number} />
+          )}
+        </aside>
+      )}
     </section>
   );
 }
@@ -606,14 +618,17 @@ export default function Product() {
           number={chapterNums.teardown}
           label="Teardown"
           title={content.teardown.title}
-          media={
+          backdrop={
             frameViewer ? (
               <ClientFrameViewer
                 key={frameViewer.src}
                 src={frameViewer.src}
                 inspectUrl={frameViewer.inspectUrl}
               />
-            ) : activeBoardArt ? (
+            ) : undefined
+          }
+          media={
+            !frameViewer && activeBoardArt ? (
               <BoardArt
                 // Remount on src change so the scroll-reveal animation and
                 // Top/Bottom toggle reset cleanly when the tier swaps boards.

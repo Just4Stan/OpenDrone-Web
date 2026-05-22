@@ -6,70 +6,51 @@ import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 export type FrameViewerProps = {
   /** Public path to the GLB, e.g. /models/frame.glb */
   src: string;
-  /** Optional "inspect" deep-dive link (e.g. the public OnShape document). */
+  /** Optional "inspect" deep-dive link (kept for API parity; unused while
+   *  the viewer renders as a decorative backdrop). */
   inspectUrl?: string;
 };
 
 /**
- * Exploded-assembly viewer for the carbon frame — the CAD analogue of
- * {@link BoardArt}. Where the board art reveals the copper / mask / silk
- * *layers* of a flat PCB, the frame is a 3D assembly, so the equivalent
- * gesture is to pull the parts apart: top plate lifts, bottom plates drop,
- * arms fan out — driven by SCROLL position through the section.
+ * Exploded-assembly backdrop for the carbon frame — the CAD analogue of
+ * {@link BoardArt}. The frame is a 3D OnShape assembly, so instead of
+ * revealing flat PCB layers it pulls its parts apart as the user scrolls:
+ * top plate lifts, bottom plates drop, arms fan out.
  *
- * Parts render as vector edge outlines (a blueprint look), not solid fills.
+ * It is purely decorative and NON-interactive: a big, full-bleed layer of
+ * gold vector outlines sitting behind the teardown text, scrubbed entirely
+ * by scroll position. No drag, no auto-rotation. `frameloop="demand"` with
+ * no self-invalidation means the GPU only works while the user is actually
+ * scrolling; off-screen the canvas unmounts.
  *
- * Performance: the canvas runs `frameloop="demand"` and never invalidates
- * itself — frames are only drawn on scroll, drag, or load. No auto-rotation,
- * so the GPU goes fully idle when the user stops interacting; off-screen the
- * whole canvas unmounts.
- *
- * The frame is designed in OnShape; its glTF export keeps each component as a
- * named node ("top", "base"/"base.001", "arm"/"arm.001"…), which is what lets
- * us group and explode them. Asset hand-exported for now; an automated
- * scripts/export-frame-cad.mjs is the planned analogue of export-board-art.
+ * Parts are classified by node name ("top", "base"/"base.001",
+ * "arm"/"arm.001"…) from the OnShape glTF export. Asset hand-exported for
+ * now; scripts/export-frame-cad.mjs (OnShape translations API) is the
+ * planned analogue of scripts/export-board-art.mjs.
  */
 
-// Part groups, in callout order. `match` classifies a node by name prefix;
-// `badge` is the numeral shown on the 3D tag and in the teardown list.
 const GROUPS = [
-  {key: 'top', badge: '①', match: (n: string) => n.startsWith('top')},
-  {key: 'arm', badge: '②', match: (n: string) => n.startsWith('arm')},
-  {key: 'base', badge: '③', match: (n: string) => n.startsWith('base')},
+  {key: 'top', match: (n: string) => n.startsWith('top')},
+  {key: 'arm', match: (n: string) => n.startsWith('arm')},
+  {key: 'base', match: (n: string) => n.startsWith('base')},
 ] as const;
 
 // Explode travel as a fraction of the assembly's largest dimension.
-const PLATE_TRAVEL = 0.34;
-const ARM_TRAVEL = 0.6;
+const PLATE_TRAVEL = 0.4;
+const ARM_TRAVEL = 0.78;
 
-type Part = {
-  obj: THREE.Object3D;
-  groupIndex: number;
-  base: THREE.Vector3;
-  explode: THREE.Vector3;
-};
+type Part = {obj: THREE.Object3D; groupIndex: number; base: THREE.Vector3; explode: THREE.Vector3};
 
 function classify(name: string): number {
   const lower = name.toLowerCase();
   return GROUPS.findIndex((g) => g.match(lower));
 }
 
-function FrameModel({
-  src,
-  progressRef,
-  badgeRefs,
-}: {
-  src: string;
-  progressRef: React.RefObject<number>;
-  badgeRefs: React.MutableRefObject<Array<HTMLSpanElement | null>>;
-}) {
+function FrameModel({src, progressRef}: {src: string; progressRef: React.RefObject<number>}) {
   const groupRef = useRef<THREE.Group>(null);
-  // Resting orientation — a three-quarter top view. Adjusted only by drag.
-  const rot = useRef({x: 0.42, y: -0.5});
-  const drag = useRef({active: false, lastX: 0, lastY: 0});
+  // Fixed three-quarter top view — no rotation interaction.
+  const rot = {x: 0.46, y: -0.55};
   const parts = useRef<Part[]>([]);
-  const badgeAnchors = useRef<Array<THREE.Object3D | null>>([null, null, null]);
-  const tmp = useRef(new THREE.Vector3());
 
   useEffect(() => {
     let cancelled = false;
@@ -80,9 +61,9 @@ function FrameModel({
         if (cancelled || !groupRef.current) return;
         const scene = gltf.scene;
 
-        // Build explode vectors in RAW model space, before scaling. The
-        // model is symmetric about its origin, so raw coords share a frame
-        // with each node's local position.
+        // Explode vectors in RAW model space, before scaling (the model is
+        // symmetric about its origin, so raw coords share a frame with each
+        // node's local position).
         scene.updateMatrixWorld(true);
         const found: Part[] = [];
         scene.traverse((o) => {
@@ -120,8 +101,7 @@ function FrameModel({
             ? topC.clone().sub(baseC).normalize()
             : new THREE.Vector3(0, 1, 0);
 
-        const overall = new THREE.Box3().setFromObject(scene);
-        const span = overall.getSize(new THREE.Vector3());
+        const span = new THREE.Box3().setFromObject(scene).getSize(new THREE.Vector3());
         const unit = Math.max(span.x, span.y, span.z) || 1;
 
         for (const f of found) {
@@ -140,18 +120,11 @@ function FrameModel({
         }
         parts.current = found;
 
-        for (let gi = 0; gi < GROUPS.length; gi++) {
-          const members = found.filter((f) => f.groupIndex === gi);
-          badgeAnchors.current[gi] = members[0]?.obj ?? null;
-        }
-
-        // Render parts as vector edge outlines, not solid fills. Collect
-        // meshes first (don't mutate the tree mid-traversal), then add an
-        // EdgesGeometry line copy beside each mesh and hide the original.
+        // Vector edge outlines instead of solid fills.
         const lineMat = new THREE.LineBasicMaterial({
           color: 0xc8b27a,
           transparent: true,
-          opacity: 0.62,
+          opacity: 0.55,
         });
         const meshes: THREE.Mesh[] = [];
         scene.traverse((o) => {
@@ -159,19 +132,17 @@ function FrameModel({
           if (m.isMesh && m.geometry) meshes.push(m);
         });
         for (const m of meshes) {
-          const edges = new THREE.EdgesGeometry(m.geometry, 24);
-          const ls = new THREE.LineSegments(edges, lineMat);
+          const ls = new THREE.LineSegments(new THREE.EdgesGeometry(m.geometry, 24), lineMat);
           ls.applyMatrix4(m.matrix);
           m.parent?.add(ls);
           m.visible = false;
         }
 
         const box = new THREE.Box3().setFromObject(scene);
-        const center = box.getCenter(new THREE.Vector3());
+        scene.position.sub(box.getCenter(new THREE.Vector3()));
         const size = box.getSize(new THREE.Vector3());
-        scene.position.sub(center);
-        const maxDim = Math.max(size.x, size.y, size.z) || 1;
-        scene.scale.setScalar(2.2 / maxDim);
+        scene.scale.setScalar(2.2 / (Math.max(size.x, size.y, size.z) || 1));
+        groupRef.current.rotation.set(rot.x, rot.y, 0);
         groupRef.current.add(scene);
         invalidate();
       },
@@ -181,7 +152,6 @@ function FrameModel({
     return () => {
       cancelled = true;
       parts.current = [];
-      badgeAnchors.current = [null, null, null];
       const g = groupRef.current;
       if (!g) return;
       while (g.children.length) {
@@ -198,12 +168,8 @@ function FrameModel({
     };
   }, [src]);
 
-  // Runs only when something calls invalidate() (scroll, drag, load) — never
-  // self-schedules, so the GPU is idle between interactions.
-  useFrame((state) => {
-    const g = groupRef.current;
-    if (!g) return;
-
+  // Only runs when invalidate() is called (scroll, load) — no self-loop.
+  useFrame(() => {
     const e = THREE.MathUtils.clamp(progressRef.current ?? 0, 0, 1);
     for (const p of parts.current) {
       p.obj.position.set(
@@ -212,65 +178,16 @@ function FrameModel({
         p.base.z + p.explode.z * e,
       );
     }
-    g.rotation.x = THREE.MathUtils.clamp(rot.current.x, -0.9, 0.9);
-    g.rotation.y = rot.current.y;
-
-    const el = state.gl.domElement;
-    const w = el.clientWidth;
-    const h = el.clientHeight;
-    for (let gi = 0; gi < badgeAnchors.current.length; gi++) {
-      const span = badgeRefs.current[gi];
-      const anchor = badgeAnchors.current[gi];
-      if (!span) continue;
-      if (!anchor || e < 0.04) {
-        span.style.opacity = '0';
-        continue;
-      }
-      anchor.getWorldPosition(tmp.current);
-      tmp.current.project(state.camera);
-      const x = (tmp.current.x * 0.5 + 0.5) * w;
-      const y = (-tmp.current.y * 0.5 + 0.5) * h;
-      span.style.transform = `translate(-50%, -50%) translate(${x}px, ${y}px)`;
-      span.style.opacity = String(e);
-    }
   });
 
-  const onDown = (e: any) => {
-    drag.current.active = true;
-    drag.current.lastX = e.clientX;
-    drag.current.lastY = e.clientY;
-    (e.target as Element).setPointerCapture?.(e.pointerId);
-  };
-  const onMove = (e: any) => {
-    if (!drag.current.active) return;
-    rot.current.y += (e.clientX - drag.current.lastX) * 0.008;
-    rot.current.x += (e.clientY - drag.current.lastY) * 0.008;
-    drag.current.lastX = e.clientX;
-    drag.current.lastY = e.clientY;
-    invalidate();
-  };
-  const onUp = (e: any) => {
-    drag.current.active = false;
-    (e.target as Element).releasePointerCapture?.(e.pointerId);
-  };
-
-  return (
-    <group
-      ref={groupRef}
-      onPointerDown={onDown}
-      onPointerMove={onMove}
-      onPointerUp={onUp}
-      onPointerLeave={onUp}
-    />
-  );
+  return <group ref={groupRef} />;
 }
 
-export function FrameViewer({src, inspectUrl}: FrameViewerProps) {
+export function FrameViewer({src}: FrameViewerProps) {
   const wrapRef = useRef<HTMLDivElement | null>(null);
   const [mounted, setMounted] = useState(false);
   const [onScreen, setOnScreen] = useState(false);
   const progressRef = useRef(0);
-  const badgeRefs = useRef<Array<HTMLSpanElement | null>>([null, null, null]);
 
   useEffect(() => setMounted(true), []);
 
@@ -282,14 +199,14 @@ export function FrameViewer({src, inspectUrl}: FrameViewerProps) {
         for (const e of entries) setOnScreen(e.isIntersecting);
         invalidate();
       },
-      {rootMargin: '200px 0px', threshold: 0.01},
+      {rootMargin: '300px 0px', threshold: 0.01},
     );
     io.observe(el);
     return () => io.disconnect();
   }, [mounted]);
 
   // Scroll-scrub: scrub off the parent chapter's top edge so the frame is
-  // assembled and fully framed when it scrolls into view, then eases apart.
+  // assembled when it scrolls into view, then fans apart as the section rises.
   useEffect(() => {
     if (!mounted || !onScreen) return;
     let raf = 0;
@@ -300,7 +217,7 @@ export function FrameViewer({src, inspectUrl}: FrameViewerProps) {
       const section = el.closest('.chapter') ?? el;
       const r = section.getBoundingClientRect();
       const vh = window.innerHeight || 1;
-      const p = (vh * 0.62 - r.top) / (vh * 0.62);
+      const p = (vh * 0.7 - r.top) / (vh * 0.62);
       const clamped = Math.max(0, Math.min(1, p));
       if (Math.abs(clamped - progressRef.current) > 0.001) {
         progressRef.current = clamped;
@@ -321,55 +238,19 @@ export function FrameViewer({src, inspectUrl}: FrameViewerProps) {
   }, [mounted, onScreen]);
 
   return (
-    <div ref={wrapRef} className="frame-viewer" data-loaded={mounted}>
-      <div
-        className="frame-viewer-canvas"
-        aria-label="Interactive exploded 3D model of the carbon frame"
-        role="img"
-      >
-        {mounted && onScreen ? (
-          <Canvas
-            camera={{position: [0, 0.2, 4.3], fov: 38}}
-            style={{background: 'transparent'}}
-            frameloop="demand"
-            dpr={[1, 1.75]}
-            gl={{antialias: true, alpha: true, powerPreference: 'default'}}
-            onCreated={() => invalidate()}
-          >
-            {/* Edge-outline parts are unlit — no lights or shadows needed. */}
-            <FrameModel src={src} progressRef={progressRef} badgeRefs={badgeRefs} />
-          </Canvas>
-        ) : null}
-        {/* Numbered part tags, projected onto the model each frame. */}
-        <div className="frame-viewer-badges" aria-hidden="true">
-          {GROUPS.map((g, i) => (
-            <span
-              key={g.key}
-              className="frame-viewer-badge"
-              ref={(node) => {
-                badgeRefs.current[i] = node;
-              }}
-              style={{opacity: 0}}
-            >
-              {g.badge}
-            </span>
-          ))}
-        </div>
-      </div>
-
-      <p className="frame-viewer-hint" aria-hidden="true">
-        Scroll to explode · drag to rotate
-      </p>
-
-      {inspectUrl ? (
-        <a
-          className="board-art-inspect"
-          href={inspectUrl}
-          target="_blank"
-          rel="noopener noreferrer"
+    <div ref={wrapRef} className="frame-viewer" data-loaded={mounted} aria-hidden="true">
+      {mounted && onScreen ? (
+        <Canvas
+          camera={{position: [0, 0.1, 3.6], fov: 40}}
+          style={{background: 'transparent'}}
+          frameloop="demand"
+          dpr={[1, 1.75]}
+          gl={{antialias: true, alpha: true, powerPreference: 'default'}}
+          onCreated={() => invalidate()}
         >
-          Open in OnShape ↗
-        </a>
+          {/* Edge-outline parts are unlit — no lights or shadows needed. */}
+          <FrameModel src={src} progressRef={progressRef} />
+        </Canvas>
       ) : null}
     </div>
   );

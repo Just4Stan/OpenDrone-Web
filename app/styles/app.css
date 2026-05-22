@@ -2682,69 +2682,51 @@ button.reset {
   }
 }
 
-/* === Frame viewer — the CAD analogue of .board-art. An exploded 3D
-   assembly rendered as vector outlines that fan apart on scroll, the way
-   the board art reveals copper/mask/silk layers. Bleeds wide of the sticky
-   media column so the parts spread across the page. === */
-.frame-viewer {
+/* === Frame viewer — the CAD analogue of .board-art. A big, non-interactive
+   layer of gold vector outlines that fan apart on scroll, sitting BEHIND the
+   teardown text. The chapter goes position:relative; the backdrop is an
+   over-bleeding absolute layer; the text/cards lift above it via z-index. === */
+.chapter[data-backdrop] {
   position: relative;
-  width: 205%;
-  margin-left: -75%;
+  min-height: 78vh;
+  align-content: start;
+}
+.chapter-backdrop {
+  position: absolute;
+  /* Over-bleed beyond the section so the explode overlaps neighbouring UI. */
+  top: -6vh;
+  bottom: -6vh;
+  left: -5vw;
+  right: -3vw;
+  z-index: 0;
+  pointer-events: none; /* purely decorative — never traps scroll or clicks */
+}
+.chapter[data-backdrop] .chapter-index,
+.chapter[data-backdrop] .chapter-body-col {
+  position: relative;
+  z-index: 1; /* text/cards sit on top of the outlines */
+}
+.frame-viewer {
+  position: absolute;
+  inset: 0;
   opacity: 0;
-  transition: opacity 0.9s cubic-bezier(0.2, 0.7, 0.2, 1);
-  pointer-events: none; /* the bleed area shouldn't trap clicks on chapter text */
+  transition: opacity 1.1s cubic-bezier(0.2, 0.7, 0.2, 1);
+  pointer-events: none;
 }
 .frame-viewer[data-loaded='true'] {
   opacity: 1;
 }
-.frame-viewer-canvas {
-  position: relative;
-  width: 100%;
-  aspect-ratio: 5 / 4;
-  touch-action: none; /* let drag-to-rotate own the gesture */
-  pointer-events: auto; /* but the model itself stays draggable */
-}
-.frame-viewer-canvas canvas {
+.frame-viewer canvas {
   display: block;
 }
-/* Numbered part tags, positioned by JS each frame (transform written
-   inline) and faded in with the explosion. */
-.frame-viewer-badges {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-}
-.frame-viewer-badge {
-  position: absolute;
-  top: 0;
-  left: 0;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 1.4rem;
-  height: 1.4rem;
-  font-family: var(--font-mono);
-  font-size: 11px;
-  color: var(--color-bg);
-  background: var(--color-gold);
-  border-radius: 999px;
-  box-shadow: 0 1px 6px color-mix(in srgb, var(--color-bg) 70%, transparent);
-  will-change: transform, opacity;
-  transition: opacity 0.2s linear;
-}
-.frame-viewer-hint {
-  margin: 0.4rem 0 0;
-  font-family: var(--font-mono);
-  font-size: 9px;
-  letter-spacing: 0.22em;
-  text-transform: uppercase;
-  color: color-mix(in srgb, var(--color-text-dim) 70%, transparent);
-  pointer-events: none;
-}
 @media (max-width: 879px) {
-  .frame-viewer {
-    width: 100%;
-    margin-left: 0;
+  /* The teardown media column is hidden on mobile, so drop the backdrop and
+     its reserved height there too. */
+  .chapter[data-backdrop] {
+    min-height: 0;
+  }
+  .chapter-backdrop {
+    display: none;
   }
 }
 
