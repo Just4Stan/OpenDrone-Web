@@ -78,15 +78,34 @@ of creating a duplicate. Prints the live URL when done.
 > Settings → Apps → Develop apps → OpenDrone Infra → Configuration, then
 > reinstall the app and update `SHOPIFY_ADMIN_API_TOKEN` in `.env`.
 
-## 4. Email subscribers
+## 4. Email subscribers (manual, in Shopify)
 
-Sending is **manual, in Shopify** (deliberately — you review every send):
+**There is no auto-send.** Publishing a post does not email anyone. Sends are
+done by hand in the Shopify admin so every one is reviewed first. This is
+deliberate — no third-party email service, no webhook auto-dispatch.
+
+Subscribers come in through the site: the footer signup form (on every page)
+writes a Shopify customer with `acceptsMarketing: true`, landing them in the
+**"Subscribed"** segment. Nothing to do in this repo for that.
+
+### One-time setup — verify the sender email (before your first send)
+
+This is done entirely in Shopify + your DNS, not in this repo:
+
+1. Shopify admin → **Settings → Notifications → Sender email**.
+2. A public domain (gmail.com, etc.) can't be a branded sender — mail would go
+   out as `store+…@shopifyemail.com`. Add a custom `@opendrone.be` address
+   ("create a new one") and complete the DNS records Shopify gives you.
+3. Confirm it shows **Verified**. (As of setup it was `stan.coene@gmail.com`,
+   Unverified — replace it.)
+
+### Each post
 
 1. Shopify admin → **Marketing → Create campaign → Shopify Email**.
-2. Pick the blog-post template (auto-pulls title, hero, excerpt, link).
-3. Audience: the **Email subscribers** segment (people who opted in via the
-   site form, `acceptsMarketing: true`).
-4. Review, then **Send**. Free up to 10,000 emails/month.
+2. Pick the blog-post template (auto-pulls title, hero, excerpt, and the link
+   to `/newsletter/<slug>`).
+3. Audience: the **"Subscribed"** customer segment.
+4. Review, then **Send**. Free up to 10,000 emails/month; Shopify handles
+   delivery and unsubscribes.
 
-No third-party email service, no auto-send-on-publish. One post → one
-reviewed campaign.
+One post → one reviewed campaign.
