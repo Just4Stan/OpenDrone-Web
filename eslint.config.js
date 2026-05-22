@@ -259,7 +259,9 @@ export default [
     },
   },
   {
-    files: ['app/components/HeroScene.tsx'],
+    // react-three/fiber components use intrinsic three.js JSX elements
+    // (mesh, *Light, material…) whose props the React DOM rule flags.
+    files: ['app/components/HeroScene.tsx', 'app/components/FrameViewer.tsx'],
     rules: {
       'react/no-unknown-property': 'off',
     },

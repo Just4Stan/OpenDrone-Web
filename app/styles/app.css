@@ -2682,6 +2682,83 @@ button.reset {
   }
 }
 
+/* === Frame viewer — the CAD analogue of .board-art. An exploded 3D
+   assembly (top plate, arms, bottom plates) that pulls apart on reveal,
+   the way the board art reveals copper/mask/silk layers. Bleeds into the
+   page margin like .board-art so the model has room to spread. === */
+.frame-viewer {
+  position: relative;
+  width: 160%;
+  margin-left: -30%;
+  opacity: 0;
+  transition: opacity 0.9s cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+.frame-viewer[data-loaded='true'] {
+  opacity: 1;
+}
+.frame-viewer-canvas {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  touch-action: none; /* let the drag-to-rotate own the gesture */
+}
+.frame-viewer-canvas canvas {
+  display: block;
+}
+/* Numbered part tags, positioned by JS each frame (transform written
+   inline) and faded in with the explosion. */
+.frame-viewer-badges {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.frame-viewer-badge {
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.4rem;
+  height: 1.4rem;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--color-bg);
+  background: var(--color-gold);
+  border-radius: 999px;
+  box-shadow: 0 1px 6px color-mix(in srgb, var(--color-bg) 70%, transparent);
+  will-change: transform, opacity;
+  transition: opacity 0.2s linear;
+}
+.frame-viewer-controls {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.85rem;
+  margin-top: 0.5rem;
+}
+/* Reuse .board-art-toggle styling for the Exploded/Assembled switch;
+   here it sits inline in the controls row rather than absolutely. */
+.frame-viewer-controls .board-art-toggle {
+  position: static;
+  transform: none;
+}
+.frame-viewer-hint {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--color-text-dim) 70%, transparent);
+}
+@media (max-width: 879px) {
+  .frame-viewer {
+    width: 100%;
+    margin-left: 0;
+  }
+}
+
 .chapter-media-glyph {
   width: 38%;
   height: 38%;

@@ -292,6 +292,7 @@ function Chapter({
   title,
   children,
   media,
+  backdrop,
 }: {
   number: string;
   label: string;
@@ -300,9 +301,22 @@ function Chapter({
   /** Optional live media node — when omitted, the chapter renders the
    *  geometric placeholder glyph for this chapter number. */
   media?: React.ReactNode;
+  /** Optional full-bleed layer rendered behind the chapter content (the
+   *  exploded frame viewer). When set, the right-hand media slot is
+   *  dropped and the text/cards sit on top of this layer. */
+  backdrop?: React.ReactNode;
 }) {
   return (
-    <section className="chapter" data-chapter={number}>
+    <section
+      className="chapter"
+      data-chapter={number}
+      data-backdrop={backdrop ? '' : undefined}
+    >
+      {backdrop ? (
+        <div className="chapter-backdrop" aria-hidden="true">
+          {backdrop}
+        </div>
+      ) : null}
       <div className="chapter-index">
         <span className="chapter-number">{number}</span>
         <span className="chapter-label">{label}</span>
@@ -311,15 +325,17 @@ function Chapter({
         <h2 className="chapter-title">{title}</h2>
         {children}
       </div>
-      <aside className="chapter-media">
-        {media ? (
-          <div className="chapter-media-frame chapter-media-frame--live">
-            {media}
-          </div>
-        ) : (
-          <ChapterMediaPlaceholder kind={number} />
-        )}
-      </aside>
+      {backdrop ? null : (
+        <aside className="chapter-media">
+          {media ? (
+            <div className="chapter-media-frame chapter-media-frame--live">
+              {media}
+            </div>
+          ) : (
+            <ChapterMediaPlaceholder kind={number} />
+          )}
+        </aside>
+      )}
     </section>
   );
 }

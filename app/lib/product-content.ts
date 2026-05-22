@@ -127,6 +127,13 @@ export type ProductContent = {
      *  layers on scroll. Set `inspectUrl` to link out to KiCanvas's
      *  hosted viewer for users who want pan/zoom. */
     boardArt?: {src: string; inspectUrl?: string};
+    /** Optional exploded 3D model — the CAD analogue of `boardArt`, for
+     *  products that are an OnShape assembly rather than a KiCad board
+     *  (the frame, later motors). `src` is a public GLB whose nodes follow
+     *  the top/base/arm naming the {@link FrameViewer} explodes by; set
+     *  `inspectUrl` to the public OnShape document. When present the
+     *  teardown renders FrameViewer instead of BoardArt. */
+    frameViewer?: {src: string; inspectUrl?: string};
   };
   inTheBox: BoxItem[];          // physical items shipped
   downloads: DownloadAsset[];   // schematic PDFs, STEP files, manuals, etc.
@@ -495,6 +502,24 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
       project: '—',
     },
     repoUrl: 'https://github.com/incutec-hw',
+    // TODO(copy): placeholder teardown editorial. The exploded viewer is the
+    // CAD analogue of the boards' KiCanvas layer reveal; pin text reflects
+    // only known specs (5 mm arms, 30.5 × 30.5 pattern) — no invented
+    // material grades. inspectUrl is omitted until the OnShape doc is public.
+    teardown: {
+      title: 'It comes apart the way it goes together.',
+      body:
+        'No layered PCB here — a carbon assembly. Two plates clamp an aluminium standoff stack; four arms bolt in individually so a crash costs one arm, not a frame. Drag to rotate, or collapse it back to assembled.',
+      pins: [
+        {ref: '①', part: 'Top plate — carbon, carries the camera + VTX bay'},
+        {ref: '②', part: 'Arms — 5 mm carbon, replaced individually', cost: '×4'},
+        {ref: '③', part: 'Bottom plate — 30.5 × 30.5 stack pattern'},
+        {ref: '④', part: 'M3 aluminium standoffs + hardware kit'},
+      ],
+      frameViewer: {
+        src: '/models/frame.glb',
+      },
+    },
     inTheBox: [
       {qty: '1×', item: 'Top plate + bottom plate'},
       {qty: '4×', item: '5" arms'},
