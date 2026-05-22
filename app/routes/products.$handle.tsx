@@ -640,7 +640,9 @@ export default function Product() {
             ) : undefined
           }
         >
-          <p className="chapter-body">{content.teardown.body}</p>
+          {content.teardown.body ? (
+            <p className="chapter-body">{content.teardown.body}</p>
+          ) : null}
           <ul className="teardown-pins">
             {content.teardown.pins.map((pin) => (
               <li key={pin.ref}>

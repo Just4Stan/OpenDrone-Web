@@ -241,7 +241,9 @@ export function FrameViewer({src}: FrameViewerProps) {
     <div ref={wrapRef} className="frame-viewer" data-loaded={mounted} aria-hidden="true">
       {mounted && onScreen ? (
         <Canvas
-          camera={{position: [0, 0.1, 3.6], fov: 40}}
+          // Camera panned left of origin → the model sits right-of-centre;
+          // as it explodes, the left-going arms fan back into the text.
+          camera={{position: [-1.05, 0.1, 3.7], fov: 40}}
           style={{background: 'transparent'}}
           frameloop="demand"
           dpr={[1, 1.75]}

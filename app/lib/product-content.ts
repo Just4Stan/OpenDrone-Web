@@ -508,8 +508,7 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
     // material grades. inspectUrl omitted until the OnShape doc is public.
     teardown: {
       title: 'It comes apart the way it goes together.',
-      body:
-        'No layered PCB here — a carbon assembly. Two plates clamp an aluminium standoff stack; four arms bolt in individually so a crash costs one arm, not a frame. Scroll to pull it apart, drag to rotate.',
+      body: '',
       pins: [
         {ref: '①', part: 'Top plate — carbon, carries the camera + VTX bay'},
         {ref: '②', part: 'Arms — 5 mm carbon, replaced individually', cost: '×4'},
