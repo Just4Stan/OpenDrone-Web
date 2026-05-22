@@ -29,7 +29,7 @@
   },
   "prettier": "@shopify/prettier-config",
   "dependencies": {
-    "@react-three/fiber": "^9.6.0",
+    "@react-three/fiber": "^9.6.1",
     "@react-three/postprocessing": "^3.0.4",
     "@shopify/hydrogen": "^2026.4.1",
     "@tailwindcss/vite": "^4.2.2",
