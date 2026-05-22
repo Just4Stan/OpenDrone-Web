@@ -26,14 +26,14 @@ The token can be rotated by re-installing the app (OAuth) and updating `.env`.
 | `01-metafield-definitions.mjs` | Creates the 15 GPSR/CRA `custom.*` definitions (storefront `PUBLIC_READ`). |
 | `02-variants.mjs` | Builds the line variant axes (Mount/Model/Size), placeholder price + SKU, 100 stock. |
 | `03-metafield-values.mjs` | Populates verifiable compliance metafields (repo, security contact, model, doc URLs). |
-| `04-reviewer-code.mjs` | `node 04-reviewer-code.mjs <CODE> [percent]` — mints a reviewer attribution discount code. |
 
 All are safe to re-run.
 
 ## Attribution scheme (reviewers + YouTube)
-- **Reviewers**: one Shopify discount code each (`REVIEWER-NAME`), minted with
-  `04-reviewer-code.mjs`. The code is the attribution key — Shopify Discounts
-  reports orders + revenue per code. Tracked in Notion → *Reviewer Units*.
+Attribution is **UTM-based** for now (no discount codes).
+- **Reviewers**: tracked in Notion → *Reviewer Units*, each given a unique UTM
+  landing link. (Per-reviewer discount codes are a possible future addition but
+  are intentionally not used right now and not stored here.)
 - **Videos/content**: tag landing links `?utm_source=youtube&utm_medium=video&utm_campaign=<slug>`.
   Shopify Marketing + GA4 (if a measurement ID is added) attribute by campaign.
   Tracked in Notion → *Content / Video Calendar*.
