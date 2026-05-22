@@ -368,8 +368,11 @@ async function main() {
     tags,
     author: {name: author},
     isPublished,
-    publishDate,
   };
+  // Only send publishDate when actually publishing. Sending a past date with
+  // isPublished:false makes Shopify treat it as a scheduled time that already
+  // passed → it publishes anyway, so `--draft` would silently go live.
+  if (isPublished) article.publishDate = publishDate;
   if (fm.summary) article.summary = `<p>${escapeHtml(fm.summary)}</p>`;
   if (heroUrl) article.image = {url: heroUrl, altText: fm.imageAlt || fm.title};
 

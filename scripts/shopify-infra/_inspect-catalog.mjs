@@ -1,31 +1,39 @@
 import {admin} from './_client.mjs';
 
-const prods = await admin(`#graphql
-  { products(first: 50) { nodes {
-      title handle status productType vendor
-      tags
-      collections(first: 10) { nodes { title handle } }
-  } } }`);
+const count = await admin(`#graphql
+  { productsCount { count } }`);
+console.log(`TOTAL products (all statuses): ${count.productsCount.count}\n`);
+
+let after = null;
+let n = 0;
 console.log('=== PRODUCTS ===');
-for (const p of prods.products.nodes) {
-  console.log(
-    `${p.handle.padEnd(12)} | type="${p.productType || '–'}" | collections=[${p.collections.nodes
-      .map((c) => c.handle)
-      .join(', ')}] | tags=[${(p.tags || []).join(', ')}]`,
+do {
+  const d = await admin(
+    `#graphql
+    query P($after: String) {
+      products(first: 100, after: $after, sortKey: TITLE) {
+        nodes {
+          title handle status productType vendor
+          tags
+          collections(first: 10) { nodes { handle } }
+        }
+        pageInfo { hasNextPage endCursor }
+      }
+    }`,
+    {after},
   );
-}
+  for (const p of d.products.nodes) {
+    n++;
+    console.log(
+      `${String(n).padStart(2)}. ${p.handle.padEnd(18)} [${p.status}] type="${p.productType || '–'}" coll=[${p.collections.nodes.map((c) => c.handle).join(', ')}] tags=[${(p.tags || []).join(', ')}]`,
+    );
+  }
+  after = d.products.pageInfo.hasNextPage ? d.products.pageInfo.endCursor : null;
+} while (after);
 
 const colls = await admin(`#graphql
-  { collections(first: 50) { nodes {
-      title handle id
-      ruleSet { appliedDisjunctively rules { column relation condition } }
-      productsCount { count }
-  } } }`);
+  { collections(first: 100) { nodes { title handle ruleSet { rules { column relation condition } } productsCount { count } } } }`);
 console.log('\n=== COLLECTIONS ===');
 for (const c of colls.collections.nodes) {
-  const kind = c.ruleSet ? 'SMART' : 'manual';
-  console.log(`${c.handle.padEnd(16)} | "${c.title}" | ${kind} | ${c.productsCount.count} products`);
-  if (c.ruleSet) {
-    for (const r of c.ruleSet.rules) console.log(`     rule: ${r.column} ${r.relation} "${r.condition}"`);
-  }
+  console.log(`${c.handle.padEnd(18)} "${c.title}" ${c.ruleSet ? 'SMART' : 'manual'} ${c.productsCount.count}p`);
 }
