@@ -927,6 +927,156 @@ html.splash-settled .homepage-layout .site-header {
   line-height: 1.4;
 }
 
+/* Model chips — surfaces a product line's variants (the Model axis) under
+   the browse card. The card chrome/hover stays on .product-card; the tile
+   body becomes .product-card-link and each model is a sibling link so we
+   don't nest anchors. Real models deep-link to the PDP with the model
+   preselected; coming-soon models render greyed and non-interactive. */
+.product-card-link {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  color: inherit;
+  text-decoration: none;
+}
+
+.product-card-models {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+  padding: var(--sp-3) var(--sp-4) var(--sp-4);
+  border-top: 1px solid var(--color-border);
+}
+
+.product-card-model {
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  letter-spacing: 0.02em;
+  color: var(--color-text-muted);
+  background: var(--color-bg-elevated);
+  border: 1px solid var(--color-border);
+  border-radius: var(--r-sm);
+  padding: 0.2rem 0.5rem;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: color 0.15s ease, border-color 0.15s ease;
+}
+
+a.product-card-model:hover {
+  color: var(--color-gold);
+  border-color: var(--color-border-strong);
+}
+
+.product-card-model.is-comingsoon {
+  color: var(--color-text-dim);
+  opacity: 0.6;
+  cursor: default;
+}
+
+/* Feature card — wide horizontal layout for a single-product category row
+   (browse page). Image left, editorial copy + model chips right, so the
+   flagship fills the rail instead of leaving one capped card with a big
+   empty band beside it. Collapses to a stacked card on narrow screens. */
+.product-feature {
+  display: grid;
+  grid-template-columns: minmax(0, 340px) 1fr;
+  align-items: stretch;
+  min-height: 260px;
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--r-md);
+  overflow: hidden;
+  transition: border-color 0.2s ease;
+}
+
+.product-feature:hover {
+  border-color: var(--color-border-strong);
+}
+
+.product-feature-media {
+  display: block;
+  position: relative;
+  overflow: hidden;
+  background: var(--color-bg-elevated);
+}
+
+.product-feature-media img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.5s cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+.product-feature:hover .product-feature-media img {
+  transform: scale(1.03);
+}
+
+.product-feature-body {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: var(--sp-3);
+  padding: var(--sp-5);
+}
+
+.product-feature-headline {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  color: inherit;
+  text-decoration: none;
+}
+
+.product-feature-headline .product-card-title {
+  font-size: var(--fs-lg);
+}
+
+/* Keep the price beside the title rather than flung to the far edge — the
+   feature row is much wider than a normal card, so space-between would
+   strand it. */
+.product-feature-headline .product-card-row {
+  justify-content: flex-start;
+  align-items: baseline;
+  gap: var(--sp-4);
+}
+
+.product-feature:hover .product-card-title {
+  color: var(--color-gold);
+}
+
+.product-feature-lead {
+  font-family: var(--font-mono);
+  font-size: var(--fs-sm);
+  line-height: 1.6;
+  color: var(--color-text-muted);
+  margin: 0;
+  max-width: 64ch;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* Inside the feature body the chips sit inline, not as a bordered footer. */
+.product-feature .product-card-models {
+  padding: 0;
+  border-top: 0;
+  margin-top: var(--sp-2);
+}
+
+@media (max-width: 64em) {
+  .product-feature {
+    grid-template-columns: 1fr;
+    min-height: 0;
+  }
+  .product-feature-media {
+    aspect-ratio: 16 / 10;
+  }
+  .product-feature-body {
+    padding: var(--sp-4);
+  }
+}
+
 /* ============================================
    Aside (cart / search drawer)
    ============================================ */
