@@ -214,11 +214,11 @@ function buildPreheader(article) {
   return text.slice(0, 140);
 }
 
-async function render({blog, article}) {
+async function render({article}) {
   const templatePath = path.join(__dirname, 'newsletter-template.html');
   let html = await fs.readFile(templatePath, 'utf8');
 
-  const articleUrl = `${SITE_ORIGIN}/blogs/${blog.handle}/${article.handle}`;
+  const articleUrl = `${SITE_ORIGIN}/blog/${article.handle}`;
   const replacements = {
     SUBJECT: article.title,
     PREHEADER: buildPreheader(article),
@@ -244,9 +244,9 @@ async function main() {
   console.log(
     `\n[compose-newsletter] Fetching ${blogHandle}/${articleHandle}…`,
   );
-  const {blog, article} = await fetchArticle({blogHandle, articleHandle});
+  const {article} = await fetchArticle({blogHandle, articleHandle});
 
-  const {html, articleUrl} = await render({blog, article});
+  const {html, articleUrl} = await render({article});
 
   const outDir = path.join(__dirname, 'out');
   await fs.mkdir(outDir, {recursive: true});

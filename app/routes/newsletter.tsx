@@ -1,21 +1,16 @@
-import {data, redirect} from 'react-router';
+import {data, useLoaderData} from 'react-router';
 import type {Route} from './+types/newsletter';
 import {checkRateLimit, clientIp} from '~/lib/rate-limit';
 import {verifyTurnstile} from '~/lib/support/turnstile';
+import {buildSeoMeta} from '~/lib/seo';
+import {NewsletterSignup} from '~/components/NewsletterSignup';
 
-// Direct GET visits land on /releases where the signup form lives.
-// Without this loader the route 404s on GET because Hydrogen treats
-// action-only routes as POST-only.
-export function loader() {
-  return redirect('/releases#subscribe');
-}
-
-// Engineering Essentials — newsletter signup handler.
+// Engineering Essentials — newsletter landing page + signup handler.
 //
-// Writes subscribers into Shopify's customer list with marketing consent so
-// Stan can compose product-release emails from Shopify admin (Marketing →
-// Shopify Email) and target the "Subscribed" customer segment. No custom
-// email sender, no third-party ESP.
+// GET  → renders the opt-in page (below) with recent posts from the blog.
+// POST → enrols the email into Shopify's customer list with marketing
+//        consent so releases/build-note emails can be sent from Shopify
+//        admin (Marketing → Shopify Email) to the "Subscribed" segment.
 //
 // Implementation: Storefront API `customerCreate` mutation. Uses the same
 // `PRIVATE_STOREFRONT_API_TOKEN` the rest of the Hydrogen app already uses,
@@ -32,6 +27,111 @@ export function loader() {
 // in favour of the Customer Account API, but no sunset date is published.
 // When deprecation bites, swap to a dedicated ESP (Klaviyo, Beehiiv) — at
 // that volume the migration is worth it anyway.
+
+export const meta: Route.MetaFunction = () =>
+  buildSeoMeta({
+    title: 'Newsletter',
+    description:
+      'Engineering Essentials — build notes, hardware releases, and write-ups from OpenDrone. One email per post, unsubscribe in one click.',
+  });
+
+const NEWSLETTER_POSTS_QUERY = `#graphql
+  query NewsletterRecentPosts(
+    $language: LanguageCode
+    $blogHandle: String!
+    $first: Int!
+  ) @inContext(language: $language) {
+    blog(handle: $blogHandle) {
+      articles(first: $first, sortKey: PUBLISHED_AT, reverse: true) {
+        nodes {
+          handle
+          title
+          publishedAt
+          excerpt
+        }
+      }
+    }
+  }
+` as const;
+
+export async function loader({context}: Route.LoaderArgs) {
+  const blogHandle = context.env.NEWSLETTER_BLOG_HANDLE || 'news';
+  let posts: Array<{
+    handle: string;
+    title: string;
+    publishedAt: string;
+    excerpt: string | null;
+  }> = [];
+  try {
+    const {blog} = await context.storefront.query(NEWSLETTER_POSTS_QUERY, {
+      variables: {blogHandle, first: 4},
+    });
+    posts = (blog?.articles?.nodes ?? []).map((n: any) => ({
+      handle: n.handle,
+      title: n.title,
+      publishedAt: n.publishedAt,
+      excerpt: n.excerpt ?? null,
+    }));
+  } catch {
+    posts = [];
+  }
+  return {
+    posts,
+    turnstileSiteKey: context.env.TURNSTILE_SITE_KEY ?? null,
+  };
+}
+
+function formatDate(iso: string): string {
+  try {
+    return new Intl.DateTimeFormat('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+    }).format(new Date(iso));
+  } catch {
+    return '';
+  }
+}
+
+export default function NewsletterPage() {
+  const {posts, turnstileSiteKey} = useLoaderData<typeof loader>();
+  return (
+    <div className="page-shell newsletter-page">
+      <header className="page-header">
+        <p className="page-eyebrow">Newsletter · Engineering Essentials</p>
+        <h1 className="page-title">Build notes, in your inbox.</h1>
+        <p className="page-description">
+          Hardware releases, firmware tuning, and engineering write-ups from
+          OpenDrone. Sent only when there&rsquo;s a new post — no schedule, no
+          marketing fluff. One email per post, unsubscribe in one click.
+        </p>
+      </header>
+
+      <NewsletterSignup variant="wide" turnstileSiteKey={turnstileSiteKey} />
+
+      {posts.length > 0 ? (
+        <section className="newsletter-recent" aria-label="Recent posts">
+          <div className="newsletter-recent-head">
+            <h2>Recent posts</h2>
+            <a href="/blog">All posts →</a>
+          </div>
+          <ul className="newsletter-recent-list">
+            {posts.map((p) => (
+              <li key={p.handle}>
+                <a href={`/blog/${p.handle}`}>
+                  <span className="newsletter-recent-date">
+                    {formatDate(p.publishedAt)}
+                  </span>
+                  <span className="newsletter-recent-title">{p.title}</span>
+                </a>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
+    </div>
+  );
+}
 
 const CUSTOMER_CREATE_MUTATION = `#graphql
   mutation NewsletterCustomerCreate($input: CustomerCreateInput!) {
@@ -195,4 +295,3 @@ export async function action({request, context}: Route.ActionArgs) {
     );
   }
 }
-

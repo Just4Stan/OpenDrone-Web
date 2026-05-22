@@ -23,6 +23,7 @@
     "codegen": "shopify hydrogen codegen && react-router typegen",
     "sync:legal": "node scripts/sync-legal.mjs",
     "compose:newsletter": "node scripts/compose-newsletter.mjs",
+    "publish:post": "node scripts/publish-post.mjs",
     "gen:shopify-templates": "node scripts/shopify-templates/gen.mjs",
     "gen:board-art": "node scripts/export-board-art.mjs --all"
   },
@@ -72,6 +73,7 @@
     "fontkit": "^2.0.4",
     "globals": "^15.14.0",
     "graphql-config": "^5.0.3",
+    "marked": "^18.0.4",
     "prettier": "^3.4.2",
     "typescript": "^5.9.2",
     "vite": "^6.2.4",

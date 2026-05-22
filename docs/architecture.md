@@ -17,10 +17,10 @@ app/
   components/                       shared React components
   content/legal/{en,nl,fr}/         legal markdown snapshots (sync:legal target)
   graphql/customer-account/         Customer Account API queries
-  lib/                              i18n, SEO, company, support bridge, newsletter, fragments
+  lib/                              i18n, SEO, company, support bridge, fragments
   styles/app.css                    single Tailwind v4 + custom CSS file (~8600 lines)
 public/                             static assets, GLB models, self-hosted fonts, wordmark, board-art SVGs
-scripts/                            sync-legal, compose-newsletter, smoke, board-art export, wordmark gen, shopify-templates/gen
+scripts/                            sync-legal, publish-post, compose-newsletter, smoke, board-art export, wordmark gen, shopify-templates/gen
 .github/workflows/                  ci.yml, oxygen-deployment-*.yml, support-cleanup.yml
 ```
 
@@ -37,7 +37,7 @@ scripts/                            sync-legal, compose-newsletter, smoke, board
 - `cart.tsx`, `cart.$lines.tsx` — Hydrogen cart actions, country forced to BE
 - `search.tsx` — site search with Aside drawer + predictive results
 - `contact.tsx` — Discord widget iframe + ticket intake CTA + direct contact
-- `firmware-partners.tsx`, `open-source.tsx`, `releases._index.tsx`, `releases.$handle.tsx`
+- `firmware-partners.tsx`, `open-source.tsx`, `blog._index.tsx`, `blog.$handle.tsx`
 
 **Customer account** (signed-in)
 - `account.tsx` — layout
@@ -57,16 +57,15 @@ scripts/                            sync-legal, compose-newsletter, smoke, board
 - `algemene-voorwaarden.tsx`, `privacy.tsx`, `cookies.tsx`, `cookie-settings.tsx`, `herroepingsrecht.tsx`, `shipping.tsx`, `warranty.tsx`, `security.tsx`, `export-compliance.tsx`, `end-use.tsx`, `terms.tsx`, `legal.tsx` — each served at `/<slug>` (locale-cookie redirect) and `/{en,nl,fr}/<slug>` (canonical)
 
 **Newsletter / blog**
-- `newsletter.tsx` — opt-in form (writes to Shopify customer list with `acceptsMarketing=true`)
-- `newsletter_.unsubscribed.tsx` — confirmation page
-- `api.newsletter.dispatch.tsx` — Shopify webhook receiver + manual bearer trigger
-- `api.newsletter.unsubscribe.tsx` — token-verified unsubscribe action
-- `blogs._index.tsx`, `blogs.$blogHandle._index.tsx`, `blogs.$blogHandle.$articleHandle.tsx`
+- `newsletter.tsx` — opt-in landing page (loader) + signup handler (action: writes to Shopify customer list with `acceptsMarketing=true`, `newsletter` tag)
+- `blog._index.tsx` — single consolidated blog archive (reads the Shopify `news` blog), tag filter, year grouping, RSS auto-discovery
+- `blog.$handle.tsx` — individual post (prev/next, optional version chip, subscribe CTA)
+- `releases._index.tsx`, `releases.$handle.tsx`, `[releases.rss].tsx`, `blogs._index.tsx`, `blogs.$blogHandle._index.tsx`, `blogs.$blogHandle.$articleHandle.tsx` — 301 redirect stubs into `/blog` (old URLs)
 
 **Misc / infra**
 - `healthz.tsx` — uptime probe
 - `[robots.txt].tsx`, `[sitemap.xml].tsx`, `sitemap.$type.$page[.xml].tsx`
-- `[releases.rss].tsx` — RSS 2.0 feed of release-note articles
+- `[blog.rss].tsx` — RSS 2.0 feed of blog articles (old `/releases.rss` redirects here)
 - `[.well-known].security[.txt].tsx` — RFC 9116 contact record
 - `api.$version.[graphql.json].tsx` — Hydrogen storefront API proxy
 - `discount.$code.tsx` — discount-code apply + redirect
@@ -124,13 +123,13 @@ Five staged moderation/AI layers, each toggleable via env:
 
 ### Newsletter
 
-Two-flow system. Subscribers come in via the `/newsletter` form, which calls Storefront API `customerCreate` with `acceptsMarketing=true` and tag `newsletter` (and re-uses `customerUpdate` for existing emails). Content lives as blog articles in Shopify admin and renders at `/blogs/<blog>/<article>`. Outbound email is rendered offline by `npm run compose:newsletter <handle>` into `scripts/out/newsletter-<handle>.html` for paste into Shopify Email Custom HTML.
+Single, manual flow — no third-party ESP, no auto-dispatch. Three parts:
 
-`api.newsletter.dispatch.tsx` is the auto-send path:
-- **Webhook mode** — Shopify `articles/update` topic, HMAC-verified against `SHOPIFY_WEBHOOK_SECRET`, article id read from JSON `admin_graphql_api_id`.
-- **Manual mode** — bearer-authed (`NEWSLETTER_DISPATCH_SECRET`) with `?article=<gid>&force=1`.
+1. **Subscribe** — the `/newsletter` page (and footer `NewsletterSignup`) POST to the `newsletter.tsx` action, which calls Storefront API `customerCreate` with `acceptsMarketing=true` and tag `newsletter`. Abuse controls: honeypot + Cloudflare Turnstile + per-IP/per-email rate limits. `/newsletter` GET renders an opt-in landing page with recent posts.
+2. **Author** — posts are written locally as Markdown in `content/posts/` and pushed to the Shopify `news` blog with `npm run publish:post -- content/posts/<slug>.md` (Admin API `articleCreate`/`articleUpdate` + Files upload for images). Idempotent by slug. They render at `/blog/<slug>`. See `content/posts/README.md`.
+3. **Send** — done by hand in Shopify admin: Marketing → Shopify Email → blog-post template → "Subscribed" segment → Send (free to 10k emails/mo). Shopify owns delivery and unsubscribes. `npm run compose:newsletter <handle>` is an optional helper that renders a branded custom-HTML email from a published article.
 
-Long sends move into `waitUntil` so Shopify gets a 200 inside its 5-second window. KV-backed dedup via `NEWSLETTER_DISPATCH_KV` (optional binding) prevents double-sends across webhook retries; the metafield write inside `dispatchArticle()` makes redelivery a no-op even without KV. Unsubscribe via `api.newsletter.unsubscribe.tsx` uses HMAC-signed tokens (`unsubscribe-token.ts`).
+> A prior AI-scaffolded Resend auto-dispatcher (`app/lib/newsletter/*`, `api.newsletter.dispatch/unsubscribe`) was removed in favour of this manual flow. It's recoverable from git history if auto-send is ever wanted.
 
 ### Legal / i18n
 
@@ -142,9 +141,9 @@ Slugs (in `app/lib/legal-slugs.ts`): `algemene-voorwaarden`, `privacy`, `cookies
 
 Markdown lives under `app/content/legal/{en,nl,fr}/`. NL snapshot is overwritten by `npm run sync:legal` from the iCloud compliance workstream (`COMPLIANCE_SRC` env override; sync no-ops when path unreachable). EN + FR are hand-authored in-repo.
 
-### Releases / RSS
+### Blog / RSS
 
-`/releases` lists release-note articles; individual notes at `/releases/$handle`. `[releases.rss].tsx` exposes RSS 2.0 with `lastBuildDate`, `atom:self`, item per article. Discoverable from `/releases` via `<link rel="alternate">`. Cache-Control: 10 min on the edge.
+`/blog` is the single consolidated archive (reads the Shopify `news` blog), with year grouping and a tag filter; posts render at `/blog/$handle`. `[blog.rss].tsx` exposes RSS 2.0 with `lastBuildDate`, `atom:self`, item per article, discoverable from `/blog` via `<link rel="alternate">`, Cache-Control 10 min on the edge. The old `/releases*` and `/blogs*` URLs 301-redirect into `/blog`.
 
 ### Static / SEO
 

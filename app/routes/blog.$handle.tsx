@@ -1,5 +1,5 @@
 import {Link, useLoaderData} from 'react-router';
-import type {Route} from './+types/releases.$handle';
+import type {Route} from './+types/blog.$handle';
 import {Image} from '@shopify/hydrogen';
 import {redirectIfHandleIsLocalized} from '~/lib/redirect';
 import {buildSeoMeta} from '~/lib/seo';
@@ -8,11 +8,11 @@ import {VersionChip, pickVersionTag} from '~/components/release-notes/VersionChi
 import {PrevNextNav} from '~/components/release-notes/PrevNextNav';
 import {FILTER_TAGS, type FilterTag} from '~/components/release-notes/TagFilter';
 
-const RELEASES_BLOG_FALLBACK = 'releases';
+const BLOG_HANDLE_FALLBACK = 'news';
 
 export const meta: Route.MetaFunction = ({data}) =>
   buildSeoMeta({
-    title: data?.article?.seo?.title || data?.article?.title || 'Release',
+    title: data?.article?.seo?.title || data?.article?.title || 'Post',
     description:
       data?.article?.seo?.description ||
       data?.article?.excerpt ||
@@ -33,7 +33,7 @@ function pickFilterTag(tags: readonly string[]): FilterTag | null {
 
 export async function loader({context, request, params}: Route.LoaderArgs) {
   const blogHandle =
-    context.env.NEWSLETTER_BLOG_HANDLE || RELEASES_BLOG_FALLBACK;
+    context.env.NEWSLETTER_BLOG_HANDLE || BLOG_HANDLE_FALLBACK;
   const articleHandle = params.handle;
   if (!articleHandle) throw new Response('Not found', {status: 404});
 
@@ -87,7 +87,7 @@ export default function ReleaseDetail() {
     <article className="page-shell">
       <div className="rn-post-page">
         <div className="rn-post-crumb">
-          <Link to="/releases">Releases</Link>
+          <Link to="/blog">Journal</Link>
           <span className="rn-sep">/</span>
           <span>{article.handle}</span>
         </div>
@@ -133,7 +133,7 @@ export default function ReleaseDetail() {
           <div className="rn-ps-text">
             <h4>Get the next one in your inbox.</h4>
             <p>
-              One email per release. No drip campaigns. Unsubscribe in one click.
+              One email per post. No drip campaigns. Unsubscribe in one click.
             </p>
           </div>
           <div style={{flex: '1 1 320px', minWidth: 0}}>

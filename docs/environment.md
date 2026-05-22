@@ -41,12 +41,15 @@ All optional; the bridge degrades gracefully when unset.
 
 - `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN`
 
-## Newsletter dispatch
+## Blog / newsletter
 
-- `SHOPIFY_WEBHOOK_SECRET` — HMAC verifier
-- `NEWSLETTER_DISPATCH_SECRET` — bearer for manual trigger (also signs unsubscribe tokens)
-- `NEWSLETTER_DISPATCH_KV` — optional Cloudflare KV binding for retry dedup (declared in the Oxygen/wrangler env, not `.env`)
-- `NEWSLETTER_BLOG_HANDLE` — defaults to `releases`
+- `NEWSLETTER_BLOG_HANDLE` — Shopify blog the `/blog` feed + RSS read from; defaults to `news`
+- Sends are manual via Shopify admin (Shopify Email → "Subscribed" segment); no dispatch secrets or ESP keys needed
+
+## Blog publisher (`scripts/publish-post.mjs`, reads `.env` directly)
+
+- `SHOPIFY_ADMIN_API_TOKEN` — "OpenDrone Infra" custom app; needs `read_content` + `write_content` + `write_files`
+- `SHOPIFY_ADMIN_API_VERSION` — defaults to `2026-01`
 
 ## Ops
 

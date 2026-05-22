@@ -1,5 +1,5 @@
 import {useLoaderData} from 'react-router';
-import type {Route} from './+types/releases._index';
+import type {Route} from './+types/blog._index';
 import {buildSeoMeta} from '~/lib/seo';
 import {NewsletterSignup} from '~/components/NewsletterSignup';
 import {ReleaseRow, type ReleaseRowArticle} from '~/components/release-notes/ReleaseRow';
@@ -9,13 +9,13 @@ import {
   type FilterTag,
 } from '~/components/release-notes/TagFilter';
 
-const RELEASES_BLOG_FALLBACK = 'releases';
+const BLOG_HANDLE_FALLBACK = 'news';
 
 export const meta: Route.MetaFunction = ({data}) => {
   const base = buildSeoMeta({
-    title: 'Release notes',
+    title: 'Journal',
     description:
-      'Hardware releases, firmware drops, and milestone updates from OpenDrone.',
+      'Build notes, hardware releases, and engineering write-ups from OpenDrone.',
   });
   return [
     ...base,
@@ -24,15 +24,15 @@ export const meta: Route.MetaFunction = ({data}) => {
       tagName: 'link',
       rel: 'alternate',
       type: 'application/rss+xml',
-      title: 'OpenDrone — Release notes',
-      href: '/releases.rss',
+      title: 'OpenDrone — Journal',
+      href: '/blog.rss',
     },
   ];
 };
 
 export async function loader({context, request}: Route.LoaderArgs) {
   const blogHandle =
-    context.env.NEWSLETTER_BLOG_HANDLE || RELEASES_BLOG_FALLBACK;
+    context.env.NEWSLETTER_BLOG_HANDLE || BLOG_HANDLE_FALLBACK;
 
   const url = new URL(request.url);
   const tagParam = url.searchParams.get('tag')?.toLowerCase() ?? null;
@@ -106,17 +106,18 @@ export default function ReleasesIndex() {
       <header className="rn-archive-head">
         <div>
           <p className="rn-eyebrow">
-            <span>Blog · Releases</span>
-            <a href="/releases.rss" className="rn-rss" rel="alternate">
-              ⌁ RSS · /releases.rss
+            <span>Journal</span>
+            <a href="/blog.rss" className="rn-rss" rel="alternate">
+              ⌁ RSS · /blog.rss
             </a>
           </p>
           <h1>
-            Release <em>notes</em>.
+            Build <em>notes</em>.
           </h1>
           <p className="rn-sub">
-            Product releases, build notes, firmware tuning. Posted only when
-            there&apos;s something to ship — no schedule, no marketing.
+            Hardware releases, firmware tuning, and engineering write-ups.
+            Posted when there&apos;s something worth sharing — no schedule, no
+            marketing.
           </p>
         </div>
         <a className="rn-sub-cta-link" href="#subscribe">
@@ -136,7 +137,7 @@ export default function ReleasesIndex() {
                 <span className="rn-year-n">{year}</span>
                 <span className="rn-year-rule" aria-hidden />
                 <span className="rn-year-count">
-                  {articles.length} release{articles.length === 1 ? '' : 's'}
+                  {articles.length} post{articles.length === 1 ? '' : 's'}
                 </span>
               </div>
               <ol className="rn-list">
@@ -152,11 +153,11 @@ export default function ReleasesIndex() {
           <div className="rn-empty-icon" aria-hidden>
             ·
           </div>
-          <h3>{activeTag ? `Nothing tagged ${activeTag} yet.` : 'No releases yet.'}</h3>
+          <h3>{activeTag ? `Nothing tagged ${activeTag} yet.` : 'No posts yet.'}</h3>
           <p>
             {activeTag
               ? 'Try another tag, or'
-              : 'First drop coming soon. Subscribe below to hear about it before it’s public.'}
+              : 'First post coming soon. Subscribe below to get it in your inbox.'}
           </p>
           {activeTag ? (
             <a className="rn-sub-cta-link" href="?">

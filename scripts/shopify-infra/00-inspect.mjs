@@ -3,7 +3,7 @@
  * catalog (products, options, variants) + product metafield definitions so we
  * know the starting state before mutating anything. Safe to run anytime.
  */
-import {admin, SHOP, VERSION} from './_client.mjs';
+import {admin, VERSION} from './_client.mjs';
 
 const data = await admin(`#graphql
   query Inspect {

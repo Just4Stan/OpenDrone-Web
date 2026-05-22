@@ -13,7 +13,8 @@ Scripts, tests, CI, and how the site ships.
 | `npm run typecheck` | React Router typegen + `tsc --noEmit` |
 | `npm run codegen` | Regenerate Storefront + Customer Account types |
 | `npm run sync:legal` | Refresh NL legal markdown from `COMPLIANCE_SRC` |
-| `npm run compose:newsletter <handle>` | Render a newsletter email from a blog article |
+| `npm run publish:post -- content/posts/<slug>.md` | Publish a local Markdown post to the Shopify blog (`--dry` to preview, `--draft` to stage). See `content/posts/README.md` |
+| `npm run compose:newsletter <handle>` | Optional: render a branded custom-HTML email from a published blog article (for Shopify Email Custom HTML) |
 | `npm run gen:shopify-templates` | Generate Shopify admin notification templates from `scripts/shopify-templates/` |
 | `npm run gen:board-art` | Export every board in `scripts/boards.config.json` to `public/boards/<handle>/board.svg` (needs KiCad CLI + `pcbnew`) |
 

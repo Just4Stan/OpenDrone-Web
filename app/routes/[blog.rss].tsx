@@ -1,12 +1,12 @@
-import type {Route} from './+types/[releases.rss]';
+import type {Route} from './+types/[blog.rss]';
 
-const RELEASES_BLOG_FALLBACK = 'releases';
+const BLOG_HANDLE_FALLBACK = 'news';
 const FEED_LIMIT = 50;
 
 /**
- * RSS 2.0 feed of release-note articles.
+ * RSS 2.0 feed of blog articles.
  *
- * Pulled by feed readers and surfaced from /releases via the
+ * Pulled by feed readers and surfaced from /blog via the
  * <link rel="alternate"> auto-discovery tag in the route's meta.
  *
  * Cache-Control: 10 min on the edge — we publish at most a few times
@@ -15,7 +15,7 @@ const FEED_LIMIT = 50;
  */
 export async function loader({context, request}: Route.LoaderArgs) {
   const blogHandle =
-    context.env.NEWSLETTER_BLOG_HANDLE || RELEASES_BLOG_FALLBACK;
+    context.env.NEWSLETTER_BLOG_HANDLE || BLOG_HANDLE_FALLBACK;
   const origin = new URL(request.url).origin;
 
   let articles: Array<{
@@ -70,7 +70,7 @@ function renderFeed({
     : new Date().toUTCString();
   const items = articles
     .map((a) => {
-      const link = `${origin}/releases/${a.handle}`;
+      const link = `${origin}/blog/${a.handle}`;
       const pubDate = new Date(a.publishedAt).toUTCString();
       const description = a.excerpt
         ? esc(a.excerpt)
@@ -90,10 +90,10 @@ function renderFeed({
   return `<?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
-    <title>OpenDrone — Release notes</title>
-    <link>${esc(origin)}/releases</link>
-    <atom:link href="${esc(origin)}/releases.rss" rel="self" type="application/rss+xml" />
-    <description>Hardware releases, firmware drops, and milestone updates from OpenDrone.</description>
+    <title>OpenDrone — Journal</title>
+    <link>${esc(origin)}/blog</link>
+    <atom:link href="${esc(origin)}/blog.rss" rel="self" type="application/rss+xml" />
+    <description>Build notes, hardware releases, and engineering write-ups from OpenDrone.</description>
     <language>en</language>
     <lastBuildDate>${lastBuild}</lastBuildDate>
 ${items}
