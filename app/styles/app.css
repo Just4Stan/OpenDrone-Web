@@ -7497,8 +7497,8 @@ button.reset {
 .rn-archive-head h1 {
   font-family: var(--font-display);
   font-weight: 600;
-  font-size: clamp(40px, 5.4vw, 72px);
-  line-height: 0.95;
+  font-size: clamp(30px, 4vw, 48px);
+  line-height: 1;
   letter-spacing: -0.02em;
   margin: 0 0 14px;
 }

@@ -7,11 +7,6 @@ import {
   ReleaseRow,
   type ReleaseRowArticle,
 } from '~/components/release-notes/ReleaseRow';
-import {
-  TagFilter,
-  FILTER_TAGS,
-  type FilterTag,
-} from '~/components/release-notes/TagFilter';
 
 // Newsletter — the single hub. It's all newsletter: posts written locally and
 // published to the Shopify `news` blog show up here as the newsletter archive,
@@ -50,15 +45,8 @@ export const meta: Route.MetaFunction = () => {
   ];
 };
 
-export async function loader({context, request}: Route.LoaderArgs) {
+export async function loader({context}: Route.LoaderArgs) {
   const blogHandle = context.env.NEWSLETTER_BLOG_HANDLE || BLOG_HANDLE_FALLBACK;
-
-  const url = new URL(request.url);
-  const tagParam = url.searchParams.get('tag')?.toLowerCase() ?? null;
-  const activeTag: FilterTag | null =
-    tagParam && (FILTER_TAGS as readonly string[]).includes(tagParam)
-      ? (tagParam as FilterTag)
-      : null;
 
   const {blog} = await context.storefront.query(ARCHIVE_QUERY, {
     variables: {blogHandle, first: 100},
@@ -79,38 +67,19 @@ export async function loader({context, request}: Route.LoaderArgs) {
   // `no-archive` tag keeps a post out of the public list (rare).
   const visible = all.filter((a) => !a.tags.includes('no-archive'));
 
-  const counts: Record<string, number> = {};
-  for (const a of visible) {
-    for (const t of a.tags) {
-      const lower = t.toLowerCase();
-      if ((FILTER_TAGS as readonly string[]).includes(lower)) {
-        counts[lower] = (counts[lower] ?? 0) + 1;
-      }
-    }
-  }
-
-  const filtered = activeTag
-    ? visible.filter((a) => a.tags.some((t) => t.toLowerCase() === activeTag))
-    : visible;
-
   // Group by year, descending — articles already reverse-chronological.
   const grouped = new Map<string, ReleaseRowArticle[]>();
-  for (const a of filtered) {
+  for (const a of visible) {
     const year = a.publishedAt.slice(0, 4);
     if (!grouped.has(year)) grouped.set(year, []);
     grouped.get(year)!.push(a);
   }
 
-  return {
-    activeTag,
-    counts,
-    total: visible.length,
-    groups: Array.from(grouped.entries()),
-  };
+  return {groups: Array.from(grouped.entries())};
 }
 
 export default function NewsletterPage() {
-  const {activeTag, counts, total, groups} = useLoaderData<typeof loader>();
+  const {groups} = useLoaderData<typeof loader>();
 
   return (
     <div className="page-shell">
@@ -122,20 +91,9 @@ export default function NewsletterPage() {
               ⌁ RSS · /newsletter.rss
             </a>
           </p>
-          <h1>
-            Build <em>notes</em>.
-          </h1>
-          <p className="rn-sub">
-            Hardware releases, firmware tuning, and engineering write-ups,
-            delivered by email. One post per email, no marketing, unsubscribe in
-            one click — sign up below.
-          </p>
+          <h1>Build notes.</h1>
         </div>
       </header>
-
-      {total > 0 ? (
-        <TagFilter active={activeTag} counts={counts} total={total} />
-      ) : null}
 
       {groups.length > 0 ? (
         <div>
@@ -161,19 +119,8 @@ export default function NewsletterPage() {
           <div className="rn-empty-icon" aria-hidden>
             ·
           </div>
-          <h3>
-            {activeTag ? `Nothing tagged ${activeTag} yet.` : 'No posts yet.'}
-          </h3>
-          <p>
-            {activeTag
-              ? 'Try another tag, or'
-              : 'First post coming soon. Subscribe below to get it in your inbox.'}
-          </p>
-          {activeTag ? (
-            <a className="rn-sub-cta-link" href="?">
-              Show all
-            </a>
-          ) : null}
+          <h3>No posts yet.</h3>
+          <p>First post coming soon. Subscribe below to get it in your inbox.</p>
         </div>
       )}
     </div>
