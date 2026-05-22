@@ -22,11 +22,11 @@ type Viewport = 'desktop' | 'mobile';
 // "Accessories" opens the catalog browse page pre-filtered to the
 // Accessory category (productType=Accessory).
 const CATEGORY_LINKS: Array<{label: string; to: string}> = [
-  {label: 'OpenFC', to: '/products/openfc'},
-  {label: 'OpenFrame', to: '/products/openframe'},
-  {label: 'OpenESC', to: '/products/openesc'},
-  {label: 'OpenRX', to: '/products/openrx'},
-  {label: 'OpenStack', to: '/products/openstack'},
+  {label: 'FC', to: '/products/openfc'},
+  {label: 'Frame', to: '/products/openframe'},
+  {label: 'ESC', to: '/products/openesc'},
+  {label: 'RX', to: '/products/openrx'},
+  {label: 'Stack', to: '/products/openstack'},
   {label: 'Accessories', to: '/collections/all?type=Accessory'},
 ];
 
