@@ -1,7 +1,9 @@
-import {Link} from 'react-router';
+import {Link, useLoaderData} from 'react-router';
 import type {Route} from './+types/_index';
 import {useEffect, useRef, useState, useCallback} from 'react';
+import type {CollectionItemFragment} from 'storefrontapi.generated';
 import {HeroWordmark} from '~/components/HeroWordmark';
+import {MobileHome} from '~/components/MobileHome';
 
 // Kick off the HeroScene chunk download at module eval so it races with
 // hydration instead of waiting for useEffect — only on desktop and only
@@ -72,8 +74,36 @@ export const meta: Route.MetaFunction = () => {
   ];
 };
 
-export async function loader(_args: Route.LoaderArgs) {
-  return {};
+export async function loader({request, context}: Route.LoaderArgs) {
+  // UA hint picks the SSR layout so a phone gets the static MobileHome on
+  // first paint instead of rendering the desktop 3D tree (and its
+  // scroll-lock) for a frame before matchMedia corrects it client-side.
+  const ua = request.headers.get('user-agent') || '';
+  const isMobileHint = /Mobi|Android|iPhone|iPod|Windows Phone|BlackBerry/i.test(
+    ua,
+  );
+
+  // Flagship line for the mobile showcase — same three the desktop hero
+  // labels point at. Catalogue changes rarely, so cache long.
+  let featured: CollectionItemFragment[] = [];
+  try {
+    const data = (await context.storefront.query(HOME_FEATURED_QUERY, {
+      cache: context.storefront.CacheLong(),
+    })) as {
+      fc: CollectionItemFragment | null;
+      frame: CollectionItemFragment | null;
+      esc: CollectionItemFragment | null;
+    };
+    featured = [data.fc, data.frame, data.esc].filter(
+      (p): p is CollectionItemFragment => Boolean(p),
+    );
+  } catch {
+    // A storefront hiccup shouldn't blank the homepage — the hero + CTAs
+    // still render, just without the product cards.
+    featured = [];
+  }
+
+  return {isMobileHint, featured};
 }
 
 function linearstep(edge0: number, edge1: number, x: number) {
@@ -97,7 +127,29 @@ const HERO_PROGRESS_VH_MOBILE = 2.5;
 // doesn't blink out and back in.
 let splashHasPlayedThisSession = false;
 
+/**
+ * Route entry. Picks the static phone layout or the WebGL desktop hero.
+ * `isMobileHint` seeds the choice at SSR (UA-based); matchMedia then owns
+ * it on the client so a resize across the 768px line swaps layouts. The
+ * two trees are separate components so the desktop scroll/RAF/scroll-lock
+ * hooks never mount on a phone.
+ */
 export default function Homepage() {
+  const {isMobileHint, featured} = useLoaderData<typeof loader>();
+  const [isMobile, setIsMobile] = useState(isMobileHint);
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 768px)');
+    const update = () => setIsMobile(mq.matches);
+    update();
+    mq.addEventListener('change', update);
+    return () => mq.removeEventListener('change', update);
+  }, []);
+
+  if (isMobile) return <MobileHome featured={featured} />;
+  return <DesktopHome />;
+}
+
+function DesktopHome() {
   const scrollRef = useRef(0);
   const rafId = useRef(0);
   const [scrollProgress, setScrollProgress] = useState(0);
@@ -562,3 +614,45 @@ export default function Homepage() {
     </div>
   );
 }
+
+// Three flagship products for the mobile showcase, fetched by handle so the
+// cards mirror the desktop hero's OpenFC / OpenFrame / OpenESC labels.
+const HOME_FEATURED_QUERY = `#graphql
+  fragment HomeMoney on MoneyV2 {
+    amount
+    currencyCode
+  }
+  fragment HomeProductCard on Product {
+    id
+    handle
+    title
+    productType
+    featuredImage {
+      id
+      altText
+      url
+      width
+      height
+    }
+    priceRange {
+      minVariantPrice {
+        ...HomeMoney
+      }
+      maxVariantPrice {
+        ...HomeMoney
+      }
+    }
+  }
+  query HomeFeatured($country: CountryCode, $language: LanguageCode)
+  @inContext(country: $country, language: $language) {
+    fc: product(handle: "openfc") {
+      ...HomeProductCard
+    }
+    frame: product(handle: "openframe") {
+      ...HomeProductCard
+    }
+    esc: product(handle: "openesc") {
+      ...HomeProductCard
+    }
+  }
+` as const;
