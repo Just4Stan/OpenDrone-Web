@@ -674,7 +674,7 @@ a:hover {
 
 .site-header-categories a {
   font-family: var(--font-mono);
-  font-size: var(--fs-xs);
+  font-size: var(--fs-sm);
   letter-spacing: 0.16em;
   text-transform: uppercase;
   color: var(--color-gold);
