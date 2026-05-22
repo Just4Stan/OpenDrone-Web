@@ -227,10 +227,12 @@ function FrameModel({
       if (next) {
         const r2 = next.getBoundingClientRect();
         const c2 = r2.top + r2.height / 2;
-        // (vh/2 − c1) is how far ch.1's centre has risen past the viewport
-        // centre; (c2 − c1) is the centre-to-centre distance to ch.2. e = 1 at
-        // ch.2; it keeps climbing past 1 as you scroll on, so the parts fly off.
-        e = THREE.MathUtils.clamp((vh / 2 - c1) / (c2 - c1 || vh), 0, EXPLODE_MAX);
+        // Hold the frame assembled (e = 0) through chapter 1 — it only starts
+        // coming apart once chapter 2 reaches the viewport centre. (vh/2 − c2)
+        // is how far ch.2's centre has risen past the centre; normalise by the
+        // ch.1→ch.2 centre distance so e ≈ 1 about one chapter later, then it
+        // keeps climbing to EXPLODE_MAX so the parts fly off as you scroll on.
+        e = THREE.MathUtils.clamp((vh / 2 - c2) / (c2 - c1 || vh), 0, EXPLODE_MAX);
       } else {
         // No following chapter — fall back to a single-pass scrub.
         e = THREE.MathUtils.clamp(1 - c1 / vh, 0, 1);
