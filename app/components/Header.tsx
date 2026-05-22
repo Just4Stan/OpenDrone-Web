@@ -19,15 +19,15 @@ interface HeaderProps {
 type Viewport = 'desktop' | 'mobile';
 
 // Category links jump straight to the current PDP for each family.
-// "Accessories" falls back to the full catalog because it isn't a
-// single product family — clicking the label shouldn't 404.
+// "Accessories" opens the catalog browse page pre-filtered to the
+// Accessory category (productType=Accessory).
 const CATEGORY_LINKS: Array<{label: string; to: string}> = [
   {label: 'OpenFC', to: '/products/openfc'},
   {label: 'OpenFrame', to: '/products/openframe'},
   {label: 'OpenESC', to: '/products/openesc'},
   {label: 'OpenRX', to: '/products/openrx'},
   {label: 'OpenStack', to: '/products/openstack'},
-  {label: 'Accessories', to: '/collections/all'},
+  {label: 'Accessories', to: '/collections/all?type=Accessory'},
 ];
 
 export function Header({

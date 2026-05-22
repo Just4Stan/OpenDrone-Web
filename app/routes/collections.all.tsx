@@ -1,100 +1,103 @@
 import type {Route} from './+types/collections.all';
-import {useLoaderData} from 'react-router';
-import {getPaginationVariables} from '@shopify/hydrogen';
-import {PaginatedResourceSection} from '~/components/PaginatedResourceSection';
+import {useLoaderData, useSearchParams} from 'react-router';
 import {ProductItem} from '~/components/ProductItem';
 import type {CollectionItemFragment} from 'storefrontapi.generated';
 import {buildSeoMeta} from '~/lib/seo';
-import {CollectionSort, resolveSort} from '~/components/CollectionSort';
 import {CategoryChips} from '~/components/CategoryChips';
 import {EmptyState} from '~/components/EmptyState';
 
 export const meta: Route.MetaFunction = () =>
   buildSeoMeta({
-    title: 'Products',
+    title: 'All Products',
     description:
-      'Browse all OpenDrone products, including open source flight controllers, ESCs, frames, and supporting hardware.',
+      'Browse the full OpenDrone catalog by category — open source flight controllers, ESCs, receivers, frames, bundles, and accessories.',
     type: 'product',
   });
 
+/**
+ * Category order + display headings for the browse page. The `type` strings
+ * are the Shopify `productType` values set by scripts/shopify-infra/04 + 05;
+ * `heading` is the section/chip label. Products whose type isn't listed fall
+ * into a trailing "Other" section so nothing is silently dropped.
+ */
+const CATEGORY_ORDER: Array<{type: string; heading: string}> = [
+  {type: 'Flight Controller', heading: 'Flight Controllers'},
+  {type: 'ESC', heading: 'ESCs'},
+  {type: 'Receiver', heading: 'Receivers'},
+  {type: 'Frame', heading: 'Frames'},
+  {type: 'Bundle', heading: 'Bundles'},
+  {type: 'Accessory', heading: 'Accessories'},
+];
+
 export async function loader(args: Route.LoaderArgs) {
-  const deferredData = loadDeferredData(args);
   const criticalData = await loadCriticalData(args);
-  return {...deferredData, ...criticalData};
+  return {...criticalData};
 }
 
-async function loadCriticalData({context, request}: Route.LoaderArgs) {
-  const {storefront} = context;
-  const paginationVariables = getPaginationVariables(request, {
-    pageBy: 12,
+async function loadCriticalData({context}: Route.LoaderArgs) {
+  // The catalog is small; fetch it whole and group/filter client-side so the
+  // page reads as a browse hub (no pagination across category sections).
+  const {products} = await context.storefront.query(CATALOG_QUERY, {
+    variables: {first: 100},
   });
-  const url = new URL(request.url);
-  const sort = resolveSort(url.searchParams.get('sort'));
-  const type = url.searchParams.get('type');
-
-  // Root products() uses ProductSortKeys which differs from
-  // ProductCollectionSortKeys — MANUAL/COLLECTION_DEFAULT → BEST_SELLING,
-  // CREATED → CREATED_AT.
-  const rootSortKey: 'BEST_SELLING' | 'CREATED_AT' | 'ID' | 'PRICE' | 'RELEVANCE' | 'TITLE' =
-    sort.sortKey === 'MANUAL' || sort.sortKey === 'COLLECTION_DEFAULT'
-      ? 'BEST_SELLING'
-      : sort.sortKey === 'CREATED'
-        ? 'CREATED_AT'
-        : sort.sortKey;
-
-  // Shopify Storefront `query` uses `product_type:"<value>"` syntax.
-  const queryFilter = type ? `product_type:"${type.replace(/"/g, '\\"')}"` : '';
-
-  const [{products}, typesData] = await Promise.all([
-    storefront.query(CATALOG_QUERY, {
-      variables: {
-        ...paginationVariables,
-        sortKey: rootSortKey,
-        reverse: Boolean(sort.reverse),
-        query: queryFilter,
-      },
-    }),
-    storefront.query(PRODUCT_TYPES_QUERY, {
-      cache: storefront.CacheShort(),
-    }),
-  ]);
-
-  const types = (typesData?.productTypes?.nodes ?? []).filter(
-    (t: string) => t && t.trim().length > 0,
-  );
-
-  return {products, types, activeType: type};
-}
-
-function loadDeferredData(_args: Route.LoaderArgs) {
-  return {};
+  return {products: products.nodes};
 }
 
 export default function Collection() {
-  const {products, types, activeType} = useLoaderData<typeof loader>();
-  const hasProducts = products.nodes.length > 0;
+  const {products} = useLoaderData<typeof loader>();
+  const [searchParams] = useSearchParams();
+  const activeType = searchParams.get('type');
+
+  // Group products into the fixed category order; collect any leftovers.
+  const byType = new Map<string, CollectionItemFragment[]>();
+  for (const p of products) {
+    const key = p.productType || 'Other';
+    if (!byType.has(key)) byType.set(key, []);
+    byType.get(key)!.push(p);
+  }
+
+  const ordered: Array<{type: string; heading: string; items: CollectionItemFragment[]}> = [];
+  for (const {type, heading} of CATEGORY_ORDER) {
+    const items = byType.get(type);
+    if (items?.length) ordered.push({type, heading, items});
+    byType.delete(type);
+  }
+  // Trailing "Other" — any product whose type isn't in CATEGORY_ORDER.
+  for (const [type, items] of byType) {
+    if (items.length) ordered.push({type, heading: type === 'Other' ? 'Other' : type, items});
+  }
+
+  const chips = ordered.map(({type, heading}) => ({value: type, label: heading}));
+  const sections = activeType
+    ? ordered.filter((s) => s.type === activeType)
+    : ordered;
+
+  const hasProducts = products.length > 0;
 
   return (
     <div className="collection page-shell">
       <header className="page-header collection-header">
-        <p className="page-eyebrow">Shop · Storefront</p>
+        <p className="page-eyebrow">Shop · Catalog</p>
         <h1 className="page-title">All Products</h1>
-        {hasProducts && <CollectionSort />}
       </header>
-      {types.length > 0 && <CategoryChips types={types} />}
-      {hasProducts ? (
-        <PaginatedResourceSection<CollectionItemFragment>
-          connection={products}
-          resourcesClassName="products-grid"
-        >
-          {({node: product, index}) => (
-            <ProductItem
-              key={product.id}
-              product={product}
-              loading={index < 8 ? 'eager' : undefined}
-            />
-          )}
-        </PaginatedResourceSection>
+
+      {hasProducts && <CategoryChips categories={chips} />}
+
+      {sections.length > 0 ? (
+        sections.map(({type, heading, items}) => (
+          <section className="catalog-category" key={type}>
+            <h2 className="catalog-category-title">{heading}</h2>
+            <div className="products-grid">
+              {items.map((product, index) => (
+                <ProductItem
+                  key={product.id}
+                  product={product}
+                  loading={index < 8 ? 'eager' : undefined}
+                />
+              ))}
+            </div>
+          </section>
+        ))
       ) : (
         <EmptyState
           title={activeType ? `No ${activeType} products yet` : 'Catalog is being stocked'}
@@ -151,47 +154,17 @@ const COLLECTION_ITEM_FRAGMENT = `#graphql
   }
 ` as const;
 
-// NOTE: https://shopify.dev/docs/api/storefront/latest/objects/product
 const CATALOG_QUERY = `#graphql
   query Catalog(
     $country: CountryCode
     $language: LanguageCode
     $first: Int
-    $last: Int
-    $startCursor: String
-    $endCursor: String
-    $sortKey: ProductSortKeys
-    $reverse: Boolean
-    $query: String
   ) @inContext(country: $country, language: $language) {
-    products(
-      first: $first,
-      last: $last,
-      before: $startCursor,
-      after: $endCursor,
-      sortKey: $sortKey,
-      reverse: $reverse,
-      query: $query
-    ) {
+    products(first: $first, sortKey: CREATED_AT, reverse: true) {
       nodes {
         ...CollectionItem
-      }
-      pageInfo {
-        hasPreviousPage
-        hasNextPage
-        startCursor
-        endCursor
       }
     }
   }
   ${COLLECTION_ITEM_FRAGMENT}
-` as const;
-
-const PRODUCT_TYPES_QUERY = `#graphql
-  query ProductTypes($country: CountryCode, $language: LanguageCode)
-  @inContext(country: $country, language: $language) {
-    productTypes(first: 25) {
-      nodes
-    }
-  }
 ` as const;
