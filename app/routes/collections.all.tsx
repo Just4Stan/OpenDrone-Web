@@ -1,10 +1,32 @@
 import type {Route} from './+types/collections.all';
 import {useLoaderData, useSearchParams} from 'react-router';
-import {ProductItem} from '~/components/ProductItem';
+import {ProductItem, type ProductModelChip} from '~/components/ProductItem';
 import type {CollectionItemFragment} from 'storefrontapi.generated';
 import {buildSeoMeta} from '~/lib/seo';
 import {CategoryChips} from '~/components/CategoryChips';
 import {EmptyState} from '~/components/EmptyState';
+import {PRODUCT_CONTENT} from '~/lib/product-content';
+
+/**
+ * The models of a product line, from the editorial source of truth
+ * (`product-content.ts`) — the same map the PDP ladder reads. Returns the
+ * line's tiers as browse-card chips, in editorial order. Empty for single
+ * products, bundles, and accessories (no `Model` axis).
+ */
+function modelChipsFor(handle: string): ProductModelChip[] {
+  const content = PRODUCT_CONTENT[handle];
+  if (!content?.optionAxis || !content.variants) return [];
+  return Object.entries(content.variants).map(([value, v]) => ({
+    value,
+    axis: content.optionAxis!,
+    comingSoon: v.comingSoon,
+  }));
+}
+
+/** Editorial one-liner (the PDP hero lead) for the feature-card layout. */
+function leadFor(handle: string): string | undefined {
+  return PRODUCT_CONTENT[handle]?.hero.lead || undefined;
+}
 
 export const meta: Route.MetaFunction = () =>
   buildSeoMeta({
@@ -87,15 +109,28 @@ export default function Collection() {
         sections.map(({type, heading, items}) => (
           <section className="catalog-category" key={type}>
             <h2 className="catalog-category-title">{heading}</h2>
-            <div className="products-grid">
-              {items.map((product, index) => (
-                <ProductItem
-                  key={product.id}
-                  product={product}
-                  loading={index < 8 ? 'eager' : undefined}
-                />
-              ))}
-            </div>
+            {items.length === 1 ? (
+              // Single-product category: a wide feature card fills the rail
+              // instead of leaving one capped card with empty tracks beside it.
+              <ProductItem
+                product={items[0]}
+                loading="eager"
+                feature
+                lead={leadFor(items[0].handle)}
+                models={modelChipsFor(items[0].handle)}
+              />
+            ) : (
+              <div className="products-grid">
+                {items.map((product, index) => (
+                  <ProductItem
+                    key={product.id}
+                    product={product}
+                    loading={index < 8 ? 'eager' : undefined}
+                    models={modelChipsFor(product.handle)}
+                  />
+                ))}
+              </div>
+            )}
           </section>
         ))
       ) : (
