@@ -54,7 +54,7 @@ const PLAN = [
     handle: 'openframe',
     option: 'Model',
     variants: [
-      {value: '5" Freestyle', price: '41.00', sku: 'OPENFRAME-5'},
+      {value: '5" Freestyle', price: '41.00', sku: ''},
       {value: '3" Freestyle', price: '35.00', sku: 'OPENFRAME-3'},
     ],
   },
