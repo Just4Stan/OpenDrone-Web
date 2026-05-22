@@ -23,15 +23,18 @@
     "codegen": "shopify hydrogen codegen && react-router typegen",
     "sync:legal": "node scripts/sync-legal.mjs",
     "compose:newsletter": "node scripts/compose-newsletter.mjs",
-    "gen:shopify-templates": "node scripts/shopify-templates/gen.mjs"
+    "gen:shopify-templates": "node scripts/shopify-templates/gen.mjs",
+    "gen:board-art": "node scripts/export-board-art.mjs --all"
   },
   "prettier": "@shopify/prettier-config",
   "dependencies": {
     "@react-three/fiber": "^9.6.0",
+    "@react-three/postprocessing": "^3.0.4",
     "@shopify/hydrogen": "^2026.4.1",
     "@tailwindcss/vite": "^4.2.2",
     "graphql": "^16.13.2",
     "isbot": "^5.1.39",
+    "postprocessing": "^6.39.1",
     "react": "^19.2.5",
     "react-dom": "^19.2.5",
     "react-router": "7.14.2",

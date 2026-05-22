@@ -12,7 +12,8 @@ Built on Shopify Hydrogen 2026.x, deployed on Shopify Oxygen, source open under 
 | Routing | React Router 7 (file-based, `app/routes/`) + Hydrogen preset |
 | UI | React 19 + TypeScript strict |
 | Styling | Tailwind CSS v4 (`@theme` tokens in `app/styles/app.css`) |
-| 3D hero | `@react-three/fiber` + `three` 0.184 |
+| Fonts | Self-hosted Inter Variable + JetBrains Mono (`public/fonts/`) |
+| 3D hero | `@react-three/fiber` + `three` 0.184, `postprocessing` (SMAA) |
 | Storefront API | `@shopify/hydrogen` codegen → `storefrontapi.generated.d.ts` |
 | Customer Accounts | Shopify Customer Account API (OAuth via Hydrogen tunnel) |
 | Email | Resend (transactional), Shopify Email (marketing) |
@@ -42,14 +43,14 @@ app/
   entry.server.tsx                  CSP, security headers, HTMLRewriter for module-preload
   entry.client.tsx                  hydration entry
   routes.ts                         flat-routes + locale-prefix legal routes
-  routes/                           67 route files (see Routes)
+  routes/                           68 route files (see Routes)
   components/                       shared React components
   content/legal/{en,nl,fr}/         legal markdown snapshots (sync:legal target)
   graphql/customer-account/         Customer Account API queries
   lib/                              i18n, SEO, company, support bridge, newsletter, fragments
-  styles/app.css                    single Tailwind v4 + custom CSS file (~7600 lines)
-public/                             static assets, GLB models, wordmark
-scripts/                            sync-legal, compose-newsletter, smoke, shopify-templates/gen
+  styles/app.css                    single Tailwind v4 + custom CSS file (~8600 lines)
+public/                             static assets, GLB models, self-hosted fonts, wordmark, board-art SVGs
+scripts/                            sync-legal, compose-newsletter, smoke, board-art export, wordmark gen, shopify-templates/gen
 .github/workflows/                  ci.yml, oxygen-deployment-*.yml, support-cleanup.yml
 ```
 
@@ -57,7 +58,7 @@ scripts/                            sync-legal, compose-newsletter, smoke, shopi
 
 ## Routes
 
-67 file-based routes under `app/routes/`. Highlights, by family:
+68 file-based routes under `app/routes/`. Highlights, by family:
 
 **Storefront**
 - `_index.tsx` — homepage (3D hero scene, splash, hero CTA)
@@ -79,11 +80,11 @@ scripts/                            sync-legal, compose-newsletter, smoke, shopi
 **Support bridge** (see Support subsystem)
 - `support.tsx` — intake / active-ticket view
 - `support.resume.tsx` — magic-link entry
-- `api.support.start|send|poll|close|status|feedback|lookup|cleanup.tsx` — bridge API
+- `api.support.start|send|poll|close|status|list|feedback|lookup|cleanup.tsx` — bridge API
 - `api.support.thread.$pid.tsx` — read-only thread fetch by public ticket id
 
 **Legal / i18n**
-- `algemene-voorwaarden.tsx`, `privacy.tsx`, `cookies.tsx`, `cookie-settings.tsx`, `herroepingsrecht.tsx`, `shipping.tsx`, `warranty.tsx`, `security.tsx`, `export-compliance.tsx`, `terms.tsx`, `legal.tsx` — each served at `/<slug>` (locale-cookie redirect) and `/{en,nl,fr}/<slug>` (canonical)
+- `algemene-voorwaarden.tsx`, `privacy.tsx`, `cookies.tsx`, `cookie-settings.tsx`, `herroepingsrecht.tsx`, `shipping.tsx`, `warranty.tsx`, `security.tsx`, `export-compliance.tsx`, `end-use.tsx`, `terms.tsx`, `legal.tsx` — each served at `/<slug>` (locale-cookie redirect) and `/{en,nl,fr}/<slug>` (canonical)
 
 **Newsletter / blog**
 - `newsletter.tsx` — opt-in form (writes to Shopify customer list with `acceptsMarketing=true`)
@@ -115,6 +116,11 @@ vuln_contact_email, battery_wh, battery_un_number
 ```
 
 `ProductCompliance` component renders these. Currently not mounted on PDP (removed in #60); content is queried but not displayed. PDP is editorial: hero copy + gallery + chapters (teardown, open-source, in-the-box, firmware, specs, downloads). `LatestCommit` cards pull `repoUrl` HEADs from GitHub (best-effort, fail-quiet). `FirmwareSplit` adds an optional €N+€1 firmware-contribution variant on PDPs configured for it.
+
+Editorial copy is keyed by handle in `app/lib/product-content.ts`, the source of truth for chapters, specs, and the box list. Two product-line features hang off it:
+
+- **Comparison ladder** (`VariantLadder`). Lines like OpenESC (20×20 / 30×30) and OpenRX (Lite / Lite-UFL / Mono / Gemini) are a single Shopify product with a variant axis, not separate products. When a handle defines `optionAxis` + `variants`, the PDP renders a tier-card selector that doubles as the buy-axis. Editorial is the source of truth for which tiers exist; the card wires to a real Shopify variant by matching the option name (`optionAxis`) and value (the `variants` key), case-insensitive. Until those Shopify variants exist the ladder still renders for preview and the cart uses the single default variant. `ProductForm` is told to skip the axis the ladder owns via `hideOptionNames`.
+- **Board art** (`BoardArt`). When a handle's teardown sets `boardArt`, the teardown chapter inlines a layered SVG of the PCB (`/boards/<handle>/board.svg`, generated by `scripts/export-board-art.mjs`), reveals copper layers on scroll, and offers a Top/Bottom toggle plus an optional "Inspect interactively" link to KiCanvas. See [Board art pipeline](#board-art-pipeline).
 
 ### Cart
 
@@ -160,7 +166,7 @@ Long sends move into `waitUntil` so Shopify gets a 200 inside its 5-second windo
 
 Site UI is English-only. Legal documents are translated NL/FR/EN and live at `/{en,nl,fr}/<slug>`. The same component file (`app/routes/<slug>.tsx`) handles all three locales — its loader calls `resolveLegalLoader` in `app/lib/i18n.ts` which reads the URL prefix to pick the markdown snapshot. Unprefixed `/<slug>` URLs redirect to the user's cached locale.
 
-Slugs (in `app/lib/legal-slugs.ts`): `algemene-voorwaarden`, `privacy`, `cookies`, `herroepingsrecht`, `shipping`, `warranty`, `security`, `export-compliance`, `legal`, `cookie-settings`, `terms`.
+Slugs (in `app/lib/legal-slugs.ts`): `algemene-voorwaarden`, `privacy`, `cookies`, `herroepingsrecht`, `shipping`, `warranty`, `security`, `export-compliance`, `end-use`, `legal`, `cookie-settings`, `terms`.
 
 `LangToggle` only renders on legal paths (everywhere else stays EN). `<html lang>` tracks URL locale. Each legal route emits `hreflang` for EN/NL/FR + `x-default=en` and a self-canonical.
 
@@ -181,7 +187,13 @@ Markdown lives under `app/content/legal/{en,nl,fr}/`. NL snapshot is overwritten
 
 ### 3D hero
 
-Homepage hero is a `@react-three/fiber` scene rendering FC + frame + ESC GLBs from `public/models/`. Module + GLBs are dynamic-imported only when `(min-width: 768px)` and `prefers-reduced-motion: no-preference`. Mobile and reduced-motion users get a static splash + wordmark. The scene renders three component labels positioned every frame from world-space bounding boxes so they track the geometry as the assembly rotates.
+Homepage hero is a `@react-three/fiber` scene rendering FC + frame + ESC GLBs from `public/models/`. Module + GLBs are dynamic-imported only when `(min-width: 768px)` and `prefers-reduced-motion: no-preference`. Mobile and reduced-motion users get a static splash + wordmark. The scene renders three component labels positioned every frame from world-space bounding boxes so they track the geometry as the assembly rotates. On first visit the GLB fetch + parse is held back ~750 ms and the post-parse mesh processing yields to the main thread between chunks, so the CSS wireframe-wordmark intro animates without contention; cached/return visits skip the delay.
+
+### Board art pipeline
+
+`scripts/export-board-art.mjs <kicad_pcb> <handle>` (or `npm run gen:board-art` over `scripts/boards.config.json`) renders a layered SVG of a PCB for the PDP teardown chapter. It shells out to `kicad-cli pcb export svg` for the copper + Edge.Cuts layers, calls `scripts/board-outline.py` (KiCad's bundled `pcbnew`) for the true board-outline polygon, clips each copper layer to that outline, mirrors B.Cu for a flip-to-back view, and writes `public/boards/<handle>/board.svg`. `BoardArt` fetches the file lazily on scroll, inlines it so CSS can address each `<g id="layer-…">`, and animates the reveal.
+
+`scripts/boards.config.json` maps handles to absolute `.kicad_pcb` paths that live outside this (public) repo, so it is gitignored — copy `boards.config.example.json` and fill it in. The export tool is build-time / maintainer-only; rerun it whenever a hardware rev ships.
 
 ## Environment
 
@@ -192,12 +204,17 @@ Full list with comments and source pointers in `.env.example`. Summary:
 - `PUBLIC_STORE_DOMAIN`, `PUBLIC_STOREFRONT_API_TOKEN`, `PUBLIC_STOREFRONT_ID`, `SHOP_ID`, `PRIVATE_STOREFRONT_API_TOKEN`
 - `PUBLIC_CUSTOMER_ACCOUNT_API_CLIENT_ID`, `PUBLIC_CUSTOMER_ACCOUNT_API_URL`
 
+**Optional core.**
+- `PUBLIC_CHECKOUT_DOMAIN` — dedicated checkout subdomain; falls back to `PUBLIC_STORE_DOMAIN` when unset.
+
 **Legal entity.** WER Art. VI.45 mandates these on every page.
 - `PUBLIC_COMPANY_NAME`, `PUBLIC_COMPANY_ADDRESS`, `PUBLIC_COMPANY_KBO`, `PUBLIC_COMPANY_VAT`, `PUBLIC_COMPANY_EMAIL`, `PUBLIC_COMPANY_TEL`
 
 **Support bridge.** All optional; bridge degrades when unset.
 - `DISCORD_BOT_TOKEN`, `DISCORD_SUPPORT_CHANNEL_ID` (forum channel), `DISCORD_GUILD_ID`
 - `DISCORD_STAFF_METADATA_CHANNEL_ID` — private staff channel for PII split
+- `DISCORD_SUPPORT_INVITE` — invite link shown on the contact page + widget
+- `PUBLIC_DISCORD_GUILD_ID`, `PUBLIC_DISCORD_INVITE` — public guild + invite for the `/contact` invite card (member/online counts); fall back to `DISCORD_GUILD_ID` / `DISCORD_SUPPORT_INVITE`
 - `SUPPORT_MOD_ROLE_ID`, `SUPPORT_APPROVE_EMOJI`, `SUPPORT_MODERATION_MODE`
 - `SUPPORT_SESSION_SECRET` — falls back to `SESSION_SECRET`
 - `TURNSTILE_SITE_KEY`, `TURNSTILE_SECRET_KEY` — fail-closed in prod
@@ -231,10 +248,13 @@ Full list with comments and source pointers in `.env.example`. Summary:
 | `npm run sync:legal` | Refresh NL legal markdown from `COMPLIANCE_SRC` |
 | `npm run compose:newsletter <handle>` | Render a newsletter email from a blog article |
 | `npm run gen:shopify-templates` | Generate Shopify admin notification templates from `scripts/shopify-templates/` |
+| `npm run gen:board-art` | Export every board in `scripts/boards.config.json` to `public/boards/<handle>/board.svg` (needs KiCad CLI + `pcbnew`) |
 
 Standalone scripts (not in `package.json`):
 - `scripts/smoke.mjs` — hits 25+ routes against a base URL and asserts status + content invariants. `BASE=https://opendrone.be node scripts/smoke.mjs`.
 - `scripts/smoke-recursive.mjs` — recursive crawl smoke; deeper than `smoke.mjs`.
+- `scripts/export-board-art.mjs <kicad_pcb> <handle>` — one-off board-art export (the `--all` form is wrapped by `gen:board-art`); calls `scripts/board-outline.py` under KiCad's bundled Python. See [Board art pipeline](#board-art-pipeline).
+- `scripts/gen-wordmark-assets.mjs`, `scripts/gen-wordmark-from-png.mjs` — regenerate the hero wordmark glyph data (`app/data/wordmark.ts`) and `public/opendrone-wordmark.svg`.
 
 Unit tests run on Node's built-in test runner (no extra deps):
 
@@ -308,4 +328,4 @@ Forgot `-s`? `git commit --amend -s --no-edit && git push --force-with-lease`.
 
 ## License
 
-[MIT](LICENSE) for this repo. Hardware repos are CERN-OHL-S — see [OpenFC](https://github.com/incutec-hw/OpenFC) and [OpenESC](https://github.com/incutec-hw/Open-4in1-AM32-ESC).
+[MIT](LICENSE) for this repo. Hardware repos are CERN-OHL-S — see [OpenFC](https://github.com/incutec-hw/OpenFC), [OpenESC](https://github.com/incutec-hw/OpenESC_20X20), and [OpenRX](https://github.com/incutec-hw/OpenRX).

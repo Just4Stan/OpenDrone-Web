@@ -304,16 +304,18 @@ html {
      control opacity ONLY during the run; afterward this calc takes
      over and the stroke fades as the fill ramps. */
   opacity: calc(1 - var(--fill-opacity, 0));
-  /* Slower draw + bigger per-letter stagger so the wireframe-assembly
-     reads as "letters flying in and stitching together" rather than a
-     single fast pop-in. fill-mode: backwards so the offset transform
-     is applied BEFORE the delay window (letter holds its fly-in start
-     pose, invisible, until its turn) — without this the letter sits at
-     rest pose during the delay and the fly-in is invisible. */
+  /* Letters fly in and stitch together. Curve is ease-out-cubic
+     instead of the original quart-ease — quart had so much slow-tail
+     that letters were visually done after ~190ms but the timeline
+     waited another 760ms to fire the next phase. Duration shortened
+     to match perceived motion. fill-mode: backwards so the offset
+     transform is applied BEFORE the delay window — without this the
+     letter sits at rest pose during the delay and the fly-in is
+     invisible. */
   animation:
-    hw-draw-shape 950ms cubic-bezier(0.16, 0.84, 0.32, 1) backwards,
-    hw-draw-opacity 950ms cubic-bezier(0.22, 1, 0.36, 1) backwards;
-  animation-delay: calc(var(--letter-index, 0) * 85ms);
+    hw-draw-shape 500ms cubic-bezier(0.33, 1, 0.68, 1) backwards,
+    hw-draw-opacity 500ms cubic-bezier(0.22, 1, 0.36, 1) backwards;
+  animation-delay: calc(var(--letter-index, 0) * 65ms);
   will-change: transform, stroke-dashoffset, opacity;
   transition: opacity 280ms ease-out;
 }
@@ -2084,6 +2086,129 @@ button.reset {
   box-shadow: none;
 }
 
+/* Comparison ladder — the variant selector for a product line. Tier
+   cards that double as the radio group; the selected card drives the
+   spec/in-the-box preview and (when Shopify carries the option) the
+   buy module. Auto-fit grid so it reads as a horizontal ladder when
+   there's room and stacks gracefully in the narrow hero copy column. */
+.variant-ladder {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+  margin: 0;
+}
+
+.variant-ladder-axis {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--color-text-muted);
+}
+
+.variant-ladder-axis-hint {
+  margin-left: 0.5rem;
+  text-transform: none;
+  letter-spacing: 0;
+  color: var(--color-text-dim);
+}
+
+.variant-ladder-track {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: var(--sp-2);
+}
+
+.variant-tier {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  text-align: left;
+  padding: var(--sp-3) var(--sp-4);
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--r-md);
+  cursor: pointer;
+  transition: border-color 0.15s ease, box-shadow 0.2s ease,
+    background 0.15s ease;
+}
+
+.variant-tier:hover:not(:disabled) {
+  border-color: var(--color-text-muted);
+}
+
+.variant-tier.is-selected {
+  border-color: var(--color-gold);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--color-gold) 35%, transparent);
+  background: color-mix(in srgb, var(--color-gold) 5%, var(--color-bg-card));
+}
+
+.variant-tier.is-soldout {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.variant-tier-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-2);
+}
+
+.variant-tier-name {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: var(--fs-base);
+  letter-spacing: -0.01em;
+  color: var(--color-text);
+}
+
+.variant-tier-flag {
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  letter-spacing: 0.04em;
+  color: var(--color-text-dim);
+}
+
+.variant-tier-flag.is-selected {
+  color: var(--color-gold);
+}
+
+.variant-tier-tagline {
+  font-family: var(--font-sans);
+  font-size: var(--fs-xs);
+  line-height: 1.45;
+  color: var(--color-text-dim);
+}
+
+.variant-tier-cells {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  margin-top: 0.1rem;
+}
+
+.variant-tier-cell {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--sp-2);
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  line-height: 1.4;
+}
+
+.variant-tier-cell-k {
+  color: var(--color-text-muted);
+}
+
+.variant-tier-cell-v {
+  text-align: right;
+  color: var(--color-text);
+  font-variant-numeric: tabular-nums;
+}
+
 /* Sticky compact buy bar — pins to the bottom of the viewport on
    mobile and to the top under the header on desktop once the user
    scrolls past the in-page buy module. Always one tap from the CTA. */
@@ -2286,6 +2411,113 @@ button.reset {
   font-size: 9px;
   letter-spacing: 0.22em;
   color: color-mix(in srgb, var(--color-text-dim) 60%, transparent);
+}
+
+/* The chapter media slot opens up when a live <BoardArt /> sits in it —
+ * no card chrome, no PLACEHOLDER tag, and overflow: visible so the SVG
+ * can bleed beyond the right column into the page margin. */
+.chapter-media-frame--live {
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  aspect-ratio: auto;
+  overflow: visible;
+  padding: 0;
+}
+.chapter-media-frame--live::after {
+  content: none;
+}
+
+.board-art {
+  position: relative;
+  width: 180%;
+  margin-left: -40%;
+  opacity: 0;
+  transition: opacity 1.2s cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+.board-art.is-revealed {
+  opacity: 1;
+}
+.board-art-canvas {
+  display: block;
+}
+.board-art-canvas svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  /* Warm-gold glow on the dark page bg pushes the board art toward
+   * "engineering blueprint" rather than KiCad screenshot. The asset is
+   * shipped with its native KiCad palette; this filter colour-shifts
+   * without rewriting the SVG. */
+  filter: drop-shadow(0 0 22px color-mix(in srgb, var(--color-gold) 35%, transparent))
+    saturate(0.85) contrast(1.05);
+}
+/* Top/bottom toggle — only one copper side renders at a time. */
+.board-art[data-side='top'] .board-art-canvas svg [id='layer-b-copper'] {
+  display: none;
+}
+.board-art[data-side='bottom'] .board-art-canvas svg [id='layer-copper'] {
+  display: none;
+}
+.board-art-toggle {
+  position: absolute;
+  top: 0.5rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 2;
+  display: inline-flex;
+  gap: 2px;
+  padding: 2px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--color-bg) 72%, transparent);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  border: 1px solid color-mix(in srgb, var(--color-gold) 22%, transparent);
+}
+.board-art-toggle button {
+  appearance: none;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--color-text-dim);
+  padding: 0.3rem 0.85rem;
+  border-radius: 999px;
+  transition: color 0.2s, background 0.2s;
+}
+.board-art-toggle button:hover {
+  color: var(--color-text);
+}
+.board-art-toggle button.is-active {
+  color: var(--color-bg);
+  background: var(--color-gold);
+}
+.board-art-inspect {
+  display: inline-block;
+  margin-top: 0.75rem;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--color-text-dim);
+  text-decoration: none;
+}
+.board-art-inspect:hover {
+  color: var(--color-gold);
+}
+.board-art-fallback {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--color-text-dim);
+}
+@media (max-width: 879px) {
+  .board-art {
+    width: 100%;
+    margin-left: 0;
+  }
 }
 
 .chapter-media-glyph {

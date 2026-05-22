@@ -30,15 +30,18 @@ function ClientHeroScene({
   onReady,
   onProgress,
   labelRefs,
+  loadDelayMs,
 }: {
   onReady?: () => void;
   onProgress?: (progress: number) => void;
   labelRefs?: LabelRefs;
+  loadDelayMs?: number;
 }) {
   const [Scene, setScene] = useState<React.ComponentType<{
     onReady?: () => void;
     onProgress?: (progress: number) => void;
     labelRefs?: LabelRefs;
+    loadDelayMs?: number;
   }> | null>(null);
   useEffect(() => {
     if (!shouldLoadHero()) {
@@ -52,7 +55,14 @@ function ClientHeroScene({
     });
   }, [onReady]);
   if (!Scene) return null;
-  return <Scene onReady={onReady} onProgress={onProgress} labelRefs={labelRefs} />;
+  return (
+    <Scene
+      onReady={onReady}
+      onProgress={onProgress}
+      labelRefs={labelRefs}
+      loadDelayMs={loadDelayMs}
+    />
+  );
 }
 
 export const meta: Route.MetaFunction = () => {
@@ -105,11 +115,10 @@ export default function Homepage() {
   // played) so the wordmark renders fully filled with no animation.
   const [progress, setProgress] = useState(splashHasPlayedThisSession ? 1 : 0);
   // Wireframe phase gate — keep the fill mask fully closed until the
-  // stroke-draw animation has had time to play. Without this, fast
-  // loads (cached GLBs, dev) snap progress to 1 immediately and the
-  // user never sees the wireframe form. Matches the longest letter
-  // animation: stagger 8 * 55ms + 700ms draw = 1140ms, rounded up.
-  const DRAW_PHASE_MS = 1200;
+  // stroke-draw animation has played out. Tuned against the CSS:
+  // 9 letters × 65ms stagger + 500ms per-letter draw = 1020ms end.
+  // Fires a touch before so fill chases the wireframe with no gap.
+  const DRAW_PHASE_MS = 950;
   const [drawPhaseDone, setDrawPhaseDone] = useState(
     splashHasPlayedThisSession,
   );
@@ -168,23 +177,16 @@ export default function Homepage() {
     };
   }, []);
 
-  // Splash settles only when the entire intro is visually complete:
-  // - sceneReady (3D models actually present)
-  // - minWaitElapsed (legacy floor)
-  // - drawPhaseDone (wireframe has finished drawing)
-  // - displayedProgress >= 0.99 (fill has visually swept to the end)
-  // This prevents the wordmark from sliding to bottom-left while still
-  // animating in the centered splash position.
+  // Splash starts moving to the bottom-left corner as soon as the
+  // wireframe phase ends — overlaps with the fill cascade (which runs
+  // ~400ms now that the lerp factor was dialled back). The splash
+  // transition itself takes ~650ms, so fill and movement share their
+  // first ~400ms before the splash continues alone to the corner.
   useEffect(() => {
-    if (
-      sceneReady &&
-      minWaitElapsed &&
-      drawPhaseDone &&
-      displayedProgress >= 0.99
-    ) {
+    if (sceneReady && minWaitElapsed && drawPhaseDone) {
       setSplashSettled(true);
     }
-  }, [sceneReady, minWaitElapsed, drawPhaseDone, displayedProgress]);
+  }, [sceneReady, minWaitElapsed, drawPhaseDone]);
 
   useEffect(() => {
     if (splashHasPlayedThisSession) return;
@@ -192,55 +194,47 @@ export default function Homepage() {
     return () => window.clearTimeout(t);
   }, []);
 
-  // Lerp displayedProgress toward target. Lerp speed adapts to load
-  // state so the animation feels responsive in both cases:
-  //   - Cached/just-loaded (sceneReady=true): fast lerp ~0.18 so the
-  //     fill completes in roughly 400ms after Phase A finishes.
-  //   - Still loading (sceneReady=false): slow lerp ~0.07 so the fill
-  //     visibly tracks the byte progress instead of running ahead of
-  //     the actual download.
-  useEffect(() => {
-    if (splashHasPlayedThisSession) return;
-    let raf = 0;
-    const tick = () => {
-      setDisplayedProgress((prev) => {
-        const target = drawPhaseDone ? progress : 0;
-        // Lower factor = slower sweep. Tuned so the gradient wave is
-        // visible (~1s end-to-end) rather than snapping in one frame
-        // when cached loads jump progress straight to 1.
-        const factor = sceneReady ? 0.09 : 0.04;
-        const next = prev + (target - prev) * factor;
-        const done = Math.abs(target - next) < 0.001;
-        if (!done) raf = requestAnimationFrame(tick);
-        return done ? target : next;
-      });
-    };
-    raf = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(raf);
-  }, [progress, drawPhaseDone, sceneReady]);
-
   // Expected total budget for the intro animation. Models that finish
   // before this stay snappy; anything past it gets the overflow UI.
   const EXPECTED_LOAD_BUDGET_MS = 2000;
 
-  // Synthetic time-based ramp — only effective until a real progress
-  // event arrives. Ramps to 0.95 over EXPECTED_LOAD_BUDGET_MS so the
-  // wordmark always has something to fill against even on cached loads
-  // where Content-Length is missing.
+  // Unified RAF loop driving BOTH the synthetic time-based progress
+  // ramp (used when Content-Length isn't available) AND the displayed
+  // progress lerp. Previously these lived in two separate RAFs that
+  // competed for scheduler slots during the wireframe phase — merging
+  // them halves the scheduler overhead during the critical first
+  // 1.5s of page load.
   useEffect(() => {
-    if (splashHasPlayedThisSession || sceneReady) return;
+    if (splashHasPlayedThisSession) return;
     let raf = 0;
     const start = performance.now();
     const tick = (now: number) => {
-      if (hasRealProgress.current) return;
-      const elapsed = now - start;
-      const synth = Math.min(0.95, elapsed / EXPECTED_LOAD_BUDGET_MS);
-      setProgress((prev) => Math.max(prev, synth));
+      // Self-terminate once the splash has settled — the closure can
+      // outlive the splash phase if the effect dep array doesn't change.
+      if (splashHasPlayedThisSession) return;
+      // Synthetic ramp — only contributes until a real GLB byte
+      // progress event lands. Bumps `progress` toward 0.95 over the
+      // load budget so the fill mask has something to chase even when
+      // Content-Length is missing.
+      if (!hasRealProgress.current) {
+        const elapsed = now - start;
+        const synth = Math.min(0.95, elapsed / EXPECTED_LOAD_BUDGET_MS);
+        setProgress((prev) => (synth > prev ? synth : prev));
+      }
+      // Displayed-progress lerp. Snappy (factor 0.45) once the
+      // wireframe phase ends so the fill is visibly readable during
+      // the splash-to-corner transition. Decoupled from byte progress
+      // — the fill is a visual beat, not a load indicator.
+      setDisplayedProgress((prev) => {
+        const target = drawPhaseDone ? 1 : 0;
+        const factor = drawPhaseDone ? 0.45 : 0.08;
+        return prev + (target - prev) * factor;
+      });
       raf = requestAnimationFrame(tick);
     };
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
-  }, [sceneReady]);
+  }, [progress, drawPhaseDone, sceneReady]);
 
   // Show "loading models…" + Skip button if the scene takes longer than
   // the expected budget. Hides immediately when sceneReady fires.
@@ -368,6 +362,11 @@ export default function Homepage() {
                 frame: frameLabelRef,
                 esc: escLabelRef,
               }}
+              // Hold the GLB fetch + parse + processing for the first
+              // ~750ms so the wireframe wordmark animation gets a
+              // clean main thread. Skipped entirely on return visits
+              // where the splash was already played in this session.
+              loadDelayMs={splashHasPlayedThisSession ? 0 : 750}
             />
             {/* Dim overlay — only covers the 3D scene, not the wordmark.
                 Fades out once the scene is ready AND the minimum splash
@@ -383,17 +382,40 @@ export default function Homepage() {
               scroll-based fade once the hero starts scrolling away.
               The SVG inside owns the per-letter draw + fill animation;
               progress maps to the GLB load progress (or a synthetic
-              ramp when Content-Length is missing). */}
-          <h1
-            className={`hero-wordmark${splashSettled ? ' is-settled' : ''}`}
-            style={{opacity: splashSettled ? heroTextOpacity : 1}}
-            aria-label="OpenDrone"
-          >
-            <HeroWordmark
-              progress={displayedProgress}
-              className={displayedProgress >= 0.99 ? 'is-filled' : ''}
-            />
-          </h1>
+              ramp when Content-Length is missing).
+
+              While the splash is active we drive `transform` inline
+              with a per-frame scale that lerps from 1.95 (during the
+              wireframe) down to 1.7 (the CSS-rule splash size). This
+              gives a subtle "zoom out as the letters fill in" feel.
+              `transition: none` overrides the CSS-rule transition so
+              the per-frame scrub stays smooth. Once the splash settles,
+              both inline overrides are removed and the CSS rule's
+              0.65s transition takes over to slide the wordmark to its
+              bottom-left settled position. */}
+          {(() => {
+            const splashScale = 1.95 - displayedProgress * 0.25;
+            return (
+              <h1
+                className={`hero-wordmark${splashSettled ? ' is-settled' : ''}`}
+                style={{
+                  opacity: splashSettled ? heroTextOpacity : 1,
+                  ...(splashSettled
+                    ? {}
+                    : {
+                        transform: `translate(calc(50vw - 2.5rem - 50%), calc(-50vh + 2.5rem + 50%)) scale(${splashScale.toFixed(3)})`,
+                        transition: 'none',
+                      }),
+                }}
+                aria-label="OpenDrone"
+              >
+                <HeroWordmark
+                  progress={displayedProgress}
+                  className={displayedProgress >= 0.99 ? 'is-filled' : ''}
+                />
+              </h1>
+            );
+          })()}
 
           {/* Overflow UI — only renders when the scene takes longer than
               the expected animation budget. Gives the user a way out so

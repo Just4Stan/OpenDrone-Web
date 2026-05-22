@@ -81,12 +81,6 @@ const letters = withX.map(({d}, i) => ({
 // <path> per letter inside two color groups, ready for the
 // HeroWordmark React component to consume.
 const xmlEsc = (s) => s.replace(/&/g, '&amp;').replace(/"/g, '&quot;');
-const pathsXml = letters
-  .map(
-    (l) =>
-      `      <path id="letter-${l.index}" class="hw-letter hw-letter--${l.group}" data-char="${l.ch}" d="${xmlEsc(l.d)}" />`,
-  )
-  .join('\n');
 
 const svg = `<?xml version="1.0" encoding="UTF-8"?>
 <!--

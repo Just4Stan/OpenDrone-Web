@@ -1,4 +1,4 @@
-import {Suspense, useEffect} from 'react';
+import {Suspense, useEffect, useState} from 'react';
 import {Await, Link, useLoaderData} from 'react-router';
 import type {Route} from './+types/products.$handle';
 import {
@@ -14,6 +14,8 @@ import {ProductGallery} from '~/components/ProductGallery';
 import {ProductForm} from '~/components/ProductForm';
 import {RelatedProducts} from '~/components/RelatedProducts';
 import {FirmwareSplit} from '~/components/FirmwareSplit';
+import {VariantLadder} from '~/components/VariantLadder';
+import {BoardArt} from '~/components/BoardArt';
 import {ProvenanceCard} from '~/components/ProvenanceCard';
 import {
   LatestCommitGrid,
@@ -288,11 +290,15 @@ function Chapter({
   label,
   title,
   children,
+  media,
 }: {
   number: string;
   label: string;
   title: React.ReactNode;
   children: React.ReactNode;
+  /** Optional live media node — when omitted, the chapter renders the
+   *  geometric placeholder glyph for this chapter number. */
+  media?: React.ReactNode;
 }) {
   return (
     <section className="chapter" data-chapter={number}>
@@ -305,7 +311,13 @@ function Chapter({
         {children}
       </div>
       <aside className="chapter-media">
-        <ChapterMediaPlaceholder kind={number} />
+        {media ? (
+          <div className="chapter-media-frame chapter-media-frame--live">
+            {media}
+          </div>
+        ) : (
+          <ChapterMediaPlaceholder kind={number} />
+        )}
       </aside>
     </section>
   );
@@ -380,6 +392,39 @@ export default function Product() {
   const commitSkeletonCount = content.bundle
     ? content.bundle.components.length
     : 1;
+
+  // Comparison-ladder state for product lines (OpenRX/OpenESC). The
+  // editorial `variants` map is the tier source of truth; the active tier
+  // drives the spec/in-the-box preview and, once Shopify carries the
+  // matching option, the buy module follows via the selected variant.
+  const variantKeys = content.variants ? Object.keys(content.variants) : [];
+  const hasLadder = Boolean(content.optionAxis && variantKeys.length > 0);
+  const matchKey = (val?: string) =>
+    val
+      ? variantKeys.find(
+          (k) => k.trim().toLowerCase() === val.trim().toLowerCase(),
+        )
+      : undefined;
+  const shopifyAxisValue = content.optionAxis
+    ? selectedVariant?.selectedOptions?.find(
+        (o) =>
+          o.name.trim().toLowerCase() ===
+          content.optionAxis!.trim().toLowerCase(),
+      )?.value
+    : undefined;
+  const [activeTier, setActiveTier] = useState(
+    matchKey(shopifyAxisValue) ?? variantKeys[0] ?? '',
+  );
+  // Re-sync if Shopify resolves a different variant (deep-link with
+  // ?Model=Mono, or the optimistic variant settling on another tier).
+  useEffect(() => {
+    const k = matchKey(shopifyAxisValue);
+    if (k && k !== activeTier) setActiveTier(k);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [shopifyAxisValue]);
+  const activeVariant = content.variants?.[activeTier];
+  const mergedSpecs = [...content.specs, ...(activeVariant?.specs ?? [])];
+  const mergedBox = [...content.inTheBox, ...(activeVariant?.inTheBox ?? [])];
 
   // primaryCollection is retained in the loader but we deliberately
   // don't render a breadcrumb on the PDP — the editorial hero with
@@ -476,6 +521,16 @@ export default function Product() {
             ) : null}
           </ul>
 
+          {hasLadder && content.optionAxis && content.variants ? (
+            <VariantLadder
+              axis={content.optionAxis}
+              variants={content.variants}
+              productOptions={productOptions}
+              activeValue={activeTier}
+              onSelect={setActiveTier}
+            />
+          ) : null}
+
           <div className="product-buy" data-buy-module>
             <div className="product-buy-price">
               <ProductPrice
@@ -496,6 +551,9 @@ export default function Product() {
             <ProductForm
               productOptions={productOptions}
               selectedVariant={selectedVariant}
+              hideOptionNames={
+                content.optionAxis ? [content.optionAxis] : undefined
+              }
             />
           </div>
 
@@ -516,6 +574,15 @@ export default function Product() {
           number={chapterNums.teardown}
           label="Teardown"
           title={content.teardown.title}
+          media={
+            content.teardown.boardArt ? (
+              <BoardArt
+                src={content.teardown.boardArt.src}
+                inspectUrl={content.teardown.boardArt.inspectUrl}
+                handle={product.handle}
+              />
+            ) : undefined
+          }
         >
           <p className="chapter-body">{content.teardown.body}</p>
           <ul className="teardown-pins">
@@ -662,9 +729,9 @@ export default function Product() {
               Anything missing from a build, say so — we&apos;ll ship it.
             </p>
           )}
-          {content.inTheBox.length > 0 ? (
+          {mergedBox.length > 0 ? (
             <ul className="in-the-box">
-              {content.inTheBox.map((it) => (
+              {mergedBox.map((it) => (
                 <li key={`${it.qty ?? ''}${it.item}`}>
                   {it.qty ? (
                     <span className="in-the-box-qty">{it.qty}</span>
@@ -735,7 +802,7 @@ export default function Product() {
           title="Every spec, in one table."
         >
           <dl className="spec-table">
-            {content.specs.map(([k, v]) => (
+            {mergedSpecs.map(([k, v]) => (
               <div key={k}>
                 <dt>{k}</dt>
                 <dd>{v}</dd>

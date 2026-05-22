@@ -1,4 +1,5 @@
 import {Canvas, useFrame, useThree, invalidate} from '@react-three/fiber';
+import {EffectComposer, SMAA} from '@react-three/postprocessing';
 import {useRef, useState, useEffect, useCallback} from 'react';
 import type {Group} from 'three';
 import * as THREE from 'three';
@@ -90,12 +91,18 @@ function createCarbonFiberTextures(canvas: HTMLCanvasElement) {
   colorMap.wrapS = colorMap.wrapT = THREE.RepeatWrapping;
   colorMap.repeat.set(2.8, 2.8);
   colorMap.colorSpace = THREE.SRGBColorSpace;
-  colorMap.anisotropy = 8;
+  colorMap.anisotropy = 4;
 
-  const detailMap = new THREE.CanvasTexture(canvas);
+  // Detail map (roughness + bump) wraps the same canvas. Share the
+  // underlying Source so the GPU stores one texture instead of two —
+  // three.js keys VRAM allocations by source.uuid.
+  const detailMap = new THREE.Texture();
+  detailMap.source = colorMap.source;
   detailMap.wrapS = detailMap.wrapT = THREE.RepeatWrapping;
   detailMap.repeat.copy(colorMap.repeat);
-  detailMap.anisotropy = 8;
+  detailMap.anisotropy = 4;
+  detailMap.colorSpace = THREE.NoColorSpace;
+  detailMap.needsUpdate = true;
 
   return {colorMap, detailMap};
 }
@@ -276,11 +283,17 @@ function DroneAssembly({
   onReady,
   onProgress,
   labelRefs,
+  loadDelayMs,
 }: {
   scrollRef: React.RefObject<number>;
   onReady?: () => void;
   onProgress?: (progress: number) => void;
   labelRefs?: LabelRefs;
+  /** Delay the network fetch + parse + post-processing of the GLBs by this
+   *  many ms so the homepage's CSS wireframe animation gets a clean main
+   *  thread for its first frames. Cached visits already see ms-scale loads
+   *  so the delay there is invisible. */
+  loadDelayMs?: number;
 }) {
   const {camera, size} = useThree();
   const tmpVec = useRef(new THREE.Vector3()).current;
@@ -302,11 +315,6 @@ function DroneAssembly({
   const fcMats = useRef<any[]>([]);
   const hoverState = useRef({frame: 0, esc: 0, fc: 0});
   const hoverTarget = useRef({frame: 0, esc: 0, fc: 0});
-  // Per-board key light that fades in on hover — sits above the board in
-  // its local frame so it follows the assembly's rotation.
-  const frameTopLightRef = useRef<THREE.PointLight>(null);
-  const escTopLightRef = useRef<THREE.PointLight>(null);
-  const fcTopLightRef = useRef<THREE.PointLight>(null);
 
 
   useEffect(() => {
@@ -314,10 +322,10 @@ function DroneAssembly({
 
     let carbonMaps:
       | {
-          colorMap: THREE.CanvasTexture;
-          detailMap: THREE.CanvasTexture;
-          armColorMap: THREE.CanvasTexture;
-          armDetailMap: THREE.CanvasTexture;
+          colorMap: THREE.Texture;
+          detailMap: THREE.Texture;
+          armColorMap: THREE.Texture;
+          armDetailMap: THREE.Texture;
         }
       | null = null;
 
@@ -350,144 +358,201 @@ function DroneAssembly({
       else onProgress(Math.min(1, l / t));
     };
 
-    Promise.all([
-      loadModel('/models/frame.glb', (l, t) => {
-        loaded[0] = l;
-        total[0] = t;
-        reportProgress();
-      }),
-      loadModel('/models/esc.glb', (l, t) => {
-        loaded[1] = l;
-        total[1] = t;
-        reportProgress();
-      }),
-      loadModel('/models/fc.glb', (l, t) => {
-        loaded[2] = l;
-        total[2] = t;
-        reportProgress();
-      }),
-    ]).then(([frameScene, escScene, fcScene]) => {
-      if (cancelled) return;
+    // Yield to the main thread so the browser can land animation frames,
+    // paint, and process input between heavy synchronous chunks. Without
+    // these breaks the post-parse processing of all 3 GLBs runs in a
+    // single ~200-400ms block that visibly freezes the CSS wireframe
+    // animation on the homepage.
+    const yieldToMain = () =>
+      new Promise<void>((resolve) => setTimeout(resolve, 0));
 
-      const box = new THREE.Box3().setFromObject(frameScene);
-      const c = box.getCenter(new THREE.Vector3());
-      frameScene.position.sub(c);
-      escScene.position.sub(c);
-      fcScene.position.sub(c);
-      // Bake the recentering transform into the mesh world matrices so
-      // the merge helper picks it up.
-      frameScene.updateMatrixWorld(true);
-      escScene.updateMatrixWorld(true);
-      fcScene.updateMatrixWorld(true);
+    void (async () => {
+      try {
+        // Hold the network fetch back until the homepage wireframe has
+        // had a clean head-start on the main thread. Skipped (loadDelayMs
+        // = 0) on cached / return visits where the GLB parse is cheap.
+        if (loadDelayMs && loadDelayMs > 0) {
+          await new Promise((r) => setTimeout(r, loadDelayMs));
+          if (cancelled) return;
+        }
 
-      // The PCB GLBs ship with unlit materials (MeshBasic). Convert to PBR
-      // so scene lights actually shade the boards instead of letting the
-      // baked albedo show through at full brightness.
-      upgradeNonPBRMaterials(escScene);
-      upgradeNonPBRMaterials(fcScene);
+        const [frameScene, escScene, fcScene] = await Promise.all([
+          loadModel('/models/frame.glb', (l, t) => {
+            loaded[0] = l;
+            total[0] = t;
+            reportProgress();
+          }),
+          loadModel('/models/esc.glb', (l, t) => {
+            loaded[1] = l;
+            total[1] = t;
+            reportProgress();
+          }),
+          loadModel('/models/fc.glb', (l, t) => {
+            loaded[2] = l;
+            total[2] = t;
+            reportProgress();
+          }),
+        ]);
+        if (cancelled) return;
 
-      // Collapse property-identical materials onto a shared instance. The
-      // GLB exporter creates a fresh material per mesh even when colour
-      // and map match — this dedup cuts the post-merge bucket count, so
-      // many more meshes coalesce into the same draw call.
-      dedupeMaterialsByFingerprint(escScene);
-      dedupeMaterialsByFingerprint(fcScene);
+        const box = new THREE.Box3().setFromObject(frameScene);
+        const c = box.getCenter(new THREE.Vector3());
+        frameScene.position.sub(c);
+        escScene.position.sub(c);
+        fcScene.position.sub(c);
+        // Bake the recentering transform into the mesh world matrices so
+        // the merge helper picks it up.
+        frameScene.updateMatrixWorld(true);
+        escScene.updateMatrixWorld(true);
+        fcScene.updateMatrixWorld(true);
 
-      const baseCanvas = createCarbonFiberCanvas();
-      const armCanvas = createRotatedCarbonCanvas(baseCanvas, Math.PI / 4);
-      const baseMaps = createCarbonFiberTextures(baseCanvas);
-      const armMaps = createCarbonFiberTextures(armCanvas);
-      carbonMaps = {
-        ...baseMaps,
-        armColorMap: armMaps.colorMap,
-        armDetailMap: armMaps.detailMap,
-      };
-      const {colorMap, detailMap, armColorMap, armDetailMap} = carbonMaps;
+        await yieldToMain();
+        if (cancelled) return;
 
-      // Build two frame materials — arm (rotated carbon) and body
-      // (straight carbon). Every frame mesh ends up in exactly one of
-      // these two buckets, so the entire frame renders in 2 draw calls.
-      const makeFrameMaterial = (arm: boolean) => {
-        const m = new THREE.MeshStandardMaterial({
-          color: 0xf2f2f2,
-          metalness: 0.16,
-          roughness: 0.58,
-          map: arm ? armColorMap : colorMap,
-          roughnessMap: arm ? armDetailMap : detailMap,
-          bumpMap: arm ? armDetailMap : detailMap,
-          bumpScale: 0.01,
-          transparent: true,
-          opacity: 0.62,
-          // depthWrite stays true to avoid the per-frame z-sort flicker
-          // ("shimmering fire" look) when rotating the transparent frame.
-          depthWrite: true,
-        });
-        return m;
-      };
-      const frameBodyMat = makeFrameMaterial(false);
-      const frameArmMat = makeFrameMaterial(true);
+        // The PCB GLBs ship with unlit materials (MeshBasic). Convert to PBR
+        // so scene lights actually shade the boards instead of letting the
+        // baked albedo show through at full brightness.
+        upgradeNonPBRMaterials(escScene);
+        await yieldToMain();
+        if (cancelled) return;
+        upgradeNonPBRMaterials(fcScene);
+        await yieldToMain();
+        if (cancelled) return;
 
-      const framePack = mergeGroupByBucket(
-        frameScene,
-        (mesh) => (/^arm/i.test(mesh.name ?? '') ? 'arm' : 'body'),
-        (key) => (key === 'arm' ? frameArmMat : frameBodyMat),
-      );
+        // Collapse property-identical materials onto a shared instance. The
+        // GLB exporter creates a fresh material per mesh even when colour
+        // and map match — this dedup cuts the post-merge bucket count, so
+        // many more meshes coalesce into the same draw call.
+        dedupeMaterialsByFingerprint(escScene);
+        await yieldToMain();
+        if (cancelled) return;
+        dedupeMaterialsByFingerprint(fcScene);
+        await yieldToMain();
+        if (cancelled) return;
 
-      // ESC + FC: keep the original materials but merge meshes that
-      // share the same material reference. This drops hundreds of draw
-      // calls without changing the visual.
-      const mergeByMaterialRef = (scene: THREE.Group) => {
-        const materialsByKey = new Map<string, THREE.Material>();
-        return mergeGroupByBucket(
-          scene,
-          (mesh) => {
-            const mat = Array.isArray(mesh.material)
-              ? mesh.material[0]
-              : mesh.material;
-            if (!mat) return 'default';
-            const key = mat.uuid;
-            if (!materialsByKey.has(key)) materialsByKey.set(key, mat);
-            return key;
-          },
-          (key) =>
-            materialsByKey.get(key) ||
-            new THREE.MeshStandardMaterial({color: 0x999999}),
+        const baseCanvas = createCarbonFiberCanvas();
+        const armCanvas = createRotatedCarbonCanvas(baseCanvas, Math.PI / 4);
+        const baseMaps = createCarbonFiberTextures(baseCanvas);
+        const armMaps = createCarbonFiberTextures(armCanvas);
+        carbonMaps = {
+          ...baseMaps,
+          armColorMap: armMaps.colorMap,
+          armDetailMap: armMaps.detailMap,
+        };
+        const {colorMap, detailMap, armColorMap, armDetailMap} = carbonMaps;
+
+        await yieldToMain();
+        if (cancelled) return;
+
+        // Build two frame materials — arm (rotated carbon) and body
+        // (straight carbon). Every frame mesh ends up in exactly one of
+        // these two buckets, so the entire frame renders in 2 draw calls.
+        const makeFrameMaterial = (arm: boolean) => {
+          const m = new THREE.MeshStandardMaterial({
+            color: 0xf2f2f2,
+            metalness: 0.16,
+            roughness: 0.58,
+            map: arm ? armColorMap : colorMap,
+            roughnessMap: arm ? armDetailMap : detailMap,
+            bumpMap: arm ? armDetailMap : detailMap,
+            bumpScale: 0.01,
+            transparent: true,
+            opacity: 0.62,
+            // depthWrite stays true to avoid the per-frame z-sort flicker
+            // ("shimmering fire" look) when rotating the transparent frame.
+            depthWrite: true,
+          });
+          return m;
+        };
+        const frameBodyMat = makeFrameMaterial(false);
+        const frameArmMat = makeFrameMaterial(true);
+
+        const framePack = mergeGroupByBucket(
+          frameScene,
+          (mesh) => (/^arm/i.test(mesh.name ?? '') ? 'arm' : 'body'),
+          (key) => (key === 'arm' ? frameArmMat : frameBodyMat),
         );
-      };
 
-      const escPack = mergeByMaterialRef(escScene);
-      const fcPack = mergeByMaterialRef(fcScene);
+        await yieldToMain();
+        if (cancelled) return;
 
-      frameMats.current = [frameBodyMat, frameArmMat];
-      escMats.current = Array.from(
-        new Set(escPack.group.children.map((m) => (m as THREE.Mesh).material)),
-      ).filter(Boolean) as THREE.Material[];
-      fcMats.current = Array.from(
-        new Set(fcPack.group.children.map((m) => (m as THREE.Mesh).material)),
-      ).filter(Boolean) as THREE.Material[];
+        // ESC + FC: keep the original materials but merge meshes that
+        // share the same material reference. This drops hundreds of draw
+        // calls without changing the visual.
+        const mergeByMaterialRef = (scene: THREE.Group) => {
+          const materialsByKey = new Map<string, THREE.Material>();
+          return mergeGroupByBucket(
+            scene,
+            (mesh) => {
+              const mat = Array.isArray(mesh.material)
+                ? mesh.material[0]
+                : mesh.material;
+              if (!mat) return 'default';
+              const key = mat.uuid;
+              if (!materialsByKey.has(key)) materialsByKey.set(key, mat);
+              return key;
+            },
+            (key) =>
+              materialsByKey.get(key) ||
+              new THREE.MeshStandardMaterial({color: 0x999999}),
+          );
+        };
 
-      // PCB exports from KiCad/Blender often ship with a non-zero emissive
-      // on copper/silkscreen, which makes the boards look self-lit under any
-      // scene lighting. Force-zero it so the boards only show what the
-      // spotlight actually puts on them.
-      for (const m of [...escMats.current, ...fcMats.current]) {
-        if (!m || !('emissive' in m)) continue;
-        (m as any).emissive.setHex(0x000000);
-        (m as any).emissiveIntensity = 0;
+        const escPack = mergeByMaterialRef(escScene);
+        await yieldToMain();
+        if (cancelled) return;
+        const fcPack = mergeByMaterialRef(fcScene);
+        await yieldToMain();
+        if (cancelled) return;
+
+        frameMats.current = [frameBodyMat, frameArmMat];
+        escMats.current = Array.from(
+          new Set(escPack.group.children.map((m) => (m as THREE.Mesh).material)),
+        ).filter(Boolean) as THREE.Material[];
+        fcMats.current = Array.from(
+          new Set(fcPack.group.children.map((m) => (m as THREE.Mesh).material)),
+        ).filter(Boolean) as THREE.Material[];
+
+        // PCB exports from KiCad/Blender often ship with a non-zero emissive
+        // on copper/silkscreen, which makes the boards look self-lit under any
+        // scene lighting. Force-zero it so the boards only show what the
+        // spotlight actually puts on them.
+        for (const m of [...escMats.current, ...fcMats.current]) {
+          if (!m || !('emissive' in m)) continue;
+          (m as any).emissive.setHex(0x000000);
+          (m as any).emissiveIntensity = 0;
+        }
+
+        // Shadow flags. Boards cast AND receive so their components
+        // self-shadow their own PCB surface — that's the depth cue at
+        // end-position. The frame is partly transparent (opacity 0.62–
+        // 0.9), so it only receives — transparent casters produce
+        // muddy ghost shadows in three.js's default depth path.
+        const setShadowFlags = (g: THREE.Group, cast: boolean) => {
+          g.traverse((obj) => {
+            const mesh = obj as THREE.Mesh;
+            if (!mesh.isMesh) return;
+            mesh.castShadow = cast;
+            mesh.receiveShadow = true;
+          });
+        };
+        setShadowFlags(framePack.group, false);
+        setShadowFlags(escPack.group, true);
+        setShadowFlags(fcPack.group, true);
+
+        mergedGroups.push(framePack.group, escPack.group, fcPack.group);
+
+        frameRef.current?.add(framePack.group);
+        escRef.current?.add(escPack.group);
+        fcRef.current?.add(fcPack.group);
+        invalidate();
+        onReady?.();
+      } catch (err) {
+        console.error('Failed to load drone models:', err);
+        // Surface completion even on failure so the splash can release.
+        onReady?.();
       }
-
-      mergedGroups.push(framePack.group, escPack.group, fcPack.group);
-
-      frameRef.current?.add(framePack.group);
-      escRef.current?.add(escPack.group);
-      fcRef.current?.add(fcPack.group);
-      invalidate();
-      onReady?.();
-    }).catch((err) => {
-      console.error('Failed to load drone models:', err);
-      // Surface completion even on failure so the splash can release.
-      onReady?.();
-    });
+    })();
 
     return () => {
       cancelled = true;
@@ -625,14 +690,10 @@ function DroneAssembly({
       THREE.MathUtils.lerp(0, 0.04, flyOut),
     );
 
-    // Hover effect — subtle gold tint, controlled via material emissive
-    // plus a per-board top key light that fades in.
+    // Hover effect — gold emissive lift on the hovered board. Replaces a
+    // per-board PointLight wash that previously cost a real light bind +
+    // per-fragment shading across every surface it touched.
     let glowAnimating = false;
-    const topLights = {
-      frame: frameTopLightRef,
-      esc: escTopLightRef,
-      fc: fcTopLightRef,
-    };
     // Clear hover when scrolled back before interactive threshold
     if (p < 0.65) {
       hoverTarget.current.frame = 0;
@@ -646,19 +707,12 @@ function DroneAssembly({
       hoverState.current[key] += (target - prev) * Math.min(1, 8 * dt);
       if (Math.abs(hoverState.current[key] - target) > 0.01) glowAnimating = true;
       const intensity = hoverState.current[key];
-      // Subtle gold emissive tint on the object (hover only)
       const mats = key === 'frame' ? frameMats : key === 'esc' ? escMats : fcMats;
       for (const m of mats.current) {
         if (!m || !('emissive' in m)) continue;
-        (m as any).emissive.copy(BLACK).lerp(GOLD_TINT, intensity * 0.12);
-        (m as any).emissiveIntensity = intensity * 0.6;
+        (m as any).emissive.copy(BLACK).lerp(GOLD_TINT, intensity * 0.18);
+        (m as any).emissiveIntensity = intensity * 0.85;
       }
-      // Hover key — a tight warm "spotlight" pool above the board.
-      // Distance is in world units; the board is ~1 world unit across once
-      // wrapper scale is applied, so 0.55 covers the hovered board but
-      // doesn't bleed onto its neighbours.
-      const topLight = topLights[key].current;
-      if (topLight) topLight.intensity = intensity * 7;
     }
 
     // Project model world positions to screen coords and update the
@@ -735,25 +789,19 @@ function DroneAssembly({
         onPointerOver={() => hover('frame', true)}
         onPointerOut={() => hover('frame', false)}
         onClick={() => handleClick('/products/openframe')}
-      >
-        <pointLight ref={frameTopLightRef} color="#ffd9b0" intensity={0} distance={0.55} decay={1.6} position={[0, 0.04, 0.05]} />
-      </group>
+      />
       <group
         ref={escRef}
         onPointerOver={() => hover('esc', true)}
         onPointerOut={() => hover('esc', false)}
         onClick={() => handleClick('/products/openesc')}
-      >
-        <pointLight ref={escTopLightRef} color="#ffd9b0" intensity={0} distance={0.55} decay={1.6} position={[0, 0.04, 0.05]} />
-      </group>
+      />
       <group
         ref={fcRef}
         onPointerOver={() => hover('fc', true)}
         onPointerOut={() => hover('fc', false)}
         onClick={() => handleClick('/products/openfc')}
-      >
-        <pointLight ref={fcTopLightRef} color="#ffd9b0" intensity={0} distance={0.55} decay={1.6} position={[0, 0.04, 0.05]} />
-      </group>
+      />
     </group>
   );
 }
@@ -818,32 +866,29 @@ function PerfProbe({
 }
 
 /**
- * Drives the global scene lights from scroll progress. Bright during the
- * intro (boards stacked + auto-rotating, so the lighting acts as a
- * showcase) and dimmer once they fan out to the interactive state, where
- * the per-board hover spotlights take over.
+ * Hemi ramps down with scroll to preserve the harsh top-down gradient
+ * in the rotating hero state (0.72 top sky color vs 0.18 ground in hemi
+ * creates a strong vertical lift across the stacked boards) while
+ * dropping it at the end so the directional key dominates and its cast
+ * shadows read clearly. Key and rim stay constant — that earlier
+ * dimming was what caused the dark→light→dark feel.
  */
 function SceneLights({scrollRef}: {scrollRef: React.RefObject<number>}) {
-  const keyRef = useRef<THREE.SpotLight>(null);
-  const rimRef = useRef<THREE.SpotLight>(null);
-  const ambRef = useRef<THREE.AmbientLight>(null);
   const hemiRef = useRef<THREE.HemisphereLight>(null);
 
   useFrame(() => {
-    const fade = smoothstep(0.5, 0.85, scrollRef.current);
-    const t = 1 - fade;
-    if (keyRef.current) keyRef.current.intensity = THREE.MathUtils.lerp(14, 32, t);
-    if (rimRef.current) rimRef.current.intensity = THREE.MathUtils.lerp(3, 6.5, t);
-    if (hemiRef.current) hemiRef.current.intensity = THREE.MathUtils.lerp(0.32, 0.72, t);
-    if (ambRef.current) ambRef.current.intensity = THREE.MathUtils.lerp(0.04, 0.1, t);
+    if (!hemiRef.current) return;
+    const t = 1 - smoothstep(0.5, 0.85, scrollRef.current);
+    hemiRef.current.intensity = THREE.MathUtils.lerp(0.3, 0.72, t);
   });
 
   return (
     <>
       <hemisphereLight ref={hemiRef} args={['#cfdaeb', '#1a1d22', 0.72]} />
-      <ambientLight ref={ambRef} intensity={0.1} />
+      {/* Key shadow-casts so PCB components self-cast onto their own
+          board surface at end-position (where hemi is low and the
+          directional key dominates). */}
       <spotLight
-        ref={keyRef}
         position={[0, 2.4, 0.9]}
         angle={0.58}
         penumbra={0.7}
@@ -851,9 +896,15 @@ function SceneLights({scrollRef}: {scrollRef: React.RefObject<number>}) {
         distance={7}
         intensity={32}
         color="#ffe8cc"
+        castShadow
+        shadow-mapSize-width={2048}
+        shadow-mapSize-height={2048}
+        shadow-camera-near={1.5}
+        shadow-camera-far={4.5}
+        shadow-bias={-0.0003}
+        shadow-normalBias={0.015}
       />
       <spotLight
-        ref={rimRef}
         position={[-1.4, 0.35, -0.7]}
         angle={0.85}
         penumbra={0.95}
@@ -893,10 +944,12 @@ export function HeroScene({
   onReady,
   onProgress,
   labelRefs,
+  loadDelayMs,
 }: {
   onReady?: () => void;
   onProgress?: (progress: number) => void;
   labelRefs?: LabelRefs;
+  loadDelayMs?: number;
 } = {}) {
   const [mounted, setMounted] = useState(false);
   const [active, setActive] = useState(true);
@@ -946,13 +999,18 @@ export function HeroScene({
       <Canvas
         camera={{position: [0, 0.15, 0.7], fov: 40}}
         style={{background: 'transparent'}}
+        shadows="soft"
         frameloop="demand"
         // Cap pixel ratio at 1.5 — at 2× on a Retina mobile screen the
         // canvas is rasterised at 4× the pixel count for no perceivable
         // gain. 1.5 is the sweet spot between sharpness and battery.
         dpr={[1, 1.5]}
         gl={{
-          antialias: true,
+          // MSAA off — replaced by an SMAA postprocess pass below. MSAA
+          // at DPR 1.5 on Retina was rasterising 4 samples × 2.25× the
+          // pixel count; SMAA is a fixed per-pixel cost decoupled from
+          // scene complexity and looks ≈ 4×MSAA for this material set.
+          antialias: false,
           alpha: true,
           // 'default' lets macOS pick an efficient GPU schedule.
           // 'high-performance' previously forced the GPU into its
@@ -975,7 +1033,11 @@ export function HeroScene({
           onReady={onReady}
           onProgress={onProgress}
           labelRefs={labelRefs}
+          loadDelayMs={loadDelayMs}
         />
+        <EffectComposer multisampling={0} enableNormalPass={false}>
+          <SMAA />
+        </EffectComposer>
         {PERF_HUD ? <PerfProbe onSample={setPerf} /> : null}
       </Canvas>
       {PERF_HUD && perf ? (

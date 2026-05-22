@@ -31,16 +31,25 @@ export function HeroWordmark({
 }) {
   // Per-letter "fly-in" offset for the wireframe phase. Memoised so the
   // offset stays stable across re-renders during the draw animation.
-  // Deterministic (sine-hash on index) so SSR and client agree.
+  // Deterministic (sine-hash on index) so SSR and client agree. Magnitudes
+  // floored so no letter happens to seed near 0.5 and spawn in-place —
+  // every letter must visibly assemble.
   const letterStyles = useMemo(() => {
     return WORDMARK_LETTERS.map(({index}) => {
       const seed = Math.sin(index * 12.9898) * 43758.5453;
       const a = seed - Math.floor(seed);
       const b = Math.sin(index * 78.233) * 43758.5453;
       const c = b - Math.floor(b);
-      const dx = (a - 0.5) * 80;
-      const dy = (c - 0.5) * 40;
-      const rot = (a - 0.5) * 12;
+      // Signed jitter with a magnitude floor — even an `a` near 0.5
+      // yields a meaningful displacement. dx ±(120..280)px,
+      // dy ±(60..160)px, rot ±(8..28)deg.
+      const signA = a < 0.5 ? -1 : 1;
+      const signC = c < 0.5 ? -1 : 1;
+      const magA = Math.abs(a - 0.5) * 2; // 0..1
+      const magC = Math.abs(c - 0.5) * 2;
+      const dx = signA * (120 + magA * 160);
+      const dy = signC * (60 + magC * 100);
+      const rot = signA * (8 + magA * 20);
       return {
         '--dx': `${dx.toFixed(1)}px`,
         '--dy': `${dy.toFixed(1)}px`,
