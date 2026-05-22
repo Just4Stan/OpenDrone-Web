@@ -16,6 +16,7 @@ import {RelatedProducts} from '~/components/RelatedProducts';
 import {FirmwareSplit} from '~/components/FirmwareSplit';
 import {VariantLadder} from '~/components/VariantLadder';
 import {BoardArt} from '~/components/BoardArt';
+import type {FrameViewerProps} from '~/components/FrameViewer';
 import {ProvenanceCard} from '~/components/ProvenanceCard';
 import {ProductCompliance} from '~/components/ProductCompliance';
 import {
@@ -228,6 +229,29 @@ function computeChapterNumbers(content: ProductContent): ChapterNumbers {
   return out;
 }
 
+/**
+ * Client-only loader for the exploded 3D frame viewer. The viewer pulls in
+ * three.js + @react-three/fiber, so — like the homepage's HeroScene — we
+ * code-split it and import it in the browser only, keeping the r3f runtime
+ * out of the server render and the PDP's initial chunk.
+ */
+function ClientFrameViewer(props: FrameViewerProps) {
+  const [Viewer, setViewer] = useState<React.ComponentType<FrameViewerProps> | null>(
+    null,
+  );
+  useEffect(() => {
+    let alive = true;
+    void import('~/components/FrameViewer').then((m) => {
+      if (alive) setViewer(() => m.FrameViewer);
+    });
+    return () => {
+      alive = false;
+    };
+  }, []);
+  if (!Viewer) return null;
+  return <Viewer {...props} />;
+}
+
 /** Placeholder media slot. Renders a soft card with a geometric icon
  *  picked from `kind` until real images are wired in. */
 function ChapterMediaPlaceholder({kind}: {kind: string}) {
@@ -430,6 +454,9 @@ export default function Product() {
   // `boardArt` wins, otherwise the shared `teardown.boardArt` (the default
   // board) is shown. Lines without per-tier art just keep the default.
   const activeBoardArt = activeVariant?.boardArt ?? content.teardown?.boardArt;
+  // CAD products (the frame) carry an exploded 3D viewer instead of a
+  // layered board SVG; when present it takes the teardown media slot.
+  const frameViewer = content.teardown?.frameViewer;
 
   // primaryCollection is retained in the loader but we deliberately
   // don't render a breadcrumb on the PDP — the editorial hero with
@@ -580,7 +607,13 @@ export default function Product() {
           label="Teardown"
           title={content.teardown.title}
           media={
-            activeBoardArt ? (
+            frameViewer ? (
+              <ClientFrameViewer
+                key={frameViewer.src}
+                src={frameViewer.src}
+                inspectUrl={frameViewer.inspectUrl}
+              />
+            ) : activeBoardArt ? (
               <BoardArt
                 // Remount on src change so the scroll-reveal animation and
                 // Top/Bottom toggle reset cleanly when the tier swaps boards.
