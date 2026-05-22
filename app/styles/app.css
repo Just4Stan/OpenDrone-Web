@@ -2236,6 +2236,123 @@ button.reset {
   box-shadow: none;
 }
 
+/* Morphing buy rail — wraps the ladder + buy module. At rest it's a
+   transparent passthrough; pinned (desktop, scrolled into the chapters) it
+   floats over the page in its own column lane and CSS collapses it to a row
+   of bare tier names + a small add-to-cart. The PDP route portals it to
+   <body> when pinned and feeds left/width inline. */
+.buy-rail {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+}
+
+@media (min-width: 960px) {
+  .buy-rail.is-pinned {
+    position: fixed;
+    top: calc(var(--header-height) + 0.5rem);
+    z-index: 60;
+    flex-direction: row;
+    align-items: center;
+    gap: var(--sp-3);
+    padding: 0.45rem 0.6rem;
+    background: color-mix(in srgb, var(--color-bg-card) 90%, transparent);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid var(--color-border);
+    border-radius: var(--r-md);
+    box-shadow: 0 14px 32px -14px rgba(0, 0, 0, 0.65);
+    animation: buy-rail-drop 0.2s ease;
+  }
+
+  /* Hidden while a cart/search/mobile aside is open so the fixed rail doesn't
+     overlap the drawer. Kept in the DOM (display:none, not unmounted) so an
+     in-flight add-to-cart submit isn't interrupted. */
+  .buy-rail.is-pinned.is-suppressed {
+    display: none;
+  }
+
+  @keyframes buy-rail-drop {
+    from {
+      opacity: 0;
+      transform: translateY(-10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  /* Ladder → inline row of name-only pills. Content-sized (not stretched)
+     so the whole rail shrink-wraps and grows leftward with each SKU. */
+  .buy-rail.is-pinned .variant-ladder {
+    flex: 0 0 auto;
+    min-width: 0;
+    gap: 0;
+  }
+  .buy-rail.is-pinned .variant-ladder-axis {
+    display: none;
+  }
+  .buy-rail.is-pinned .variant-ladder-track {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: var(--sp-2);
+    grid-template-columns: none;
+  }
+  .buy-rail.is-pinned .variant-tier {
+    flex: 0 1 auto;
+    padding: 0.3rem 0.7rem;
+    gap: 0;
+    border-radius: var(--r-sm);
+  }
+  .buy-rail.is-pinned .variant-tier-tagline,
+  .buy-rail.is-pinned .variant-tier-cells,
+  .buy-rail.is-pinned .variant-tier-flag {
+    display: none;
+  }
+  .buy-rail.is-pinned .variant-tier-name {
+    font-size: var(--fs-sm);
+    white-space: nowrap;
+  }
+
+  /* Buy module → compact price + small add-to-cart, no card chrome. */
+  .buy-rail.is-pinned .product-buy {
+    flex: 0 0 auto;
+    flex-direction: row;
+    align-items: center;
+    gap: var(--sp-2);
+    margin: 0;
+    padding: 0;
+    border: none;
+    background: none;
+    border-radius: 0;
+  }
+  .buy-rail.is-pinned .product-buy-sku,
+  .buy-rail.is-pinned .product-buy-stock {
+    display: none;
+  }
+  .buy-rail.is-pinned .product-buy-price .product-price {
+    font-size: 1.1rem;
+  }
+  .buy-rail.is-pinned .product-form {
+    margin: 0;
+  }
+  /* Hide the option pill grids; keep only the add-to-cart button. */
+  .buy-rail.is-pinned .product-form > div {
+    display: none;
+  }
+  .buy-rail.is-pinned .product-form .btn-primary {
+    padding: 0.42rem 0.95rem;
+    font-size: var(--fs-sm);
+    white-space: nowrap;
+  }
+}
+
+.buy-rail-sentinel {
+  height: 0;
+  margin: 0;
+}
+
 /* Comparison ladder — the variant selector for a product line. Tier
    cards that double as the radio group; the selected card drives the
    spec/in-the-box preview and (when Shopify carries the option) the
@@ -2590,6 +2707,14 @@ button.reset {
   content: none;
 }
 
+/* Firmware project wordmark in the "The €1" chapter media slot. */
+.firmware-logo {
+  width: 100%;
+  max-width: 320px;
+  height: auto;
+  display: block;
+}
+
 .board-art {
   position: relative;
   width: 180%;
@@ -2679,6 +2804,54 @@ button.reset {
   .board-art {
     width: 100%;
     margin-left: 0;
+  }
+}
+
+/* === Frame viewer — the CAD analogue of .board-art. A big, non-interactive
+   layer of gold vector outlines that fan apart on scroll, sitting BEHIND the
+   teardown text. The chapter goes position:relative; the backdrop is an
+   over-bleeding absolute layer; the text/cards lift above it via z-index. === */
+/* No extra height — the chapter sizes to its text. The frame is an overlay
+   that flows OVER the neighbouring sections via a big over-bleeding layer. */
+.chapter[data-backdrop] {
+  position: relative;
+}
+/* Over-bleeds far above (into the section above) and below (into chapter 2)
+   and into the side margins, so the exploded outlines spill over the rest of
+   the page. Purely decorative. */
+.chapter-backdrop {
+  position: absolute;
+  top: -6vh; /* barely above the section — keep clear of the hero / buy button */
+  bottom: -70vh; /* flow down into chapter 2. NB: the model paints at this
+                    layer's vertical centre, so don't grow this much further or
+                    the assembled frame drops out of the chapter-1 view. */
+  left: -10vw;
+  right: -4vw;
+  z-index: 0;
+  pointer-events: none;
+}
+.chapter[data-backdrop] .chapter-index,
+.chapter[data-backdrop] .chapter-body-col {
+  position: relative;
+  z-index: 1; /* text/cards sit on top of the outlines */
+}
+.frame-viewer {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transition: opacity 1.1s cubic-bezier(0.2, 0.7, 0.2, 1);
+  pointer-events: none;
+}
+.frame-viewer[data-loaded='true'] {
+  opacity: 1;
+}
+.frame-viewer canvas {
+  display: block;
+}
+@media (max-width: 879px) {
+  /* The teardown media column is hidden on mobile, so drop the backdrop. */
+  .chapter-backdrop {
+    display: none;
   }
 }
 
@@ -3290,22 +3463,8 @@ button.reset {
   align-items: center;
 }
 
-.firmware-split-eyebrow {
-  grid-column: 1 / -1;
-  font-family: var(--font-mono);
-  font-size: 11px;
-  letter-spacing: 0.25em;
-  text-transform: uppercase;
-  color: var(--color-gold);
-  margin: 0;
-}
-
-.firmware-split-eyebrow span {
-  color: var(--color-text-muted);
-}
-
 .firmware-split-amounts {
-  grid-row: 2 / span 2;
+  grid-row: 1 / span 2;
   display: flex;
   align-items: center;
   gap: 0.75rem;
@@ -4513,124 +4672,6 @@ button.reset {
   font-size: 11px;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: var(--color-text-muted);
-}
-
-/* ============================================
-   Product compliance block (GPSR)
-   ============================================ */
-
-.product-compliance {
-  margin-top: 1.5rem;
-  padding: 1.1rem;
-  background: var(--color-bg-card);
-  border: 1px solid var(--color-border);
-  border-radius: 10px;
-  display: grid;
-  gap: 1rem;
-}
-
-.product-compliance .section-heading {
-  margin-bottom: 0;
-}
-
-.product-compliance-grid {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 1rem 3rem;
-}
-
-.product-compliance-grid > div {
-  min-width: 200px;
-  max-width: 420px;
-}
-
-.product-compliance-grid dt {
-  font-family: var(--font-mono);
-  font-size: 11px;
-  text-transform: uppercase;
-  letter-spacing: 0.16em;
-  color: var(--color-text-muted);
-  margin-bottom: 0.35rem;
-}
-
-.product-compliance-grid dd {
-  color: var(--color-text);
-  font-size: 0.85rem;
-  line-height: 1.5;
-}
-
-.product-compliance-muted {
-  color: var(--color-text-muted);
-  font-size: 0.75rem;
-}
-
-.product-compliance-safety {
-  border-left: 3px solid var(--color-gold);
-  padding: 0.6rem 0.85rem;
-  background: color-mix(in srgb, var(--color-gold) 8%, var(--color-bg));
-  border-radius: 4px;
-}
-
-.product-compliance-safety strong {
-  display: block;
-  font-family: var(--font-mono);
-  font-size: 12px;
-  text-transform: uppercase;
-  letter-spacing: 0.12em;
-  color: var(--color-gold);
-  margin-bottom: 0.35rem;
-}
-
-.product-compliance-downloads {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-}
-
-.product-compliance-download {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
-  padding: 0.45rem 0.8rem;
-  border: 1px solid var(--color-border);
-  background: var(--color-bg);
-  color: var(--color-text);
-  font-family: var(--font-mono);
-  font-size: 12px;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  border-radius: 4px;
-  transition: border-color 150ms ease, color 150ms ease;
-}
-
-.product-compliance-download:hover {
-  border-color: var(--color-gold);
-  color: var(--color-gold);
-}
-
-.product-compliance-marks {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-  list-style: none;
-  padding: 0;
-  margin: 0;
-}
-
-.product-compliance-marks li {
-  padding: 0.25rem 0.55rem;
-  border: 1px solid var(--color-border);
-  border-radius: 3px;
-  font-family: var(--font-mono);
-  font-size: 11px;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  color: var(--color-text-muted);
-}
-
-.product-compliance-repo {
-  font-size: 0.8rem;
   color: var(--color-text-muted);
 }
 

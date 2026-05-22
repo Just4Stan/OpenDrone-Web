@@ -188,6 +188,18 @@ export default function Homepage() {
     }
   }, [sceneReady, minWaitElapsed, drawPhaseDone]);
 
+  // Guarantee the wordmark ends fully filled. The displayed-progress lerp
+  // is asymptotic and lives in the RAF below, which self-terminates the
+  // instant `splashHasPlayedThisSession` flips true. On a fast/cached load
+  // the settle can fire in the same commit that opens the fill, killing the
+  // loop while displayedProgress is only partway up — freezing letters as
+  // half-drawn outlines. Snapping to 1 on settle makes the end state
+  // deterministic; on slow loads the RAF has already swept it to ~1 by then,
+  // so this is a no-op and the cascade stays visible.
+  useEffect(() => {
+    if (splashSettled) setDisplayedProgress(1);
+  }, [splashSettled]);
+
   useEffect(() => {
     if (splashHasPlayedThisSession) return;
     const t = window.setTimeout(() => setDrawPhaseDone(true), DRAW_PHASE_MS);

@@ -1,14 +1,21 @@
-import {Suspense, useEffect, useState} from 'react';
-import {Await, Link, useLoaderData} from 'react-router';
+import {Suspense, useEffect, useMemo, useRef, useState} from 'react';
+import {createPortal} from 'react-dom';
+import {
+  Await,
+  Link,
+  useLoaderData,
+  useSearchParams,
+  type ShouldRevalidateFunctionArgs,
+} from 'react-router';
 import type {Route} from './+types/products.$handle';
 import {
   getSelectedProductOptions,
   Analytics,
-  useOptimisticVariant,
   getProductOptions,
   getAdjacentAndFirstAvailableVariants,
   useSelectedOptionInUrlParam,
 } from '@shopify/hydrogen';
+import {useAside} from '~/components/Aside';
 import {ProductPrice} from '~/components/ProductPrice';
 import {ProductGallery} from '~/components/ProductGallery';
 import {ProductForm} from '~/components/ProductForm';
@@ -16,16 +23,14 @@ import {RelatedProducts} from '~/components/RelatedProducts';
 import {FirmwareSplit} from '~/components/FirmwareSplit';
 import {VariantLadder} from '~/components/VariantLadder';
 import {BoardArt} from '~/components/BoardArt';
+import type {FrameViewerProps} from '~/components/FrameViewer';
 import {ProvenanceCard} from '~/components/ProvenanceCard';
-import {ProductCompliance} from '~/components/ProductCompliance';
 import {
   LatestCommitGrid,
   LatestCommitSkeleton,
 } from '~/components/LatestCommit';
 import {redirectIfHandleIsLocalized} from '~/lib/redirect';
 import {buildSeoMeta, buildProductJsonLd} from '~/lib/seo';
-import {getCompanyIdentity} from '~/lib/company';
-import {getLocaleFromRequest} from '~/lib/i18n';
 import {fetchLatestCommits} from '~/lib/github';
 import {
   PRODUCT_CONTENT,
@@ -45,6 +50,22 @@ export const meta: Route.MetaFunction = ({data}) =>
     image: data?.product?.selectedOrFirstAvailableVariant?.image?.url,
     type: 'product',
   });
+
+/**
+ * Selecting a SKU only mutates this PDP's option query params (e.g. ?Model=…).
+ * Skip the loader on those same-path navigations: re-running it means a
+ * Shopify round-trip plus a full PDP re-render (3D viewer, chapters, deferred
+ * recommendations) on every click — the source of the variant-switch lag. The
+ * variant is resolved client-side from the already-loaded data instead.
+ */
+export function shouldRevalidate({
+  currentUrl,
+  nextUrl,
+  defaultShouldRevalidate,
+}: ShouldRevalidateFunctionArgs) {
+  if (currentUrl.pathname === nextUrl.pathname) return false;
+  return defaultShouldRevalidate;
+}
 
 export async function loader(args: Route.LoaderArgs) {
   // Start fetching non-critical data without blocking time to first byte
@@ -82,16 +103,8 @@ async function loadCriticalData({context, params, request}: Route.LoaderArgs) {
   // The API handle might be localized, so redirect to the localized handle
   redirectIfHandleIsLocalized(request, {handle, data: product});
 
-  const company = getCompanyIdentity(
-    context.env as unknown as Record<string, string | undefined>,
-  );
-
-  const locale = getLocaleFromRequest(request);
-
   return {
     product,
-    company,
-    locale,
   };
 }
 
@@ -228,6 +241,55 @@ function computeChapterNumbers(content: ProductContent): ChapterNumbers {
   return out;
 }
 
+/**
+ * Merge a variant's spec deltas over the product's shared spec table,
+ * matched by row key. A delta value of `null` hides the base row (e.g. the
+ * cost-down Lite drops a sensor the standard board carries); a value
+ * replaces the base row in place; an unknown key appends. Keeps every
+ * tier's table coherent off one base instead of duplicating shared rows.
+ */
+function mergeSpecs(
+  base: Array<[string, string]>,
+  overrides?: Array<[string, string | null]>,
+): Array<[string, string]> {
+  if (!overrides?.length) return base;
+  const out: Array<[string, string]> = base.map(([k, v]) => [k, v]);
+  for (const [k, v] of overrides) {
+    const idx = out.findIndex(([bk]) => bk === k);
+    if (v === null) {
+      if (idx !== -1) out.splice(idx, 1);
+    } else if (idx !== -1) {
+      out[idx] = [k, v];
+    } else {
+      out.push([k, v]);
+    }
+  }
+  return out;
+}
+
+/**
+ * Client-only loader for the exploded 3D frame viewer. The viewer pulls in
+ * three.js + @react-three/fiber, so — like the homepage's HeroScene — we
+ * code-split it and import it in the browser only, keeping the r3f runtime
+ * out of the server render and the PDP's initial chunk.
+ */
+function ClientFrameViewer(props: FrameViewerProps) {
+  const [Viewer, setViewer] = useState<React.ComponentType<FrameViewerProps> | null>(
+    null,
+  );
+  useEffect(() => {
+    let alive = true;
+    void import('~/components/FrameViewer').then((m) => {
+      if (alive) setViewer(() => m.FrameViewer);
+    });
+    return () => {
+      alive = false;
+    };
+  }, []);
+  if (!Viewer) return null;
+  return <Viewer {...props} />;
+}
+
 /** Placeholder media slot. Renders a soft card with a geometric icon
  *  picked from `kind` until real images are wired in. */
 function ChapterMediaPlaceholder({kind}: {kind: string}) {
@@ -292,6 +354,7 @@ function Chapter({
   title,
   children,
   media,
+  backdrop,
 }: {
   number: string;
   label: string;
@@ -300,9 +363,18 @@ function Chapter({
   /** Optional live media node — when omitted, the chapter renders the
    *  geometric placeholder glyph for this chapter number. */
   media?: React.ReactNode;
+  /** Optional full-bleed, non-interactive layer rendered behind the chapter
+   *  content (the exploded frame viewer). When set, the right-hand media
+   *  slot is dropped and the text sits on top of this layer. */
+  backdrop?: React.ReactNode;
 }) {
   return (
-    <section className="chapter" data-chapter={number}>
+    <section
+      className="chapter"
+      data-chapter={number}
+      data-backdrop={backdrop ? '' : undefined}
+    >
+      {backdrop ? <div className="chapter-backdrop">{backdrop}</div> : null}
       <div className="chapter-index">
         <span className="chapter-number">{number}</span>
         <span className="chapter-label">{label}</span>
@@ -311,15 +383,17 @@ function Chapter({
         <h2 className="chapter-title">{title}</h2>
         {children}
       </div>
-      <aside className="chapter-media">
-        {media ? (
-          <div className="chapter-media-frame chapter-media-frame--live">
-            {media}
-          </div>
-        ) : (
-          <ChapterMediaPlaceholder kind={number} />
-        )}
-      </aside>
+      {backdrop ? null : (
+        <aside className="chapter-media">
+          {media ? (
+            <div className="chapter-media-frame chapter-media-frame--live">
+              {media}
+            </div>
+          ) : (
+            <ChapterMediaPlaceholder kind={number} />
+          )}
+        </aside>
+      )}
     </section>
   );
 }
@@ -358,19 +432,37 @@ function useChapterReveal(key: string) {
 }
 
 export default function Product() {
-  const {product, recommendations, latestCommits, company, locale} =
+  const {product, recommendations, latestCommits} =
     useLoaderData<typeof loader>();
   useChapterReveal(product.handle);
 
-  // Optimistically selects a variant with given available variant information
-  const selectedVariant = useOptimisticVariant(
-    product.selectedOrFirstAvailableVariant,
-    getAdjacentAndFirstAvailableVariants(product),
-  );
+  // Resolve the selected variant client-side from the URL options. Paired with
+  // `shouldRevalidate` (above), switching SKUs is instant — no Shopify
+  // round-trip, no full-page revalidation. The candidate list already carries
+  // every tier's price/stock for a line product, so we match the URL against it
+  // and fall back to the server's default variant when no options are set.
+  const [searchParams] = useSearchParams();
+  const searchKey = searchParams.toString();
+  const selectedVariant = useMemo(() => {
+    const params = new URLSearchParams(searchKey);
+    const match = getAdjacentAndFirstAvailableVariants(product).find(
+      (v) =>
+        (v.selectedOptions?.length ?? 0) > 0 &&
+        v.selectedOptions!.every((o) => params.get(o.name) === o.value),
+    );
+    return (
+      (match as unknown as typeof product.selectedOrFirstAvailableVariant) ??
+      product.selectedOrFirstAvailableVariant
+    );
+  }, [searchKey, product]);
 
   // Sets the search param to the selected variant without navigation
   // only when no search params are set in the url
-  useSelectedOptionInUrlParam(selectedVariant.selectedOptions);
+  useSelectedOptionInUrlParam(selectedVariant?.selectedOptions ?? []);
+
+  // Hide the pinned buy rail while an aside (cart/search/mobile nav) is open —
+  // otherwise the fixed overlay sits on top of the cart drawer.
+  const {type: asideType} = useAside();
 
   // Get the product options array
   const productOptions = getProductOptions({
@@ -424,12 +516,65 @@ export default function Product() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [shopifyAxisValue]);
   const activeVariant = content.variants?.[activeTier];
-  const mergedSpecs = [...content.specs, ...(activeVariant?.specs ?? [])];
+  const mergedSpecs = mergeSpecs(content.specs, activeVariant?.specs);
   const mergedBox = [...content.inTheBox, ...(activeVariant?.inTheBox ?? [])];
   // The teardown board art follows the selected tier: a variant's own
   // `boardArt` wins, otherwise the shared `teardown.boardArt` (the default
   // board) is shown. Lines without per-tier art just keep the default.
   const activeBoardArt = activeVariant?.boardArt ?? content.teardown?.boardArt;
+  // CAD products (the frame) carry an exploded 3D viewer instead of a
+  // layered board SVG; when present it takes the teardown media slot.
+  const frameViewer = content.teardown?.frameViewer;
+
+  // Morphing buy rail (line products, desktop): the ladder + add-to-cart ride
+  // in the hero at rest. Once the hero scrolls away (≈ chapter 1) the rail
+  // pins to the top — over its own column — and CSS collapses it to bare name
+  // pills + a small add-to-cart so a buyer can switch SKUs from anywhere and
+  // compare spec tables. Scrolling back up settles it home. The pin is driven
+  // by a zero-height sentinel dropped just below the hero. The pinned rail
+  // shrink-wraps to its content (chips + price + add-to-cart) and anchors to
+  // the content's right edge, so it grows leftward as more SKUs are added
+  // rather than stretching into a full-width banner. `railBox.right` mirrors
+  // the gap from the viewport's right edge to the hero's right edge.
+  const heroSectionRef = useRef<HTMLElement>(null);
+  const railSentinelRef = useRef<HTMLDivElement>(null);
+  const [railPinned, setRailPinned] = useState(false);
+  const [railBox, setRailBox] = useState<{right: number} | null>(null);
+  useEffect(() => {
+    if (!hasLadder) return;
+    const sentinel = railSentinelRef.current;
+    const section = heroSectionRef.current;
+    if (!sentinel || !section) return;
+    const HEADER = 56; // --header-height
+    const isDesktop = () => window.matchMedia('(min-width: 960px)').matches;
+    const measure = () => {
+      const r = section.getBoundingClientRect();
+      // clientWidth excludes the scrollbar, so the rail's right edge lines up
+      // with the content gutter rather than floating over the scrollbar.
+      const right = Math.round(document.documentElement.clientWidth - r.right);
+      setRailBox({right});
+    };
+    measure();
+    const io = new IntersectionObserver(
+      ([entry]) =>
+        setRailPinned(
+          isDesktop() &&
+            !entry.isIntersecting &&
+            entry.boundingClientRect.top < HEADER,
+        ),
+      {rootMargin: `-${HEADER}px 0px 0px 0px`, threshold: 0},
+    );
+    io.observe(sentinel);
+    const onResize = () => {
+      measure();
+      if (!isDesktop()) setRailPinned(false);
+    };
+    window.addEventListener('resize', onResize);
+    return () => {
+      io.disconnect();
+      window.removeEventListener('resize', onResize);
+    };
+  }, [product.handle, hasLadder]);
 
   // primaryCollection is retained in the loader but we deliberately
   // don't render a breadcrumb on the PDP — the editorial hero with
@@ -453,6 +598,55 @@ export default function Product() {
     productHandle: product.handle,
   });
 
+  // The ladder + buy module. When pinned it's portaled to <body> so the fixed
+  // overlay escapes the hero's stacking/overflow context — otherwise the
+  // chapter media (which is sticky to the same top-right spot) paints over it
+  // and swallows clicks. Suppressed (CSS-hidden, not unmounted — the
+  // add-to-cart submit must survive opening the drawer) while an aside is open
+  // so it doesn't sit on top of the cart.
+  const railSuppressed = railPinned && asideType !== 'closed';
+  const buyRail = (
+    <div
+      className={`buy-rail${railPinned ? ' is-pinned' : ''}${
+        railSuppressed ? ' is-suppressed' : ''
+      }`}
+      style={railPinned && railBox ? {right: railBox.right} : undefined}
+    >
+      {hasLadder && content.optionAxis && content.variants ? (
+        <VariantLadder
+          axis={content.optionAxis}
+          variants={content.variants}
+          productOptions={productOptions}
+          activeValue={activeTier}
+          onSelect={setActiveTier}
+        />
+      ) : null}
+      <div className="product-buy" data-buy-module>
+        <div className="product-buy-price">
+          <ProductPrice
+            price={selectedVariant?.price}
+            compareAtPrice={selectedVariant?.compareAtPrice}
+          />
+          {selectedVariant?.sku ? (
+            <span className="product-buy-sku">SKU {selectedVariant.sku}</span>
+          ) : null}
+        </div>
+        <span
+          className={`product-buy-stock${selectedVariant?.availableForSale ? '' : ' is-out'}`}
+        >
+          {selectedVariant?.availableForSale
+            ? 'In stock · ships from Belgium'
+            : 'Sold out'}
+        </span>
+        <ProductForm
+          productOptions={productOptions}
+          selectedVariant={selectedVariant}
+          hideOptionNames={content.optionAxis ? [content.optionAxis] : undefined}
+        />
+      </div>
+    </div>
+  );
+
   return (
     <div className="product-page">
       <script
@@ -461,7 +655,7 @@ export default function Product() {
         dangerouslySetInnerHTML={{__html: JSON.stringify(productJsonLd)}}
       />
       {/* === HERO: gallery left, copy + sticky buy module right === */}
-      <section className="product-hero">
+      <section className="product-hero" ref={heroSectionRef}>
         <div className="product-hero-gallery-col">
           <div className="product-hero-media">
             <ProductGallery
@@ -526,41 +720,7 @@ export default function Product() {
             ) : null}
           </ul>
 
-          {hasLadder && content.optionAxis && content.variants ? (
-            <VariantLadder
-              axis={content.optionAxis}
-              variants={content.variants}
-              productOptions={productOptions}
-              activeValue={activeTier}
-              onSelect={setActiveTier}
-            />
-          ) : null}
-
-          <div className="product-buy" data-buy-module>
-            <div className="product-buy-price">
-              <ProductPrice
-                price={selectedVariant?.price}
-                compareAtPrice={selectedVariant?.compareAtPrice}
-              />
-              {selectedVariant?.sku ? (
-                <span className="product-buy-sku">SKU {selectedVariant.sku}</span>
-              ) : null}
-            </div>
-            <span
-              className={`product-buy-stock${selectedVariant?.availableForSale ? '' : ' is-out'}`}
-            >
-              {selectedVariant?.availableForSale
-                ? 'In stock · ships from Belgium'
-                : 'Sold out'}
-            </span>
-            <ProductForm
-              productOptions={productOptions}
-              selectedVariant={selectedVariant}
-              hideOptionNames={
-                content.optionAxis ? [content.optionAxis] : undefined
-              }
-            />
-          </div>
+          {railPinned ? createPortal(buyRail, document.body) : buyRail}
 
           {content.pairCta ? (
             <Link className="pair-cta" to={content.pairCta.to} prefetch="intent">
@@ -572,6 +732,9 @@ export default function Product() {
         </div>
       </section>
 
+      {/* Pin trigger for the morphing buy rail — once this passes under the
+          header, the rail (above) goes fixed + compact. */}
+      <div ref={railSentinelRef} className="buy-rail-sentinel" aria-hidden="true" />
 
       {/* === Chapter: Teardown === */}
       {content.teardown && chapterNums.teardown ? (
@@ -579,8 +742,17 @@ export default function Product() {
           number={chapterNums.teardown}
           label="Teardown"
           title={content.teardown.title}
+          backdrop={
+            frameViewer ? (
+              <ClientFrameViewer
+                key={frameViewer.src}
+                src={frameViewer.src}
+                inspectUrl={frameViewer.inspectUrl}
+              />
+            ) : undefined
+          }
           media={
-            activeBoardArt ? (
+            !frameViewer && activeBoardArt ? (
               <BoardArt
                 // Remount on src change so the scroll-reveal animation and
                 // Top/Bottom toggle reset cleanly when the tier swaps boards.
@@ -592,7 +764,9 @@ export default function Product() {
             ) : undefined
           }
         >
-          <p className="chapter-body">{content.teardown.body}</p>
+          {content.teardown.body ? (
+            <p className="chapter-body">{content.teardown.body}</p>
+          ) : null}
           <ul className="teardown-pins">
             {content.teardown.pins.map((pin) => (
               <li key={pin.ref}>
@@ -792,10 +966,19 @@ export default function Product() {
               <em>people who wrote the firmware</em> get.
             </>
           }
+          media={
+            content.firmware.logo ? (
+              <img
+                className="firmware-logo"
+                src={content.firmware.logo}
+                alt={`${content.firmware.project} logo`}
+                loading="lazy"
+              />
+            ) : undefined
+          }
         >
           <FirmwareSplit
             price={selectedVariant?.price}
-            productTitle={product.title}
             firmwareProject={content.firmware.project}
             firmwareUrl={content.firmware.projectUrl}
           />
@@ -844,10 +1027,6 @@ export default function Product() {
         </Chapter>
       ) : null}
 
-      {/* GPSR/CRA manufacturer + safety + documentation block. Reads the
-          custom.* metafields the loader queries; renders nothing for fields
-          left blank. */}
-      <ProductCompliance product={product} company={company} locale={locale} />
       <RelatedProducts recommendations={recommendations} />
       <Analytics.ProductView
         data={{
@@ -957,57 +1136,6 @@ const PRODUCT_FRAGMENT = `#graphql
       description
       title
     }
-    safetyWarningsNl: metafield(namespace: "custom", key: "safety_warnings_nl") {
-      ...ComplianceMetafield
-    }
-    safetyWarningsFr: metafield(namespace: "custom", key: "safety_warnings_fr") {
-      ...ComplianceMetafield
-    }
-    safetyWarningsEn: metafield(namespace: "custom", key: "safety_warnings_en") {
-      ...ComplianceMetafield
-    }
-    datasheetUrl: metafield(namespace: "custom", key: "datasheet_url") {
-      ...ComplianceMetafield
-    }
-    manualUrl: metafield(namespace: "custom", key: "manual_url") {
-      ...ComplianceMetafield
-    }
-    docUrl: metafield(namespace: "custom", key: "doc_url") {
-      ...ComplianceMetafield
-    }
-    sbomUrl: metafield(namespace: "custom", key: "sbom_url") {
-      ...ComplianceMetafield
-    }
-    githubRepo: metafield(namespace: "custom", key: "github_repo") {
-      ...ComplianceMetafield
-    }
-    modelNumber: metafield(namespace: "custom", key: "model_number") {
-      ...ComplianceMetafield
-    }
-    batchId: metafield(namespace: "custom", key: "batch_id") {
-      ...ComplianceMetafield
-    }
-    firmwareVersion: metafield(namespace: "custom", key: "firmware_version") {
-      ...ComplianceMetafield
-    }
-    supportEndDate: metafield(namespace: "custom", key: "support_end_date") {
-      ...ComplianceMetafield
-    }
-    vulnContactEmail: metafield(namespace: "custom", key: "vuln_contact_email") {
-      ...ComplianceMetafield
-    }
-    batteryWh: metafield(namespace: "custom", key: "battery_wh") {
-      ...ComplianceMetafield
-    }
-    batteryUnNumber: metafield(namespace: "custom", key: "battery_un_number") {
-      ...ComplianceMetafield
-    }
-  }
-  fragment ComplianceMetafield on Metafield {
-    key
-    namespace
-    type
-    value
   }
   ${PRODUCT_VARIANT_FRAGMENT}
 ` as const;

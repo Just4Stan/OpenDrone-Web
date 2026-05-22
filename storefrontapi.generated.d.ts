@@ -543,16 +543,6 @@ export type CatalogQueryVariables = StorefrontAPI.Exact<{
   country?: StorefrontAPI.InputMaybe<StorefrontAPI.CountryCode>;
   language?: StorefrontAPI.InputMaybe<StorefrontAPI.LanguageCode>;
   first?: StorefrontAPI.InputMaybe<StorefrontAPI.Scalars['Int']['input']>;
-  last?: StorefrontAPI.InputMaybe<StorefrontAPI.Scalars['Int']['input']>;
-  startCursor?: StorefrontAPI.InputMaybe<
-    StorefrontAPI.Scalars['String']['input']
-  >;
-  endCursor?: StorefrontAPI.InputMaybe<
-    StorefrontAPI.Scalars['String']['input']
-  >;
-  sortKey?: StorefrontAPI.InputMaybe<StorefrontAPI.ProductSortKeys>;
-  reverse?: StorefrontAPI.InputMaybe<StorefrontAPI.Scalars['Boolean']['input']>;
-  query?: StorefrontAPI.InputMaybe<StorefrontAPI.Scalars['String']['input']>;
 }>;
 
 export type CatalogQuery = {
@@ -577,20 +567,7 @@ export type CatalogQuery = {
         };
       }
     >;
-    pageInfo: Pick<
-      StorefrontAPI.PageInfo,
-      'hasPreviousPage' | 'hasNextPage' | 'startCursor' | 'endCursor'
-    >;
   };
-};
-
-export type ProductTypesQueryVariables = StorefrontAPI.Exact<{
-  country?: StorefrontAPI.InputMaybe<StorefrontAPI.CountryCode>;
-  language?: StorefrontAPI.InputMaybe<StorefrontAPI.LanguageCode>;
-}>;
-
-export type ProductTypesQuery = {
-  productTypes: Pick<StorefrontAPI.StringConnection, 'nodes'>;
 };
 
 export type NewsletterPostDetailQueryVariables = StorefrontAPI.Exact<{
@@ -823,57 +800,7 @@ export type ProductFragment = Pick<
     nodes: Array<Pick<StorefrontAPI.Collection, 'handle' | 'title'>>;
   };
   seo: Pick<StorefrontAPI.Seo, 'description' | 'title'>;
-  safetyWarningsNl?: StorefrontAPI.Maybe<
-    Pick<StorefrontAPI.Metafield, 'key' | 'namespace' | 'type' | 'value'>
-  >;
-  safetyWarningsFr?: StorefrontAPI.Maybe<
-    Pick<StorefrontAPI.Metafield, 'key' | 'namespace' | 'type' | 'value'>
-  >;
-  safetyWarningsEn?: StorefrontAPI.Maybe<
-    Pick<StorefrontAPI.Metafield, 'key' | 'namespace' | 'type' | 'value'>
-  >;
-  datasheetUrl?: StorefrontAPI.Maybe<
-    Pick<StorefrontAPI.Metafield, 'key' | 'namespace' | 'type' | 'value'>
-  >;
-  manualUrl?: StorefrontAPI.Maybe<
-    Pick<StorefrontAPI.Metafield, 'key' | 'namespace' | 'type' | 'value'>
-  >;
-  docUrl?: StorefrontAPI.Maybe<
-    Pick<StorefrontAPI.Metafield, 'key' | 'namespace' | 'type' | 'value'>
-  >;
-  sbomUrl?: StorefrontAPI.Maybe<
-    Pick<StorefrontAPI.Metafield, 'key' | 'namespace' | 'type' | 'value'>
-  >;
-  githubRepo?: StorefrontAPI.Maybe<
-    Pick<StorefrontAPI.Metafield, 'key' | 'namespace' | 'type' | 'value'>
-  >;
-  modelNumber?: StorefrontAPI.Maybe<
-    Pick<StorefrontAPI.Metafield, 'key' | 'namespace' | 'type' | 'value'>
-  >;
-  batchId?: StorefrontAPI.Maybe<
-    Pick<StorefrontAPI.Metafield, 'key' | 'namespace' | 'type' | 'value'>
-  >;
-  firmwareVersion?: StorefrontAPI.Maybe<
-    Pick<StorefrontAPI.Metafield, 'key' | 'namespace' | 'type' | 'value'>
-  >;
-  supportEndDate?: StorefrontAPI.Maybe<
-    Pick<StorefrontAPI.Metafield, 'key' | 'namespace' | 'type' | 'value'>
-  >;
-  vulnContactEmail?: StorefrontAPI.Maybe<
-    Pick<StorefrontAPI.Metafield, 'key' | 'namespace' | 'type' | 'value'>
-  >;
-  batteryWh?: StorefrontAPI.Maybe<
-    Pick<StorefrontAPI.Metafield, 'key' | 'namespace' | 'type' | 'value'>
-  >;
-  batteryUnNumber?: StorefrontAPI.Maybe<
-    Pick<StorefrontAPI.Metafield, 'key' | 'namespace' | 'type' | 'value'>
-  >;
 };
-
-export type ComplianceMetafieldFragment = Pick<
-  StorefrontAPI.Metafield,
-  'key' | 'namespace' | 'type' | 'value'
->;
 
 export type ProductQueryVariables = StorefrontAPI.Exact<{
   country?: StorefrontAPI.InputMaybe<StorefrontAPI.CountryCode>;
@@ -998,51 +925,6 @@ export type ProductQuery = {
         nodes: Array<Pick<StorefrontAPI.Collection, 'handle' | 'title'>>;
       };
       seo: Pick<StorefrontAPI.Seo, 'description' | 'title'>;
-      safetyWarningsNl?: StorefrontAPI.Maybe<
-        Pick<StorefrontAPI.Metafield, 'key' | 'namespace' | 'type' | 'value'>
-      >;
-      safetyWarningsFr?: StorefrontAPI.Maybe<
-        Pick<StorefrontAPI.Metafield, 'key' | 'namespace' | 'type' | 'value'>
-      >;
-      safetyWarningsEn?: StorefrontAPI.Maybe<
-        Pick<StorefrontAPI.Metafield, 'key' | 'namespace' | 'type' | 'value'>
-      >;
-      datasheetUrl?: StorefrontAPI.Maybe<
-        Pick<StorefrontAPI.Metafield, 'key' | 'namespace' | 'type' | 'value'>
-      >;
-      manualUrl?: StorefrontAPI.Maybe<
-        Pick<StorefrontAPI.Metafield, 'key' | 'namespace' | 'type' | 'value'>
-      >;
-      docUrl?: StorefrontAPI.Maybe<
-        Pick<StorefrontAPI.Metafield, 'key' | 'namespace' | 'type' | 'value'>
-      >;
-      sbomUrl?: StorefrontAPI.Maybe<
-        Pick<StorefrontAPI.Metafield, 'key' | 'namespace' | 'type' | 'value'>
-      >;
-      githubRepo?: StorefrontAPI.Maybe<
-        Pick<StorefrontAPI.Metafield, 'key' | 'namespace' | 'type' | 'value'>
-      >;
-      modelNumber?: StorefrontAPI.Maybe<
-        Pick<StorefrontAPI.Metafield, 'key' | 'namespace' | 'type' | 'value'>
-      >;
-      batchId?: StorefrontAPI.Maybe<
-        Pick<StorefrontAPI.Metafield, 'key' | 'namespace' | 'type' | 'value'>
-      >;
-      firmwareVersion?: StorefrontAPI.Maybe<
-        Pick<StorefrontAPI.Metafield, 'key' | 'namespace' | 'type' | 'value'>
-      >;
-      supportEndDate?: StorefrontAPI.Maybe<
-        Pick<StorefrontAPI.Metafield, 'key' | 'namespace' | 'type' | 'value'>
-      >;
-      vulnContactEmail?: StorefrontAPI.Maybe<
-        Pick<StorefrontAPI.Metafield, 'key' | 'namespace' | 'type' | 'value'>
-      >;
-      batteryWh?: StorefrontAPI.Maybe<
-        Pick<StorefrontAPI.Metafield, 'key' | 'namespace' | 'type' | 'value'>
-      >;
-      batteryUnNumber?: StorefrontAPI.Maybe<
-        Pick<StorefrontAPI.Metafield, 'key' | 'namespace' | 'type' | 'value'>
-      >;
     }
   >;
 };
@@ -1352,13 +1234,9 @@ interface GeneratedQueryTypes {
     return: StoreCollectionsQuery;
     variables: StoreCollectionsQueryVariables;
   };
-  '#graphql\n  query Catalog(\n    $country: CountryCode\n    $language: LanguageCode\n    $first: Int\n    $last: Int\n    $startCursor: String\n    $endCursor: String\n    $sortKey: ProductSortKeys\n    $reverse: Boolean\n    $query: String\n  ) @inContext(country: $country, language: $language) {\n    products(\n      first: $first,\n      last: $last,\n      before: $startCursor,\n      after: $endCursor,\n      sortKey: $sortKey,\n      reverse: $reverse,\n      query: $query\n    ) {\n      nodes {\n        ...CollectionItem\n      }\n      pageInfo {\n        hasPreviousPage\n        hasNextPage\n        startCursor\n        endCursor\n      }\n    }\n  }\n  #graphql\n  fragment MoneyCollectionItem on MoneyV2 {\n    amount\n    currencyCode\n  }\n  fragment CollectionItem on Product {\n    id\n    handle\n    title\n    productType\n    featuredImage {\n      id\n      altText\n      url\n      width\n      height\n    }\n    priceRange {\n      minVariantPrice {\n        ...MoneyCollectionItem\n      }\n      maxVariantPrice {\n        ...MoneyCollectionItem\n      }\n    }\n  }\n\n': {
+  '#graphql\n  query Catalog(\n    $country: CountryCode\n    $language: LanguageCode\n    $first: Int\n  ) @inContext(country: $country, language: $language) {\n    products(first: $first, sortKey: CREATED_AT, reverse: true) {\n      nodes {\n        ...CollectionItem\n      }\n    }\n  }\n  #graphql\n  fragment MoneyCollectionItem on MoneyV2 {\n    amount\n    currencyCode\n  }\n  fragment CollectionItem on Product {\n    id\n    handle\n    title\n    productType\n    featuredImage {\n      id\n      altText\n      url\n      width\n      height\n    }\n    priceRange {\n      minVariantPrice {\n        ...MoneyCollectionItem\n      }\n      maxVariantPrice {\n        ...MoneyCollectionItem\n      }\n    }\n  }\n\n': {
     return: CatalogQuery;
     variables: CatalogQueryVariables;
-  };
-  '#graphql\n  query ProductTypes($country: CountryCode, $language: LanguageCode)\n  @inContext(country: $country, language: $language) {\n    productTypes(first: 25) {\n      nodes\n    }\n  }\n': {
-    return: ProductTypesQuery;
-    variables: ProductTypesQueryVariables;
   };
   '#graphql\n  query NewsletterPostDetail(\n    $articleHandle: String!\n    $blogHandle: String!\n    $siblingCount: Int!\n    $country: CountryCode\n    $language: LanguageCode\n  ) @inContext(language: $language, country: $country) {\n    blog(handle: $blogHandle) {\n      handle\n      articleByHandle(handle: $articleHandle) {\n        handle\n        title\n        contentHtml\n        excerpt\n        publishedAt\n        tags\n        image {\n          id\n          altText\n          url\n          width\n          height\n        }\n        seo {\n          description\n          title\n        }\n      }\n      articles(first: $siblingCount, sortKey: PUBLISHED_AT, reverse: true) {\n        nodes {\n          handle\n          title\n          publishedAt\n        }\n      }\n    }\n  }\n': {
     return: NewsletterPostDetailQuery;
@@ -1372,7 +1250,7 @@ interface GeneratedQueryTypes {
     return: PageQuery;
     variables: PageQueryVariables;
   };
-  '#graphql\n  query Product(\n    $country: CountryCode\n    $handle: String!\n    $language: LanguageCode\n    $selectedOptions: [SelectedOptionInput!]!\n  ) @inContext(country: $country, language: $language) {\n    product(handle: $handle) {\n      ...Product\n    }\n  }\n  #graphql\n  fragment Product on Product {\n    id\n    title\n    vendor\n    handle\n    descriptionHtml\n    description\n    encodedVariantExistence\n    encodedVariantAvailability\n    options {\n      name\n      optionValues {\n        name\n        firstSelectableVariant {\n          ...ProductVariant\n        }\n        swatch {\n          color\n          image {\n            previewImage {\n              url\n            }\n          }\n        }\n      }\n    }\n    selectedOrFirstAvailableVariant(selectedOptions: $selectedOptions, ignoreUnknownOptions: true, caseInsensitiveMatch: true) {\n      ...ProductVariant\n    }\n    adjacentVariants (selectedOptions: $selectedOptions) {\n      ...ProductVariant\n    }\n    images(first: 10) {\n      nodes {\n        id\n        url\n        altText\n        width\n        height\n      }\n    }\n    collections(first: 1) {\n      nodes {\n        handle\n        title\n      }\n    }\n    seo {\n      description\n      title\n    }\n    safetyWarningsNl: metafield(namespace: "custom", key: "safety_warnings_nl") {\n      ...ComplianceMetafield\n    }\n    safetyWarningsFr: metafield(namespace: "custom", key: "safety_warnings_fr") {\n      ...ComplianceMetafield\n    }\n    safetyWarningsEn: metafield(namespace: "custom", key: "safety_warnings_en") {\n      ...ComplianceMetafield\n    }\n    datasheetUrl: metafield(namespace: "custom", key: "datasheet_url") {\n      ...ComplianceMetafield\n    }\n    manualUrl: metafield(namespace: "custom", key: "manual_url") {\n      ...ComplianceMetafield\n    }\n    docUrl: metafield(namespace: "custom", key: "doc_url") {\n      ...ComplianceMetafield\n    }\n    sbomUrl: metafield(namespace: "custom", key: "sbom_url") {\n      ...ComplianceMetafield\n    }\n    githubRepo: metafield(namespace: "custom", key: "github_repo") {\n      ...ComplianceMetafield\n    }\n    modelNumber: metafield(namespace: "custom", key: "model_number") {\n      ...ComplianceMetafield\n    }\n    batchId: metafield(namespace: "custom", key: "batch_id") {\n      ...ComplianceMetafield\n    }\n    firmwareVersion: metafield(namespace: "custom", key: "firmware_version") {\n      ...ComplianceMetafield\n    }\n    supportEndDate: metafield(namespace: "custom", key: "support_end_date") {\n      ...ComplianceMetafield\n    }\n    vulnContactEmail: metafield(namespace: "custom", key: "vuln_contact_email") {\n      ...ComplianceMetafield\n    }\n    batteryWh: metafield(namespace: "custom", key: "battery_wh") {\n      ...ComplianceMetafield\n    }\n    batteryUnNumber: metafield(namespace: "custom", key: "battery_un_number") {\n      ...ComplianceMetafield\n    }\n  }\n  fragment ComplianceMetafield on Metafield {\n    key\n    namespace\n    type\n    value\n  }\n  #graphql\n  fragment ProductVariant on ProductVariant {\n    availableForSale\n    compareAtPrice {\n      amount\n      currencyCode\n    }\n    id\n    image {\n      __typename\n      id\n      url\n      altText\n      width\n      height\n    }\n    price {\n      amount\n      currencyCode\n    }\n    product {\n      title\n      handle\n    }\n    selectedOptions {\n      name\n      value\n    }\n    sku\n    title\n    unitPrice {\n      amount\n      currencyCode\n    }\n  }\n\n\n': {
+  '#graphql\n  query Product(\n    $country: CountryCode\n    $handle: String!\n    $language: LanguageCode\n    $selectedOptions: [SelectedOptionInput!]!\n  ) @inContext(country: $country, language: $language) {\n    product(handle: $handle) {\n      ...Product\n    }\n  }\n  #graphql\n  fragment Product on Product {\n    id\n    title\n    vendor\n    handle\n    descriptionHtml\n    description\n    encodedVariantExistence\n    encodedVariantAvailability\n    options {\n      name\n      optionValues {\n        name\n        firstSelectableVariant {\n          ...ProductVariant\n        }\n        swatch {\n          color\n          image {\n            previewImage {\n              url\n            }\n          }\n        }\n      }\n    }\n    selectedOrFirstAvailableVariant(selectedOptions: $selectedOptions, ignoreUnknownOptions: true, caseInsensitiveMatch: true) {\n      ...ProductVariant\n    }\n    adjacentVariants (selectedOptions: $selectedOptions) {\n      ...ProductVariant\n    }\n    images(first: 10) {\n      nodes {\n        id\n        url\n        altText\n        width\n        height\n      }\n    }\n    collections(first: 1) {\n      nodes {\n        handle\n        title\n      }\n    }\n    seo {\n      description\n      title\n    }\n  }\n  #graphql\n  fragment ProductVariant on ProductVariant {\n    availableForSale\n    compareAtPrice {\n      amount\n      currencyCode\n    }\n    id\n    image {\n      __typename\n      id\n      url\n      altText\n      width\n      height\n    }\n    price {\n      amount\n      currencyCode\n    }\n    product {\n      title\n      handle\n    }\n    selectedOptions {\n      name\n      value\n    }\n    sku\n    title\n    unitPrice {\n      amount\n      currencyCode\n    }\n  }\n\n\n': {
     return: ProductQuery;
     variables: ProductQueryVariables;
   };
