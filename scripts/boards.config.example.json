@@ -1,0 +1,14 @@
+[
+  {
+    "handle": "openesc",
+    "pcb": "/absolute/path/to/OpenESC/OpenESC.kicad_pcb"
+  },
+  {
+    "handle": "openfc",
+    "pcb": "/absolute/path/to/OpenFC/OpenFC.kicad_pcb"
+  },
+  {
+    "handle": "openrx",
+    "pcb": "/absolute/path/to/OpenRX/OpenRX.kicad_pcb"
+  }
+]
