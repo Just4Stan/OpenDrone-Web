@@ -2236,6 +2236,115 @@ button.reset {
   box-shadow: none;
 }
 
+/* Morphing buy rail — wraps the ladder + buy module. At rest it's a
+   transparent passthrough; pinned (desktop, scrolled into the chapters) it
+   floats over the page in its own column lane and CSS collapses it to a row
+   of bare tier names + a small add-to-cart. See the PDP route for the JS that
+   toggles .is-pinned and feeds left/width inline. */
+.buy-rail {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+}
+
+@media (min-width: 960px) {
+  .buy-rail.is-pinned {
+    position: fixed;
+    top: calc(var(--header-height) + 0.5rem);
+    z-index: 60;
+    flex-direction: row;
+    align-items: center;
+    gap: var(--sp-3);
+    padding: 0.45rem 0.6rem;
+    background: color-mix(in srgb, var(--color-bg-card) 90%, transparent);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid var(--color-border);
+    border-radius: var(--r-md);
+    box-shadow: 0 14px 32px -14px rgba(0, 0, 0, 0.65);
+    animation: buy-rail-drop 0.2s ease;
+  }
+
+  @keyframes buy-rail-drop {
+    from {
+      opacity: 0;
+      transform: translateY(-10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  /* Ladder → inline row of name-only pills. */
+  .buy-rail.is-pinned .variant-ladder {
+    flex: 1 1 auto;
+    min-width: 0;
+    gap: 0;
+  }
+  .buy-rail.is-pinned .variant-ladder-axis {
+    display: none;
+  }
+  .buy-rail.is-pinned .variant-ladder-track {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: var(--sp-2);
+    grid-template-columns: none;
+  }
+  .buy-rail.is-pinned .variant-tier {
+    flex: 0 1 auto;
+    padding: 0.3rem 0.7rem;
+    gap: 0;
+    border-radius: var(--r-sm);
+  }
+  .buy-rail.is-pinned .variant-tier-tagline,
+  .buy-rail.is-pinned .variant-tier-cells,
+  .buy-rail.is-pinned .variant-tier-flag {
+    display: none;
+  }
+  .buy-rail.is-pinned .variant-tier-name {
+    font-size: var(--fs-sm);
+    white-space: nowrap;
+  }
+
+  /* Buy module → compact price + small add-to-cart, no card chrome. */
+  .buy-rail.is-pinned .product-buy {
+    flex: 0 0 auto;
+    flex-direction: row;
+    align-items: center;
+    gap: var(--sp-2);
+    margin: 0;
+    padding: 0;
+    border: none;
+    background: none;
+    border-radius: 0;
+  }
+  .buy-rail.is-pinned .product-buy-sku,
+  .buy-rail.is-pinned .product-buy-stock {
+    display: none;
+  }
+  .buy-rail.is-pinned .product-buy-price .product-price {
+    font-size: 1.1rem;
+  }
+  .buy-rail.is-pinned .product-form {
+    margin: 0;
+  }
+  /* Hide the option pill grids; keep only the add-to-cart button. */
+  .buy-rail.is-pinned .product-form > div {
+    display: none;
+  }
+  .buy-rail.is-pinned .product-form .btn-primary {
+    padding: 0.42rem 0.95rem;
+    font-size: var(--fs-sm);
+    white-space: nowrap;
+  }
+}
+
+.buy-rail-sentinel {
+  height: 0;
+  margin: 0;
+}
+
 /* Comparison ladder — the variant selector for a product line. Tier
    cards that double as the radio group; the selected card drives the
    spec/in-the-box preview and (when Shopify carries the option) the
@@ -2694,20 +2803,20 @@ button.reset {
    layer of gold vector outlines that fan apart on scroll, sitting BEHIND the
    teardown text. The chapter goes position:relative; the backdrop is an
    over-bleeding absolute layer; the text/cards lift above it via z-index. === */
-/* No extra height — the chapter sizes to its text. The frame is an overlay
-   that flows OVER the neighbouring sections via a big over-bleeding layer. */
+/* The frame is PINNED: the teardown chapter is a tall scroll track and the
+   viewer sticks to the viewport while you scroll through it, so the explode
+   scrubs against a stationary frame and the parts fly off screen. min-height
+   sets the runway (≈ this − 100vh of pinned scroll); tune for pacing. */
 .chapter[data-backdrop] {
   position: relative;
+  min-height: 250vh;
 }
-/* Over-bleeds far above (into the section above) and below (into chapter 2)
-   and into the side margins, so the exploded outlines spill over the rest of
-   the page. Purely decorative. */
+/* Spans the full tall section (side-bleeds into the margins) and hosts the
+   sticky pin. Out of grid flow so it never disturbs the chapter text. */
 .chapter-backdrop {
   position: absolute;
-  top: -6vh; /* barely above the section — keep clear of the hero / buy button */
-  bottom: -70vh; /* flow down into chapter 2. NB: the model paints at this
-                    layer's vertical centre, so don't grow this much further or
-                    the assembled frame drops out of the chapter-1 view. */
+  top: 0;
+  bottom: 0;
   left: -10vw;
   right: -4vw;
   z-index: 0;
@@ -2718,9 +2827,20 @@ button.reset {
   position: relative;
   z-index: 1; /* text/cards sit on top of the outlines */
 }
+/* The pinned chapter must NOT carry a transform in any state — a transformed
+   ancestor breaks position: sticky on the frame viewer. Override the base
+   translateY(0) and the scroll-reveal translate; reveal via opacity only. */
+.chapter[data-backdrop],
+.chapter[data-backdrop]:not(.is-visible) {
+  transform: none;
+}
+/* The pin: sticks to the top of the viewport for the length of the track, so
+   the model stays centred on screen while the explode is scrubbed by scroll. */
 .frame-viewer {
-  position: absolute;
-  inset: 0;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  width: 100%;
   opacity: 0;
   transition: opacity 1.1s cubic-bezier(0.2, 0.7, 0.2, 1);
   pointer-events: none;
@@ -2732,9 +2852,13 @@ button.reset {
   display: block;
 }
 @media (max-width: 879px) {
-  /* The teardown media column is hidden on mobile, so drop the backdrop. */
+  /* The teardown media column is hidden on mobile, so drop the backdrop and
+     collapse the tall scroll track back to a normal text-sized chapter. */
   .chapter-backdrop {
     display: none;
+  }
+  .chapter[data-backdrop] {
+    min-height: 0;
   }
 }
 

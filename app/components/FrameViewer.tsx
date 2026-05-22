@@ -41,6 +41,9 @@ const ARM_TRAVEL = 0.78;
 // e keeps growing past 1 as you scroll further, so the parts fly off screen.
 // At e = 1 arms are ~at the frame edge; ~e = 2.5–3 takes everything off.
 const EXPLODE_MAX = 3;
+// Fraction of the pinned scroll spent showing the whole assembled frame before
+// it starts coming apart. The explode then ramps over the remaining (1 − HOLD).
+const HOLD = 0.18;
 
 type Part = {obj: THREE.Object3D; groupIndex: number; base: THREE.Vector3; explode: THREE.Vector3};
 
@@ -62,10 +65,6 @@ function FrameModel({
   const rot = {x: 0.42, y: -0.5};
   const offsetX = 1.0;
   const parts = useRef<Part[]>([]);
-  // The chapter following the teardown ("Open for learning"). The explode is
-  // scrubbed across the gap between the two chapters' centres, so we need its
-  // box too. Resolved lazily and cached (re-resolved if it drops out of DOM).
-  const nextChapter = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -202,41 +201,26 @@ function FrameModel({
     };
   }, [src]);
 
-  // Recompute the explode amount from scroll position each rendered frame.
-  // The throw spans chapter 1 (teardown) → chapter 2: e = 0 when the teardown
-  // chapter's centre sits at the viewport centre (assembled, in view), and
-  // e = 1 once the next chapter's centre reaches the viewport centre (fully
-  // exploded). Normalised by the centre-to-centre distance, so it's stable
-  // regardless of section heights or the gap between them.
+  // The frame is PINNED: the viewer sticks to the viewport while the (tall)
+  // teardown section scrolls past, and the explode is scrubbed by how far we've
+  // scrolled through that section. progress = 0 when the section top hits the
+  // viewport top (whole frame shown, pinned), 1 when its bottom reaches the
+  // viewport bottom (pin releases into chapter 2). Hold assembled for the first
+  // HOLD of the pin, then ramp to EXPLODE_MAX so the parts fly off a stationary
+  // frame before chapter 2 arrives.
   useFrame(() => {
     if (!parts.current.length) return;
     let e = 0;
     const el = containerRef.current;
     if (el) {
       const section = (el.closest('.chapter') as HTMLElement | null) ?? el;
-      let next = nextChapter.current;
-      if (!next || !next.isConnected) {
-        let n = section.nextElementSibling as HTMLElement | null;
-        while (n && !n.classList.contains('chapter'))
-          n = n.nextElementSibling as HTMLElement | null;
-        nextChapter.current = next = n;
-      }
       const vh = window.innerHeight || 1;
-      const r1 = section.getBoundingClientRect();
-      const c1 = r1.top + r1.height / 2;
-      if (next) {
-        const r2 = next.getBoundingClientRect();
-        const c2 = r2.top + r2.height / 2;
-        // Hold the frame assembled (e = 0) through chapter 1 — it only starts
-        // coming apart once chapter 2 reaches the viewport centre. (vh/2 − c2)
-        // is how far ch.2's centre has risen past the centre; normalise by the
-        // ch.1→ch.2 centre distance so e ≈ 1 about one chapter later, then it
-        // keeps climbing to EXPLODE_MAX so the parts fly off as you scroll on.
-        e = THREE.MathUtils.clamp((vh / 2 - c2) / (c2 - c1 || vh), 0, EXPLODE_MAX);
-      } else {
-        // No following chapter — fall back to a single-pass scrub.
-        e = THREE.MathUtils.clamp(1 - c1 / vh, 0, 1);
-      }
+      const r = section.getBoundingClientRect();
+      const pinnable = Math.max(section.offsetHeight - vh, 1);
+      const progress = THREE.MathUtils.clamp(-r.top / pinnable, 0, 1);
+      e =
+        THREE.MathUtils.clamp((progress - HOLD) / (1 - HOLD), 0, 1) *
+        EXPLODE_MAX;
     }
     for (const p of parts.current) {
       p.obj.position.set(
@@ -257,17 +241,15 @@ export function FrameViewer({src}: FrameViewerProps) {
 
   useEffect(() => setMounted(true), []);
 
-  // Mount the canvas while the over-bleeding backdrop is near the viewport.
-  // The explode now spans chapter 1 → chapter 2, so observing the teardown
-  // chapter alone would unmount the canvas mid-throw once that chapter scrolls
-  // up out of view. The backdrop layer (.frame-viewer fills it, -6vh→-70vh)
-  // covers both sections, so observing it keeps the canvas alive for exactly
-  // as long as it's visible. While mounted the canvas runs frameloop="always"
-  // so the explode tracks scroll every frame; off-screen it unmounts.
+  // Mount the canvas while the (tall, pinned) teardown section is near the
+  // viewport. Observing the section keeps the canvas alive for the full pin —
+  // from before it sticks until after it releases into chapter 2. While mounted
+  // the canvas runs frameloop="always" so the explode tracks scroll every
+  // frame; off-screen it unmounts and costs nothing.
   useEffect(() => {
     const el = wrapRef.current;
     if (!el || typeof IntersectionObserver === 'undefined') return;
-    const target = el;
+    const target = (el.closest('.chapter') as HTMLElement | null) ?? el;
     const io = new IntersectionObserver(
       (entries) => {
         for (const e of entries) setOnScreen(e.isIntersecting);
