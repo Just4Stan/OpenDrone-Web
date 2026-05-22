@@ -17,6 +17,7 @@ import {FirmwareSplit} from '~/components/FirmwareSplit';
 import {VariantLadder} from '~/components/VariantLadder';
 import {BoardArt} from '~/components/BoardArt';
 import {ProvenanceCard} from '~/components/ProvenanceCard';
+import {ProductCompliance} from '~/components/ProductCompliance';
 import {
   LatestCommitGrid,
   LatestCommitSkeleton,
@@ -357,7 +358,7 @@ function useChapterReveal(key: string) {
 }
 
 export default function Product() {
-  const {product, recommendations, latestCommits} =
+  const {product, recommendations, latestCommits, company, locale} =
     useLoaderData<typeof loader>();
   useChapterReveal(product.handle);
 
@@ -836,6 +837,10 @@ export default function Product() {
         </Chapter>
       ) : null}
 
+      {/* GPSR/CRA manufacturer + safety + documentation block. Reads the
+          custom.* metafields the loader queries; renders nothing for fields
+          left blank. */}
+      <ProductCompliance product={product} company={company} locale={locale} />
       <RelatedProducts recommendations={recommendations} />
       <Analytics.ProductView
         data={{
