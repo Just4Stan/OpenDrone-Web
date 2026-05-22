@@ -9,23 +9,23 @@ export function ProductPrice({
   compareAtPrice?: MoneyV2 | null;
 }) {
   return (
-    <div className="font-mono text-2xl font-bold">
+    <span className="product-price">
       {compareAtPrice ? (
-        <div className="flex items-center gap-3">
+        <span className="product-price-row">
           {price ? (
-            <span className="text-[var(--color-gold)]">
+            <span className="product-price-sale">
               <Money data={price} />
             </span>
           ) : null}
-          <s className="text-base text-[var(--color-text-muted)]">
+          <s className="product-price-compare">
             <Money data={compareAtPrice} />
           </s>
-        </div>
+        </span>
       ) : price ? (
         <Money data={price} />
       ) : (
         <span>&nbsp;</span>
       )}
-    </div>
+    </span>
   );
 }

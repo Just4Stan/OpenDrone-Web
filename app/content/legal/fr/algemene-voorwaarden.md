@@ -156,9 +156,13 @@
 
 17.2. En cas de force majeure, Incutec BV en informe le client dans les meilleurs délais et propose, au choix du client, une date de livraison alternative ou un remboursement intégral.
 
-### Article 18 : Langue
+### Article 18 : Usage final acceptable
 
-18.1. La version en langue néerlandaise des présentes conditions est le texte authentique. Les traductions en français, anglais ou autres langues sont informatives et non contraignantes.
+18.1. En passant une commande, le Client accepte la Politique d’usage final d’Incutec publiée sur /end-use et garantit que les biens ne seront pas utilisés pour l’un des usages finaux exclus énoncés au §3 de cette politique. La violation de cette garantie constitue un manquement essentiel au contrat et autorise Incutec BV à annuler la commande, refuser la livraison et exercer tout recours disponible en vertu du droit belge et des règlements de l’UE applicables.
+
+### Article 19 : Langue
+
+19.1. La version en langue néerlandaise des présentes conditions est le texte authentique. Les traductions en français, anglais ou autres langues sont informatives et non contraignantes.
 
 ---
 

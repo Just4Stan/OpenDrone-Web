@@ -11,19 +11,27 @@ import type {ProductFragment} from 'storefrontapi.generated';
 export function ProductForm({
   productOptions,
   selectedVariant,
+  hideOptionNames,
 }: {
   productOptions: MappedProductOptions[];
   selectedVariant: ProductFragment['selectedOrFirstAvailableVariant'];
+  /** Option names already handled elsewhere (e.g. the comparison ladder
+   *  owns the line's primary axis), so the pill grid skips them and
+   *  renders only the Add-to-cart button for that axis. */
+  hideOptionNames?: string[];
 }) {
   const navigate = useNavigate();
   const {open} = useAside();
   const ctaLabelAvailable = 'Add to cart';
   const ctaLabelSoldOut = 'Sold out';
+  const hidden = new Set((hideOptionNames ?? []).map((n) => n.trim().toLowerCase()));
   return (
     <div className="product-form">
       {productOptions.map((option) => {
         // If there is only a single value in the option values, don't display the option
         if (option.optionValues.length === 1) return null;
+        // Skip axes owned by another selector (the comparison ladder).
+        if (hidden.has(option.name.trim().toLowerCase())) return null;
 
         return (
           <div key={option.name} className="mb-4">

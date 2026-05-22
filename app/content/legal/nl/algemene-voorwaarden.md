@@ -156,9 +156,13 @@
 
 17.2. In geval van overmacht stelt Incutec BV de klant zo snel mogelijk op de hoogte en biedt, naar keuze van de klant, een alternatieve leverdatum of volledige terugbetaling aan.
 
-### Artikel 18: Taal
+### Artikel 18: Aanvaardbaar eindgebruik
 
-18.1. De Nederlandstalige versie van deze voorwaarden is de authentieke tekst. Vertalingen in het Frans, Engels of andere talen zijn informatief en niet bindend.
+18.1. Door een bestelling te plaatsen, aanvaardt de klant het Incutec End-Use beleid gepubliceerd op /end-use, en garandeert hij dat de goederen niet zullen worden gebruikt voor enig uitgesloten eindgebruik zoals beschreven in §3 van dat beleid. Schending van deze garantie vormt een wezenlijke contractbreuk en geeft Incutec BV het recht de bestelling te annuleren, de levering te weigeren, en elk rechtsmiddel uit te oefenen dat beschikbaar is onder Belgisch recht en de toepasselijke EU-verordeningen.
+
+### Artikel 19: Taal
+
+19.1. De Nederlandstalige versie van deze voorwaarden is de authentieke tekst. Vertalingen in het Frans, Engels of andere talen zijn informatief en niet bindend.
 
 ---
 

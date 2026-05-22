@@ -1,10 +1,19 @@
 import {useSearchParams} from 'react-router';
 
-export function CategoryChips({types}: {types: string[]}) {
+/**
+ * Category filter chips for the catalog browse page. Each chip sets `?type=`
+ * to a Shopify productType VALUE while showing a friendlier plural LABEL, so
+ * the value still matches the product's productType for grouping/filtering.
+ */
+export function CategoryChips({
+  categories,
+}: {
+  categories: Array<{value: string; label: string}>;
+}) {
   const [searchParams, setSearchParams] = useSearchParams();
   const active = searchParams.get('type');
 
-  if (types.length === 0) return null;
+  if (categories.length === 0) return null;
 
   const setType = (value: string | null) => {
     const next = new URLSearchParams(searchParams);
@@ -15,7 +24,7 @@ export function CategoryChips({types}: {types: string[]}) {
   };
 
   return (
-    <nav className="category-chips" aria-label="Filter by product type">
+    <nav className="category-chips" aria-label="Filter by category">
       <button
         type="button"
         className={`category-chip${active === null ? ' is-active' : ''}`}
@@ -23,14 +32,14 @@ export function CategoryChips({types}: {types: string[]}) {
       >
         All
       </button>
-      {types.map((t) => (
+      {categories.map((c) => (
         <button
-          key={t}
+          key={c.value}
           type="button"
-          className={`category-chip${active === t ? ' is-active' : ''}`}
-          onClick={() => setType(t)}
+          className={`category-chip${active === c.value ? ' is-active' : ''}`}
+          onClick={() => setType(c.value)}
         >
-          {t}
+          {c.label}
         </button>
       ))}
     </nav>

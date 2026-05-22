@@ -297,7 +297,7 @@ function BuildCard() {
         read along to understand what&rsquo;s flying in your drone.
       </p>
       <a
-        href="https://github.com/Just4Stan"
+        href="https://github.com/incutec-hw"
         target="_blank"
         rel="noreferrer noopener"
         className="account-dashboard-cta"

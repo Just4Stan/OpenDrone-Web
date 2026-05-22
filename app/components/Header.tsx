@@ -19,15 +19,15 @@ interface HeaderProps {
 type Viewport = 'desktop' | 'mobile';
 
 // Category links jump straight to the current PDP for each family.
-// "Accessories" falls back to the full catalog because it isn't a
-// single product family — clicking the label shouldn't 404.
+// "Accessories" opens the catalog browse page pre-filtered to the
+// Accessory category (productType=Accessory).
 const CATEGORY_LINKS: Array<{label: string; to: string}> = [
-  {label: 'OpenFC', to: '/products/openfc'},
-  {label: 'OpenFrame', to: '/products/openframe'},
-  {label: 'OpenESC', to: '/products/openesc'},
-  {label: 'OpenRX', to: '/products/openrx'},
-  {label: 'OpenStack', to: '/products/openstack'},
-  {label: 'Accessories', to: '/collections/all'},
+  {label: 'FC', to: '/products/openfc'},
+  {label: 'Frame', to: '/products/openframe'},
+  {label: 'ESC', to: '/products/openesc'},
+  {label: 'RX', to: '/products/openrx'},
+  {label: 'Stack', to: '/products/openstack'},
+  {label: 'Accessories', to: '/collections/all?type=Accessory'},
 ];
 
 export function Header({
@@ -173,6 +173,30 @@ export function HeaderMenu({
           </NavLink>
         );
       })}
+      {/* Mobile aside only: a Newsletter link in the slide-out menu. On
+          desktop Newsletter lives in the right-side CTA group (left of
+          Catalog), so it's omitted here to avoid duplicating it. Skipped if
+          the Shopify menu already links to /newsletter. */}
+      {isMobile &&
+      !(menu || FALLBACK_HEADER_MENU).items.some((it) =>
+        it.url?.includes('/newsletter'),
+      ) ? (
+        <NavLink
+          end
+          onClick={close}
+          prefetch="intent"
+          to="/newsletter"
+          className={({isActive}) =>
+            `${isMobile ? 'text-sm tracking-wider' : 'text-[12px] tracking-[0.15em]'} font-mono uppercase transition-colors ${
+              isActive
+                ? 'text-[var(--color-text)]'
+                : 'text-[var(--color-text-muted)] hover:text-[var(--color-text)]'
+            }`
+          }
+        >
+          Newsletter
+        </NavLink>
+      ) : null}
     </nav>
   );
 }
@@ -184,6 +208,19 @@ function HeaderCtas({
   return (
     <nav className="flex items-center gap-5 ml-auto" role="navigation">
       <LangToggle className="header-lang-toggle" />
+      <NavLink
+        prefetch="intent"
+        to="/newsletter"
+        className={({isActive}) =>
+          `font-mono text-[12px] uppercase tracking-[0.15em] transition-colors hidden md:block ${
+            isActive
+              ? 'text-[var(--color-text)]'
+              : 'text-[var(--color-text-muted)] hover:text-[var(--color-text)]'
+          }`
+        }
+      >
+        Newsletter
+      </NavLink>
       <NavLink
         prefetch="intent"
         to="/collections/all"
@@ -330,9 +367,9 @@ const FALLBACK_HEADER_MENU = {
       id: 'gid://shopify/MenuItem/461609566265',
       resourceId: null,
       tags: [],
-      title: 'Journal',
+      title: 'Newsletter',
       type: 'HTTP',
-      url: '/blogs',
+      url: '/newsletter',
       items: [],
     },
     {
@@ -341,7 +378,7 @@ const FALLBACK_HEADER_MENU = {
       tags: [],
       title: 'Open Source',
       type: 'HTTP',
-      url: 'https://github.com/Just4Stan',
+      url: 'https://github.com/incutec-hw',
       items: [],
     },
   ],

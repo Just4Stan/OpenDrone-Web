@@ -46,7 +46,7 @@ export function TagFilter({
   };
 
   return (
-    <div className="rn-filters" role="group" aria-label="Filter releases by tag">
+    <div className="rn-filters" role="group" aria-label="Filter posts by tag">
       <span className="rn-k">Filter</span>
       <Link
         to={buildHref(null)}

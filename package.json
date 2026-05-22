@@ -8,10 +8,10 @@
   "homepage": "https://opendrone.be",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Just4Stan/OpenDrone-Web.git"
+    "url": "git+https://github.com/incutec-hw/OpenDrone-Web.git"
   },
   "bugs": {
-    "url": "https://github.com/Just4Stan/OpenDrone-Web/issues"
+    "url": "https://github.com/incutec-hw/OpenDrone-Web/issues"
   },
   "scripts": {
     "prebuild": "npm run sync:legal",
@@ -23,15 +23,19 @@
     "codegen": "shopify hydrogen codegen && react-router typegen",
     "sync:legal": "node scripts/sync-legal.mjs",
     "compose:newsletter": "node scripts/compose-newsletter.mjs",
-    "gen:shopify-templates": "node scripts/shopify-templates/gen.mjs"
+    "publish:post": "node scripts/publish-post.mjs",
+    "gen:shopify-templates": "node scripts/shopify-templates/gen.mjs",
+    "gen:board-art": "node scripts/export-board-art.mjs --all"
   },
   "prettier": "@shopify/prettier-config",
   "dependencies": {
     "@react-three/fiber": "^9.6.0",
+    "@react-three/postprocessing": "^3.0.4",
     "@shopify/hydrogen": "^2026.4.1",
     "@tailwindcss/vite": "^4.2.2",
     "graphql": "^16.13.2",
     "isbot": "^5.1.39",
+    "postprocessing": "^6.39.1",
     "react": "^19.2.5",
     "react-dom": "^19.2.5",
     "react-router": "7.14.2",
@@ -66,8 +70,10 @@
     "eslint-plugin-jsx-a11y": "^6.10.2",
     "eslint-plugin-react": "^7.37.4",
     "eslint-plugin-react-hooks": "^5.1.0",
+    "fontkit": "^2.0.4",
     "globals": "^15.14.0",
     "graphql-config": "^5.0.3",
+    "marked": "^18.0.4",
     "prettier": "^3.4.2",
     "typescript": "^5.9.2",
     "vite": "^6.2.4",

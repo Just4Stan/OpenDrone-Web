@@ -46,11 +46,6 @@ export function ProvenanceCard() {
           </span>
         </li>
       </ul>
-      <p className="provenance-foot">
-        Every board ships with a build card: batch ID, QC initials,
-        factory, firmware rev and GitHub commit. One card per unit, not
-        per carton.
-      </p>
     </section>
   );
 }

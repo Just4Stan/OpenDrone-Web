@@ -125,7 +125,7 @@ export default function OpenSourceRoute() {
           See who the €1 goes to →
         </Link>
         <a
-          href="https://github.com/Just4Stan"
+          href="https://github.com/incutec-hw"
           target="_blank"
           rel="noopener noreferrer"
           className="editorial-cta-secondary"
