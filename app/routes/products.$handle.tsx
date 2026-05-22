@@ -1,4 +1,4 @@
-import {Suspense, useEffect} from 'react';
+import {Suspense, useEffect, useState} from 'react';
 import {Await, Link, useLoaderData} from 'react-router';
 import type {Route} from './+types/products.$handle';
 import {
@@ -14,7 +14,10 @@ import {ProductGallery} from '~/components/ProductGallery';
 import {ProductForm} from '~/components/ProductForm';
 import {RelatedProducts} from '~/components/RelatedProducts';
 import {FirmwareSplit} from '~/components/FirmwareSplit';
+import {VariantLadder} from '~/components/VariantLadder';
+import {BoardArt} from '~/components/BoardArt';
 import {ProvenanceCard} from '~/components/ProvenanceCard';
+import {ProductCompliance} from '~/components/ProductCompliance';
 import {
   LatestCommitGrid,
   LatestCommitSkeleton,
@@ -225,27 +228,98 @@ function computeChapterNumbers(content: ProductContent): ChapterNumbers {
   return out;
 }
 
+/** Placeholder media slot. Renders a soft card with a geometric icon
+ *  picked from `kind` until real images are wired in. */
+function ChapterMediaPlaceholder({kind}: {kind: string}) {
+  return (
+    <div className="chapter-media-frame" aria-hidden="true">
+      <svg
+        viewBox="0 0 120 120"
+        className="chapter-media-glyph"
+        xmlns="http://www.w3.org/2000/svg"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
+        {kind === '01' ? (
+          <>
+            <rect x="22" y="22" width="76" height="76" rx="6" />
+            <circle cx="36" cy="36" r="3" />
+            <circle cx="84" cy="36" r="3" />
+            <circle cx="36" cy="84" r="3" />
+            <circle cx="84" cy="84" r="3" />
+            <path d="M44 60h32M60 44v32" />
+          </>
+        ) : kind === '02' ? (
+          <>
+            <path d="M30 32h60v56H30z" />
+            <path d="M30 32l30 18 30-18" />
+            <path d="M60 50v38" />
+          </>
+        ) : kind === '03' ? (
+          <>
+            <path d="M24 38l36-14 36 14v44L60 96 24 82z" />
+            <path d="M24 38l36 14 36-14" />
+            <path d="M60 52v44" />
+          </>
+        ) : kind === '04' ? (
+          <>
+            <circle cx="60" cy="60" r="34" />
+            <path d="M50 50h20M50 70h20M55 50v20M65 50v20" />
+          </>
+        ) : kind === '05' ? (
+          <>
+            <rect x="26" y="26" width="68" height="68" rx="4" />
+            <path d="M26 46h68M26 66h68M26 86h68" />
+            <path d="M46 26v68M66 26v68" />
+          </>
+        ) : (
+          <>
+            <path d="M30 32h60v56H30z" />
+            <path d="M40 56l12 12 28-28" />
+          </>
+        )}
+      </svg>
+    </div>
+  );
+}
+
 function Chapter({
   number,
   label,
   title,
   children,
+  media,
 }: {
   number: string;
   label: string;
   title: React.ReactNode;
   children: React.ReactNode;
+  /** Optional live media node — when omitted, the chapter renders the
+   *  geometric placeholder glyph for this chapter number. */
+  media?: React.ReactNode;
 }) {
   return (
     <section className="chapter" data-chapter={number}>
       <div className="chapter-index">
-        <div className="chapter-number">{number}</div>
-        <div className="chapter-label">{label}</div>
+        <span className="chapter-number">{number}</span>
+        <span className="chapter-label">{label}</span>
       </div>
       <div className="chapter-body-col">
         <h2 className="chapter-title">{title}</h2>
         {children}
       </div>
+      <aside className="chapter-media">
+        {media ? (
+          <div className="chapter-media-frame chapter-media-frame--live">
+            {media}
+          </div>
+        ) : (
+          <ChapterMediaPlaceholder kind={number} />
+        )}
+      </aside>
     </section>
   );
 }
@@ -284,7 +358,7 @@ function useChapterReveal(key: string) {
 }
 
 export default function Product() {
-  const {product, recommendations, latestCommits} =
+  const {product, recommendations, latestCommits, company, locale} =
     useLoaderData<typeof loader>();
   useChapterReveal(product.handle);
 
@@ -320,6 +394,43 @@ export default function Product() {
     ? content.bundle.components.length
     : 1;
 
+  // Comparison-ladder state for product lines (OpenRX/OpenESC). The
+  // editorial `variants` map is the tier source of truth; the active tier
+  // drives the spec/in-the-box preview and, once Shopify carries the
+  // matching option, the buy module follows via the selected variant.
+  const variantKeys = content.variants ? Object.keys(content.variants) : [];
+  const hasLadder = Boolean(content.optionAxis && variantKeys.length > 0);
+  const matchKey = (val?: string) =>
+    val
+      ? variantKeys.find(
+          (k) => k.trim().toLowerCase() === val.trim().toLowerCase(),
+        )
+      : undefined;
+  const shopifyAxisValue = content.optionAxis
+    ? selectedVariant?.selectedOptions?.find(
+        (o) =>
+          o.name.trim().toLowerCase() ===
+          content.optionAxis!.trim().toLowerCase(),
+      )?.value
+    : undefined;
+  const [activeTier, setActiveTier] = useState(
+    matchKey(shopifyAxisValue) ?? variantKeys[0] ?? '',
+  );
+  // Re-sync if Shopify resolves a different variant (deep-link with
+  // ?Model=Mono, or the optimistic variant settling on another tier).
+  useEffect(() => {
+    const k = matchKey(shopifyAxisValue);
+    if (k && k !== activeTier) setActiveTier(k);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [shopifyAxisValue]);
+  const activeVariant = content.variants?.[activeTier];
+  const mergedSpecs = [...content.specs, ...(activeVariant?.specs ?? [])];
+  const mergedBox = [...content.inTheBox, ...(activeVariant?.inTheBox ?? [])];
+  // The teardown board art follows the selected tier: a variant's own
+  // `boardArt` wins, otherwise the shared `teardown.boardArt` (the default
+  // board) is shown. Lines without per-tier art just keep the default.
+  const activeBoardArt = activeVariant?.boardArt ?? content.teardown?.boardArt;
+
   // primaryCollection is retained in the loader but we deliberately
   // don't render a breadcrumb on the PDP — the editorial hero with
   // the "File 0N · Family" eyebrow is the navigation clue instead.
@@ -349,18 +460,27 @@ export default function Product() {
         // eslint-disable-next-line react/no-danger
         dangerouslySetInnerHTML={{__html: JSON.stringify(productJsonLd)}}
       />
-      {/* === HERO: headline left, gallery right === */}
+      {/* === HERO: gallery left, copy + sticky buy module right === */}
       <section className="product-hero">
+        <div className="product-hero-gallery-col">
+          <div className="product-hero-media">
+            <ProductGallery
+              images={galleryImages}
+              activeImageId={selectedVariant?.image?.id ?? null}
+            />
+          </div>
+        </div>
+
         <div className="product-hero-copy">
           <p className="product-hero-eyebrow">
             File {content.fileNumber} · {content.family}
           </p>
           {hasHeroCopy ? (
             <h1 className="product-hero-headline">
-              <span>{content.hero.line1}</span>
+              <span>{content.hero.line1}</span>{' '}
               <span>
                 <em>{content.hero.line2Italic}</em>
-              </span>
+              </span>{' '}
               <span>{content.hero.line3}</span>
             </h1>
           ) : (
@@ -379,7 +499,7 @@ export default function Product() {
                 prefetch="intent"
                 className="trust-chip trust-chip-green trust-chip-link"
               >
-                ● Open source · CERN-OHL-S-2.0
+                Open source · CERN-OHL-S-2.0
               </Link>
             </li>
             {content.bundle ? (
@@ -404,12 +524,19 @@ export default function Product() {
                 </Link>
               </li>
             ) : null}
-            <li className="trust-chip">
-              {selectedVariant?.availableForSale ? 'In stock' : 'Sold out'}
-            </li>
           </ul>
 
-          <div className="product-buy">
+          {hasLadder && content.optionAxis && content.variants ? (
+            <VariantLadder
+              axis={content.optionAxis}
+              variants={content.variants}
+              productOptions={productOptions}
+              activeValue={activeTier}
+              onSelect={setActiveTier}
+            />
+          ) : null}
+
+          <div className="product-buy" data-buy-module>
             <div className="product-buy-price">
               <ProductPrice
                 price={selectedVariant?.price}
@@ -419,9 +546,19 @@ export default function Product() {
                 <span className="product-buy-sku">SKU {selectedVariant.sku}</span>
               ) : null}
             </div>
+            <span
+              className={`product-buy-stock${selectedVariant?.availableForSale ? '' : ' is-out'}`}
+            >
+              {selectedVariant?.availableForSale
+                ? 'In stock · ships from Belgium'
+                : 'Sold out'}
+            </span>
             <ProductForm
               productOptions={productOptions}
               selectedVariant={selectedVariant}
+              hideOptionNames={
+                content.optionAxis ? [content.optionAxis] : undefined
+              }
             />
           </div>
 
@@ -433,16 +570,8 @@ export default function Product() {
             </Link>
           ) : null}
         </div>
-
-        <div className="product-hero-right">
-          <div className="product-hero-media">
-            <ProductGallery
-              images={galleryImages}
-              activeImageId={selectedVariant?.image?.id ?? null}
-            />
-          </div>
-        </div>
       </section>
+
 
       {/* === Chapter: Teardown === */}
       {content.teardown && chapterNums.teardown ? (
@@ -450,6 +579,18 @@ export default function Product() {
           number={chapterNums.teardown}
           label="Teardown"
           title={content.teardown.title}
+          media={
+            activeBoardArt ? (
+              <BoardArt
+                // Remount on src change so the scroll-reveal animation and
+                // Top/Bottom toggle reset cleanly when the tier swaps boards.
+                key={activeBoardArt.src}
+                src={activeBoardArt.src}
+                inspectUrl={activeBoardArt.inspectUrl}
+                handle={product.handle}
+              />
+            ) : undefined
+          }
         >
           <p className="chapter-body">{content.teardown.body}</p>
           <ul className="teardown-pins">
@@ -596,9 +737,9 @@ export default function Product() {
               Anything missing from a build, say so — we&apos;ll ship it.
             </p>
           )}
-          {content.inTheBox.length > 0 ? (
+          {mergedBox.length > 0 ? (
             <ul className="in-the-box">
-              {content.inTheBox.map((it) => (
+              {mergedBox.map((it) => (
                 <li key={`${it.qty ?? ''}${it.item}`}>
                   {it.qty ? (
                     <span className="in-the-box-qty">{it.qty}</span>
@@ -669,7 +810,7 @@ export default function Product() {
           title="Every spec, in one table."
         >
           <dl className="spec-table">
-            {content.specs.map(([k, v]) => (
+            {mergedSpecs.map(([k, v]) => (
               <div key={k}>
                 <dt>{k}</dt>
                 <dd>{v}</dd>
@@ -703,6 +844,10 @@ export default function Product() {
         </Chapter>
       ) : null}
 
+      {/* GPSR/CRA manufacturer + safety + documentation block. Reads the
+          custom.* metafields the loader queries; renders nothing for fields
+          left blank. */}
+      <ProductCompliance product={product} company={company} locale={locale} />
       <RelatedProducts recommendations={recommendations} />
       <Analytics.ProductView
         data={{

@@ -17,30 +17,32 @@ export function ProductItem({
   const image = product.featuredImage;
   return (
     <Link
-      className="product-card group"
+      className="product-card"
       key={product.id}
       prefetch="intent"
       to={variantUrl}
     >
       {image && (
-        <div className="aspect-square overflow-hidden bg-[var(--color-bg-elevated)]">
+        <div className="product-card-media">
           <Image
             alt={image.altText || product.title}
             aspectRatio="1/1"
             data={image}
             loading={loading}
             sizes="(min-width: 45em) 400px, 100vw"
-            className="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-500"
           />
         </div>
       )}
-      <div className="p-3">
-        <h2 className="text-xs font-medium mb-0.5 group-hover:text-[var(--color-gold)] transition-colors leading-snug">
-          {product.title}
-        </h2>
-        <p className="font-mono text-[12px] text-[var(--color-text-muted)]">
-          <Money data={product.priceRange.minVariantPrice} />
-        </p>
+      <div className="product-card-body">
+        <div className="product-card-row">
+          <h2 className="product-card-title">{product.title}</h2>
+          <span className="product-card-price">
+            <Money data={product.priceRange.minVariantPrice} />
+          </span>
+        </div>
+        {('productType' in product && product.productType) ? (
+          <p className="product-card-meta">{product.productType}</p>
+        ) : null}
       </div>
     </Link>
   );

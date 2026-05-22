@@ -1,6 +1,7 @@
 import {Link} from 'react-router';
 import type {Route} from './+types/_index';
 import {useEffect, useRef, useState, useCallback} from 'react';
+import {HeroWordmark} from '~/components/HeroWordmark';
 
 // Kick off the HeroScene chunk download at module eval so it races with
 // hydration instead of waiting for useEffect — only on desktop and only
@@ -27,14 +28,20 @@ type LabelRefs = {
 
 function ClientHeroScene({
   onReady,
+  onProgress,
   labelRefs,
+  loadDelayMs,
 }: {
   onReady?: () => void;
+  onProgress?: (progress: number) => void;
   labelRefs?: LabelRefs;
+  loadDelayMs?: number;
 }) {
   const [Scene, setScene] = useState<React.ComponentType<{
     onReady?: () => void;
+    onProgress?: (progress: number) => void;
     labelRefs?: LabelRefs;
+    loadDelayMs?: number;
   }> | null>(null);
   useEffect(() => {
     if (!shouldLoadHero()) {
@@ -48,7 +55,14 @@ function ClientHeroScene({
     });
   }, [onReady]);
   if (!Scene) return null;
-  return <Scene onReady={onReady} labelRefs={labelRefs} />;
+  return (
+    <Scene
+      onReady={onReady}
+      onProgress={onProgress}
+      labelRefs={labelRefs}
+      loadDelayMs={loadDelayMs}
+    />
+  );
 }
 
 export const meta: Route.MetaFunction = () => {
@@ -95,7 +109,45 @@ export default function Homepage() {
   const [sceneReady, setSceneReady] = useState(splashHasPlayedThisSession);
   const [minWaitElapsed, setMinWaitElapsed] = useState(splashHasPlayedThisSession);
   const [isMobile, setIsMobile] = useState(false);
-  const handleSceneReady = useCallback(() => setSceneReady(true), []);
+  // Hero-wordmark fill progress, 0..1. Driven by real GLTFLoader byte
+  // progress when Content-Length is available, otherwise by the synthetic
+  // ramp effect below. Starts at 1 on repeat visits (splash already
+  // played) so the wordmark renders fully filled with no animation.
+  const [progress, setProgress] = useState(splashHasPlayedThisSession ? 1 : 0);
+  // Wireframe phase gate — keep the fill mask fully closed until the
+  // stroke-draw animation has played out. Tuned against the CSS:
+  // 9 letters × 65ms stagger + 500ms per-letter draw = 1020ms end.
+  // Fires a touch before so fill chases the wireframe with no gap.
+  const DRAW_PHASE_MS = 950;
+  const [drawPhaseDone, setDrawPhaseDone] = useState(
+    splashHasPlayedThisSession,
+  );
+  // Visually displayed progress — JS-lerped toward `progress` so the
+  // fill sweeps even when actual load progress jumps from 0 to 1
+  // instantly (cached/dev). 0.1 lerp factor → ~95% in ~250ms.
+  const [displayedProgress, setDisplayedProgress] = useState(
+    splashHasPlayedThisSession ? 1 : 0,
+  );
+  // Overflow UI — only shown if scene isn't ready within
+  // EXPECTED_LOAD_BUDGET_MS. Hidden again as soon as it lands.
+  const [showOverflow, setShowOverflow] = useState(false);
+  // Tracks whether at least one real (non-synthetic) progress event has
+  // come back from GLTFLoader. If not, the time-based ramp drives the
+  // wordmark fill so a cached/Content-Length-less load still animates.
+  const hasRealProgress = useRef(false);
+  const handleSceneReady = useCallback(() => {
+    setSceneReady(true);
+    setProgress(1);
+  }, []);
+  const handleSceneProgress = useCallback((p: number) => {
+    // -1 = lengthComputable false on all 3 GLBs (cached, no
+    //      Content-Length). The synthetic ramp keeps moving.
+    if (p < 0) return;
+    hasRealProgress.current = true;
+    // Reserve the last 5% for the sceneReady signal so the fill doesn't
+    // hit 100% before the models are actually parsed.
+    setProgress((prev) => Math.max(prev, Math.min(p, 0.95)));
+  }, []);
   const fcLabelRef = useRef<HTMLDivElement>(null);
   const frameLabelRef = useRef<HTMLDivElement>(null);
   const escLabelRef = useRef<HTMLDivElement>(null);
@@ -125,9 +177,78 @@ export default function Homepage() {
     };
   }, []);
 
+  // Splash starts moving to the bottom-left corner as soon as the
+  // wireframe phase ends — overlaps with the fill cascade (which runs
+  // ~400ms now that the lerp factor was dialled back). The splash
+  // transition itself takes ~650ms, so fill and movement share their
+  // first ~400ms before the splash continues alone to the corner.
   useEffect(() => {
-    if (sceneReady && minWaitElapsed) setSplashSettled(true);
-  }, [sceneReady, minWaitElapsed]);
+    if (sceneReady && minWaitElapsed && drawPhaseDone) {
+      setSplashSettled(true);
+    }
+  }, [sceneReady, minWaitElapsed, drawPhaseDone]);
+
+  useEffect(() => {
+    if (splashHasPlayedThisSession) return;
+    const t = window.setTimeout(() => setDrawPhaseDone(true), DRAW_PHASE_MS);
+    return () => window.clearTimeout(t);
+  }, []);
+
+  // Expected total budget for the intro animation. Models that finish
+  // before this stay snappy; anything past it gets the overflow UI.
+  const EXPECTED_LOAD_BUDGET_MS = 2000;
+
+  // Unified RAF loop driving BOTH the synthetic time-based progress
+  // ramp (used when Content-Length isn't available) AND the displayed
+  // progress lerp. Previously these lived in two separate RAFs that
+  // competed for scheduler slots during the wireframe phase — merging
+  // them halves the scheduler overhead during the critical first
+  // 1.5s of page load.
+  useEffect(() => {
+    if (splashHasPlayedThisSession) return;
+    let raf = 0;
+    const start = performance.now();
+    const tick = (now: number) => {
+      // Self-terminate once the splash has settled — the closure can
+      // outlive the splash phase if the effect dep array doesn't change.
+      if (splashHasPlayedThisSession) return;
+      // Synthetic ramp — only contributes until a real GLB byte
+      // progress event lands. Bumps `progress` toward 0.95 over the
+      // load budget so the fill mask has something to chase even when
+      // Content-Length is missing.
+      if (!hasRealProgress.current) {
+        const elapsed = now - start;
+        const synth = Math.min(0.95, elapsed / EXPECTED_LOAD_BUDGET_MS);
+        setProgress((prev) => (synth > prev ? synth : prev));
+      }
+      // Displayed-progress lerp. Snappy (factor 0.45) once the
+      // wireframe phase ends so the fill is visibly readable during
+      // the splash-to-corner transition. Decoupled from byte progress
+      // — the fill is a visual beat, not a load indicator.
+      setDisplayedProgress((prev) => {
+        const target = drawPhaseDone ? 1 : 0;
+        const factor = drawPhaseDone ? 0.45 : 0.08;
+        return prev + (target - prev) * factor;
+      });
+      raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [progress, drawPhaseDone, sceneReady]);
+
+  // Show "loading models…" + Skip button if the scene takes longer than
+  // the expected budget. Hides immediately when sceneReady fires.
+  useEffect(() => {
+    if (splashHasPlayedThisSession || sceneReady) {
+      setShowOverflow(false);
+      return;
+    }
+    const t = window.setTimeout(
+      () => setShowOverflow(true),
+      EXPECTED_LOAD_BUDGET_MS,
+    );
+    return () => window.clearTimeout(t);
+  }, [sceneReady]);
 
   // Drive the site-header drop-in animation from splash state. The
   // header lives outside this component (PageLayout in root.tsx), so
@@ -163,9 +284,6 @@ export default function Homepage() {
         1,
         Math.max(0, window.scrollY / (window.innerHeight * heroProgressVh)),
       );
-      if (window.scrollY > 8) {
-        setSplashSettled(true);
-      }
       if (!rafId.current) {
         rafId.current = requestAnimationFrame(tick);
       }
@@ -176,6 +294,26 @@ export default function Homepage() {
       if (rafId.current) cancelAnimationFrame(rafId.current);
     };
   }, [tick, heroProgressVh]);
+
+  // Lock page scroll until the intro animation has fully settled. Without
+  // this, a flick-scroll mid-animation jumps the splash → settled
+  // transform on the wordmark, which looks broken (the wordmark warps
+  // mid-stroke). Once the splash has played in this session the lock
+  // never re-engages.
+  useEffect(() => {
+    if (splashHasPlayedThisSession) return;
+    if (splashSettled) {
+      document.documentElement.style.removeProperty('overflow');
+      document.body.style.removeProperty('overflow');
+      return;
+    }
+    document.documentElement.style.overflow = 'hidden';
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.documentElement.style.removeProperty('overflow');
+      document.body.style.removeProperty('overflow');
+    };
+  }, [splashSettled]);
 
   const heroTextOpacity = Math.max(0, 1 - scrollProgress * 4);
   const labelOpacity = linearstep(0.65, 0.75, scrollProgress);
@@ -218,11 +356,17 @@ export default function Homepage() {
             />
             <ClientHeroScene
               onReady={handleSceneReady}
+              onProgress={handleSceneProgress}
               labelRefs={{
                 fc: fcLabelRef,
                 frame: frameLabelRef,
                 esc: escLabelRef,
               }}
+              // Hold the GLB fetch + parse + processing for the first
+              // ~750ms so the wireframe wordmark animation gets a
+              // clean main thread. Skipped entirely on return visits
+              // where the splash was already played in this session.
+              loadDelayMs={splashHasPlayedThisSession ? 0 : 750}
             />
             {/* Dim overlay — only covers the 3D scene, not the wordmark.
                 Fades out once the scene is ready AND the minimum splash
@@ -235,26 +379,74 @@ export default function Homepage() {
 
           {/* Single wordmark — starts centered + large, animates to
               bottom-left at settled size. Inline opacity drives the
-              scroll-based fade once the hero starts scrolling away. */}
-          <h1
-            className={`hero-wordmark${splashSettled ? ' is-settled' : ''}`}
-            style={{opacity: splashSettled ? heroTextOpacity : 1}}
-            aria-label="OpenDrone"
-          >
-            {/* sizes accounts for the 1.5–1.7× splash-state transform,
-                so the browser picks an asset with enough pixels for the
-                largest displayed width, not just the settled size. */}
-            <img
-              src="/opendrone-wordmark-1200.png"
-              srcSet="/opendrone-wordmark-1200.png 1200w, /opendrone-wordmark-2400.png 2400w"
-              sizes="(min-width: 768px) 900px, 500px"
-              alt=""
-              width={1200}
-              height={216}
-              decoding="async"
-              fetchPriority="high"
-            />
-          </h1>
+              scroll-based fade once the hero starts scrolling away.
+              The SVG inside owns the per-letter draw + fill animation;
+              progress maps to the GLB load progress (or a synthetic
+              ramp when Content-Length is missing).
+
+              While the splash is active we drive `transform` inline
+              with a per-frame scale that lerps from 1.95 (during the
+              wireframe) down to 1.7 (the CSS-rule splash size). This
+              gives a subtle "zoom out as the letters fill in" feel.
+              `transition: none` overrides the CSS-rule transition so
+              the per-frame scrub stays smooth. Once the splash settles,
+              both inline overrides are removed and the CSS rule's
+              0.65s transition takes over to slide the wordmark to its
+              bottom-left settled position. */}
+          {(() => {
+            const splashScale = 1.95 - displayedProgress * 0.25;
+            return (
+              <h1
+                className={`hero-wordmark${splashSettled ? ' is-settled' : ''}`}
+                style={{
+                  opacity: splashSettled ? heroTextOpacity : 1,
+                  ...(splashSettled
+                    ? {}
+                    : {
+                        transform: `translate(calc(50vw - 2.5rem - 50%), calc(-50vh + 2.5rem + 50%)) scale(${splashScale.toFixed(3)})`,
+                        transition: 'none',
+                      }),
+                }}
+                aria-label="OpenDrone"
+              >
+                <HeroWordmark
+                  progress={displayedProgress}
+                  className={displayedProgress >= 0.99 ? 'is-filled' : ''}
+                />
+              </h1>
+            );
+          })()}
+
+          {/* Overflow UI — only renders when the scene takes longer than
+              the expected animation budget. Gives the user a way out so
+              they aren't trapped behind the dim layer on slow networks. */}
+          {showOverflow && !sceneReady ? (
+            <div
+              className={`hero-load-overflow${splashSettled ? ' is-hidden' : ''}`}
+              role="status"
+              aria-live="polite"
+            >
+              <span className="hero-load-overflow__text">loading models…</span>
+              <Link
+                to="/collections/all"
+                className="hero-load-overflow__skip"
+                onClick={() => setSplashSettled(true)}
+              >
+                Skip to catalogue
+                <svg
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.5"
+                >
+                  <line x1="5" y1="12" x2="19" y2="12" />
+                  <polyline points="12 5 19 12 12 19" />
+                </svg>
+              </Link>
+            </div>
+          ) : null}
 
           {/* CTAs bottom-right */}
           <div
@@ -269,7 +461,7 @@ export default function Homepage() {
               </svg>
             </Link>
             <a
-              href="https://github.com/Just4Stan"
+              href="https://github.com/incutec-hw"
               target="_blank"
               rel="noopener noreferrer"
               className="hero-action-secondary"
@@ -292,9 +484,7 @@ export default function Homepage() {
         {/* Phase 2: Component labels — each div sits below its 3D model.
             HeroScene writes `transform: translate(x, y)` imperatively
             every frame based on the model's world-space bounding box so
-            labels track the geometry even as the assembly rotates.
-            Parent container controls visibility/push-up; children set
-            their own position. */}
+            labels track the geometry even as the assembly rotates. */}
         <div
           className="hero-component-labels"
           style={{opacity: labelOpacity, transform: `translateY(-${pushUp}vh)`}}
@@ -343,7 +533,7 @@ export default function Homepage() {
               </svg>
             </Link>
             <a
-              href="https://github.com/Just4Stan"
+              href="https://github.com/incutec-hw"
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center justify-center w-[52px] h-[52px] border border-[var(--color-text-muted)]/30 text-[var(--color-text)] rounded hover:border-[var(--color-gold)]/50 hover:shadow-[0_0_16px_rgba(184,146,46,0.25)] transition-all duration-300 pointer-events-auto"

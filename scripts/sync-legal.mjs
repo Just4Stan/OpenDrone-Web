@@ -31,6 +31,7 @@ const FILES = {
   'export-control-memo.md': 'export-sanctions/export-control-memo.md',
   'vulnerability-handling-policy.md':
     'product/vulnerability-handling-policy.md',
+  'end-use-policy.md': 'end-use-policy.md',
 };
 
 // NL is the authoritative source synced from the compliance repo.

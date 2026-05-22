@@ -1,0 +1,34 @@
+[
+  {
+    "handle": "openesc",
+    "pcb": "/absolute/path/to/OpenESC-20x20/OpenESC.kicad_pcb"
+  },
+  {
+    "handle": "openesc-30x30",
+    "pcb": "/absolute/path/to/OpenESC-30x30/OpenESC.kicad_pcb"
+  },
+  {
+    "handle": "openfc",
+    "pcb": "/absolute/path/to/OpenFC/hardware/OpenFC.kicad_pcb"
+  },
+  {
+    "handle": "openfc-lite",
+    "pcb": "/absolute/path/to/OpenFC-ECO/hardware/OpenFC.kicad_pcb"
+  },
+  {
+    "handle": "openrx-lite",
+    "pcb": "/absolute/path/to/OpenRX/OpenRX-Lite/OpenRX-Lite.kicad_pcb"
+  },
+  {
+    "handle": "openrx-lite-ufl",
+    "pcb": "/absolute/path/to/OpenRX/OpenRX-Lite-UFL/OpenRX-Lite-UFL.kicad_pcb"
+  },
+  {
+    "handle": "openrx-mono",
+    "pcb": "/absolute/path/to/OpenRX/OpenRX-Mono/OpenRX-Mono.kicad_pcb"
+  },
+  {
+    "handle": "openrx-gemini",
+    "pcb": "/absolute/path/to/OpenRX/OpenRX-Gemini/OpenRX-Gemini.kicad_pcb"
+  }
+]

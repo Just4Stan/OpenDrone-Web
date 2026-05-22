@@ -128,6 +128,15 @@ const PAGES: PageEntry[] = [
     },
   },
   {
+    slug: 'end-use',
+    label: {en: 'End-Use Policy', nl: 'End-Use Beleid', fr: 'Politique d’Usage Final'},
+    desc: {
+      en: 'Permitted and excluded end-uses for Incutec goods.',
+      nl: 'Toegestaan en uitgesloten eindgebruik voor Incutec-goederen.',
+      fr: 'Usages finaux autorisés et exclus pour les biens Incutec.',
+    },
+  },
+  {
     slug: 'security',
     label: {en: 'Security', nl: 'Beveiliging', fr: 'Sécurité'},
     desc: {
