@@ -27,10 +27,11 @@ const cases = [
   },
   {path: '/contact', expectStatus: 200, expectInBody: ['Contact', 'Discord']},
   {path: '/support', expectStatus: 200, expectInBody: ['Support']},
-  {path: '/blog', expectStatus: 200, expectInBody: ['Journal']},
-  {path: '/blog.rss', expectStatus: 200, expectInBody: ['<rss', 'channel']},
-  // Old blog URLs permanently redirect into the consolidated /blog.
-  {path: '/releases', expectStatus: 200, expectRedirect: '/blog'},
+  {path: '/newsletter', expectStatus: 200, expectInBody: ['Newsletter']},
+  {path: '/newsletter.rss', expectStatus: 200, expectInBody: ['<rss', 'channel']},
+  // Old blog URLs permanently redirect into the consolidated /newsletter.
+  {path: '/blog', expectStatus: 200, expectRedirect: '/newsletter'},
+  {path: '/releases', expectStatus: 200, expectRedirect: '/newsletter'},
   {path: '/open-source', expectStatus: 200, expectInBody: ['Open']},
   {path: '/firmware-partners', expectStatus: 200, expectInBody: ['Partner']},
   {path: '/legal', expectStatus: 200, expectInBody: ['Legal']},
@@ -38,8 +39,6 @@ const cases = [
   {path: '/privacy', expectStatus: 200, expectInBody: ['Privacy']},
   {path: '/terms', expectStatus: 200, expectInBody: ['Terms']},
   {path: '/cookies', expectStatus: 200, expectInBody: ['Cookie']},
-  // Newsletter GET renders the opt-in landing page.
-  {path: '/newsletter', expectStatus: 200, expectInBody: ['Newsletter']},
   // Cart and search load fine without items.
   {path: '/cart', expectStatus: 200, expectInBody: ['Cart']},
   {path: '/search', expectStatus: 200, expectInBody: ['Search']},

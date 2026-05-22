@@ -1,6 +1,6 @@
 import {redirect} from 'react-router';
 
-// Per-blog index collapsed into the single /blog feed. Permanent redirect.
+// Per-blog index collapsed into the single /newsletter feed. Permanent.
 export function loader() {
-  return redirect('/blog', 301);
+  return redirect('/newsletter', 301);
 }

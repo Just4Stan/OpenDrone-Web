@@ -2149,6 +2149,18 @@ button.reset {
   cursor: not-allowed;
 }
 
+/* Coming-soon: designed model, not yet purchasable. Greyed + dashed edge
+   to read as a placeholder distinct from a sold-out variant. */
+.variant-tier.is-comingsoon {
+  opacity: 0.55;
+  cursor: not-allowed;
+  border-style: dashed;
+}
+
+.variant-tier.is-comingsoon:hover {
+  border-color: var(--color-border);
+}
+
 .variant-tier-head {
   display: flex;
   align-items: center;

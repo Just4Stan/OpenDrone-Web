@@ -589,7 +589,7 @@ function SupportThreadSidebar({
             </a>
           </li>
           <li>
-            <a href="/blog" target="_blank" rel="noreferrer noopener">
+            <a href="/newsletter" target="_blank" rel="noreferrer noopener">
               Latest build notes →
             </a>
           </li>

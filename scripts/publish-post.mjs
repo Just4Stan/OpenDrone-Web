@@ -28,7 +28,7 @@ const REPO_ROOT = path.resolve(__dirname, '..');
 const CACHE_PATH = path.join(__dirname, '.post-uploads.json');
 
 const SITE_ORIGIN = 'https://opendrone.be';
-const POST_PATH = 'blog'; // public URL is `${SITE_ORIGIN}/${POST_PATH}/<slug>`
+const POST_PATH = 'newsletter'; // public URL is `${SITE_ORIGIN}/${POST_PATH}/<slug>`
 const DEFAULT_BLOG_HANDLE = 'news';
 const DEFAULT_AUTHOR = 'Stan';
 

@@ -218,7 +218,7 @@ async function render({article}) {
   const templatePath = path.join(__dirname, 'newsletter-template.html');
   let html = await fs.readFile(templatePath, 'utf8');
 
-  const articleUrl = `${SITE_ORIGIN}/blog/${article.handle}`;
+  const articleUrl = `${SITE_ORIGIN}/newsletter/${article.handle}`;
   const replacements = {
     SUBJECT: article.title,
     PREHEADER: buildPreheader(article),

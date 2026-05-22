@@ -173,19 +173,19 @@ export function HeaderMenu({
           </NavLink>
         );
       })}
-      {/* Mobile aside only: a Journal link in the slide-out menu. On desktop
-          Journal lives in the right-side CTA group (left of Catalog), so it's
-          omitted here to avoid duplicating it. Skipped if the Shopify menu
-          already links somewhere under /blog. */}
+      {/* Mobile aside only: a Newsletter link in the slide-out menu. On
+          desktop Newsletter lives in the right-side CTA group (left of
+          Catalog), so it's omitted here to avoid duplicating it. Skipped if
+          the Shopify menu already links to /newsletter. */}
       {isMobile &&
       !(menu || FALLBACK_HEADER_MENU).items.some((it) =>
-        it.url?.includes('/blog'),
+        it.url?.includes('/newsletter'),
       ) ? (
         <NavLink
           end
           onClick={close}
           prefetch="intent"
-          to="/blog"
+          to="/newsletter"
           className={({isActive}) =>
             `${isMobile ? 'text-sm tracking-wider' : 'text-[12px] tracking-[0.15em]'} font-mono uppercase transition-colors ${
               isActive
@@ -194,7 +194,7 @@ export function HeaderMenu({
             }`
           }
         >
-          Journal
+          Newsletter
         </NavLink>
       ) : null}
     </nav>
@@ -210,7 +210,7 @@ function HeaderCtas({
       <LangToggle className="header-lang-toggle" />
       <NavLink
         prefetch="intent"
-        to="/blog"
+        to="/newsletter"
         className={({isActive}) =>
           `font-mono text-[12px] uppercase tracking-[0.15em] transition-colors hidden md:block ${
             isActive
@@ -219,7 +219,7 @@ function HeaderCtas({
           }`
         }
       >
-        Journal
+        Newsletter
       </NavLink>
       <NavLink
         prefetch="intent"
@@ -367,9 +367,9 @@ const FALLBACK_HEADER_MENU = {
       id: 'gid://shopify/MenuItem/461609566265',
       resourceId: null,
       tags: [],
-      title: 'Journal',
+      title: 'Newsletter',
       type: 'HTTP',
-      url: '/blog',
+      url: '/newsletter',
       items: [],
     },
     {

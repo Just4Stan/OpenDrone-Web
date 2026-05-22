@@ -51,23 +51,29 @@ export function VariantLadder({
       <div className="variant-ladder-track">
         {tiers.map(({value, content, optionValue}) => {
           const selected = norm(value) === norm(activeValue);
+          // Coming-soon: a designed model with no purchasable variant yet.
+          // Editorial-only — greyed and non-selectable regardless of Shopify.
+          const comingSoon = Boolean(content.comingSoon);
           // Sold-out only when Shopify actually has the variant and marks
           // it unavailable. Pre-setup (no matching option) stays selectable
           // for preview.
           const soldOut = Boolean(
             optionValue && optionValue.exists && !optionValue.available,
           );
+          const disabled = comingSoon || soldOut;
           return (
             <button
               type="button"
               key={value}
               role="radio"
               aria-checked={selected}
-              disabled={soldOut}
+              aria-disabled={disabled}
+              disabled={disabled}
               className={`variant-tier${selected ? ' is-selected' : ''}${
-                soldOut ? ' is-soldout' : ''
+                comingSoon ? ' is-comingsoon' : soldOut ? ' is-soldout' : ''
               }`}
               onClick={() => {
+                if (comingSoon) return;
                 onSelect(value);
                 if (optionValue?.variantUriQuery && !optionValue.selected) {
                   void navigate(`?${optionValue.variantUriQuery}`, {
@@ -79,7 +85,9 @@ export function VariantLadder({
             >
               <span className="variant-tier-head">
                 <span className="variant-tier-name">{value}</span>
-                {soldOut ? (
+                {comingSoon ? (
+                  <span className="variant-tier-flag">Coming soon</span>
+                ) : soldOut ? (
                   <span className="variant-tier-flag">Sold out</span>
                 ) : selected ? (
                   <span className="variant-tier-flag is-selected" aria-hidden="true">

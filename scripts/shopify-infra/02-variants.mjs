@@ -4,10 +4,14 @@
  * app/lib/product-content.ts exactly (incl. the × glyph U+00D7 and the "
  * inch mark) so the comparison ladder wires each card to a real variant.
  *
- *   OpenESC   Mount: 20×20 / 30×30
- *   OpenFC    Model: Lite / 20×20 / 30×30   (Lite = former OpenFC-ECO)
+ * Axis NAME is standardised to "Model" across every line.
+ *
+ *   OpenESC   Model: 20×20 / 30×30                 (Pro variants land later)
+ *   OpenFC    Model: Lite                          (Lite = former OpenFC-ECO;
+ *                                                    20×20 / 30×30 designed but
+ *                                                    not in the launch batch)
  *   OpenRX    Model: Lite / Lite-UFL / Mono / Gemini
- *   OpenFrame Size:  5" / 3"
+ *   OpenFrame Model: 5" Freestyle / 3" Freestyle
  *   OpenStack — left as a single bundle product (no axis)
  *
  * Prices/SKUs are placeholders for Stan to replace. Idempotent: skips option
@@ -18,7 +22,7 @@ import {admin} from './_client.mjs';
 const PLAN = [
   {
     handle: 'openesc',
-    option: 'Mount',
+    option: 'Model',
     variants: [
       {value: '20×20', price: '69.00', sku: 'OPENESC-2020'},
       {value: '30×30', price: '75.00', sku: 'OPENESC-3030'},
@@ -29,8 +33,11 @@ const PLAN = [
     option: 'Model',
     variants: [
       {value: 'Lite', price: '45.00', sku: 'OPENFC-LITE'},
-      {value: '20×20', price: '55.00', sku: 'OPENFC-2020'},
-      {value: '30×30', price: '59.00', sku: 'OPENFC-3030'},
+      // Designed, not in the launch batch — surfaced on the web ladder as
+      // greyed "Coming soon" cards (see app/lib/product-content.ts). Restore
+      // here when the boards ship.
+      // {value: '20×20', price: '55.00', sku: 'OPENFC-2020'},
+      // {value: '30×30', price: '59.00', sku: 'OPENFC-3030'},
     ],
   },
   {
@@ -45,10 +52,10 @@ const PLAN = [
   },
   {
     handle: 'openframe',
-    option: 'Size',
+    option: 'Model',
     variants: [
-      {value: '5"', price: '41.00', sku: 'OPENFRAME-5'},
-      {value: '3"', price: '35.00', sku: 'OPENFRAME-3'},
+      {value: '5" Freestyle', price: '41.00', sku: 'OPENFRAME-5'},
+      {value: '3" Freestyle', price: '35.00', sku: 'OPENFRAME-3'},
     ],
   },
 ];

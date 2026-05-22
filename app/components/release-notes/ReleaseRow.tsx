@@ -50,7 +50,7 @@ export function ReleaseRow({article}: {article: ReleaseRowArticle}) {
   return (
     <li className="rn-row">
       <Link
-        to={`/blog/${article.handle}`}
+        to={`/newsletter/${article.handle}`}
         className="rn-row-link"
         prefetch="intent"
       >

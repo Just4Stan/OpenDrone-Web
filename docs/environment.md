@@ -43,7 +43,7 @@ All optional; the bridge degrades gracefully when unset.
 
 ## Blog / newsletter
 
-- `NEWSLETTER_BLOG_HANDLE` — Shopify blog the `/blog` feed + RSS read from; defaults to `news`
+- `NEWSLETTER_BLOG_HANDLE` — Shopify blog the `/newsletter` feed + RSS read from; defaults to `news`
 - Sends are manual via Shopify admin (Shopify Email → "Subscribed" segment); no dispatch secrets or ESP keys needed
 
 ## Blog publisher (`scripts/publish-post.mjs`, reads `.env` directly)

@@ -1,6 +1,6 @@
 import {redirect} from 'react-router';
 
-// Feed moved to /blog.rss. Permanent redirect keeps existing subscribers.
+// Feed moved to /newsletter.rss. Permanent redirect keeps old subscribers.
 export function loader() {
-  return redirect('/blog.rss', 301);
+  return redirect('/newsletter.rss', 301);
 }

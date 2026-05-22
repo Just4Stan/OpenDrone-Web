@@ -426,6 +426,10 @@ export default function Product() {
   const activeVariant = content.variants?.[activeTier];
   const mergedSpecs = [...content.specs, ...(activeVariant?.specs ?? [])];
   const mergedBox = [...content.inTheBox, ...(activeVariant?.inTheBox ?? [])];
+  // The teardown board art follows the selected tier: a variant's own
+  // `boardArt` wins, otherwise the shared `teardown.boardArt` (the default
+  // board) is shown. Lines without per-tier art just keep the default.
+  const activeBoardArt = activeVariant?.boardArt ?? content.teardown?.boardArt;
 
   // primaryCollection is retained in the loader but we deliberately
   // don't render a breadcrumb on the PDP — the editorial hero with
@@ -576,10 +580,13 @@ export default function Product() {
           label="Teardown"
           title={content.teardown.title}
           media={
-            content.teardown.boardArt ? (
+            activeBoardArt ? (
               <BoardArt
-                src={content.teardown.boardArt.src}
-                inspectUrl={content.teardown.boardArt.inspectUrl}
+                // Remount on src change so the scroll-reveal animation and
+                // Top/Bottom toggle reset cleanly when the tier swaps boards.
+                key={activeBoardArt.src}
+                src={activeBoardArt.src}
+                inspectUrl={activeBoardArt.inspectUrl}
                 handle={product.handle}
               />
             ) : undefined

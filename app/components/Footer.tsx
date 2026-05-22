@@ -13,7 +13,7 @@ interface FooterProps {
 
 const SHOP_LINKS: Array<{to: string; label: string}> = [
   {to: '/collections/all', label: 'Catalog'},
-  {to: '/blog', label: 'Journal'},
+  {to: '/newsletter', label: 'Newsletter'},
   {to: '/search', label: 'Search'},
 ];
 

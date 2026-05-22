@@ -371,12 +371,12 @@ export type FooterQuery = {
   >;
 };
 
-export type ReleasesFeedQueryVariables = StorefrontAPI.Exact<{
+export type NewsletterFeedQueryVariables = StorefrontAPI.Exact<{
   blogHandle: StorefrontAPI.Scalars['String']['input'];
   first: StorefrontAPI.Scalars['Int']['input'];
 }>;
 
-export type ReleasesFeedQuery = {
+export type NewsletterFeedQuery = {
   blog?: StorefrontAPI.Maybe<{
     articles: {
       nodes: Array<
@@ -387,75 +387,6 @@ export type ReleasesFeedQuery = {
       >;
     };
   }>;
-};
-
-export type ReleaseDetailQueryVariables = StorefrontAPI.Exact<{
-  articleHandle: StorefrontAPI.Scalars['String']['input'];
-  blogHandle: StorefrontAPI.Scalars['String']['input'];
-  siblingCount: StorefrontAPI.Scalars['Int']['input'];
-  country?: StorefrontAPI.InputMaybe<StorefrontAPI.CountryCode>;
-  language?: StorefrontAPI.InputMaybe<StorefrontAPI.LanguageCode>;
-}>;
-
-export type ReleaseDetailQuery = {
-  blog?: StorefrontAPI.Maybe<
-    Pick<StorefrontAPI.Blog, 'handle'> & {
-      articleByHandle?: StorefrontAPI.Maybe<
-        Pick<
-          StorefrontAPI.Article,
-          | 'handle'
-          | 'title'
-          | 'contentHtml'
-          | 'excerpt'
-          | 'publishedAt'
-          | 'tags'
-        > & {
-          image?: StorefrontAPI.Maybe<
-            Pick<
-              StorefrontAPI.Image,
-              'id' | 'altText' | 'url' | 'width' | 'height'
-            >
-          >;
-          seo?: StorefrontAPI.Maybe<
-            Pick<StorefrontAPI.Seo, 'description' | 'title'>
-          >;
-        }
-      >;
-      articles: {
-        nodes: Array<
-          Pick<StorefrontAPI.Article, 'handle' | 'title' | 'publishedAt'>
-        >;
-      };
-    }
-  >;
-};
-
-export type ReleasesListQueryVariables = StorefrontAPI.Exact<{
-  language?: StorefrontAPI.InputMaybe<StorefrontAPI.LanguageCode>;
-  blogHandle: StorefrontAPI.Scalars['String']['input'];
-  first: StorefrontAPI.Scalars['Int']['input'];
-}>;
-
-export type ReleasesListQuery = {
-  blog?: StorefrontAPI.Maybe<
-    Pick<StorefrontAPI.Blog, 'title' | 'handle'> & {
-      articles: {
-        nodes: Array<
-          Pick<
-            StorefrontAPI.Article,
-            'id' | 'handle' | 'title' | 'publishedAt' | 'excerpt' | 'tags'
-          > & {
-            image?: StorefrontAPI.Maybe<
-              Pick<
-                StorefrontAPI.Image,
-                'id' | 'altText' | 'url' | 'width' | 'height'
-              >
-            >;
-          }
-        >;
-      };
-    }
-  >;
 };
 
 export type DonationProductQueryVariables = StorefrontAPI.Exact<{
@@ -662,23 +593,73 @@ export type ProductTypesQuery = {
   productTypes: Pick<StorefrontAPI.StringConnection, 'nodes'>;
 };
 
-export type NewsletterRecentPostsQueryVariables = StorefrontAPI.Exact<{
+export type NewsletterPostDetailQueryVariables = StorefrontAPI.Exact<{
+  articleHandle: StorefrontAPI.Scalars['String']['input'];
+  blogHandle: StorefrontAPI.Scalars['String']['input'];
+  siblingCount: StorefrontAPI.Scalars['Int']['input'];
+  country?: StorefrontAPI.InputMaybe<StorefrontAPI.CountryCode>;
+  language?: StorefrontAPI.InputMaybe<StorefrontAPI.LanguageCode>;
+}>;
+
+export type NewsletterPostDetailQuery = {
+  blog?: StorefrontAPI.Maybe<
+    Pick<StorefrontAPI.Blog, 'handle'> & {
+      articleByHandle?: StorefrontAPI.Maybe<
+        Pick<
+          StorefrontAPI.Article,
+          | 'handle'
+          | 'title'
+          | 'contentHtml'
+          | 'excerpt'
+          | 'publishedAt'
+          | 'tags'
+        > & {
+          image?: StorefrontAPI.Maybe<
+            Pick<
+              StorefrontAPI.Image,
+              'id' | 'altText' | 'url' | 'width' | 'height'
+            >
+          >;
+          seo?: StorefrontAPI.Maybe<
+            Pick<StorefrontAPI.Seo, 'description' | 'title'>
+          >;
+        }
+      >;
+      articles: {
+        nodes: Array<
+          Pick<StorefrontAPI.Article, 'handle' | 'title' | 'publishedAt'>
+        >;
+      };
+    }
+  >;
+};
+
+export type NewsletterArchiveQueryVariables = StorefrontAPI.Exact<{
   language?: StorefrontAPI.InputMaybe<StorefrontAPI.LanguageCode>;
   blogHandle: StorefrontAPI.Scalars['String']['input'];
   first: StorefrontAPI.Scalars['Int']['input'];
 }>;
 
-export type NewsletterRecentPostsQuery = {
-  blog?: StorefrontAPI.Maybe<{
-    articles: {
-      nodes: Array<
-        Pick<
-          StorefrontAPI.Article,
-          'handle' | 'title' | 'publishedAt' | 'excerpt'
-        >
-      >;
-    };
-  }>;
+export type NewsletterArchiveQuery = {
+  blog?: StorefrontAPI.Maybe<
+    Pick<StorefrontAPI.Blog, 'title' | 'handle'> & {
+      articles: {
+        nodes: Array<
+          Pick<
+            StorefrontAPI.Article,
+            'id' | 'handle' | 'title' | 'publishedAt' | 'excerpt' | 'tags'
+          > & {
+            image?: StorefrontAPI.Maybe<
+              Pick<
+                StorefrontAPI.Image,
+                'id' | 'altText' | 'url' | 'width' | 'height'
+              >
+            >;
+          }
+        >;
+      };
+    }
+  >;
 };
 
 export type NewsletterCustomerCreateMutationVariables = StorefrontAPI.Exact<{
@@ -1355,17 +1336,9 @@ interface GeneratedQueryTypes {
     return: FooterQuery;
     variables: FooterQueryVariables;
   };
-  '#graphql\n  query ReleasesFeed($blogHandle: String!, $first: Int!) {\n    blog(handle: $blogHandle) {\n      articles(first: $first, sortKey: PUBLISHED_AT, reverse: true) {\n        nodes {\n          handle\n          title\n          publishedAt\n          excerpt\n          contentHtml\n        }\n      }\n    }\n  }\n': {
-    return: ReleasesFeedQuery;
-    variables: ReleasesFeedQueryVariables;
-  };
-  '#graphql\n  query ReleaseDetail(\n    $articleHandle: String!\n    $blogHandle: String!\n    $siblingCount: Int!\n    $country: CountryCode\n    $language: LanguageCode\n  ) @inContext(language: $language, country: $country) {\n    blog(handle: $blogHandle) {\n      handle\n      articleByHandle(handle: $articleHandle) {\n        handle\n        title\n        contentHtml\n        excerpt\n        publishedAt\n        tags\n        image {\n          id\n          altText\n          url\n          width\n          height\n        }\n        seo {\n          description\n          title\n        }\n      }\n      articles(\n        first: $siblingCount\n        sortKey: PUBLISHED_AT\n        reverse: true\n      ) {\n        nodes {\n          handle\n          title\n          publishedAt\n        }\n      }\n    }\n  }\n': {
-    return: ReleaseDetailQuery;
-    variables: ReleaseDetailQueryVariables;
-  };
-  '#graphql\n  query ReleasesList(\n    $language: LanguageCode\n    $blogHandle: String!\n    $first: Int!\n  ) @inContext(language: $language) {\n    blog(handle: $blogHandle) {\n      title\n      handle\n      articles(\n        first: $first\n        sortKey: PUBLISHED_AT\n        reverse: true\n      ) {\n        nodes {\n          id\n          handle\n          title\n          publishedAt\n          excerpt\n          tags\n          image {\n            id\n            altText\n            url\n            width\n            height\n          }\n        }\n      }\n    }\n  }\n': {
-    return: ReleasesListQuery;
-    variables: ReleasesListQueryVariables;
+  '#graphql\n  query NewsletterFeed($blogHandle: String!, $first: Int!) {\n    blog(handle: $blogHandle) {\n      articles(first: $first, sortKey: PUBLISHED_AT, reverse: true) {\n        nodes {\n          handle\n          title\n          publishedAt\n          excerpt\n          contentHtml\n        }\n      }\n    }\n  }\n': {
+    return: NewsletterFeedQuery;
+    variables: NewsletterFeedQueryVariables;
   };
   '#graphql\n  query DonationProduct(\n    $country: CountryCode\n    $language: LanguageCode\n    $handle: String!\n  ) @inContext(country: $country, language: $language) {\n    product(handle: $handle) {\n      id\n      title\n      handle\n      description\n      variants(first: 10) {\n        nodes {\n          id\n          title\n          availableForSale\n          price {\n            amount\n            currencyCode\n          }\n        }\n      }\n    }\n  }\n': {
     return: DonationProductQuery;
@@ -1387,9 +1360,13 @@ interface GeneratedQueryTypes {
     return: ProductTypesQuery;
     variables: ProductTypesQueryVariables;
   };
-  '#graphql\n  query NewsletterRecentPosts(\n    $language: LanguageCode\n    $blogHandle: String!\n    $first: Int!\n  ) @inContext(language: $language) {\n    blog(handle: $blogHandle) {\n      articles(first: $first, sortKey: PUBLISHED_AT, reverse: true) {\n        nodes {\n          handle\n          title\n          publishedAt\n          excerpt\n        }\n      }\n    }\n  }\n': {
-    return: NewsletterRecentPostsQuery;
-    variables: NewsletterRecentPostsQueryVariables;
+  '#graphql\n  query NewsletterPostDetail(\n    $articleHandle: String!\n    $blogHandle: String!\n    $siblingCount: Int!\n    $country: CountryCode\n    $language: LanguageCode\n  ) @inContext(language: $language, country: $country) {\n    blog(handle: $blogHandle) {\n      handle\n      articleByHandle(handle: $articleHandle) {\n        handle\n        title\n        contentHtml\n        excerpt\n        publishedAt\n        tags\n        image {\n          id\n          altText\n          url\n          width\n          height\n        }\n        seo {\n          description\n          title\n        }\n      }\n      articles(first: $siblingCount, sortKey: PUBLISHED_AT, reverse: true) {\n        nodes {\n          handle\n          title\n          publishedAt\n        }\n      }\n    }\n  }\n': {
+    return: NewsletterPostDetailQuery;
+    variables: NewsletterPostDetailQueryVariables;
+  };
+  '#graphql\n  query NewsletterArchive(\n    $language: LanguageCode\n    $blogHandle: String!\n    $first: Int!\n  ) @inContext(language: $language) {\n    blog(handle: $blogHandle) {\n      title\n      handle\n      articles(first: $first, sortKey: PUBLISHED_AT, reverse: true) {\n        nodes {\n          id\n          handle\n          title\n          publishedAt\n          excerpt\n          tags\n          image {\n            id\n            altText\n            url\n            width\n            height\n          }\n        }\n      }\n    }\n  }\n': {
+    return: NewsletterArchiveQuery;
+    variables: NewsletterArchiveQueryVariables;
   };
   '#graphql\n  query Page(\n    $language: LanguageCode,\n    $country: CountryCode,\n    $handle: String!\n  )\n  @inContext(language: $language, country: $country) {\n    page(handle: $handle) {\n      handle\n      id\n      title\n      body\n      seo {\n        description\n        title\n      }\n    }\n  }\n': {
     return: PageQuery;

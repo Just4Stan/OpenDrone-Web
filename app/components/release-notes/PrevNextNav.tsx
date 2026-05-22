@@ -27,7 +27,7 @@ export function PrevNextNav({
     <nav className="rn-post-footer" aria-label="Post navigation">
       {previous ? (
         <Link
-          to={`/blog/${previous.handle}`}
+          to={`/newsletter/${previous.handle}`}
           className="rn-pn rn-prev"
           prefetch="intent"
         >
@@ -40,7 +40,7 @@ export function PrevNextNav({
       )}
       {next ? (
         <Link
-          to={`/blog/${next.handle}`}
+          to={`/newsletter/${next.handle}`}
           className="rn-pn rn-next"
           prefetch="intent"
         >

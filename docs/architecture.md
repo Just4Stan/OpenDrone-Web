@@ -37,7 +37,7 @@ scripts/                            sync-legal, publish-post, compose-newsletter
 - `cart.tsx`, `cart.$lines.tsx` — Hydrogen cart actions, country forced to BE
 - `search.tsx` — site search with Aside drawer + predictive results
 - `contact.tsx` — Discord widget iframe + ticket intake CTA + direct contact
-- `firmware-partners.tsx`, `open-source.tsx`, `blog._index.tsx`, `blog.$handle.tsx`
+- `firmware-partners.tsx`, `open-source.tsx`, `newsletter.tsx`, `newsletter.$handle.tsx`
 
 **Customer account** (signed-in)
 - `account.tsx` — layout
@@ -56,16 +56,15 @@ scripts/                            sync-legal, publish-post, compose-newsletter
 **Legal / i18n**
 - `algemene-voorwaarden.tsx`, `privacy.tsx`, `cookies.tsx`, `cookie-settings.tsx`, `herroepingsrecht.tsx`, `shipping.tsx`, `warranty.tsx`, `security.tsx`, `export-compliance.tsx`, `end-use.tsx`, `terms.tsx`, `legal.tsx` — each served at `/<slug>` (locale-cookie redirect) and `/{en,nl,fr}/<slug>` (canonical)
 
-**Newsletter / blog**
-- `newsletter.tsx` — opt-in landing page (loader) + signup handler (action: writes to Shopify customer list with `acceptsMarketing=true`, `newsletter` tag)
-- `blog._index.tsx` — single consolidated blog archive (reads the Shopify `news` blog), tag filter, year grouping, RSS auto-discovery
-- `blog.$handle.tsx` — individual post (prev/next, optional version chip, subscribe CTA)
-- `releases._index.tsx`, `releases.$handle.tsx`, `[releases.rss].tsx`, `blogs._index.tsx`, `blogs.$blogHandle._index.tsx`, `blogs.$blogHandle.$articleHandle.tsx` — 301 redirect stubs into `/blog` (old URLs)
+**Newsletter** (it's all one section)
+- `newsletter.tsx` — the hub: post archive (reads the Shopify `news` blog, tag filter, year grouping, RSS auto-discovery) + the signup handler (action: writes to Shopify customer list with `acceptsMarketing=true`, `newsletter` tag). No in-body signup form — the footer form (every page) is the single signup.
+- `newsletter.$handle.tsx` — individual post (prev/next, optional version chip)
+- `blog._index.tsx`, `blog.$handle.tsx`, `[blog.rss].tsx`, `releases._index.tsx`, `releases.$handle.tsx`, `[releases.rss].tsx`, `blogs._index.tsx`, `blogs.$blogHandle._index.tsx`, `blogs.$blogHandle.$articleHandle.tsx` — 301 redirect stubs into `/newsletter` (old URLs)
 
 **Misc / infra**
 - `healthz.tsx` — uptime probe
 - `[robots.txt].tsx`, `[sitemap.xml].tsx`, `sitemap.$type.$page[.xml].tsx`
-- `[blog.rss].tsx` — RSS 2.0 feed of blog articles (old `/releases.rss` redirects here)
+- `[newsletter.rss].tsx` — RSS 2.0 feed of newsletter posts (old `/blog.rss`, `/releases.rss` redirect here)
 - `[.well-known].security[.txt].tsx` — RFC 9116 contact record
 - `api.$version.[graphql.json].tsx` — Hydrogen storefront API proxy
 - `discount.$code.tsx` — discount-code apply + redirect
@@ -125,8 +124,8 @@ Five staged moderation/AI layers, each toggleable via env:
 
 Single, manual flow — no third-party ESP, no auto-dispatch. Three parts:
 
-1. **Subscribe** — the `/newsletter` page (and footer `NewsletterSignup`) POST to the `newsletter.tsx` action, which calls Storefront API `customerCreate` with `acceptsMarketing=true` and tag `newsletter`. Abuse controls: honeypot + Cloudflare Turnstile + per-IP/per-email rate limits. `/newsletter` GET renders an opt-in landing page with recent posts.
-2. **Author** — posts are written locally as Markdown in `content/posts/` and pushed to the Shopify `news` blog with `npm run publish:post -- content/posts/<slug>.md` (Admin API `articleCreate`/`articleUpdate` + Files upload for images). Idempotent by slug. They render at `/blog/<slug>`. See `content/posts/README.md`.
+1. **Subscribe** — the footer `NewsletterSignup` (every page) POSTs to the `newsletter.tsx` action, which calls Storefront API `customerCreate` with `acceptsMarketing=true` and tag `newsletter`. Abuse controls: honeypot + Cloudflare Turnstile + per-IP/per-email rate limits. The signup form lives only in the footer — `/newsletter` itself has no in-body form, to avoid duplicating it.
+2. **Author** — posts are written locally as Markdown in `content/posts/` and pushed to the Shopify `news` blog with `npm run publish:post -- content/posts/<slug>.md` (Admin API `articleCreate`/`articleUpdate` + Files upload for images). Idempotent by slug. They render at `/newsletter/<slug>`. See `content/posts/README.md`.
 3. **Send** — done by hand in Shopify admin: Marketing → Shopify Email → blog-post template → "Subscribed" segment → Send (free to 10k emails/mo). Shopify owns delivery and unsubscribes. `npm run compose:newsletter <handle>` is an optional helper that renders a branded custom-HTML email from a published article.
 
 > A prior AI-scaffolded Resend auto-dispatcher (`app/lib/newsletter/*`, `api.newsletter.dispatch/unsubscribe`) was removed in favour of this manual flow. It's recoverable from git history if auto-send is ever wanted.
@@ -141,9 +140,9 @@ Slugs (in `app/lib/legal-slugs.ts`): `algemene-voorwaarden`, `privacy`, `cookies
 
 Markdown lives under `app/content/legal/{en,nl,fr}/`. NL snapshot is overwritten by `npm run sync:legal` from the iCloud compliance workstream (`COMPLIANCE_SRC` env override; sync no-ops when path unreachable). EN + FR are hand-authored in-repo.
 
-### Blog / RSS
+### Newsletter feed / RSS
 
-`/blog` is the single consolidated archive (reads the Shopify `news` blog), with year grouping and a tag filter; posts render at `/blog/$handle`. `[blog.rss].tsx` exposes RSS 2.0 with `lastBuildDate`, `atom:self`, item per article, discoverable from `/blog` via `<link rel="alternate">`, Cache-Control 10 min on the edge. The old `/releases*` and `/blogs*` URLs 301-redirect into `/blog`.
+`/newsletter` is the single consolidated archive (reads the Shopify `news` blog), with year grouping and a tag filter; posts render at `/newsletter/$handle`. `[newsletter.rss].tsx` exposes RSS 2.0 with `lastBuildDate`, `atom:self`, item per article, discoverable from `/newsletter` via `<link rel="alternate">`, Cache-Control 10 min on the edge. The old `/blog*`, `/releases*`, and `/blogs*` URLs 301-redirect into `/newsletter`.
 
 ### Static / SEO
 
