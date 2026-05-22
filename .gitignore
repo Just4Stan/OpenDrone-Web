@@ -43,4 +43,3 @@ scripts/boards.config.json
 
 # Local cache for scripts/publish-post.mjs (Shopify Files CDN URLs)
 scripts/.post-uploads.json
-scripts/out/
