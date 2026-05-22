@@ -33,12 +33,6 @@ export function buildMetaDescription(
   return truncate(description);
 }
 
-export function buildCanonicalUrl(path: string, origin?: string) {
-  const base = origin || 'https://opendrone.be';
-  if (!path.startsWith('/')) path = `/${path}`;
-  return `${base.replace(/\/$/, '')}${path}`;
-}
-
 export type HreflangAlternate = {
   lang: string; // e.g. 'en', 'nl', 'x-default'
   href: string; // absolute or origin-relative URL

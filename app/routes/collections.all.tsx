@@ -61,6 +61,8 @@ async function loadCriticalData({context}: Route.LoaderArgs) {
   // page reads as a browse hub (no pagination across category sections).
   const {products} = await context.storefront.query(CATALOG_QUERY, {
     variables: {first: 100},
+    // Catalog content changes rarely — cache long instead of the 1s default.
+    cache: context.storefront.CacheLong(),
   });
   return {products: products.nodes};
 }
