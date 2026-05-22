@@ -36,6 +36,7 @@ export async function loader({context, request, params}: Route.LoaderArgs) {
   // One round-trip: this article + the surrounding archive for prev/next.
   const {blog} = await context.storefront.query(POST_DETAIL_QUERY, {
     variables: {blogHandle, articleHandle, siblingCount: 100},
+    cache: context.storefront.CacheLong(),
   });
 
   if (!blog?.articleByHandle) {

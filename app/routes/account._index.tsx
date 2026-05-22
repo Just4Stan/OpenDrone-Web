@@ -59,27 +59,27 @@ export async function loader({request, context}: Route.LoaderArgs) {
     }
   }
 
-  const recentOrders = await customerAccount
-    .query(CUSTOMER_ORDERS_QUERY, {
-      variables: {
-        first: 3,
-        language: customerAccount.i18n.language,
-      },
-    })
-    .catch(() => null);
+  // Recent orders and the support-prefill lookup are independent; run them
+  // in parallel so the dashboard waits one customerAccount round-trip, not two.
+  const [recentOrders, prefillResult] = await Promise.all([
+    customerAccount
+      .query(CUSTOMER_ORDERS_QUERY, {
+        variables: {
+          first: 3,
+          language: customerAccount.i18n.language,
+        },
+      })
+      .catch(() => null),
+    customerAccount.query(SUPPORT_CUSTOMER_PREFILL_QUERY).catch(() => null),
+  ]);
 
   const orders = recentOrders?.data?.customer?.orders?.nodes ?? [];
 
-  // Open ticket count for the support tile. Customer ID lookup is a
-  // second cheap GraphQL roundtrip but we already fetched details
-  // above; reuse-by-extra-query keeps this isolated and avoids
-  // touching the existing CUSTOMER_DETAILS_QUERY shape.
+  // Open ticket count for the support tile — needs the customer id from the
+  // prefill query above, so this Redis read runs after. Fail open.
   let openTicketCount = 0;
   try {
-    const {data: prefill} = await customerAccount.query(
-      SUPPORT_CUSTOMER_PREFILL_QUERY,
-    );
-    const cid = prefill?.customer?.id;
+    const cid = prefillResult?.data?.customer?.id;
     if (cid) openTicketCount = await countOpenForCustomer(context.env, cid);
   } catch {
     /* fail open — tile renders the no-tickets variant */

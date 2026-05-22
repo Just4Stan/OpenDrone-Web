@@ -50,6 +50,7 @@ export async function loader({context}: Route.LoaderArgs) {
 
   const {blog} = await context.storefront.query(ARCHIVE_QUERY, {
     variables: {blogHandle, first: 100},
+    cache: context.storefront.CacheLong(),
   });
 
   const all: ReleaseRowArticle[] = (blog?.articles?.nodes ?? []).map(

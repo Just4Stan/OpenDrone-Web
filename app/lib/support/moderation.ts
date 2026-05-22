@@ -148,10 +148,16 @@ export async function filterByApproval(
   if (mode === 'off') {
     return {approved: messages, dropped: [], mode};
   }
+  // decideApproval may do a per-message Discord `fetchReactors` round-trip.
+  // Resolve them in parallel so the poll waits one round-trip's latency, not
+  // N sequential ones, then assemble in input order to keep message ordering.
+  const decisions = await Promise.all(
+    messages.map((m) => decideApproval(env, m, channelId)),
+  );
   const approved: DiscordMessage[] = [];
   const dropped: Array<{message: DiscordMessage; reason: string}> = [];
-  for (const m of messages) {
-    const d = await decideApproval(env, m, channelId);
+  messages.forEach((m, i) => {
+    const d = decisions[i];
     if (d.approved) {
       approved.push(m);
     } else if (mode === 'log') {
@@ -163,6 +169,6 @@ export async function filterByApproval(
     } else {
       dropped.push({message: m, reason: d.reason});
     }
-  }
+  });
   return {approved, dropped, mode};
 }

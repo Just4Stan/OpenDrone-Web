@@ -57,6 +57,7 @@ async function loadCriticalData({context, params, request}: Route.LoaderArgs) {
         sortKey: sort.sortKey,
         reverse: Boolean(sort.reverse),
       },
+      cache: storefront.CacheLong(),
     }),
   ]);
 
