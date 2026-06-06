@@ -53,6 +53,89 @@ const ORDER = ['root', 'rp2350a', 'rp2354a', 'power', 'imu', 'osd', 'blackbox', 
 const titleCase = (s) =>
   s.replace(/[-_]+/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
 
+// --- Crop a KiCad schematic SVG to its content bounding box. ---
+// KiCad plots on the full A-series page, so most sheets sit in a corner with
+// huge empty margins. We walk every path/rect/circle/line/text coordinate to
+// find the real extent and rewrite the <svg> viewBox + width/height to it.
+function pathBBox(d, acc) {
+  let i = 0;
+  const n = d.length;
+  let cx = 0, cy = 0, sx = 0, sy = 0, cmd = '';
+  const isCmd = (c) => 'MmLlHhVvCcSsQqTtAaZz'.includes(c);
+  const num = () => {
+    while (i < n && ' ,\n\t\r'.includes(d[i])) i++;
+    const s = i;
+    if (d[i] === '+' || d[i] === '-') i++;
+    while (i < n && ((d[i] >= '0' && d[i] <= '9') || d[i] === '.')) i++;
+    if (d[i] === 'e' || d[i] === 'E') {
+      i++;
+      if (d[i] === '+' || d[i] === '-') i++;
+      while (i < n && d[i] >= '0' && d[i] <= '9') i++;
+    }
+    return parseFloat(d.slice(s, i));
+  };
+  const pt = (x, y) => {
+    if (!Number.isFinite(x) || !Number.isFinite(y)) return;
+    if (x < acc.minX) acc.minX = x;
+    if (y < acc.minY) acc.minY = y;
+    if (x > acc.maxX) acc.maxX = x;
+    if (y > acc.maxY) acc.maxY = y;
+  };
+  while (i < n) {
+    while (i < n && ' ,\n\t\r'.includes(d[i])) i++;
+    if (i >= n) break;
+    if (isCmd(d[i])) { cmd = d[i]; i++; }
+    const up = cmd.toUpperCase();
+    const rel = cmd !== up;
+    if (up === 'Z') { cx = sx; cy = sy; continue; }
+    if (up === 'H') { let x = num(); if (rel) x += cx; cx = x; pt(x, cy); }
+    else if (up === 'V') { let y = num(); if (rel) y += cy; cy = y; pt(cx, y); }
+    else if (up === 'A') {
+      num(); num(); num(); num(); num();
+      let x = num(), y = num(); if (rel) { x += cx; y += cy; } cx = x; cy = y; pt(x, y);
+    } else if (up === 'C' || up === 'S' || up === 'Q') {
+      const k = up === 'C' ? 3 : 2;
+      for (let j = 0; j < k; j++) {
+        let x = num(), y = num(); if (rel) { x += cx; y += cy; } pt(x, y);
+        if (j === k - 1) { cx = x; cy = y; }
+      }
+    } else { // M / L / T
+      let x = num(), y = num(); if (rel) { x += cx; y += cy; }
+      cx = x; cy = y; pt(x, y);
+      if (up === 'M') { sx = x; sy = y; cmd = rel ? 'l' : 'L'; }
+    }
+  }
+}
+
+function cropSvg(svg) {
+  const acc = {minX: Infinity, minY: Infinity, maxX: -Infinity, maxY: -Infinity};
+  const pt = (x, y) => {
+    if (x < acc.minX) acc.minX = x; if (y < acc.minY) acc.minY = y;
+    if (x > acc.maxX) acc.maxX = x; if (y > acc.maxY) acc.maxY = y;
+  };
+  let m;
+  const re = /\sd="([^"]+)"/g;
+  while ((m = re.exec(svg))) pathBBox(m[1], acc);
+  for (const r of svg.matchAll(/<rect[^>]*\sx="([-\d.]+)"[^>]*\sy="([-\d.]+)"[^>]*\swidth="([-\d.]+)"[^>]*\sheight="([-\d.]+)"/g)) {
+    const [x, y, w, h] = [+r[1], +r[2], +r[3], +r[4]]; pt(x, y); pt(x + w, y + h);
+  }
+  for (const c of svg.matchAll(/<circle[^>]*\scx="([-\d.]+)"[^>]*\scy="([-\d.]+)"[^>]*\sr="([-\d.]+)"/g)) {
+    const [x, y, rr] = [+c[1], +c[2], +c[3]]; pt(x - rr, y - rr); pt(x + rr, y + rr);
+  }
+  for (const t of svg.matchAll(/<text[^>]*\sx="([-\d.]+)"[^>]*\sy="([-\d.]+)"/g)) {
+    pt(+t[1], +t[2]);
+  }
+  if (!Number.isFinite(acc.minX)) return svg; // nothing found — leave as is
+  const pad = 2; // mm
+  const minX = acc.minX - pad, minY = acc.minY - pad;
+  const w = acc.maxX - acc.minX + pad * 2, h = acc.maxY - acc.minY + pad * 2;
+  const r4 = (v) => v.toFixed(4);
+  return svg.replace(
+    /width="[^"]*mm" height="[^"]*mm" viewBox="[^"]*"/,
+    `width="${r4(w)}mm" height="${r4(h)}mm" viewBox="${r4(minX)} ${r4(minY)} ${r4(w)} ${r4(h)}"`,
+  );
+}
+
 function buildSchematic(schPath, handle) {
   const outDir = resolve(here, '..', 'public', 'schematics', handle);
   mkdirSync(outDir, {recursive: true});
@@ -71,7 +154,7 @@ function buildSchematic(schPath, handle) {
       // Root sheet is "<base>.svg"; sub-sheets "<base>-<SHEET>.svg".
       const stem = basename(file, '.svg');
       const slug = stem === base ? 'root' : stem.replace(`${base}-`, '').toLowerCase();
-      copyFileSync(join(tmp, file), join(outDir, `${slug}.svg`));
+      writeFileSync(join(outDir, `${slug}.svg`), cropSvg(readFileSync(join(tmp, file), 'utf8')));
       return {slug, label: LABELS[slug] ?? titleCase(slug), file: `${slug}.svg`};
     });
     sheets.sort((a, b) => {

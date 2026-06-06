@@ -49,6 +49,28 @@ export function SchematicViewer({handle, inspectUrl}: SchematicViewerProps) {
     return () => io.disconnect();
   }, [handle]);
 
+  // Warm the cache for instant tab switches: prefetch hovered sheets eagerly
+  // and the rest on idle. First paint stays light (only the active sheet
+  // blocks); subsequent switches are snappy.
+  const prefetched = useRef<Set<string>>(new Set());
+  const prefetch = (sheet?: Sheet) => {
+    if (!sheet || prefetched.current.has(sheet.slug)) return;
+    prefetched.current.add(sheet.slug);
+    const img = new Image();
+    img.src = `/schematics/${handle}/${sheet.file}`;
+  };
+  useEffect(() => {
+    if (!sheets?.length || typeof window === 'undefined') return;
+    const ric =
+      window.requestIdleCallback ??
+      ((cb: () => void) => window.setTimeout(cb, 400));
+    const id = ric(() => sheets.forEach((s) => prefetch(s)));
+    return () => {
+      (window.cancelIdleCallback ?? window.clearTimeout)(id as number);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sheets, handle]);
+
   const current = sheets?.[active];
 
   return (
@@ -67,6 +89,8 @@ export function SchematicViewer({handle, inspectUrl}: SchematicViewerProps) {
                 className={i === active ? 'is-active' : undefined}
                 aria-pressed={i === active}
                 onClick={() => setActive(i)}
+                onMouseEnter={() => prefetch(s)}
+                onFocus={() => prefetch(s)}
               >
                 {s.label}
               </button>
