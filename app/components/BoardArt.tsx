@@ -107,11 +107,6 @@ export function BoardArt({src, srcs, handle, inspectUrl, layerFns}: BoardArtProp
         if (!alive) return;
         setRaw(text);
         setFailed(false);
-        requestAnimationFrame(() =>
-          requestAnimationFrame(() => {
-            if (alive) setRevealed(true);
-          }),
-        );
       })
       .catch(() => {
         if (alive) setFailed(true);
@@ -125,6 +120,19 @@ export function BoardArt({src, srcs, handle, inspectUrl, layerFns}: BoardArtProp
       alive = false;
     };
   }, [inView, src, srcs]);
+
+  // Fade the board in once its SVG is in hand — driven off `raw`, not the fetch
+  // effect's `alive` flag. A large SVG's parse can block the main thread long
+  // enough that an effect re-run (e.g. a fresh `srcs` array) flips `alive` false
+  // before a reveal scheduled inside the fetch effect ever fires, leaving the
+  // board stuck at opacity 0. Keying on `raw` makes the reveal independent.
+  useEffect(() => {
+    if (raw == null) return;
+    const r = requestAnimationFrame(() =>
+      requestAnimationFrame(() => setRevealed(true)),
+    );
+    return () => cancelAnimationFrame(r);
+  }, [raw]);
 
   // Split the multi-layer SVG into one sheet per copper layer.
   const sheets = useMemo<Sheet[]>(() => {
