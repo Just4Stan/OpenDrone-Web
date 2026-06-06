@@ -60,25 +60,18 @@ export function Header({
           primaryDomainUrl={header.shop.primaryDomain.url}
           publicStoreDomain={publicStoreDomain}
         />
-        {/* FC + ESC are the two halves of a Stack, so they're bracketed as a
-            pair with Stack right after as the combination; a divider sets that
-            trio off from the standalone RX / Frame families. CATEGORY_LINKS is
-            ordered [FC, ESC, Stack, RX, Frame] to match. */}
+        {/* FC, ESC and Stack are one family — a Stack is just an FC + ESC — so
+            they share one bubble (a segmented group), set off from the
+            standalone RX / Frame by a divider. CATEGORY_LINKS is ordered
+            [FC, ESC, Stack, RX, Frame] to match. */}
         <nav className="site-header-categories" aria-label="Product categories">
-          <span className="site-header-cat-pair">
-            {CATEGORY_LINKS.slice(0, 2).map((cat) => (
+          <span className="site-header-cat-group">
+            {CATEGORY_LINKS.slice(0, 3).map((cat) => (
               <NavLink key={cat.label} prefetch="viewport" to={cat.to}>
                 {cat.label}
               </NavLink>
             ))}
           </span>
-          <NavLink
-            prefetch="viewport"
-            to={CATEGORY_LINKS[2].to}
-            className="site-header-cat-stack"
-          >
-            {CATEGORY_LINKS[2].label}
-          </NavLink>
           <span className="site-header-cat-divider" aria-hidden="true" />
           {CATEGORY_LINKS.slice(3).map((cat) => (
             <NavLink key={cat.label} prefetch="viewport" to={cat.to}>
