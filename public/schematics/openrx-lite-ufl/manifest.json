@@ -1,0 +1,15 @@
+{
+  "handle": "openrx-lite-ufl",
+  "sheets": [
+    {
+      "slug": "root",
+      "label": "Overview",
+      "file": "root.svg"
+    },
+    {
+      "slug": "esp32-c3 + sx1281 core (ufl)",
+      "label": "Esp32 C3 + Sx1281 Core (Ufl)",
+      "file": "esp32-c3 + sx1281 core (ufl).svg"
+    }
+  ]
+}

@@ -23,6 +23,7 @@ import {RelatedProducts} from '~/components/RelatedProducts';
 import {FirmwareSplit} from '~/components/FirmwareSplit';
 import {VariantLadder} from '~/components/VariantLadder';
 import {BoardArt} from '~/components/BoardArt';
+import {SchematicViewer} from '~/components/SchematicViewer';
 import type {FrameViewerProps} from '~/components/FrameViewer';
 import {ProvenanceCard} from '~/components/ProvenanceCard';
 import {
@@ -523,8 +524,13 @@ export default function Product() {
   // board) is shown. Lines without per-tier art just keep the default.
   const activeBoardArt = activeVariant?.boardArt ?? content.teardown?.boardArt;
   // CAD products (the frame) carry an exploded 3D viewer instead of a
-  // layered board SVG; when present it takes the teardown media slot.
-  const frameViewer = content.teardown?.frameViewer;
+  // layered board SVG; when present it takes the teardown media slot. Like
+  // boardArt, a tier's own model (3" vs 5") wins over the shared default.
+  const frameViewer = activeVariant?.frameViewer ?? content.teardown?.frameViewer;
+  // The schematic viewer follows the same board as the layer viewer — its
+  // sheets live at /schematics/<board-handle>/ (same handle as the board art).
+  const schematicHandle =
+    activeBoardArt?.src.match(/\/boards\/([^/]+)\//)?.[1] ?? null;
 
   // Morphing buy rail (line products, desktop): the ladder + add-to-cart ride
   // in the hero at rest. Once the hero scrolls away (≈ chapter 1) the rail
@@ -796,6 +802,15 @@ export default function Product() {
         number={chapterNums.openSource}
         label="Open for learning"
         title="Published so you can study it. Produced so you don't have to."
+        media={
+          schematicHandle ? (
+            <SchematicViewer
+              key={schematicHandle}
+              handle={schematicHandle}
+              inspectUrl={activeBoardArt?.inspectUrl}
+            />
+          ) : undefined
+        }
       >
         <p className="chapter-body">
           The schematic, PCB, BOM and 3D STEP are on GitHub under CERN-OHL-S v2.

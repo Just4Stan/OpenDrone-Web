@@ -1,0 +1,30 @@
+{
+  "handle": "openrx-gemini",
+  "sheets": [
+    {
+      "slug": "root",
+      "label": "Overview",
+      "file": "root.svg"
+    },
+    {
+      "slug": "clock",
+      "label": "Clock",
+      "file": "clock.svg"
+    },
+    {
+      "slug": "esp32-c3",
+      "label": "Esp32 C3",
+      "file": "esp32-c3.svg"
+    },
+    {
+      "slug": "lr1121_a",
+      "label": "Lr1121 A",
+      "file": "lr1121_a.svg"
+    },
+    {
+      "slug": "lr1121_b",
+      "label": "Lr1121 B",
+      "file": "lr1121_b.svg"
+    }
+  ]
+}
