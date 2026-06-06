@@ -114,6 +114,19 @@ export function BoardArt({src, handle, inspectUrl}: BoardArtProps) {
     >
       {sheets.length ? (
         <>
+          <div className="board-folder-tabs" role="group" aria-label="Copper layer">
+            {sheets.map((s, i) => (
+              <button
+                type="button"
+                key={s.slug}
+                className={i === active ? 'is-active' : undefined}
+                aria-pressed={i === active}
+                onClick={() => setActive(i)}
+              >
+                {s.label}
+              </button>
+            ))}
+          </div>
           <div className="board-folder-stack">
             {sheets.map((s, i) => (
               <button
@@ -127,19 +140,6 @@ export function BoardArt({src, handle, inspectUrl}: BoardArtProps) {
                 // eslint-disable-next-line react/no-danger
                 dangerouslySetInnerHTML={{__html: s.html}}
               />
-            ))}
-          </div>
-          <div className="board-folder-tabs" role="group" aria-label="Copper layer">
-            {sheets.map((s, i) => (
-              <button
-                type="button"
-                key={s.slug}
-                className={i === active ? 'is-active' : undefined}
-                aria-pressed={i === active}
-                onClick={() => setActive(i)}
-              >
-                {s.label}
-              </button>
             ))}
           </div>
         </>

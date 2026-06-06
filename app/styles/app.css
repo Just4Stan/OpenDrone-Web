@@ -2911,11 +2911,11 @@ button.reset {
   opacity: 0.6;
 }
 
-/* Layer selector — file tabs under the folder. */
+/* Layer selector — file tabs above the folder. */
 .board-folder-tabs {
   position: relative;
   z-index: 60;
-  margin-top: 1.1rem;
+  margin-bottom: 0.4rem;
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
