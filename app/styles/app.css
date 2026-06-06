@@ -823,37 +823,41 @@ a:hover {
   margin-left: clamp(1rem, 2vw, 2.5rem);
 }
 
-/* FC + ESC bracketed as the pair that makes a Stack. Corner brackets are drawn
-   with absolutely-positioned pseudo-elements so they add no layout height (the
-   active-link underline stays clean). The pair's own gap is a touch tighter
-   than the row gap so the two read as one unit. */
-.site-header-cat-pair {
-  position: relative;
+/* FC, ESC and Stack are one family (a Stack is just an FC + ESC), so they share
+   one bubble — a neutral segmented pill that groups them, set off from the
+   standalone RX / Frame by a divider. Each item carries its own fixed padding,
+   so the active state only swaps colour: the bubble never changes size as you
+   navigate. The neutral (non-gold) fill keeps the gold labels high-contrast. */
+.site-header-cat-group {
   display: inline-flex;
   align-items: center;
-  gap: clamp(0.5rem, 1vw, 0.85rem);
-  padding: 0 0.62rem;
+  gap: 0.2rem;
+  padding: 0.25rem;
+  border-radius: 999px;
+  background: var(--color-bg-elevated);
+  border: 1px solid var(--color-border);
 }
-.site-header-cat-pair::before,
-.site-header-cat-pair::after {
-  content: '';
-  position: absolute;
-  top: 50%;
-  width: 5px;
-  height: 1.15em;
-  transform: translateY(-50%);
-  border: 1px solid color-mix(in srgb, var(--color-gold) 38%, transparent);
-  pointer-events: none;
+.site-header-cat-group a {
+  padding: 0.36em 0.82em;
+  border-radius: 999px;
+  opacity: 0.78;
+  transition: color 0.15s ease, background 0.15s ease, opacity 0.15s ease;
 }
-.site-header-cat-pair::before {
-  left: 0;
-  border-right: none;
+.site-header-cat-group a:hover {
+  opacity: 1;
 }
-.site-header-cat-pair::after {
-  right: 0;
-  border-left: none;
+.site-header-cat-group a.active,
+.site-header-cat-group a[aria-current='page'] {
+  color: var(--color-on-accent);
+  background: var(--color-gold);
+  opacity: 1;
+  font-weight: 600;
 }
-/* Divider between the FC/ESC/Stack trio and the standalone RX / Frame. */
+.site-header-cat-group a.active::after,
+.site-header-cat-group a[aria-current='page']::after {
+  display: none;
+}
+/* Divider between the FC/ESC/Stack family bubble and the standalone RX / Frame. */
 .site-header-cat-divider {
   width: 1px;
   height: 1.1em;
