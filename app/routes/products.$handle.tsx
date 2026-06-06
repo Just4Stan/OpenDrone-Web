@@ -28,7 +28,7 @@ import type {FrameViewerProps} from '~/components/FrameViewer';
 import {SceneErrorBoundary} from '~/components/SceneErrorBoundary';
 import {ProvenanceCard} from '~/components/ProvenanceCard';
 import {BrandName} from '~/components/BrandName';
-import {LatestCommitCard} from '~/components/LatestCommit';
+import {CommitHistoryCard, LatestCommitCard} from '~/components/LatestCommit';
 import {redirectIfHandleIsLocalized} from '~/lib/redirect';
 import {buildSeoMeta, buildProductJsonLd} from '~/lib/seo';
 import {fetchLatestCommits} from '~/lib/github';
@@ -498,6 +498,15 @@ export default function Product() {
   const hasHeroCopy = Boolean(content.hero.line1);
   const chapterNums = computeChapterNumbers(content);
 
+  // Repo whose commit history backs the "Open for learning" row's 4th card —
+  // the bundle's first component repo, else this product's own. Used as the
+  // fallback link when the live latest-commit fetch is rate-limited.
+  const commitHistoryRepoUrl = content.bundle
+    ? content.bundle.components
+        .map((c) => PRODUCT_CONTENT[c.handle]?.repoUrl)
+        .find((url): url is string => Boolean(url))
+    : content.repoUrl;
+
   // Comparison-ladder state for product lines (OpenRX/OpenESC). The
   // editorial `variants` map is the tier source of truth; the active tier
   // drives the spec/in-the-box preview and, once Shopify carries the
@@ -949,16 +958,33 @@ export default function Product() {
             </p>
           </a>
           {/* The latest commit rides in the same row as the resource cards —
-              streams in as a 4th card once the deferred GitHub fetch lands. */}
-          <Suspense fallback={null}>
-            <Await resolve={latestCommits} errorElement={null}>
-              {(commits) =>
-                (commits ?? []).map((c) => (
-                  <LatestCommitCard key={c.sha + c.repoUrl} commit={c} />
-                ))
-              }
-            </Await>
-          </Suspense>
+              streams in as a 4th card once the deferred GitHub fetch lands.
+              GitHub's unauthenticated API rate-limits the edge under load, so
+              when the fetch comes back empty we still render a 4th card: a
+              static link to the repo's commit history. The bubble is always
+              present, it just degrades from a live commit to a changelog link. */}
+          {commitHistoryRepoUrl ? (
+            <Suspense
+              fallback={<CommitHistoryCard repoUrl={commitHistoryRepoUrl} />}
+            >
+              <Await
+                resolve={latestCommits}
+                errorElement={
+                  <CommitHistoryCard repoUrl={commitHistoryRepoUrl} />
+                }
+              >
+                {(commits) =>
+                  commits && commits.length ? (
+                    commits.map((c) => (
+                      <LatestCommitCard key={c.sha + c.repoUrl} commit={c} />
+                    ))
+                  ) : (
+                    <CommitHistoryCard repoUrl={commitHistoryRepoUrl} />
+                  )
+                }
+              </Await>
+            </Suspense>
+          ) : null}
         </div>
       </Chapter>
 

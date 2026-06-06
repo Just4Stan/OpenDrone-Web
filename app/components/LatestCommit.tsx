@@ -42,6 +42,27 @@ export function LatestCommitCard({commit}: {commit: LatestCommit}) {
   );
 }
 
+/**
+ * Static stand-in for {@link LatestCommitCard} when the live GitHub fetch comes
+ * back empty (the unauthenticated API is capped at 60 req/hour per IP, so the
+ * edge gets rate-limited under load). Keeps the row's 4th card present on every
+ * page — it just links to the repo's commit history instead of a single commit.
+ */
+export function CommitHistoryCard({repoUrl}: {repoUrl: string}) {
+  return (
+    <a
+      href={`${repoUrl.replace(/\/$/, '')}/commits`}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="open-source-card"
+    >
+      <p className="open-source-card-label">Changelog</p>
+      <p className="open-source-card-title">Commit history ↗</p>
+      <p className="open-source-card-sub">Every revision, public on GitHub</p>
+    </a>
+  );
+}
+
 export function LatestCommitGrid({commits}: {commits: LatestCommit[]}) {
   if (commits.length === 0) return null;
   return (
