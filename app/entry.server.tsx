@@ -48,6 +48,14 @@ export default async function handleRequest(
       "'self'",
       'https://cdn.shopify.com',
       'https://challenges.cloudflare.com',
+      // The hero 3D scene loads EXT_meshopt_compression GLBs; the meshopt
+      // decoder instantiates a small WebAssembly module on the main thread.
+      // 'wasm-unsafe-eval' allows WASM compilation ONLY — it does not permit
+      // string eval()/new Function() — so it's the minimal grant needed.
+      // Without it the decoder throws a CSP CompileError and the hero stays
+      // blank. (Draco was rejected as an alternative: its decoder runs in a
+      // blob: Worker, which worker-src also blocks.)
+      "'wasm-unsafe-eval'",
     ],
     frameSrc: [
       "'self'",

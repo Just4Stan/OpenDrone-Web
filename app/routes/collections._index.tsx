@@ -92,7 +92,7 @@ function CollectionItem({
       className="collection-card"
       key={collection.id}
       to={`/collections/${collection.handle}`}
-      prefetch="intent"
+      prefetch="viewport"
     >
       {collection?.image && (
         <Image

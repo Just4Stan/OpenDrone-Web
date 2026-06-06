@@ -26,7 +26,7 @@ export function EmptyState({
       {description && <p className="empty-state-body">{description}</p>}
       <div className="empty-state-actions">
         {ctaLabel && ctaTo && (
-          <Link to={ctaTo} className="hero-cta-primary" prefetch="intent">
+          <Link to={ctaTo} className="hero-cta-primary" prefetch="viewport">
             {ctaLabel}
           </Link>
         )}

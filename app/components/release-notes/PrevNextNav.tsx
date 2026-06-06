@@ -29,7 +29,7 @@ export function PrevNextNav({
         <Link
           to={`/newsletter/${previous.handle}`}
           className="rn-pn rn-prev"
-          prefetch="intent"
+          prefetch="viewport"
         >
           <span className="rn-k">← Previous</span>
           <span className="rn-pn-title">{previous.title}</span>
@@ -42,7 +42,7 @@ export function PrevNextNav({
         <Link
           to={`/newsletter/${next.handle}`}
           className="rn-pn rn-next"
-          prefetch="intent"
+          prefetch="viewport"
         >
           <span className="rn-k">Next →</span>
           <span className="rn-pn-title">{next.title}</span>

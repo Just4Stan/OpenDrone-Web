@@ -51,7 +51,7 @@ export function TagFilter({
       <Link
         to={buildHref(null)}
         className={'rn-filter' + (active === null ? ' is-on' : '')}
-        prefetch="intent"
+        prefetch="viewport"
       >
         All <span className="rn-n">{total}</span>
       </Link>
@@ -60,7 +60,7 @@ export function TagFilter({
           key={tag}
           to={buildHref(tag)}
           className={'rn-filter' + (active === tag ? ' is-on' : '')}
-          prefetch="intent"
+          prefetch="viewport"
         >
           {LABELS[tag]} <span className="rn-n">{counts[tag] ?? 0}</span>
         </Link>

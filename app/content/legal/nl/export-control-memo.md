@@ -11,7 +11,7 @@
 
 | Product | Description | Freq | Max power |
 |---------|-------------|------|-----------|
-| OpenFC-ECO / OpenFC | MCU + IMU + OSD, 7-36 VDC (2-6S) | 2.4 GHz (OpenFC full only, WiFi factory-disabled) | N/A |
+| OpenFC-Lite / OpenFC | MCU + IMU + OSD, 7-36 VDC (2-6S) | 2.4 GHz (OpenFC full only, WiFi factory-disabled) | N/A |
 | OpenESC 20x20 | BLDC motor driver, 11.1-25.2 VDC | N/A | 35 A continuous |
 | OpenESC 30x30 | BLDC motor driver, 11.1-25.2 VDC | N/A | 120 A continuous |
 | OpenRX Lite | ExpressLRS RX | 2.4 GHz ISM | ~10 dBm (telemetry) |

@@ -1,11 +1,21 @@
 import {Canvas, useFrame, invalidate} from '@react-three/fiber';
-import {useEffect, useRef, useState} from 'react';
+import {useEffect, useReducer, useRef, useState} from 'react';
 import * as THREE from 'three';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
+import {MeshoptDecoder} from 'three/addons/libs/meshopt_decoder.module.js';
+
+// Memoise fetched GLB bytes by URL so a model that's been loaded once (e.g. the
+// other tier, preloaded in the background) never hits the network again — the
+// switch only pays the cheap parse, not the multi-MB download.
+THREE.Cache.enabled = true;
 
 export type FrameViewerProps = {
-  /** Public path to the GLB, e.g. /models/frame.glb */
+  /** Public path to the active GLB, e.g. /models/frame3.glb */
   src: string;
+  /** All frame GLBs across tiers. Preloaded up front so switching the active
+   *  `src` is instant (toggle visibility) instead of a fetch + parse. Defaults
+   *  to `[src]`. */
+  srcs?: string[];
   /** Optional "inspect" deep-dive link (kept for API parity; unused while
    *  the viewer renders as a decorative backdrop). */
   inspectUrl?: string;
@@ -26,6 +36,10 @@ export type FrameViewerProps = {
  *
  * Parts are classified by node name ("top", "base"/"base.001",
  * "arm"/"arm.001"…) from the OnShape glTF export.
+ *
+ * Tier switching (3" ⇄ 5") is instant: every tier's model is loaded once and
+ * kept in the scene; changing `src` just toggles which one is visible. No
+ * remount, no refetch.
  */
 
 const GROUPS = [
@@ -43,17 +57,154 @@ const ARM_TRAVEL = 0.78;
 const EXPLODE_MAX = 3;
 
 type Part = {obj: THREE.Object3D; groupIndex: number; base: THREE.Vector3; explode: THREE.Vector3};
+type Model = {root: THREE.Object3D; parts: Part[]};
 
 function classify(name: string): number {
   const lower = name.toLowerCase();
   return GROUPS.findIndex((g) => g.match(lower));
 }
 
+/**
+ * Turn a freshly-loaded glTF scene into a render-ready model: classify the
+ * explodable parts, compute their explode vectors, replace solid surfaces with
+ * gold edge outlines, and centre + normalise the scene to a fixed size. The
+ * scene is mutated in place and returned alongside its part list.
+ */
+function prepareModel(scene: THREE.Object3D): Part[] {
+  scene.updateMatrixWorld(true);
+  // glTF wraps the whole frame under a single identity root node (both the
+  // OnShape and the OCCT/cascadio STEP exports name it "Assembly 1"). The node
+  // we translate must sit DIRECTLY beneath that root, so its position lives in
+  // the identity assembly frame and the world-space explode delta applies
+  // without a parent rotation/flip twisting it.
+  const assemblyRoot =
+    scene.children.length === 1 ? scene.children[0] : scene;
+  const found: Part[] = [];
+  scene.traverse((o) => {
+    const idx = classify(o.name);
+    if (idx === -1) return;
+    let p = o.parent;
+    while (p && p !== scene) {
+      if (classify(p.name) !== -1) return;
+      p = p.parent;
+    }
+    const box = new THREE.Box3().setFromObject(o);
+    if (box.isEmpty()) return;
+    // Climb from the classified node up to the assembly root's direct child:
+    //  - OnShape: the mesh ("arm") sits inside a per-part "occurrence" wrapper
+    //    that carries a 180° flip; moving the occurrence (a child of the root)
+    //    applies the explode cleanly instead of negating it.
+    //  - cascadio: the mesh is ON the named part node ("Arm"), already a direct
+    //    child of the root, so the part node itself is what moves.
+    // Moving the SHARED root would collapse every part onto one vector — the
+    // "flies up as one piece" bug — so we stop one level below it.
+    let moveNode = o;
+    while (
+      moveNode.parent &&
+      moveNode.parent !== assemblyRoot &&
+      moveNode.parent !== scene
+    ) {
+      moveNode = moveNode.parent;
+    }
+    found.push({
+      obj: moveNode,
+      groupIndex: idx,
+      base: moveNode.position.clone(),
+      explode: box.getCenter(new THREE.Vector3()),
+    });
+  });
+
+  const groupCentroid = (gi: number) => {
+    const c = new THREE.Vector3();
+    let n = 0;
+    for (const f of found)
+      if (f.groupIndex === gi) {
+        c.add(f.explode);
+        n++;
+      }
+    return n ? c.divideScalar(n) : null;
+  };
+  const topC = groupCentroid(0);
+  const baseC = groupCentroid(2);
+  const stackDir =
+    topC && baseC
+      ? topC.clone().sub(baseC).normalize()
+      : new THREE.Vector3(0, 1, 0);
+
+  const sceneBox = new THREE.Box3().setFromObject(scene);
+  const sz = sceneBox.getSize(new THREE.Vector3());
+  const unit = Math.max(sz.x, sz.y, sz.z) || 1;
+  // Fan the arms out from the stack centreline (the plate centres), not
+  // the bounding-box centre — the arms are asymmetric, so the bbox centre
+  // is skewed and would bias every arm the same way.
+  const axisPoint = baseC ?? topC ?? sceneBox.getCenter(new THREE.Vector3());
+
+  for (const f of found) {
+    const centroid = f.explode.clone();
+    if (f.groupIndex === 0) {
+      f.explode = stackDir.clone().multiplyScalar(unit * PLATE_TRAVEL);
+    } else if (f.groupIndex === 2) {
+      f.explode = stackDir.clone().multiplyScalar(-unit * PLATE_TRAVEL);
+    } else {
+      const rel = centroid.sub(axisPoint);
+      const radial = rel.sub(
+        stackDir.clone().multiplyScalar(rel.dot(stackDir)),
+      );
+      if (radial.lengthSq() < 1e-6) radial.set(1, 0, 0);
+      f.explode = radial.normalize().multiplyScalar(unit * ARM_TRAVEL);
+    }
+  }
+
+  // Vector edge outlines instead of solid fills. The outline is added as
+  // a CHILD of its mesh so it inherits the mesh's transform — and crucially
+  // travels with the part when the explode moves the mesh node. The solid
+  // surface is suppressed via the material's `visible`, NOT the object's
+  // `visible` (which would also hide the child outline, leaving nothing on
+  // screen). Hiding the object was the bug: the outline used to be a
+  // sibling on the parent "occurrence" node, so it never moved.
+  const lineMat = new THREE.LineBasicMaterial({
+    color: 0xc8b27a,
+    transparent: true,
+    opacity: 0.55,
+  });
+  const meshes: THREE.Mesh[] = [];
+  scene.traverse((o) => {
+    const m = o as THREE.Mesh;
+    if (m.isMesh && m.geometry) meshes.push(m);
+  });
+  for (const m of meshes) {
+    const ls = new THREE.LineSegments(new THREE.EdgesGeometry(m.geometry, 24), lineMat);
+    m.add(ls);
+    const mats = Array.isArray(m.material) ? m.material : [m.material];
+    mats.forEach((mat) => {
+      if (mat) mat.visible = false;
+    });
+  }
+
+  const box = new THREE.Box3().setFromObject(scene);
+  scene.position.sub(box.getCenter(new THREE.Vector3()));
+  const size = box.getSize(new THREE.Vector3());
+  scene.scale.setScalar(2.2 / (Math.max(size.x, size.y, size.z) || 1));
+  return found;
+}
+
+function disposeObject(root: THREE.Object3D) {
+  root.traverse((o: any) => {
+    if (o.isMesh || o.isLineSegments) {
+      o.geometry?.dispose();
+      const mats = Array.isArray(o.material) ? o.material : [o.material];
+      mats.forEach((m: any) => m?.dispose());
+    }
+  });
+}
+
 function FrameModel({
   src,
+  srcs,
   containerRef,
 }: {
   src: string;
+  srcs: string[];
   containerRef: React.RefObject<HTMLDivElement | null>;
 }) {
   const groupRef = useRef<THREE.Group>(null);
@@ -61,146 +212,83 @@ function FrameModel({
   // model sits off to the right and the left arms fan into the text.
   const rot = {x: 0.42, y: -0.5};
   const offsetX = 1.0;
-  const parts = useRef<Part[]>([]);
+  // All loaded models, keyed by src. Only the active one is `visible`.
+  const models = useRef<Map<string, Model>>(new Map());
+  const [, bump] = useReducer((c: number) => c + 1, 0);
   // The chapter following the teardown ("Open for learning"). The explode is
   // scrubbed across the gap between the two chapters' centres, so we need its
   // box too. Resolved lazily and cached (re-resolved if it drops out of DOM).
   const nextChapter = useRef<HTMLElement | null>(null);
 
+  // Load every tier's model once, active one first so it shows ASAP; the rest
+  // warm in the background so switching tiers is instant. THREE.Cache keeps the
+  // bytes, so re-mounting (scroll away/back) re-parses without re-downloading.
   useEffect(() => {
     let cancelled = false;
     const loader = new GLTFLoader();
-    loader.load(
-      src,
-      (gltf) => {
-        if (cancelled || !groupRef.current) return;
-        const scene = gltf.scene;
-
-        scene.updateMatrixWorld(true);
-        const found: Part[] = [];
-        scene.traverse((o) => {
-          const idx = classify(o.name);
-          if (idx === -1) return;
-          let p = o.parent;
-          while (p && p !== scene) {
-            if (classify(p.name) !== -1) return;
-            p = p.parent;
-          }
-          const box = new THREE.Box3().setFromObject(o);
-          if (box.isEmpty()) return;
-          // Translate the part in the assembly's frame, not the mesh's local
-          // frame: some OnShape "occurrence" wrappers carry a 180° flip that
-          // would negate the world-space explode direction (collapsing arm
-          // pairs onto one corner). The occurrence sits directly under the
-          // identity Assembly root, so moving IT applies the explode cleanly.
-          const moveNode = o.parent && o.parent !== scene ? o.parent : o;
-          found.push({
-            obj: moveNode,
-            groupIndex: idx,
-            base: moveNode.position.clone(),
-            explode: box.getCenter(new THREE.Vector3()),
-          });
-        });
-
-        const groupCentroid = (gi: number) => {
-          const c = new THREE.Vector3();
-          let n = 0;
-          for (const f of found)
-            if (f.groupIndex === gi) {
-              c.add(f.explode);
-              n++;
-            }
-          return n ? c.divideScalar(n) : null;
-        };
-        const topC = groupCentroid(0);
-        const baseC = groupCentroid(2);
-        const stackDir =
-          topC && baseC
-            ? topC.clone().sub(baseC).normalize()
-            : new THREE.Vector3(0, 1, 0);
-
-        const sceneBox = new THREE.Box3().setFromObject(scene);
-        const sz = sceneBox.getSize(new THREE.Vector3());
-        const unit = Math.max(sz.x, sz.y, sz.z) || 1;
-        // Fan the arms out from the stack centreline (the plate centres), not
-        // the bounding-box centre — the arms are asymmetric, so the bbox centre
-        // is skewed and would bias every arm the same way.
-        const axisPoint =
-          baseC ?? topC ?? sceneBox.getCenter(new THREE.Vector3());
-
-        for (const f of found) {
-          const centroid = f.explode.clone();
-          if (f.groupIndex === 0) {
-            f.explode = stackDir.clone().multiplyScalar(unit * PLATE_TRAVEL);
-          } else if (f.groupIndex === 2) {
-            f.explode = stackDir.clone().multiplyScalar(-unit * PLATE_TRAVEL);
-          } else {
-            const rel = centroid.sub(axisPoint);
-            const radial = rel.sub(
-              stackDir.clone().multiplyScalar(rel.dot(stackDir)),
-            );
-            if (radial.lengthSq() < 1e-6) radial.set(1, 0, 0);
-            f.explode = radial.normalize().multiplyScalar(unit * ARM_TRAVEL);
-          }
-        }
-        parts.current = found;
-
-        // Vector edge outlines instead of solid fills. The outline is added as
-        // a CHILD of its mesh so it inherits the mesh's transform — and crucially
-        // travels with the part when the explode moves the mesh node. The solid
-        // surface is suppressed via the material's `visible`, NOT the object's
-        // `visible` (which would also hide the child outline, leaving nothing on
-        // screen). Hiding the object was the bug: the outline used to be a
-        // sibling on the parent "occurrence" node, so it never moved.
-        const lineMat = new THREE.LineBasicMaterial({
-          color: 0xc8b27a,
-          transparent: true,
-          opacity: 0.55,
-        });
-        const meshes: THREE.Mesh[] = [];
-        scene.traverse((o) => {
-          const m = o as THREE.Mesh;
-          if (m.isMesh && m.geometry) meshes.push(m);
-        });
-        for (const m of meshes) {
-          const ls = new THREE.LineSegments(new THREE.EdgesGeometry(m.geometry, 24), lineMat);
-          m.add(ls);
-          const mats = Array.isArray(m.material) ? m.material : [m.material];
-          mats.forEach((mat) => {
-            if (mat) mat.visible = false;
-          });
-        }
-
-        const box = new THREE.Box3().setFromObject(scene);
-        scene.position.sub(box.getCenter(new THREE.Vector3()));
-        const size = box.getSize(new THREE.Vector3());
-        scene.scale.setScalar(2.2 / (Math.max(size.x, size.y, size.z) || 1));
-        groupRef.current.rotation.set(rot.x, rot.y, 0);
-        groupRef.current.position.x = offsetX;
-        groupRef.current.add(scene);
-        invalidate();
-      },
-      undefined,
-      (err) => console.error('[FrameViewer] failed to load', src, err),
-    );
+    // OnShape exports the frame GLBs with EXT_meshopt_compression (+ mesh
+    // quantization), so the loader needs the meshopt decoder or every load
+    // throws "setMeshoptDecoder must be called before loading compressed files".
+    loader.setMeshoptDecoder(MeshoptDecoder);
+    const wanted = srcs.length ? srcs : [src];
+    const order = [src, ...wanted.filter((s) => s !== src)];
+    for (const s of order) {
+      if (models.current.has(s)) continue;
+      // Reserve the slot synchronously so a re-render mid-load doesn't queue a
+      // duplicate fetch for the same src.
+      models.current.set(s, {root: new THREE.Group(), parts: []});
+      loader.load(
+        s,
+        (gltf) => {
+          if (cancelled || !groupRef.current) return;
+          const scene = gltf.scene;
+          const parts = prepareModel(scene);
+          scene.visible = s === src;
+          models.current.set(s, {root: scene, parts});
+          groupRef.current.add(scene);
+          invalidate();
+          bump();
+        },
+        undefined,
+        (err) => console.error('[FrameViewer] failed to load', s, err),
+      );
+    }
     return () => {
       cancelled = true;
-      parts.current = [];
-      const g = groupRef.current;
-      if (!g) return;
-      while (g.children.length) {
-        const child = g.children[0];
-        g.remove(child);
-        child.traverse((o: any) => {
-          if (o.isMesh || o.isLineSegments) {
-            o.geometry?.dispose();
-            const mats = Array.isArray(o.material) ? o.material : [o.material];
-            mats.forEach((m: any) => m?.dispose());
-          }
-        });
-      }
     };
+    // srcs is a stable list for the product; src changes are handled by the
+    // visibility effect below, not by reloading.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [srcs.join('|')]);
+
+  // Orient the rig once; rotation/offset apply to every model under it (only
+  // one is visible at a time).
+  useEffect(() => {
+    if (!groupRef.current) return;
+    groupRef.current.rotation.set(rot.x, rot.y, 0);
+    groupRef.current.position.x = offsetX;
+  }, [rot.x, rot.y]);
+
+  // Instant tier switch: show the requested model, hide the rest. If the model
+  // hasn't finished loading yet it simply becomes visible once it lands.
+  useEffect(() => {
+    for (const [s, m] of models.current) m.root.visible = s === src;
+    invalidate();
   }, [src]);
+
+  // Dispose everything on unmount (the IntersectionObserver unmounts the whole
+  // canvas when the backdrop scrolls out of view).
+  useEffect(() => {
+    const loaded = models.current;
+    const g = groupRef.current;
+    return () => {
+      for (const {root} of loaded.values()) {
+        g?.remove(root);
+        disposeObject(root);
+      }
+      loaded.clear();
+    };
+  }, []);
 
   // Recompute the explode amount from scroll position each rendered frame.
   // The throw spans chapter 1 (teardown) → chapter 2: e = 0 when the teardown
@@ -209,7 +297,8 @@ function FrameModel({
   // exploded). Normalised by the centre-to-centre distance, so it's stable
   // regardless of section heights or the gap between them.
   useFrame(() => {
-    if (!parts.current.length) return;
+    const active = models.current.get(src);
+    if (!active || !active.parts.length) return;
     let e = 0;
     const el = containerRef.current;
     if (el) {
@@ -238,7 +327,7 @@ function FrameModel({
         e = THREE.MathUtils.clamp(1 - c1 / vh, 0, 1);
       }
     }
-    for (const p of parts.current) {
+    for (const p of active.parts) {
       p.obj.position.set(
         p.base.x + p.explode.x * e,
         p.base.y + p.explode.y * e,
@@ -250,10 +339,11 @@ function FrameModel({
   return <group ref={groupRef} />;
 }
 
-export function FrameViewer({src}: FrameViewerProps) {
+export function FrameViewer({src, srcs}: FrameViewerProps) {
   const wrapRef = useRef<HTMLDivElement | null>(null);
   const [mounted, setMounted] = useState(false);
   const [onScreen, setOnScreen] = useState(false);
+  const allSrcs = srcs && srcs.length ? srcs : [src];
 
   useEffect(() => setMounted(true), []);
 
@@ -289,7 +379,7 @@ export function FrameViewer({src}: FrameViewerProps) {
           gl={{antialias: true, alpha: true, powerPreference: 'default'}}
         >
           {/* Edge-outline parts are unlit — no lights or shadows needed. */}
-          <FrameModel src={src} containerRef={wrapRef} />
+          <FrameModel src={src} srcs={allSrcs} containerRef={wrapRef} />
         </Canvas>
       ) : null}
     </div>

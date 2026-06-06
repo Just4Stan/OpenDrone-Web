@@ -23,7 +23,9 @@ import {RelatedProducts} from '~/components/RelatedProducts';
 import {FirmwareSplit} from '~/components/FirmwareSplit';
 import {VariantLadder} from '~/components/VariantLadder';
 import {BoardArt} from '~/components/BoardArt';
+import {SchematicViewer} from '~/components/SchematicViewer';
 import type {FrameViewerProps} from '~/components/FrameViewer';
+import {SceneErrorBoundary} from '~/components/SceneErrorBoundary';
 import {ProvenanceCard} from '~/components/ProvenanceCard';
 import {
   LatestCommitGrid,
@@ -355,6 +357,7 @@ function Chapter({
   children,
   media,
   backdrop,
+  wideMedia,
 }: {
   number: string;
   label: string;
@@ -367,12 +370,16 @@ function Chapter({
    *  content (the exploded frame viewer). When set, the right-hand media
    *  slot is dropped and the text sits on top of this layer. */
   backdrop?: React.ReactNode;
+  /** Flip the column split so the media takes most of the width and the text
+   *  column narrows — used for the wide schematic viewer. */
+  wideMedia?: boolean;
 }) {
   return (
     <section
       className="chapter"
       data-chapter={number}
       data-backdrop={backdrop ? '' : undefined}
+      data-wide-media={wideMedia ? '' : undefined}
     >
       {backdrop ? <div className="chapter-backdrop">{backdrop}</div> : null}
       <div className="chapter-index">
@@ -523,19 +530,34 @@ export default function Product() {
   // board) is shown. Lines without per-tier art just keep the default.
   const activeBoardArt = activeVariant?.boardArt ?? content.teardown?.boardArt;
   // CAD products (the frame) carry an exploded 3D viewer instead of a
-  // layered board SVG; when present it takes the teardown media slot.
-  const frameViewer = content.teardown?.frameViewer;
+  // layered board SVG; when present it takes the teardown media slot. Like
+  // boardArt, a tier's own model (3" vs 5") wins over the shared default.
+  const frameViewer = activeVariant?.frameViewer ?? content.teardown?.frameViewer;
+  // Every frame model across all tiers, so the viewer can preload them and
+  // switch tiers instantly (toggle visibility) instead of re-fetching the
+  // multi-MB GLB on each swap.
+  const frameViewerSrcs = useMemo(() => {
+    const set = new Set<string>();
+    if (content.teardown?.frameViewer) set.add(content.teardown.frameViewer.src);
+    for (const v of Object.values(content.variants ?? {})) {
+      if (v.frameViewer) set.add(v.frameViewer.src);
+    }
+    return [...set];
+  }, [content]);
+  // The schematic viewer follows the same board as the layer viewer — its
+  // sheets live at /schematics/<board-handle>/ (same handle as the board art).
+  const schematicHandle =
+    activeBoardArt?.src.match(/\/boards\/([^/]+)\//)?.[1] ?? null;
 
-  // Morphing buy rail (line products, desktop): the ladder + add-to-cart ride
-  // in the hero at rest. Once the hero scrolls away (≈ chapter 1) the rail
-  // pins to the top — over its own column — and CSS collapses it to bare name
-  // pills + a small add-to-cart so a buyer can switch SKUs from anywhere and
-  // compare spec tables. Scrolling back up settles it home. The pin is driven
-  // by a zero-height sentinel dropped just below the hero. The pinned rail
-  // shrink-wraps to its content (chips + price + add-to-cart) and anchors to
-  // the content's right edge, so it grows leftward as more SKUs are added
-  // rather than stretching into a full-width banner. `railBox.right` mirrors
-  // the gap from the viewport's right edge to the hero's right edge.
+  // Compact buy bar (line products, desktop): the in-hero ladder + add-to-cart
+  // scroll past normally; once the in-hero selector passes under the header a
+  // separate compact bar pins to the top so a buyer can switch SKUs from
+  // anywhere and compare spec tables. Scrolling back up hides it again. The pin
+  // is driven by a zero-height sentinel sitting just below the in-hero selector.
+  // The pinned bar shrink-wraps to its content (chips + price + add-to-cart) and
+  // anchors to the content's right edge, so it grows leftward as more SKUs are
+  // added rather than stretching into a full-width banner. `railBox.right`
+  // mirrors the gap from the viewport's right edge to the hero's right edge.
   const heroSectionRef = useRef<HTMLElement>(null);
   const railSentinelRef = useRef<HTMLDivElement>(null);
   const [railPinned, setRailPinned] = useState(false);
@@ -598,52 +620,61 @@ export default function Product() {
     productHandle: product.handle,
   });
 
-  // The ladder + buy module. When pinned it's portaled to <body> so the fixed
-  // overlay escapes the hero's stacking/overflow context — otherwise the
-  // chapter media (which is sticky to the same top-right spot) paints over it
-  // and swallows clicks. Suppressed (CSS-hidden, not unmounted — the
-  // add-to-cart submit must survive opening the drawer) while an aside is open
-  // so it doesn't sit on top of the cart.
-  const railSuppressed = railPinned && asideType !== 'closed';
-  const buyRail = (
-    <div
-      className={`buy-rail${railPinned ? ' is-pinned' : ''}${
-        railSuppressed ? ' is-suppressed' : ''
-      }`}
-      style={railPinned && railBox ? {right: railBox.right} : undefined}
-    >
-      {hasLadder && content.optionAxis && content.variants ? (
-        <VariantLadder
-          axis={content.optionAxis}
-          variants={content.variants}
-          productOptions={productOptions}
-          activeValue={activeTier}
-          onSelect={setActiveTier}
+  // The ladder + buy module. These two nodes are rendered twice: once in the
+  // hero (in normal flow — it scrolls past like any content) and, once the
+  // in-hero selector has scrolled under the header, again in a compact bar
+  // pinned to the top so a variant switcher + add-to-cart is always reachable.
+  // Both copies share `activeTier`, so switching in either keeps them in sync.
+  const railLadder =
+    hasLadder && content.optionAxis && content.variants ? (
+      <VariantLadder
+        axis={content.optionAxis}
+        variants={content.variants}
+        productOptions={productOptions}
+        activeValue={activeTier}
+        onSelect={setActiveTier}
+      />
+    ) : null;
+  const railBuyModule = (
+    <div className="product-buy" data-buy-module>
+      <div className="product-buy-price">
+        <ProductPrice
+          price={selectedVariant?.price}
+          compareAtPrice={selectedVariant?.compareAtPrice}
         />
-      ) : null}
-      <div className="product-buy" data-buy-module>
-        <div className="product-buy-price">
-          <ProductPrice
-            price={selectedVariant?.price}
-            compareAtPrice={selectedVariant?.compareAtPrice}
-          />
-          {selectedVariant?.sku ? (
-            <span className="product-buy-sku">SKU {selectedVariant.sku}</span>
-          ) : null}
-        </div>
-        <span
-          className={`product-buy-stock${selectedVariant?.availableForSale ? '' : ' is-out'}`}
-        >
-          {selectedVariant?.availableForSale
-            ? 'In stock · ships from Belgium'
-            : 'Sold out'}
-        </span>
-        <ProductForm
-          productOptions={productOptions}
-          selectedVariant={selectedVariant}
-          hideOptionNames={content.optionAxis ? [content.optionAxis] : undefined}
-        />
+        {selectedVariant?.sku ? (
+          <span className="product-buy-sku">SKU {selectedVariant.sku}</span>
+        ) : null}
       </div>
+      <span
+        className={`product-buy-stock${selectedVariant?.availableForSale ? '' : ' is-out'}`}
+      >
+        {selectedVariant?.availableForSale
+          ? 'In stock · ships from Belgium'
+          : 'Sold out'}
+      </span>
+      <ProductForm
+        productOptions={productOptions}
+        selectedVariant={selectedVariant}
+        hideOptionNames={content.optionAxis ? [content.optionAxis] : undefined}
+      />
+    </div>
+  );
+
+  // The compact, top-pinned copy. Portaled to <body> so the fixed overlay
+  // escapes the hero's sticky/stacking context — otherwise the chapter media
+  // (sticky to the same top-right spot) paints over it and swallows clicks.
+  // Suppressed (CSS-hidden, not unmounted — an in-flight add-to-cart submit
+  // must survive opening the drawer) while an aside is open so it doesn't sit
+  // on top of the cart.
+  const railSuppressed = railPinned && asideType !== 'closed';
+  const pinnedRail = (
+    <div
+      className={`buy-rail is-pinned${railSuppressed ? ' is-suppressed' : ''}`}
+      style={railBox ? {right: railBox.right} : undefined}
+    >
+      {railLadder}
+      {railBuyModule}
     </div>
   );
 
@@ -690,7 +721,7 @@ export default function Product() {
             <li>
               <Link
                 to="/open-source"
-                prefetch="intent"
+                prefetch="viewport"
                 className="trust-chip trust-chip-green trust-chip-link"
               >
                 Open source · CERN-OHL-S-2.0
@@ -700,7 +731,7 @@ export default function Product() {
               <li>
                 <Link
                   to="/firmware-partners"
-                  prefetch="intent"
+                  prefetch="viewport"
                   className="trust-chip trust-chip-gold trust-chip-link"
                 >
                   €1 × {content.bundle.components.length} →{' '}
@@ -711,7 +742,7 @@ export default function Product() {
               <li>
                 <Link
                   to="/firmware-partners"
-                  prefetch="intent"
+                  prefetch="viewport"
                   className="trust-chip trust-chip-gold trust-chip-link"
                 >
                   €1 → {content.firmware.project} maintainers
@@ -720,10 +751,25 @@ export default function Product() {
             ) : null}
           </ul>
 
-          {railPinned ? createPortal(buyRail, document.body) : buyRail}
+          {/* In-flow buy box — scrolls past with the page like any content,
+              so nothing vanishes or leaves a gap. The sentinel sits between
+              the selector and the buy module: once the selector scrolls under
+              the header the compact top bar takes over. */}
+          <div className="buy-rail">
+            {railLadder}
+            <div
+              ref={railSentinelRef}
+              className="buy-rail-sentinel"
+              aria-hidden="true"
+            />
+            {railBuyModule}
+          </div>
+          {/* Separate compact bar pinned to the top while the in-hero selector
+              is out of view, so variants stay switchable from anywhere. */}
+          {railPinned ? createPortal(pinnedRail, document.body) : null}
 
           {content.pairCta ? (
-            <Link className="pair-cta" to={content.pairCta.to} prefetch="intent">
+            <Link className="pair-cta" to={content.pairCta.to} prefetch="viewport">
               <span className="pair-cta-eyebrow">{content.pairCta.eyebrow}</span>
               <span className="pair-cta-title">{content.pairCta.title}</span>
               <span className="pair-cta-arrow" aria-hidden="true">→</span>
@@ -731,10 +777,6 @@ export default function Product() {
           ) : null}
         </div>
       </section>
-
-      {/* Pin trigger for the morphing buy rail — once this passes under the
-          header, the rail (above) goes fixed + compact. */}
-      <div ref={railSentinelRef} className="buy-rail-sentinel" aria-hidden="true" />
 
       {/* === Chapter: Teardown === */}
       {content.teardown && chapterNums.teardown ? (
@@ -744,11 +786,18 @@ export default function Product() {
           title={content.teardown.title}
           backdrop={
             frameViewer ? (
-              <ClientFrameViewer
-                key={frameViewer.src}
-                src={frameViewer.src}
-                inspectUrl={frameViewer.inspectUrl}
-              />
+              // No key on src: keep the canvas mounted across tier switches so
+              // the viewer toggles between preloaded models instantly rather
+              // than remounting and re-fetching the GLB. Wrapped so a WebGL
+              // failure drops the (decorative) viewer instead of crashing the
+              // whole product page.
+              <SceneErrorBoundary fallback={null}>
+                <ClientFrameViewer
+                  src={frameViewer.src}
+                  srcs={frameViewerSrcs}
+                  inspectUrl={frameViewer.inspectUrl}
+                />
+              </SceneErrorBoundary>
             ) : undefined
           }
           media={
@@ -778,6 +827,16 @@ export default function Product() {
               </li>
             ))}
           </ul>
+          {!frameViewer && activeBoardArt?.inspectUrl ? (
+            <a
+              className="board-art-inspect teardown-inspect"
+              href={activeBoardArt.inspectUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Inspect interactively ↗
+            </a>
+          ) : null}
         </Chapter>
       ) : null}
 
@@ -786,6 +845,16 @@ export default function Product() {
         number={chapterNums.openSource}
         label="Open for learning"
         title="Published so you can study it. Produced so you don't have to."
+        wideMedia={!!schematicHandle}
+        media={
+          schematicHandle ? (
+            <SchematicViewer
+              key={schematicHandle}
+              handle={schematicHandle}
+              inspectUrl={activeBoardArt?.inspectUrl}
+            />
+          ) : undefined
+        }
       >
         <p className="chapter-body">
           The schematic, PCB, BOM and 3D STEP are on GitHub under CERN-OHL-S v2.
@@ -932,7 +1001,7 @@ export default function Product() {
                 <Link
                   key={c.handle}
                   to={`/products/${c.handle}`}
-                  prefetch="intent"
+                  prefetch="viewport"
                   className="bundle-component-card"
                 >
                   <p className="bundle-component-title">{c.title}</p>
