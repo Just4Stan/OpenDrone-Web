@@ -4,27 +4,37 @@
     {
       "slug": "root",
       "label": "Overview",
-      "file": "root.svg"
+      "file": "root.svg",
+      "w": 339.28,
+      "h": 161.48
     },
     {
       "slug": "esc1",
       "label": "Esc1",
-      "file": "esc1.svg"
+      "file": "esc1.svg",
+      "w": 259.9,
+      "h": 165.29
     },
     {
       "slug": "esc2",
       "label": "Esc2",
-      "file": "esc2.svg"
+      "file": "esc2.svg",
+      "w": 259.9,
+      "h": 165.29
     },
     {
       "slug": "esc3",
       "label": "Esc3",
-      "file": "esc3.svg"
+      "file": "esc3.svg",
+      "w": 259.9,
+      "h": 165.29
     },
     {
       "slug": "esc4",
       "label": "Esc4",
-      "file": "esc4.svg"
+      "file": "esc4.svg",
+      "w": 259.9,
+      "h": 165.29
     }
   ]
 }

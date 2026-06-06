@@ -7,7 +7,7 @@ export type SchematicViewerProps = {
   inspectUrl?: string;
 };
 
-type Sheet = {slug: string; label: string; file: string};
+type Sheet = {slug: string; label: string; file: string; w?: number; h?: number};
 
 /**
  * Paged viewer for a multi-sheet KiCad schematic — the schematic analogue of
@@ -49,9 +49,9 @@ export function SchematicViewer({handle, inspectUrl}: SchematicViewerProps) {
     return () => io.disconnect();
   }, [handle]);
 
-  // Warm the cache for instant tab switches: prefetch hovered sheets eagerly
-  // and the rest on idle. First paint stays light (only the active sheet
-  // blocks); subsequent switches are snappy.
+  // Lazy + snappy: nothing preloads on its own. Hovering/focusing a tab
+  // prefetches that sheet so the click is instant; the active sheet itself
+  // lazy-loads. Keeps the page light — only sheets you reach for are fetched.
   const prefetched = useRef<Set<string>>(new Set());
   const prefetch = (sheet?: Sheet) => {
     if (!sheet || prefetched.current.has(sheet.slug)) return;
@@ -59,19 +59,15 @@ export function SchematicViewer({handle, inspectUrl}: SchematicViewerProps) {
     const img = new Image();
     img.src = `/schematics/${handle}/${sheet.file}`;
   };
-  useEffect(() => {
-    if (!sheets?.length || typeof window === 'undefined') return;
-    const ric =
-      window.requestIdleCallback ??
-      ((cb: () => void) => window.setTimeout(cb, 400));
-    const id = ric(() => sheets.forEach((s) => prefetch(s)));
-    return () => {
-      (window.cancelIdleCallback ?? window.clearTimeout)(id as number);
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sheets, handle]);
 
   const current = sheets?.[active];
+  // One scale factor for every sheet of a board: the widest sheet fills the
+  // frame, narrower sheets render proportionally smaller (with a floor so a
+  // tiny sheet — e.g. a clock — isn't microscopic). Without this each sheet
+  // would stretch to full width and blow small circuits up huge.
+  const maxW = Math.max(1, ...(sheets ?? []).map((s) => s.w ?? 0));
+  const sheetWidth = (s?: Sheet) =>
+    `${Math.max(40, Math.min(100, ((s?.w ?? maxW) / maxW) * 100)).toFixed(1)}%`;
 
   return (
     <div className="schematic-viewer" ref={ref} data-board={handle}>
@@ -101,6 +97,7 @@ export function SchematicViewer({handle, inspectUrl}: SchematicViewerProps) {
               <img
                 key={current.slug}
                 className={`schematic-sheet${loaded[current.slug] ? ' is-loaded' : ''}`}
+                style={{width: sheetWidth(current)}}
                 src={`/schematics/${handle}/${current.file}`}
                 alt={`${current.label} schematic sheet`}
                 loading="lazy"

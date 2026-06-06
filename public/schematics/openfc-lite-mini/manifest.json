@@ -2,39 +2,46 @@
   "handle": "openfc-lite-mini",
   "sheets": [
     {
-      "slug": "root",
-      "label": "Overview",
-      "file": "root.svg"
-    },
-    {
       "slug": "rp2350a",
       "label": "MCU",
-      "file": "rp2350a.svg"
+      "file": "rp2350a.svg",
+      "w": 376.67,
+      "h": 241.44
     },
     {
       "slug": "power",
       "label": "Power",
-      "file": "power.svg"
+      "file": "power.svg",
+      "w": 270.7,
+      "h": 166.8
     },
     {
       "slug": "imu",
       "label": "IMU",
-      "file": "imu.svg"
+      "file": "imu.svg",
+      "w": 128.75,
+      "h": 65.02
     },
     {
       "slug": "osd",
       "label": "OSD",
-      "file": "osd.svg"
+      "file": "osd.svg",
+      "w": 185.61,
+      "h": 133.54
     },
     {
       "slug": "blackbox",
       "label": "Blackbox",
-      "file": "blackbox.svg"
+      "file": "blackbox.svg",
+      "w": 130.06,
+      "h": 56.31
     },
     {
       "slug": "pads",
       "label": "Connectors",
-      "file": "pads.svg"
+      "file": "pads.svg",
+      "w": 179.87,
+      "h": 146.94
     }
   ]
 }

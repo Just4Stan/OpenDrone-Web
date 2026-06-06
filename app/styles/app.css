@@ -2919,20 +2919,19 @@ button.reset {
   opacity: 0.6;
 }
 
-/* Tabs + stack share a positioning context; the rail floats in the left gutter
-   so it sits in the empty space beside the board instead of over it. */
-/* Rail sits to the LEFT of the board and is vertically centred with the stack,
-   so the two read as one symmetric unit with no overlap. */
+/* Rail and board sit side by side: the rail takes its own fixed column on the
+   left (so it can never cover the teardown text to its left), the board takes
+   the rest, and align-items centres the rail vertically against the board. */
 .board-folder-body {
   display: flex;
   align-items: center;
-  gap: 1rem;
+  gap: clamp(8px, 1vw, 18px);
 }
 .board-folder-stack {
   flex: 1 1 auto;
   min-width: 0;
 }
-/* Layer rail — a self-contained vertical selector parked left of the board. */
+/* Layer rail — a self-contained vertical selector beside the board. */
 .board-folder-rail {
   flex: 0 0 auto;
   z-index: 60;
@@ -2940,7 +2939,9 @@ button.reset {
   flex-direction: column;
   align-items: stretch;
   gap: 6px;
-  width: 96px;
+  /* Size tracks the viewport so the rail scales with the board across aspect
+     ratios instead of staying a fixed pixel block. */
+  width: clamp(76px, 5.6vw, 104px);
   padding: 10px 9px 11px;
   border-radius: 16px;
   background: color-mix(in srgb, var(--color-bg) 50%, transparent);
@@ -3012,12 +3013,12 @@ button.reset {
   background: color-mix(in srgb, var(--color-bg) 78%, transparent);
   cursor: pointer;
   font-family: var(--font-mono);
-  font-size: 12px;
+  font-size: clamp(10.5px, 0.74vw, 13px);
   letter-spacing: 0.14em;
   text-transform: uppercase;
   text-align: center;
   color: var(--color-text-dim);
-  padding: 0.48rem 0.55rem;
+  padding: 0.48em 0.4em;
   border-radius: 999px;
   transition: color 0.2s, background 0.2s, border-color 0.2s, transform 0.2s,
     box-shadow 0.2s;
@@ -3032,11 +3033,14 @@ button.reset {
   border-color: var(--color-gold);
   box-shadow: 0 0 16px color-mix(in srgb, var(--color-gold) 35%, transparent);
 }
-/* On narrow screens the gutter collapses — drop the rail back to a top bar. */
-@media (max-width: 879px) {
+/* Below this the left gutter is too tight to float the rail without crowding the
+   teardown text — drop it back to a horizontal bar above the board instead. */
+@media (max-width: 1024px) {
+  .board-folder-body {
+    flex-direction: column;
+    align-items: stretch;
+  }
   .board-folder-rail {
-    position: static;
-    transform: none;
     width: auto;
     flex-direction: row;
     flex-wrap: wrap;
@@ -3116,6 +3120,9 @@ button.reset {
   display: block;
   width: 100%;
   height: auto;
+  /* Width is set inline per sheet (one scale factor per board); centre the
+   * narrower sheets in the frame. */
+  margin: 0 auto;
   /* B&W export → white blueprint lines on the dark page. Contrast lifts the
    * thin anti-aliased strokes so the sheet reads at preview scale. */
   filter: invert(1) contrast(1.45) brightness(1.05);
