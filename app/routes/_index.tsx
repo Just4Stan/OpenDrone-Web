@@ -1,9 +1,10 @@
-import {Link, useLoaderData} from 'react-router';
+import {Link, PrefetchPageLinks, useLoaderData} from 'react-router';
 import type {Route} from './+types/_index';
 import {useEffect, useRef, useState, useCallback} from 'react';
 import type {CollectionItemFragment} from 'storefrontapi.generated';
 import {HeroWordmark} from '~/components/HeroWordmark';
 import {MobileHome} from '~/components/MobileHome';
+import {SceneErrorBoundary} from '~/components/SceneErrorBoundary';
 
 // Kick off the HeroScene chunk download at module eval so it races with
 // hydration instead of waiting for useEffect — only on desktop and only
@@ -33,17 +34,20 @@ function ClientHeroScene({
   onProgress,
   labelRefs,
   loadDelayMs,
+  size,
 }: {
   onReady?: () => void;
   onProgress?: (progress: number) => void;
   labelRefs?: LabelRefs;
   loadDelayMs?: number;
+  size?: '5' | '3';
 }) {
   const [Scene, setScene] = useState<React.ComponentType<{
     onReady?: () => void;
     onProgress?: (progress: number) => void;
     labelRefs?: LabelRefs;
     loadDelayMs?: number;
+    size?: '5' | '3';
   }> | null>(null);
   useEffect(() => {
     if (!shouldLoadHero()) {
@@ -52,9 +56,17 @@ function ClientHeroScene({
       onReady?.();
       return;
     }
-    void (heroScenePromise ?? import('~/components/HeroScene')).then((m) => {
-      setScene(() => m.HeroScene);
-    });
+    void (heroScenePromise ?? import('~/components/HeroScene'))
+      .then((m) => {
+        setScene(() => m.HeroScene);
+      })
+      .catch((err) => {
+        // Chunk failed to load (offline, CDN hiccup). Release the splash now
+        // rather than waiting out the safety timeout — the page stays usable
+        // without the 3D scene.
+        console.error('[hero] failed to load 3D scene chunk:', err);
+        onReady?.();
+      });
   }, [onReady]);
   if (!Scene) return null;
   return (
@@ -63,6 +75,7 @@ function ClientHeroScene({
       onProgress={onProgress}
       labelRefs={labelRefs}
       loadDelayMs={loadDelayMs}
+      size={size}
     />
   );
 }
@@ -83,25 +96,24 @@ export async function loader({request, context}: Route.LoaderArgs) {
     ua,
   );
 
-  // Flagship line for the mobile showcase. Catalogue changes rarely, so
-  // cache long.
-  let featured: CollectionItemFragment[] = [];
-  try {
-    const data = (await context.storefront.query(HOME_FEATURED_QUERY, {
-      cache: context.storefront.CacheLong(),
-    })) as {
-      frame: CollectionItemFragment | null;
-      stack: CollectionItemFragment | null;
-      rx: CollectionItemFragment | null;
-    };
-    featured = [data.frame, data.stack, data.rx].filter(
-      (p): p is CollectionItemFragment => Boolean(p),
-    );
-  } catch {
-    // A storefront hiccup shouldn't blank the homepage — the hero + CTAs
-    // still render, just without the product cards.
-    featured = [];
-  }
+  // Flagship line for the mobile showcase. Deferred, not awaited: desktop
+  // never renders these cards, and on mobile they sit below the hero — so
+  // streaming them keeps TTFB off the Shopify round-trip entirely. Cache
+  // long since the catalogue changes rarely. Catch resolves to [] so a
+  // storefront hiccup just drops the cards instead of blanking the page.
+  const featured: Promise<CollectionItemFragment[]> = context.storefront
+    .query(HOME_FEATURED_QUERY, {cache: context.storefront.CacheLong()})
+    .then((data) => {
+      const d = data as {
+        frame: CollectionItemFragment | null;
+        stack: CollectionItemFragment | null;
+        rx: CollectionItemFragment | null;
+      };
+      return [d.frame, d.stack, d.rx].filter(
+        (p): p is CollectionItemFragment => Boolean(p),
+      );
+    })
+    .catch(() => [] as CollectionItemFragment[]);
 
   return {isMobileHint, featured};
 }
@@ -153,6 +165,9 @@ function DesktopHome() {
   const scrollRef = useRef(0);
   const rafId = useRef(0);
   const [scrollProgress, setScrollProgress] = useState(0);
+  // Which airframe the hero shows — 5-inch or 3-inch. Toggling swaps the
+  // GLB trio loaded by HeroScene.
+  const [heroSize, setHeroSize] = useState<'5' | '3'>('5');
   // Splash starts centered and large. It settles when the 3D scene has
   // finished loading AND a minimum wait has elapsed (so the wordmark
   // always gets a readable beat), or when a max timeout fires as a
@@ -386,6 +401,15 @@ function DesktopHome() {
 
   return (
     <div className="homepage">
+      {/*
+        Warm the three flagship PDPs (the live handles the 3D part hotspots
+        navigate to) so clicking a part is an instant SPA transition with its
+        loader data already in cache. openfc-lite is the label target but ships
+        DRAFT, so the hotspots use the live openfc/openesc/openframe handles.
+      */}
+      <PrefetchPageLinks page="/products/openfc" />
+      <PrefetchPageLinks page="/products/openesc" />
+      <PrefetchPageLinks page="/products/openframe" />
 
       {/*
         Scroll spacer — gives us HERO_SPACER_VH of scroll to drive the
@@ -418,20 +442,26 @@ function DesktopHome() {
                   'radial-gradient(ellipse at 50% 45%, rgba(80, 65, 20, 0.3) 0%, transparent 60%)',
               }}
             />
-            <ClientHeroScene
-              onReady={handleSceneReady}
-              onProgress={handleSceneProgress}
-              labelRefs={{
-                fc: fcLabelRef,
-                frame: frameLabelRef,
-                esc: escLabelRef,
-              }}
-              // Hold the GLB fetch + parse + processing for the first
-              // ~750ms so the wireframe wordmark animation gets a
-              // clean main thread. Skipped entirely on return visits
-              // where the splash was already played in this session.
-              loadDelayMs={splashHasPlayedThisSession ? 0 : 750}
-            />
+            {/* If the WebGL scene crashes (no GPU, lost context, …) the
+                boundary releases the splash so the visitor isn't trapped behind
+                the dim/scroll-lock — the wordmark + CTAs below stay usable. */}
+            <SceneErrorBoundary onError={handleSceneReady} fallback={null}>
+              <ClientHeroScene
+                onReady={handleSceneReady}
+                onProgress={handleSceneProgress}
+                labelRefs={{
+                  fc: fcLabelRef,
+                  frame: frameLabelRef,
+                  esc: escLabelRef,
+                }}
+                // Hold the GLB fetch + parse + processing for the first
+                // ~750ms so the wireframe wordmark animation gets a
+                // clean main thread. Skipped entirely on return visits
+                // where the splash was already played in this session.
+                loadDelayMs={splashHasPlayedThisSession ? 0 : 750}
+                size={heroSize}
+              />
+            </SceneErrorBoundary>
             {/* Dim overlay — only covers the 3D scene, not the wordmark.
                 Fades out once the scene is ready AND the minimum splash
                 beat has elapsed. */}
@@ -537,6 +567,31 @@ function DesktopHome() {
             </a>
           </div>
 
+        {/* Airframe size toggle — swaps the 5" / 3" GLB trio in the hero.
+            Fades in with the rest of the hero UI once the splash settles and
+            fades back out as the user scrolls into the explode phases. */}
+        <div
+          className="absolute top-24 left-1/2 -translate-x-1/2 z-20 pointer-events-auto"
+          style={{
+            opacity: splashSettled ? heroTextOpacity : 0,
+            transition: 'opacity 0.4s ease',
+          }}
+        >
+          <div className="hero-size-toggle" role="group" aria-label="Airframe size">
+            {(['5', '3'] as const).map((s) => (
+              <button
+                key={s}
+                type="button"
+                className={`hero-size-toggle__btn${heroSize === s ? ' is-active' : ''}`}
+                aria-pressed={heroSize === s}
+                onClick={() => setHeroSize(s)}
+              >
+                {s}&Prime;
+              </button>
+            ))}
+          </div>
+        </div>
+
         {/* Scroll hint */}
         <div
           className="absolute bottom-3 left-1/2 -translate-x-1/2"
@@ -554,17 +609,17 @@ function DesktopHome() {
           style={{opacity: labelOpacity, transform: `translateY(-${pushUp}vh)`}}
         >
           <div ref={fcLabelRef} className="hero-component-label">
-            <Link to="/products/openfc">
+            <Link to="/products/openfc-lite" prefetch="render">
               Open<span>FC</span>
             </Link>
           </div>
           <div ref={frameLabelRef} className="hero-component-label">
-            <Link to="/products/openframe">
+            <Link to="/products/openframe" prefetch="render">
               Open<span>Frame</span>
             </Link>
           </div>
           <div ref={escLabelRef} className="hero-component-label">
-            <Link to="/products/openesc">
+            <Link to="/products/openesc" prefetch="render">
               Open<span>ESC</span>
             </Link>
           </div>
@@ -587,7 +642,7 @@ function DesktopHome() {
           >
             <Link
               to="/collections/all"
-              className="inline-flex items-center gap-3 px-10 py-4 bg-[var(--color-gold)] text-[var(--color-bg)] font-mono font-bold uppercase tracking-wider rounded shadow-[0_0_24px_rgba(184,146,46,0.45)] hover:shadow-[0_0_36px_rgba(184,146,46,0.65)] hover:bg-[var(--color-gold-hover)] transition-all duration-300 pointer-events-auto"
+              className="inline-flex items-center gap-3 px-10 py-4 bg-[var(--color-gold)] text-[var(--color-on-accent)] font-mono font-bold uppercase tracking-wider rounded shadow-[0_0_24px_rgba(184,146,46,0.45)] hover:shadow-[0_0_36px_rgba(184,146,46,0.65)] hover:bg-[var(--color-gold-hover)] transition-all duration-300 pointer-events-auto"
               style={{fontSize: 'clamp(0.9rem, 1vw, 1.05rem)'}}
             >
               Shop Now

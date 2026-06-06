@@ -1,4 +1,5 @@
-import {Link} from 'react-router';
+import {Suspense} from 'react';
+import {Await, Link} from 'react-router';
 import type {CollectionItemFragment} from 'storefrontapi.generated';
 import {HeroWordmark} from '~/components/HeroWordmark';
 import {ProductItem} from '~/components/ProductItem';
@@ -14,7 +15,11 @@ import {ProductItem} from '~/components/ProductItem';
  * the mobile counterpart: a plain landing page that gets a visitor to the
  * flagship products and the catalogue with no 3D and no scroll tricks.
  */
-export function MobileHome({featured}: {featured: CollectionItemFragment[]}) {
+export function MobileHome({
+  featured,
+}: {
+  featured: Promise<CollectionItemFragment[]>;
+}) {
   return (
     <div className="home-mobile">
       <section className="home-mobile-hero">
@@ -54,20 +59,26 @@ export function MobileHome({featured}: {featured: CollectionItemFragment[]}) {
         </div>
       </section>
 
-      {featured.length > 0 ? (
-        <section className="home-mobile-featured">
-          <p className="section-label">Flagship hardware</p>
-          <div className="home-mobile-grid">
-            {featured.map((product, i) => (
-              <ProductItem
-                key={product.id}
-                product={product}
-                loading={i === 0 ? 'eager' : 'lazy'}
-              />
-            ))}
-          </div>
-        </section>
-      ) : null}
+      <Suspense fallback={null}>
+        <Await resolve={featured} errorElement={null}>
+          {(items) =>
+            items.length > 0 ? (
+              <section className="home-mobile-featured">
+                <p className="section-label">Flagship hardware</p>
+                <div className="home-mobile-grid">
+                  {items.map((product, i) => (
+                    <ProductItem
+                      key={product.id}
+                      product={product}
+                      loading={i === 0 ? 'eager' : 'lazy'}
+                    />
+                  ))}
+                </div>
+              </section>
+            ) : null
+          }
+        </Await>
+      </Suspense>
 
       <Link to="/collections/all" className="home-mobile-browse">
         Browse the full catalogue

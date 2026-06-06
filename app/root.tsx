@@ -19,6 +19,7 @@ import {PageLayout} from './components/PageLayout';
 import {getCompanyIdentity} from '~/lib/company';
 import {localeFromPathname, seoLocaleTag} from '~/lib/i18n';
 import {buildOrgJsonLd} from '~/lib/seo';
+import {THEME_COLORS, THEME_INIT_SCRIPT} from '~/lib/theme';
 
 export type RootLoader = typeof loader;
 
@@ -58,6 +59,18 @@ export function links() {
   return [
     {rel: 'preconnect', href: 'https://cdn.shopify.com'},
     {rel: 'preconnect', href: 'https://shop.app'},
+    // Preload the body typeface so first paint doesn't flash the system
+    // fallback then reflow when Inter swaps in. Fonts fetch in CORS mode
+    // even same-origin, so crossorigin is required for the preload to match
+    // the @font-face request and not double-download. Only Inter (body) is
+    // preloaded; JetBrains Mono is used for spec tables below the fold.
+    {
+      rel: 'preload',
+      href: '/fonts/inter-var.woff2',
+      as: 'font',
+      type: 'font/woff2',
+      crossOrigin: 'anonymous',
+    },
     {rel: 'icon', type: 'image/svg+xml', href: favicon},
   ];
 }
@@ -161,11 +174,19 @@ export function Layout({children}: {children?: React.ReactNode}) {
   const orgJsonLd = data?.company ? buildOrgJsonLd(data.company) : null;
 
   return (
-    <html lang={htmlLang} className="dark">
+    <html lang={htmlLang} className="dark" suppressHydrationWarning>
       <head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width,initial-scale=1" />
-        <meta name="theme-color" content="#0d0d10" />
+        <meta name="theme-color" content={THEME_COLORS.dark} />
+        {/* Resolve + apply the theme before first paint so a light-mode
+            visitor never sees a dark flash. Must run before the stylesheet
+            and before hydration; nonce satisfies CSP. */}
+        <script
+          nonce={nonce}
+          suppressHydrationWarning
+          dangerouslySetInnerHTML={{__html: THEME_INIT_SCRIPT}}
+        />
         <link rel="stylesheet" href={resetStyles}></link>
         <link rel="stylesheet" href={appStyles}></link>
         <Meta />

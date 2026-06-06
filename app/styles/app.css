@@ -47,6 +47,12 @@
   --color-border: #24242a;
   --color-border-strong: #34343c;
 
+  /* Text/icon color that sits ON the gold accent (filled buttons, badges,
+     active toggles). Dark in both themes — gold reads best with dark ink.
+     Decoupled from --color-bg so light mode can flip the page background
+     without dragging on-accent text light with it. */
+  --color-on-accent: #0d0d10;
+
   /* Legacy alias map — collapses the old dual gold/green CTA system
      into a single gold accent. Any CSS still referencing the old
      names keeps working without an audit. */
@@ -103,6 +109,58 @@
   :root {
     --rail-gutter: 2rem;
   }
+}
+
+/* ============================================================
+   LIGHT MODE
+   The @theme block above is the dark default. `html.light`
+   overrides the semantic color tokens; every var(--color-*)
+   consumer re-themes for free. Below the token swap are the
+   handful of spots that hardcoded a dark value (load overlay,
+   header backdrop, floating controls) and need a light twin.
+   The init script in root.tsx puts .light/.dark on <html>
+   before first paint.
+   ============================================================ */
+html.light {
+  --color-bg: #f7f6f3;          /* warm off-white, not clinical #fff */
+  --color-bg-card: #ffffff;
+  --color-bg-elevated: #efece6; /* recessed/raised neutral surface */
+  --color-text: #1a1a1e;
+  --color-text-muted: #57575c;
+  --color-text-dim: #86868c;
+  /* Deep amber-gold: saturated enough to read as gold (not olive) on white,
+     deep enough that white sits legibly on gold fills. Hover DARKENS here —
+     the light-mode convention for filled buttons — rather than lightening
+     like dark mode, so the white label keeps its contrast. */
+  --color-gold: #c08c10;
+  --color-gold-hover: #a87a0b;
+  --color-gold-soft: rgba(192, 140, 16, 0.14);
+  --color-stock: #2f8a4e;       /* darker green for contrast on light */
+  --color-border: #e4e0d8;
+  --color-border-strong: #cfc9bd;
+  /* White ink on gold fills in light mode — dark ink looked dull on the
+     lighter gold. (Dark mode keeps the dark-on-gold default above.) */
+  --color-on-accent: #ffffff;
+}
+
+/* Mode-specific surfaces that bypassed the token system. */
+html.light .scene-dim {
+  background-color: rgba(247, 246, 243, 0.9);
+}
+html.light .site-header {
+  background: rgba(247, 246, 243, 0.85);
+}
+html.light .hero-size-toggle {
+  background: rgba(255, 255, 255, 0.6);
+}
+html.light .product-gallery-controls {
+  background: rgba(255, 255, 255, 0.7);
+}
+/* Schematic sheets are black-on-white KiCad exports. Dark mode inverts them
+   to white blueprint lines; light mode drops the invert so they read as dark
+   ink on a white sheet of paper. */
+html.light .schematic-sheet {
+  filter: contrast(1.15);
 }
 
 /* Default price treatment. Display sans, tabular figures. Specialised
@@ -233,6 +291,42 @@ html {
   color: var(--color-gold);
 }
 
+/* Airframe size toggle — segmented 5"/3" switch centered above the hero. */
+.hero-size-toggle {
+  display: inline-flex;
+  gap: 2px;
+  padding: 3px;
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  background: rgba(13, 13, 16, 0.55);
+  backdrop-filter: blur(8px);
+}
+
+.hero-size-toggle__btn {
+  min-width: 3rem;
+  padding: 0.4rem 0.9rem;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--color-text-muted);
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  transition: color 0.2s ease, background 0.2s ease;
+}
+
+.hero-size-toggle__btn:hover {
+  color: var(--color-text);
+}
+
+.hero-size-toggle__btn.is-active {
+  background: var(--color-gold);
+  color: var(--color-on-accent);
+  box-shadow: 0 0 16px rgba(184, 146, 46, 0.45);
+}
+
 /* Hero wordmark — single element that animates from centered-large
    (splash) to bottom-left-small (settled). Anchor is the settled
    position; the splash state is a transform that moves+scales it up
@@ -330,7 +424,7 @@ html {
 
 .hw-strokes .hw-stroke--open,
 .hw-strokes .hw-stroke--drone {
-  color: #ffffff;
+  color: var(--color-text);
 }
 
 @keyframes hw-draw-shape {
@@ -366,10 +460,10 @@ html {
 }
 
 .hw-fills .hw-fill--open {
-  fill: #e5e5e5;
+  fill: var(--color-text);
 }
 .hw-fills .hw-fill--drone {
-  fill: #b8922e;
+  fill: var(--color-gold);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -510,7 +604,7 @@ html {
   gap: 0.75rem;
   padding: 1rem 2.25rem;
   background: var(--color-gold);
-  color: var(--color-bg);
+  color: var(--color-on-accent);
   font-family: var(--font-mono);
   font-size: 0.95rem;
   font-weight: 700;
@@ -522,7 +616,7 @@ html {
 
 .hero-action-primary:hover {
   background: var(--color-gold-hover);
-  color: var(--color-bg);
+  color: var(--color-on-accent);
 }
 
 .hero-action-secondary {
@@ -587,7 +681,7 @@ body {
 /* Selection */
 ::selection {
   background-color: var(--color-gold);
-  color: var(--color-bg);
+  color: var(--color-on-accent);
 }
 
 /* Scrollbar */
@@ -653,10 +747,36 @@ a:hover {
   line-height: 0;
 }
 
-.site-header-logo img {
+.site-header-logo img,
+.site-header-wordmark {
   display: block;
   height: 1.25rem;
   width: auto;
+}
+
+/* Inline SVG wordmark fills "Open" with body text + "Drone" with gold via
+   tokens, so the logo inverts with the theme. Cap width so the wide glyph
+   run never crowds the nav at the 1.25rem cap height. */
+.site-header-wordmark {
+  height: 1.25rem;
+  width: auto;
+}
+
+/* Theme toggle — same muted-icon treatment as the search/cart actions. */
+.theme-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-text-muted);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  transition: color 0.15s ease;
+}
+
+.theme-toggle:hover {
+  color: var(--color-text);
 }
 
 .site-header-logo:hover {
@@ -855,7 +975,7 @@ html.splash-settled .homepage-layout .site-header {
   gap: 0.375rem;
   padding: 0.5rem 1.25rem;
   background: var(--color-gold);
-  color: var(--color-bg);
+  color: var(--color-on-accent);
   font-family: var(--font-mono);
   font-size: 12px;
   font-weight: 700;
@@ -867,7 +987,7 @@ html.splash-settled .homepage-layout .site-header {
 
 .hero-cta-primary:hover {
   background: var(--color-gold-hover);
-  color: var(--color-bg);
+  color: var(--color-on-accent);
 }
 
 .hero-cta-secondary {
@@ -2219,7 +2339,7 @@ button.reset {
   width: 100%;
   padding: 0.85rem 1.25rem;
   background: var(--color-gold);
-  color: #0d0d10;
+  color: var(--color-on-accent);
   font-family: var(--font-display);
   font-weight: 600;
   font-size: var(--fs-base);
@@ -2758,6 +2878,14 @@ button.reset {
     position: sticky;
     top: calc(var(--header-height) + var(--sp-4));
   }
+  /* Schematic chapter: hand most of the width to the (wide, dense) sheet and
+   * narrow the text column. The tall sheet scrolls rather than sticking. */
+  .chapter[data-wide-media] {
+    grid-template-columns: minmax(0, 0.36fr) minmax(0, 1fr);
+  }
+  .chapter[data-wide-media] .chapter-media {
+    position: static;
+  }
 }
 
 .chapter-media-frame {
@@ -2818,72 +2946,305 @@ button.reset {
 .board-art.is-revealed {
   opacity: 1;
 }
-.board-art-canvas {
-  display: block;
+/* === Folder stack: every copper layer is a sheet; the selected one floats up
+   like pulling a file out of a folder. === */
+.board-folder {
+  overflow: visible;
 }
-.board-art-canvas svg {
+.board-folder-stack {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  /* Headroom above the stack so the floated-up sheet isn't clipped. */
+  margin-top: 12%;
+  perspective: 1700px;
+  transform-style: preserve-3d;
+}
+.board-sheet {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  padding: 0;
+  border: none;
+  background: none;
+  cursor: pointer;
+  transform-origin: 50% 50%;
+  /* Fan the stack back-and-down by physical layer index (--depth). */
+  transform: translateY(calc(var(--depth) * 7%)) translateX(calc(var(--depth) * 2.4%))
+    translateZ(calc(var(--depth) * -70px)) scale(calc(1 - var(--depth) * 0.035));
+  z-index: calc(30 - var(--depth));
+  transition: transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1), filter 0.45s ease;
+  /* Dim + flatten the un-selected sheets so the active one reads clearly. */
+  filter: brightness(0.55) saturate(0.7)
+    drop-shadow(0 14px 22px rgba(0, 0, 0, 0.55));
+}
+.board-sheet:hover {
+  filter: brightness(0.78) saturate(0.85)
+    drop-shadow(0 14px 22px rgba(0, 0, 0, 0.55));
+}
+.board-sheet.is-active {
+  transform: translateY(-11%) translateZ(120px) scale(1.05);
+  z-index: 50;
+  filter: saturate(0.95) contrast(1.05)
+    drop-shadow(0 0 26px color-mix(in srgb, var(--color-gold) 38%, transparent))
+    drop-shadow(0 26px 34px rgba(0, 0, 0, 0.55));
+}
+.board-sheet-svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+/* The board silhouette under each layer — a faint engraved sheet edge. */
+.board-sheet-edge {
+  fill: none;
+  stroke: color-mix(in srgb, var(--color-gold) 28%, transparent);
+  stroke-width: 0.35;
+  vector-effect: non-scaling-stroke;
+  opacity: 0.6;
+}
+
+/* Rail and board sit side by side: the rail takes its own fixed column on the
+   left (so it can never cover the teardown text to its left), the board takes
+   the rest, and align-items centres the rail vertically against the board. */
+.board-folder-body {
+  display: flex;
+  align-items: center;
+  gap: clamp(8px, 1vw, 18px);
+}
+.board-folder-stack {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+/* Layer rail — a self-contained vertical selector beside the board. */
+.board-folder-rail {
+  flex: 0 0 auto;
+  z-index: 60;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 6px;
+  /* Size tracks the viewport so the rail scales with the board across aspect
+     ratios instead of staying a fixed pixel block. */
+  width: clamp(76px, 5.6vw, 104px);
+  padding: 10px 9px 11px;
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--color-bg) 50%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-gold) 13%, transparent);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+  outline: none;
+}
+.board-folder-rail:focus-visible {
+  border-color: color-mix(in srgb, var(--color-gold) 45%, transparent);
+}
+.board-folder-rail-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  padding: 0 3px 1px;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--color-text-dim);
+}
+.board-folder-rail-count {
+  color: var(--color-gold);
+  letter-spacing: 0.06em;
+}
+/* Up / down chevrons — make the "step through layers" affordance explicit. */
+.board-folder-step {
+  appearance: none;
+  border: none;
+  background: none;
+  cursor: pointer;
+  padding: 1px 0;
+  font-size: 9px;
+  line-height: 1;
+  color: var(--color-text-dim);
+  transition: color 0.2s, opacity 0.2s;
+}
+.board-folder-step:hover:not(:disabled) {
+  color: var(--color-gold);
+}
+.board-folder-step:disabled {
+  opacity: 0.25;
+  cursor: default;
+}
+.board-folder-tabs {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 6px;
+}
+/* A faint spine threading the buttons — like a via through the copper stack. */
+.board-folder-tabs::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 8px;
+  bottom: 8px;
+  width: 2px;
+  transform: translateX(-50%);
+  background: color-mix(in srgb, var(--color-gold) 16%, transparent);
+  border-radius: 1px;
+}
+.board-folder-tabs button {
+  position: relative;
+  appearance: none;
+  border: 1px solid color-mix(in srgb, var(--color-gold) 16%, transparent);
+  background: color-mix(in srgb, var(--color-bg) 78%, transparent);
+  cursor: pointer;
+  font-family: var(--font-mono);
+  font-size: clamp(10.5px, 0.74vw, 13px);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  text-align: center;
+  color: var(--color-text-dim);
+  padding: 0.48em 0.4em;
+  border-radius: 999px;
+  transition: color 0.2s, background 0.2s, border-color 0.2s, transform 0.2s,
+    box-shadow 0.2s;
+}
+.board-folder-tabs button:hover {
+  color: var(--color-text);
+  border-color: color-mix(in srgb, var(--color-gold) 40%, transparent);
+}
+.board-folder-tabs button.is-active {
+  color: var(--color-on-accent);
+  background: var(--color-gold);
+  border-color: var(--color-gold);
+  box-shadow: 0 0 16px color-mix(in srgb, var(--color-gold) 35%, transparent);
+}
+/* Below this the left gutter is too tight to float the rail without crowding the
+   teardown text — drop it back to a horizontal bar above the board instead. */
+@media (max-width: 1024px) {
+  .board-folder-body {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .board-folder-rail {
+    width: auto;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    margin-bottom: 0.5rem;
+    padding: 0;
+    border: none;
+    background: none;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+  .board-folder-rail-head {
+    width: 100%;
+    justify-content: center;
+    gap: 0.5em;
+  }
+  .board-folder-step {
+    display: none;
+  }
+  .board-folder-tabs {
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .board-folder-tabs::before {
+    display: none;
+  }
+}
+
+/* === Schematic viewer — paged sheets of the KiCad schematic, the analogue of
+   the board folder. In the wide-media chapter it fills the dominant column and
+   bleeds a little into the right gutter for maximum legible width. === */
+.schematic-viewer {
+  /* Bleed into the right gutter so the dense sheet has breathing room. */
+  width: 124%;
+  margin-left: 0;
+}
+.schematic-tabs {
+  display: flex;
+  flex-wrap: nowrap;
+  justify-content: center;
+  gap: 4px;
+  margin-bottom: 0.7rem;
+  overflow-x: auto;
+}
+.schematic-tabs button {
+  appearance: none;
+  flex: 0 0 auto;
+  white-space: nowrap;
+  border: 1px solid color-mix(in srgb, var(--color-gold) 18%, transparent);
+  background: color-mix(in srgb, var(--color-bg) 70%, transparent);
+  cursor: pointer;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--color-text-dim);
+  padding: 0.32rem 0.7rem;
+  border-radius: 999px;
+  transition: color 0.2s, background 0.2s, border-color 0.2s;
+}
+.schematic-tabs button:hover {
+  color: var(--color-text);
+  border-color: color-mix(in srgb, var(--color-gold) 40%, transparent);
+}
+.schematic-tabs button.is-active {
+  color: var(--color-on-accent);
+  background: var(--color-gold);
+  border-color: var(--color-gold);
+}
+.schematic-page {
+  position: relative;
+}
+.schematic-sheet {
   display: block;
   width: 100%;
   height: auto;
-  /* Warm-gold glow on the dark page bg pushes the board art toward
-   * "engineering blueprint" rather than KiCad screenshot. The asset is
-   * shipped with its native KiCad palette; this filter colour-shifts
-   * without rewriting the SVG. */
-  filter: drop-shadow(0 0 22px color-mix(in srgb, var(--color-gold) 35%, transparent))
-    saturate(0.85) contrast(1.05);
+  /* Width is set inline per sheet (one scale factor per board); centre the
+   * narrower sheets in the frame. */
+  margin: 0 auto;
+  /* B&W export → white blueprint lines on the dark page. Contrast lifts the
+   * thin anti-aliased strokes so the sheet reads at preview scale. */
+  filter: invert(1) contrast(1.45) brightness(1.05);
+  opacity: 0;
+  transition: opacity 0.5s ease;
 }
-/* Top/bottom toggle — only one copper side renders at a time. */
-.board-art[data-side='top'] .board-art-canvas svg [id='layer-b-copper'] {
-  display: none;
+.schematic-sheet.is-loaded {
+  opacity: 1;
 }
-.board-art[data-side='bottom'] .board-art-canvas svg [id='layer-copper'] {
-  display: none;
-}
-.board-art-toggle {
-  position: absolute;
-  top: 0.5rem;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 2;
-  display: inline-flex;
-  gap: 2px;
-  padding: 2px;
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--color-bg) 72%, transparent);
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
-  border: 1px solid color-mix(in srgb, var(--color-gold) 22%, transparent);
-}
-.board-art-toggle button {
-  appearance: none;
-  border: none;
-  background: transparent;
-  cursor: pointer;
+.schematic-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 0.7rem;
   font-family: var(--font-mono);
   font-size: 10px;
   letter-spacing: 0.18em;
   text-transform: uppercase;
   color: var(--color-text-dim);
-  padding: 0.3rem 0.85rem;
-  border-radius: 999px;
-  transition: color 0.2s, background 0.2s;
 }
-.board-art-toggle button:hover {
-  color: var(--color-text);
-}
-.board-art-toggle button.is-active {
-  color: var(--color-bg);
-  background: var(--color-gold);
+@media (max-width: 879px) {
+  .schematic-viewer {
+    width: 100%;
+    margin-left: 0;
+  }
 }
 .board-art-inspect {
   display: inline-block;
-  margin-top: 0.75rem;
   font-family: var(--font-mono);
   font-size: 10px;
   letter-spacing: 0.22em;
   text-transform: uppercase;
   color: var(--color-text-dim);
   text-decoration: none;
+}
+/* Inspect link in the teardown's left column — sits in the gap under the pins. */
+.teardown-inspect {
+  margin-top: 1.4rem;
 }
 .board-art-inspect:hover {
   color: var(--color-gold);
@@ -3650,7 +4011,7 @@ button.reset {
 }
 
 .category-chip.is-active {
-  color: var(--color-bg);
+  color: var(--color-on-accent);
   background: var(--color-gold);
   border-color: var(--color-gold);
 }
@@ -3951,7 +4312,7 @@ button.reset {
 .account-button {
   border: 1px solid var(--color-border);
   background: var(--color-gold);
-  color: var(--color-bg);
+  color: var(--color-on-accent);
   border-radius: 6px;
   padding: 0.75rem 1rem;
   font-family: var(--font-mono);
@@ -4707,7 +5068,7 @@ button.reset {
 .lang-toggle button[aria-pressed="true"],
 .lang-toggle a[data-active="true"] {
   background: var(--color-gold);
-  color: var(--color-bg);
+  color: var(--color-on-accent);
 }
 
 /* Compact variant used in the site header */
@@ -4992,7 +5353,7 @@ button.reset {
   align-items: center;
   padding: 0.9rem 1.5rem;
   background: var(--color-gold);
-  color: var(--color-bg);
+  color: var(--color-on-accent);
   font-family: var(--font-mono);
   font-size: 12px;
   font-weight: 700;
@@ -5004,7 +5365,7 @@ button.reset {
 
 .editorial-cta-primary:hover {
   background: var(--color-gold-hover);
-  color: var(--color-bg);
+  color: var(--color-on-accent);
 }
 
 .editorial-cta-secondary {
@@ -5331,12 +5692,12 @@ button.reset {
 
 .contact-tier-cta-primary {
   background: var(--color-gold);
-  color: var(--color-bg);
+  color: var(--color-on-accent);
 }
 
 .contact-tier-cta-primary:hover {
   background: var(--color-gold-hover);
-  color: var(--color-bg);
+  color: var(--color-on-accent);
 }
 
 /* --- tier 1: Discord (gold accent rail, CTA right) ------------------- */
@@ -5670,7 +6031,7 @@ button.reset {
   text-transform: uppercase;
   font-weight: 700;
   background: var(--color-gold);
-  color: var(--color-bg);
+  color: var(--color-on-accent);
   border: none;
   padding: 0.65rem 1.1rem;
   border-radius: 2px;
@@ -6165,7 +6526,7 @@ button.reset {
   z-index: 100;
   padding: 0.75rem 1rem;
   background: var(--color-gold);
-  color: var(--color-bg);
+  color: var(--color-on-accent);
   font-family: var(--font-mono);
   font-size: 12px;
   letter-spacing: 0.14em;

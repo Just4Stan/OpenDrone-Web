@@ -46,3 +46,9 @@ scripts/.post-uploads.json
 
 # mobile audit screenshots (local only)
 .mobile-audit/
+
+# Obsidian vault config — local note-taking, not part of the app
+.obsidian/
+
+# Throwaway hero-asset forensics (machine-specific absolute paths)
+scripts/hero-assets/_forensic_*.mjs
