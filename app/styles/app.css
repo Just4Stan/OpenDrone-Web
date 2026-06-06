@@ -823,47 +823,6 @@ a:hover {
   margin-left: clamp(1rem, 2vw, 2.5rem);
 }
 
-/* FC, ESC and Stack are one family (a Stack is just an FC + ESC), so they share
-   one bubble — a neutral segmented pill that groups them, set off from the
-   standalone RX / Frame by a divider. Each item carries its own fixed padding,
-   so the active state only swaps colour: the bubble never changes size as you
-   navigate. The neutral (non-gold) fill keeps the gold labels high-contrast. */
-.site-header-cat-group {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.2rem;
-  padding: 0.25rem;
-  border-radius: 999px;
-  background: var(--color-bg-elevated);
-  border: 1px solid var(--color-border);
-}
-.site-header-cat-group a {
-  padding: 0.36em 0.82em;
-  border-radius: 999px;
-  opacity: 0.78;
-  transition: color 0.15s ease, background 0.15s ease, opacity 0.15s ease;
-}
-.site-header-cat-group a:hover {
-  opacity: 1;
-}
-.site-header-cat-group a.active,
-.site-header-cat-group a[aria-current='page'] {
-  color: var(--color-on-accent);
-  background: var(--color-gold);
-  opacity: 1;
-  font-weight: 600;
-}
-.site-header-cat-group a.active::after,
-.site-header-cat-group a[aria-current='page']::after {
-  display: none;
-}
-/* Divider between the FC/ESC/Stack family bubble and the standalone RX / Frame. */
-.site-header-cat-divider {
-  width: 1px;
-  height: 1.1em;
-  background: color-mix(in srgb, var(--color-gold) 24%, transparent);
-}
-
 .site-header-categories a {
   font-family: var(--font-mono);
   font-size: var(--fs-sm);
@@ -900,6 +859,72 @@ a:hover {
   height: 2px;
   background: var(--color-gold);
   border-radius: 1px;
+}
+
+/* Category families live in segmented bubbles, not a plain row: FC/ESC/Stack in
+   one (a Stack is just an FC + ESC), RX/Frame in another, and All Products in
+   its own accented bubble as the route into the full catalogue. No dividers —
+   the bubbles do the grouping. Items carry fixed padding so the active state
+   only swaps colour; the bubbles never resize as you navigate. */
+.site-header-categories .site-header-cat-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  padding: 0.25rem;
+  border-radius: 999px;
+  background: var(--color-bg-elevated);
+  border: 1px solid var(--color-border);
+}
+.site-header-categories .site-header-cat-group a {
+  padding: 0.36em 0.82em;
+  border-radius: 999px;
+  opacity: 0.72;
+}
+.site-header-categories .site-header-cat-group a:hover {
+  opacity: 1;
+  color: var(--color-gold-hover);
+}
+/* Active = high-contrast label (white in dark, black in light) on a raised
+   chip. A gold fill washed the text out — gold is a mid-tone, so neither dark
+   nor light ink reads cleanly on it in both themes. */
+.site-header-categories .site-header-cat-group a.active,
+.site-header-categories .site-header-cat-group a[aria-current='page'] {
+  color: var(--color-text);
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border-strong);
+  padding: calc(0.36em - 1px) calc(0.82em - 1px);
+  opacity: 1;
+  font-weight: 600;
+}
+.site-header-categories .site-header-cat-group a.active::after,
+.site-header-categories .site-header-cat-group a[aria-current='page']::after {
+  display: none;
+}
+/* All Products — an accented bubble so it reads as the catalogue entry, not
+   just another family. Gold-tinted fill + outline + label, kept legible
+   (gold-on-tint) rather than a solid gold fill that would wash the text out. */
+.site-header-categories .site-header-cat-all {
+  padding: 0.42em 0.95em;
+  border-radius: 999px;
+  background: var(--color-gold-soft);
+  border: 1px solid color-mix(in srgb, var(--color-gold) 50%, transparent);
+  color: var(--color-gold);
+  opacity: 1;
+}
+.site-header-categories .site-header-cat-all:hover {
+  background: color-mix(in srgb, var(--color-gold) 20%, transparent);
+  border-color: var(--color-gold);
+  color: var(--color-gold-hover);
+}
+.site-header-categories .site-header-cat-all.active,
+.site-header-categories .site-header-cat-all[aria-current='page'] {
+  background: color-mix(in srgb, var(--color-gold) 24%, transparent);
+  border-color: var(--color-gold);
+  color: var(--color-gold-hover);
+  font-weight: 600;
+}
+.site-header-categories .site-header-cat-all::after {
+  display: none !important;
 }
 
 /* On the homepage the header floats over the hero scene. It starts
