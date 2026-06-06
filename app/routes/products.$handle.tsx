@@ -778,6 +778,16 @@ export default function Product() {
               </li>
             ))}
           </ul>
+          {!frameViewer && activeBoardArt?.inspectUrl ? (
+            <a
+              className="board-art-inspect teardown-inspect"
+              href={activeBoardArt.inspectUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Inspect interactively ↗
+            </a>
+          ) : null}
         </Chapter>
       ) : null}
 

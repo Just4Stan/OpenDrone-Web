@@ -154,16 +154,6 @@ export function BoardArt({src, handle, inspectUrl}: BoardArtProps) {
           ) : null}
         </p>
       ) : null}
-      {inspectUrl ? (
-        <a
-          className="board-art-inspect"
-          href={inspectUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Inspect interactively ↗
-        </a>
-      ) : null}
     </div>
   );
 }

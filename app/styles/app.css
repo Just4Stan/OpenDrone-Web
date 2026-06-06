@@ -2946,13 +2946,16 @@ button.reset {
 }
 .board-art-inspect {
   display: inline-block;
-  margin-top: 0.75rem;
   font-family: var(--font-mono);
   font-size: 10px;
   letter-spacing: 0.22em;
   text-transform: uppercase;
   color: var(--color-text-dim);
   text-decoration: none;
+}
+/* Inspect link in the teardown's left column — sits in the gap under the pins. */
+.teardown-inspect {
+  margin-top: 1.4rem;
 }
 .board-art-inspect:hover {
   color: var(--color-gold);
