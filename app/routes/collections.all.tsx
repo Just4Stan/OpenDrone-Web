@@ -1,27 +1,12 @@
 import type {Route} from './+types/collections.all';
 import {useMemo} from 'react';
 import {useLoaderData, useSearchParams} from 'react-router';
-import {ProductItem, type ProductModelChip} from '~/components/ProductItem';
+import type {MoneyV2} from '@shopify/hydrogen/storefront-api-types';
+import {ProductItem} from '~/components/ProductItem';
 import type {CollectionItemFragment} from 'storefrontapi.generated';
 import {buildSeoMeta} from '~/lib/seo';
 import {EmptyState} from '~/components/EmptyState';
 import {PRODUCT_CONTENT} from '~/lib/product-content';
-
-/**
- * The models of a product line, from the editorial source of truth
- * (`product-content.ts`) — the same map the PDP ladder reads. Returns the
- * line's tiers as browse-card chips, in editorial order. Empty for single
- * products, bundles, and accessories (no `Model` axis).
- */
-function modelChipsFor(handle: string): ProductModelChip[] {
-  const content = PRODUCT_CONTENT[handle];
-  if (!content?.optionAxis || !content.variants) return [];
-  return Object.entries(content.variants).map(([value, v]) => ({
-    value,
-    axis: content.optionAxis!,
-    comingSoon: v.comingSoon,
-  }));
-}
 
 export const meta: Route.MetaFunction = () =>
   buildSeoMeta({
@@ -64,8 +49,9 @@ export async function loader(args: Route.LoaderArgs) {
 }
 
 async function loadCriticalData({context}: Route.LoaderArgs) {
-  // The catalog is small; fetch it whole (newest first) and filter/sort
-  // client-side from the URL so the page is a single shareable browse hub.
+  // The catalog is small; fetch it whole (newest first) with variants, then
+  // expand/filter/sort client-side from the URL so the page is one shareable
+  // browse hub that lists every model on its own card.
   const {products} = await context.storefront.query(CATALOG_QUERY, {
     variables: {first: 100},
     // Catalog content changes rarely — cache long instead of the 1s default.
@@ -75,13 +61,55 @@ async function loadCriticalData({context}: Route.LoaderArgs) {
   return {products: products.nodes, now: Date.now()};
 }
 
-const amount = (p: CollectionItemFragment) =>
-  parseFloat(p.priceRange.minVariantPrice.amount) || 0;
+type CatalogProduct = CollectionItemFragment;
 
-const isOnSale = (p: CollectionItemFragment) => {
-  const compare = p.compareAtPriceRange?.minVariantPrice?.amount;
-  return compare != null && parseFloat(compare) > amount(p);
+/** One browse card — a single product, or one model/tier of a product line. */
+type Card = {
+  key: string;
+  product: CatalogProduct;
+  title: string;
+  to: string;
+  price: MoneyV2;
+  onSale: boolean;
+  createdAt?: string | null;
 };
+
+const num = (m?: MoneyV2 | null) => (m ? parseFloat(m.amount) || 0 : 0);
+
+const productOnSale = (p: CatalogProduct) => {
+  const compare = p.compareAtPriceRange?.minVariantPrice?.amount;
+  return compare != null && parseFloat(compare) > num(p.priceRange.minVariantPrice);
+};
+
+/** The Shopify variant carrying a given option value (e.g. Model = "Gemini"),
+ *  so a tier card shows its real price/sale even though the tiers themselves
+ *  come from the editorial source of truth. */
+function variantFor(p: CatalogProduct, axis: string, value: string) {
+  return p.variants?.nodes.find((v) =>
+    v.selectedOptions.some((o) => o.name === axis && o.value === value),
+  );
+}
+
+/**
+ * Join a product title with a tier value without stuttering — "OpenFC Lite" +
+ * "Lite Mini" → "OpenFC Lite Mini", "OpenFC Lite" + "Lite" → "OpenFC Lite",
+ * while "OpenRX" + "Gemini" → "OpenRX Gemini".
+ */
+function joinTitle(title: string, value: string): string {
+  const tWords = title.split(/\s+/);
+  const vWords = value.split(/\s+/);
+  let i = 0;
+  while (
+    i < vWords.length &&
+    tWords.length > 0 &&
+    tWords[tWords.length - 1].toLowerCase() === vWords[i].toLowerCase()
+  ) {
+    tWords.pop();
+    i++;
+  }
+  const rest = vWords.slice(i).join(' ');
+  return rest ? `${title} ${rest}` : title;
+}
 
 export default function Collection() {
   const {products, now} = useLoaderData<typeof loader>();
@@ -89,6 +117,49 @@ export default function Collection() {
   const activeType = searchParams.get('type');
   const onlySale = searchParams.get('sale') === '1';
   const sort = searchParams.get('sort') || 'newest';
+
+  // Expand each product into one card per purchasable model (skipping
+  // coming-soon tiers); single products / bundles / accessories get one card.
+  // Products arrive newest-first, so card order is newest-first by default.
+  const cards = useMemo<Card[]>(() => {
+    const out: Card[] = [];
+    for (const p of products) {
+      const content = PRODUCT_CONTENT[p.handle];
+      const axis = content?.optionAxis;
+      const tiers =
+        axis && content?.variants
+          ? Object.entries(content.variants).filter(([, v]) => !v.comingSoon)
+          : [];
+      if (axis && tiers.length > 0) {
+        for (const [value] of tiers) {
+          const sv = variantFor(p, axis, value);
+          const price = sv?.price ?? p.priceRange.minVariantPrice;
+          out.push({
+            key: `${p.id}:${value}`,
+            product: p,
+            title: joinTitle(p.title, value),
+            to: `/products/${p.handle}?${encodeURIComponent(axis)}=${encodeURIComponent(value)}`,
+            price,
+            onSale: sv?.compareAtPrice
+              ? num(sv.compareAtPrice) > num(price)
+              : productOnSale(p),
+            createdAt: p.createdAt,
+          });
+        }
+      } else {
+        out.push({
+          key: p.id,
+          product: p,
+          title: p.title,
+          to: `/products/${p.handle}`,
+          price: p.priceRange.minVariantPrice,
+          onSale: productOnSale(p),
+          createdAt: p.createdAt,
+        });
+      }
+    }
+    return out;
+  }, [products]);
 
   // Categories present in the catalog, in editorial order then any leftovers.
   const categories = useMemo(() => {
@@ -105,20 +176,21 @@ export default function Collection() {
     return out;
   }, [products]);
 
-  const anyOnSale = useMemo(() => products.some(isOnSale), [products]);
+  const anyOnSale = useMemo(() => cards.some((c) => c.onSale), [cards]);
 
   // Filter, then sort. `newest` keeps the loader's fetch order.
   const visible = useMemo(() => {
-    let list = products as CollectionItemFragment[];
-    if (activeType) list = list.filter((p) => (p.productType || 'Other') === activeType);
-    if (onlySale) list = list.filter(isOnSale);
+    let list = cards;
+    if (activeType)
+      list = list.filter((c) => (c.product.productType || 'Other') === activeType);
+    if (onlySale) list = list.filter((c) => c.onSale);
     const sorted = [...list];
     switch (sort) {
       case 'price-asc':
-        sorted.sort((a, b) => amount(a) - amount(b));
+        sorted.sort((a, b) => num(a.price) - num(b.price));
         break;
       case 'price-desc':
-        sorted.sort((a, b) => amount(b) - amount(a));
+        sorted.sort((a, b) => num(b.price) - num(a.price));
         break;
       case 'name-asc':
         sorted.sort((a, b) => a.title.localeCompare(b.title));
@@ -130,7 +202,7 @@ export default function Collection() {
         break; // newest — already CREATED_AT desc from the loader
     }
     return sorted;
-  }, [products, activeType, onlySale, sort]);
+  }, [cards, activeType, onlySale, sort]);
 
   const setParam = (key: string, value: string | null) => {
     const next = new URLSearchParams(searchParams);
@@ -154,8 +226,8 @@ export default function Collection() {
   );
 
   const hasProducts = products.length > 0;
-  const newBadge = (p: CollectionItemFragment & {createdAt?: string}) =>
-    p.createdAt ? now - Date.parse(p.createdAt) < NEW_WINDOW_MS : false;
+  const isNew = (createdAt?: string | null) =>
+    createdAt ? now - Date.parse(createdAt) < NEW_WINDOW_MS : false;
 
   return (
     <div className="collection page-shell">
@@ -215,14 +287,16 @@ export default function Collection() {
 
             {visible.length > 0 ? (
               <div className="products-grid">
-                {visible.map((product, index) => (
+                {visible.map((card, index) => (
                   <ProductItem
-                    key={product.id}
-                    product={product}
+                    key={card.key}
+                    product={card.product}
+                    to={card.to}
+                    title={card.title}
+                    priceOverride={card.price}
                     loading={index < 8 ? 'eager' : undefined}
-                    models={modelChipsFor(product.handle)}
-                    isNew={newBadge(product)}
-                    onSale={isOnSale(product)}
+                    isNew={isNew(card.createdAt)}
+                    onSale={card.onSale}
                   />
                 ))}
               </div>
@@ -285,6 +359,22 @@ const COLLECTION_ITEM_FRAGMENT = `#graphql
     compareAtPriceRange {
       minVariantPrice {
         ...MoneyCollectionItem
+      }
+    }
+    variants(first: 50) {
+      nodes {
+        id
+        availableForSale
+        selectedOptions {
+          name
+          value
+        }
+        price {
+          ...MoneyCollectionItem
+        }
+        compareAtPrice {
+          ...MoneyCollectionItem
+        }
       }
     }
   }

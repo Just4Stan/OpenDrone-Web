@@ -32,6 +32,26 @@
   font-display: swap;
   src: url("/fonts/jetbrains-mono-Bold.woff2") format("woff2");
 }
+/* Tokio — the brand face. Used ONLY for product/brand name tokens
+   (OpenStack, OpenFC, OpenESC, OpenFrame, …) via the <BrandName>
+   component, never for body copy. Two static faces; the weight range is
+   declared wide so a name sitting inside a bold heading maps to the same
+   file instead of synthesising. Retune the range once the real metrics
+   are known. font-display: swap → the display fallback paints first. */
+@font-face {
+  font-family: "Tokio";
+  font-style: normal;
+  font-weight: 400 800;
+  font-display: swap;
+  src: url("/fonts/tokio-regular.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Tokio";
+  font-style: italic;
+  font-weight: 400 800;
+  font-display: swap;
+  src: url("/fonts/tokio-italic.woff2") format("woff2");
+}
 
 @theme {
   --color-bg: #0d0d10;
@@ -70,6 +90,10 @@
     system-ui, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, Menlo, Monaco, "SF Mono",
     "Cascadia Mono", "Segoe UI Mono", Consolas, monospace;
+
+  /* Brand face for product/brand name tokens. Falls back to the display
+     stack until Tokio loads, so names never disappear. */
+  --font-brand: "Tokio", var(--font-display);
 
   /* Type scale. Capped so display doesn't balloon on ultrawide. */
   --fs-xs: 0.6875rem;     /* 11px */
@@ -211,6 +235,16 @@ html.light .schematic-sheet {
 /* Font utilities */
 .font-display {
   font-family: var(--font-display);
+}
+
+/* Brand name token — the <BrandName> component wraps each OpenX product
+   name in this span so it leans into Tokio wherever a product is named
+   (cards, hero, cart, search, orders, bundles). Inherits color/size from
+   its context; only the face + the lean change. */
+.brand {
+  font-family: var(--font-brand);
+  font-style: italic;
+  font-synthesis: none;
 }
 
 /* Base styles. Set font-family explicitly to Inter — Tailwind v4
@@ -2157,6 +2191,13 @@ button.reset {
   font-weight: 600;
 }
 
+/* auto-fill (not auto-fit) so a filtered/small result keeps the cards at one
+   consistent size — empty tracks stay instead of stretching a lone card to
+   span the whole rail. */
+.catalog-main .products-grid {
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+}
+
 /* Toolbar above the grid — product count left, sort dropdown right. */
 .catalog-toolbar {
   display: flex;
@@ -2984,6 +3025,11 @@ button.reset {
     grid-template-columns: minmax(0, 1fr) clamp(220px, 24vw, 340px);
     column-gap: clamp(var(--sp-5), 4vw, var(--sp-7));
     align-items: start;
+  }
+  /* Even split — media takes half the chapter width, text column narrows to
+   * match (in-the-box parts shot). */
+  .chapter[data-big-media] {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   }
   .chapter-index {
     grid-column: 1 / -1;
@@ -3843,14 +3889,9 @@ button.reset {
 
 .provenance-rows li {
   display: grid;
-  grid-template-columns: 1.6rem 5.5rem 1fr;
+  grid-template-columns: 5.5rem 1fr;
   column-gap: 0.75rem;
   align-items: baseline;
-}
-
-.provenance-flag {
-  font-size: 1.05rem;
-  line-height: 1;
 }
 
 .provenance-row-label {

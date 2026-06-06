@@ -1,10 +1,12 @@
 import {Link} from 'react-router';
 import {Image, Money} from '@shopify/hydrogen';
+import type {MoneyV2} from '@shopify/hydrogen/storefront-api-types';
 import type {
   ProductItemFragment,
   CollectionItemFragment,
 } from 'storefrontapi.generated';
 import {useVariantUrl} from '~/lib/variants';
+import {BrandName} from '~/components/BrandName';
 
 /**
  * One model/tier of a product line, surfaced as a chip under the card on
@@ -27,6 +29,9 @@ export function ProductItem({
   lead,
   isNew,
   onSale,
+  to,
+  title,
+  priceOverride,
 }: {
   product: CollectionItemFragment | ProductItemFragment;
   loading?: 'eager' | 'lazy';
@@ -41,8 +46,19 @@ export function ProductItem({
   isNew?: boolean;
   /** Corner badge — listed below its compare-at price. */
   onSale?: boolean;
+  /** Link override — used by per-variant cards to deep-link the PDP with a
+   *  model preselected (`?Model=…`) instead of the bare product URL. */
+  to?: string;
+  /** Display-title override — used by per-variant cards (e.g. "OpenRX Gemini"
+   *  instead of just "OpenRX"). */
+  title?: string;
+  /** Price override — the specific variant's price for per-variant cards. */
+  priceOverride?: MoneyV2;
 }) {
   const variantUrl = useVariantUrl(product.handle);
+  const url = to ?? variantUrl;
+  const displayTitle = title ?? product.title;
+  const price = priceOverride ?? product.priceRange.minVariantPrice;
   const image = product.featuredImage;
   const hasModels = Boolean(models && models.length > 0);
 
@@ -110,7 +126,9 @@ export function ProductItem({
             to={variantUrl}
           >
             <div className="product-card-row">
-              <h2 className="product-card-title">{product.title}</h2>
+              <h2 className="product-card-title">
+                <BrandName>{product.title}</BrandName>
+              </h2>
               <span className="product-card-price">
                 <Money data={product.priceRange.minVariantPrice} />
               </span>
@@ -142,9 +160,11 @@ export function ProductItem({
       )}
       <div className="product-card-body">
         <div className="product-card-row">
-          <h2 className="product-card-title">{product.title}</h2>
+          <h2 className="product-card-title">
+            <BrandName>{displayTitle}</BrandName>
+          </h2>
           <span className="product-card-price">
-            <Money data={product.priceRange.minVariantPrice} />
+            <Money data={price} />
           </span>
         </div>
         {'productType' in product && product.productType ? (
@@ -157,7 +177,7 @@ export function ProductItem({
   // Plain card — a single link wrapping the whole tile.
   if (!hasModels) {
     return (
-      <Link className="product-card" prefetch="viewport" to={variantUrl}>
+      <Link className="product-card" prefetch="viewport" to={url}>
         {inner}
       </Link>
     );
