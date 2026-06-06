@@ -18,18 +18,69 @@ function getGLTFLoader(): GLTFLoader {
   return loader;
 }
 
+// Two refs: `target` is the raw scroll position (updated on every scroll event,
+// at the browser's coarse/irregular event cadence) and `smooth` is what the
+// scene actually reads. <ScrollDamper> eases smooth → target each frame so the
+// camera/explode interpolate fluidly between scroll events instead of snapping
+// to each one in visible steps.
 function useScrollProgress() {
-  const progressRef = useRef(0);
+  const targetRef = useRef(0);
+  const smoothRef = useRef(0);
   useEffect(() => {
     window.scrollTo(0, 0);
     const onScroll = () => {
-      progressRef.current = Math.min(1, Math.max(0, window.scrollY / window.innerHeight));
+      targetRef.current = Math.min(1, Math.max(0, window.scrollY / window.innerHeight));
       invalidate();
     };
     window.addEventListener('scroll', onScroll, {passive: true});
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
-  return progressRef;
+  return {targetRef, smoothRef};
+}
+
+// Frame-rate-independent exponential smoothing of the scroll progress, PLUS a
+// max-velocity clamp. Runs as the first useFrame in the Canvas so downstream
+// consumers (lights, camera, assembly) read the freshly-eased value the same
+// frame. Keeps re-invalidating while catching up, then snaps exactly to target
+// and goes quiet so the demand loop can idle.
+//
+// RATE (~1/RATE s time constant) governs the gentle ease for ordinary scrolling.
+// MAX_RATE caps how fast the animation can advance in progress-units/second:
+// when you fling the page hard, the raw scroll target leaps to the end, but the
+// scene is not allowed to traverse the whole sequence in two frames — it glides
+// at a watchable speed instead of teleporting. Normal slow scrolling never hits
+// the cap (its per-frame step is well under it), so it stays directly coupled.
+const SCROLL_RATE = 14;
+const SCROLL_MAX_VEL = 1.3; // full 0→1 sweep can't play faster than ~0.77s
+function ScrollDamper({
+  targetRef,
+  smoothRef,
+}: {
+  targetRef: React.RefObject<number>;
+  smoothRef: React.RefObject<number>;
+}) {
+  useFrame((_, dt) => {
+    const target = targetRef.current;
+    const diff = target - smoothRef.current;
+    if (Math.abs(diff) < 0.0002) {
+      if (smoothRef.current !== target) {
+        smoothRef.current = target;
+        invalidate();
+      }
+      return;
+    }
+    // Clamp dt so a long stall (tab refocus, GC pause) can't snap the value.
+    const cdt = Math.min(dt, 0.1);
+    let step = diff * (1 - Math.exp(-cdt * SCROLL_RATE));
+    // Velocity cap — bounds the per-frame jump so a momentum fling plays the
+    // animation at a controlled rate rather than skipping through it.
+    const maxStep = SCROLL_MAX_VEL * cdt;
+    if (step > maxStep) step = maxStep;
+    else if (step < -maxStep) step = -maxStep;
+    smoothRef.current += step;
+    invalidate();
+  });
+  return null;
 }
 
 function loadModel(
@@ -277,7 +328,7 @@ function DroneAssembly({
    *  size-specific GLB trio (frame{N}/fc{N}/esc{N}). Changing it reloads. */
   size: '5' | '3';
 }) {
-  const {camera, size} = useThree();
+  const {camera, gl, scene, size} = useThree();
   const tmpVec = useRef(new THREE.Vector3()).current;
   const bboxVec = useRef(new THREE.Vector3()).current;
   const bbox = useRef(new THREE.Box3()).current;
@@ -292,6 +343,7 @@ function DroneAssembly({
   const dragMoved = useRef(false);
   const lastPtr = useRef({x: 0, y: 0});
   const dampedP = useRef(0);
+  const focusedRef = useRef(true);
   const frameMats = useRef<any[]>([]);
   const escMats = useRef<any[]>([]);
   const fcMats = useRef<any[]>([]);
@@ -549,6 +601,13 @@ function DroneAssembly({
       if (isToggle) transitionRef.current = 0;
       hasDisplayedRef.current = true;
       prevModelRef.current = model;
+      // Force shader compilation NOW rather than lazily during the scroll.
+      // three.js builds a GLSL program per material × light × shadow variant on
+      // first render; doing that mid-animation is what made the scene choppy
+      // until it "warmed up", and made the first scroll right after a size
+      // toggle lag hard. gl.compile walks the scene and builds them all up
+      // front — on initial load we're behind the splash, so the cost is hidden.
+      try { gl.compile(scene, camera); } catch { /* compile is best-effort */ }
       invalidate();
     };
 
@@ -578,8 +637,19 @@ function DroneAssembly({
           if (!aliveRef.current || modelCacheRef.current.has(other)) return;
           void buildModel(other, {shouldCancel: () => !aliveRef.current}).then((m) => {
             if (!m) return;
-            if (aliveRef.current) modelCacheRef.current.set(other, m);
-            else disposeBuiltModel(m);
+            if (!aliveRef.current) { disposeBuiltModel(m); return; }
+            // Warm the other size's shaders offscreen too, so the eventual
+            // 3↔5 toggle (and the scroll right after it) is smooth instead of
+            // stalling on a first-render compile. Briefly parent it into the
+            // (idle) slide-out wrapper, compile, then detach — gl.compile only
+            // builds programs, it never draws, so nothing flashes on screen.
+            const holder = outWrapperRef.current;
+            if (holder) {
+              holder.add(m.frame, m.esc, m.fc);
+              try { gl.compile(scene, camera); } catch { /* best-effort */ }
+              for (const g of [m.frame, m.esc, m.fc]) holder.remove(g);
+            }
+            modelCacheRef.current.set(other, m);
           });
         };
         const ric = (window as any).requestIdleCallback;
@@ -635,6 +705,26 @@ function DroneAssembly({
     };
   }, []);
 
+  // Pause the perpetual auto-rotate when the window loses focus. The Canvas-level
+  // visibilitychange handler only catches a fully hidden tab (switched away /
+  // minimised); it does NOT fire when the tab stays "visible" but the window is
+  // unfocused — another app on top, a second monitor, another window in front.
+  // In that gap RAF keeps running at full rate and the showcase rotation pegs the
+  // GPU for nothing. Gate the auto-rotate's invalidate() on focus so the
+  // frameloop="demand" loop halts to zero cost while blurred, and kick one frame
+  // on refocus to resume. We don't unmount on blur — that would replay the load.
+  useEffect(() => {
+    focusedRef.current = document.hasFocus();
+    const onFocus = () => { focusedRef.current = true; invalidate(); };
+    const onBlur = () => { focusedRef.current = false; };
+    window.addEventListener('focus', onFocus);
+    window.addEventListener('blur', onBlur);
+    return () => {
+      window.removeEventListener('focus', onFocus);
+      window.removeEventListener('blur', onBlur);
+    };
+  }, []);
+
   useFrame((_, dt) => {
     if (!wrapperRef.current || !frameRef.current || !escRef.current || !fcRef.current) return;
 
@@ -652,8 +742,9 @@ function DroneAssembly({
     const frameOpacity = smoothstep(0.3, 0.55, p);
     const dragInf = 1 - flyOut * 0.9;
 
-    // Auto-rotate
-    if (!dragging.current) {
+    // Auto-rotate — only while the window is focused. Blurred, it freezes so the
+    // demand loop can stop re-arming (see the invalidate gate at the bottom).
+    if (!dragging.current && focusedRef.current) {
       rotRef.current += dt * THREE.MathUtils.lerp(0.12, 0.0, rotSlow);
     }
 
@@ -790,7 +881,13 @@ function DroneAssembly({
     // label overlay divs imperatively — keeps labels glued under each
     // board as the assembly rotates/moves, without triggering React
     // re-renders every frame.
-    if (labelRefs) {
+    //
+    // Only while the labels are actually on screen. They fade in at p≈0.72
+    // (linearstep(0.72, 0.84) in the route), so below ~0.66 this whole block —
+    // a forced full-subtree updateMatrixWorld plus 3× Box3.setFromObject, all
+    // on the main thread — was running every frame through the explode for
+    // labels nobody can see. That was a big chunk of the fast-scroll jank.
+    if (labelRefs && p >= 0.66) {
       wrapperRef.current.updateMatrixWorld(true);
       const project = (
         target: React.RefObject<HTMLDivElement | null>,
@@ -823,7 +920,10 @@ function DroneAssembly({
     // are in the single digits the scene is cheap enough to let the
     // browser's RAF drive it at display rate.
     const scrollChanged = Math.abs(p - prevP) > 0.0001;
-    const isAutoRotating = rotSlow < 0.99;
+    // Auto-rotate keeps the loop alive only while focused — a blurred window
+    // (still "visible", so visibilitychange never fired) otherwise burns the GPU
+    // at full rate on a rotation no one is watching.
+    const isAutoRotating = rotSlow < 0.99 && focusedRef.current;
     const hasDragMomentum =
       Math.abs(dragRef.current.x) > 0.0005 ||
       Math.abs(dragRef.current.y) > 0.0005;
@@ -887,7 +987,11 @@ function DroneAssembly({
 type PerfSample = {
   fps: number;
   renderMs: number;
-  drawCalls: number;
+  // Sticky over a 3s window so a fast scroll's damage survives long enough to
+  // screenshot AFTER you stop moving.
+  worstMs: number; // slowest single frame in the window
+  jank: number; // # frames slower than 20ms (a dropped frame at 120/60Hz)
+  drawCalls: number; // true total per frame (autoReset off; counts composer passes)
   triangles: number;
   geometries: number;
   textures: number;
@@ -896,6 +1000,9 @@ type PerfSample = {
   width: number;
   height: number;
 };
+
+const PERF_WINDOW_MS = 3000;
+const PERF_JANK_MS = 20;
 
 function PerfProbe({
   onSample,
@@ -907,11 +1014,32 @@ function PerfProbe({
   const lastT = useRef(performance.now());
   const intervalAccum = useRef(0);
   const prevFrameT = useRef(0);
+  // Ring of recent frame timings {t, dt} for the sticky worst/jank window.
+  const ring = useRef<Array<{t: number; dt: number}>>([]);
+  // Real per-frame draw totals — three resets info per gl.render() call, and
+  // EffectComposer renders several passes per frame, so the default counter
+  // only ever shows the last (SMAA) pass = 1. Turn autoReset off and reset once
+  // per frame ourselves so calls/triangles accumulate across all passes.
+  const lastDraw = useRef(0);
+  const lastTris = useRef(0);
+  useEffect(() => {
+    gl.info.autoReset = false;
+    return () => { gl.info.autoReset = true; };
+  }, [gl]);
 
   useFrame(() => {
+    // At the top of the frame, info holds the PREVIOUS frame's full render
+    // (all composer passes, since autoReset is off). Capture, then reset so
+    // this frame accumulates cleanly.
+    lastDraw.current = gl.info.render.calls;
+    lastTris.current = gl.info.render.triangles;
+    gl.info.reset();
+
     const now = performance.now();
     if (prevFrameT.current) {
-      intervalAccum.current += now - prevFrameT.current;
+      const dt = now - prevFrameT.current;
+      intervalAccum.current += dt;
+      ring.current.push({t: now, dt});
     }
     prevFrameT.current = now;
     frames.current += 1;
@@ -920,14 +1048,22 @@ function PerfProbe({
       const elapsed = now - lastT.current;
       const avgInterval =
         frames.current > 1 ? intervalAccum.current / (frames.current - 1) : 0;
+      // Prune ring to the sticky window, then derive worst/jank from it.
+      const cutoff = now - PERF_WINDOW_MS;
+      ring.current = ring.current.filter((e) => e.t >= cutoff);
+      let worst = 0;
+      let jank = 0;
+      for (const e of ring.current) {
+        if (e.dt > worst) worst = e.dt;
+        if (e.dt > PERF_JANK_MS) jank += 1;
+      }
       onSample({
         fps: Math.round((frames.current * 1000) / elapsed),
-        // Average interval between consecutive useFrame calls in ms —
-        // inverse of fps. Not a "render cost" measurement; use Chrome
-        // DevTools Performance panel for that.
         renderMs: +avgInterval.toFixed(2),
-        drawCalls: gl.info.render.calls,
-        triangles: gl.info.render.triangles,
+        worstMs: +worst.toFixed(1),
+        jank,
+        drawCalls: lastDraw.current,
+        triangles: lastTris.current,
         geometries: gl.info.memory.geometries,
         textures: gl.info.memory.textures,
         programs: gl.info.programs?.length ?? 0,
@@ -963,9 +1099,9 @@ function SceneLights({scrollRef}: {scrollRef: React.RefObject<number>}) {
   return (
     <>
       <hemisphereLight ref={hemiRef} args={['#cfdaeb', '#1a1d22', 0.72]} />
-      {/* Key shadow-casts so PCB components self-cast onto their own
-          board surface at end-position (where hemi is low and the
-          directional key dominates). */}
+      {/* Warm key light. No longer casts — nothing in the scene was set to
+          receive a real cast shadow (boards are out of shadows, frame only
+          "received" with no casters), so shadow rendering was pure overhead. */}
       <spotLight
         position={[0, 2.4, 0.9]}
         angle={0.58}
@@ -974,21 +1110,16 @@ function SceneLights({scrollRef}: {scrollRef: React.RefObject<number>}) {
         distance={7}
         intensity={32}
         color="#ffe8cc"
-        castShadow
-        shadow-mapSize-width={1024}
-        shadow-mapSize-height={1024}
-        shadow-camera-near={1.5}
-        shadow-camera-far={4.5}
-        shadow-bias={-0.0003}
-        shadow-normalBias={0.015}
       />
-      <spotLight
+      {/* Cool fill / rim from behind-left. Was a second spotLight — converted
+          to a directionalLight: it casts no shadow and only needs to wash the
+          dark side, so the per-fragment cone+distance attenuation a spotLight
+          pays for was wasted. A directional is a plain dot-product, noticeably
+          cheaper at this fill rate. Aim is position → origin (default target).
+          Intensity retuned for the directional model (no decay/distance). */}
+      <directionalLight
         position={[-1.4, 0.35, -0.7]}
-        angle={0.85}
-        penumbra={0.95}
-        decay={2}
-        distance={5}
-        intensity={6.5}
+        intensity={0.8}
         color="#7891b6"
       />
     </>
@@ -1035,7 +1166,7 @@ export function HeroScene({
   const [active, setActive] = useState(true);
   const [perf, setPerf] = useState<PerfSample | null>(null);
   const navigate = useNavigate();
-  const scrollRef = useScrollProgress();
+  const {targetRef, smoothRef} = useScrollProgress();
   useEffect(() => { setMounted(true); }, []);
 
   // Pause the WebGL canvas entirely when the tab is hidden or the hero
@@ -1086,12 +1217,17 @@ export function HeroScene({
         // pad/board gap right at the precision limit.)
         camera={{position: [0, 0.15, 0.7], fov: 40, near: 0.1, far: 20}}
         style={{background: 'transparent'}}
-        shadows="soft"
+        // No `shadows` — nothing in the scene sets castShadow (frame + boards
+        // are all cast=false), so the shadow map was rendering empty every
+        // frame: a render-target bind/clear + extra depth-material programs for
+        // zero visible shadow. Dropping it is a free per-frame win.
         frameloop="demand"
-        // Cap pixel ratio at 1.5 — at 2× on a Retina mobile screen the
-        // canvas is rasterised at 4× the pixel count for no perceivable
-        // gain. 1.5 is the sweet spot between sharpness and battery.
-        dpr={[1, 1.5]}
+        // Cap pixel ratio at 1.25. Fragment (fill) cost scales with dpr², and
+        // this scene is fill-bound once the boards explode to fill the screen
+        // (full-screen PBR × 3 lights). 1.25² vs 1.5² is ~30% fewer shaded
+        // pixels every frame — the biggest single lever short of swapping the
+        // PBR materials for matcaps. Barely perceptible at hero distance.
+        dpr={[1, 1.25]}
         gl={{
           // MSAA off — replaced by an SMAA postprocess pass below. MSAA
           // at DPR 1.5 on Retina was rasterising 4 samples × 2.25× the
@@ -1122,10 +1258,13 @@ export function HeroScene({
           invalidate();
         }}
       >
-        <SceneLights scrollRef={scrollRef} />
-        <CameraRig scrollRef={scrollRef} />
+        {/* First useFrame in the tree — eases smoothRef toward the raw scroll
+            target so every consumer below reads the damped value this frame. */}
+        <ScrollDamper targetRef={targetRef} smoothRef={smoothRef} />
+        <SceneLights scrollRef={smoothRef} />
+        <CameraRig scrollRef={smoothRef} />
         <DroneAssembly
-          scrollRef={scrollRef}
+          scrollRef={smoothRef}
           onReady={onReady}
           onProgress={onProgress}
           labelRefs={labelRefs}
@@ -1157,15 +1296,17 @@ export function HeroScene({
             whiteSpace: 'pre',
           }}
         >
-          {`FPS       ${perf.fps}
-FRAME MS  ${perf.renderMs}
-DRAW      ${perf.drawCalls}
-TRIS      ${perf.triangles}
-GEOMS     ${perf.geometries}
-TEX       ${perf.textures}
-PROGS     ${perf.programs}
-DPR       ${perf.dpr}
-SIZE      ${perf.width}x${perf.height}`}
+          {`FPS        ${perf.fps}
+FRAME MS   ${perf.renderMs}
+WORST 3s   ${perf.worstMs}ms
+JANK 3s    ${perf.jank} frames >${PERF_JANK_MS}ms
+DRAW       ${perf.drawCalls}
+TRIS       ${perf.triangles}
+GEOMS      ${perf.geometries}
+TEX        ${perf.textures}
+PROGS      ${perf.programs}
+DPR        ${perf.dpr}
+SIZE       ${perf.width}x${perf.height}`}
         </div>
       ) : null}
     </div>
