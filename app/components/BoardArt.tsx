@@ -1,13 +1,39 @@
 import {useEffect, useMemo, useRef, useState} from 'react';
+import {fetchTextCached, peekText} from '~/lib/asset-prefetch';
 
 export type BoardArtProps = {
   /** Public path to the layered SVG, e.g. /boards/openesc/board.svg */
   src: string;
+  /** Every tier's board SVG, so siblings can be warmed in the background and
+   *  a variant toggle swaps in with no network and no blank frame. */
+  srcs?: string[];
   /** Optional handle used for analytics / data attributes. */
   handle?: string;
   /** Optional "Inspect interactively" deep-dive link (e.g. KiCanvas hosted). */
   inspectUrl?: string;
+  /** Per-layer function blurbs keyed by copper-layer slug (`f`, `in1`…`b`),
+   *  shown beside each name in the rail. Slugs left unset fall back to a
+   *  position-based guess (see {@link layerFunction}). */
+  layerFns?: Record<string, string>;
 };
+
+/**
+ * Short function blurb for a copper layer. A content-supplied `override` wins;
+ * otherwise guess from the layer's position in the stack — the outermost pair
+ * carries signals + components, the pair just inside them is almost always a
+ * solid reference (ground) plane, and everything between is signal + power.
+ */
+function layerFunction(
+  slug: string,
+  index: number,
+  total: number,
+  override?: Record<string, string>,
+): string {
+  if (override?.[slug]) return override[slug];
+  if (index === 0 || index === total - 1) return 'Signal + components';
+  if (index === 1 || index === total - 2) return 'Ground plane';
+  return 'Signal + power';
+}
 
 /** Human label for each known layer slug, in physical top→bottom order. */
 const LAYER_LABELS: Record<string, string> = {
@@ -35,32 +61,31 @@ type Sheet = {slug: string; label: string; html: string};
  *
  * Fetched lazily (only as the section nears the viewport).
  */
-export function BoardArt({src, handle, inspectUrl}: BoardArtProps) {
+export function BoardArt({src, srcs, handle, inspectUrl, layerFns}: BoardArtProps) {
   const ref = useRef<HTMLDivElement | null>(null);
   const bodyRef = useRef<HTMLDivElement | null>(null);
   const railRef = useRef<HTMLDivElement | null>(null);
-  const [raw, setRaw] = useState<string | null>(null);
-  const [revealed, setRevealed] = useState(false);
+  // `raw` is the SVG text currently on screen. Seed from cache so a tier that
+  // was warmed earlier paints immediately with no blank frame.
+  const [raw, setRaw] = useState<string | null>(() => peekText(src) ?? null);
+  const [revealed, setRevealed] = useState<boolean>(() => peekText(src) != null);
   const [failed, setFailed] = useState(false);
   const [active, setActive] = useState(0);
+  const [inView, setInView] = useState(false);
 
+  // Lazy gate: fetch nothing until the section nears the viewport.
   useEffect(() => {
     const el = ref.current;
-    if (!el || typeof IntersectionObserver === 'undefined') return;
+    if (!el || typeof IntersectionObserver === 'undefined') {
+      setInView(true);
+      return;
+    }
     const io = new IntersectionObserver(
       (entries) => {
         for (const e of entries) {
           if (e.isIntersecting) {
             io.disconnect();
-            fetch(src)
-              .then((r) => (r.ok ? r.text() : Promise.reject(r.status)))
-              .then((text) => {
-                setRaw(text);
-                requestAnimationFrame(() =>
-                  requestAnimationFrame(() => setRevealed(true)),
-                );
-              })
-              .catch(() => setFailed(true));
+            setInView(true);
             return;
           }
         }
@@ -69,7 +94,37 @@ export function BoardArt({src, handle, inspectUrl}: BoardArtProps) {
     );
     io.observe(el);
     return () => io.disconnect();
-  }, [src]);
+  }, []);
+
+  // Load the active board once in view and warm every sibling tier in the
+  // background. The previously shown board stays on screen until the new SVG
+  // resolves, so a tier toggle swaps cleanly instead of flashing empty.
+  useEffect(() => {
+    if (!inView) return;
+    let alive = true;
+    fetchTextCached(src)
+      .then((text) => {
+        if (!alive) return;
+        setRaw(text);
+        setFailed(false);
+        requestAnimationFrame(() =>
+          requestAnimationFrame(() => {
+            if (alive) setRevealed(true);
+          }),
+        );
+      })
+      .catch(() => {
+        if (alive) setFailed(true);
+      });
+    if (srcs) {
+      for (const s of srcs) {
+        if (s !== src) void fetchTextCached(s).catch(() => {});
+      }
+    }
+    return () => {
+      alive = false;
+    };
+  }, [inView, src, srcs]);
 
   // Split the multi-layer SVG into one sheet per copper layer.
   const sheets = useMemo<Sheet[]>(() => {
@@ -187,15 +242,6 @@ export function BoardArt({src, handle, inspectUrl}: BoardArtProps) {
                 {active + 1}/{sheets.length}
               </span>
             </span>
-            <button
-              type="button"
-              className="board-folder-step"
-              aria-label="Previous layer (up)"
-              disabled={active === 0}
-              onClick={() => step(-1)}
-            >
-              ▲
-            </button>
             <div className="board-folder-tabs">
               {sheets.map((s, i) => (
                 <button
@@ -205,19 +251,13 @@ export function BoardArt({src, handle, inspectUrl}: BoardArtProps) {
                   aria-pressed={i === active}
                   onClick={() => setActive(i)}
                 >
-                  {s.label}
+                  <span className="board-folder-tab-name">{s.label}</span>
+                  <span className="board-folder-tab-fn">
+                    {layerFunction(s.slug, i, sheets.length, layerFns)}
+                  </span>
                 </button>
               ))}
             </div>
-            <button
-              type="button"
-              className="board-folder-step"
-              aria-label="Next layer (down)"
-              disabled={active === sheets.length - 1}
-              onClick={() => step(1)}
-            >
-              ▼
-            </button>
           </div>
           {/* eslint-enable jsx-a11y/no-noninteractive-element-interactions, jsx-a11y/no-noninteractive-tabindex */}
           <div className="board-folder-stack">

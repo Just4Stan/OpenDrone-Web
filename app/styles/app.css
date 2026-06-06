@@ -674,9 +674,9 @@ body {
   overscroll-behavior-y: none;
 }
 
-/* Homepage footer now appears naturally after the hero spacer.
-   The hero uses a sticky container inside a tall spacer so it pins for
-   the full scroll, then releases into the footer below. */
+/* Homepage has no footer — the hero uses a sticky container inside a
+   spacer sized so the sticky releases exactly when the phased animation
+   completes. The page ends there; no footer, no trailing dead scroll. */
 
 /* Selection */
 ::selection {
@@ -2878,13 +2878,65 @@ button.reset {
     position: sticky;
     top: calc(var(--header-height) + var(--sp-4));
   }
-  /* Schematic chapter: hand most of the width to the (wide, dense) sheet and
-   * narrow the text column. The tall sheet scrolls rather than sticking. */
+  /* Schematic chapter: text + cards sit on top, the schematic spans the full
+   * content width below. Single column so the dense sheet uses every pixel. */
   .chapter[data-wide-media] {
-    grid-template-columns: minmax(0, 0.36fr) minmax(0, 1fr);
+    grid-template-columns: minmax(0, 1fr);
   }
   .chapter[data-wide-media] .chapter-media {
     position: static;
+    top: auto;
+  }
+}
+
+/* The schematic media is full-width and useful on every breakpoint (unlike the
+ * decorative chapter glyph), so keep it visible on mobile too where the base
+ * .chapter-media is hidden. */
+.chapter[data-wide-media] .chapter-media {
+  display: block;
+}
+
+/* On mobile the three cards stack in one column; at the desktop breakpoint
+ * they become a 3-across row beside the title (below). */
+.chapter[data-wide-media] .open-source-cards {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+/* Header for the schematic chapter: a slim band — title on the left, the three
+ * resource cards in a 3-across row to its right — and the full-width schematic
+ * drops below (the chapter is single-column, so .chapter-media spans the row). */
+@media (min-width: 880px) {
+  .chapter[data-wide-media] .chapter-body-col {
+    /* Span the whole chapter width so the card row reaches the right edge,
+     * flush with the full-width schematic below. */
+    grid-column: 1 / -1;
+    max-width: none;
+    display: grid;
+    /* The card row takes the bulk of the width to fit four abreast. */
+    grid-template-columns: minmax(0, 0.5fr) minmax(0, 1.5fr);
+    column-gap: clamp(var(--sp-5), 4vw, var(--sp-7));
+    align-items: center;
+  }
+  .chapter[data-wide-media] .chapter-title {
+    grid-column: 1;
+  }
+  /* Resource cards + the latest-commit card abreast, filling the right column;
+   * a gold edge + lift on hover gives them a bit of life. */
+  .chapter[data-wide-media] .open-source-cards {
+    grid-column: 2;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 0.85rem;
+  }
+  .chapter[data-wide-media] .open-source-card,
+  .chapter[data-wide-media] .latest-commit-card {
+    border-top: 2px solid transparent;
+    transition: border-color 0.2s ease, background 0.2s ease,
+      transform 0.2s ease;
+  }
+  .chapter[data-wide-media] .open-source-card:hover,
+  .chapter[data-wide-media] .latest-commit-card:hover {
+    transform: translateY(-4px);
+    border-top-color: var(--color-gold);
   }
 }
 
@@ -2938,8 +2990,11 @@ button.reset {
 
 .board-art {
   position: relative;
-  width: 180%;
-  margin-left: -40%;
+  /* Blow the block up well past its (capped) media column so the rail + stack
+     fill the chapter's height; margin-left grows it leftward into the empty
+     gutter rather than overflowing the page to the right. */
+  width: 245%;
+  margin-left: -120%;
   opacity: 0;
   transition: opacity 1.2s cubic-bezier(0.2, 0.7, 0.2, 1);
 }
@@ -3015,17 +3070,16 @@ button.reset {
   flex: 1 1 auto;
   min-width: 0;
 }
-/* Layer rail — a self-contained vertical selector beside the board. */
-.board-folder-rail {
+/* Layer / sheet rail — a self-contained vertical selector beside the board or
+   schematic. The schematic viewer reuses this exact selector style. */
+.board-folder-rail,
+.schematic-rail {
   flex: 0 0 auto;
   z-index: 60;
   display: flex;
   flex-direction: column;
   align-items: stretch;
   gap: 6px;
-  /* Size tracks the viewport so the rail scales with the board across aspect
-     ratios instead of staying a fixed pixel block. */
-  width: clamp(76px, 5.6vw, 104px);
   padding: 10px 9px 11px;
   border-radius: 16px;
   background: color-mix(in srgb, var(--color-bg) 50%, transparent);
@@ -3034,10 +3088,25 @@ button.reset {
   backdrop-filter: blur(6px);
   outline: none;
 }
-.board-folder-rail:focus-visible {
+/* Each board layer carries a name (F.Cu / In1) plus a function blurb ("Ground
+   plane", "Signal · 5V"), so the rail is a wider column than the schematic's.
+   Size scales with the board across aspect ratios. */
+.board-folder-rail {
+  width: clamp(150px, 13vw, 200px);
+}
+/* Schematic sheets are full words (MCU / BLACKBOX / CONNECTORS), so size the
+   rail to its longest label — capped — instead of clipping inside a fixed
+   column. Labels stay on one line; the page column takes whatever's left. */
+.schematic-rail {
+  width: max-content;
+  max-width: clamp(130px, 13vw, 200px);
+}
+.board-folder-rail:focus-visible,
+.schematic-rail:focus-visible {
   border-color: color-mix(in srgb, var(--color-gold) 45%, transparent);
 }
-.board-folder-rail-head {
+.board-folder-rail-head,
+.schematic-rail-head {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
@@ -3048,30 +3117,13 @@ button.reset {
   text-transform: uppercase;
   color: var(--color-text-dim);
 }
-.board-folder-rail-count {
+.board-folder-rail-count,
+.schematic-rail-count {
   color: var(--color-gold);
   letter-spacing: 0.06em;
 }
-/* Up / down chevrons — make the "step through layers" affordance explicit. */
-.board-folder-step {
-  appearance: none;
-  border: none;
-  background: none;
-  cursor: pointer;
-  padding: 1px 0;
-  font-size: 9px;
-  line-height: 1;
-  color: var(--color-text-dim);
-  transition: color 0.2s, opacity 0.2s;
-}
-.board-folder-step:hover:not(:disabled) {
-  color: var(--color-gold);
-}
-.board-folder-step:disabled {
-  opacity: 0.25;
-  cursor: default;
-}
-.board-folder-tabs {
+.board-folder-tabs,
+.schematic-rail-tabs {
   position: relative;
   display: flex;
   flex-direction: column;
@@ -3079,7 +3131,8 @@ button.reset {
   gap: 6px;
 }
 /* A faint spine threading the buttons — like a via through the copper stack. */
-.board-folder-tabs::before {
+.board-folder-tabs::before,
+.schematic-rail-tabs::before {
   content: '';
   position: absolute;
   left: 50%;
@@ -3090,7 +3143,8 @@ button.reset {
   background: color-mix(in srgb, var(--color-gold) 16%, transparent);
   border-radius: 1px;
 }
-.board-folder-tabs button {
+.board-folder-tabs button,
+.schematic-rail-tabs button {
   position: relative;
   appearance: none;
   border: 1px solid color-mix(in srgb, var(--color-gold) 16%, transparent);
@@ -3107,24 +3161,69 @@ button.reset {
   transition: color 0.2s, background 0.2s, border-color 0.2s, transform 0.2s,
     box-shadow 0.2s;
 }
-.board-folder-tabs button:hover {
+.board-folder-tabs button:hover,
+.schematic-rail-tabs button:hover {
   color: var(--color-text);
   border-color: color-mix(in srgb, var(--color-gold) 40%, transparent);
 }
-.board-folder-tabs button.is-active {
+.board-folder-tabs button.is-active,
+.schematic-rail-tabs button.is-active {
   color: var(--color-on-accent);
   background: var(--color-gold);
   border-color: var(--color-gold);
   box-shadow: 0 0 16px color-mix(in srgb, var(--color-gold) 35%, transparent);
 }
+/* Layer buttons stack a name over a function blurb, left-aligned — so the
+   centred via-spine would cut through the text; drop it on the board rail. */
+.board-folder-tabs::before {
+  display: none;
+}
+.board-folder-tabs button {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  text-align: left;
+  border-radius: 12px;
+  padding: 0.44em 0.72em;
+}
+.board-folder-tab-name {
+  font-size: clamp(10.5px, 0.74vw, 13px);
+  letter-spacing: 0.14em;
+  line-height: 1;
+}
+.board-folder-tab-fn {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.06em;
+  text-transform: none;
+  line-height: 1.2;
+  color: var(--color-text-dim);
+}
+.board-folder-tabs button:hover .board-folder-tab-fn {
+  color: var(--color-text-muted);
+}
+.board-folder-tabs button.is-active .board-folder-tab-fn {
+  color: color-mix(in srgb, var(--color-on-accent) 72%, transparent);
+}
+/* The rail sizes to its longest label, so normal sheet names stay on one line.
+   Tighter tracking keeps it compact, and wrapping (rather than nowrap) is the
+   safety net for a very long sheet name (e.g. the OpenRX single sheet) — it
+   stacks onto extra lines inside the capped width instead of leaking out. */
+.schematic-rail-tabs button {
+  letter-spacing: 0.1em;
+  overflow-wrap: anywhere;
+}
 /* Below this the left gutter is too tight to float the rail without crowding the
    teardown text — drop it back to a horizontal bar above the board instead. */
 @media (max-width: 1024px) {
-  .board-folder-body {
+  .board-folder-body,
+  .schematic-body {
     flex-direction: column;
     align-items: stretch;
   }
-  .board-folder-rail {
+  .board-folder-rail,
+  .schematic-rail {
     width: auto;
     flex-direction: row;
     flex-wrap: wrap;
@@ -3138,20 +3237,30 @@ button.reset {
     -webkit-backdrop-filter: none;
     backdrop-filter: none;
   }
-  .board-folder-rail-head {
+  .board-folder-rail-head,
+  .schematic-rail-head {
     width: 100%;
     justify-content: center;
     gap: 0.5em;
   }
-  .board-folder-step {
-    display: none;
-  }
-  .board-folder-tabs {
+  .board-folder-tabs,
+  .schematic-rail-tabs {
     flex-direction: row;
     flex-wrap: wrap;
     justify-content: center;
   }
-  .board-folder-tabs::before {
+  .board-folder-tabs::before,
+  .schematic-rail-tabs::before {
+    display: none;
+  }
+  /* The function blurbs would bloat the wrapped pill row — names only here. */
+  .board-folder-tabs button {
+    flex-direction: row;
+    align-items: center;
+    border-radius: 999px;
+    padding: 0.48em 0.7em;
+  }
+  .board-folder-tab-fn {
     display: none;
   }
 }
@@ -3160,53 +3269,33 @@ button.reset {
    the board folder. In the wide-media chapter it fills the dominant column and
    bleeds a little into the right gutter for maximum legible width. === */
 .schematic-viewer {
-  /* Bleed into the right gutter so the dense sheet has breathing room. */
-  width: 124%;
+  width: 100%;
   margin-left: 0;
 }
-.schematic-tabs {
+/* Rail + sheet sit side by side, mirroring the board folder: the rail takes a
+   fixed column on the left, the sheet fills the rest, centred vertically. */
+.schematic-body {
   display: flex;
-  flex-wrap: nowrap;
-  justify-content: center;
-  gap: 4px;
-  margin-bottom: 0.7rem;
-  overflow-x: auto;
+  align-items: center;
+  gap: clamp(8px, 1vw, 18px);
 }
-.schematic-tabs button {
-  appearance: none;
-  flex: 0 0 auto;
-  white-space: nowrap;
-  border: 1px solid color-mix(in srgb, var(--color-gold) 18%, transparent);
-  background: color-mix(in srgb, var(--color-bg) 70%, transparent);
-  cursor: pointer;
-  font-family: var(--font-mono);
-  font-size: 10px;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--color-text-dim);
-  padding: 0.32rem 0.7rem;
-  border-radius: 999px;
-  transition: color 0.2s, background 0.2s, border-color 0.2s;
-}
-.schematic-tabs button:hover {
-  color: var(--color-text);
-  border-color: color-mix(in srgb, var(--color-gold) 40%, transparent);
-}
-.schematic-tabs button.is-active {
-  color: var(--color-on-accent);
-  background: var(--color-gold);
-  border-color: var(--color-gold);
-}
+/* Fixed stage: at most one screen tall, so the entire sheet is visible without
+ * scrolling, and the height never changes as you page through sheets of
+ * differing proportions. Every sheet is contained + centred inside this box. */
 .schematic-page {
   position: relative;
+  flex: 1 1 auto;
+  min-width: 0;
+  height: min(72vh, 700px);
 }
 .schematic-sheet {
+  position: absolute;
+  inset: 0;
   display: block;
   width: 100%;
-  height: auto;
-  /* Width is set inline per sheet (one scale factor per board); centre the
-   * narrower sheets in the frame. */
-  margin: 0 auto;
+  height: 100%;
+  object-fit: contain;
+  object-position: center;
   /* B&W export → white blueprint lines on the dark page. Contrast lifts the
    * thin anti-aliased strokes so the sheet reads at preview scale. */
   filter: invert(1) contrast(1.45) brightness(1.05);
@@ -3400,13 +3489,17 @@ button.reset {
 
 /* Teardown pins list — wraps into 2–3 columns so short part names don't
    each own a full-width row. */
+/* A single narrow column so the callouts stack vertically instead of spreading
+   a wide grid across the chapter — the freed horizontal space goes to the
+   board + its (now richer) layer rail. */
 .teardown-pins {
   list-style: none;
   padding: 0;
   margin: 0;
   display: grid;
   gap: 0.5rem;
-  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  grid-template-columns: 1fr;
+  max-width: 30rem;
 }
 
 .teardown-pins li {
