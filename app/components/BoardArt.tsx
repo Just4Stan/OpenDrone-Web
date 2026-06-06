@@ -171,21 +171,24 @@ export function BoardArt({src, srcs, handle, inspectUrl, layerFns}: BoardArtProp
     if (sheets.length && active >= sheets.length) setActive(0);
   }, [sheets, active]);
 
-  // Place the layer rail relative to where the *text* and the *board* actually
-  // are, not their grid columns. The board is blown up well past its column and
-  // bleeds left for drama, so its left edge sits at (or past) the text column's
-  // right edge at every width — but the teardown copy rarely fills that column,
-  // leaving a real gutter to its right. So we measure the rightmost edge of the
-  // actual text content and the board's left edge, and:
-  //   • when a gutter wide enough for the rail exists, park the rail in it, a
-  //     margin clear of the board (the roomy, default look); otherwise
-  //   • drop the rail to names-only (`is-compact`) and slide it right OVER the
-  //     board, floored so its left edge always clears the text.
-  // This keeps the board full size and the rail off the copy at every width,
-  // trading the rail's own footprint (over empty gutter → over the board) for
-  // horizontal room as the viewport tightens. Re-runs on resize; the active
-  // sheet's settled left edge is the same for every layer, so we don't key it
-  // on `active` (which would measure mid-float-animation).
+  // Fit the layer rail into the gutter between the teardown copy and the board,
+  // measuring where the *text* and the *board* actually are (not their grid
+  // columns). The board is blown up past its column and bleeds left for drama,
+  // so its left edge sits at/past the text column's right edge — but the copy
+  // rarely fills that column, leaving a real gutter to its right. Priority,
+  // matching how a reader expects it to degrade:
+  //   1. Park the full rail in the gutter, a margin clear of the board (the
+  //      roomy default — untouched on wide screens).
+  //   2. When the gutter is too tight, shrink the board (`--board-w`, down to
+  //      MIN_W) just enough to reopen a full-rail gutter — the board gives up
+  //      size to keep the whole menu visible.
+  //   3. Only when even the smallest board can't free the room: drop the rail
+  //      to names-only (`is-compact`) and, if still tight, slide it over the
+  //      board — always floored so it clears the copy.
+  // The board's right edge is pinned (CSS keeps width + margin = 125%), so
+  // shrinking only pulls its left edge rightward. Re-runs (rAF-coalesced) on
+  // resize; the active sheet's settled left edge is the same for every layer,
+  // so we don't key it on `active` (which would measure mid-float-animation).
   useEffect(() => {
     const rail = railRef.current;
     const body = bodyRef.current;
@@ -193,7 +196,15 @@ export function BoardArt({src, srcs, handle, inspectUrl, layerFns}: BoardArtProp
     if (!rail || !body || !root) return;
     const GAP = 18; // clearance between the rail and the board's left edge
     const MARGIN = 22; // clearance between the rail and the text content
+    const DEFAULT_W = 2.45; // board blow-up factor at full size (matches CSS)
+    const MIN_W = 1.7; // smallest the board shrinks to before the rail compacts
     const chapter = root.closest('.chapter');
+    const activeSvg = () =>
+      body.querySelector('.board-sheet.is-active svg') as SVGElement | null;
+    const leftOf = (el: Element) => el.getBoundingClientRect().left;
+    const widthOf = (el: Element) => el.getBoundingClientRect().width;
+    const setBoardW = (w: number) =>
+      root.style.setProperty('--board-w', `${w * 100}%`);
     // Rightmost edge of the actual rendered teardown copy — a Range gives the
     // tight text bounds (longest wrapped line), not the full column box.
     const contentRight = () => {
@@ -201,7 +212,6 @@ export function BoardArt({src, srcs, handle, inspectUrl, layerFns}: BoardArtProp
         '.chapter-title, .chapter-body, .teardown-pins li, .board-art-inspect',
       );
       if (!els?.length) {
-        // Fallback: the body column's box edge (no measurable copy found).
         const col = chapter?.querySelector('.chapter-body-col');
         return col?.getBoundingClientRect().right ?? -Infinity;
       }
@@ -219,37 +229,75 @@ export function BoardArt({src, srcs, handle, inspectUrl, layerFns}: BoardArtProp
       if (!window.matchMedia('(min-width: 1025px)').matches) {
         rail.classList.remove('is-compact');
         rail.style.transform = '';
+        root.style.removeProperty('--board-w');
         return;
       }
-      const pcb = body.querySelector(
-        '.board-sheet.is-active svg',
-      ) as SVGElement | null;
-      if (!pcb) return;
       rail.classList.remove('is-compact');
       rail.style.transform = '';
-      const railLeft = rail.getBoundingClientRect().left;
-      const boardLeft = pcb.getBoundingClientRect().left;
+      setBoardW(DEFAULT_W);
+      let svg = activeSvg();
+      if (!svg) return;
+      const railFull = widthOf(rail);
       const textRight = contentRight();
-      // Preferred: hug the board from its left, sitting in the gutter.
-      const hug = boardLeft - GAP - rail.getBoundingClientRect().width;
-      let target: number;
-      if (hug >= textRight + MARGIN) {
-        target = hug; // roomy gutter — full rail, clear of the board
+      // Board's left edge must clear this for the full rail to sit in the gutter.
+      const fullFloor = textRight + MARGIN + railFull + GAP;
+      // The board's left edge decreases as `--board-w` grows, so "full rail
+      // fits" holds at small w and fails at large w. Binary-search the largest
+      // w that still fits — the biggest board that keeps the whole menu. (The
+      // active sheet's scale bleed makes the exact relationship non-obvious, so
+      // we search rather than solve.)
+      const fitsAt = (w: number) => {
+        setBoardW(w);
+        const s = activeSvg();
+        return s ? leftOf(s) >= fullFloor : true;
+      };
+      let needCompact = false;
+      if (fitsAt(DEFAULT_W)) {
+        setBoardW(DEFAULT_W); // roomy — no shrink needed
+      } else if (!fitsAt(MIN_W)) {
+        setBoardW(MIN_W); // even the smallest board can't free the gutter
+        needCompact = true;
       } else {
-        // Tight: compact the rail (names only, narrower) and re-measure, then
-        // hug the board if the slimmer rail now fits, else overlay the board
-        // but never cross the text.
+        let lo = MIN_W;
+        let hi = DEFAULT_W;
+        for (let i = 0; i < 6; i++) {
+          const mid = (lo + hi) / 2;
+          if (fitsAt(mid)) lo = mid;
+          else hi = mid;
+        }
+        setBoardW(lo);
+      }
+      svg = activeSvg();
+      if (!svg) return;
+      let target: number;
+      if (!needCompact) {
+        target = leftOf(svg) - GAP - railFull; // full rail, in the gutter
+      } else {
+        // Names-only rail; hug the (minimum) board if it now fits, else overlay
+        // it — never crossing the copy.
         rail.classList.add('is-compact');
-        const compactWidth = rail.getBoundingClientRect().width;
+        const compactWidth = widthOf(rail);
+        const boardLeft = leftOf(svg);
         target = Math.max(textRight + MARGIN, boardLeft - GAP - compactWidth);
       }
-      rail.style.transform = `translateX(${target - railLeft}px)`;
+      rail.style.transform = `translateX(${target - leftOf(rail)}px)`;
+    };
+    // Coalesce resize bursts into one placement per frame — `place` forces a
+    // handful of layout reads against the large board SVG.
+    let scheduled = 0;
+    const schedule = () => {
+      if (scheduled) return;
+      scheduled = requestAnimationFrame(() => {
+        scheduled = 0;
+        place();
+      });
     };
     const raf = requestAnimationFrame(place);
-    window.addEventListener('resize', place);
+    window.addEventListener('resize', schedule);
     return () => {
       cancelAnimationFrame(raf);
-      window.removeEventListener('resize', place);
+      if (scheduled) cancelAnimationFrame(scheduled);
+      window.removeEventListener('resize', schedule);
     };
   }, [sheets, revealed]);
 
