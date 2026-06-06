@@ -28,7 +28,7 @@ export function LegalPage({
     <article className="legal-page page-shell">
       <div className="reading-column">
         <div className="policy-back-link">
-          <Link to={overviewHref}>{ui.backToOverview}</Link>
+          <Link prefetch="viewport" to={overviewHref}>{ui.backToOverview}</Link>
         </div>
         <header className="page-header">
           <p className="page-eyebrow">{eyebrow}</p>

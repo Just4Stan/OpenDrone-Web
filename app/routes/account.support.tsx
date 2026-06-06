@@ -115,7 +115,7 @@ export default function AccountSupportRoute() {
           >
             <div className="account-support-list-head">
               <h3>Tickets</h3>
-              <Link
+              <Link prefetch="viewport"
                 to="/support"
                 className="od-btn od-btn-secondary od-btn-sm"
               >
@@ -174,7 +174,7 @@ function EmptyState() {
       </p>
       <h3>You haven&rsquo;t opened any tickets.</h3>
       <p>Need help? Open one and we&rsquo;ll thread it back to you here.</p>
-      <Link to="/support" className="od-btn od-btn-primary">
+      <Link prefetch="viewport" to="/support" className="od-btn od-btn-primary">
         Open a ticket →
       </Link>
     </div>
@@ -266,7 +266,7 @@ function DetailPane({
       {isCookieActive ? (
         <div className="account-support-active-banner">
           <span>This ticket is open. Continue the conversation here:</span>
-          <Link to="/support" className="od-btn od-btn-primary od-btn-sm">
+          <Link prefetch="viewport" to="/support" className="od-btn od-btn-primary od-btn-sm">
             Continue thread →
           </Link>
         </div>

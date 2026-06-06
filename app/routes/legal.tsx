@@ -204,7 +204,7 @@ export default function LegalIndex() {
         <div className="policies-grid">
           {PAGES.map((p) => (
             <article className="policy-card" key={p.slug}>
-              <Link to={`/${locale}/${p.slug}`}>
+              <Link prefetch="viewport" to={`/${locale}/${p.slug}`}>
                 <strong>{p.label[locale]}</strong>
               </Link>
               <p style={{marginTop: '0.35rem', fontSize: '0.75rem'}}>

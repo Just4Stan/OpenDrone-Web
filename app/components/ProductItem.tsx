@@ -150,7 +150,7 @@ export function ProductItem({
   }
 
   // Card with a model strip. The card chrome (border, hover lift) stays on
-  // the outer element, but it can't be a <Link> — the chips are their own
+  // the outer element, but it can't be a <Link prefetch="viewport"> — the chips are their own
   // links and nesting anchors is invalid HTML. So the tile body is one link
   // and each model is a sibling link below it.
   return (

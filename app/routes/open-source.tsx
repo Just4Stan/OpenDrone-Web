@@ -121,7 +121,7 @@ export default function OpenSourceRoute() {
       </section>
 
       <section className="editorial-cta">
-        <Link to="/firmware-partners" className="editorial-cta-primary">
+        <Link prefetch="viewport" to="/firmware-partners" className="editorial-cta-primary">
           See who the €1 goes to →
         </Link>
         <a

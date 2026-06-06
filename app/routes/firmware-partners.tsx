@@ -129,10 +129,10 @@ export default function FirmwarePartnersRoute() {
       </section>
 
       <section className="editorial-cta">
-        <Link to="/open-source" className="editorial-cta-primary">
+        <Link prefetch="viewport" to="/open-source" className="editorial-cta-primary">
           Read why we open-source everything →
         </Link>
-        <Link to="/collections/all" className="editorial-cta-secondary">
+        <Link prefetch="viewport" to="/collections/all" className="editorial-cta-secondary">
           Browse the boards →
         </Link>
       </section>
