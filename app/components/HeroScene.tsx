@@ -424,7 +424,9 @@ function DroneAssembly({
         // Stays partly transparent so the boards read through it; the colour is
         // animated per-frame (see frameMats in useFrame).
         const frameMat = new THREE.MeshStandardMaterial({
-          color: 0xf2f2f2, metalness: 0.16, roughness: 0.58,
+          // Matte, near-non-metallic so the warm key light doesn't bloom the
+          // frame into a tan/grey plastic look — it should read as dark carbon.
+          color: 0xf2f2f2, metalness: 0.0, roughness: 0.82,
           transparent: true, opacity: 0.62, depthWrite: true,
           // polygonOffset pushes the transparent frame's depth back so the
           // near-coplanar plates/boards don't z-fight (keeps see-through frame).
@@ -722,20 +724,18 @@ function DroneAssembly({
       THREE.MathUtils.lerp(0, 0.012, flyOut),
       THREE.MathUtils.lerp(0, 0.025, flyOut),
     );
-    // Frame stays semi-transparent in BOTH themes so the boards show through
-    // and the carbon weave reads. On the light page it's tinted darker and a
-    // little more solid (a smoked-carbon look) so the pale background doesn't
-    // wash it out; on the dark page it keeps the lighter, airier tint.
-    // Same carbon COLOR in both themes so the woven texture reads identically
-    // (darkening the colour in light mode crushed the weave to flat black). The
-    // only per-theme change is opacity: light mode is more solid so the pale
-    // page doesn't bleed through and wash it out, while still showing the boards.
-    const b = THREE.MathUtils.lerp(0x8a, 0xb8, flyOut);
+    // Frame stays semi-transparent in BOTH themes so the boards show through.
+    // Dark mode uses a much darker carbon grey (and more transparency) so it
+    // reads as a true black frame against the dark page; light mode stays a
+    // mid grey, a touch more solid so the pale page doesn't wash it out.
+    const b = lightRef.current
+      ? THREE.MathUtils.lerp(0x6e, 0x96, flyOut)
+      : THREE.MathUtils.lerp(0x14, 0x22, flyOut);
     for (const mat of frameMats.current) {
       if (!mat?.transparent) continue;
       mat.opacity = lightRef.current
-        ? (flyOut < 0.5 ? THREE.MathUtils.lerp(0.82, 0.94, frameOpacity) : 0.94)
-        : (flyOut < 0.5 ? THREE.MathUtils.lerp(0.62, 0.9, frameOpacity) : 0.9);
+        ? (flyOut < 0.5 ? THREE.MathUtils.lerp(0.72, 0.9, frameOpacity) : 0.9)
+        : (flyOut < 0.5 ? THREE.MathUtils.lerp(0.4, 0.58, frameOpacity) : 0.58);
       mat.color.setRGB(b / 255, b / 255, b / 255);
     }
     frameRef.current.scale.setScalar(THREE.MathUtils.lerp(1, 0.45, flyOut));
@@ -858,7 +858,7 @@ function DroneAssembly({
 
   return (
     <>
-      <group ref={wrapperRef} scale={7} rotation={[0.45, 0, 0.05]} onPointerDown={onDown}>
+      <group ref={wrapperRef} scale={7} rotation={[0.6, 0, 0.05]} onPointerDown={onDown}>
         <group
           ref={frameRef}
           onPointerOver={() => hover('frame', true)}

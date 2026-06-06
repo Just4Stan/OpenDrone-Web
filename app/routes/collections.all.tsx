@@ -95,8 +95,8 @@ function variantFor(p: CatalogProduct, axis: string, value: string) {
 
 /**
  * Join a product title with a tier value without stuttering — "OpenFC Lite" +
- * "Lite Mini" → "OpenFC Lite Mini", "OpenFC Lite" + "Lite" → "OpenFC Lite",
- * while "OpenRX" + "Gemini" → "OpenRX Gemini".
+ * "20×20" → "OpenFC Lite 20×20", while "OpenRX" + "Gemini" → "OpenRX Gemini"
+ * and "OpenFC Lite" + "Lite" → "OpenFC Lite" (drops the repeated word).
  */
 function joinTitle(title: string, value: string): string {
   const tWords = title.split(/\s+/);

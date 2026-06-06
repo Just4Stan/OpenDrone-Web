@@ -83,8 +83,12 @@ export type BundleComponent = {
  * and the cart falls back to the single default variant.
  */
 export type VariantContent = {
+  /** Display name on the ladder card. Defaults to the variant key (which is
+   *  what Shopify matches against); set this when the shown name should differ
+   *  from the matched key (e.g. key "20×20" shown as "20×20 (mini)"). */
+  label?: string;
   /** One-line role under the tier name in the ladder card. */
-  tagline: string;
+  tagline?: string;
   /** The 3–4 cells that differ between tiers, shown in the card body. */
   highlights: Array<[string, string]>;
   /** Per-tier spec deltas merged over the shared `specs` by row key: a
@@ -126,6 +130,10 @@ export type ProductContent = {
      *  (public path, e.g. `/logos/betaflight.svg`). Falls back to the
      *  geometric placeholder glyph when unset. */
     logo?: string;
+    /** Set when the wordmark is white-on-transparent (e.g. AM32) so it gets
+     *  rendered on a fixed dark tile that reads in both light and dark themes,
+     *  instead of the transparent slot a multi-colour mark uses. */
+    logoDark?: boolean;
   };
   repoUrl: string;
   teardown?: {
@@ -182,6 +190,8 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
       project: 'AM32',
       projectUrl:
         'https://github.com/AlkaMotors/AM32-MultiRotor-ESC-firmware',
+      logo: '/logos/am32.svg',
+      logoDark: true,
     },
     repoUrl: 'https://github.com/incutec-hw/OpenESC_20X20',
     teardown: {
@@ -201,8 +211,8 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
         layers: {
           f: 'Signal + components',
           in1: 'Ground plane',
-          in2: 'Signal · 5V',
-          in3: 'Signal · 3V3',
+          in2: 'Signal · 10V · 3V3',
+          in3: 'Signal',
           in4: 'Ground plane',
           b: 'Signal + components',
         },
@@ -236,25 +246,25 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
     optionAxis: 'Model',
     variants: {
       '20×20': {
-        tagline: '20×20 mount, 35 A per channel — the standard stack size.',
         highlights: [
-          ['Mount', '20×20 · 30.5 holes'],
+          ['Mount', '20×20'],
           ['MOSFET', 'SP40N03GNJ'],
-          ['Continuous', '35 A / channel'],
+          ['Continuous', '30 A / channel'],
         ],
         specs: [
-          ['Continuous', '35 A / channel'],
+          ['Continuous', '30 A / channel'],
           ['MOSFETs', 'SP40N03GNJ, 40 V / 2.9 mΩ'],
           ['PCB', '6-layer, 20×20 mount'],
         ],
       },
       '30×30': {
-        tagline: '30×30 mount with higher-current SP40N01GHNK MOSFETs.',
         highlights: [
           ['Mount', '30×30'],
           ['MOSFET', 'SP40N01GHNK'],
+          ['Continuous', '50 A / channel'],
         ],
         specs: [
+          ['Continuous', '50 A / channel'],
           ['MOSFETs', 'SP40N01GHNK'],
           ['PCB', '6-layer, 30×30 mount'],
         ],
@@ -263,8 +273,8 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
           layers: {
             f: 'Signal + components',
             in1: 'Ground plane',
-            in2: 'Signal · 5V',
-            in3: 'Signal · 3V3',
+            in2: 'Signal · 10V · 3V3',
+            in3: 'Signal',
             in4: 'Ground plane',
             b: 'Signal + components',
           },
@@ -401,9 +411,9 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
   },
 
   // The shipping cost-down flight controller. One design, two mount sizes
-  // (Lite Mini 20×20 / Lite 30×30) that share nearly the whole BOM. Spec
-  // drawn from the OpenFC-Lite / OpenFC-Lite-Mini READMEs. The Shopify product
-  // (handle `openfc-lite`, Model: "Lite Mini" / "Lite") is created DRAFT by
+  // (20×20 / 30×30) that share nearly the whole BOM. Spec drawn from the
+  // OpenFC-Lite / OpenFC-Lite-Mini READMEs. The Shopify product
+  // (handle `openfc-lite`, Model: "20×20" / "30×30") is created DRAFT by
   // scripts/shopify-infra/06-openfc-lite.mjs — the PDP 404s until it's activated.
   'openfc-lite': {
     fileNumber: '02',
@@ -461,10 +471,10 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
       'The cost-down trims over the full OpenFC: no barometer, no onboard radio, no SPI blackbox flash. External RX over UART, microSD for blackbox.',
     optionAxis: 'Model',
     variants: {
-      'Lite Mini': {
-        tagline: 'The 20×20 / 30.5 mount — RP2354A, QFN-60. The compact stack size.',
+      '20×20': {
+        tagline: 'The 20×20 mount — RP2354A, QFN-60. The compact stack size.',
         highlights: [
-          ['Mount', '20×20 · 30.5 holes'],
+          ['Mount', '20×20'],
           ['Size', '20×20 mm'],
         ],
         specs: [
@@ -477,7 +487,7 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
             'https://kicanvas.org/?github=https://github.com/incutec-hw/OpenFC-Lite-Mini',
         },
       },
-      Lite: {
+      '30×30': {
         tagline: 'The 30×30 mount — bigger pads and more I/O.',
         highlights: [
           ['Mount', '30×30'],

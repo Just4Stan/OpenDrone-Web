@@ -27,6 +27,7 @@ import {SchematicViewer} from '~/components/SchematicViewer';
 import type {FrameViewerProps} from '~/components/FrameViewer';
 import {SceneErrorBoundary} from '~/components/SceneErrorBoundary';
 import {ProvenanceCard} from '~/components/ProvenanceCard';
+import {BrandName} from '~/components/BrandName';
 import {LatestCommitCard} from '~/components/LatestCommit';
 import {redirectIfHandleIsLocalized} from '~/lib/redirect';
 import {buildSeoMeta, buildProductJsonLd} from '~/lib/seo';
@@ -355,6 +356,8 @@ function Chapter({
   media,
   backdrop,
   wideMedia,
+  bigMedia,
+  noMedia,
 }: {
   number: string;
   label: string;
@@ -370,6 +373,12 @@ function Chapter({
   /** Flip the column split so the media takes most of the width and the text
    *  column narrows — used for the wide schematic viewer. */
   wideMedia?: boolean;
+  /** Even the column split 50/50 so the media takes half the chapter width —
+   *  used for the in-the-box parts shot. */
+  bigMedia?: boolean;
+  /** Drop the media column entirely so the body spans full width — used by
+   *  chapters whose content (e.g. the spec table) needs no image. */
+  noMedia?: boolean;
 }) {
   return (
     <section
@@ -377,6 +386,8 @@ function Chapter({
       data-chapter={number}
       data-backdrop={backdrop ? '' : undefined}
       data-wide-media={wideMedia ? '' : undefined}
+      data-big-media={bigMedia ? '' : undefined}
+      data-no-media={noMedia ? '' : undefined}
     >
       {backdrop ? <div className="chapter-backdrop">{backdrop}</div> : null}
       <div className="chapter-index">
@@ -387,7 +398,7 @@ function Chapter({
         <h2 className="chapter-title">{title}</h2>
         {children}
       </div>
-      {backdrop ? null : (
+      {backdrop || noMedia ? null : (
         <aside className="chapter-media">
           {media ? (
             <div className="chapter-media-frame chapter-media-frame--live">
@@ -723,7 +734,9 @@ export default function Product() {
             </h1>
           ) : (
             <h1 className="product-hero-headline">
-              <span>{title}</span>
+              <span>
+                <BrandName>{title}</BrandName>
+              </span>
             </h1>
           )}
           {content.hero.lead ? (
@@ -955,6 +968,7 @@ export default function Product() {
         <Chapter
           number={chapterNums.inTheBox}
           label="In the box"
+          bigMedia
           title={
             content.bundle ? (
               <>
@@ -979,8 +993,8 @@ export default function Product() {
             </p>
           ) : (
             <p className="chapter-body">
-              No stock photo of an open box. Here is the actual parts list.
-              Anything missing from a build, say so — we&apos;ll ship it.
+              Here is the actual parts list. Anything missing from a build,
+              say so — we&apos;ll ship it.
             </p>
           )}
           {mergedBox.length > 0 ? (
@@ -1041,7 +1055,11 @@ export default function Product() {
           media={
             content.firmware.logo ? (
               <img
-                className="firmware-logo"
+                className={
+                  content.firmware.logoDark
+                    ? 'firmware-logo firmware-logo--tile'
+                    : 'firmware-logo'
+                }
                 src={content.firmware.logo}
                 alt={`${content.firmware.project} logo`}
                 loading="lazy"
@@ -1063,6 +1081,7 @@ export default function Product() {
           number={chapterNums.specs}
           label="Datasheet"
           title="Every spec, in one table."
+          noMedia
         >
           <dl className="spec-table">
             {mergedSpecs.map(([k, v]) => (

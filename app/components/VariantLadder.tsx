@@ -84,7 +84,7 @@ export function VariantLadder({
               }}
             >
               <span className="variant-tier-head">
-                <span className="variant-tier-name">{value}</span>
+                <span className="variant-tier-name">{content.label ?? value}</span>
                 {comingSoon ? (
                   <span className="variant-tier-flag">Coming soon</span>
                 ) : soldOut ? (

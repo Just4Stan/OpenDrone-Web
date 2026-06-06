@@ -186,24 +186,39 @@ async function buildOne(srcPath, _unused, sizeLabel) {
     for (const m of clone.getRoot().listMeshes())
       for (const p of m.listPrimitives())
         if (p.getAttribute('TEXCOORD_0')) p.setAttribute('TEXCOORD_0', null);
-    const ops = [
-      prune({keepAttributes: true}),
-      flatten(),
-      join({keepNamed: false}),
-      weld({tolerance: 0.0001}),
-    ];
-    // Halve the board geometry. The SMD components are sub-pixel at hero
-    // scale, so this removes triangles you can't see, not visible detail —
-    // it roughly halves the per-frame vertex cost (incl. the shadow pass).
-    // The frame is already low-poly and has crisp silhouettes, so it's left
-    // untouched.
-    if (g !== 'Frame')
-      ops.push(simplify({simplifier: MeshoptSimplifier, ratio: 0.5, error: 0.004}));
-    ops.push(dedup(), prune({keepAttributes: true}));
+    // The FRAME must stay MULTI-PART and KEEP ITS PER-PART NODE TRANSFORMS:
+    // the runtime exploded-assembly viewer (FrameViewer) classifies nodes by
+    // name (Arm/Base/Top/Cross) and translates each one on scroll to pull the
+    // assembly apart. flatten()+join()+bake collapse the 4 instanced arms (one
+    // shared mesh placed at 4 rotations) onto a single transform — the assembly
+    // renders as one arm and "just scrolls up as one piece" instead of flying
+    // outwards. So the frame skips the whole destructive chain: prune + dedup
+    // (keeps the single arm mesh instanced across its 4 nodes) + meshopt only,
+    // leaving the raw Onshape occurrence transforms intact. The boards (FC/ESC)
+    // are static backdrops, so they still flatten/join/simplify down hard.
+    let ops;
+    if (g === 'Frame') {
+      // weld is per-primitive (merges coincident verts) — it shrinks the mesh
+      // without touching the node graph, so the parts stay separate & instanced.
+      ops = [prune({keepAttributes: true}), weld({tolerance: 0.0001}), dedup()];
+    } else {
+      ops = [
+        prune({keepAttributes: true}),
+        flatten(),
+        join({keepNamed: false}),
+        weld({tolerance: 0.0001}),
+        // Halve the board geometry. The SMD components are sub-pixel at hero
+        // scale, so this removes triangles you can't see, not visible detail.
+        simplify({simplifier: MeshoptSimplifier, ratio: 0.5, error: 0.004}),
+        dedup(),
+        prune({keepAttributes: true}),
+      ];
+    }
     await clone.transform(...ops);
     // Bake residual node transforms so accessor coords == world coords; the
-    // flip + normalise below depend on that.
-    bakeNodeTransforms(clone);
+    // flip + normalise below depend on that. Skip for the frame — baking the
+    // shared arm mesh once would flatten its 4 placements into one.
+    if (g !== 'Frame') bakeNodeTransforms(clone);
     // Flip the boards 180° in-plane so the silkscreen reads upright (they're
     // mounted rotated in the airframe). Rotate about each board's OWN centre so
     // its position relative to the frame is preserved; z is untouched so the

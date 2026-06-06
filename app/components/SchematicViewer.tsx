@@ -78,7 +78,9 @@ export function SchematicViewer({handle, handles, inspectUrl}: SchematicViewerPr
         if (!alive) return;
         const sheets = m.sheets ?? [];
         setDisplay({handle, sheets});
-        setActive(0);
+        // Keep the current sheet across a tier swap (clamped below if the new
+        // board has fewer sheets) — mirrors BoardArt holding its active layer,
+        // rather than snapping back to the first sheet on every variant switch.
         for (const s of sheets) prefetchImage(sheetUrl(handle, s.file));
       })
       .catch(() => {
@@ -101,6 +103,12 @@ export function SchematicViewer({handle, handles, inspectUrl}: SchematicViewerPr
 
   const dh = display?.handle ?? handle;
   const sheets = display?.sheets ?? null;
+
+  // Keep the active index in range when the board (re)loads with fewer sheets.
+  useEffect(() => {
+    if (sheets && sheets.length && active >= sheets.length) setActive(0);
+  }, [sheets, active]);
+
   const current = sheets?.[active];
 
   // Step through the sheets, clamped to the ends (used by arrow keys / wheel

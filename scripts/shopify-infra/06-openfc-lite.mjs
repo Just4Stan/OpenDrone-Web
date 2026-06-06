@@ -1,22 +1,22 @@
 /**
  * Create the "OpenFC Lite" product — the shipping cost-down FC line, in two
- * mount sizes (Lite Mini 20×20, Lite 30×30). The full OpenFC / OpenFC Mini
- * stay on the existing `openfc` product as coming-soon.
+ * mount sizes (20×20, 30×30). The full OpenFC / OpenFC Mini stay on the
+ * existing `openfc` product as coming-soon.
  *
  * Created as DRAFT with PLACEHOLDER price/SKU — Stan sets the real values in
  * admin before activating. Idempotent: skips creation if the handle exists,
  * always re-applies the option + price/sku/stock.
  *
- *   Model: Lite Mini  -> /boards/openfc-lite-mini/board.svg
- *   Model: Lite       -> /boards/openfc-lite/board.svg
+ *   Model: 20×20  -> /boards/openfc-lite-mini/board.svg
+ *   Model: 30×30  -> /boards/openfc-lite/board.svg
  */
 import {admin} from './_client.mjs';
 
 const HANDLE = 'openfc-lite';
 const OPTION = 'Model';
 const VARIANTS = [
-  {value: 'Lite Mini', price: '45.00', sku: 'OPENFC-LITE-MINI'},
-  {value: 'Lite', price: '49.00', sku: 'OPENFC-LITE-3030'},
+  {value: '20×20', price: '45.00', sku: 'OPENFC-LITE-MINI'},
+  {value: '30×30', price: '49.00', sku: 'OPENFC-LITE-3030'},
 ];
 const STOCK = 100;
 

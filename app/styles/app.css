@@ -3169,36 +3169,39 @@ button.reset {
   content: none;
 }
 
-/* Brand/firmware mark in the "In the box" chapter media slot. The AM32 mark
- * is white-on-transparent, so it sits on a fixed dark tile in BOTH themes
- * (like the Discord embed) rather than the theme card background. */
-/* Firmware project wordmark in the "The €1" chapter media slot. The slot is a
- * narrow right column, so the mark is blown up ~2× and pulled left into the
- * gutter (biased left so it doesn't overflow the page edge) — same trick as
- * .board-art. The media frame is overflow: visible, so the bleed shows. */
+/* Firmware project wordmark in the "The €1" chapter media slot. Sits roughly at
+ * column width, pulled a little left into the gutter so it isn't jammed against
+ * the page edge. The media frame is overflow: visible, so the bleed shows. */
 .firmware-logo {
-  width: 200%;
+  width: 100%;
   max-width: none;
   height: auto;
   display: block;
-  margin-left: -70%;
-  margin-right: -30%;
+  margin-left: -25%;
+  margin-right: 0;
+}
+
+/* The firmware mark doesn't need to track the scroll like the board art does —
+ * pin it in place by dropping the sticky on its media column. */
+.chapter-media:has(.firmware-logo) {
+  position: static;
+  top: auto;
 }
 
 /* White-on-transparent marks (e.g. AM32) sit on a fixed dark tile that reads
  * in both themes (like the Discord embed), rather than the transparent blow-up
- * a multi-colour mark uses. Contained square, modestly enlarged + pulled left
- * to share the betaflight mark's position. */
+ * a multi-colour mark uses. Kept a compact square centred in the slot — a big
+ * square tile leaves dead vertical space next to the short price block. */
 .firmware-logo--tile {
-  width: 130%;
-  margin-left: -30%;
-  margin-right: 0;
+  width: 78%;
+  max-width: 260px;
+  margin-inline: auto;
   aspect-ratio: 1 / 1;
   object-fit: contain;
   background: #14171c;
   border: 1px solid var(--color-border);
   border-radius: var(--r-lg);
-  padding: clamp(1.5rem, 6%, 3.5rem);
+  padding: clamp(1.5rem, 7%, 3rem);
 }
 
 .board-art {
@@ -4252,6 +4255,15 @@ button.reset {
 
 .firmware-split-contrib {
   color: var(--color-accent-light);
+}
+
+.firmware-split-eq {
+  color: var(--color-text-muted);
+  font-weight: 500;
+}
+
+.firmware-split-total {
+  color: var(--color-text);
 }
 
 .firmware-split-tagline {
