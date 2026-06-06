@@ -171,20 +171,53 @@ export function BoardArt({src, srcs, handle, inspectUrl, layerFns}: BoardArtProp
     if (sheets.length && active >= sheets.length) setActive(0);
   }, [sheets, active]);
 
-  // Park the rail against the board's actual left outline (not the box centre):
-  // the floated/scaled active sheet bleeds past its slot, so we measure where
-  // the PCB edge really lands and nudge the rail to sit a margin to its left.
-  // Re-runs on resize so it tracks the board across aspect ratios. The active
+  // Place the layer rail relative to where the *text* and the *board* actually
+  // are, not their grid columns. The board is blown up well past its column and
+  // bleeds left for drama, so its left edge sits at (or past) the text column's
+  // right edge at every width — but the teardown copy rarely fills that column,
+  // leaving a real gutter to its right. So we measure the rightmost edge of the
+  // actual text content and the board's left edge, and:
+  //   • when a gutter wide enough for the rail exists, park the rail in it, a
+  //     margin clear of the board (the roomy, default look); otherwise
+  //   • drop the rail to names-only (`is-compact`) and slide it right OVER the
+  //     board, floored so its left edge always clears the text.
+  // This keeps the board full size and the rail off the copy at every width,
+  // trading the rail's own footprint (over empty gutter → over the board) for
+  // horizontal room as the viewport tightens. Re-runs on resize; the active
   // sheet's settled left edge is the same for every layer, so we don't key it
   // on `active` (which would measure mid-float-animation).
   useEffect(() => {
     const rail = railRef.current;
     const body = bodyRef.current;
-    if (!rail || !body) return;
-    const MARGIN = 22; // breathing room between the rail and the PCB outline
+    const root = ref.current;
+    if (!rail || !body || !root) return;
+    const GAP = 18; // clearance between the rail and the board's left edge
+    const MARGIN = 22; // clearance between the rail and the text content
+    const chapter = root.closest('.chapter');
+    // Rightmost edge of the actual rendered teardown copy — a Range gives the
+    // tight text bounds (longest wrapped line), not the full column box.
+    const contentRight = () => {
+      const els = chapter?.querySelectorAll(
+        '.chapter-title, .chapter-body, .teardown-pins li, .board-art-inspect',
+      );
+      if (!els?.length) {
+        // Fallback: the body column's box edge (no measurable copy found).
+        const col = chapter?.querySelector('.chapter-body-col');
+        return col?.getBoundingClientRect().right ?? -Infinity;
+      }
+      let max = -Infinity;
+      for (const el of els) {
+        const range = document.createRange();
+        range.selectNodeContents(el);
+        const rect = range.getBoundingClientRect();
+        if (rect.width) max = Math.max(max, rect.right);
+      }
+      return max;
+    };
     const place = () => {
-      // Below the breakpoint the rail is a top bar — leave it untransformed.
+      // Below the breakpoint the rail is a full-width top bar — reset both.
       if (!window.matchMedia('(min-width: 1025px)').matches) {
+        rail.classList.remove('is-compact');
         rail.style.transform = '';
         return;
       }
@@ -192,13 +225,25 @@ export function BoardArt({src, srcs, handle, inspectUrl, layerFns}: BoardArtProp
         '.board-sheet.is-active svg',
       ) as SVGElement | null;
       if (!pcb) return;
+      rail.classList.remove('is-compact');
       rail.style.transform = '';
-      const railRight = rail.getBoundingClientRect().right;
-      const pcbLeft = pcb.getBoundingClientRect().left;
-      // Pull the rail left to clear the PCB; clamp the travel so it can never
-      // drift far enough left to crowd the teardown text.
-      const shift = Math.max(-48, Math.min(64, pcbLeft - MARGIN - railRight));
-      rail.style.transform = `translateX(${shift}px)`;
+      const railLeft = rail.getBoundingClientRect().left;
+      const boardLeft = pcb.getBoundingClientRect().left;
+      const textRight = contentRight();
+      // Preferred: hug the board from its left, sitting in the gutter.
+      const hug = boardLeft - GAP - rail.getBoundingClientRect().width;
+      let target: number;
+      if (hug >= textRight + MARGIN) {
+        target = hug; // roomy gutter — full rail, clear of the board
+      } else {
+        // Tight: compact the rail (names only, narrower) and re-measure, then
+        // hug the board if the slimmer rail now fits, else overlay the board
+        // but never cross the text.
+        rail.classList.add('is-compact');
+        const compactWidth = rail.getBoundingClientRect().width;
+        target = Math.max(textRight + MARGIN, boardLeft - GAP - compactWidth);
+      }
+      rail.style.transform = `translateX(${target - railLeft}px)`;
     };
     const raf = requestAnimationFrame(place);
     window.addEventListener('resize', place);

@@ -3422,6 +3422,22 @@ button.reset {
 .board-folder-tabs button.is-active .board-folder-tab-fn {
   color: color-mix(in srgb, var(--color-on-accent) 72%, transparent);
 }
+/* Compact rail — toggled by BoardArt's placement effect when the board has to
+   sit tight enough that the rail must overlay it. Dropping the function blurbs
+   and narrowing to names-only keeps the selector legible while covering as
+   little of the board as possible. */
+.board-folder-rail.is-compact {
+  width: clamp(86px, 7.5vw, 120px);
+}
+.board-folder-rail.is-compact .board-folder-tab-fn {
+  display: none;
+}
+.board-folder-rail.is-compact .board-folder-tabs button {
+  flex-direction: row;
+  align-items: center;
+  border-radius: 999px;
+  padding: 0.5em 0.8em;
+}
 /* The rail sizes to its longest label, so normal sheet names stay on one line.
    Tighter tracking keeps it compact, and wrapping (rather than nowrap) is the
    safety net for a very long sheet name (e.g. the OpenRX single sheet) — it
