@@ -3208,9 +3208,14 @@ button.reset {
   position: relative;
   /* Blow the block up well past its (capped) media column so the rail + stack
      fill the chapter's height; margin-left grows it leftward into the empty
-     gutter rather than overflowing the page to the right. */
-  width: 245%;
-  margin-left: -120%;
+     gutter rather than overflowing the page to the right. `--board-w` is the
+     blow-up factor: 245% by default, dialled down by BoardArt's placement
+     effect when the gutter is too tight to hold the full layer rail (the board
+     gives up size to keep the menu legible). The matching margin keeps the
+     board's right edge pinned (width + margin = 125%) as it scales. */
+  --board-w: 245%;
+  width: var(--board-w);
+  margin-left: calc(125% - var(--board-w));
   opacity: 0;
   transition: opacity 1.2s cubic-bezier(0.2, 0.7, 0.2, 1);
 }
@@ -3421,6 +3426,22 @@ button.reset {
 }
 .board-folder-tabs button.is-active .board-folder-tab-fn {
   color: color-mix(in srgb, var(--color-on-accent) 72%, transparent);
+}
+/* Compact rail — toggled by BoardArt's placement effect when the board has to
+   sit tight enough that the rail must overlay it. Dropping the function blurbs
+   and narrowing to names-only keeps the selector legible while covering as
+   little of the board as possible. */
+.board-folder-rail.is-compact {
+  width: clamp(86px, 7.5vw, 120px);
+}
+.board-folder-rail.is-compact .board-folder-tab-fn {
+  display: none;
+}
+.board-folder-rail.is-compact .board-folder-tabs button {
+  flex-direction: row;
+  align-items: center;
+  border-radius: 999px;
+  padding: 0.5em 0.8em;
 }
 /* The rail sizes to its longest label, so normal sheet names stay on one line.
    Tighter tracking keeps it compact, and wrapping (rather than nowrap) is the
