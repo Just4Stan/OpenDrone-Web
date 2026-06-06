@@ -27,10 +27,8 @@ import {SchematicViewer} from '~/components/SchematicViewer';
 import type {FrameViewerProps} from '~/components/FrameViewer';
 import {SceneErrorBoundary} from '~/components/SceneErrorBoundary';
 import {ProvenanceCard} from '~/components/ProvenanceCard';
-import {
-  LatestCommitGrid,
-  LatestCommitSkeleton,
-} from '~/components/LatestCommit';
+import {BrandName} from '~/components/BrandName';
+import {LatestCommitCard} from '~/components/LatestCommit';
 import {redirectIfHandleIsLocalized} from '~/lib/redirect';
 import {buildSeoMeta, buildProductJsonLd} from '~/lib/seo';
 import {fetchLatestCommits} from '~/lib/github';
@@ -358,6 +356,8 @@ function Chapter({
   media,
   backdrop,
   wideMedia,
+  bigMedia,
+  noMedia,
 }: {
   number: string;
   label: string;
@@ -373,6 +373,12 @@ function Chapter({
   /** Flip the column split so the media takes most of the width and the text
    *  column narrows — used for the wide schematic viewer. */
   wideMedia?: boolean;
+  /** Even the column split 50/50 so the media takes half the chapter width —
+   *  used for the in-the-box parts shot. */
+  bigMedia?: boolean;
+  /** Drop the media column entirely so the body spans full width — used by
+   *  chapters whose content (e.g. the spec table) needs no image. */
+  noMedia?: boolean;
 }) {
   return (
     <section
@@ -380,6 +386,8 @@ function Chapter({
       data-chapter={number}
       data-backdrop={backdrop ? '' : undefined}
       data-wide-media={wideMedia ? '' : undefined}
+      data-big-media={bigMedia ? '' : undefined}
+      data-no-media={noMedia ? '' : undefined}
     >
       {backdrop ? <div className="chapter-backdrop">{backdrop}</div> : null}
       <div className="chapter-index">
@@ -390,7 +398,7 @@ function Chapter({
         <h2 className="chapter-title">{title}</h2>
         {children}
       </div>
-      {backdrop ? null : (
+      {backdrop || noMedia ? null : (
         <aside className="chapter-media">
           {media ? (
             <div className="chapter-media-frame chapter-media-frame--live">
@@ -489,9 +497,6 @@ export default function Product() {
   const content = PRODUCT_CONTENT[product.handle] ?? PRODUCT_CONTENT_FALLBACK;
   const hasHeroCopy = Boolean(content.hero.line1);
   const chapterNums = computeChapterNumbers(content);
-  const commitSkeletonCount = content.bundle
-    ? content.bundle.components.length
-    : 1;
 
   // Comparison-ladder state for product lines (OpenRX/OpenESC). The
   // editorial `variants` map is the tier source of truth; the active tier
@@ -544,10 +549,29 @@ export default function Product() {
     }
     return [...set];
   }, [content]);
+  // Every tier's board SVG, so BoardArt can warm them all and a tier toggle
+  // swaps in instantly instead of refetching + flashing blank.
+  const boardArtSrcs = useMemo(() => {
+    const set = new Set<string>();
+    if (content.teardown?.boardArt) set.add(content.teardown.boardArt.src);
+    for (const v of Object.values(content.variants ?? {})) {
+      if (v.boardArt) set.add(v.boardArt.src);
+    }
+    return [...set];
+  }, [content]);
   // The schematic viewer follows the same board as the layer viewer — its
   // sheets live at /schematics/<board-handle>/ (same handle as the board art).
   const schematicHandle =
     activeBoardArt?.src.match(/\/boards\/([^/]+)\//)?.[1] ?? null;
+  // Every tier's schematic handle (derived from its board src), so the viewer
+  // can warm sibling manifests + sheets and a tier toggle swaps in instantly.
+  const schematicHandles = useMemo(
+    () =>
+      boardArtSrcs
+        .map((s) => s.match(/\/boards\/([^/]+)\//)?.[1])
+        .filter((h): h is string => Boolean(h)),
+    [boardArtSrcs],
+  );
 
   // Compact buy bar (line products, desktop): the in-hero ladder + add-to-cart
   // scroll past normally; once the in-hero selector passes under the header a
@@ -710,7 +734,9 @@ export default function Product() {
             </h1>
           ) : (
             <h1 className="product-hero-headline">
-              <span>{title}</span>
+              <span>
+                <BrandName>{title}</BrandName>
+              </span>
             </h1>
           )}
           {content.hero.lead ? (
@@ -802,12 +828,14 @@ export default function Product() {
           }
           media={
             !frameViewer && activeBoardArt ? (
+              // No key: keep the component mounted across tier switches so it
+              // swaps between warmed boards instantly (no remount, no refetch,
+              // no blank frame). `srcs` lets it prefetch every tier up front.
               <BoardArt
-                // Remount on src change so the scroll-reveal animation and
-                // Top/Bottom toggle reset cleanly when the tier swaps boards.
-                key={activeBoardArt.src}
                 src={activeBoardArt.src}
+                srcs={boardArtSrcs}
                 inspectUrl={activeBoardArt.inspectUrl}
+                layerFns={activeBoardArt.layers}
                 handle={product.handle}
               />
             ) : undefined
@@ -848,20 +876,17 @@ export default function Product() {
         wideMedia={!!schematicHandle}
         media={
           schematicHandle ? (
+            // No key: keep the viewer mounted across tier switches so it swaps
+            // between warmed manifests + sheets instantly instead of remounting
+            // and refetching. `handles` lets it preload every tier up front.
             <SchematicViewer
-              key={schematicHandle}
               handle={schematicHandle}
+              handles={schematicHandles}
               inspectUrl={activeBoardArt?.inspectUrl}
             />
           ) : undefined
         }
       >
-        <p className="chapter-body">
-          The schematic, PCB, BOM and 3D STEP are on GitHub under CERN-OHL-S v2.
-          Read them, fork them, ship a variant — the license is the contract.
-          What you buy here is the production run: EU manufacturing, CE / EMC,
-          QC, packaging, support. That pays for the next design.
-        </p>
         <div className="open-source-cards">
           {content.bundle ? (
             content.bundle.components.map((c) => {
@@ -923,27 +948,18 @@ export default function Product() {
               Strong reciprocal — share your changes
             </p>
           </a>
+          {/* The latest commit rides in the same row as the resource cards —
+              streams in as a 4th card once the deferred GitHub fetch lands. */}
+          <Suspense fallback={null}>
+            <Await resolve={latestCommits} errorElement={null}>
+              {(commits) =>
+                (commits ?? []).map((c) => (
+                  <LatestCommitCard key={c.sha + c.repoUrl} commit={c} />
+                ))
+              }
+            </Await>
+          </Suspense>
         </div>
-        <Suspense
-          fallback={
-            <>
-              <p className="chapter-subhead">Live from the repo</p>
-              <LatestCommitSkeleton count={commitSkeletonCount} />
-            </>
-          }
-        >
-          <Await resolve={latestCommits} errorElement={null}>
-            {(commits) => {
-              if (!commits || commits.length === 0) return null;
-              return (
-                <>
-                  <p className="chapter-subhead">Live from the repo</p>
-                  <LatestCommitGrid commits={commits} />
-                </>
-              );
-            }}
-          </Await>
-        </Suspense>
       </Chapter>
 
       {/* === Chapter: In the box (always) === */}
@@ -952,6 +968,7 @@ export default function Product() {
         <Chapter
           number={chapterNums.inTheBox}
           label="In the box"
+          bigMedia
           title={
             content.bundle ? (
               <>
@@ -976,8 +993,8 @@ export default function Product() {
             </p>
           ) : (
             <p className="chapter-body">
-              No stock photo of an open box. Here is the actual parts list.
-              Anything missing from a build, say so — we&apos;ll ship it.
+              Here is the actual parts list. Anything missing from a build,
+              say so — we&apos;ll ship it.
             </p>
           )}
           {mergedBox.length > 0 ? (
@@ -1038,7 +1055,11 @@ export default function Product() {
           media={
             content.firmware.logo ? (
               <img
-                className="firmware-logo"
+                className={
+                  content.firmware.logoDark
+                    ? 'firmware-logo firmware-logo--tile'
+                    : 'firmware-logo'
+                }
                 src={content.firmware.logo}
                 alt={`${content.firmware.project} logo`}
                 loading="lazy"
@@ -1060,6 +1081,7 @@ export default function Product() {
           number={chapterNums.specs}
           label="Datasheet"
           title="Every spec, in one table."
+          noMedia
         >
           <dl className="spec-table">
             {mergedSpecs.map(([k, v]) => (

@@ -44,6 +44,10 @@ export function FirmwareSplit({
     amount: CONTRIBUTION_EUR.toFixed(2),
     currencyCode: 'EUR',
   };
+  const totalData: MoneyV2 = {
+    amount: amount.toFixed(2),
+    currencyCode: 'EUR',
+  };
 
   const boardAmountText = EUR_FORMATTER.format(boardAmountRaw);
   const contributionText = EUR_FORMATTER.format(CONTRIBUTION_EUR);
@@ -59,6 +63,12 @@ export function FirmwareSplit({
         </span>
         <span className="firmware-split-contrib">
           <Money data={contributionData} />
+        </span>
+        <span className="firmware-split-eq" aria-hidden="true">
+          =
+        </span>
+        <span className="firmware-split-total">
+          <Money data={totalData} />
         </span>
       </div>
       <p className="firmware-split-tagline">

@@ -21,15 +21,15 @@ interface HeaderProps {
 type Viewport = 'desktop' | 'mobile';
 
 // Category links jump straight to the current PDP for each family.
-// "Accessories" opens the catalog browse page pre-filtered to the
-// Accessory category (productType=Accessory).
+// Accessories no longer get a dedicated link here — they live (with
+// everything else) on the aggregated All Products page, reachable via the
+// "All Products" CTA on the right, filterable by category there.
 const CATEGORY_LINKS: Array<{label: string; to: string}> = [
   {label: 'FC', to: '/products/openfc-lite'},
   {label: 'ESC', to: '/products/openesc'},
   {label: 'Stack', to: '/products/openstack'},
   {label: 'RX', to: '/products/openrx'},
   {label: 'Frame', to: '/products/openframe'},
-  {label: 'Accessories', to: '/collections/all?type=Accessory'},
 ];
 
 export function Header({
@@ -221,14 +221,14 @@ function HeaderCtas({
         prefetch="viewport"
         to="/collections/all"
         className={({isActive}) =>
-          `font-mono text-[12px] uppercase tracking-[0.15em] transition-colors hidden md:block ${
+          `font-mono text-[12px] uppercase tracking-[0.15em] transition-colors hidden md:block whitespace-nowrap ${
             isActive
               ? 'text-[var(--color-text)]'
               : 'text-[var(--color-text-muted)] hover:text-[var(--color-text)]'
           }`
         }
       >
-        Catalog
+        All Products
       </NavLink>
       <NavLink
         prefetch="viewport"

@@ -1,46 +1,25 @@
 import type {Route} from './+types/collections.all';
+import {useMemo} from 'react';
 import {useLoaderData, useSearchParams} from 'react-router';
-import {ProductItem, type ProductModelChip} from '~/components/ProductItem';
+import type {MoneyV2} from '@shopify/hydrogen/storefront-api-types';
+import {ProductItem} from '~/components/ProductItem';
 import type {CollectionItemFragment} from 'storefrontapi.generated';
 import {buildSeoMeta} from '~/lib/seo';
-import {CategoryChips} from '~/components/CategoryChips';
 import {EmptyState} from '~/components/EmptyState';
 import {PRODUCT_CONTENT} from '~/lib/product-content';
-
-/**
- * The models of a product line, from the editorial source of truth
- * (`product-content.ts`) — the same map the PDP ladder reads. Returns the
- * line's tiers as browse-card chips, in editorial order. Empty for single
- * products, bundles, and accessories (no `Model` axis).
- */
-function modelChipsFor(handle: string): ProductModelChip[] {
-  const content = PRODUCT_CONTENT[handle];
-  if (!content?.optionAxis || !content.variants) return [];
-  return Object.entries(content.variants).map(([value, v]) => ({
-    value,
-    axis: content.optionAxis!,
-    comingSoon: v.comingSoon,
-  }));
-}
-
-/** Editorial one-liner (the PDP hero lead) for the feature-card layout. */
-function leadFor(handle: string): string | undefined {
-  return PRODUCT_CONTENT[handle]?.hero.lead || undefined;
-}
 
 export const meta: Route.MetaFunction = () =>
   buildSeoMeta({
     title: 'All Products',
     description:
-      'Browse the full OpenDrone catalog by category — open source flight controllers, ESCs, receivers, frames, bundles, and accessories.',
+      'Browse every OpenDrone product in one place — open source flight controllers, ESCs, receivers, frames, bundles, and accessories. Filter by category and sort by price or newest.',
     type: 'product',
   });
 
 /**
- * Category order + display headings for the browse page. The `type` strings
- * are the Shopify `productType` values set by scripts/shopify-infra/04 + 05;
- * `heading` is the section/chip label. Products whose type isn't listed fall
- * into a trailing "Other" section so nothing is silently dropped.
+ * Display heading + sidebar order for each Shopify `productType` (set by
+ * scripts/shopify-infra/04 + 05). Types not listed fall into a trailing
+ * "Other" bucket so nothing is silently dropped from the filter rail.
  */
 const CATEGORY_ORDER: Array<{type: string; heading: string}> = [
   {type: 'Flight Controller', heading: 'Flight Controllers'},
@@ -51,111 +30,306 @@ const CATEGORY_ORDER: Array<{type: string; heading: string}> = [
   {type: 'Accessory', heading: 'Accessories'},
 ];
 
+/** Sort options for the toolbar dropdown. `newest` is the default and matches
+ *  the loader's CREATED_AT-desc fetch order, so it needs no client re-sort. */
+const SORT_OPTIONS: Array<{value: string; label: string}> = [
+  {value: 'newest', label: 'Newest'},
+  {value: 'price-asc', label: 'Price: low to high'},
+  {value: 'price-desc', label: 'Price: high to low'},
+  {value: 'name-asc', label: 'Name: A–Z'},
+  {value: 'name-desc', label: 'Name: Z–A'},
+];
+
+/** Products created within this window get a "NEW" badge. */
+const NEW_WINDOW_MS = 1000 * 60 * 60 * 24 * 30;
+
 export async function loader(args: Route.LoaderArgs) {
   const criticalData = await loadCriticalData(args);
   return {...criticalData};
 }
 
 async function loadCriticalData({context}: Route.LoaderArgs) {
-  // The catalog is small; fetch it whole and group/filter client-side so the
-  // page reads as a browse hub (no pagination across category sections).
+  // The catalog is small; fetch it whole (newest first) with variants, then
+  // expand/filter/sort client-side from the URL so the page is one shareable
+  // browse hub that lists every model on its own card.
   const {products} = await context.storefront.query(CATALOG_QUERY, {
     variables: {first: 100},
     // Catalog content changes rarely — cache long instead of the 1s default.
     cache: context.storefront.CacheLong(),
   });
-  return {products: products.nodes};
+  // Server timestamp for the NEW badge, so SSR and first client render agree.
+  return {products: products.nodes, now: Date.now()};
+}
+
+type CatalogProduct = CollectionItemFragment;
+
+/** One browse card — a single product, or one model/tier of a product line. */
+type Card = {
+  key: string;
+  product: CatalogProduct;
+  title: string;
+  to: string;
+  price: MoneyV2;
+  onSale: boolean;
+  createdAt?: string | null;
+  /** A product line whose every tier is still coming soon — shown as a
+   *  greyed, non-clickable teaser rather than a buyable card. */
+  comingSoon?: boolean;
+};
+
+const num = (m?: MoneyV2 | null) => (m ? parseFloat(m.amount) || 0 : 0);
+
+const productOnSale = (p: CatalogProduct) => {
+  const compare = p.compareAtPriceRange?.minVariantPrice?.amount;
+  return compare != null && parseFloat(compare) > num(p.priceRange.minVariantPrice);
+};
+
+/** The Shopify variant carrying a given option value (e.g. Model = "Gemini"),
+ *  so a tier card shows its real price/sale even though the tiers themselves
+ *  come from the editorial source of truth. */
+function variantFor(p: CatalogProduct, axis: string, value: string) {
+  return p.variants?.nodes.find((v) =>
+    v.selectedOptions.some((o) => o.name === axis && o.value === value),
+  );
+}
+
+/**
+ * Join a product title with a tier value without stuttering — "OpenFC Lite" +
+ * "20×20" → "OpenFC Lite 20×20", while "OpenRX" + "Gemini" → "OpenRX Gemini"
+ * and "OpenFC Lite" + "Lite" → "OpenFC Lite" (drops the repeated word).
+ */
+function joinTitle(title: string, value: string): string {
+  const tWords = title.split(/\s+/);
+  const vWords = value.split(/\s+/);
+  let i = 0;
+  while (
+    i < vWords.length &&
+    tWords.length > 0 &&
+    tWords[tWords.length - 1].toLowerCase() === vWords[i].toLowerCase()
+  ) {
+    tWords.pop();
+    i++;
+  }
+  const rest = vWords.slice(i).join(' ');
+  return rest ? `${title} ${rest}` : title;
 }
 
 export default function Collection() {
-  const {products} = useLoaderData<typeof loader>();
-  const [searchParams] = useSearchParams();
+  const {products, now} = useLoaderData<typeof loader>();
+  const [searchParams, setSearchParams] = useSearchParams();
   const activeType = searchParams.get('type');
+  const onlySale = searchParams.get('sale') === '1';
+  const sort = searchParams.get('sort') || 'newest';
 
-  // Group products into the fixed category order; collect any leftovers.
-  const byType = new Map<string, CollectionItemFragment[]>();
-  for (const p of products) {
-    const key = p.productType || 'Other';
-    if (!byType.has(key)) byType.set(key, []);
-    byType.get(key)!.push(p);
-  }
+  // Expand each product into one card per purchasable model (skipping
+  // coming-soon tiers); single products / bundles / accessories get one card.
+  // Products arrive newest-first, so card order is newest-first by default.
+  const cards = useMemo<Card[]>(() => {
+    const out: Card[] = [];
+    for (const p of products) {
+      const content = PRODUCT_CONTENT[p.handle];
+      const axis = content?.optionAxis;
+      const allTiers =
+        axis && content?.variants ? Object.entries(content.variants) : [];
+      const liveTiers = allTiers.filter(([, v]) => !v.comingSoon);
+      if (axis && liveTiers.length > 0) {
+        for (const [value] of liveTiers) {
+          const sv = variantFor(p, axis, value);
+          const price = sv?.price ?? p.priceRange.minVariantPrice;
+          out.push({
+            key: `${p.id}:${value}`,
+            product: p,
+            title: joinTitle(p.title, value),
+            to: `/products/${p.handle}?${encodeURIComponent(axis)}=${encodeURIComponent(value)}`,
+            price,
+            onSale: sv?.compareAtPrice
+              ? num(sv.compareAtPrice) > num(price)
+              : productOnSale(p),
+            createdAt: p.createdAt,
+          });
+        }
+      } else {
+        // A line whose every tier is still coming soon (e.g. OpenFC) is an
+        // unreleased teaser — show it greyed and non-clickable, not buyable.
+        const comingSoon = allTiers.length > 0;
+        out.push({
+          key: p.id,
+          product: p,
+          title: p.title,
+          to: `/products/${p.handle}`,
+          price: p.priceRange.minVariantPrice,
+          onSale: comingSoon ? false : productOnSale(p),
+          createdAt: p.createdAt,
+          comingSoon,
+        });
+      }
+    }
+    return out;
+  }, [products]);
 
-  const ordered: Array<{type: string; heading: string; items: CollectionItemFragment[]}> = [];
-  for (const {type, heading} of CATEGORY_ORDER) {
-    const items = byType.get(type);
-    if (items?.length) ordered.push({type, heading, items});
-    byType.delete(type);
-  }
-  // Trailing "Other" — any product whose type isn't in CATEGORY_ORDER.
-  for (const [type, items] of byType) {
-    if (items.length) ordered.push({type, heading: type === 'Other' ? 'Other' : type, items});
-  }
+  // Categories present in the catalog, in editorial order then any leftovers.
+  const categories = useMemo(() => {
+    const present = new Set(products.map((p) => p.productType || 'Other'));
+    const out = CATEGORY_ORDER.filter((c) => present.has(c.type)).map((c) => ({
+      value: c.type,
+      label: c.heading,
+    }));
+    for (const type of present) {
+      if (!CATEGORY_ORDER.some((c) => c.type === type)) {
+        out.push({value: type, label: type === 'Other' ? 'Other' : type});
+      }
+    }
+    return out;
+  }, [products]);
 
-  const chips = ordered.map(({type, heading}) => ({value: type, label: heading}));
-  const sections = activeType
-    ? ordered.filter((s) => s.type === activeType)
-    : ordered;
+  const anyOnSale = useMemo(() => cards.some((c) => c.onSale), [cards]);
+
+  // Filter, then sort. `newest` keeps the loader's fetch order.
+  const visible = useMemo(() => {
+    let list = cards;
+    if (activeType)
+      list = list.filter((c) => (c.product.productType || 'Other') === activeType);
+    if (onlySale) list = list.filter((c) => c.onSale);
+    const sorted = [...list];
+    switch (sort) {
+      case 'price-asc':
+        sorted.sort((a, b) => num(a.price) - num(b.price));
+        break;
+      case 'price-desc':
+        sorted.sort((a, b) => num(b.price) - num(a.price));
+        break;
+      case 'name-asc':
+        sorted.sort((a, b) => a.title.localeCompare(b.title));
+        break;
+      case 'name-desc':
+        sorted.sort((a, b) => b.title.localeCompare(a.title));
+        break;
+      default:
+        break; // newest — already CREATED_AT desc from the loader
+    }
+    return sorted;
+  }, [cards, activeType, onlySale, sort]);
+
+  const setParam = (key: string, value: string | null) => {
+    const next = new URLSearchParams(searchParams);
+    if (value === null) next.delete(key);
+    else next.set(key, value);
+    ['cursor', 'direction'].forEach((k) => next.delete(k));
+    setSearchParams(next, {preventScrollReset: true});
+  };
+
+  const filterLink = (label: string, active: boolean, onClick: () => void) => (
+    <li>
+      <button
+        type="button"
+        className={`catalog-filter${active ? ' is-active' : ''}`}
+        aria-pressed={active}
+        onClick={onClick}
+      >
+        {label}
+      </button>
+    </li>
+  );
 
   const hasProducts = products.length > 0;
+  const isNew = (createdAt?: string | null) =>
+    createdAt ? now - Date.parse(createdAt) < NEW_WINDOW_MS : false;
 
   return (
     <div className="collection page-shell">
       <header className="page-header collection-header">
-        <p className="page-eyebrow">Shop · Catalog</p>
+        <p className="page-eyebrow">Shop</p>
         <h1 className="page-title">All Products</h1>
       </header>
 
-      {hasProducts && <CategoryChips categories={chips} />}
+      {hasProducts ? (
+        <div className="catalog-layout">
+          {/* Left filter rail — category single-select + an on-sale toggle. */}
+          <aside className="catalog-sidebar" aria-label="Filter products">
+            <div className="catalog-filter-group">
+              <h2 className="catalog-filter-head">Categories</h2>
+              <ul className="catalog-filter-list">
+                {filterLink('All products', !activeType && !onlySale, () => {
+                  const next = new URLSearchParams(searchParams);
+                  next.delete('type');
+                  next.delete('sale');
+                  setSearchParams(next, {preventScrollReset: true});
+                })}
+                {anyOnSale &&
+                  filterLink('On sale', onlySale, () =>
+                    setParam('sale', onlySale ? null : '1'),
+                  )}
+                {categories.map((c) =>
+                  filterLink(c.label, activeType === c.value, () =>
+                    setParam('type', activeType === c.value ? null : c.value),
+                  ),
+                )}
+              </ul>
+            </div>
+          </aside>
 
-      {sections.length > 0 ? (
-        sections.map(({type, heading, items}) => (
-          <section className="catalog-category" key={type}>
-            <h2 className="catalog-category-title">{heading}</h2>
-            {items.length === 1 ? (
-              // Single-product category: a wide feature card fills the rail
-              // instead of leaving one capped card with empty tracks beside it.
-              <ProductItem
-                product={items[0]}
-                loading="eager"
-                feature
-                lead={leadFor(items[0].handle)}
-                models={modelChipsFor(items[0].handle)}
-              />
-            ) : (
+          {/* Main column — toolbar (count + sort) above the product grid. */}
+          <div className="catalog-main">
+            <div className="catalog-toolbar">
+              <p className="catalog-count">
+                {visible.length} {visible.length === 1 ? 'product' : 'products'}
+              </p>
+              <label className="collection-sort catalog-sort">
+                <span className="collection-sort-label">Sort</span>
+                <select
+                  value={sort}
+                  onChange={(e) =>
+                    setParam('sort', e.target.value === 'newest' ? null : e.target.value)
+                  }
+                >
+                  {SORT_OPTIONS.map((o) => (
+                    <option key={o.value} value={o.value}>
+                      {o.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
+
+            {visible.length > 0 ? (
               <div className="products-grid">
-                {items.map((product, index) => (
+                {visible.map((card, index) => (
                   <ProductItem
-                    key={product.id}
-                    product={product}
+                    key={card.key}
+                    product={card.product}
+                    to={card.to}
+                    title={card.title}
+                    priceOverride={card.price}
                     loading={index < 8 ? 'eager' : undefined}
-                    models={modelChipsFor(product.handle)}
+                    isNew={isNew(card.createdAt)}
+                    onSale={card.onSale}
+                    comingSoon={card.comingSoon}
                   />
                 ))}
               </div>
+            ) : (
+              <EmptyState
+                title="Nothing matches those filters"
+                description="Try another category or clear the filters."
+                ctaLabel="Show all"
+                ctaTo="/collections/all"
+              />
             )}
-          </section>
-        ))
+          </div>
+        </div>
       ) : (
         <EmptyState
-          title={activeType ? `No ${activeType} products yet` : 'Catalog is being stocked'}
-          description={
-            activeType
-              ? 'Try another category or browse everything.'
-              : 'Products are not yet listed. Follow along on GitHub for hardware progress.'
-          }
-          ctaLabel={activeType ? 'Show all' : undefined}
-          ctaTo={activeType ? '/collections/all' : undefined}
+          title="Catalog is being stocked"
+          description="Products are not yet listed. Follow along on GitHub for hardware progress."
           secondary={
-            activeType ? undefined : (
-              <a
-                href="https://github.com/incutec-hw"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="hero-cta-secondary"
-              >
-                GitHub
-              </a>
-            )
+            <a
+              href="https://github.com/incutec-hw"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hero-cta-secondary"
+            >
+              GitHub
+            </a>
           }
         />
       )}
@@ -173,6 +347,7 @@ const COLLECTION_ITEM_FRAGMENT = `#graphql
     handle
     title
     productType
+    createdAt
     featuredImage {
       id
       altText
@@ -186,6 +361,27 @@ const COLLECTION_ITEM_FRAGMENT = `#graphql
       }
       maxVariantPrice {
         ...MoneyCollectionItem
+      }
+    }
+    compareAtPriceRange {
+      minVariantPrice {
+        ...MoneyCollectionItem
+      }
+    }
+    variants(first: 50) {
+      nodes {
+        id
+        availableForSale
+        selectedOptions {
+          name
+          value
+        }
+        price {
+          ...MoneyCollectionItem
+        }
+        compareAtPrice {
+          ...MoneyCollectionItem
+        }
       }
     }
   }

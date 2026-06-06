@@ -153,7 +153,7 @@ export default function AccountWelcome() {
         >
           Join the Discord →
         </a>
-        <Link className="account-welcome-link" to="/collections/all">
+        <Link prefetch="viewport" className="account-welcome-link" to="/collections/all">
           Browse the catalog →
         </Link>
       </aside>

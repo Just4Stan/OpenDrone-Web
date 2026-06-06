@@ -82,7 +82,7 @@ export default function NewsletterPost() {
     <article className="page-shell">
       <div className="rn-post-page">
         <div className="rn-post-crumb">
-          <Link to="/newsletter">Newsletter</Link>
+          <Link prefetch="viewport" to="/newsletter">Newsletter</Link>
           <span className="rn-sep">/</span>
           <span>{article.handle}</span>
         </div>

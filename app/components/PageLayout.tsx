@@ -62,12 +62,14 @@ export function PageLayout({
         <main id="main-content" className="site-main">
           {children}
         </main>
-        <Footer
-          header={header}
-          publicStoreDomain={publicStoreDomain}
-          company={company}
-          turnstileSiteKey={turnstileSiteKey ?? null}
-        />
+        {!isHomepage && (
+          <Footer
+            header={header}
+            publicStoreDomain={publicStoreDomain}
+            company={company}
+            turnstileSiteKey={turnstileSiteKey ?? null}
+          />
+        )}
       </div>
     </Aside.Provider>
   );
@@ -150,7 +152,7 @@ function SearchAside() {
                   term={term}
                 />
                 {term.current && total ? (
-                  <Link
+                  <Link prefetch="viewport"
                     onClick={closeSearch}
                     to={buildSearchPath(term.current)}
                   >
