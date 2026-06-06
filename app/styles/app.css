@@ -32,25 +32,19 @@
   font-display: swap;
   src: url("/fonts/jetbrains-mono-Bold.woff2") format("woff2");
 }
-/* Tokio — the brand face. Used ONLY for product/brand name tokens
-   (OpenStack, OpenFC, OpenESC, OpenFrame, …) via the <BrandName>
-   component, never for body copy. Two static faces; the weight range is
-   declared wide so a name sitting inside a bold heading maps to the same
-   file instead of synthesising. Retune the range once the real metrics
-   are known. font-display: swap → the display fallback paints first. */
+/* Tokyo — the brand face (Graphicxell). Used ONLY for product/brand name
+   tokens (OpenStack, OpenFC, OpenESC, OpenFrame, …), never for body copy.
+   A condensed all-caps display face shipping a single upright Regular, so
+   the "lean" is a synthetic oblique applied in .brand (font-style: italic
+   over the upright face). The weight range is declared wide so a name
+   inside a bold heading maps to the same file instead of falling back.
+   font-display: swap → the display fallback paints first. */
 @font-face {
-  font-family: "Tokio";
+  font-family: "Tokyo";
   font-style: normal;
   font-weight: 400 800;
   font-display: swap;
-  src: url("/fonts/tokio-regular.woff2") format("woff2");
-}
-@font-face {
-  font-family: "Tokio";
-  font-style: italic;
-  font-weight: 400 800;
-  font-display: swap;
-  src: url("/fonts/tokio-italic.woff2") format("woff2");
+  src: url("/fonts/tokyo-regular.woff2") format("woff2");
 }
 
 @theme {
@@ -92,8 +86,8 @@
     "Cascadia Mono", "Segoe UI Mono", Consolas, monospace;
 
   /* Brand face for product/brand name tokens. Falls back to the display
-     stack until Tokio loads, so names never disappear. */
-  --font-brand: "Tokio", var(--font-display);
+     stack until Tokyo loads, so names never disappear. */
+  --font-brand: "Tokyo", var(--font-display);
 
   /* Type scale. Capped so display doesn't balloon on ultrawide. */
   --fs-xs: 0.6875rem;     /* 11px */
@@ -238,13 +232,14 @@ html.light .schematic-sheet {
 }
 
 /* Brand name token — the <BrandName> component wraps each OpenX product
-   name in this span so it leans into Tokio wherever a product is named
-   (cards, hero, cart, search, orders, bundles). Inherits color/size from
-   its context; only the face + the lean change. */
+   name in this span so it leans into Tokyo. Tokyo is a condensed all-caps
+   display face: legible only at heading scale, so it's reserved for the
+   PDP product H1 (here) and the home hero labels (.hero-component-label a
+   below). Small UI keeps the normal font. Tokyo ships upright only, so the
+   gentle lean is a synthetic oblique. */
 .brand {
   font-family: var(--font-brand);
-  font-style: italic;
-  font-synthesis: none;
+  font-style: oblique 6deg;
 }
 
 /* Base styles. Set font-family explicitly to Inter — Tailwind v4
@@ -307,11 +302,13 @@ html {
 
 .hero-component-label a {
   display: inline-block;
-  font-family: var(--font-display);
+  /* Tokyo brand face — display scale, gentle synthetic lean. */
+  font-family: var(--font-brand);
+  font-style: oblique 6deg;
   font-weight: 700;
   font-size: clamp(1.75rem, 3.2vw, 3.25rem);
   line-height: 1;
-  letter-spacing: -0.02em;
+  letter-spacing: 0;
   color: var(--color-text);
   white-space: nowrap;
   transition: color 0.15s ease;
@@ -2265,6 +2262,22 @@ button.reset {
   color: #fff;
 }
 
+.product-card-badge.is-soon {
+  background: var(--color-bg-elevated);
+  color: var(--color-text-muted);
+  border: 1px solid var(--color-border);
+}
+
+/* Unreleased product — greyed, non-interactive (no link, no hover lift). */
+.product-card.is-comingsoon {
+  opacity: 0.55;
+  cursor: default;
+  pointer-events: none;
+}
+.product-card.is-comingsoon .product-card-media img {
+  filter: grayscale(0.6);
+}
+
 /* ============================================
    Product page — editorial layout
    ============================================ */
@@ -3031,6 +3044,10 @@ button.reset {
   .chapter[data-big-media] {
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   }
+  /* No media column — body spans the full chapter width (e.g. spec table). */
+  .chapter[data-no-media] {
+    grid-template-columns: minmax(0, 1fr);
+  }
   .chapter-index {
     grid-column: 1 / -1;
   }
@@ -3152,12 +3169,36 @@ button.reset {
   content: none;
 }
 
-/* Firmware project wordmark in the "The €1" chapter media slot. */
+/* Brand/firmware mark in the "In the box" chapter media slot. The AM32 mark
+ * is white-on-transparent, so it sits on a fixed dark tile in BOTH themes
+ * (like the Discord embed) rather than the theme card background. */
+/* Firmware project wordmark in the "The €1" chapter media slot. The slot is a
+ * narrow right column, so the mark is blown up ~2× and pulled left into the
+ * gutter (biased left so it doesn't overflow the page edge) — same trick as
+ * .board-art. The media frame is overflow: visible, so the bleed shows. */
 .firmware-logo {
-  width: 100%;
-  max-width: 320px;
+  width: 200%;
+  max-width: none;
   height: auto;
   display: block;
+  margin-left: -70%;
+  margin-right: -30%;
+}
+
+/* White-on-transparent marks (e.g. AM32) sit on a fixed dark tile that reads
+ * in both themes (like the Discord embed), rather than the transparent blow-up
+ * a multi-colour mark uses. Contained square, modestly enlarged + pulled left
+ * to share the betaflight mark's position. */
+.firmware-logo--tile {
+  width: 130%;
+  margin-left: -30%;
+  margin-right: 0;
+  aspect-ratio: 1 / 1;
+  object-fit: contain;
+  background: #14171c;
+  border: 1px solid var(--color-border);
+  border-radius: var(--r-lg);
+  padding: clamp(1.5rem, 6%, 3.5rem);
 }
 
 .board-art {

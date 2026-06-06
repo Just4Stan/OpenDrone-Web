@@ -6,7 +6,6 @@ import type {
   CollectionItemFragment,
 } from 'storefrontapi.generated';
 import {useVariantUrl} from '~/lib/variants';
-import {BrandName} from '~/components/BrandName';
 
 /**
  * One model/tier of a product line, surfaced as a chip under the card on
@@ -32,6 +31,7 @@ export function ProductItem({
   to,
   title,
   priceOverride,
+  comingSoon,
 }: {
   product: CollectionItemFragment | ProductItemFragment;
   loading?: 'eager' | 'lazy';
@@ -54,6 +54,9 @@ export function ProductItem({
   title?: string;
   /** Price override — the specific variant's price for per-variant cards. */
   priceOverride?: MoneyV2;
+  /** Unreleased product — renders greyed and non-clickable with a "Coming
+   *  soon" badge instead of a link (nothing to buy or open yet). */
+  comingSoon?: boolean;
 }) {
   const variantUrl = useVariantUrl(product.handle);
   const url = to ?? variantUrl;
@@ -62,12 +65,13 @@ export function ProductItem({
   const image = product.featuredImage;
   const hasModels = Boolean(models && models.length > 0);
 
-  const badge =
-    onSale ? (
-      <span className="product-card-badge is-sale">Sale</span>
-    ) : isNew ? (
-      <span className="product-card-badge is-new">New</span>
-    ) : null;
+  const badge = comingSoon ? (
+    <span className="product-card-badge is-soon">Coming soon</span>
+  ) : onSale ? (
+    <span className="product-card-badge is-sale">Sale</span>
+  ) : isNew ? (
+    <span className="product-card-badge is-new">New</span>
+  ) : null;
 
   const modelStrip = hasModels ? (
     <div className="product-card-models">
@@ -126,9 +130,7 @@ export function ProductItem({
             to={variantUrl}
           >
             <div className="product-card-row">
-              <h2 className="product-card-title">
-                <BrandName>{product.title}</BrandName>
-              </h2>
+              <h2 className="product-card-title">{product.title}</h2>
               <span className="product-card-price">
                 <Money data={product.priceRange.minVariantPrice} />
               </span>
@@ -160,9 +162,7 @@ export function ProductItem({
       )}
       <div className="product-card-body">
         <div className="product-card-row">
-          <h2 className="product-card-title">
-            <BrandName>{displayTitle}</BrandName>
-          </h2>
+          <h2 className="product-card-title">{displayTitle}</h2>
           <span className="product-card-price">
             <Money data={price} />
           </span>
@@ -173,6 +173,15 @@ export function ProductItem({
       </div>
     </>
   );
+
+  // Unreleased — a non-interactive tile (nothing to open or buy yet).
+  if (comingSoon) {
+    return (
+      <div className="product-card is-comingsoon" aria-disabled="true">
+        {inner}
+      </div>
+    );
+  }
 
   // Plain card — a single link wrapping the whole tile.
   if (!hasModels) {

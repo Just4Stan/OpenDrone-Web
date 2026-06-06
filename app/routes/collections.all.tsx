@@ -72,6 +72,9 @@ type Card = {
   price: MoneyV2;
   onSale: boolean;
   createdAt?: string | null;
+  /** A product line whose every tier is still coming soon — shown as a
+   *  greyed, non-clickable teaser rather than a buyable card. */
+  comingSoon?: boolean;
 };
 
 const num = (m?: MoneyV2 | null) => (m ? parseFloat(m.amount) || 0 : 0);
@@ -126,12 +129,11 @@ export default function Collection() {
     for (const p of products) {
       const content = PRODUCT_CONTENT[p.handle];
       const axis = content?.optionAxis;
-      const tiers =
-        axis && content?.variants
-          ? Object.entries(content.variants).filter(([, v]) => !v.comingSoon)
-          : [];
-      if (axis && tiers.length > 0) {
-        for (const [value] of tiers) {
+      const allTiers =
+        axis && content?.variants ? Object.entries(content.variants) : [];
+      const liveTiers = allTiers.filter(([, v]) => !v.comingSoon);
+      if (axis && liveTiers.length > 0) {
+        for (const [value] of liveTiers) {
           const sv = variantFor(p, axis, value);
           const price = sv?.price ?? p.priceRange.minVariantPrice;
           out.push({
@@ -147,14 +149,18 @@ export default function Collection() {
           });
         }
       } else {
+        // A line whose every tier is still coming soon (e.g. OpenFC) is an
+        // unreleased teaser — show it greyed and non-clickable, not buyable.
+        const comingSoon = allTiers.length > 0;
         out.push({
           key: p.id,
           product: p,
           title: p.title,
           to: `/products/${p.handle}`,
           price: p.priceRange.minVariantPrice,
-          onSale: productOnSale(p),
+          onSale: comingSoon ? false : productOnSale(p),
           createdAt: p.createdAt,
+          comingSoon,
         });
       }
     }
@@ -297,6 +303,7 @@ export default function Collection() {
                     loading={index < 8 ? 'eager' : undefined}
                     isNew={isNew(card.createdAt)}
                     onSale={card.onSale}
+                    comingSoon={card.comingSoon}
                   />
                 ))}
               </div>
