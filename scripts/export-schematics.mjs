@@ -20,7 +20,6 @@ import {
   mkdtempSync,
   readFileSync,
   writeFileSync,
-  copyFileSync,
   readdirSync,
   rmSync,
   mkdirSync,

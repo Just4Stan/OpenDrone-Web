@@ -1,10 +1,22 @@
 import {Canvas, useFrame, useThree, invalidate} from '@react-three/fiber';
 import {EffectComposer, SMAA} from '@react-three/postprocessing';
 import {useRef, useState, useEffect, useCallback} from 'react';
+import {useNavigate} from 'react-router';
 import type {Group} from 'three';
 import * as THREE from 'three';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
+import {MeshoptDecoder} from 'three/addons/libs/meshopt_decoder.module.js';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
+
+// The hero GLBs use EXT_meshopt_compression (the Onshape assemblies are
+// decimated to a few MB/size this way). MeshoptDecoder decodes on the main
+// thread — unlike DRACOLoader, which spins up a blob: Web Worker that
+// Hydrogen's CSP (worker-src) blocks, causing the loader to hang silently.
+function getGLTFLoader(): GLTFLoader {
+  const loader = new GLTFLoader();
+  loader.setMeshoptDecoder(MeshoptDecoder);
+  return loader;
+}
 
 function useScrollProgress() {
   const progressRef = useRef(0);
@@ -25,7 +37,7 @@ function loadModel(
   onProgress?: (loaded: number, total: number) => void,
 ): Promise<THREE.Group> {
   return new Promise((resolve, reject) => {
-    new GLTFLoader().load(
+    getGLTFLoader().load(
       url,
       (gltf) => resolve(gltf.scene),
       (event) => {
@@ -278,22 +290,67 @@ export type LabelRefs = {
   esc: React.RefObject<HTMLDivElement | null>;
 };
 
+// A fully-processed airframe ready to drop into the scene: the three merged
+// groups, their material lists (for hover/opacity animation), and the carbon
+// textures to dispose with it.
+type BuiltModel = {
+  frame: THREE.Group;
+  esc: THREE.Group;
+  fc: THREE.Group;
+  frameMats: THREE.Material[];
+  escMats: THREE.Material[];
+  fcMats: THREE.Material[];
+  carbonMaps: {
+    colorMap: THREE.Texture;
+    detailMap: THREE.Texture;
+    armColorMap: THREE.Texture;
+    armDetailMap: THREE.Texture;
+  };
+};
+
+function disposeBuiltModel(m: BuiltModel) {
+  m.carbonMaps.colorMap.dispose();
+  m.carbonMaps.detailMap.dispose();
+  m.carbonMaps.armColorMap.dispose();
+  m.carbonMaps.armDetailMap.dispose();
+  for (const g of [m.frame, m.esc, m.fc]) {
+    g.parent?.remove(g);
+    g.traverse((obj: any) => {
+      if (obj.isMesh) {
+        obj.geometry?.dispose();
+        const mats = Array.isArray(obj.material) ? obj.material : [obj.material];
+        mats.forEach((mat: any) => mat?.dispose());
+      }
+    });
+  }
+}
+
 function DroneAssembly({
   scrollRef,
   onReady,
   onProgress,
   labelRefs,
   loadDelayMs,
+  size: airframeSize,
+  onNavigate,
 }: {
   scrollRef: React.RefObject<number>;
   onReady?: () => void;
   onProgress?: (progress: number) => void;
   labelRefs?: LabelRefs;
+  /** Client-side navigate, threaded from HeroScene (outside the r3f Canvas,
+   *  where Router context is available). Used by the part hotspots so a click
+   *  is an instant SPA transition into the prefetched PDP rather than a full
+   *  document reload. */
+  onNavigate?: (url: string) => void;
   /** Delay the network fetch + parse + post-processing of the GLBs by this
    *  many ms so the homepage's CSS wireframe animation gets a clean main
    *  thread for its first frames. Cached visits already see ms-scale loads
    *  so the delay there is invisible. */
   loadDelayMs?: number;
+  /** Which airframe to show — '5' (5-inch) or '3' (3-inch). Each maps to a
+   *  size-specific GLB trio (frame{N}/fc{N}/esc{N}). Changing it reloads. */
+  size: '5' | '3';
 }) {
   const {camera, size} = useThree();
   const tmpVec = useRef(new THREE.Vector3()).current;
@@ -315,267 +372,313 @@ function DroneAssembly({
   const fcMats = useRef<any[]>([]);
   const hoverState = useRef({frame: 0, esc: 0, fc: 0});
   const hoverTarget = useRef({frame: 0, esc: 0, fc: 0});
+  // Per-size processed models, kept alive across toggles so switching back is
+  // instant (no re-fetch / re-decode / re-merge). The inactive size is built
+  // lazily on idle AFTER the active one is shown, so it never slows first load.
+  const modelCacheRef = useRef<Map<'5' | '3', BuiltModel>>(new Map());
+  // Cross-slide transition progress for the most recent swap (0→1). Starts at 1
+  // (settled) so the very first model doesn't animate in. On a toggle the new
+  // assembly slides in from the right while the previous one slides out to the
+  // left in `outWrapperRef`.
+  const transitionRef = useRef(1);
+  const hasDisplayedRef = useRef(false);
+  const outWrapperRef = useRef<Group>(null);
+  const prevModelRef = useRef<BuiltModel | null>(null); // currently displayed
+  const outgoingRef = useRef<BuiltModel | null>(null); // sliding out (in outWrapper)
+  const outBaseXRef = useRef(0);
+  const outBaseScaleRef = useRef(7);
+  // Flipped false on unmount so a background preload that finishes afterwards
+  // disposes its model instead of leaking it into a torn-down cache.
+  const aliveRef = useRef(true);
+
+  // Detach the outgoing model's groups from the slide-out wrapper (they return
+  // to the cache for reuse — never disposed here).
+  const finishOutgoing = useCallback(() => {
+    const og = outgoingRef.current;
+    if (og && outWrapperRef.current) {
+      for (const g of [og.frame, og.esc, og.fc]) outWrapperRef.current.remove(g);
+    }
+    outgoingRef.current = null;
+  }, []);
 
 
   useEffect(() => {
     let cancelled = false;
 
-    let carbonMaps:
-      | {
-          colorMap: THREE.Texture;
-          detailMap: THREE.Texture;
-          armColorMap: THREE.Texture;
-          armDetailMap: THREE.Texture;
-        }
-      | null = null;
-
-    // Groups that survive merging — we dispose the source scenes but
-    // keep these so the effect cleanup can drop them from the refs.
-    const mergedGroups: THREE.Group[] = [];
-
-    // Per-model byte progress. Cached responses often omit Content-Length
-    // entirely; for those models `total` stays 0 and the parent component
-    // falls back to a synthetic time-based ramp. Models with known total
-    // contribute their actual byte fraction.
-    const loaded = [0, 0, 0];
-    const total = [0, 0, 0];
-    const reportProgress = () => {
-      if (!onProgress) return;
-      // Sum bytes only across models that reported a known total. If
-      // none of the three is computable we report -1 to signal "use the
-      // time-based ramp".
-      let l = 0;
-      let t = 0;
-      let knownCount = 0;
-      for (let i = 0; i < 3; i++) {
-        if (total[i] > 0) {
-          l += loaded[i];
-          t += total[i];
-          knownCount += 1;
-        }
-      }
-      if (knownCount === 0) onProgress(-1);
-      else onProgress(Math.min(1, l / t));
-    };
-
-    // Yield to the main thread so the browser can land animation frames,
-    // paint, and process input between heavy synchronous chunks. Without
-    // these breaks the post-parse processing of all 3 GLBs runs in a
-    // single ~200-400ms block that visibly freezes the CSS wireframe
-    // animation on the homepage.
     const yieldToMain = () =>
       new Promise<void>((resolve) => setTimeout(resolve, 0));
 
-    void (async () => {
+    // Load + fully process one size's GLB trio into a BuiltModel. It never
+    // touches the scene/refs, so the result can be cached and dropped in later,
+    // or built ahead of time for the inactive size. Returns null if cancelled
+    // or on error (freeing any partial GPU resources first).
+    async function buildModel(
+      sz: '5' | '3',
+      opts: {
+        onProg?: (p: number) => void;
+        delayMs?: number;
+        shouldCancel: () => boolean;
+      },
+    ): Promise<BuiltModel | null> {
+      const {onProg, delayMs = 0, shouldCancel} = opts;
+      let carbonMaps: BuiltModel['carbonMaps'] | null = null;
+      const packs: Array<{group: THREE.Group}> = [];
+      const bail = (): null => {
+        carbonMaps?.colorMap.dispose();
+        carbonMaps?.detailMap.dispose();
+        carbonMaps?.armColorMap.dispose();
+        carbonMaps?.armDetailMap.dispose();
+        for (const p of packs)
+          p.group.traverse((o: any) => {
+            if (o.isMesh) {
+              o.geometry?.dispose();
+              (Array.isArray(o.material) ? o.material : [o.material]).forEach(
+                (m: any) => m?.dispose(),
+              );
+            }
+          });
+        return null;
+      };
       try {
-        // Hold the network fetch back until the homepage wireframe has
-        // had a clean head-start on the main thread. Skipped (loadDelayMs
-        // = 0) on cached / return visits where the GLB parse is cheap.
-        if (loadDelayMs && loadDelayMs > 0) {
-          await new Promise((r) => setTimeout(r, loadDelayMs));
-          if (cancelled) return;
+        if (delayMs > 0) {
+          await new Promise((r) => setTimeout(r, delayMs));
+          if (shouldCancel()) return null;
         }
 
+        const loaded = [0, 0, 0];
+        const total = [0, 0, 0];
+        const reportProgress = () => {
+          if (!onProg) return;
+          let l = 0, t = 0, known = 0;
+          for (let i = 0; i < 3; i++)
+            if (total[i] > 0) { l += loaded[i]; t += total[i]; known += 1; }
+          onProg(known === 0 ? -1 : Math.min(1, l / t));
+        };
         const [frameScene, escScene, fcScene] = await Promise.all([
-          loadModel('/models/frame.glb', (l, t) => {
-            loaded[0] = l;
-            total[0] = t;
-            reportProgress();
-          }),
-          loadModel('/models/esc.glb', (l, t) => {
-            loaded[1] = l;
-            total[1] = t;
-            reportProgress();
-          }),
-          loadModel('/models/fc.glb', (l, t) => {
-            loaded[2] = l;
-            total[2] = t;
-            reportProgress();
-          }),
+          loadModel(`/models/frame${sz}.glb`, (l, t) => { loaded[0] = l; total[0] = t; reportProgress(); }),
+          loadModel(`/models/esc${sz}.glb`, (l, t) => { loaded[1] = l; total[1] = t; reportProgress(); }),
+          loadModel(`/models/fc${sz}.glb`, (l, t) => { loaded[2] = l; total[2] = t; reportProgress(); }),
         ]);
-        if (cancelled) return;
+        if (shouldCancel()) return null;
+
+        // Raw Onshape geometry (metres). Fit to a ~0.124-unit frame with ONE
+        // uniform scale across the trio — display only; proportions/positions
+        // stay exactly as exported.
+        const FIT_FRAME_SIZE = 0.124;
+        const fbox = new THREE.Box3().setFromObject(frameScene);
+        const fsize = fbox.getSize(new THREE.Vector3());
+        const fit = FIT_FRAME_SIZE / Math.max(fsize.x, fsize.y, fsize.z, 1e-6);
+        for (const s of [frameScene, escScene, fcScene]) s.scale.setScalar(fit);
+        frameScene.updateMatrixWorld(true); escScene.updateMatrixWorld(true); fcScene.updateMatrixWorld(true);
 
         const box = new THREE.Box3().setFromObject(frameScene);
         const c = box.getCenter(new THREE.Vector3());
-        frameScene.position.sub(c);
-        escScene.position.sub(c);
-        fcScene.position.sub(c);
-        // Bake the recentering transform into the mesh world matrices so
-        // the merge helper picks it up.
-        frameScene.updateMatrixWorld(true);
-        escScene.updateMatrixWorld(true);
-        fcScene.updateMatrixWorld(true);
+        frameScene.position.sub(c); escScene.position.sub(c); fcScene.position.sub(c);
+        frameScene.updateMatrixWorld(true); escScene.updateMatrixWorld(true); fcScene.updateMatrixWorld(true);
 
-        await yieldToMain();
-        if (cancelled) return;
-
-        // The PCB GLBs ship with unlit materials (MeshBasic). Convert to PBR
-        // so scene lights actually shade the boards instead of letting the
-        // baked albedo show through at full brightness.
+        await yieldToMain(); if (shouldCancel()) return null;
         upgradeNonPBRMaterials(escScene);
-        await yieldToMain();
-        if (cancelled) return;
+        await yieldToMain(); if (shouldCancel()) return null;
         upgradeNonPBRMaterials(fcScene);
-        await yieldToMain();
-        if (cancelled) return;
-
-        // Collapse property-identical materials onto a shared instance. The
-        // GLB exporter creates a fresh material per mesh even when colour
-        // and map match — this dedup cuts the post-merge bucket count, so
-        // many more meshes coalesce into the same draw call.
+        await yieldToMain(); if (shouldCancel()) return null;
         dedupeMaterialsByFingerprint(escScene);
-        await yieldToMain();
-        if (cancelled) return;
+        await yieldToMain(); if (shouldCancel()) return null;
         dedupeMaterialsByFingerprint(fcScene);
-        await yieldToMain();
-        if (cancelled) return;
+        await yieldToMain(); if (shouldCancel()) return null;
 
         const baseCanvas = createCarbonFiberCanvas();
         const armCanvas = createRotatedCarbonCanvas(baseCanvas, Math.PI / 4);
         const baseMaps = createCarbonFiberTextures(baseCanvas);
         const armMaps = createCarbonFiberTextures(armCanvas);
-        carbonMaps = {
-          ...baseMaps,
-          armColorMap: armMaps.colorMap,
-          armDetailMap: armMaps.detailMap,
-        };
+        carbonMaps = {...baseMaps, armColorMap: armMaps.colorMap, armDetailMap: armMaps.detailMap};
         const {colorMap, detailMap, armColorMap, armDetailMap} = carbonMaps;
+        await yieldToMain(); if (shouldCancel()) return bail();
 
-        await yieldToMain();
-        if (cancelled) return;
-
-        // Build two frame materials — arm (rotated carbon) and body
-        // (straight carbon). Every frame mesh ends up in exactly one of
-        // these two buckets, so the entire frame renders in 2 draw calls.
-        const makeFrameMaterial = (arm: boolean) => {
-          const m = new THREE.MeshStandardMaterial({
-            color: 0xf2f2f2,
-            metalness: 0.16,
-            roughness: 0.58,
+        // Two frame materials — arm (rotated carbon) + body (straight carbon).
+        const makeFrameMaterial = (arm: boolean) =>
+          new THREE.MeshStandardMaterial({
+            color: 0xf2f2f2, metalness: 0.16, roughness: 0.58,
             map: arm ? armColorMap : colorMap,
             roughnessMap: arm ? armDetailMap : detailMap,
             bumpMap: arm ? armDetailMap : detailMap,
-            bumpScale: 0.01,
-            transparent: true,
-            opacity: 0.62,
-            // depthWrite stays true to avoid the per-frame z-sort flicker
-            // ("shimmering fire" look) when rotating the transparent frame.
-            depthWrite: true,
+            bumpScale: 0.01, transparent: true, opacity: 0.62, depthWrite: true,
+            // polygonOffset pushes the transparent frame's depth back so the
+            // near-coplanar plates/boards don't z-fight (keeps see-through carbon).
+            polygonOffset: true, polygonOffsetFactor: 2, polygonOffsetUnits: 2,
           });
-          return m;
-        };
         const frameBodyMat = makeFrameMaterial(false);
         const frameArmMat = makeFrameMaterial(true);
-
         const framePack = mergeGroupByBucket(
           frameScene,
           (mesh) => (/^arm/i.test(mesh.name ?? '') ? 'arm' : 'body'),
           (key) => (key === 'arm' ? frameArmMat : frameBodyMat),
         );
+        packs.push(framePack);
+        await yieldToMain(); if (shouldCancel()) return bail();
 
-        await yieldToMain();
-        if (cancelled) return;
-
-        // ESC + FC: keep the original materials but merge meshes that
-        // share the same material reference. This drops hundreds of draw
-        // calls without changing the visual.
+        // ESC + FC: keep original materials, merge meshes sharing a material.
         const mergeByMaterialRef = (scene: THREE.Group) => {
           const materialsByKey = new Map<string, THREE.Material>();
           return mergeGroupByBucket(
             scene,
             (mesh) => {
-              const mat = Array.isArray(mesh.material)
-                ? mesh.material[0]
-                : mesh.material;
+              const mat = Array.isArray(mesh.material) ? mesh.material[0] : mesh.material;
               if (!mat) return 'default';
               const key = mat.uuid;
               if (!materialsByKey.has(key)) materialsByKey.set(key, mat);
               return key;
             },
-            (key) =>
-              materialsByKey.get(key) ||
-              new THREE.MeshStandardMaterial({color: 0x999999}),
+            (key) => materialsByKey.get(key) || new THREE.MeshStandardMaterial({color: 0x999999}),
           );
         };
-
         const escPack = mergeByMaterialRef(escScene);
-        await yieldToMain();
-        if (cancelled) return;
+        packs.push(escPack);
+        await yieldToMain(); if (shouldCancel()) return bail();
         const fcPack = mergeByMaterialRef(fcScene);
-        await yieldToMain();
-        if (cancelled) return;
+        packs.push(fcPack);
+        await yieldToMain(); if (shouldCancel()) return bail();
 
-        frameMats.current = [frameBodyMat, frameArmMat];
-        escMats.current = Array.from(
+        const frameMatsArr: THREE.Material[] = [frameBodyMat, frameArmMat];
+        const escMatsArr = Array.from(
           new Set(escPack.group.children.map((m) => (m as THREE.Mesh).material)),
         ).filter(Boolean) as THREE.Material[];
-        fcMats.current = Array.from(
+        const fcMatsArr = Array.from(
           new Set(fcPack.group.children.map((m) => (m as THREE.Mesh).material)),
         ).filter(Boolean) as THREE.Material[];
-
-        // PCB exports from KiCad/Blender often ship with a non-zero emissive
-        // on copper/silkscreen, which makes the boards look self-lit under any
-        // scene lighting. Force-zero it so the boards only show what the
-        // spotlight actually puts on them.
-        for (const m of [...escMats.current, ...fcMats.current]) {
-          if (!m || !('emissive' in m)) continue;
-          (m as any).emissive.setHex(0x000000);
-          (m as any).emissiveIntensity = 0;
+        for (const m of [...escMatsArr, ...fcMatsArr]) {
+          if (!m) continue;
+          // Force-zero board emissive so they only show the spotlight, not self-lit.
+          if ('emissive' in m) {
+            (m as any).emissive.setHex(0x000000);
+            (m as any).emissiveIntensity = 0;
+          }
+          // The boards' gold ENIG pads are modelled exactly coplanar with the
+          // copper/soldermask beneath them. On the 5" (uncompressed source) the
+          // two surfaces share the identical z and z-fight as you rotate — a
+          // shimmer no depth-buffer precision can resolve. (The 3" survives only
+          // because its Draco source quantised the pads slightly off-plane.)
+          // Pull the gold forward in depth so it always wins the test, which is
+          // also physically correct — the pads sit on top of the board.
+          const c = (m as any).color;
+          if (c && c.r > 0.5 && c.g > 0.35 && c.b < 0.35) {
+            (m as any).polygonOffset = true;
+            (m as any).polygonOffsetFactor = -1;
+            (m as any).polygonOffsetUnits = -2;
+            (m as any).needsUpdate = true;
+          }
         }
-
-        // Shadow flags. Boards cast AND receive so their components
-        // self-shadow their own PCB surface — that's the depth cue at
-        // end-position. The frame is partly transparent (opacity 0.62–
-        // 0.9), so it only receives — transparent casters produce
-        // muddy ghost shadows in three.js's default depth path.
         const setShadowFlags = (g: THREE.Group, cast: boolean) => {
           g.traverse((obj) => {
             const mesh = obj as THREE.Mesh;
             if (!mesh.isMesh) return;
-            mesh.castShadow = cast;
-            mesh.receiveShadow = true;
+            mesh.castShadow = cast; mesh.receiveShadow = true;
           });
         };
         setShadowFlags(framePack.group, false);
         setShadowFlags(escPack.group, true);
         setShadowFlags(fcPack.group, true);
 
-        mergedGroups.push(framePack.group, escPack.group, fcPack.group);
-
-        frameRef.current?.add(framePack.group);
-        escRef.current?.add(escPack.group);
-        fcRef.current?.add(fcPack.group);
-        invalidate();
-        onReady?.();
+        return {
+          frame: framePack.group, esc: escPack.group, fc: fcPack.group,
+          frameMats: frameMatsArr, escMats: escMatsArr, fcMats: fcMatsArr,
+          carbonMaps,
+        };
       } catch (err) {
         console.error('Failed to load drone models:', err);
-        // Surface completion even on failure so the splash can release.
-        onReady?.();
+        return bail();
+      }
+    }
+
+    // Drop a built model into the scene. On a toggle, hand the previous trio to
+    // the slide-out wrapper (cached, NOT disposed) so it can exit left while the
+    // new one slides in from the right. Models are never disposed here.
+    const display = (model: BuiltModel) => {
+      const prev = prevModelRef.current;
+      const isToggle = hasDisplayedRef.current && !!prev && prev !== model;
+
+      if (isToggle && outWrapperRef.current && wrapperRef.current) {
+        finishOutgoing(); // clear any still-in-flight slide-out first
+        // Reparent the previous trio into the slide-out wrapper, frozen at the
+        // main wrapper's current transform, then it just translates left.
+        outWrapperRef.current.add(prev.frame, prev.esc, prev.fc);
+        outWrapperRef.current.position.copy(wrapperRef.current.position);
+        outWrapperRef.current.quaternion.copy(wrapperRef.current.quaternion);
+        outWrapperRef.current.scale.copy(wrapperRef.current.scale);
+        outBaseXRef.current = wrapperRef.current.position.x;
+        outBaseScaleRef.current = wrapperRef.current.scale.x;
+        outgoingRef.current = prev;
+      }
+
+      // Main wrapper now holds only the incoming trio.
+      for (const ref of [frameRef, escRef, fcRef]) {
+        while (ref.current && ref.current.children.length) {
+          ref.current.remove(ref.current.children[0]);
+        }
+      }
+      for (const g of [model.frame, model.esc, model.fc]) g.parent?.remove(g);
+      frameRef.current?.add(model.frame);
+      escRef.current?.add(model.esc);
+      fcRef.current?.add(model.fc);
+      frameMats.current = model.frameMats;
+      escMats.current = model.escMats;
+      fcMats.current = model.fcMats;
+      if (isToggle) transitionRef.current = 0;
+      hasDisplayedRef.current = true;
+      prevModelRef.current = model;
+      invalidate();
+    };
+
+    void (async () => {
+      let model: BuiltModel | null | undefined = modelCacheRef.current.get(airframeSize);
+      if (!model) {
+        model = await buildModel(airframeSize, {
+          onProg: onProgress,
+          delayMs: loadDelayMs ?? 0,
+          shouldCancel: () => cancelled,
+        });
+        if (!model) {
+          onReady?.(); // release the splash even on failure / cancel
+          return;
+        }
+        modelCacheRef.current.set(airframeSize, model);
+      }
+      if (cancelled) return;
+      display(model);
+      onReady?.();
+
+      // Build the OTHER size lazily, only once the thread is idle — scheduled
+      // AFTER the active model is shown so it never delays the initial load.
+      const other: '5' | '3' = airframeSize === '5' ? '3' : '5';
+      if (!modelCacheRef.current.has(other)) {
+        const preload = () => {
+          if (!aliveRef.current || modelCacheRef.current.has(other)) return;
+          void buildModel(other, {shouldCancel: () => !aliveRef.current}).then((m) => {
+            if (!m) return;
+            if (aliveRef.current) modelCacheRef.current.set(other, m);
+            else disposeBuiltModel(m);
+          });
+        };
+        const ric = (window as any).requestIdleCallback;
+        if (typeof ric === 'function') ric(preload, {timeout: 5000});
+        else setTimeout(preload, 1500);
       }
     })();
 
     return () => {
+      // Cancel only the in-flight build for THIS size change. Displayed models
+      // stay in the cache (and on screen) — they're disposed on unmount below.
       cancelled = true;
-      carbonMaps?.colorMap.dispose();
-      carbonMaps?.detailMap.dispose();
-      carbonMaps?.armColorMap.dispose();
-      carbonMaps?.armDetailMap.dispose();
-      // Clean up models from groups on unmount
-      [frameRef, escRef, fcRef].forEach((ref) => {
-        if (!ref.current) return;
-        while (ref.current.children.length) {
-          const child = ref.current.children[0];
-          ref.current.remove(child);
-          child.traverse((obj: any) => {
-            if (obj.isMesh) {
-              obj.geometry?.dispose();
-              const mats = Array.isArray(obj.material) ? obj.material : [obj.material];
-              mats.forEach((m: any) => m?.dispose());
-            }
-          });
-        }
-      });
-      mergedGroups.length = 0;
+    };
+  }, [airframeSize]);
+
+  // Dispose every cached model (both sizes) on unmount, and stop any in-flight
+  // background preload from repopulating the cache afterwards.
+  useEffect(() => {
+    const cache = modelCacheRef.current;
+    return () => {
+      aliveRef.current = false;
+      for (const m of cache.values()) disposeBuiltModel(m);
+      cache.clear();
     };
   }, []);
 
@@ -654,6 +757,42 @@ function DroneAssembly({
 
     // Scale — small enough to fit all 3 on screen
     wrapperRef.current.scale.setScalar(THREE.MathUtils.lerp(7, 8, flyOut));
+
+    // Rest lift — at the top of the hero (pre-scroll) the assembly otherwise
+    // sits low in frame; raise it so the stack reads centered. Eases back to 0
+    // as the explode begins so the side-by-side layout stays vertically centred.
+    const restLift = 1 - smoothstep(0, 0.3, p);
+    wrapperRef.current.position.y = restLift * 0.07;
+
+    // Cross-slide — on a size toggle the incoming assembly slides in from the
+    // right while the outgoing one (frozen in outWrapperRef) slides out to the
+    // left. To keep it from feeling dizzying both assemblies also pull back
+    // (zoom out) toward the middle of the swap, and the horizontal motion uses
+    // an ease-in-out so it starts and stops gently. Applied on top of the
+    // scroll transforms (absolute each frame), so x/scale just reset when idle.
+    const SLIDE = 1.3;
+    const TRANS_DUR = 0.85;
+    if (transitionRef.current < 1) {
+      transitionRef.current = Math.min(1, transitionRef.current + dt / TRANS_DUR);
+      const t = transitionRef.current;
+      // easeInOutCubic — gentle acceleration then deceleration.
+      const e = t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+      // Zoom-out dip — peaks (~0.82×) mid-swap, settles to 1 at both ends.
+      const zoom = 1 - 0.18 * Math.sin(Math.PI * t);
+      wrapperRef.current.position.x = SLIDE * (1 - e);
+      wrapperRef.current.scale.multiplyScalar(zoom);
+      if (outgoingRef.current && outWrapperRef.current) {
+        outWrapperRef.current.position.x = outBaseXRef.current - SLIDE * e;
+        outWrapperRef.current.scale.setScalar(outBaseScaleRef.current * zoom);
+      }
+      if (transitionRef.current >= 1) {
+        wrapperRef.current.position.x = 0;
+        finishOutgoing();
+      }
+      invalidate();
+    } else {
+      wrapperRef.current.position.x = 0;
+    }
 
     // Frame — becomes more solid during fly-out
     frameRef.current.position.set(
@@ -771,9 +910,12 @@ function DroneAssembly({
 
   const handleClick = useCallback((url: string) => {
     if (!dragMoved.current && isInteractive()) {
-      window.location.href = url;
+      // Client-side nav into the prefetched PDP — instant. Falls back to a
+      // hard load only if no navigate was threaded in.
+      if (onNavigate) onNavigate(url);
+      else window.location.href = url;
     }
-  }, [isInteractive]);
+  }, [isInteractive, onNavigate]);
 
   const hover = useCallback((key: 'frame' | 'esc' | 'fc', value: boolean) => {
     if (!isInteractive()) return;
@@ -783,26 +925,30 @@ function DroneAssembly({
   }, [isInteractive]);
 
   return (
-    <group ref={wrapperRef} scale={7} rotation={[0.45, 0, 0.05]} onPointerDown={onDown}>
-      <group
-        ref={frameRef}
-        onPointerOver={() => hover('frame', true)}
-        onPointerOut={() => hover('frame', false)}
-        onClick={() => handleClick('/products/openframe')}
-      />
-      <group
-        ref={escRef}
-        onPointerOver={() => hover('esc', true)}
-        onPointerOut={() => hover('esc', false)}
-        onClick={() => handleClick('/products/openesc')}
-      />
-      <group
-        ref={fcRef}
-        onPointerOver={() => hover('fc', true)}
-        onPointerOut={() => hover('fc', false)}
-        onClick={() => handleClick('/products/openfc')}
-      />
-    </group>
+    <>
+      <group ref={wrapperRef} scale={7} rotation={[0.45, 0, 0.05]} onPointerDown={onDown}>
+        <group
+          ref={frameRef}
+          onPointerOver={() => hover('frame', true)}
+          onPointerOut={() => hover('frame', false)}
+          onClick={() => handleClick('/products/openframe')}
+        />
+        <group
+          ref={escRef}
+          onPointerOver={() => hover('esc', true)}
+          onPointerOut={() => hover('esc', false)}
+          onClick={() => handleClick('/products/openesc')}
+        />
+        <group
+          ref={fcRef}
+          onPointerOver={() => hover('fc', true)}
+          onPointerOut={() => hover('fc', false)}
+          onClick={() => handleClick('/products/openfc')}
+        />
+      </group>
+      {/* Holds the previous assembly while it slides out on a size toggle. */}
+      <group ref={outWrapperRef} />
+    </>
   );
 }
 
@@ -897,8 +1043,8 @@ function SceneLights({scrollRef}: {scrollRef: React.RefObject<number>}) {
         intensity={32}
         color="#ffe8cc"
         castShadow
-        shadow-mapSize-width={2048}
-        shadow-mapSize-height={2048}
+        shadow-mapSize-width={1024}
+        shadow-mapSize-height={1024}
         shadow-camera-near={1.5}
         shadow-camera-far={4.5}
         shadow-bias={-0.0003}
@@ -945,15 +1091,18 @@ export function HeroScene({
   onProgress,
   labelRefs,
   loadDelayMs,
+  size = '5',
 }: {
   onReady?: () => void;
   onProgress?: (progress: number) => void;
   labelRefs?: LabelRefs;
   loadDelayMs?: number;
+  size?: '5' | '3';
 } = {}) {
   const [mounted, setMounted] = useState(false);
   const [active, setActive] = useState(true);
   const [perf, setPerf] = useState<PerfSample | null>(null);
+  const navigate = useNavigate();
   const scrollRef = useScrollProgress();
   useEffect(() => { setMounted(true); }, []);
 
@@ -997,7 +1146,13 @@ export function HeroScene({
   return (
     <div className="absolute inset-0" role="img" aria-label="3D interactive drone assembly viewer">
       <Canvas
-        camera={{position: [0, 0.15, 0.7], fov: 40}}
+        // near/far kept tight around the drone (~0.7–1.5 units away, ~1 unit
+        // across). The three.js default far of 2000 wastes almost all depth
+        // precision on empty space, which makes near-coplanar surfaces — the
+        // gold FC pads on the board — z-fight when you rotate the model. A
+        // 200:1 range fixes it. (Worst on 5": its tighter fit-scale puts the
+        // pad/board gap right at the precision limit.)
+        camera={{position: [0, 0.15, 0.7], fov: 40, near: 0.1, far: 20}}
         style={{background: 'transparent'}}
         shadows="soft"
         frameloop="demand"
@@ -1020,6 +1175,15 @@ export function HeroScene({
         }}
         onCreated={({camera, gl}) => {
           camera.lookAt(0, 0, 0);
+          // Tighten the depth range HERE — r3f bakes the `camera` prop's
+          // near/far at creation and doesn't reliably re-apply them, so set
+          // them on the live camera. The drone sits ~0.7–1.5 units away and is
+          // ~1 unit across; a 200:1 range (vs the default 20000:1) restores the
+          // depth precision the near-coplanar FC gold pads need to stop z-fighting.
+          const cam = camera as THREE.PerspectiveCamera;
+          cam.near = 0.1;
+          cam.far = 20;
+          cam.updateProjectionMatrix();
           // Exposure pulled down so the spotlight key doesn't push the
           // pastel-green PCB albedo into pure white.
           gl.toneMappingExposure = 0.78;
@@ -1034,6 +1198,8 @@ export function HeroScene({
           onProgress={onProgress}
           labelRefs={labelRefs}
           loadDelayMs={loadDelayMs}
+          size={size}
+          onNavigate={(url) => void navigate(url)}
         />
         <EffectComposer multisampling={0} enableNormalPass={false}>
           <SMAA />

@@ -37,6 +37,8 @@ type Sheet = {slug: string; label: string; html: string};
  */
 export function BoardArt({src, handle, inspectUrl}: BoardArtProps) {
   const ref = useRef<HTMLDivElement | null>(null);
+  const bodyRef = useRef<HTMLDivElement | null>(null);
+  const railRef = useRef<HTMLDivElement | null>(null);
   const [raw, setRaw] = useState<string | null>(null);
   const [revealed, setRevealed] = useState(false);
   const [failed, setFailed] = useState(false);
@@ -106,6 +108,47 @@ export function BoardArt({src, handle, inspectUrl}: BoardArtProps) {
     if (sheets.length && active >= sheets.length) setActive(0);
   }, [sheets, active]);
 
+  // Park the rail against the board's actual left outline (not the box centre):
+  // the floated/scaled active sheet bleeds past its slot, so we measure where
+  // the PCB edge really lands and nudge the rail to sit a margin to its left.
+  // Re-runs on resize so it tracks the board across aspect ratios. The active
+  // sheet's settled left edge is the same for every layer, so we don't key it
+  // on `active` (which would measure mid-float-animation).
+  useEffect(() => {
+    const rail = railRef.current;
+    const body = bodyRef.current;
+    if (!rail || !body) return;
+    const MARGIN = 22; // breathing room between the rail and the PCB outline
+    const place = () => {
+      // Below the breakpoint the rail is a top bar — leave it untransformed.
+      if (!window.matchMedia('(min-width: 1025px)').matches) {
+        rail.style.transform = '';
+        return;
+      }
+      const pcb = body.querySelector(
+        '.board-sheet.is-active svg',
+      ) as SVGElement | null;
+      if (!pcb) return;
+      rail.style.transform = '';
+      const railRight = rail.getBoundingClientRect().right;
+      const pcbLeft = pcb.getBoundingClientRect().left;
+      // Pull the rail left to clear the PCB; clamp the travel so it can never
+      // drift far enough left to crowd the teardown text.
+      const shift = Math.max(-48, Math.min(64, pcbLeft - MARGIN - railRight));
+      rail.style.transform = `translateX(${shift}px)`;
+    };
+    const raf = requestAnimationFrame(place);
+    window.addEventListener('resize', place);
+    return () => {
+      cancelAnimationFrame(raf);
+      window.removeEventListener('resize', place);
+    };
+  }, [sheets, revealed]);
+
+  // Step through the stack, clamped to its ends (used by chevrons / keys / wheel).
+  const step = (delta: number) =>
+    setActive((i) => Math.min(sheets.length - 1, Math.max(0, i + delta)));
+
   return (
     <div
       ref={ref}
@@ -113,20 +156,70 @@ export function BoardArt({src, handle, inspectUrl}: BoardArtProps) {
       data-board={handle}
     >
       {sheets.length ? (
-        <>
-          <div className="board-folder-tabs" role="group" aria-label="Copper layer">
-            {sheets.map((s, i) => (
-              <button
-                type="button"
-                key={s.slug}
-                className={i === active ? 'is-active' : undefined}
-                aria-pressed={i === active}
-                onClick={() => setActive(i)}
-              >
-                {s.label}
-              </button>
-            ))}
+        <div className="board-folder-body" ref={bodyRef}>
+          {/* Roving keyboard-nav group: arrows/wheel step the layer stack.
+              The interactive controls (buttons) live inside; the group itself
+              is focusable to capture arrow/wheel nav. */}
+          {/* eslint-disable jsx-a11y/no-noninteractive-element-interactions, jsx-a11y/no-noninteractive-tabindex */}
+          <div
+            className="board-folder-rail"
+            ref={railRef}
+            role="group"
+            aria-label="Copper layer"
+            tabIndex={0}
+            onKeyDown={(e) => {
+              if (e.key === 'ArrowDown' || e.key === 'ArrowRight') {
+                e.preventDefault();
+                step(1);
+              } else if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') {
+                e.preventDefault();
+                step(-1);
+              }
+            }}
+            onWheel={(e) => {
+              if (Math.abs(e.deltaY) < 2) return;
+              step(e.deltaY > 0 ? 1 : -1);
+            }}
+          >
+            <span className="board-folder-rail-head">
+              Layer
+              <span className="board-folder-rail-count">
+                {active + 1}/{sheets.length}
+              </span>
+            </span>
+            <button
+              type="button"
+              className="board-folder-step"
+              aria-label="Previous layer (up)"
+              disabled={active === 0}
+              onClick={() => step(-1)}
+            >
+              ▲
+            </button>
+            <div className="board-folder-tabs">
+              {sheets.map((s, i) => (
+                <button
+                  type="button"
+                  key={s.slug}
+                  className={i === active ? 'is-active' : undefined}
+                  aria-pressed={i === active}
+                  onClick={() => setActive(i)}
+                >
+                  {s.label}
+                </button>
+              ))}
+            </div>
+            <button
+              type="button"
+              className="board-folder-step"
+              aria-label="Next layer (down)"
+              disabled={active === sheets.length - 1}
+              onClick={() => step(1)}
+            >
+              ▼
+            </button>
           </div>
+          {/* eslint-enable jsx-a11y/no-noninteractive-element-interactions, jsx-a11y/no-noninteractive-tabindex */}
           <div className="board-folder-stack">
             {sheets.map((s, i) => (
               <button
@@ -142,7 +235,7 @@ export function BoardArt({src, handle, inspectUrl}: BoardArtProps) {
               />
             ))}
           </div>
-        </>
+        </div>
       ) : null}
       {failed ? (
         <p className="board-art-fallback">

@@ -19,24 +19,23 @@ downloads: [] (none published yet)
 optionAxis: Model
 ```
 
+Notes: github and repuUrl is the same?
 ## Hero
 
 - **family:** 4-in-1 ESC
-- **hero_line1:** An ESC
-- **hero_line2_italic:** is not
-- **hero_line3:** a miracle.
+- **hero_line1:** An ESC (or 4)
 
 ### prose: hero_lead
 
-Four half-bridges, a gate driver, a microcontroller running AM32, and a current-sense shunt. That is the list. Open schematic, open layout, open BOM — €1 of every order forwarded to the AM32 maintainers, tracked publicly.
+6 mosfets per motor, 2 for each phase. Driven by a gate driver, controlled by a microcontroller. Duplicate that 4 times et voila, 'An ESC'.
 
 ## Teardown
 
-- **teardown_title:** Four chips. One sheet, used four times.
+- **teardown_title:** Isn't it beautiful? 
 
 ### prose: teardown_body
 
-The schematic is split into a main sheet (power, current sensing, 8-pin connector) and one sub-sheet reused for each of the four channels. Each channel carries the AT32F421 running AM32, the NSG2065Q 3-phase gate driver, and six SP40N03GNJ MOSFETs wired as three half-bridges. Back-EMF feedback handles sensorless commutation.
+ESC have to carry a lot of current so optimized power routing matters. You can see it right here or check the interactive KiCAD viewer. Each AT32 microcontroller is running AM32. A large array of low-ESR, high capacitance ceramic capacitors feed the fast switching time of the MOSFET's to reduce voltage spikes. TVS diodes clamp any spikes that still get too high.
 
 ### Teardown pins (label text)
 
@@ -44,49 +43,46 @@ Ref glyphs (`①②③④`) and the `cost` ×N counts are structural; edit only 
 part text. Counts shown for context.
 
 ```do-not-edit
-pin_1.cost: ×4   pin_2.cost: ×4   pin_3.cost: ×24   pin_4.cost: ×4
+pin_1.cost: ×4   pin_2.cost: ×4   pin_3.cost: ×24   pin_4.cost: ×1
 ```
 
-- **pin_1:** AT32F421G8U7 — 120 MHz M4 MCU
-- **pin_2:** NSG2065Q gate driver (FD6288Q-compatible)
-- **pin_3:** SP40N03GNJ MOSFET, 40 V / 2.9 mΩ
+- **pin_1:** AT32F421 MCU
+- **pin_2:** NSG2065Q gate driver
+- **pin_3:** Low Rds(on) MOSFET
 - **pin_4:** INA186A3 + 0.2 mΩ shunt
+  Notes:   add pin 5: Low ESR Caps
 
 ## In the box
 
 Edit the item and note text; `qty` codes are in the do-not-edit fence.
 
+Note: fix the qty with my changes
+
 ```do-not-edit
 qty (in order): 1×, 2×, 1×, 4×, 1×
 ```
 
-- **box_1_item:** OpenESC 4-in-1 board
-- **box_1_note:** model selected at checkout
-- **box_2_item:** 8-pin Betaflight signal cable
-- **box_2_note:** JST SM08B-SRSS-TB, pre-crimped, 8 cm
-- **box_3_item:** XT60 battery pigtail with 470 µF low-ESR cap
-- **box_4_item:** M3 rubber soft-mount grommets
-- **box_5_item:** Build card
-- **box_5_note:** batch ID, QC initials, firmware flash command, GitHub rev
+- **box_1_item:** OpenESC
+- **box_2_item:** 8-pin JST cable
+- **box_3_item:** XT battery pigtai
+- **box_4_item:** M3 grommets
+- **box_5_item:** Low-ESR Electrolytic Capacitor
 
 ## Downloads
 
-No download assets are published yet (`downloads: []`). Source carries a
-TODO to publish schematic.pdf, bom.csv, gerbers.zip, manual.pdf,
-wiring.pdf, flashing.md to the OpenESC_20X20 repo and re-add the cards.
-Nothing editable here until they ship.
+Notes: There are no downloads, they are on github. Only a manual and maybe later a youtube video on how to flash and change settings for optimal performance.
 
 ## Specs
 
 `[label, value]` pairs. Both label and value are editable copy.
 
 - **spec_firmware:** AM32
-- **spec_protocol:** DShot (Betaflight)
+- **spec_protocol:** DShot, PWM...
 - **spec_input:** 3–6S LiPo (11.1–25.2 V)
 - **spec_mcu:** AT32F421G8U7, 120 MHz
 - **spec_gate_driver:** NSG2065Q (QFN-24)
 - **spec_current_sense:** INA186A3 + 0.2 mΩ shunt
-- **spec_power_rails:** LMR51420 buck + TLV76733 LDO
+- **spec_power_rails:** LMR54406DBVR buck + TLV76733 LDO
 - **spec_connector:** JST SM08B-SRSS-TB (8-pin BF)
 - **spec_license:** CERN-OHL-S-2.0
 

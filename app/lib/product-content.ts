@@ -99,6 +99,11 @@ export type VariantContent = {
    *  `scripts/export-board-art.mjs <kicad_pcb> <handle>` — one handle per
    *  physical PCB (see scripts/boards.config.json). */
   boardArt?: {src: string; inspectUrl?: string};
+  /** Per-tier exploded 3D model (same shape as `teardown.frameViewer`). The
+   *  CAD analogue of `boardArt` for frames: the 3" and 5" tiers each carry
+   *  their own GLB so the teardown viewer explodes the selected model. Tiers
+   *  without their own model fall back to `teardown.frameViewer`. */
+  frameViewer?: {src: string; inspectUrl?: string};
   /** When true the tier renders as a greyed, non-selectable "Coming soon"
    *  card — a designed model that is not yet a purchasable Shopify variant.
    *  It shows on the ladder for line completeness but can't be added to cart. */
@@ -621,8 +626,11 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
         {ref: '③', part: 'Bottom plate — 30.5 × 30.5 stack pattern'},
         {ref: '④', part: 'M3 aluminium standoffs + hardware kit'},
       ],
+      // Fallback model when a tier defines none. Both tiers (3"/5") override
+      // this, so it also seeds the viewer's preload set — point it at a current
+      // model (the 5") rather than the stale generic frame.glb.
       frameViewer: {
-        src: '/models/frame.glb',
+        src: '/models/frame5.glb',
       },
     },
     inTheBox: [
@@ -658,6 +666,7 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
           ['Stack mounts', '20×20 · 25×25 · 30×30'],
           ['Motor mount', '16×16 · 19×19 (M3)'],
         ],
+        frameViewer: {src: '/models/frame5.glb'},
       },
       '3" Freestyle': {
         tagline: '',
@@ -665,6 +674,7 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
           ['Stack mounts', '20×20 · 25×25'],
           ['Motor mount', '9×9 · 12×12 (M2)'],
         ],
+        frameViewer: {src: '/models/frame3.glb'},
       },
     },
   },

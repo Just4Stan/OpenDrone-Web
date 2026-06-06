@@ -143,23 +143,21 @@ Lite.boardArt: /boards/openfc-lite/board.svg
 20×20.comingSoon: true   30×30.comingSoon: true
 ```
 
-### Variant: Lite
+### Variant: 20×20
 
-- **variant_lite_tagline:** OpenFC Lite — the cost-down board (formerly OpenFC-ECO).
-- **variant_lite_highlight_1_label:** Model
-- **variant_lite_highlight_1_value:** Lite
-
-### Variant: 20×20 (Coming soon)
-
-- **variant_20x20_tagline:** OpenFC on the 20×20 / 30.5 mount — the compact stack size.
+- **variant_20x20_tagline:** OpenFC Lite on the 20×20 / 30.5 mount — the compact stack size.
 - **variant_20x20_highlight_1_label:** Mount
 - **variant_20x20_highlight_1_value:** 20×20 · 30.5 holes
+- **variant_20x20_highlight_2_label:** Model
+- **variant_20x20_highlight_2_value:** Lite
 
-### Variant: 30×30 (Coming soon)
+### Variant: 30×30
 
-- **variant_30x30_tagline:** OpenFC on the 30×30 mount.
+- **variant_30x30_tagline:** OpenFC Lite on the 30×30 mount.
 - **variant_30x30_highlight_1_label:** Mount
 - **variant_30x30_highlight_1_value:** 30×30
+- **variant_30x30_highlight_2_label:** Model
+- **variant_30x30_highlight_2_value:** Lite
 
 ## Pair CTA (cross-sell)
 
