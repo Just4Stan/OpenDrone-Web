@@ -823,6 +823,43 @@ a:hover {
   margin-left: clamp(1rem, 2vw, 2.5rem);
 }
 
+/* FC + ESC bracketed as the pair that makes a Stack. Corner brackets are drawn
+   with absolutely-positioned pseudo-elements so they add no layout height (the
+   active-link underline stays clean). The pair's own gap is a touch tighter
+   than the row gap so the two read as one unit. */
+.site-header-cat-pair {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: clamp(0.5rem, 1vw, 0.85rem);
+  padding: 0 0.62rem;
+}
+.site-header-cat-pair::before,
+.site-header-cat-pair::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  width: 5px;
+  height: 1.15em;
+  transform: translateY(-50%);
+  border: 1px solid color-mix(in srgb, var(--color-gold) 38%, transparent);
+  pointer-events: none;
+}
+.site-header-cat-pair::before {
+  left: 0;
+  border-right: none;
+}
+.site-header-cat-pair::after {
+  right: 0;
+  border-left: none;
+}
+/* Divider between the FC/ESC/Stack trio and the standalone RX / Frame. */
+.site-header-cat-divider {
+  width: 1px;
+  height: 1.1em;
+  background: color-mix(in srgb, var(--color-gold) 24%, transparent);
+}
+
 .site-header-categories a {
   font-family: var(--font-mono);
   font-size: var(--fs-sm);
