@@ -356,6 +356,7 @@ function Chapter({
   children,
   media,
   backdrop,
+  wideMedia,
 }: {
   number: string;
   label: string;
@@ -368,12 +369,16 @@ function Chapter({
    *  content (the exploded frame viewer). When set, the right-hand media
    *  slot is dropped and the text sits on top of this layer. */
   backdrop?: React.ReactNode;
+  /** Flip the column split so the media takes most of the width and the text
+   *  column narrows — used for the wide schematic viewer. */
+  wideMedia?: boolean;
 }) {
   return (
     <section
       className="chapter"
       data-chapter={number}
       data-backdrop={backdrop ? '' : undefined}
+      data-wide-media={wideMedia ? '' : undefined}
     >
       {backdrop ? <div className="chapter-backdrop">{backdrop}</div> : null}
       <div className="chapter-index">
@@ -802,6 +807,7 @@ export default function Product() {
         number={chapterNums.openSource}
         label="Open for learning"
         title="Published so you can study it. Produced so you don't have to."
+        wideMedia={!!schematicHandle}
         media={
           schematicHandle ? (
             <SchematicViewer
