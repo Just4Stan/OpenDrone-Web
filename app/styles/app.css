@@ -233,6 +233,42 @@ html {
   color: var(--color-gold);
 }
 
+/* Airframe size toggle — segmented 5"/3" switch centered above the hero. */
+.hero-size-toggle {
+  display: inline-flex;
+  gap: 2px;
+  padding: 3px;
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  background: rgba(13, 13, 16, 0.55);
+  backdrop-filter: blur(8px);
+}
+
+.hero-size-toggle__btn {
+  min-width: 3rem;
+  padding: 0.4rem 0.9rem;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--color-text-muted);
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  transition: color 0.2s ease, background 0.2s ease;
+}
+
+.hero-size-toggle__btn:hover {
+  color: var(--color-text);
+}
+
+.hero-size-toggle__btn.is-active {
+  background: var(--color-gold);
+  color: var(--color-bg);
+  box-shadow: 0 0 16px rgba(184, 146, 46, 0.45);
+}
+
 /* Hero wordmark — single element that animates from centered-large
    (splash) to bottom-left-small (settled). Anchor is the settled
    position; the splash state is a transform that moves+scales it up
@@ -2818,62 +2854,95 @@ button.reset {
 .board-art.is-revealed {
   opacity: 1;
 }
-.board-art-canvas {
-  display: block;
+/* === Folder stack: every copper layer is a sheet; the selected one floats up
+   like pulling a file out of a folder. === */
+.board-folder {
+  overflow: visible;
 }
-.board-art-canvas svg {
+.board-folder-stack {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  /* Headroom above the stack so the floated-up sheet isn't clipped. */
+  margin-top: 12%;
+  perspective: 1700px;
+  transform-style: preserve-3d;
+}
+.board-sheet {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  padding: 0;
+  border: none;
+  background: none;
+  cursor: pointer;
+  transform-origin: 50% 50%;
+  /* Fan the stack back-and-down by physical layer index (--depth). */
+  transform: translateY(calc(var(--depth) * 7%)) translateX(calc(var(--depth) * 2.4%))
+    translateZ(calc(var(--depth) * -70px)) scale(calc(1 - var(--depth) * 0.035));
+  z-index: calc(30 - var(--depth));
+  transition: transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1), filter 0.45s ease;
+  /* Dim + flatten the un-selected sheets so the active one reads clearly. */
+  filter: brightness(0.55) saturate(0.7)
+    drop-shadow(0 14px 22px rgba(0, 0, 0, 0.55));
+}
+.board-sheet:hover {
+  filter: brightness(0.78) saturate(0.85)
+    drop-shadow(0 14px 22px rgba(0, 0, 0, 0.55));
+}
+.board-sheet.is-active {
+  transform: translateY(-11%) translateZ(120px) scale(1.05);
+  z-index: 50;
+  filter: saturate(0.95) contrast(1.05)
+    drop-shadow(0 0 26px color-mix(in srgb, var(--color-gold) 38%, transparent))
+    drop-shadow(0 26px 34px rgba(0, 0, 0, 0.55));
+}
+.board-sheet-svg {
   display: block;
   width: 100%;
-  height: auto;
-  /* Warm-gold glow on the dark page bg pushes the board art toward
-   * "engineering blueprint" rather than KiCad screenshot. The asset is
-   * shipped with its native KiCad palette; this filter colour-shifts
-   * without rewriting the SVG. */
-  filter: drop-shadow(0 0 22px color-mix(in srgb, var(--color-gold) 35%, transparent))
-    saturate(0.85) contrast(1.05);
+  height: 100%;
 }
-/* Top/bottom toggle — only one copper side renders at a time. */
-.board-art[data-side='top'] .board-art-canvas svg [id='layer-b-copper'] {
-  display: none;
+/* The board silhouette under each layer — a faint engraved sheet edge. */
+.board-sheet-edge {
+  fill: none;
+  stroke: color-mix(in srgb, var(--color-gold) 28%, transparent);
+  stroke-width: 0.35;
+  vector-effect: non-scaling-stroke;
+  opacity: 0.6;
 }
-.board-art[data-side='bottom'] .board-art-canvas svg [id='layer-copper'] {
-  display: none;
+
+/* Layer selector — file tabs under the folder. */
+.board-folder-tabs {
+  position: relative;
+  z-index: 60;
+  margin-top: 1.1rem;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 4px;
 }
-.board-art-toggle {
-  position: absolute;
-  top: 0.5rem;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 2;
-  display: inline-flex;
-  gap: 2px;
-  padding: 2px;
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--color-bg) 72%, transparent);
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
-  border: 1px solid color-mix(in srgb, var(--color-gold) 22%, transparent);
-}
-.board-art-toggle button {
+.board-folder-tabs button {
   appearance: none;
-  border: none;
-  background: transparent;
+  border: 1px solid color-mix(in srgb, var(--color-gold) 18%, transparent);
+  background: color-mix(in srgb, var(--color-bg) 70%, transparent);
   cursor: pointer;
   font-family: var(--font-mono);
   font-size: 10px;
-  letter-spacing: 0.18em;
+  letter-spacing: 0.16em;
   text-transform: uppercase;
   color: var(--color-text-dim);
-  padding: 0.3rem 0.85rem;
+  padding: 0.32rem 0.8rem;
   border-radius: 999px;
-  transition: color 0.2s, background 0.2s;
+  transition: color 0.2s, background 0.2s, border-color 0.2s;
 }
-.board-art-toggle button:hover {
+.board-folder-tabs button:hover {
   color: var(--color-text);
+  border-color: color-mix(in srgb, var(--color-gold) 40%, transparent);
 }
-.board-art-toggle button.is-active {
+.board-folder-tabs button.is-active {
   color: var(--color-bg);
   background: var(--color-gold);
+  border-color: var(--color-gold);
 }
 .board-art-inspect {
   display: inline-block;

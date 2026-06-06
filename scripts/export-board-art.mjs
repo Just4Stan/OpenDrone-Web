@@ -45,6 +45,7 @@ import {
   rmSync,
   writeFileSync,
   mkdirSync,
+  existsSync,
 } from 'node:fs';
 import {join, basename, dirname, resolve} from 'node:path';
 import {tmpdir} from 'node:os';
@@ -64,21 +65,30 @@ const KICAD_PYTHON =
 const OUTLINE_SCRIPT = resolve(here, 'board-outline.py');
 const CONFIG_PATH = resolve(here, 'boards.config.json');
 
-const LAYERS = ['Edge.Cuts', 'F.Cu', 'B.Cu'];
+// Every copper layer of a (up to) 6-layer stackup, plus the board outline.
+// Boards with fewer layers simply don't emit the missing inner files; we skip
+// them. The <BoardArt/> folder viewer renders one sheet per copper layer.
+const LAYERS = ['Edge.Cuts', 'F.Cu', 'In1.Cu', 'In2.Cu', 'In3.Cu', 'In4.Cu', 'B.Cu'];
 
 /** Map kicad-cli's output filename suffix back to the layer slug we use as `id`. */
 const FILENAME_TO_SLUG = {
   Edge_Cuts: 'edge-cuts',
-  F_Cu: 'copper',
-  B_Cu: 'b-copper',
+  F_Cu: 'f',
+  In1_Cu: 'in1',
+  In2_Cu: 'in2',
+  In3_Cu: 'in3',
+  In4_Cu: 'in4',
+  B_Cu: 'b',
 };
 
-// Paint order — first is deepest. Both copper layers ship; the Top/Bottom
-// toggle in <BoardArt /> reveals one at a time. Edge.Cuts crowns the stack.
-const STACK_ORDER = ['b-copper', 'copper', 'edge-cuts'];
+// Physical top→bottom order. The folder viewer stacks the copper sheets in this
+// order; edge-cuts is the shared board silhouette, emitted first so it sits
+// under the copper as the "sheet" shape.
+const STACK_ORDER = ['edge-cuts', 'f', 'in1', 'in2', 'in3', 'in4', 'b'];
 
-// Bottom-side copper is mirrored so it reads as a flip-to-back view.
-const MIRROR_SLUGS = new Set(['b-copper']);
+// All copper is shown from the top now (the stack reads as looking straight
+// down through the board), so nothing is mirrored.
+const MIRROR_SLUGS = new Set();
 
 const TAU = Math.PI * 2;
 /** Max arc/bezier chord ≈ this many radians per sample — fine enough that a
@@ -394,7 +404,10 @@ function buildBoard(pcbPath, handle) {
     const perLayer = {};
     let edgeCutsRaw = null;
     for (const [suffix, slug] of Object.entries(FILENAME_TO_SLUG)) {
-      const raw = readFileSync(join(tmp, `${projectBase}-${suffix}.svg`), 'utf8');
+      // Inner-layer files are absent on <6-layer boards — skip rather than throw.
+      const file = join(tmp, `${projectBase}-${suffix}.svg`);
+      if (!existsSync(file)) continue;
+      const raw = readFileSync(file, 'utf8');
       if (slug === 'edge-cuts') edgeCutsRaw = raw;
       perLayer[slug] = layerBody(raw);
     }
