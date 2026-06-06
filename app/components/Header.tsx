@@ -60,10 +60,12 @@ export function Header({
           primaryDomainUrl={header.shop.primaryDomain.url}
           publicStoreDomain={publicStoreDomain}
         />
-        {/* Category families in segmented bubbles: FC/ESC/Stack (a Stack is just
-            an FC + ESC), RX/Frame, then All Products in its own accented bubble
-            as the route into the full catalogue. No dividers — the bubbles do
-            the grouping. CATEGORY_LINKS is ordered [FC, ESC, Stack, RX, Frame]. */}
+        {/* Category families in segmented bubbles: FC/ESC/Stack share one (a
+            Stack is just an FC + ESC), while RX and Frame are standalone
+            families so each gets its own bubble; All Products follows in its
+            own accented bubble as the route into the full catalogue. No
+            dividers — the bubbles do the grouping. CATEGORY_LINKS is ordered
+            [FC, ESC, Stack, RX, Frame]. */}
         <nav className="site-header-categories" aria-label="Product categories">
           <span className="site-header-cat-group">
             {CATEGORY_LINKS.slice(0, 3).map((cat) => (
@@ -72,13 +74,13 @@ export function Header({
               </NavLink>
             ))}
           </span>
-          <span className="site-header-cat-group">
-            {CATEGORY_LINKS.slice(3).map((cat) => (
-              <NavLink key={cat.label} prefetch="viewport" to={cat.to}>
+          {CATEGORY_LINKS.slice(3).map((cat) => (
+            <span className="site-header-cat-group" key={cat.label}>
+              <NavLink prefetch="viewport" to={cat.to}>
                 {cat.label}
               </NavLink>
-            ))}
-          </span>
+            </span>
+          ))}
           <NavLink
             prefetch="viewport"
             to="/collections/all"
