@@ -36,8 +36,8 @@ export function CartSummary({cart, layout}: CartSummaryProps) {
       </p>
       <p className="cart-summary-note">
         By completing this order you accept the Incutec{' '}
-        <Link to="/end-use">End-Use Policy</Link> and the{' '}
-        <Link to="/algemene-voorwaarden">General Terms and Conditions</Link>.
+        <Link prefetch="viewport" to="/end-use">End-Use Policy</Link> and the{' '}
+        <Link prefetch="viewport" to="/algemene-voorwaarden">General Terms and Conditions</Link>.
       </p>
     </div>
   );

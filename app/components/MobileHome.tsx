@@ -31,7 +31,7 @@ export function MobileHome({
           built in Belgium.
         </p>
         <div className="home-mobile-cta">
-          <Link to="/collections/all" className="hero-action-primary">
+          <Link prefetch="viewport" to="/collections/all" className="hero-action-primary">
             Shop
             <svg
               width="20"
@@ -80,7 +80,7 @@ export function MobileHome({
         </Await>
       </Suspense>
 
-      <Link to="/collections/all" className="home-mobile-browse">
+      <Link prefetch="viewport" to="/collections/all" className="home-mobile-browse">
         Browse the full catalogue
         <svg
           width="16"

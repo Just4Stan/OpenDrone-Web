@@ -123,14 +123,18 @@ function linearstep(edge0: number, edge1: number, x: number) {
 }
 
 // Hero scroll budget — the 3D scene + phased UI stays pinned for this many
-// screen heights. Mobile gets a much shorter spacer since thumb-scrolling
-// 8 screens to reach the footer is brutal.
-const HERO_SPACER_VH_DESKTOP = 800;
-const HERO_SPACER_VH_MOBILE = 400;
-// Scroll denominator for 0..1 progress — mobile finishes phases earlier
-// so the release-to-footer buffer still fits in a couple swipes.
-const HERO_PROGRESS_VH_DESKTOP = 4;
-const HERO_PROGRESS_VH_MOBILE = 2.5;
+// screen heights. Pinned budget (spacer − 100, for the h-screen child) is a
+// touch larger than HERO_PROGRESS_VH so progress comfortably reaches 1 and
+// the finished state holds for a brief beat before the sticky releases —
+// without the long dead-scroll tail the old 800vh spacer had.
+const HERO_SPACER_VH_DESKTOP = 220;
+const HERO_SPACER_VH_MOBILE = 220;
+// Scroll denominator for 0..1 progress — how many viewport heights of
+// scroll drive the phased animation from start to finish. One viewport
+// height means the whole sequence plays out in a single continuous scroll
+// gesture, instead of needing several wheel/trackpad flicks to get through.
+const HERO_PROGRESS_VH_DESKTOP = 1;
+const HERO_PROGRESS_VH_MOBILE = 1;
 
 // Module-scoped flag that survives across remounts of the homepage during
 // a single browser session. Hard refresh tears down the JS module and
@@ -395,8 +399,13 @@ function DesktopHome() {
   }, [splashSettled]);
 
   const heroTextOpacity = Math.max(0, 1 - scrollProgress * 4);
-  const labelOpacity = linearstep(0.65, 0.75, scrollProgress);
-  const ctaRise = linearstep(0.7, 0.85, scrollProgress);
+  // Phase timing (single 0..1 progress shared with the 3D scene). The model
+  // finishes exploding at p≈0.65 (flyOut smoothstep ends there), so labels
+  // and the CTA are sequenced AFTER that so the names don't pop in while the
+  // parts are still flying apart. Everything lands by ~0.95, leaving the tail
+  // of the scroll as a brief settled-state hold before the page ends.
+  const labelOpacity = linearstep(0.72, 0.84, scrollProgress);
+  const ctaRise = linearstep(0.84, 0.96, scrollProgress);
   const pushUp = ctaRise * 12; // vh units — how far scene/labels shift up
 
   return (
@@ -521,7 +530,7 @@ function DesktopHome() {
               aria-live="polite"
             >
               <span className="hero-load-overflow__text">loading models…</span>
-              <Link
+              <Link prefetch="viewport"
                 to="/collections/all"
                 className="hero-load-overflow__skip"
                 onClick={() => setSplashSettled(true)}
@@ -547,7 +556,7 @@ function DesktopHome() {
             className={`hero-actions${splashSettled ? ' is-visible' : ''}`}
             style={{opacity: splashSettled ? heroTextOpacity : 0}}
           >
-            <Link to="/collections/all" className="hero-action-primary">
+            <Link prefetch="viewport" to="/collections/all" className="hero-action-primary">
               Shop
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                 <line x1="5" y1="12" x2="19" y2="12" />
@@ -609,7 +618,7 @@ function DesktopHome() {
           style={{opacity: labelOpacity, transform: `translateY(-${pushUp}vh)`}}
         >
           <div ref={fcLabelRef} className="hero-component-label">
-            <Link to="/products/openfc-lite" prefetch="render">
+            <Link to="/products/openfc" prefetch="render">
               Open<span>FC</span>
             </Link>
           </div>
@@ -637,10 +646,14 @@ function DesktopHome() {
           <div
             className="flex items-center justify-center gap-5 px-6 pb-10 pt-4"
             style={{
-              background: 'linear-gradient(to top, rgba(13,13,16,0.95) 60%, rgba(13,13,16,0) 100%)',
+              // Fade the page background up behind the CTA. Theme-aware: uses
+              // the bg token (dark or light) instead of a hardcoded dark, so it
+              // doesn't show as a grey band in light mode.
+              background:
+                'linear-gradient(to top, color-mix(in srgb, var(--color-bg) 95%, transparent) 60%, transparent 100%)',
             }}
           >
-            <Link
+            <Link prefetch="viewport"
               to="/collections/all"
               className="inline-flex items-center gap-3 px-10 py-4 bg-[var(--color-gold)] text-[var(--color-on-accent)] font-mono font-bold uppercase tracking-wider rounded shadow-[0_0_24px_rgba(184,146,46,0.45)] hover:shadow-[0_0_36px_rgba(184,146,46,0.65)] hover:bg-[var(--color-gold-hover)] transition-all duration-300 pointer-events-auto"
               style={{fontSize: 'clamp(0.9rem, 1vw, 1.05rem)'}}

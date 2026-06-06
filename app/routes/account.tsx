@@ -83,16 +83,16 @@ function AccountMenu() {
 
   return (
     <nav className="account-nav" role="navigation" aria-label="Account">
-      <NavLink className="account-nav-link" to="/account/orders" style={isActiveStyle}>
+      <NavLink prefetch="viewport" className="account-nav-link" to="/account/orders" style={isActiveStyle}>
         Orders
       </NavLink>
-      <NavLink className="account-nav-link" to="/account/profile" style={isActiveStyle}>
+      <NavLink prefetch="viewport" className="account-nav-link" to="/account/profile" style={isActiveStyle}>
         Profile
       </NavLink>
-      <NavLink className="account-nav-link" to="/account/addresses" style={isActiveStyle}>
+      <NavLink prefetch="viewport" className="account-nav-link" to="/account/addresses" style={isActiveStyle}>
         Addresses
       </NavLink>
-      <NavLink className="account-nav-link" to="/account/support" style={isActiveStyle}>
+      <NavLink prefetch="viewport" className="account-nav-link" to="/account/support" style={isActiveStyle}>
         Support
       </NavLink>
       <Logout />

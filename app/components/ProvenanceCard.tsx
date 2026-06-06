@@ -10,9 +10,6 @@ export function ProvenanceCard() {
       <p className="provenance-label">Provenance</p>
       <ul className="provenance-rows">
         <li>
-          <span className="provenance-flag" aria-hidden="true">
-            🇧🇪
-          </span>
           <span className="provenance-row-label">Designed</span>
           <span className="provenance-row-value">
             Leuven, Belgium{' '}
@@ -22,9 +19,6 @@ export function ProvenanceCard() {
           </span>
         </li>
         <li>
-          <span className="provenance-flag" aria-hidden="true">
-            🇨🇳
-          </span>
           <span className="provenance-row-label">Assembled</span>
           <span className="provenance-row-value">
             Shenzhen, China{' '}
@@ -34,9 +28,6 @@ export function ProvenanceCard() {
           </span>
         </li>
         <li>
-          <span className="provenance-flag" aria-hidden="true">
-            🇪🇺
-          </span>
           <span className="provenance-row-label">Next</span>
           <span className="provenance-row-value">
             EU assembly{' '}

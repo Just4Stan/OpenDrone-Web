@@ -147,7 +147,7 @@ export default function ContactRoute() {
             </span>
             <span className="od-banner-id">— {t.bannerLastReply}</span>
           </div>
-          <Link to="/account/support" className="od-btn od-btn-primary">
+          <Link prefetch="viewport" to="/account/support" className="od-btn od-btn-primary">
             {t.bannerCta}
           </Link>
         </div>
@@ -327,7 +327,7 @@ function TicketPointerTile({
       <p className="od-tile-eyebrow">{copy.ticketEyebrow}</p>
       <h2>{title}</h2>
       <p>{lede}</p>
-      <Link to={to} className="od-btn od-btn-secondary">
+      <Link prefetch="viewport" to={to} className="od-btn od-btn-secondary">
         {cta}
       </Link>
     </div>
@@ -365,7 +365,7 @@ function DirectContactTile({
       </div>
       <div className="contact-direct-row">
         <span className="od-k">{copy.securityLabel}</span>
-        <Link to="/security" className="od-v">
+        <Link prefetch="viewport" to="/security" className="od-v">
           {copy.securityValue}
         </Link>
       </div>

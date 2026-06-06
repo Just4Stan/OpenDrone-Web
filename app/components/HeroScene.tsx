@@ -23,7 +23,7 @@ function useScrollProgress() {
   useEffect(() => {
     window.scrollTo(0, 0);
     const onScroll = () => {
-      progressRef.current = Math.min(1, Math.max(0, window.scrollY / (window.innerHeight * 3)));
+      progressRef.current = Math.min(1, Math.max(0, window.scrollY / window.innerHeight));
       invalidate();
     };
     window.addEventListener('scroll', onScroll, {passive: true});
@@ -50,73 +50,6 @@ function loadModel(
       reject,
     );
   });
-}
-
-function createCarbonFiberCanvas(size = 256) {
-  const canvas = document.createElement('canvas');
-  canvas.width = size;
-  canvas.height = size;
-  const ctx = canvas.getContext('2d')!;
-
-  // Base dark color
-  ctx.fillStyle = '#1b1b1b';
-  ctx.fillRect(0, 0, size, size);
-
-  // Weave pattern — alternating light/dark rectangles
-  const cell = size / 8;
-  for (let y = 0; y < 8; y++) {
-    for (let x = 0; x < 8; x++) {
-      const even = (x + y) % 2 === 0;
-      ctx.fillStyle = even ? '#333333' : '#202020';
-      ctx.fillRect(x * cell, y * cell, cell, cell);
-      // Subtle diagonal highlight for weave effect
-      if (even) {
-        ctx.fillStyle = 'rgba(255,255,255,0.08)';
-        ctx.fillRect(x * cell, y * cell, cell * 0.5, cell * 0.5);
-      } else {
-        ctx.fillStyle = 'rgba(255,255,255,0.035)';
-        ctx.fillRect(x * cell + cell * 0.5, y * cell + cell * 0.5, cell * 0.5, cell * 0.5);
-      }
-    }
-  }
-
-  return canvas;
-}
-
-function createRotatedCarbonCanvas(source: HTMLCanvasElement, rotation: number) {
-  const size = source.width;
-  const canvas = document.createElement('canvas');
-  canvas.width = size;
-  canvas.height = size;
-  const ctx = canvas.getContext('2d')!;
-
-  ctx.translate(size / 2, size / 2);
-  ctx.rotate(rotation);
-  ctx.scale(1.42, 1.42);
-  ctx.drawImage(source, -size / 2, -size / 2, size, size);
-
-  return canvas;
-}
-
-function createCarbonFiberTextures(canvas: HTMLCanvasElement) {
-  const colorMap = new THREE.CanvasTexture(canvas);
-  colorMap.wrapS = colorMap.wrapT = THREE.RepeatWrapping;
-  colorMap.repeat.set(2.8, 2.8);
-  colorMap.colorSpace = THREE.SRGBColorSpace;
-  colorMap.anisotropy = 4;
-
-  // Detail map (roughness + bump) wraps the same canvas. Share the
-  // underlying Source so the GPU stores one texture instead of two —
-  // three.js keys VRAM allocations by source.uuid.
-  const detailMap = new THREE.Texture();
-  detailMap.source = colorMap.source;
-  detailMap.wrapS = detailMap.wrapT = THREE.RepeatWrapping;
-  detailMap.repeat.copy(colorMap.repeat);
-  detailMap.anisotropy = 4;
-  detailMap.colorSpace = THREE.NoColorSpace;
-  detailMap.needsUpdate = true;
-
-  return {colorMap, detailMap};
 }
 
 function smoothstep(edge0: number, edge1: number, x: number) {
@@ -247,6 +180,9 @@ function mergeGroupByBucket(
     }
     if (!geom.attributes.normal) geom.computeVertexNormals();
     if (!geom.attributes.uv) {
+      // No material samples UVs (frame is a flat colour; boards are untextured),
+      // but mergeGeometries needs every primitive in a bucket to share the same
+      // attribute set — give the UV-less ones zeroed coords.
       const count = geom.attributes.position.count;
       geom.setAttribute(
         'uv',
@@ -291,8 +227,7 @@ export type LabelRefs = {
 };
 
 // A fully-processed airframe ready to drop into the scene: the three merged
-// groups, their material lists (for hover/opacity animation), and the carbon
-// textures to dispose with it.
+// groups and their material lists (for hover/opacity animation).
 type BuiltModel = {
   frame: THREE.Group;
   esc: THREE.Group;
@@ -300,19 +235,9 @@ type BuiltModel = {
   frameMats: THREE.Material[];
   escMats: THREE.Material[];
   fcMats: THREE.Material[];
-  carbonMaps: {
-    colorMap: THREE.Texture;
-    detailMap: THREE.Texture;
-    armColorMap: THREE.Texture;
-    armDetailMap: THREE.Texture;
-  };
 };
 
 function disposeBuiltModel(m: BuiltModel) {
-  m.carbonMaps.colorMap.dispose();
-  m.carbonMaps.detailMap.dispose();
-  m.carbonMaps.armColorMap.dispose();
-  m.carbonMaps.armDetailMap.dispose();
   for (const g of [m.frame, m.esc, m.fc]) {
     g.parent?.remove(g);
     g.traverse((obj: any) => {
@@ -390,6 +315,20 @@ function DroneAssembly({
   // Flipped false on unmount so a background preload that finishes afterwards
   // disposes its model instead of leaking it into a torn-down cache.
   const aliveRef = useRef(true);
+  // Light vs dark site theme (the `light` class on <html>). The frame is
+  // transparent in both, but on the light page it needs to be a touch darker +
+  // more solid so it reads instead of the pale page bleeding through.
+  const lightRef = useRef(false);
+  useEffect(() => {
+    const read = () => {
+      lightRef.current = document.documentElement.classList.contains('light');
+      invalidate();
+    };
+    read();
+    const obs = new MutationObserver(read);
+    obs.observe(document.documentElement, {attributes: true, attributeFilter: ['class']});
+    return () => obs.disconnect();
+  }, []);
 
   // Detach the outgoing model's groups from the slide-out wrapper (they return
   // to the cache for reuse — never disposed here).
@@ -421,13 +360,8 @@ function DroneAssembly({
       },
     ): Promise<BuiltModel | null> {
       const {onProg, delayMs = 0, shouldCancel} = opts;
-      let carbonMaps: BuiltModel['carbonMaps'] | null = null;
       const packs: Array<{group: THREE.Group}> = [];
       const bail = (): null => {
-        carbonMaps?.colorMap.dispose();
-        carbonMaps?.detailMap.dispose();
-        carbonMaps?.armColorMap.dispose();
-        carbonMaps?.armDetailMap.dispose();
         for (const p of packs)
           p.group.traverse((o: any) => {
             if (o.isMesh) {
@@ -486,32 +420,22 @@ function DroneAssembly({
         dedupeMaterialsByFingerprint(fcScene);
         await yieldToMain(); if (shouldCancel()) return null;
 
-        const baseCanvas = createCarbonFiberCanvas();
-        const armCanvas = createRotatedCarbonCanvas(baseCanvas, Math.PI / 4);
-        const baseMaps = createCarbonFiberTextures(baseCanvas);
-        const armMaps = createCarbonFiberTextures(armCanvas);
-        carbonMaps = {...baseMaps, armColorMap: armMaps.colorMap, armDetailMap: armMaps.detailMap};
-        const {colorMap, detailMap, armColorMap, armDetailMap} = carbonMaps;
-        await yieldToMain(); if (shouldCancel()) return bail();
-
-        // Two frame materials — arm (rotated carbon) + body (straight carbon).
-        const makeFrameMaterial = (arm: boolean) =>
-          new THREE.MeshStandardMaterial({
-            color: 0xf2f2f2, metalness: 0.16, roughness: 0.58,
-            map: arm ? armColorMap : colorMap,
-            roughnessMap: arm ? armDetailMap : detailMap,
-            bumpMap: arm ? armDetailMap : detailMap,
-            bumpScale: 0.01, transparent: true, opacity: 0.62, depthWrite: true,
-            // polygonOffset pushes the transparent frame's depth back so the
-            // near-coplanar plates/boards don't z-fight (keeps see-through carbon).
-            polygonOffset: true, polygonOffsetFactor: 2, polygonOffsetUnits: 2,
-          });
-        const frameBodyMat = makeFrameMaterial(false);
-        const frameArmMat = makeFrameMaterial(true);
+        // Plain dark frame material — flat carbon colour, no woven texture.
+        // Stays partly transparent so the boards read through it; the colour is
+        // animated per-frame (see frameMats in useFrame).
+        const frameMat = new THREE.MeshStandardMaterial({
+          // Matte, near-non-metallic so the warm key light doesn't bloom the
+          // frame into a tan/grey plastic look — it should read as dark carbon.
+          color: 0xf2f2f2, metalness: 0.0, roughness: 0.82,
+          transparent: true, opacity: 0.62, depthWrite: true,
+          // polygonOffset pushes the transparent frame's depth back so the
+          // near-coplanar plates/boards don't z-fight (keeps see-through frame).
+          polygonOffset: true, polygonOffsetFactor: 2, polygonOffsetUnits: 2,
+        });
         const framePack = mergeGroupByBucket(
           frameScene,
-          (mesh) => (/^arm/i.test(mesh.name ?? '') ? 'arm' : 'body'),
-          (key) => (key === 'arm' ? frameArmMat : frameBodyMat),
+          () => 'body',
+          () => frameMat,
         );
         packs.push(framePack);
         await yieldToMain(); if (shouldCancel()) return bail();
@@ -538,7 +462,7 @@ function DroneAssembly({
         packs.push(fcPack);
         await yieldToMain(); if (shouldCancel()) return bail();
 
-        const frameMatsArr: THREE.Material[] = [frameBodyMat, frameArmMat];
+        const frameMatsArr: THREE.Material[] = [frameMat];
         const escMatsArr = Array.from(
           new Set(escPack.group.children.map((m) => (m as THREE.Mesh).material)),
         ).filter(Boolean) as THREE.Material[];
@@ -552,36 +476,36 @@ function DroneAssembly({
             (m as any).emissive.setHex(0x000000);
             (m as any).emissiveIntensity = 0;
           }
-          // The boards' gold ENIG pads are modelled exactly coplanar with the
-          // copper/soldermask beneath them. On the 5" (uncompressed source) the
-          // two surfaces share the identical z and z-fight as you rotate — a
-          // shimmer no depth-buffer precision can resolve. (The 3" survives only
-          // because its Draco source quantised the pads slightly off-plane.)
-          // Pull the gold forward in depth so it always wins the test, which is
-          // also physically correct — the pads sit on top of the board.
-          const c = (m as any).color;
-          if (c && c.r > 0.5 && c.g > 0.35 && c.b < 0.35) {
-            (m as any).polygonOffset = true;
-            (m as any).polygonOffsetFactor = -1;
-            (m as any).polygonOffsetUnits = -2;
-            (m as any).needsUpdate = true;
-          }
+          // Onshape exports every board material DOUBLE-SIDED. PCBs are solid,
+          // so the inside/back faces never should show — and double-siding makes
+          // near-coplanar pad/board faces flicker through one another as the
+          // model rotates. Render front-only: correct for a solid and it removes
+          // the back-face z-fighting that drove the gold-pad shimmer.
+          (m as any).side = THREE.FrontSide;
+          (m as any).needsUpdate = true;
         }
-        const setShadowFlags = (g: THREE.Group, cast: boolean) => {
+        const setShadowFlags = (g: THREE.Group, cast: boolean, receive: boolean) => {
           g.traverse((obj) => {
             const mesh = obj as THREE.Mesh;
             if (!mesh.isMesh) return;
-            mesh.castShadow = cast; mesh.receiveShadow = true;
+            mesh.castShadow = cast;
+            mesh.receiveShadow = receive;
           });
         };
-        setShadowFlags(framePack.group, false);
-        setShadowFlags(escPack.group, true);
-        setShadowFlags(fcPack.group, true);
+        // Frame: receives only (it's transparent, so it never casts cleanly).
+        setShadowFlags(framePack.group, false, true);
+        // Boards: OUT of shadows entirely. They used to self-shadow (cast+receive),
+        // which on the down-scaled 5" board produced crawling shadow-acne across
+        // the fine pad geometry — a fixed world-space bias + fixed shadow-map
+        // texel size can't resolve features that small, so the depth comparison
+        // flips per-texel as the view rotates. Dropping board self-shadow kills
+        // it (and is a small perf win); the look is unchanged at hero distance.
+        setShadowFlags(escPack.group, false, false);
+        setShadowFlags(fcPack.group, false, false);
 
         return {
           frame: framePack.group, esc: escPack.group, fc: fcPack.group,
           frameMats: frameMatsArr, escMats: escMatsArr, fcMats: fcMatsArr,
-          carbonMaps,
         };
       } catch (err) {
         console.error('Failed to load drone models:', err);
@@ -800,11 +724,19 @@ function DroneAssembly({
       THREE.MathUtils.lerp(0, 0.012, flyOut),
       THREE.MathUtils.lerp(0, 0.025, flyOut),
     );
+    // Frame stays semi-transparent in BOTH themes so the boards show through.
+    // Dark mode uses a much darker carbon grey (and more transparency) so it
+    // reads as a true black frame against the dark page; light mode stays a
+    // mid grey, a touch more solid so the pale page doesn't wash it out.
+    const b = lightRef.current
+      ? THREE.MathUtils.lerp(0x6e, 0x96, flyOut)
+      : THREE.MathUtils.lerp(0x14, 0x22, flyOut);
     for (const mat of frameMats.current) {
       if (!mat?.transparent) continue;
-      mat.opacity = flyOut < 0.5 ? THREE.MathUtils.lerp(0.62, 0.9, frameOpacity) : 0.9;
-      const brightness = THREE.MathUtils.lerp(0x8a, 0xb8, flyOut);
-      mat.color.setRGB(brightness / 255, brightness / 255, brightness / 255);
+      mat.opacity = lightRef.current
+        ? (flyOut < 0.5 ? THREE.MathUtils.lerp(0.72, 0.9, frameOpacity) : 0.9)
+        : (flyOut < 0.5 ? THREE.MathUtils.lerp(0.4, 0.58, frameOpacity) : 0.58);
+      mat.color.setRGB(b / 255, b / 255, b / 255);
     }
     frameRef.current.scale.setScalar(THREE.MathUtils.lerp(1, 0.45, flyOut));
 
@@ -926,7 +858,7 @@ function DroneAssembly({
 
   return (
     <>
-      <group ref={wrapperRef} scale={7} rotation={[0.45, 0, 0.05]} onPointerDown={onDown}>
+      <group ref={wrapperRef} scale={7} rotation={[0.6, 0, 0.05]} onPointerDown={onDown}>
         <group
           ref={frameRef}
           onPointerOver={() => hover('frame', true)}
@@ -1113,7 +1045,7 @@ export function HeroScene({
     const update = () => {
       const visible = document.visibilityState === 'visible';
       const heroOnScreen =
-        window.scrollY < window.innerHeight * 8; // matches HERO_SPACER_VH
+        window.scrollY < window.innerHeight * 2; // matches HERO_SPACER_VH
       setActive(visible && heroOnScreen);
     };
     update();

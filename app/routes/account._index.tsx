@@ -169,7 +169,7 @@ function SupportCard({openCount}: {openCount: number}) {
           No open tickets — need help?
         </p>
       )}
-      <Link
+      <Link prefetch="viewport"
         to={isActive ? '/account/support' : '/support'}
         className="od-tile-link"
       >
@@ -192,7 +192,7 @@ function OrdersCard({orders}: {orders: OrderItemFragment[]}) {
     <section className="account-dashboard-card">
       <header className="account-dashboard-card-head">
         <p className="account-dashboard-eyebrow-mono">Orders</p>
-        <Link to="/account/orders" className="account-dashboard-card-link">
+        <Link prefetch="viewport" to="/account/orders" className="account-dashboard-card-link">
           View all →
         </Link>
       </header>
@@ -203,7 +203,7 @@ function OrdersCard({orders}: {orders: OrderItemFragment[]}) {
               flattenConnection(order.fulfillments)[0]?.status ?? null;
             return (
               <li key={order.id} className="account-dashboard-order">
-                <Link to={`/account/orders/${btoa(order.id)}`}>
+                <Link prefetch="viewport" to={`/account/orders/${btoa(order.id)}`}>
                   <div className="account-dashboard-order-head">
                     <span className="account-dashboard-order-number">
                       #{order.number}
@@ -227,7 +227,7 @@ function OrdersCard({orders}: {orders: OrderItemFragment[]}) {
       ) : (
         <div className="account-dashboard-empty">
           <p>No orders yet.</p>
-          <Link to="/collections/all" className="account-dashboard-cta">
+          <Link prefetch="viewport" to="/collections/all" className="account-dashboard-cta">
             Browse the catalog →
           </Link>
         </div>
@@ -242,7 +242,7 @@ function AddressCard({customer}: {customer: CustomerFragment}) {
     <section className="account-dashboard-card">
       <header className="account-dashboard-card-head">
         <p className="account-dashboard-eyebrow-mono">Default address</p>
-        <Link to="/account/addresses" className="account-dashboard-card-link">
+        <Link prefetch="viewport" to="/account/addresses" className="account-dashboard-card-link">
           Manage →
         </Link>
       </header>
@@ -255,7 +255,7 @@ function AddressCard({customer}: {customer: CustomerFragment}) {
       ) : (
         <div className="account-dashboard-empty">
           <p>No shipping address yet.</p>
-          <Link to="/account/addresses" className="account-dashboard-cta">
+          <Link prefetch="viewport" to="/account/addresses" className="account-dashboard-cta">
             Add an address →
           </Link>
         </div>
