@@ -55,7 +55,7 @@ export function ProductItem({
           <Link
             key={m.value}
             className="product-card-model"
-            prefetch="intent"
+            prefetch="viewport"
             to={`${variantUrl}?${encodeURIComponent(m.axis)}=${encodeURIComponent(
               m.value,
             )}`}
@@ -76,7 +76,7 @@ export function ProductItem({
       <article className="product-feature">
         <Link
           className="product-feature-media"
-          prefetch="intent"
+          prefetch="viewport"
           to={variantUrl}
           aria-hidden="true"
           tabIndex={-1}
@@ -93,7 +93,7 @@ export function ProductItem({
         <div className="product-feature-body">
           <Link
             className="product-feature-headline"
-            prefetch="intent"
+            prefetch="viewport"
             to={variantUrl}
           >
             <div className="product-card-row">
@@ -143,7 +143,7 @@ export function ProductItem({
   // Plain card — a single link wrapping the whole tile.
   if (!hasModels) {
     return (
-      <Link className="product-card" prefetch="intent" to={variantUrl}>
+      <Link className="product-card" prefetch="viewport" to={variantUrl}>
         {inner}
       </Link>
     );
@@ -155,7 +155,7 @@ export function ProductItem({
   // and each model is a sibling link below it.
   return (
     <div className="product-card has-models">
-      <Link className="product-card-link" prefetch="intent" to={variantUrl}>
+      <Link className="product-card-link" prefetch="viewport" to={variantUrl}>
         {inner}
       </Link>
       {modelStrip}

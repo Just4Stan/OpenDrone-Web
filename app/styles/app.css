@@ -47,6 +47,12 @@
   --color-border: #24242a;
   --color-border-strong: #34343c;
 
+  /* Text/icon color that sits ON the gold accent (filled buttons, badges,
+     active toggles). Dark in both themes — gold reads best with dark ink.
+     Decoupled from --color-bg so light mode can flip the page background
+     without dragging on-accent text light with it. */
+  --color-on-accent: #0d0d10;
+
   /* Legacy alias map — collapses the old dual gold/green CTA system
      into a single gold accent. Any CSS still referencing the old
      names keeps working without an audit. */
@@ -103,6 +109,58 @@
   :root {
     --rail-gutter: 2rem;
   }
+}
+
+/* ============================================================
+   LIGHT MODE
+   The @theme block above is the dark default. `html.light`
+   overrides the semantic color tokens; every var(--color-*)
+   consumer re-themes for free. Below the token swap are the
+   handful of spots that hardcoded a dark value (load overlay,
+   header backdrop, floating controls) and need a light twin.
+   The init script in root.tsx puts .light/.dark on <html>
+   before first paint.
+   ============================================================ */
+html.light {
+  --color-bg: #f7f6f3;          /* warm off-white, not clinical #fff */
+  --color-bg-card: #ffffff;
+  --color-bg-elevated: #efece6; /* recessed/raised neutral surface */
+  --color-text: #1a1a1e;
+  --color-text-muted: #57575c;
+  --color-text-dim: #86868c;
+  /* Deep amber-gold: saturated enough to read as gold (not olive) on white,
+     deep enough that white sits legibly on gold fills. Hover DARKENS here —
+     the light-mode convention for filled buttons — rather than lightening
+     like dark mode, so the white label keeps its contrast. */
+  --color-gold: #c08c10;
+  --color-gold-hover: #a87a0b;
+  --color-gold-soft: rgba(192, 140, 16, 0.14);
+  --color-stock: #2f8a4e;       /* darker green for contrast on light */
+  --color-border: #e4e0d8;
+  --color-border-strong: #cfc9bd;
+  /* White ink on gold fills in light mode — dark ink looked dull on the
+     lighter gold. (Dark mode keeps the dark-on-gold default above.) */
+  --color-on-accent: #ffffff;
+}
+
+/* Mode-specific surfaces that bypassed the token system. */
+html.light .scene-dim {
+  background-color: rgba(247, 246, 243, 0.9);
+}
+html.light .site-header {
+  background: rgba(247, 246, 243, 0.85);
+}
+html.light .hero-size-toggle {
+  background: rgba(255, 255, 255, 0.6);
+}
+html.light .product-gallery-controls {
+  background: rgba(255, 255, 255, 0.7);
+}
+/* Schematic sheets are black-on-white KiCad exports. Dark mode inverts them
+   to white blueprint lines; light mode drops the invert so they read as dark
+   ink on a white sheet of paper. */
+html.light .schematic-sheet {
+  filter: contrast(1.15);
 }
 
 /* Default price treatment. Display sans, tabular figures. Specialised
@@ -265,7 +323,7 @@ html {
 
 .hero-size-toggle__btn.is-active {
   background: var(--color-gold);
-  color: var(--color-bg);
+  color: var(--color-on-accent);
   box-shadow: 0 0 16px rgba(184, 146, 46, 0.45);
 }
 
@@ -366,7 +424,7 @@ html {
 
 .hw-strokes .hw-stroke--open,
 .hw-strokes .hw-stroke--drone {
-  color: #ffffff;
+  color: var(--color-text);
 }
 
 @keyframes hw-draw-shape {
@@ -402,10 +460,10 @@ html {
 }
 
 .hw-fills .hw-fill--open {
-  fill: #e5e5e5;
+  fill: var(--color-text);
 }
 .hw-fills .hw-fill--drone {
-  fill: #b8922e;
+  fill: var(--color-gold);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -546,7 +604,7 @@ html {
   gap: 0.75rem;
   padding: 1rem 2.25rem;
   background: var(--color-gold);
-  color: var(--color-bg);
+  color: var(--color-on-accent);
   font-family: var(--font-mono);
   font-size: 0.95rem;
   font-weight: 700;
@@ -558,7 +616,7 @@ html {
 
 .hero-action-primary:hover {
   background: var(--color-gold-hover);
-  color: var(--color-bg);
+  color: var(--color-on-accent);
 }
 
 .hero-action-secondary {
@@ -623,7 +681,7 @@ body {
 /* Selection */
 ::selection {
   background-color: var(--color-gold);
-  color: var(--color-bg);
+  color: var(--color-on-accent);
 }
 
 /* Scrollbar */
@@ -689,10 +747,36 @@ a:hover {
   line-height: 0;
 }
 
-.site-header-logo img {
+.site-header-logo img,
+.site-header-wordmark {
   display: block;
   height: 1.25rem;
   width: auto;
+}
+
+/* Inline SVG wordmark fills "Open" with body text + "Drone" with gold via
+   tokens, so the logo inverts with the theme. Cap width so the wide glyph
+   run never crowds the nav at the 1.25rem cap height. */
+.site-header-wordmark {
+  height: 1.25rem;
+  width: auto;
+}
+
+/* Theme toggle — same muted-icon treatment as the search/cart actions. */
+.theme-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-text-muted);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  transition: color 0.15s ease;
+}
+
+.theme-toggle:hover {
+  color: var(--color-text);
 }
 
 .site-header-logo:hover {
@@ -891,7 +975,7 @@ html.splash-settled .homepage-layout .site-header {
   gap: 0.375rem;
   padding: 0.5rem 1.25rem;
   background: var(--color-gold);
-  color: var(--color-bg);
+  color: var(--color-on-accent);
   font-family: var(--font-mono);
   font-size: 12px;
   font-weight: 700;
@@ -903,7 +987,7 @@ html.splash-settled .homepage-layout .site-header {
 
 .hero-cta-primary:hover {
   background: var(--color-gold-hover);
-  color: var(--color-bg);
+  color: var(--color-on-accent);
 }
 
 .hero-cta-secondary {
@@ -2255,7 +2339,7 @@ button.reset {
   width: 100%;
   padding: 0.85rem 1.25rem;
   background: var(--color-gold);
-  color: #0d0d10;
+  color: var(--color-on-accent);
   font-family: var(--font-display);
   font-weight: 600;
   font-size: var(--fs-base);
@@ -3028,7 +3112,7 @@ button.reset {
   border-color: color-mix(in srgb, var(--color-gold) 40%, transparent);
 }
 .board-folder-tabs button.is-active {
-  color: var(--color-bg);
+  color: var(--color-on-accent);
   background: var(--color-gold);
   border-color: var(--color-gold);
   box-shadow: 0 0 16px color-mix(in srgb, var(--color-gold) 35%, transparent);
@@ -3109,7 +3193,7 @@ button.reset {
   border-color: color-mix(in srgb, var(--color-gold) 40%, transparent);
 }
 .schematic-tabs button.is-active {
-  color: var(--color-bg);
+  color: var(--color-on-accent);
   background: var(--color-gold);
   border-color: var(--color-gold);
 }
@@ -3927,7 +4011,7 @@ button.reset {
 }
 
 .category-chip.is-active {
-  color: var(--color-bg);
+  color: var(--color-on-accent);
   background: var(--color-gold);
   border-color: var(--color-gold);
 }
@@ -4228,7 +4312,7 @@ button.reset {
 .account-button {
   border: 1px solid var(--color-border);
   background: var(--color-gold);
-  color: var(--color-bg);
+  color: var(--color-on-accent);
   border-radius: 6px;
   padding: 0.75rem 1rem;
   font-family: var(--font-mono);
@@ -4984,7 +5068,7 @@ button.reset {
 .lang-toggle button[aria-pressed="true"],
 .lang-toggle a[data-active="true"] {
   background: var(--color-gold);
-  color: var(--color-bg);
+  color: var(--color-on-accent);
 }
 
 /* Compact variant used in the site header */
@@ -5269,7 +5353,7 @@ button.reset {
   align-items: center;
   padding: 0.9rem 1.5rem;
   background: var(--color-gold);
-  color: var(--color-bg);
+  color: var(--color-on-accent);
   font-family: var(--font-mono);
   font-size: 12px;
   font-weight: 700;
@@ -5281,7 +5365,7 @@ button.reset {
 
 .editorial-cta-primary:hover {
   background: var(--color-gold-hover);
-  color: var(--color-bg);
+  color: var(--color-on-accent);
 }
 
 .editorial-cta-secondary {
@@ -5608,12 +5692,12 @@ button.reset {
 
 .contact-tier-cta-primary {
   background: var(--color-gold);
-  color: var(--color-bg);
+  color: var(--color-on-accent);
 }
 
 .contact-tier-cta-primary:hover {
   background: var(--color-gold-hover);
-  color: var(--color-bg);
+  color: var(--color-on-accent);
 }
 
 /* --- tier 1: Discord (gold accent rail, CTA right) ------------------- */
@@ -5947,7 +6031,7 @@ button.reset {
   text-transform: uppercase;
   font-weight: 700;
   background: var(--color-gold);
-  color: var(--color-bg);
+  color: var(--color-on-accent);
   border: none;
   padding: 0.65rem 1.1rem;
   border-radius: 2px;
@@ -6442,7 +6526,7 @@ button.reset {
   z-index: 100;
   padding: 0.75rem 1rem;
   background: var(--color-gold);
-  color: var(--color-bg);
+  color: var(--color-on-accent);
   font-family: var(--font-mono);
   font-size: 12px;
   letter-spacing: 0.14em;

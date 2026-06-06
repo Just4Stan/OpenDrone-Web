@@ -50,7 +50,7 @@ export function CartLineItem({
 
         <div>
           <Link
-            prefetch="intent"
+            prefetch="viewport"
             to={lineItemUrl}
             onClick={() => {
               if (layout === 'aside') {

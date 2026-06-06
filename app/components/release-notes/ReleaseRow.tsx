@@ -52,7 +52,7 @@ export function ReleaseRow({article}: {article: ReleaseRowArticle}) {
       <Link
         to={`/newsletter/${article.handle}`}
         className="rn-row-link"
-        prefetch="intent"
+        prefetch="viewport"
       >
         <span className="rn-date">{date}</span>
         <VersionChip version={version} />

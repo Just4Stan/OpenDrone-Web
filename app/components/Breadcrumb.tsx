@@ -12,7 +12,7 @@ export function Breadcrumb({items}: {items: Crumb[]}) {
           return (
             <li key={`${item.label}-${i}`}>
               {item.to && !isLast ? (
-                <Link to={item.to} prefetch="intent">
+                <Link to={item.to} prefetch="viewport">
                   {item.label}
                 </Link>
               ) : (

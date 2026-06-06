@@ -8,6 +8,8 @@ import {
 import type {HeaderQuery, CartApiQueryFragment} from 'storefrontapi.generated';
 import {useAside} from '~/components/Aside';
 import {LangToggle} from '~/components/LangToggle';
+import {ThemeToggle} from '~/components/ThemeToggle';
+import {SiteWordmark} from '~/components/SiteWordmark';
 
 interface HeaderProps {
   header: HeaderQuery;
@@ -42,19 +44,13 @@ export function Header({
       <div className="site-header-main">
         {/* Left: wordmark — "Open" neutral, "Drone" in gold, matches splash */}
         <NavLink
-          prefetch="intent"
+          prefetch="viewport"
           to="/"
           end
           className="site-header-logo"
           aria-label="OpenDrone"
         >
-          <img
-            src="/opendrone-wordmark-400.png"
-            alt="OpenDrone"
-            width={400}
-            height={72}
-            decoding="async"
-          />
+          <SiteWordmark className="site-header-wordmark" />
         </NavLink>
 
         {/* Center: primary nav + gold category links on the same row */}
@@ -66,7 +62,7 @@ export function Header({
         />
         <nav className="site-header-categories" aria-label="Product categories">
           {CATEGORY_LINKS.map((cat) => (
-            <NavLink key={cat.label} prefetch="intent" to={cat.to}>
+            <NavLink key={cat.label} prefetch="viewport" to={cat.to}>
               {cat.label}
             </NavLink>
           ))}
@@ -106,7 +102,7 @@ export function HeaderMenu({
         <NavLink
           end
           onClick={close}
-          prefetch="intent"
+          prefetch="viewport"
           to="/"
           className="text-sm font-mono uppercase tracking-wider text-[var(--color-text-muted)] hover:text-[var(--color-text)] transition-colors"
         >
@@ -159,7 +155,7 @@ export function HeaderMenu({
             end
             key={item.id}
             onClick={close}
-            prefetch="intent"
+            prefetch="viewport"
             to={url}
             className={({isActive}) =>
               `${isMobile ? 'text-sm tracking-wider' : 'text-[12px] tracking-[0.15em]'} font-mono uppercase transition-colors ${
@@ -184,7 +180,7 @@ export function HeaderMenu({
         <NavLink
           end
           onClick={close}
-          prefetch="intent"
+          prefetch="viewport"
           to="/newsletter"
           className={({isActive}) =>
             `${isMobile ? 'text-sm tracking-wider' : 'text-[12px] tracking-[0.15em]'} font-mono uppercase transition-colors ${
@@ -209,7 +205,7 @@ function HeaderCtas({
     <nav className="flex items-center gap-5 ml-auto" role="navigation">
       <LangToggle className="header-lang-toggle" />
       <NavLink
-        prefetch="intent"
+        prefetch="viewport"
         to="/newsletter"
         className={({isActive}) =>
           `font-mono text-[12px] uppercase tracking-[0.15em] transition-colors hidden md:block ${
@@ -222,7 +218,7 @@ function HeaderCtas({
         Newsletter
       </NavLink>
       <NavLink
-        prefetch="intent"
+        prefetch="viewport"
         to="/collections/all"
         className={({isActive}) =>
           `font-mono text-[12px] uppercase tracking-[0.15em] transition-colors hidden md:block ${
@@ -235,7 +231,7 @@ function HeaderCtas({
         Catalog
       </NavLink>
       <NavLink
-        prefetch="intent"
+        prefetch="viewport"
         to="/contact"
         className={({isActive}) =>
           `font-mono text-[12px] uppercase tracking-[0.15em] transition-colors hidden md:block ${
@@ -248,7 +244,7 @@ function HeaderCtas({
         Contact
       </NavLink>
       <NavLink
-        prefetch="intent"
+        prefetch="viewport"
         to="/account"
         className="font-mono text-[12px] uppercase tracking-[0.15em] text-[var(--color-text-muted)] hover:text-[var(--color-text)] transition-colors hidden md:block"
       >
@@ -258,6 +254,7 @@ function HeaderCtas({
           </Await>
         </Suspense>
       </NavLink>
+      <ThemeToggle />
       <SearchToggle />
       <CartToggle cart={cart} />
       <HeaderMenuMobileToggle />
@@ -323,7 +320,7 @@ function CartBadge({count}: {count: number}) {
         <path d="M16 10a4 4 0 01-8 0" />
       </svg>
       {count > 0 && (
-        <span className="absolute -top-1 -right-1.5 bg-[var(--color-gold)] text-[var(--color-bg)] text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center leading-none">
+        <span className="absolute -top-1 -right-1.5 bg-[var(--color-gold)] text-[var(--color-on-accent)] text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center leading-none">
           {count}
         </span>
       )}

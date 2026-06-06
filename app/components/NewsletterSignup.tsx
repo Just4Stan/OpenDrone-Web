@@ -1,5 +1,6 @@
 import {useCallback, useEffect, useId, useRef, useState} from 'react';
 import {useFetcher} from 'react-router';
+import {getActiveTheme} from '~/lib/theme';
 
 // Engineering Essentials — dual-purpose: product-release announcements and
 // engineering content digest. Posts to app/routes/newsletter.tsx which
@@ -79,7 +80,9 @@ export function NewsletterSignup({
       if (turnstileWidgetId.current) return;
       const id = cf.render(turnstileContainerRef.current, {
         sitekey: siteKey,
-        theme: 'dark',
+        // Match the active site theme so the widget doesn't render a dark
+        // box on a light page (and vice-versa).
+        theme: getActiveTheme(),
         size: 'flexible',
       });
       turnstileWidgetId.current = id ?? null;
@@ -244,7 +247,7 @@ export function NewsletterSignup({
             disabled={isSubmitting}
             className={[
               'font-mono text-xs uppercase tracking-[0.14em] font-bold',
-              'bg-[var(--color-gold)] text-[var(--color-bg)]',
+              'bg-[var(--color-gold)] text-[var(--color-on-accent)]',
               'px-5 py-2.5 rounded-sm',
               'transition-colors hover:bg-[var(--color-gold-hover)]',
               'disabled:opacity-60 disabled:cursor-not-allowed',
