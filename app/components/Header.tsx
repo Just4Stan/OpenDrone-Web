@@ -22,7 +22,7 @@ type Viewport = 'desktop' | 'mobile';
 // "Accessories" opens the catalog browse page pre-filtered to the
 // Accessory category (productType=Accessory).
 const CATEGORY_LINKS: Array<{label: string; to: string}> = [
-  {label: 'FC', to: '/products/openfc'},
+  {label: 'FC', to: '/products/openfc-lite'},
   {label: 'ESC', to: '/products/openesc'},
   {label: 'Stack', to: '/products/openstack'},
   {label: 'RX', to: '/products/openrx'},

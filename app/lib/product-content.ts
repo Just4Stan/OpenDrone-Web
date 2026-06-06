@@ -162,11 +162,11 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
     fileNumber: '01',
     family: '4-in-1 ESC',
     hero: {
-      line1: 'An ESC',
-      line2Italic: 'is not',
-      line3: 'a miracle.',
+      line1: 'An ESC (or 4)',
+      line2Italic: '',
+      line3: '',
       lead:
-        'Four half-bridges, a gate driver, a microcontroller running AM32, and a current-sense shunt. That is the list. Open schematic, open layout, open BOM — €1 of every order forwarded to the AM32 maintainers, tracked publicly.',
+        "6 mosfets per motor, 2 for each phase. Driven by a gate driver, controlled by a microcontroller. Duplicate that 4 times et voila, 'An ESC'.",
     },
     firmware: {
       project: 'AM32',
@@ -175,13 +175,13 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
     },
     repoUrl: 'https://github.com/incutec-hw/OpenESC_20X20',
     teardown: {
-      title: 'Four chips. One sheet, used four times.',
+      title: "Isn't it beautiful?",
       body:
-        'The schematic is split into a main sheet (power, current sensing, 8-pin connector) and one sub-sheet reused for each of the four channels. Each channel carries the AT32F421 running AM32, the NSG2065Q 3-phase gate driver, and six SP40N03GNJ MOSFETs wired as three half-bridges. Back-EMF feedback handles sensorless commutation.',
+        "ESC have to carry a lot of current so optimized power routing matters. You can see it right here or check the interactive KiCAD viewer. Each AT32 microcontroller is running AM32. A large array of low-ESR, high capacitance ceramic capacitors feed the fast switching time of the MOSFET's to reduce voltage spikes. TVS diodes clamp any spikes that still get too high.",
       pins: [
-        {ref: '①', part: 'AT32F421G8U7 — 120 MHz M4 MCU', cost: '×4'},
-        {ref: '②', part: 'NSG2065Q gate driver (FD6288Q-compatible)', cost: '×4'},
-        {ref: '③', part: 'SP40N03GNJ MOSFET, 40 V / 2.9 mΩ', cost: '×24'},
+        {ref: '①', part: 'AT32F421 MCU', cost: '×4'},
+        {ref: '②', part: 'NSG2065Q gate driver', cost: '×4'},
+        {ref: '③', part: 'Low Rds(on) MOSFET', cost: '×24'},
         {ref: '④', part: 'INA186A3 + 0.2 mΩ shunt', cost: '×4'},
       ],
       boardArt: {
@@ -191,11 +191,11 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
       },
     },
     inTheBox: [
-      {qty: '1×', item: 'OpenESC 4-in-1 board', note: 'model selected at checkout'},
-      {qty: '2×', item: '8-pin Betaflight signal cable', note: 'JST SM08B-SRSS-TB, pre-crimped, 8 cm'},
-      {qty: '1×', item: 'XT60 battery pigtail with 470 µF low-ESR cap'},
-      {qty: '4×', item: 'M3 rubber soft-mount grommets'},
-      {qty: '1×', item: 'Build card', note: 'batch ID, QC initials, firmware flash command, GitHub rev'},
+      {qty: '1×', item: 'OpenESC'},
+      {qty: '2×', item: '8-pin JST cable'},
+      {qty: '1×', item: 'XT battery pigtail'},
+      {qty: '4×', item: 'M3 grommets'},
+      {qty: '1×', item: 'Low-ESR Electrolytic Capacitor'},
     ],
     // TODO(downloads): publish schematic.pdf, bom.csv, gerbers.zip, manual.pdf,
     // wiring.pdf, flashing.md to the OpenESC_20X20 repo and re-add the cards.
@@ -204,12 +204,12 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
     downloads: [],
     specs: [
       ['Firmware', 'AM32'],
-      ['Protocol', 'DShot (Betaflight)'],
+      ['Protocol', 'DShot, PWM...'],
       ['Input', '3–6S LiPo (11.1–25.2 V)'],
       ['MCU', 'AT32F421G8U7, 120 MHz'],
       ['Gate driver', 'NSG2065Q (QFN-24)'],
       ['Current sense', 'INA186A3 + 0.2 mΩ shunt'],
-      ['Power rails', 'LMR51420 buck + TLV76733 LDO'],
+      ['Power rails', 'LMR54406DBVR buck + TLV76733 LDO'],
       ['Connector', 'JST SM08B-SRSS-TB (8-pin BF)'],
       ['License', 'CERN-OHL-S-2.0'],
     ],
@@ -342,26 +342,125 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
     ],
     footnote:
       'The ELRS receiver break-off lets you relocate the RX without cutting traces. Solder onto the pads when reattaching.',
-    // Launching with the Lite model (formerly OpenFC-ECO). The 20×20 / 30×30
-    // mount models are designed but not in the launch batch — shown on the
-    // ladder as greyed "Coming soon" cards (comingSoon), not wired to a
-    // purchasable Shopify variant yet.
+    // The full OpenFC (onboard ELRS break-off, barometer, SPI blackbox flash,
+    // corner LEDs) is still in development — shown here as greyed "Coming soon"
+    // cards in both mount sizes. The shipping cost-down board is a separate
+    // product, OpenFC Lite (see the `openfc-lite` entry below).
     optionAxis: 'Model',
     variants: {
+      'OpenFC Mini': {
+        tagline: 'The full OpenFC on the 20×20 / 30.5 mount.',
+        highlights: [
+          ['Mount', '20×20 · 30.5 holes'],
+          ['Radio', 'Onboard ELRS break-off'],
+        ],
+        comingSoon: true,
+      },
+      OpenFC: {
+        tagline: 'The full OpenFC on the 30×30 mount.',
+        highlights: [
+          ['Mount', '30×30'],
+          ['Radio', 'Onboard ELRS break-off'],
+        ],
+        comingSoon: true,
+      },
+    },
+    pairCta: {
+      eyebrow: 'Better together',
+      title: 'OpenStack — OpenFC + OpenESC, one 30.5 mm stack, one checkout.',
+      to: '/products/openstack',
+    },
+  },
+
+  // The shipping cost-down flight controller. One design, two mount sizes
+  // (Lite Mini 20×20 / Lite 30×30) that share nearly the whole BOM. Spec
+  // drawn from the OpenFC-Lite / OpenFC-Lite-Mini READMEs. The Shopify product
+  // (handle `openfc-lite`, Model: "Lite Mini" / "Lite") is created DRAFT by
+  // scripts/shopify-infra/06-openfc-lite.mjs — the PDP 404s until it's activated.
+  'openfc-lite': {
+    fileNumber: '02',
+    family: 'Flight Controller',
+    hero: {
+      line1: 'A flight controller,',
+      line2Italic: 'minus',
+      line3: 'what you don’t need.',
+      lead:
+        'An RP2354 dual-core M33 running Betaflight on a 6-layer board: a 6-axis IMU, microSD blackbox, PIO-driven analog OSD, and a switchable 10 V VTX rail. No barometer, no onboard radio — bring your own RX over UART and keep the board small and cheap.',
+    },
+    firmware: {
+      project: 'Betaflight',
+      projectUrl: 'https://github.com/betaflight/betaflight',
+      logo: '/logos/betaflight.svg',
+    },
+    repoUrl: 'https://github.com/incutec-hw/OpenFC-Lite',
+    teardown: {
+      title: 'Two PIO blocks doing the work of a fistful of chips.',
+      body:
+        'The RP2354 has no analog-OSD peripheral and only two hardware UARTs, so its PIO blocks fake both. One drives the analog OSD front end — a comparator strips the video sync, an op-amp buffers the camera signal, and an SPDT switch injects black and white pixels — while another spins up extra software UARTs. The IMU and the microSD blackbox sit on separate SPI buses, and a switchable 10 V buck feeds the VTX and camera.',
+      pins: [
+        {ref: '①', part: 'RP2354 — dual M33 @ 150 MHz'},
+        {ref: '②', part: '6-axis IMU (LGA-14, TDK/ST)'},
+        {ref: '③', part: 'microSD blackbox, on SPI'},
+        {ref: '④', part: 'Analog OSD — comparator + op-amp + SPDT'},
+        {ref: '⑤', part: 'Switchable 10 V VTX buck'},
+      ],
+      // boardArt is supplied per variant (openfc-lite-mini / openfc-lite); the
+      // PDP swaps the layer reveal as the ladder selects a mount size.
+    },
+    inTheBox: [
+      {qty: '1×', item: 'OpenFC Lite board'},
+      {qty: '1×', item: '8-pin JST SH ESC harness'},
+      {qty: '4×', item: 'M3 rubber soft-mount grommets'},
+      {qty: '1×', item: 'Build card', note: 'batch ID, QC initials, firmware flash command, GitHub rev'},
+    ],
+    // TODO(downloads): publish schematic.pdf / bom.csv / gerbers.zip / manual.pdf
+    // to the OpenFC-Lite repos and wire the cards here.
+    downloads: [],
+    specs: [
+      ['Firmware', 'Betaflight (custom RP2350 target)'],
+      ['MCU', 'RP2354 — dual M33 @ 150 MHz, 2 MB flash'],
+      ['IMU', '6-axis MEMS, LGA-14 (TDK or ST)'],
+      ['Blackbox', 'microSD card (TF-021B)'],
+      ['OSD', 'Analog, PIO-driven'],
+      ['Motor outputs', '4× DShot, bidirectional telemetry'],
+      ['RX', 'External, over UART (CRSF/SBUS)'],
+      ['Power', '3S–6S; switchable 10 V + always-on 5 V'],
+      ['USB', 'USB-C (config + flash)'],
+      ['Layers', '6'],
+      ['License', 'CERN-OHL-S-2.0'],
+    ],
+    footnote:
+      'The cost-down trims over the full OpenFC: no barometer, no onboard radio, no SPI blackbox flash. External RX over UART, microSD for blackbox.',
+    optionAxis: 'Model',
+    variants: {
+      'Lite Mini': {
+        tagline: 'The 20×20 / 30.5 mount — RP2354A, QFN-60. The compact stack size.',
+        highlights: [
+          ['Mount', '20×20 · 30.5 holes'],
+          ['Size', '20×20 mm'],
+        ],
+        specs: [
+          ['MCU', 'RP2354A — dual M33 @ 150 MHz, QFN-60 (30 GPIO)'],
+          ['Size', '20×20 mm, 6-layer'],
+        ],
+        boardArt: {
+          src: '/boards/openfc-lite-mini/board.svg',
+          inspectUrl:
+            'https://kicanvas.org/?github=https://github.com/incutec-hw/OpenFC-Lite-Mini',
+        },
+      },
       Lite: {
-        tagline: 'OpenFC Lite — the cost-down board (formerly OpenFC-ECO).',
-        highlights: [['Model', 'Lite']],
-        boardArt: {src: '/boards/openfc-lite/board.svg'},
-      },
-      '20×20': {
-        comingSoon: true,
-        tagline: 'OpenFC on the 20×20 / 30.5 mount — the compact stack size.',
-        highlights: [['Mount', '20×20 · 30.5 holes']],
-      },
-      '30×30': {
-        comingSoon: true,
-        tagline: 'OpenFC on the 30×30 mount.',
-        highlights: [['Mount', '30×30']],
+        tagline: 'The 30×30 mount — bigger pads and more I/O.',
+        highlights: [
+          ['Mount', '30×30'],
+          ['Size', '30.5×30.5 mm'],
+        ],
+        specs: [['Size', '30.5×30.5 mm, 6-layer']],
+        boardArt: {
+          src: '/boards/openfc-lite/board.svg',
+          inspectUrl:
+            'https://kicanvas.org/?github=https://github.com/incutec-hw/OpenFC-Lite',
+        },
       },
     },
     pairCta: {
