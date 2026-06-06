@@ -2797,7 +2797,7 @@ button.reset {
   /* Schematic chapter: hand most of the width to the (wide, dense) sheet and
    * narrow the text column. The tall sheet scrolls rather than sticking. */
   .chapter[data-wide-media] {
-    grid-template-columns: minmax(0, 0.42fr) minmax(0, 1fr);
+    grid-template-columns: minmax(0, 0.36fr) minmax(0, 1fr);
   }
   .chapter[data-wide-media] .chapter-media {
     position: static;
@@ -2919,42 +2919,108 @@ button.reset {
   opacity: 0.6;
 }
 
-/* Tabs + stack sit side by side; the selector runs vertically down the left. */
+/* Tabs + stack share a positioning context; the rail floats in the left gutter
+   so it sits in the empty space beside the board instead of over it. */
+/* Rail sits to the LEFT of the board and is vertically centred with the stack,
+   so the two read as one symmetric unit with no overlap. */
 .board-folder-body {
   display: flex;
-  align-items: flex-start;
-  gap: 0.9rem;
+  align-items: center;
+  gap: 1rem;
 }
-.board-folder-body .board-folder-stack {
+.board-folder-stack {
   flex: 1 1 auto;
   min-width: 0;
 }
-/* Layer selector — vertical file tabs down the left of the folder. */
-.board-folder-tabs {
-  position: relative;
-  z-index: 60;
+/* Layer rail — a self-contained vertical selector parked left of the board. */
+.board-folder-rail {
   flex: 0 0 auto;
-  /* Drop the column down so it aligns with the fanned stack, not its headroom. */
-  margin-top: 12%;
+  z-index: 60;
   display: flex;
   flex-direction: column;
   align-items: stretch;
-  gap: 4px;
+  gap: 6px;
+  width: 96px;
+  padding: 10px 9px 11px;
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--color-bg) 50%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-gold) 13%, transparent);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+  outline: none;
+}
+.board-folder-rail:focus-visible {
+  border-color: color-mix(in srgb, var(--color-gold) 45%, transparent);
+}
+.board-folder-rail-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  padding: 0 3px 1px;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--color-text-dim);
+}
+.board-folder-rail-count {
+  color: var(--color-gold);
+  letter-spacing: 0.06em;
+}
+/* Up / down chevrons — make the "step through layers" affordance explicit. */
+.board-folder-step {
+  appearance: none;
+  border: none;
+  background: none;
+  cursor: pointer;
+  padding: 1px 0;
+  font-size: 9px;
+  line-height: 1;
+  color: var(--color-text-dim);
+  transition: color 0.2s, opacity 0.2s;
+}
+.board-folder-step:hover:not(:disabled) {
+  color: var(--color-gold);
+}
+.board-folder-step:disabled {
+  opacity: 0.25;
+  cursor: default;
+}
+.board-folder-tabs {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 6px;
+}
+/* A faint spine threading the buttons — like a via through the copper stack. */
+.board-folder-tabs::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 8px;
+  bottom: 8px;
+  width: 2px;
+  transform: translateX(-50%);
+  background: color-mix(in srgb, var(--color-gold) 16%, transparent);
+  border-radius: 1px;
 }
 .board-folder-tabs button {
+  position: relative;
   appearance: none;
-  border: 1px solid color-mix(in srgb, var(--color-gold) 18%, transparent);
-  background: color-mix(in srgb, var(--color-bg) 70%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-gold) 16%, transparent);
+  background: color-mix(in srgb, var(--color-bg) 78%, transparent);
   cursor: pointer;
   font-family: var(--font-mono);
-  font-size: 10px;
-  letter-spacing: 0.16em;
+  font-size: 12px;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
   text-align: center;
   color: var(--color-text-dim);
-  padding: 0.32rem 0.8rem;
+  padding: 0.48rem 0.55rem;
   border-radius: 999px;
-  transition: color 0.2s, background 0.2s, border-color 0.2s;
+  transition: color 0.2s, background 0.2s, border-color 0.2s, transform 0.2s,
+    box-shadow 0.2s;
 }
 .board-folder-tabs button:hover {
   color: var(--color-text);
@@ -2964,13 +3030,50 @@ button.reset {
   color: var(--color-bg);
   background: var(--color-gold);
   border-color: var(--color-gold);
+  box-shadow: 0 0 16px color-mix(in srgb, var(--color-gold) 35%, transparent);
+}
+/* On narrow screens the gutter collapses — drop the rail back to a top bar. */
+@media (max-width: 879px) {
+  .board-folder-rail {
+    position: static;
+    transform: none;
+    width: auto;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    margin-bottom: 0.5rem;
+    padding: 0;
+    border: none;
+    background: none;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+  .board-folder-rail-head {
+    width: 100%;
+    justify-content: center;
+    gap: 0.5em;
+  }
+  .board-folder-step {
+    display: none;
+  }
+  .board-folder-tabs {
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .board-folder-tabs::before {
+    display: none;
+  }
 }
 
 /* === Schematic viewer — paged sheets of the KiCad schematic, the analogue of
    the board folder. In the wide-media chapter it fills the dominant column and
    bleeds a little into the right gutter for maximum legible width. === */
 .schematic-viewer {
-  width: 110%;
+  /* Bleed into the right gutter so the dense sheet has breathing room. */
+  width: 124%;
   margin-left: 0;
 }
 .schematic-tabs {
