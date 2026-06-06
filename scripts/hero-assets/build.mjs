@@ -179,12 +179,13 @@ async function buildOne(srcPath, _unused, sizeLabel) {
     for (const node of [...cScene.listChildren()]) {
       if (node.getName() !== g) disposeTree(node);
     }
-    // Boards don't use a UV-mapped texture (flat material colours) — drop their
-    // UVs to save bytes. The frame keeps UVs for the carbon-fibre weave.
-    if (g !== 'Frame')
-      for (const m of clone.getRoot().listMeshes())
-        for (const p of m.listPrimitives())
-          if (p.getAttribute('TEXCOORD_0')) p.setAttribute('TEXCOORD_0', null);
+    // Boards carry no UV-mapped texture (flat material colours); the frame's
+    // Onshape export carries no usable UVs at all (the runtime generates planar
+    // ones for its procedural carbon weave). Either way, drop TEXCOORD_0 to save
+    // bytes.
+    for (const m of clone.getRoot().listMeshes())
+      for (const p of m.listPrimitives())
+        if (p.getAttribute('TEXCOORD_0')) p.setAttribute('TEXCOORD_0', null);
     const ops = [
       prune({keepAttributes: true}),
       flatten(),
