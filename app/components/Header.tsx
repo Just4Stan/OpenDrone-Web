@@ -60,10 +60,10 @@ export function Header({
           primaryDomainUrl={header.shop.primaryDomain.url}
           publicStoreDomain={publicStoreDomain}
         />
-        {/* FC, ESC and Stack are one family — a Stack is just an FC + ESC — so
-            they share one bubble (a segmented group), set off from the
-            standalone RX / Frame by a divider. CATEGORY_LINKS is ordered
-            [FC, ESC, Stack, RX, Frame] to match. */}
+        {/* Category families in segmented bubbles: FC/ESC/Stack (a Stack is just
+            an FC + ESC), RX/Frame, then All Products in its own accented bubble
+            as the route into the full catalogue. No dividers — the bubbles do
+            the grouping. CATEGORY_LINKS is ordered [FC, ESC, Stack, RX, Frame]. */}
         <nav className="site-header-categories" aria-label="Product categories">
           <span className="site-header-cat-group">
             {CATEGORY_LINKS.slice(0, 3).map((cat) => (
@@ -72,12 +72,20 @@ export function Header({
               </NavLink>
             ))}
           </span>
-          <span className="site-header-cat-divider" aria-hidden="true" />
-          {CATEGORY_LINKS.slice(3).map((cat) => (
-            <NavLink key={cat.label} prefetch="viewport" to={cat.to}>
-              {cat.label}
-            </NavLink>
-          ))}
+          <span className="site-header-cat-group">
+            {CATEGORY_LINKS.slice(3).map((cat) => (
+              <NavLink key={cat.label} prefetch="viewport" to={cat.to}>
+                {cat.label}
+              </NavLink>
+            ))}
+          </span>
+          <NavLink
+            prefetch="viewport"
+            to="/collections/all"
+            className="site-header-cat-all"
+          >
+            All Products
+          </NavLink>
         </nav>
 
         {/* Right: actions */}
@@ -228,19 +236,6 @@ function HeaderCtas({
         }
       >
         Newsletter
-      </NavLink>
-      <NavLink
-        prefetch="viewport"
-        to="/collections/all"
-        className={({isActive}) =>
-          `font-mono text-[12px] uppercase tracking-[0.15em] transition-colors hidden md:block whitespace-nowrap ${
-            isActive
-              ? 'text-[var(--color-text)]'
-              : 'text-[var(--color-text-muted)] hover:text-[var(--color-text)]'
-          }`
-        }
-      >
-        All Products
       </NavLink>
       <NavLink
         prefetch="viewport"
