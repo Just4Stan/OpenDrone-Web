@@ -25,6 +25,8 @@ export function ProductItem({
   models,
   feature,
   lead,
+  isNew,
+  onSale,
 }: {
   product: CollectionItemFragment | ProductItemFragment;
   loading?: 'eager' | 'lazy';
@@ -35,10 +37,21 @@ export function ProductItem({
   /** Editorial one-liner shown in the feature layout (the product's hero
    *  lead). Ignored outside `feature`. */
   lead?: string;
+  /** Corner badge — recently added product. */
+  isNew?: boolean;
+  /** Corner badge — listed below its compare-at price. */
+  onSale?: boolean;
 }) {
   const variantUrl = useVariantUrl(product.handle);
   const image = product.featuredImage;
   const hasModels = Boolean(models && models.length > 0);
+
+  const badge =
+    onSale ? (
+      <span className="product-card-badge is-sale">Sale</span>
+    ) : isNew ? (
+      <span className="product-card-badge is-new">New</span>
+    ) : null;
 
   const modelStrip = hasModels ? (
     <div className="product-card-models">
@@ -117,6 +130,7 @@ export function ProductItem({
     <>
       {image && (
         <div className="product-card-media">
+          {badge}
           <Image
             alt={image.altText || product.title}
             aspectRatio="1/1"

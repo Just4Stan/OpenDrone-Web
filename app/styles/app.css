@@ -2099,6 +2099,132 @@ button.reset {
 }
 
 /* ============================================
+   All Products — faceted browse (sidebar + grid)
+   ============================================ */
+/* Left filter rail + main column. The rail is a fixed, sticky column; the
+   grid takes the rest. Collapses to a stacked layout below the breakpoint. */
+.catalog-layout {
+  display: grid;
+  grid-template-columns: 200px minmax(0, 1fr);
+  gap: clamp(1.5rem, 3vw, 3rem);
+  align-items: start;
+}
+
+.catalog-sidebar {
+  position: sticky;
+  top: calc(var(--header-height) + var(--sp-4));
+}
+
+.catalog-filter-head {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  color: var(--color-text-muted);
+  padding-bottom: 0.75rem;
+  margin-bottom: 0.75rem;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.catalog-filter-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+
+.catalog-filter {
+  appearance: none;
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0.4rem 0;
+  font-size: 0.95rem;
+  color: var(--color-text-muted);
+  transition: color 0.18s ease;
+}
+
+.catalog-filter:hover {
+  color: var(--color-text);
+}
+
+.catalog-filter.is-active {
+  color: var(--color-gold);
+  font-weight: 600;
+}
+
+/* Toolbar above the grid — product count left, sort dropdown right. */
+.catalog-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+}
+
+.catalog-count {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  color: var(--color-text-muted);
+}
+
+@media (max-width: 899px) {
+  .catalog-layout {
+    grid-template-columns: 1fr;
+    gap: 1.25rem;
+  }
+  /* Filters become a horizontal wrap-row above the grid on narrow screens. */
+  .catalog-sidebar {
+    position: static;
+    top: auto;
+  }
+  .catalog-filter-list {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+  .catalog-filter {
+    width: auto;
+    padding: 0.4rem 0.8rem;
+    border: 1px solid var(--color-border);
+    border-radius: 999px;
+    font-size: 0.85rem;
+  }
+  .catalog-filter.is-active {
+    border-color: var(--color-gold);
+    color: var(--color-on-accent);
+    background: var(--color-gold);
+  }
+}
+
+/* Corner badge on a product card (New / Sale). */
+.product-card-badge {
+  position: absolute;
+  top: 0.6rem;
+  right: 0.6rem;
+  z-index: 2;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  color: var(--color-on-accent);
+  background: var(--color-gold);
+}
+
+.product-card-badge.is-sale {
+  background: var(--color-stock, #c0392b);
+  color: #fff;
+}
+
+/* ============================================
    Product page — editorial layout
    ============================================ */
 
