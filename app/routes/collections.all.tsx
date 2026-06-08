@@ -70,6 +70,9 @@ type Card = {
   title: string;
   to: string;
   price: MoneyV2;
+  /** The tier's own variant image, so each size card shows its real board
+   *  instead of falling back to the product's featuredImage. */
+  image?: CatalogProduct['featuredImage'];
   onSale: boolean;
   createdAt?: string | null;
   /** A product line whose every tier is still coming soon — shown as a
@@ -142,6 +145,7 @@ export default function Collection() {
             title: joinTitle(p.title, value),
             to: `/products/${p.handle}?${encodeURIComponent(axis)}=${encodeURIComponent(value)}`,
             price,
+            image: sv?.image ?? p.featuredImage,
             onSale: sv?.compareAtPrice
               ? num(sv.compareAtPrice) > num(price)
               : productOnSale(p),
@@ -300,6 +304,7 @@ export default function Collection() {
                     to={card.to}
                     title={card.title}
                     priceOverride={card.price}
+                    imageOverride={card.image}
                     loading={index < 8 ? 'eager' : undefined}
                     isNew={isNew(card.createdAt)}
                     onSale={card.onSale}
@@ -372,6 +377,13 @@ const COLLECTION_ITEM_FRAGMENT = `#graphql
       nodes {
         id
         availableForSale
+        image {
+          id
+          altText
+          url
+          width
+          height
+        }
         selectedOptions {
           name
           value

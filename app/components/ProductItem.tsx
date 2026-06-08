@@ -31,6 +31,7 @@ export function ProductItem({
   to,
   title,
   priceOverride,
+  imageOverride,
   comingSoon,
 }: {
   product: CollectionItemFragment | ProductItemFragment;
@@ -54,6 +55,10 @@ export function ProductItem({
   title?: string;
   /** Price override — the specific variant's price for per-variant cards. */
   priceOverride?: MoneyV2;
+  /** Image override — the specific variant's image for per-variant cards.
+   *  Without it every tier card falls back to the product's featuredImage
+   *  (the first uploaded render), so 20×20 and 30×30 show the same board. */
+  imageOverride?: CollectionItemFragment['featuredImage'];
   /** Unreleased product — renders greyed and non-clickable with a "Coming
    *  soon" badge instead of a link (nothing to buy or open yet). */
   comingSoon?: boolean;
@@ -62,7 +67,7 @@ export function ProductItem({
   const url = to ?? variantUrl;
   const displayTitle = title ?? product.title;
   const price = priceOverride ?? product.priceRange.minVariantPrice;
-  const image = product.featuredImage;
+  const image = imageOverride ?? product.featuredImage;
   const hasModels = Boolean(models && models.length > 0);
 
   const badge = comingSoon ? (
