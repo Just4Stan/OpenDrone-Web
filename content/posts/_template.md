@@ -28,4 +28,4 @@ gpio_put(LED_PIN, 1);
 ```
 
 > Preview with `npm run publish:post -- content/posts/<slug>.md --dry` before
-> pushing. See `content/posts/README.md` for the full workflow.
+> pushing. See the Editing content section in the root `README.md` for the full workflow.

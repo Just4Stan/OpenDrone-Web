@@ -3,8 +3,8 @@
 > source: app/lib/i18n.ts (LEGAL_LABELS, LEGAL_UI_STRINGS)
 
 The legal page *bodies* are Markdown in `app/content/legal/{en,nl,fr}/` —
-edit those there (NL is synced from the compliance repo; see
-`content/site/README.md`). This file is the trilingual **chrome** wrapped
+edit those there (NL is synced from the compliance repo; see the Editing
+content section in the root `README.md`). This file is the trilingual **chrome** wrapped
 around each body: the title, eyebrow, and short description per slug and
 locale, plus the shared back-link / last-updated UI strings.
 

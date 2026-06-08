@@ -15,7 +15,8 @@
 // harmless (re-runs reuse them via the local cache).
 //
 // Source of truth is the Markdown file. Re-running overwrites the Shopify
-// copy — never hand-edit the article in the admin. See content/posts/README.md.
+// copy — never hand-edit the article in the admin. See the Editing content
+// section in the root README.md.
 
 import {promises as fs} from 'node:fs';
 import path from 'node:path';
@@ -415,7 +416,7 @@ main().catch((err) => {
       '\n[publish-post] Admin API denied access to blog content.\n' +
         'Add read_content + write_content to the "OpenDrone Infra" custom app\n' +
         '(Settings → Apps → Develop apps → Configuration), reinstall, and update\n' +
-        'SHOPIFY_ADMIN_API_TOKEN in .env. See content/posts/README.md.\n',
+        'SHOPIFY_ADMIN_API_TOKEN in .env. See README.md (Editing content).\n',
     );
   } else {
     console.error(`\n[publish-post] failed: ${msg}\n`);
