@@ -82,7 +82,18 @@ export function buildSeoMeta({
     {property: 'og:type', content: type},
     {property: 'og:locale', content: locale},
     {name: 'twitter:card', content: 'summary_large_image'},
-    {property: 'og:image', content: image || '/og-image.svg'},
+    // PNG, not SVG: Facebook, LinkedIn, iMessage, Slack, Discord and X all
+    // reject SVG OG images and render a blank preview.
+    {property: 'og:image', content: image || '/og-image.png'},
+    // Dimensions help crawlers lay out the card before the fetch finishes.
+    // Only emitted for the known-size default; a custom product image has
+    // unknown dimensions, so we let the crawler measure it.
+    ...(image
+      ? []
+      : [
+          {property: 'og:image:width', content: '1200'},
+          {property: 'og:image:height', content: '630'},
+        ]),
   ];
 
   for (const alt of alternateLocales || []) {

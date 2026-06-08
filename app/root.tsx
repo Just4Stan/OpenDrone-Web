@@ -72,6 +72,10 @@ export function links() {
       crossOrigin: 'anonymous',
     },
     {rel: 'icon', type: 'image/svg+xml', href: favicon},
+    // PNG fallbacks for browsers that ignore SVG favicons, iOS home-screen,
+    // and PWA install. Files live in /public (served from the site root).
+    {rel: 'apple-touch-icon', href: '/apple-touch-icon.png'},
+    {rel: 'manifest', href: '/manifest.webmanifest'},
   ];
 }
 
