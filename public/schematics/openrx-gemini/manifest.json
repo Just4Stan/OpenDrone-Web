@@ -5,36 +5,36 @@
       "slug": "root",
       "label": "Overview",
       "file": "root.svg",
-      "w": 244.62,
-      "h": 175.41
+      "w": 207.2,
+      "h": 148.27
     },
     {
       "slug": "clock",
       "label": "Clock",
       "file": "clock.svg",
-      "w": 116.46,
-      "h": 96.34
+      "w": 38.94,
+      "h": 29.71
     },
     {
       "slug": "esp32-c3",
       "label": "Esp32 C3",
       "file": "esp32-c3.svg",
-      "w": 243.03,
-      "h": 164.67
+      "w": 228.55,
+      "h": 148.84
     },
     {
       "slug": "lr1121_a",
       "label": "Lr1121 A",
       "file": "lr1121_a.svg",
-      "w": 325.43,
-      "h": 199.46
+      "w": 298.8,
+      "h": 112.01
     },
     {
       "slug": "lr1121_b",
       "label": "Lr1121 B",
       "file": "lr1121_b.svg",
-      "w": 325.43,
-      "h": 199.46
+      "w": 298.8,
+      "h": 112.01
     }
   ]
 }

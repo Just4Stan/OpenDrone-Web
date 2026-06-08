@@ -5,43 +5,43 @@
       "slug": "rp2350a",
       "label": "MCU",
       "file": "rp2350a.svg",
-      "w": 510.73,
-      "h": 315.57
+      "w": 394.53,
+      "h": 223.66
     },
     {
       "slug": "power",
       "label": "Power",
       "file": "power.svg",
       "w": 272.32,
-      "h": 176.92
+      "h": 166.8
     },
     {
       "slug": "imu",
       "label": "IMU",
       "file": "imu.svg",
-      "w": 154.32,
-      "h": 107.04
+      "w": 137.17,
+      "h": 73.17
     },
     {
       "slug": "osd",
       "label": "OSD",
       "file": "osd.svg",
-      "w": 301.94,
-      "h": 229.26
+      "w": 185.61,
+      "h": 133.54
     },
     {
       "slug": "blackbox",
       "label": "Blackbox",
       "file": "blackbox.svg",
-      "w": 147.54,
-      "h": 82.38
+      "w": 137.75,
+      "h": 45.97
     },
     {
       "slug": "pads",
       "label": "Connectors",
       "file": "pads.svg",
-      "w": 243.44,
-      "h": 183.35
+      "w": 178.95,
+      "h": 146.94
     }
   ]
 }
