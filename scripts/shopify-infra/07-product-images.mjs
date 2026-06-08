@@ -33,10 +33,10 @@ const PLAN = {
   'openfc-lite': {
     replace: true,
     images: [
-      {file: `${REPOS}/OpenFC-Lite-Mini/images/openfc-lite-mini-rev2-top.png`,    name: 'openfc-lite-mini-top.png',    alt: 'OpenFC Lite Mini — top',    variant: 'Lite Mini'},
-      {file: `${REPOS}/OpenFC-Lite-Mini/images/openfc-lite-mini-rev2-bottom.png`, name: 'openfc-lite-mini-bottom.png', alt: 'OpenFC Lite Mini — bottom', variant: 'Lite Mini'},
-      {file: `${REPOS}/OpenFC-Lite/images/openfc-lite-rev2-top.png`,              name: 'openfc-lite-top.png',         alt: 'OpenFC Lite — top',         variant: 'Lite'},
-      {file: `${REPOS}/OpenFC-Lite/images/openfc-lite-rev2-bottom.png`,           name: 'openfc-lite-bottom.png',      alt: 'OpenFC Lite — bottom',      variant: 'Lite'},
+      {file: `${REPOS}/OpenFC-Lite-Mini/images/openfc-lite-mini-rev2-top.png`,    name: 'openfc-lite-mini-top.png',    alt: 'OpenFC Lite Mini — top',    variant: '20×20'},
+      {file: `${REPOS}/OpenFC-Lite-Mini/images/openfc-lite-mini-rev2-bottom.png`, name: 'openfc-lite-mini-bottom.png', alt: 'OpenFC Lite Mini — bottom', variant: '20×20'},
+      {file: `${REPOS}/OpenFC-Lite/images/openfc-lite-rev2-top.png`,              name: 'openfc-lite-top.png',         alt: 'OpenFC Lite — top',         variant: '30×30'},
+      {file: `${REPOS}/OpenFC-Lite/images/openfc-lite-rev2-bottom.png`,           name: 'openfc-lite-bottom.png',      alt: 'OpenFC Lite — bottom',      variant: '30×30'},
     ],
   },
   openrx: {

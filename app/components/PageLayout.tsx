@@ -11,6 +11,7 @@ import {Footer} from '~/components/Footer';
 import {Header, HeaderMenu} from '~/components/Header';
 import {CartMain} from '~/components/CartMain';
 import {PlaceholderBanner} from '~/components/PlaceholderBanner';
+import {RouteProgress} from '~/components/RouteProgress';
 import {
   SearchFormPredictive,
 } from '~/components/SearchFormPredictive';
@@ -50,6 +51,7 @@ export function PageLayout({
         <a className="skip-link" href="#main-content">
           Skip to main content
         </a>
+        <RouteProgress />
         <PlaceholderBanner />
         {header && (
           <Header

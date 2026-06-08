@@ -3282,10 +3282,20 @@ button.reset {
   --board-w: 245%;
   width: var(--board-w);
   margin-left: calc(125% - var(--board-w));
+}
+/* Reserve a square-ish slot while the board SVG streams in, so the loading
+   skeleton has a box to sit in instead of collapsing to zero height. */
+.board-art:not(.is-revealed) {
+  min-height: clamp(320px, 32vw, 460px);
+}
+/* The fade lives on the board *content*, not the container — the container
+   stays opaque so the loading skeleton (its child) is visible while the
+   content is still at opacity 0. */
+.board-folder-body {
   opacity: 0;
   transition: opacity 1.2s cubic-bezier(0.2, 0.7, 0.2, 1);
 }
-.board-art.is-revealed {
+.board-art.is-revealed .board-folder-body {
   opacity: 1;
 }
 /* === Folder stack: every copper layer is a sheet; the selected one floats up
@@ -9715,5 +9725,70 @@ button.reset {
   }
   .newsletter-recent-date {
     width: auto;
+  }
+}
+
+/* ── Route-transition progress bar ──────────────────────────────────────────
+   Thin gold bar pinned to the top while React Router resolves a route, so any
+   navigation (FC/ESC/RX tabs, product links) shows motion instead of feeling
+   blocked. Cosmetic, aria-hidden, zero layout impact. */
+.route-progress {
+  position: fixed;
+  inset: 0 0 auto 0;
+  height: 2px;
+  z-index: 200;
+  pointer-events: none;
+}
+.route-progress-bar {
+  height: 100%;
+  background: var(--color-gold);
+  box-shadow: 0 0 10px var(--color-gold), 0 0 4px var(--color-gold);
+  border-radius: 0 2px 2px 0;
+  transition: width 0.2s ease-out, opacity 0.28s ease-out;
+}
+
+/* ── Heavy-asset loading skeletons (board art + schematic viewer) ────────────
+   Shown while a multi-MB SVG downloads + parses, so the slot reads as
+   "loading" rather than a blank/black box. Removed once the asset reveals. */
+.board-art-skeleton {
+  position: absolute;
+  inset: 0;
+}
+.board-art-skeleton,
+.schematic-skeleton {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.85rem;
+  pointer-events: none;
+}
+.schematic-skeleton {
+  min-height: clamp(260px, 30vw, 420px);
+}
+.board-art-skeleton-spinner {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: 2px solid var(--color-border);
+  border-top-color: var(--color-gold);
+  animation: board-art-spin 0.8s linear infinite;
+}
+.board-art-skeleton-label {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+  animation: latest-commit-pulse 1.4s ease-in-out infinite;
+}
+@keyframes board-art-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .board-art-skeleton-spinner {
+    animation-duration: 2.4s;
   }
 }

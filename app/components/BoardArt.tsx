@@ -51,6 +51,59 @@ const LAYER_LABELS: Record<string, string> = {
 type Sheet = {slug: string; label: string; html: string};
 
 /**
+ * Module-level cache of parsed layer sheets, keyed by board SVG src. Splitting a
+ * multi-MB / 30k-path board SVG with DOMParser is the expensive step (~1 s) and
+ * used to re-run on every variant click. Caching the parsed result — and
+ * pre-parsing sibling tiers in the background the moment the section is in view —
+ * turns a tier switch into an instant cache hit instead of a fetch + parse.
+ */
+const parsedCache = new Map<string, Sheet[]>();
+
+/** Split the multi-layer board SVG into one sheet per copper layer. */
+function parseSheets(raw: string): Sheet[] {
+  if (!raw || typeof DOMParser === 'undefined') return [];
+  try {
+    const doc = new DOMParser().parseFromString(raw, 'image/svg+xml');
+    const svg = doc.querySelector('svg');
+    if (!svg) return [];
+    const viewBox = svg.getAttribute('viewBox') ?? '';
+    const defs = svg.querySelector('defs')?.outerHTML ?? '';
+    const edgeInner = doc.getElementById('layer-edge-cuts')?.innerHTML ?? '';
+    const copper = Array.from(svg.querySelectorAll('[id^="layer-"]')).filter(
+      (g) => g.id !== 'layer-edge-cuts',
+    ) as SVGElement[];
+    return copper.map((g) => {
+      const slug = g.id.replace(/^layer-/, '');
+      return {
+        slug,
+        label: LAYER_LABELS[slug] ?? slug.toUpperCase(),
+        html:
+          `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${viewBox}" ` +
+          `preserveAspectRatio="xMidYMid meet" class="board-sheet-svg">` +
+          `<defs>${defs}</defs>` +
+          `<g class="board-sheet-edge">${edgeInner}</g>` +
+          `${g.outerHTML}</svg>`,
+      };
+    });
+  } catch {
+    return [];
+  }
+}
+
+/** Fetch (text-cached) and parse a board SVG into {@link parsedCache}, so a
+ *  later switch to it renders with no network and no parse. */
+async function warmParsed(src: string): Promise<Sheet[]> {
+  const hit = parsedCache.get(src);
+  if (hit) return hit;
+  const text = await fetchTextCached(src);
+  const existing = parsedCache.get(src);
+  if (existing) return existing;
+  const parsed = parseSheets(text);
+  if (parsed.length) parsedCache.set(src, parsed);
+  return parsed;
+}
+
+/**
  * Render every copper layer of a KiCad board as a stack of sheets in a folder.
  *
  * The asset is one SVG (scripts/export-board-art.mjs) with a `<g id="layer-…">`
@@ -72,6 +125,11 @@ export function BoardArt({src, srcs, handle, inspectUrl, layerFns}: BoardArtProp
   const [failed, setFailed] = useState(false);
   const [active, setActive] = useState(0);
   const [inView, setInView] = useState(false);
+  // Which src the current `raw` text belongs to, and the last non-empty parsed
+  // board — so a tier switch keeps the prior board on screen until the new one
+  // is parsed, and never re-parses a board the cache already holds.
+  const rawSrcRef = useRef<string | null>(peekText(src) != null ? src : null);
+  const lastSheetsRef = useRef<Sheet[]>([]);
 
   // Lazy gate: fetch nothing until the section nears the viewport.
   useEffect(() => {
@@ -102,22 +160,44 @@ export function BoardArt({src, srcs, handle, inspectUrl, layerFns}: BoardArtProp
   useEffect(() => {
     if (!inView) return;
     let alive = true;
+    let warmId: number | undefined;
     fetchTextCached(src)
       .then((text) => {
         if (!alive) return;
+        // Parse + cache the active board if not already cached, so the memo
+        // serves it (and any later return to it) instantly.
+        const parsed = parsedCache.get(src) ?? parseSheets(text);
+        if (parsed.length) parsedCache.set(src, parsed);
+        rawSrcRef.current = src;
         setRaw(text);
-        setFailed(false);
+        setFailed(parsed.length === 0);
+        // Pre-parse every sibling tier in the background so a click is an
+        // instant cache hit. Kicked off on idle (with a short timeout cap) so it
+        // never competes with the active board's first paint, but still lands
+        // well before the user finishes reading and clicks a tier.
+        if (srcs) {
+          const warm = () => {
+            for (const s of srcs) {
+              if (s !== src && !parsedCache.has(s)) {
+                void warmParsed(s).catch(() => {});
+              }
+            }
+          };
+          warmId =
+            typeof requestIdleCallback !== 'undefined'
+              ? requestIdleCallback(warm, {timeout: 1500})
+              : (setTimeout(warm, 250) as unknown as number);
+        }
       })
       .catch(() => {
         if (alive) setFailed(true);
       });
-    if (srcs) {
-      for (const s of srcs) {
-        if (s !== src) void fetchTextCached(s).catch(() => {});
-      }
-    }
     return () => {
       alive = false;
+      if (warmId != null) {
+        if (typeof cancelIdleCallback !== 'undefined') cancelIdleCallback(warmId);
+        else clearTimeout(warmId);
+      }
     };
   }, [inView, src, srcs]);
 
@@ -134,37 +214,26 @@ export function BoardArt({src, srcs, handle, inspectUrl, layerFns}: BoardArtProp
     return () => cancelAnimationFrame(r);
   }, [raw]);
 
-  // Split the multi-layer SVG into one sheet per copper layer.
+  // Resolve the layer sheets for the active board: a cache hit (the active board
+  // or a pre-parsed sibling) renders instantly; otherwise parse the freshly
+  // fetched text for THIS src; while a not-yet-parsed tier is loading, keep the
+  // prior board on screen instead of flashing empty.
   const sheets = useMemo<Sheet[]>(() => {
-    if (!raw || typeof DOMParser === 'undefined') return [];
-    try {
-      const doc = new DOMParser().parseFromString(raw, 'image/svg+xml');
-      const svg = doc.querySelector('svg');
-      if (!svg) return [];
-      const viewBox = svg.getAttribute('viewBox') ?? '';
-      const defs = svg.querySelector('defs')?.outerHTML ?? '';
-      const edgeInner =
-        doc.getElementById('layer-edge-cuts')?.innerHTML ?? '';
-      const copper = Array.from(svg.querySelectorAll('[id^="layer-"]')).filter(
-        (g) => g.id !== 'layer-edge-cuts',
-      ) as SVGElement[];
-      return copper.map((g) => {
-        const slug = g.id.replace(/^layer-/, '');
-        return {
-          slug,
-          label: LAYER_LABELS[slug] ?? slug.toUpperCase(),
-          html:
-            `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${viewBox}" ` +
-            `preserveAspectRatio="xMidYMid meet" class="board-sheet-svg">` +
-            `<defs>${defs}</defs>` +
-            `<g class="board-sheet-edge">${edgeInner}</g>` +
-            `${g.outerHTML}</svg>`,
-        };
-      });
-    } catch {
-      return [];
+    const cached = parsedCache.get(src);
+    if (cached) {
+      lastSheetsRef.current = cached;
+      return cached;
     }
-  }, [raw]);
+    if (rawSrcRef.current === src && raw) {
+      const parsed = parseSheets(raw);
+      if (parsed.length) {
+        parsedCache.set(src, parsed);
+        lastSheetsRef.current = parsed;
+      }
+      return parsed;
+    }
+    return lastSheetsRef.current;
+  }, [src, raw]);
 
   // Keep the active index in range when sheets (re)load.
   useEffect(() => {
@@ -376,6 +445,12 @@ export function BoardArt({src, srcs, handle, inspectUrl, layerFns}: BoardArtProp
               />
             ))}
           </div>
+        </div>
+      ) : null}
+      {!revealed && !failed ? (
+        <div className="board-art-skeleton" aria-hidden="true">
+          <span className="board-art-skeleton-spinner" />
+          <span className="board-art-skeleton-label">Rendering board…</span>
         </div>
       ) : null}
       {failed ? (
