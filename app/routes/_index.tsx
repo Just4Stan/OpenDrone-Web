@@ -1,6 +1,6 @@
 import {Link, PrefetchPageLinks, useLoaderData} from 'react-router';
 import type {Route} from './+types/_index';
-import {useEffect, useRef, useState, useCallback} from 'react';
+import {useEffect, useRef, useState, useCallback, useMemo, memo} from 'react';
 import type {CollectionItemFragment} from 'storefrontapi.generated';
 import {HeroWordmark} from '~/components/HeroWordmark';
 import {MobileHome} from '~/components/MobileHome';
@@ -29,7 +29,14 @@ type LabelRefs = {
   esc: React.RefObject<HTMLDivElement | null>;
 };
 
-function ClientHeroScene({
+// Memoised so scroll-driven re-renders of the home route (setScrollProgress
+// fires every scroll frame) don't reconcile the whole <Canvas>/r3f tree. The
+// 3D scene animates itself off its own scroll listener + invalidate(), so it
+// needs nothing from those renders — and reconciling it each frame was starving
+// the WebGL render of the main thread, which is what made scrolling choppy.
+// Props are referentially stable (callbacks are useCallback, labelRefs is
+// useMemo'd, the rest are primitives), so memo bails out every scroll frame.
+const ClientHeroScene = memo(function ClientHeroScene({
   onReady,
   onProgress,
   labelRefs,
@@ -78,7 +85,7 @@ function ClientHeroScene({
       size={size}
     />
   );
-}
+});
 
 export const meta: Route.MetaFunction = () => {
   return [
@@ -222,6 +229,12 @@ function DesktopHome() {
   const fcLabelRef = useRef<HTMLDivElement>(null);
   const frameLabelRef = useRef<HTMLDivElement>(null);
   const escLabelRef = useRef<HTMLDivElement>(null);
+  // Stable object so <ClientHeroScene>'s memo isn't defeated by a fresh literal
+  // every (scroll-driven) render. The refs themselves never change identity.
+  const labelRefs = useMemo(
+    () => ({fc: fcLabelRef, frame: frameLabelRef, esc: escLabelRef}),
+    [],
+  );
   const tick = useCallback(() => {
     setScrollProgress(scrollRef.current);
     rafId.current = 0;
@@ -406,7 +419,6 @@ function DesktopHome() {
   // of the scroll as a brief settled-state hold before the page ends.
   const labelOpacity = linearstep(0.72, 0.84, scrollProgress);
   const ctaRise = linearstep(0.84, 0.96, scrollProgress);
-  const pushUp = ctaRise * 12; // vh units — how far scene/labels shift up
 
   return (
     <div className="homepage">
@@ -433,8 +445,6 @@ function DesktopHome() {
           <div
             className="absolute inset-0 z-0"
             style={{
-              transform: `translateY(-${pushUp}vh)`,
-              transition: 'none',
               // Let the browser own vertical panning (page scroll) while
               // horizontal drags still reach the r3f pointer handlers for
               // model rotation. Without this, touch-action defaults to
@@ -458,11 +468,7 @@ function DesktopHome() {
               <ClientHeroScene
                 onReady={handleSceneReady}
                 onProgress={handleSceneProgress}
-                labelRefs={{
-                  fc: fcLabelRef,
-                  frame: frameLabelRef,
-                  esc: escLabelRef,
-                }}
+                labelRefs={labelRefs}
                 // Hold the GLB fetch + parse + processing for the first
                 // ~750ms so the wireframe wordmark animation gets a
                 // clean main thread. Skipped entirely on return visits
@@ -615,7 +621,7 @@ function DesktopHome() {
             labels track the geometry even as the assembly rotates. */}
         <div
           className="hero-component-labels"
-          style={{opacity: labelOpacity, transform: `translateY(-${pushUp}vh)`}}
+          style={{opacity: labelOpacity}}
         >
           <div ref={fcLabelRef} className="hero-component-label">
             <Link to="/products/openfc" prefetch="render">
