@@ -102,22 +102,37 @@ export function BoardArt({src, srcs, handle, inspectUrl, layerFns}: BoardArtProp
   useEffect(() => {
     if (!inView) return;
     let alive = true;
+    let warmId: number | undefined;
     fetchTextCached(src)
       .then((text) => {
         if (!alive) return;
         setRaw(text);
         setFailed(false);
+        // Warm sibling tiers only AFTER the visible board is in hand, and only
+        // while the main thread is idle. Each sibling SVG is 1–2 MB; firing them
+        // alongside the active fetch starved the active board's download + parse
+        // and was the cause of the long blank-board frame on first view.
+        if (srcs) {
+          const warm = () => {
+            for (const s of srcs) {
+              if (s !== src) void fetchTextCached(s).catch(() => {});
+            }
+          };
+          warmId =
+            typeof requestIdleCallback !== 'undefined'
+              ? requestIdleCallback(warm, {timeout: 2500})
+              : (setTimeout(warm, 400) as unknown as number);
+        }
       })
       .catch(() => {
         if (alive) setFailed(true);
       });
-    if (srcs) {
-      for (const s of srcs) {
-        if (s !== src) void fetchTextCached(s).catch(() => {});
-      }
-    }
     return () => {
       alive = false;
+      if (warmId != null) {
+        if (typeof cancelIdleCallback !== 'undefined') cancelIdleCallback(warmId);
+        else clearTimeout(warmId);
+      }
     };
   }, [inView, src, srcs]);
 
@@ -376,6 +391,12 @@ export function BoardArt({src, srcs, handle, inspectUrl, layerFns}: BoardArtProp
               />
             ))}
           </div>
+        </div>
+      ) : null}
+      {!revealed && !failed ? (
+        <div className="board-art-skeleton" aria-hidden="true">
+          <span className="board-art-skeleton-spinner" />
+          <span className="board-art-skeleton-label">Rendering board…</span>
         </div>
       ) : null}
       {failed ? (
