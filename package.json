@@ -34,7 +34,7 @@
     "@shopify/hydrogen": "^2026.4.1",
     "@tailwindcss/vite": "^4.3.0",
     "graphql": "^16.14.0",
-    "isbot": "^5.1.40",
+    "isbot": "^5.1.41",
     "postprocessing": "^6.39.1",
     "react": "^19.2.6",
     "react-dom": "^19.2.6",
