@@ -86,18 +86,32 @@ export function SchematicViewer({handle, handles, inspectUrl}: SchematicViewerPr
       .catch(() => {
         if (alive) setDisplay({handle, sheets: []});
       });
+    // Warm sibling tiers (manifest + sheet images, ~1 MB/sheet) only when the
+    // main thread is idle, so they never compete with the active board's sheets
+    // for the first paint. Cancelled if the effect re-runs before idle fires.
+    let warmId: number | undefined;
     if (handles) {
-      for (const h of handles) {
-        if (h === handle) continue;
-        void fetchJsonCached<Manifest>(manifestUrl(h))
-          .then((m) => {
-            for (const s of m.sheets ?? []) prefetchImage(sheetUrl(h, s.file));
-          })
-          .catch(() => {});
-      }
+      const warm = () => {
+        for (const h of handles) {
+          if (h === handle) continue;
+          void fetchJsonCached<Manifest>(manifestUrl(h))
+            .then((m) => {
+              for (const s of m.sheets ?? []) prefetchImage(sheetUrl(h, s.file));
+            })
+            .catch(() => {});
+        }
+      };
+      warmId =
+        typeof requestIdleCallback !== 'undefined'
+          ? requestIdleCallback(warm, {timeout: 1500})
+          : (setTimeout(warm, 250) as unknown as number);
     }
     return () => {
       alive = false;
+      if (warmId != null) {
+        if (typeof cancelIdleCallback !== 'undefined') cancelIdleCallback(warmId);
+        else clearTimeout(warmId);
+      }
     };
   }, [inView, handle, handles]);
 
@@ -120,6 +134,12 @@ export function SchematicViewer({handle, handles, inspectUrl}: SchematicViewerPr
 
   return (
     <div className="schematic-viewer" ref={ref} data-board={dh}>
+      {inView && sheets === null ? (
+        <div className="schematic-skeleton" aria-hidden="true">
+          <span className="board-art-skeleton-spinner" />
+          <span className="board-art-skeleton-label">Loading schematic…</span>
+        </div>
+      ) : null}
       {sheets && sheets.length ? (
         <>
           <div className="schematic-body">
