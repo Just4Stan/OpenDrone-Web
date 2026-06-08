@@ -103,8 +103,8 @@ export function SchematicViewer({handle, handles, inspectUrl}: SchematicViewerPr
       };
       warmId =
         typeof requestIdleCallback !== 'undefined'
-          ? requestIdleCallback(warm, {timeout: 2500})
-          : (setTimeout(warm, 400) as unknown as number);
+          ? requestIdleCallback(warm, {timeout: 1500})
+          : (setTimeout(warm, 250) as unknown as number);
     }
     return () => {
       alive = false;
