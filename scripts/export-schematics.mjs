@@ -5,6 +5,11 @@
  *
  *   node scripts/export-schematics.mjs <root.kicad_sch> <handle>
  *   node scripts/export-schematics.mjs --all     # every board in boards.config.json
+ *   npm run gen:schematics                        # alias for --all; re-run after
+ *                                                 # the KiCad schematics change
+ *
+ * The OpenDrone title block (logo + title + date + sheet number) drawn on each
+ * sheet is stripped automatically on export — see stripTitleBlock below.
  *
  * `--all` reuses boards.config.json (handle → .kicad_pcb) and derives the
  * schematic next to it (same basename, .kicad_sch). One folder per board
@@ -117,6 +122,65 @@ function pathBBox(d, acc) {
   }
 }
 
+// --- Strip the OpenDrone title block from a sheet SVG. ---
+// Every sheet carries a graphical title block (OpenDrone logo + sheet title +
+// date + sheet number) drawn directly on the schematic and anchored to the
+// page's bottom-right corner. kicad-cli's --exclude-drawing-sheet only drops the
+// worksheet frame, not these schematic-level graphics, so they survive export,
+// inflate the content bounding box, and shrink the real circuitry once cropped.
+// We anchor on the date field (DD/MM/YYYY — always present, easy to match) and
+// remove every primitive fully inside the block's box around it: the title/date/
+// sheet-number text, the logo, and the block's frame lines. The block is the
+// isolated bottom-right cluster, well clear of the circuitry comments, which are
+// kept. (The title block has no rotate transforms, so raw path coords are the
+// on-page coords.)
+function stripTitleBlock(svg) {
+  const dm = svg.match(
+    /<text\s+x="([-\d.]+)"\s+y="([-\d.]+)"[^>]*?>\s*\d\d\/\d\d\/\d{4}\s*<\/text>/s,
+  );
+  if (!dm) return svg;
+  const dx = +dm[1], dy = +dm[2];
+  // Box around the date anchor: covers the logo (up/left), the title (left) and
+  // the sheet number (right). Sized from the measured block (~28 mm left, 55 mm
+  // right, 26 mm up of the date) plus margin.
+  const B = {x0: dx - 45, x1: dx + 64, y0: dy - 36, y1: dy + 12};
+  const inBox = (x, y) => x >= B.x0 && x <= B.x1 && y >= B.y0 && y <= B.y1;
+  const fitsBox = (d) => {
+    const acc = {minX: Infinity, minY: Infinity, maxX: -Infinity, maxY: -Infinity};
+    pathBBox(d, acc);
+    return (
+      Number.isFinite(acc.minX) &&
+      inBox(acc.minX, acc.minY) &&
+      inBox(acc.maxX, acc.maxY)
+    );
+  };
+  let out = svg;
+  // 1. Hidden text anchors inside the box (title/date/sheet number).
+  out = out.replace(
+    /<text\s+x="([-\d.]+)"\s+y="([-\d.]+)"[^>]*?>.*?<\/text>/gs,
+    (m, x, y) => (inBox(+x, +y) ? '' : m),
+  );
+  // 2. Stroked-text glyph groups whose strokes fall inside the box.
+  out = out.replace(/<g class="stroked-text">[\s\S]*?<\/g>/g, (g) => {
+    const acc = {minX: Infinity, minY: Infinity, maxX: -Infinity, maxY: -Infinity};
+    let m;
+    const re = /\sd="([^"]+)"/g;
+    while ((m = re.exec(g))) pathBBox(m[1], acc);
+    return Number.isFinite(acc.minX) &&
+      inBox(acc.minX, acc.minY) &&
+      inBox(acc.maxX, acc.maxY)
+      ? ''
+      : g;
+  });
+  // 3. Paths inside the box (the logo glyphs + the block's frame lines). Matches
+  //    both stroke paths (d-first) and the filled logo paths (style-first).
+  out = out.replace(/<path\b[^>]*?\/>/gs, (m) => {
+    const d = m.match(/\sd="([^"]+)"/s);
+    return d && fitsBox(d[1]) ? '' : m;
+  });
+  return out;
+}
+
 function cropSvg(svg) {
   const acc = {minX: Infinity, minY: Infinity, maxX: -Infinity, maxY: -Infinity};
   const pt = (x, y) => {
@@ -169,7 +233,8 @@ function buildSchematic(schPath, handle) {
       // Root sheet is "<base>.svg"; sub-sheets "<base>-<SHEET>.svg".
       const stem = basename(file, '.svg');
       const slug = stem === base ? 'root' : stem.replace(`${base}-`, '').toLowerCase();
-      const {svg, w, h} = cropSvg(readFileSync(join(tmp, file), 'utf8'));
+      const raw = stripTitleBlock(readFileSync(join(tmp, file), 'utf8'));
+      const {svg, w, h} = cropSvg(raw);
       return {slug, label: LABELS[slug] ?? titleCase(slug), file: `${slug}.svg`, w, h, svg};
     });
     descs.sort((a, b) => {
