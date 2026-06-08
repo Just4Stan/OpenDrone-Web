@@ -12,6 +12,9 @@ export function ProductForm({
   productOptions,
   selectedVariant,
   hideOptionNames,
+  bundleLines,
+  bundleDisabled,
+  bundleCtaLabel,
 }: {
   productOptions: MappedProductOptions[];
   selectedVariant: ProductFragment['selectedOrFirstAvailableVariant'];
@@ -19,9 +22,18 @@ export function ProductForm({
    *  owns the line's primary axis), so the pill grid skips them and
    *  renders only the Add-to-cart button for that axis. */
   hideOptionNames?: string[];
+  /** Bundle products (OpenStack) are a display shell: the page renders from
+   *  the bundle product, but add-to-cart drops the *component* variants
+   *  (the real FC + ESC at the selected size) as separate lines instead of a
+   *  phantom bundle SKU. When set, these lines replace the single-variant
+   *  add. `undefined` → normal single-product behaviour. */
+  bundleLines?: Array<{merchandiseId: string; quantity: number}>;
+  bundleDisabled?: boolean;
+  bundleCtaLabel?: string;
 }) {
   const navigate = useNavigate();
   const {open} = useAside();
+  const isBundle = bundleLines !== undefined;
   const ctaLabelAvailable = 'Add to cart';
   const ctaLabelSoldOut = 'Sold out';
   const hidden = new Set((hideOptionNames ?? []).map((n) => n.trim().toLowerCase()));
@@ -112,23 +124,33 @@ export function ProductForm({
         );
       })}
       <AddToCartButton
-        disabled={!selectedVariant || !selectedVariant.availableForSale}
+        disabled={
+          isBundle
+            ? (bundleDisabled ?? bundleLines!.length === 0)
+            : !selectedVariant || !selectedVariant.availableForSale
+        }
         onClick={() => {
           open('cart');
         }}
         lines={
-          selectedVariant
-            ? [
-                {
-                  merchandiseId: selectedVariant.id,
-                  quantity: 1,
-                  selectedVariant,
-                },
-              ]
-            : []
+          isBundle
+            ? bundleLines!
+            : selectedVariant
+              ? [
+                  {
+                    merchandiseId: selectedVariant.id,
+                    quantity: 1,
+                    selectedVariant,
+                  },
+                ]
+              : []
         }
       >
-        {selectedVariant?.availableForSale ? ctaLabelAvailable : ctaLabelSoldOut}
+        {isBundle
+          ? (bundleCtaLabel ?? ctaLabelAvailable)
+          : selectedVariant?.availableForSale
+            ? ctaLabelAvailable
+            : ctaLabelSoldOut}
       </AddToCartButton>
     </div>
   );

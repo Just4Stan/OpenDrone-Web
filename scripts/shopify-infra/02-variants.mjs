@@ -12,7 +12,13 @@
  *                                                    not in the launch batch)
  *   OpenRX    Model: Lite / Lite-UFL / Mono / Gemini
  *   OpenFrame Model: 5" Freestyle / 3" Freestyle
- *   OpenStack — left as a single bundle product (no axis)
+ *   OpenStack Model: 20×20 / 30×30                 (FC-Lite + ESC bundle; each
+ *                                                    size pairs the matching FC
+ *                                                    and ESC mount. Add the
+ *                                                    values so the size ladder
+ *                                                    wires to real variants —
+ *                                                    until then it previews and
+ *                                                    cart uses the default)
  *
  * Prices/SKUs are placeholders for Stan to replace. Idempotent: skips option
  * creation if the option already exists, and always re-applies price/sku/stock.
