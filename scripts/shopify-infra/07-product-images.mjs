@@ -15,7 +15,6 @@
  *   node scripts/shopify-infra/07-product-images.mjs
  */
 import fs from 'node:fs';
-import path from 'node:path';
 import {admin, assertNoUserErrors} from './_client.mjs';
 
 const REPOS = '/Users/stan/OpenDrone';
