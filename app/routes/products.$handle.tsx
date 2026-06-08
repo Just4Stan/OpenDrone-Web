@@ -89,11 +89,21 @@ async function loadCriticalData({context, params, request}: Route.LoaderArgs) {
     throw new Error('Expected product handle to be defined');
   }
 
-  const [{product}] = await Promise.all([
+  // Bundle products (OpenStack) render from their own product but add the
+  // *component* variants to cart. Fetch those components' variants in parallel
+  // so the buy module can resolve the FC + ESC variant for the chosen size.
+  const bundleHandles =
+    PRODUCT_CONTENT[handle]?.bundle?.components.map((c) => c.handle) ?? [];
+
+  const [{product}, ...bundleResults] = await Promise.all([
     storefront.query(PRODUCT_QUERY, {
       variables: {handle, selectedOptions: getSelectedProductOptions(request)},
     }),
-    // Add other queries here, so that they are loaded in parallel
+    ...bundleHandles.map((h) =>
+      storefront
+        .query(BUNDLE_COMPONENT_QUERY, {variables: {handle: h}})
+        .catch(() => null),
+    ),
   ]);
 
   if (!product?.id) {
@@ -103,8 +113,13 @@ async function loadCriticalData({context, params, request}: Route.LoaderArgs) {
   // The API handle might be localized, so redirect to the localized handle
   redirectIfHandleIsLocalized(request, {handle, data: product});
 
+  const bundleProducts = bundleResults
+    .map((r) => r?.product)
+    .filter((p): p is NonNullable<typeof p> => Boolean(p));
+
   return {
     product,
+    bundleProducts,
   };
 }
 
@@ -447,7 +462,7 @@ function useChapterReveal(key: string) {
 }
 
 export default function Product() {
-  const {product, recommendations, latestCommits} =
+  const {product, bundleProducts, recommendations, latestCommits} =
     useLoaderData<typeof loader>();
   useChapterReveal(product.handle);
 
@@ -539,6 +554,39 @@ export default function Product() {
   const activeVariant = content.variants?.[activeTier];
   const mergedSpecs = mergeSpecs(content.specs, activeVariant?.specs);
   const mergedBox = [...content.inTheBox, ...(activeVariant?.inTheBox ?? [])];
+
+  // Bundle (OpenStack): resolve each component's variant for the active size,
+  // so add-to-cart drops the real FC + ESC lines and the buy module shows the
+  // combined price. The size axis is matched by name ("Model") + the active
+  // tier key; a component with no matching variant falls back to its first.
+  const bundleComponents = content.bundle?.components ?? [];
+  const bundleVariants = bundleComponents.map((c) => {
+    const bp = bundleProducts?.find((p) => p?.handle === c.handle);
+    const nodes = bp?.variants?.nodes ?? [];
+    const match = nodes.find((n) =>
+      n.selectedOptions?.some(
+        (o) =>
+          o.name.trim().toLowerCase() === 'model' &&
+          o.value.trim().toLowerCase() === activeTier.trim().toLowerCase(),
+      ),
+    );
+    return match ?? nodes[0] ?? null;
+  });
+  const bundleReady =
+    Boolean(content.bundle) && bundleVariants.every((v) => v != null);
+  const bundleLines = bundleReady
+    ? bundleVariants.map((v) => ({merchandiseId: v!.id, quantity: 1}))
+    : [];
+  const bundleAvailable =
+    bundleReady && bundleVariants.every((v) => v!.availableForSale);
+  const bundlePrice = bundleReady
+    ? {
+        amount: bundleVariants
+          .reduce((s, v) => s + parseFloat(v!.price.amount), 0)
+          .toFixed(2),
+        currencyCode: bundleVariants[0]!.price.currencyCode,
+      }
+    : undefined;
   // The teardown board art follows the selected tier: a variant's own
   // `boardArt` wins, otherwise the shared `teardown.boardArt` (the default
   // board) is shown. Lines without per-tier art just keep the default.
@@ -668,28 +716,42 @@ export default function Product() {
         onSelect={setActiveTier}
       />
     ) : null;
+  const isBundle = Boolean(content.bundle);
+  const buyPrice = isBundle ? bundlePrice : selectedVariant?.price;
+  const buyAvailable = isBundle
+    ? bundleAvailable
+    : Boolean(selectedVariant?.availableForSale);
   const railBuyModule = (
     <div className="product-buy" data-buy-module>
       <div className="product-buy-price">
         <ProductPrice
-          price={selectedVariant?.price}
-          compareAtPrice={selectedVariant?.compareAtPrice}
+          price={buyPrice}
+          compareAtPrice={isBundle ? undefined : selectedVariant?.compareAtPrice}
         />
-        {selectedVariant?.sku ? (
+        {isBundle ? (
+          <span className="product-buy-sku">
+            OpenFC-Lite + OpenESC · {activeTier}
+          </span>
+        ) : selectedVariant?.sku ? (
           <span className="product-buy-sku">SKU {selectedVariant.sku}</span>
         ) : null}
       </div>
-      <span
-        className={`product-buy-stock${selectedVariant?.availableForSale ? '' : ' is-out'}`}
-      >
-        {selectedVariant?.availableForSale
-          ? 'In stock · ships from Belgium'
-          : 'Sold out'}
+      <span className={`product-buy-stock${buyAvailable ? '' : ' is-out'}`}>
+        {isBundle
+          ? buyAvailable
+            ? 'Both boards in stock · ships from Belgium'
+            : 'One or both boards unavailable'
+          : selectedVariant?.availableForSale
+            ? 'In stock · ships from Belgium'
+            : 'Sold out'}
       </span>
       <ProductForm
         productOptions={productOptions}
         selectedVariant={selectedVariant}
         hideOptionNames={content.optionAxis ? [content.optionAxis] : undefined}
+        bundleLines={isBundle ? bundleLines : undefined}
+        bundleDisabled={isBundle ? !bundleAvailable : undefined}
+        bundleCtaLabel={isBundle ? 'Add the stack — both boards' : undefined}
       />
     </div>
   );
@@ -1011,7 +1073,7 @@ export default function Product() {
         >
           {content.bundle ? (
             <p className="chapter-body">
-              The bundle is just OpenFC and OpenESC shipped together. No
+              The bundle is just OpenFC-Lite and OpenESC shipped together. No
               combined SKU, no tied hardware — each board is the same one
               you can buy on its own. What you save is courier-and-handling.
               What you don&apos;t lose is the €1 split: each firmware
@@ -1269,6 +1331,37 @@ const PRODUCT_QUERY = `#graphql
     }
   }
   ${PRODUCT_FRAGMENT}
+` as const;
+
+// Bundle component lookup: just enough of each FC/ESC product to resolve the
+// variant for the selected mount size and price/stock it. The bundle page
+// renders from its own product; this only powers the two-line add-to-cart.
+const BUNDLE_COMPONENT_QUERY = `#graphql
+  query BundleComponent(
+    $country: CountryCode
+    $language: LanguageCode
+    $handle: String!
+  ) @inContext(country: $country, language: $language) {
+    product(handle: $handle) {
+      handle
+      title
+      variants(first: 20) {
+        nodes {
+          id
+          sku
+          availableForSale
+          price {
+            amount
+            currencyCode
+          }
+          selectedOptions {
+            name
+            value
+          }
+        }
+      }
+    }
+  }
 ` as const;
 
 const PRODUCT_RECOMMENDATIONS_QUERY = `#graphql

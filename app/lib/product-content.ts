@@ -714,13 +714,13 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
 
   openstack: {
     fileNumber: '05',
-    family: 'FC + ESC Bundle',
+    family: 'FC + ESC',
     hero: {
-      line1: 'The stack,',
-      line2Italic: 'pre-stacked.',
-      line3: 'Two boards, one checkout.',
+      line1: 'Not a product.',
+      line2Italic: 'Just',
+      line3: 'an FC and an ESC.',
       lead:
-        'OpenFC and OpenESC built on the same 30.5 × 30.5 pattern. Buy them together, skip the courier round-trip, and bring-up is soldering headers, flashing once, and bolting it into OpenFrame. Two open firmwares, two maintainers paid — from one order.',
+        'The stack is OpenFC-Lite and OpenESC bought together. Order each board on its own page and you get the exact same two boards — same hardware, same box, same firmware. Bundling changes one thing: one checkout instead of two, and the second courier saved. Betaflight and AM32 each still get their €1.',
     },
     // Firmware set to empty so the single-project €N+€1 chapter is
     // suppressed. The bundle chapter replaces it with a per-component
@@ -729,61 +729,77 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
       project: '',
     },
     repoUrl: 'https://github.com/incutec-hw',
+    // No bundle-only items: the stack ships exactly what the two boards ship
+    // in their own boxes — anything else would be a fiction, since buying
+    // them separately gives the identical hardware. Each line points back to
+    // the board whose box it comes from.
     inTheBox: [
-      {qty: '1×', item: 'OpenFC board', note: 'break-off 2.4 GHz ELRS RX attached'},
-      {qty: '1×', item: 'OpenESC 4-in-1 board'},
-      {qty: '1×', item: '8-pin Betaflight signal cable', note: 'JST SM08B-SRSS-TB, pre-crimped both ends — FC ↔ ESC, length matched for a 30.5 × 30.5 stack'},
-      {qty: '1×', item: 'DJI/HD camera pigtail', note: 'JST-SH1.0 6-pin ↔ GHR 10-pin'},
-      {qty: '1×', item: 'XT60 battery pigtail with 470 µF low-ESR cap'},
-      {qty: '4×', item: 'M3 rubber soft-mount grommets'},
-      {qty: '1×', item: 'Build card', note: 'batch IDs for both boards, QC initials, firmware flash commands (Betaflight + AM32), GitHub revs'},
+      {qty: '1×', item: 'OpenFC-Lite board', note: 'ships in its own box — ESC harness, grommets, build card'},
+      {qty: '1×', item: 'OpenESC board', note: 'ships in its own box — JST cables, XT pigtail, low-ESR cap, grommets'},
     ],
-    downloads: [
-      {
-        kind: 'schematic',
-        label: 'Schematics — FC + ESC',
-        href: 'https://github.com/incutec-hw/OpenFC/raw/main/hardware/schematic.pdf',
-        note: 'Combined link — individual boards have their own repo',
-      },
-      {
-        kind: 'step',
-        label: '3D STEP — stacked assembly',
-        href: 'https://github.com/incutec-hw/OpenStack/raw/main/hardware/stack.step',
-        note: 'Both boards, 30.5 × 30.5 soft-mounted',
-      },
-      {
-        kind: 'manual',
-        label: 'Stack guide (PDF)',
-        href: 'https://github.com/incutec-hw/OpenStack/raw/main/docs/guide.pdf',
-        note: 'Wire harness routing, first-flash order, UART assignments',
-      },
-      {
-        kind: 'flash',
-        label: 'Flash commands — Betaflight + AM32',
-        href: 'https://github.com/incutec-hw/OpenStack/blob/main/docs/flashing.md',
-      },
-    ],
+    // No combined "OpenStack" repo exists — there is no stack hardware. The
+    // schematics, STEP and flashing docs live in each board's own repo; the
+    // bundle cards below link straight to those PDPs.
+    downloads: [],
     specs: [
-      ['Includes', 'OpenFC + OpenESC'],
-      ['Mount', '30.5 × 30.5'],
-      ['FC firmware', 'Betaflight (RP2354B)'],
+      ['Includes', 'OpenFC-Lite + OpenESC'],
+      ['Mount', '20×20 or 30×30 — matched pair'],
+      ['FC firmware', 'Betaflight (RP2354)'],
       ['ESC firmware', 'AM32 (AT32F421 × 4)'],
-      ['Continuous', '35 A / channel'],
+      ['Continuous', '30 A (20×20) / 50 A (30×30) per channel'],
       ['Input', '3–6S LiPo'],
       ['Contribution', '€1 → Betaflight, €1 → AM32'],
       ['License', 'CERN-OHL-S-2.0'],
     ],
     footnote:
-      'Bundle price is OpenFC + OpenESC minus the courier/handling saved by shipping together. Firmware splits stay intact — Betaflight and AM32 each get their €1.',
+      'Same two boards as their own pages — OpenFC-Lite + OpenESC. The bundle price is those two minus the courier/handling saved by shipping together; the hardware is identical. Firmware splits stay intact — Betaflight and AM32 each get their €1.',
+    // Two stack sizes, picked on the same "Model" axis the FC and ESC use.
+    // Each tier is just the matching pair at that mount size — the bundle
+    // component handles don't change, only which size variant of each board
+    // ships. Spec deltas describe the pair per size.
+    optionAxis: 'Model',
+    variants: {
+      '20×20': {
+        label: '20×20 (mini)',
+        tagline: 'OpenFC-Lite-Mini + OpenESC 20×20 — sub-3", cinewhoop, micro.',
+        highlights: [
+          ['Pair', 'FC-Lite-Mini + ESC 20×20'],
+          ['Mount', '20×20'],
+          ['Continuous', '30 A / channel'],
+        ],
+        specs: [
+          ['Includes', 'OpenFC-Lite-Mini + OpenESC (20×20)'],
+          ['Mount', '20×20'],
+          ['FC', 'OpenFC-Lite-Mini — RP2354A, QFN-60'],
+          ['ESC', 'OpenESC 20×20 — SP40N03GNJ, 40 V / 2.9 mΩ'],
+          ['Continuous', '30 A / channel'],
+        ],
+      },
+      '30×30': {
+        tagline: 'OpenFC-Lite + OpenESC 30×30 — 5", freestyle.',
+        highlights: [
+          ['Pair', 'FC-Lite + ESC 30×30'],
+          ['Mount', '30.5×30.5'],
+          ['Continuous', '50 A / channel'],
+        ],
+        specs: [
+          ['Includes', 'OpenFC-Lite + OpenESC (30×30)'],
+          ['Mount', '30.5×30.5'],
+          ['FC', 'OpenFC-Lite — RP2354, 30.5×30.5'],
+          ['ESC', 'OpenESC 30×30 — SP40N01GHNK'],
+          ['Continuous', '50 A / channel'],
+        ],
+      },
+    },
     bundle: {
       components: [
         {
-          title: 'OpenFC',
-          handle: 'openfc',
+          title: 'OpenFC-Lite',
+          handle: 'openfc-lite',
           firmware: 'Betaflight',
           firmwareUrl: 'https://github.com/betaflight/betaflight',
           blurb:
-            'RP2354B dual-core M33 with LSM6DSV16X IMU, BMP388 barometer, 16 MB blackbox and a break-off ExpressLRS RX on the same PCB.',
+            'RP2354 dual-core M33 running Betaflight: 6-axis IMU, microSD blackbox, PIO-driven analog OSD and a switchable 10 V VTX rail. No onboard radio — bring your own RX over UART.',
         },
         {
           title: 'OpenESC',
@@ -792,7 +808,7 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
           firmwareUrl:
             'https://github.com/AlkaMotors/AM32-MultiRotor-ESC-firmware',
           blurb:
-            'Four AT32F421 channels, NSG2065Q gate drivers, 35 A continuous, INA186A3 + 0.2 mΩ current sensing. 20 × 20 carrier, 30.5 × 30.5 mount holes to match OpenFC.',
+            'Four AT32F421 channels, NSG2065Q gate drivers, INA186A3 + 0.2 mΩ current sensing. Same 20×20 / 30×30 mount options as OpenFC-Lite, so the pair stacks.',
         },
       ],
     },
