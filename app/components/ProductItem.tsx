@@ -67,7 +67,7 @@ export function ProductItem({
   const url = to ?? variantUrl;
   const displayTitle = title ?? product.title;
   const price = priceOverride ?? product.priceRange.minVariantPrice;
-  const image = product.featuredImage;
+  const image = imageOverride ?? product.featuredImage;
   const hasModels = Boolean(models && models.length > 0);
 
   const badge = comingSoon ? (
