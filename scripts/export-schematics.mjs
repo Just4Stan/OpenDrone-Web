@@ -5,6 +5,11 @@
  *
  *   node scripts/export-schematics.mjs <root.kicad_sch> <handle>
  *   node scripts/export-schematics.mjs --all     # every board in boards.config.json
+ *   npm run gen:schematics                        # alias for --all; re-run after
+ *                                                 # the KiCad schematics change
+ *
+ * The OpenDrone title block (logo + title + date + sheet number) drawn on each
+ * sheet is stripped automatically on export — see stripTitleBlock below.
  *
  * `--all` reuses boards.config.json (handle → .kicad_pcb) and derives the
  * schematic next to it (same basename, .kicad_sch). One folder per board
