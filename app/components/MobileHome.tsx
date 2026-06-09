@@ -27,8 +27,8 @@ export function MobileHome({
           <HeroWordmark progress={1} className="is-filled" />
         </h1>
         <p className="home-mobile-tagline">
-          Open-source flight controllers, ESCs, and frames. Designed and
-          built in Belgium.
+          Open-source flight controllers, ESCs, and frames. Designed in
+          Belgium.
         </p>
         <div className="home-mobile-cta">
           <Link prefetch="viewport" to="/collections/all" className="hero-action-primary">

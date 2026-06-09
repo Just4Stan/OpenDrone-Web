@@ -197,12 +197,12 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
     teardown: {
       title: "Isn't it beautiful?",
       body:
-        "ESC have to carry a lot of current so optimized power routing matters. You can see it right here or check the interactive KiCAD viewer. Each AT32 microcontroller is running AM32. A large array of low-ESR, high capacitance ceramic capacitors feed the fast switching time of the MOSFET's to reduce voltage spikes. TVS diodes clamp any spikes that still get too high.",
+        'ESCs have to carry a lot of current so optimized power routing matters. You can see it right here or check the interactive KiCad viewer. Each AT32 microcontroller is running AM32. A large array of low-ESR, high-capacitance ceramic capacitors feeds the fast switching of the MOSFETs to reduce voltage spikes. TVS diodes clamp any spikes that still get too high.',
       pins: [
         {ref: '①', part: 'AT32F421 MCU', cost: '×4'},
         {ref: '②', part: 'NSG2065Q gate driver', cost: '×4'},
         {ref: '③', part: 'Low Rds(on) MOSFET', cost: '×24'},
-        {ref: '④', part: 'INA186A3 + 0.2 mΩ shunt', cost: '×4'},
+        {ref: '④', part: 'INA186A3 high-side current sense', cost: '×1'},
       ],
       boardArt: {
         src: '/boards/openesc/board.svg',
@@ -232,11 +232,11 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
     downloads: [],
     specs: [
       ['Firmware', 'AM32'],
-      ['Protocol', 'DShot, PWM...'],
+      ['Protocol', 'DShot · bidirectional DShot telemetry · PWM'],
       ['Input', '3–6S LiPo (11.1–25.2 V)'],
       ['MCU', 'AT32F421G8U7, 120 MHz'],
       ['Gate driver', 'NSG2065Q (QFN-24)'],
-      ['Current sense', 'INA186A3 + 0.2 mΩ shunt'],
+      ['Current sense', 'INA186A3 high-side, board-level'],
       ['Power rails', 'LMR54406DBVR buck + TLV76733 LDO'],
       ['Connector', 'JST SM08B-SRSS-TB (8-pin BF)'],
       ['License', 'CERN-OHL-S-2.0'],
@@ -248,28 +248,33 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
       '20×20': {
         highlights: [
           ['Mount', '20×20'],
-          ['MOSFET', 'SP40N03GNJ'],
-          ['Continuous', '30 A / channel'],
+          ['MOSFET', 'DOY180N03T'],
+          ['Continuous', '30 A / channel*'],
         ],
         specs: [
-          ['Continuous', '30 A / channel'],
-          ['MOSFETs', 'SP40N03GNJ, 40 V / 2.9 mΩ'],
-          ['PCB', '6-layer, 20×20 mount'],
+          ['Continuous', '30 A / channel — preliminary, bench characterization pending'],
+          ['MOSFETs', 'DOY180N03T, 30 V / 1.0 mΩ'],
+          ['Input', '3–6S LiPo — 6S hard maximum (30 V FETs, TVS-clamped)'],
+          ['Current sense', 'INA186A3 + 0.2 mΩ shunt · 20 mV/A, 165 A full-scale'],
+          ['PCB', '6-layer, 2 oz outer copper, 20×20 mount'],
         ],
       },
       '30×30': {
         highlights: [
           ['Mount', '30×30'],
           ['MOSFET', 'SP40N01GHNK'],
-          ['Continuous', '50 A / channel'],
+          ['Continuous', '50 A / channel*'],
         ],
         specs: [
-          ['Continuous', '50 A / channel'],
-          ['MOSFETs', 'SP40N01GHNK'],
+          ['Continuous', '50 A / channel — preliminary, bench characterization pending'],
+          ['MOSFETs', 'SP40N01GHNK, 40 V / 1.2 mΩ'],
+          ['Current sense', 'INA186A3 + 2× 0.2 mΩ shunt · 10 mV/A, 330 A full-scale'],
           ['PCB', '6-layer, 30×30 mount'],
         ],
         boardArt: {
           src: '/boards/openesc-30x30/board.svg',
+          inspectUrl:
+            'https://kicanvas.org/?github=https://github.com/incutec-hw/OpenESC-30x30',
           layers: {
             f: 'Signal + components',
             in1: 'Ground plane',
@@ -413,8 +418,8 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
   // The shipping cost-down flight controller. One design, two mount sizes
   // (20×20 / 30×30) that share nearly the whole BOM. Spec drawn from the
   // OpenFC-Lite / OpenFC-Lite-Mini READMEs. The Shopify product
-  // (handle `openfc-lite`, Model: "20×20" / "30×30") is created DRAFT by
-  // scripts/shopify-infra/06-openfc-lite.mjs — the PDP 404s until it's activated.
+  // (handle `openfc-lite`, Model: "20×20" / "30×30") is ACTIVE — this is the
+  // live FC PDP; the old `openfc` product is archived in Shopify.
   'openfc-lite': {
     fileNumber: '02',
     family: 'Flight Controller',
@@ -423,7 +428,7 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
       line2Italic: 'minus',
       line3: 'what you don’t need.',
       lead:
-        'An RP2354 dual-core M33 running Betaflight on a 6-layer board: a 6-axis IMU, microSD blackbox, PIO-driven analog OSD, and a switchable 10 V VTX rail. No barometer, no onboard radio — bring your own RX over UART and keep the board small and cheap.',
+        'An RP2354 dual-core M33 running Betaflight on a 6-layer board: a 6-axis IMU, microSD blackbox, PIO-driven analog OSD (in development), and a switchable 10 V VTX rail. No barometer, no onboard radio — bring your own RX over UART and keep the board small and cheap.',
     },
     firmware: {
       project: 'Betaflight',
@@ -455,15 +460,15 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
     // to the OpenFC-Lite repos and wire the cards here.
     downloads: [],
     specs: [
-      ['Firmware', 'Betaflight (custom RP2350 target)'],
+      ['Firmware', 'Betaflight — custom RP2350 target, upstreaming in progress'],
       ['MCU', 'RP2354 — dual M33 @ 150 MHz, 2 MB flash'],
-      ['IMU', '6-axis MEMS, LGA-14 (TDK or ST)'],
+      ['IMU', 'ST LSM6DSV16X on SPI — LGA-14 footprint also takes TDK ICM-426xx'],
       ['Blackbox', 'microSD card (TF-021B)'],
-      ['OSD', 'Analog, PIO-driven'],
+      ['OSD', 'Analog, PIO-driven — in development; digital OSD via MSP DisplayPort'],
       ['Motor outputs', '4× DShot, bidirectional telemetry'],
       ['RX', 'External, over UART (CRSF/SBUS)'],
-      ['Power', '3S–6S; switchable 10 V + always-on 5 V'],
-      ['USB', 'USB-C (config + flash)'],
+      ['Power', '3S–6S; switchable 10 V + always-on 5 V (3 A-rated bucks)'],
+      ['USB', 'USB-C (config + UF2 flash)'],
       ['Layers', '6'],
       ['License', 'CERN-OHL-S-2.0'],
     ],
@@ -479,6 +484,8 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
         ],
         specs: [
           ['MCU', 'RP2354A — dual M33 @ 150 MHz, QFN-60 (30 GPIO)'],
+          ['Betaflight target', 'OPENFC_LITE_MINI_RP2350A'],
+          ['UARTs', '3 — 2 hardware + 1 PIO'],
           ['Size', '20×20 mm, 6-layer'],
         ],
         boardArt: {
@@ -493,7 +500,10 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
           ['Mount', '30×30'],
           ['Size', '30.5×30.5 mm'],
         ],
-        specs: [['Size', '30.5×30.5 mm, 6-layer']],
+        specs: [
+          ['UARTs', '4 — 2 hardware + 2 PIO'],
+          ['Size', '30.5×30.5 mm, 6-layer'],
+        ],
         boardArt: {
           src: '/boards/openfc-lite/board.svg',
           inspectUrl:
@@ -526,11 +536,11 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
     teardown: {
       title: 'One ESP32-C3, one (or two) radios, careful RF.',
       body:
-        'Every variant runs on the ESP32-C3 at the MCU layer. Lite uses Semtech SX1281 with the 2450FM07D0034 BPF; Mono and Gemini use Semtech LR1121 with the RFX2401C + SKY13414 + Johanson IPD front-end. Firmware targets upstream to ExpressLRS (Unified_ESP32C3_2400_RX for Lite, Unified_ESP32C3_LR1121_RX for Mono/Gemini).',
+        'Every variant runs on the ESP32-C3 at the MCU layer. Lite uses Semtech SX1281 with the 2450FM07D0034 BPF; Mono and Gemini use Semtech LR1121 with the RFX2401C + SKY13373 + Johanson IPD front-end. Firmware targets upstream to ExpressLRS (Unified_ESP32C3_2400_RX for Lite, Unified_ESP32C3_LR1121_RX for Mono/Gemini).',
       pins: [
         {ref: '①', part: 'ESP32-C3 — Wi-Fi OTA + CRSF'},
         {ref: '②', part: 'SX1281 (Lite) or LR1121 (Mono/Gemini)'},
-        {ref: '③', part: 'RFX2401C + SKY13414 front-end (Mono/Gemini)'},
+        {ref: '③', part: 'RFX2401C + SKY13373 front-end (Mono/Gemini)'},
         {ref: '④', part: 'U.FL or ceramic antenna'},
       ],
     },
@@ -540,50 +550,18 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
       {qty: '1×', item: 'Heat-shrink sleeve + double-sided tape'},
       {qty: '1×', item: 'Build card', note: 'batch ID, QC initials, ExpressLRS flash target, GitHub rev'},
     ],
-    downloads: [
-      {
-        kind: 'schematic',
-        label: 'Schematic (PDF)',
-        href: 'https://github.com/incutec-hw/OpenRX/raw/main/hardware/schematic.pdf',
-        note: 'All four variants — Lite / Lite-UFL / Mono / Gemini',
-      },
-      {
-        kind: 'step',
-        label: '3D STEP — all variants',
-        href: 'https://github.com/incutec-hw/OpenRX/raw/main/hardware/boards.step',
-      },
-      {
-        kind: 'bom',
-        label: 'BOM (CSV)',
-        href: 'https://github.com/incutec-hw/OpenRX/raw/main/hardware/bom.csv',
-        note: 'Per-variant — front-end parts only on Mono/Gemini',
-      },
-      {
-        kind: 'gerber',
-        label: 'Gerbers (ZIP)',
-        href: 'https://github.com/incutec-hw/OpenRX/raw/main/hardware/gerbers.zip',
-      },
-      {
-        kind: 'manual',
-        label: 'User manual (PDF)',
-        href: 'https://github.com/incutec-hw/OpenRX/raw/main/docs/manual.pdf',
-      },
-      {
-        kind: 'flash',
-        label: 'ExpressLRS flash targets',
-        href: 'https://github.com/incutec-hw/OpenRX/blob/main/docs/flashing.md',
-        note: 'Unified_ESP32C3_2400_RX (Lite), Unified_ESP32C3_LR1121_RX (Mono/Gemini)',
-      },
-    ],
+    // TODO(downloads): every previous card 404'd — the artifacts were never
+    // published to the OpenRX repo. Publish schematic.pdf / boards.step /
+    // bom.csv / gerbers.zip / manual.pdf / flashing.md, then re-add the cards.
+    downloads: [],
     specs: [
-      ['Firmware', 'ExpressLRS'],
+      ['Firmware', 'ExpressLRS (3.5.0+)'],
       ['Telemetry', 'CRSF'],
-      ['MCU', 'ESP32-C3'],
+      ['MCU', 'ESP32-C3, 4 MB flash'],
+      ['Wi-Fi antenna', 'Dedicated on-board ceramic — separate from the link antenna'],
       ['Flashing', 'UART first, then Wi-Fi OTA / BF passthrough'],
       ['License', 'CERN-OHL-S-2.0'],
     ],
-    footnote:
-      'Variants will land as Shopify options once the test batch of Mono and Gemini returns. Lite and Lite-UFL ship first.',
     optionAxis: 'Model',
     variants: {
       Lite: {
@@ -592,6 +570,13 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
           ['Radio', 'Semtech SX1281'],
           ['Band', '2.4 GHz'],
           ['Antenna', 'Ceramic, on-board'],
+        ],
+        specs: [
+          ['Radio', 'Semtech SX1281, 2.4 GHz'],
+          ['Flash target', 'Unified_ESP32C3_2400_RX'],
+          ['Telemetry power', '13 dBm (~20 mW)'],
+          ['Antenna', 'On-board ceramic chip — no antenna wire to tear off'],
+          ['Size', '10.05 × 10.55 mm, 6-layer'],
         ],
         boardArt: {src: '/boards/openrx-lite/board.svg'},
       },
@@ -602,6 +587,13 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
           ['Band', '2.4 GHz'],
           ['Antenna', 'U.FL × 1'],
         ],
+        specs: [
+          ['Radio', 'Semtech SX1281, 2.4 GHz'],
+          ['Flash target', 'Unified_ESP32C3_2400_RX'],
+          ['Telemetry power', '13 dBm (~20 mW)'],
+          ['Antenna', 'U.FL — run the dipole of your choice'],
+          ['Size', '10.05 × 10.55 mm, 6-layer'],
+        ],
         inTheBox: [{qty: '1×', item: 'U.FL dipole antenna'}],
         boardArt: {src: '/boards/openrx-lite-ufl/board.svg'},
       },
@@ -609,9 +601,16 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
         tagline: 'Single LR1121 for multi-band links, with the RF front-end.',
         highlights: [
           ['Radio', 'Semtech LR1121'],
-          ['Band', 'Multi-band'],
-          ['Front-end', 'RFX2401C + SKY13414'],
+          ['Band', '2.4 GHz + sub-GHz'],
+          ['Front-end', 'RFX2401C + SKY13373'],
           ['Antenna', 'U.FL × 1'],
+        ],
+        specs: [
+          ['Radio', 'Semtech LR1121 — dual-band from one antenna'],
+          ['Flash target', 'Unified_ESP32C3_LR1121_RX'],
+          ['Telemetry power', '12–22 dBm selectable (~158 mW max), 12 dB RX LNA'],
+          ['Antenna', 'U.FL, both bands through one RF switch'],
+          ['Size', '10.05 × 16.35 mm, 6-layer'],
         ],
         inTheBox: [{qty: '1×', item: 'U.FL dipole antenna'}],
         boardArt: {src: '/boards/openrx-mono/board.svg'},
@@ -620,9 +619,17 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
         tagline: 'Dual LR1121 in ExpressLRS Xrossband mode for frequency-diverse links.',
         highlights: [
           ['Radio', 'Semtech LR1121 × 2'],
-          ['Band', 'Multi-band, diversity'],
-          ['Front-end', 'RFX2401C + SKY13414'],
+          ['Band', '2.4 GHz + sub-GHz, diversity'],
+          ['Front-end', 'RFX2401C + SKY13373'],
           ['Antenna', 'U.FL × 2'],
+        ],
+        specs: [
+          ['Radio', '2× Semtech LR1121 — two complete radio chains'],
+          ['Flash target', 'Unified_ESP32C3_LR1121_RX'],
+          ['Telemetry power', '12–22 dBm per radio (~158 mW), 12 dB RX LNA per chain'],
+          ['Antenna', '2× U.FL — one per radio'],
+          ['Flashing', 'UART with on-board BOOT button, Wi-Fi OTA, BF passthrough'],
+          ['Size', '17.05 × 15.75 mm, 6-layer'],
         ],
         inTheBox: [
           {qty: '2×', item: 'U.FL dipole antenna', note: 'diversity pair'},
@@ -746,13 +753,14 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
       ['Mount', '20×20 or 30×30 — matched pair'],
       ['FC firmware', 'Betaflight (RP2354)'],
       ['ESC firmware', 'AM32 (AT32F421 × 4)'],
-      ['Continuous', '30 A (20×20) / 50 A (30×30) per channel'],
+      ['Continuous', '30 A (20×20) / 50 A (30×30) per channel — preliminary'],
       ['Input', '3–6S LiPo'],
+      ['Harness', '8-pin JST SH, plug-and-play FC↔ESC — no signal soldering'],
       ['Contribution', '€1 → Betaflight, €1 → AM32'],
       ['License', 'CERN-OHL-S-2.0'],
     ],
     footnote:
-      'Same two boards as their own pages — OpenFC-Lite + OpenESC. The bundle price is those two minus the courier/handling saved by shipping together; the hardware is identical. Firmware splits stay intact — Betaflight and AM32 each get their €1.',
+      'Same two boards as their own pages — OpenFC-Lite + OpenESC, at the same prices. One checkout, one parcel, one courier fee instead of two. Firmware splits stay intact — Betaflight and AM32 each get their €1.',
     // Two stack sizes, picked on the same "Model" axis the FC and ESC use.
     // Each tier is just the matching pair at that mount size — the bundle
     // component handles don't change, only which size variant of each board
@@ -771,8 +779,8 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
           ['Includes', 'OpenFC-Lite-Mini + OpenESC (20×20)'],
           ['Mount', '20×20'],
           ['FC', 'OpenFC-Lite-Mini — RP2354A, QFN-60'],
-          ['ESC', 'OpenESC 20×20 — SP40N03GNJ, 40 V / 2.9 mΩ'],
-          ['Continuous', '30 A / channel'],
+          ['ESC', 'OpenESC 20×20 — DOY180N03T, 30 V / 1.0 mΩ'],
+          ['Continuous', '30 A / channel — preliminary'],
         ],
       },
       '30×30': {
@@ -786,8 +794,8 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
           ['Includes', 'OpenFC-Lite + OpenESC (30×30)'],
           ['Mount', '30.5×30.5'],
           ['FC', 'OpenFC-Lite — RP2354, 30.5×30.5'],
-          ['ESC', 'OpenESC 30×30 — SP40N01GHNK'],
-          ['Continuous', '50 A / channel'],
+          ['ESC', 'OpenESC 30×30 — SP40N01GHNK, 40 V / 1.2 mΩ'],
+          ['Continuous', '50 A / channel — preliminary'],
         ],
       },
     },
@@ -799,7 +807,7 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
           firmware: 'Betaflight',
           firmwareUrl: 'https://github.com/betaflight/betaflight',
           blurb:
-            'RP2354 dual-core M33 running Betaflight: 6-axis IMU, microSD blackbox, PIO-driven analog OSD and a switchable 10 V VTX rail. No onboard radio — bring your own RX over UART.',
+            'RP2354 dual-core M33 running Betaflight: 6-axis IMU, microSD blackbox, PIO-driven analog OSD (in development) and a switchable 10 V VTX rail. No onboard radio — bring your own RX over UART.',
         },
         {
           title: 'OpenESC',

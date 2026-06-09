@@ -228,7 +228,10 @@ type ChapterNumbers = {
 };
 
 /** Compute chapter numbers that stay contiguous when any chapter is hidden. */
-function computeChapterNumbers(content: ProductContent): ChapterNumbers {
+function computeChapterNumbers(
+  content: ProductContent,
+  includeOpenSource = true,
+): ChapterNumbers {
   let n = 1;
   const pad = (x: number) => x.toString().padStart(2, '0');
   const out: ChapterNumbers = {openSource: ''};
@@ -236,7 +239,11 @@ function computeChapterNumbers(content: ProductContent): ChapterNumbers {
   if (content.teardown) {
     out.teardown = pad(n++);
   }
-  out.openSource = pad(n++);
+  // Accessories (fallback content) aren't open-hardware products — they get
+  // no "Open for learning" chapter, so don't burn a chapter number on it.
+  if (includeOpenSource) {
+    out.openSource = pad(n++);
+  }
   if (content.inTheBox.length > 0 || content.bundle) {
     out.inTheBox = pad(n++);
   }
@@ -509,9 +516,14 @@ export default function Product() {
       : [];
 
   const primaryCollection = product.collections?.nodes?.[0];
+  // isEditorial: this handle has a real PRODUCT_CONTENT entry. Fallback
+  // products (accessories like straps and hardware kits) are not open-source
+  // hardware — they must not claim a CERN-OHL-S license or render the
+  // "Open for learning" chapter pointing at the GitHub org.
+  const isEditorial = Boolean(PRODUCT_CONTENT[product.handle]);
   const content = PRODUCT_CONTENT[product.handle] ?? PRODUCT_CONTENT_FALLBACK;
   const hasHeroCopy = Boolean(content.hero.line1);
-  const chapterNums = computeChapterNumbers(content);
+  const chapterNums = computeChapterNumbers(content, isEditorial);
 
   // Repo whose commit history backs the "Open for learning" row's 4th card —
   // the bundle's first component repo, else this product's own. Used as the
@@ -684,6 +696,9 @@ export default function Product() {
   // the "File 0N · Family" eyebrow is the navigation clue instead.
   void primaryCollection;
 
+  // Bundles advertise the composed component price (what add-to-cart actually
+  // charges), not the Shopify master-variant placeholder.
+  const jsonLdPrice = content.bundle ? bundlePrice : selectedVariant?.price;
   const productJsonLd = buildProductJsonLd({
     title: product.title,
     description: product.description,
@@ -691,13 +706,15 @@ export default function Product() {
     url: `https://opendrone.be/products/${product.handle}`,
     vendor: product.vendor,
     sku: selectedVariant?.sku ?? null,
-    price: selectedVariant?.price
+    price: jsonLdPrice
       ? {
-          amount: selectedVariant.price.amount,
-          currencyCode: selectedVariant.price.currencyCode,
+          amount: jsonLdPrice.amount,
+          currencyCode: jsonLdPrice.currencyCode,
         }
       : null,
-    availableForSale: selectedVariant?.availableForSale ?? false,
+    availableForSale: content.bundle
+      ? bundleAvailable
+      : (selectedVariant?.availableForSale ?? false),
     productHandle: product.handle,
   });
 
@@ -730,7 +747,10 @@ export default function Product() {
         />
         {isBundle ? (
           <span className="product-buy-sku">
-            OpenFC-Lite + OpenESC · {activeTier}
+            {/* Name the actual pair for the tier (20×20 ships the Mini). */}
+            {content.variants?.[activeTier]?.highlights?.find(
+              ([k]) => k === 'Pair',
+            )?.[1] ?? `OpenFC-Lite + OpenESC · ${activeTier}`}
           </span>
         ) : selectedVariant?.sku ? (
           <span className="product-buy-sku">SKU {selectedVariant.sku}</span>
@@ -797,11 +817,23 @@ export default function Product() {
           </p>
           {hasHeroCopy ? (
             <h1 className="product-hero-headline">
-              <span>{content.hero.line1}</span>{' '}
-              <span>
-                <em>{content.hero.line2Italic}</em>
-              </span>{' '}
-              <span>{content.hero.line3}</span>
+              {/* Skip empty lines — single-line heroes (OpenESC) otherwise
+                  render stray empty <em>/<span> nodes and join spaces. */}
+              <span>{content.hero.line1}</span>
+              {content.hero.line2Italic ? (
+                <>
+                  {' '}
+                  <span>
+                    <em>{content.hero.line2Italic}</em>
+                  </span>
+                </>
+              ) : null}
+              {content.hero.line3 ? (
+                <>
+                  {' '}
+                  <span>{content.hero.line3}</span>
+                </>
+              ) : null}
             </h1>
           ) : (
             <h1 className="product-hero-headline">
@@ -815,15 +847,17 @@ export default function Product() {
           ) : null}
 
           <ul className="trust-chips" aria-label="Certifications">
-            <li>
-              <Link
-                to="/open-source"
-                prefetch="viewport"
-                className="trust-chip trust-chip-green trust-chip-link"
-              >
-                Open source · CERN-OHL-S-2.0
-              </Link>
-            </li>
+            {isEditorial ? (
+              <li>
+                <Link
+                  to="/open-source"
+                  prefetch="viewport"
+                  className="trust-chip trust-chip-green trust-chip-link"
+                >
+                  Open source · CERN-OHL-S-2.0
+                </Link>
+              </li>
+            ) : null}
             {content.bundle ? (
               <li>
                 <Link
@@ -940,6 +974,7 @@ export default function Product() {
       ) : null}
 
       {/* === Chapter: Open for learning === */}
+      {!isEditorial ? null : (
       <Chapter
         number={chapterNums.openSource}
         label="Open for learning"
@@ -1049,6 +1084,7 @@ export default function Product() {
           ) : null}
         </div>
       </Chapter>
+      )}
 
       {/* === Chapter: In the box (always) === */}
       {(content.inTheBox.length > 0 || content.bundle) &&
