@@ -9,6 +9,7 @@ import type {CompanyIdentity} from '~/lib/company';
 import {Aside} from '~/components/Aside';
 import {Footer} from '~/components/Footer';
 import {Header, HeaderMenu} from '~/components/Header';
+import {LangToggle} from '~/components/LangToggle';
 import {CartMain} from '~/components/CartMain';
 import {PlaceholderBanner} from '~/components/PlaceholderBanner';
 import {RouteProgress} from '~/components/RouteProgress';
@@ -190,6 +191,10 @@ function MobileMenuAside({
           primaryDomainUrl={header.shop.primaryDomain.url}
           publicStoreDomain={publicStoreDomain}
         />
+        {/* Language switch lives in the drawer on phones — it's hidden from the
+            top bar there to keep the header row inside a 320px viewport.
+            LangToggle self-hides on non-legal routes. */}
+        <LangToggle className="mobile-menu-lang" />
       </Aside>
     )
   );

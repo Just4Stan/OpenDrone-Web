@@ -810,6 +810,24 @@ a:hover {
   color: var(--color-text);
 }
 
+/* Header icon controls (theme, search, cart, menu). Desktop keeps the compact
+   icon footprint; on phones each gets a 44x44 minimum hit area (Apple HIG /
+   WCAG 2.5.5) without enlarging the glyph itself. Negative inline margin
+   cancels the extra width so the tighter mobile CTA gap still reads evenly. */
+.site-header-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+@media (max-width: 768px) {
+  .site-header-icon {
+    min-width: 44px;
+    min-height: 44px;
+    margin-inline: -6px;
+  }
+}
+
 .site-header-logo:hover {
   opacity: 0.85;
 }
@@ -5487,6 +5505,21 @@ button.reset {
   padding: 0.25rem 0.55rem;
   font-size: 11px;
   letter-spacing: 0.15em;
+}
+
+/* The top-bar lang toggle would overflow a 320px header row on legal pages,
+   so hide it on phones — MobileMenuAside renders the full-size toggle inside
+   the slide-out drawer instead. */
+@media (max-width: 768px) {
+  .lang-toggle.header-lang-toggle {
+    display: none;
+  }
+}
+
+/* Drawer copy of the lang toggle: full-size taps, spaced below the nav links. */
+.lang-toggle.mobile-menu-lang {
+  margin-top: 0.5rem;
+  align-self: flex-start;
 }
 
 .legal-body h2 {

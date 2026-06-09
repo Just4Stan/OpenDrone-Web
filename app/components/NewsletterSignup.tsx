@@ -163,7 +163,7 @@ export function NewsletterSignup({
         .join(' ')}
     >
       <div>
-        <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-[var(--color-gold)] mb-0.5">
+        <p className="font-mono text-[12px] uppercase tracking-[0.2em] text-[var(--color-gold)] mb-0.5">
           Newsletter · Engineering Essentials
         </p>
         <h3
@@ -237,7 +237,7 @@ export function NewsletterSignup({
             className={[
               'flex-1 bg-[var(--color-bg)] border border-[var(--color-border)]',
               'text-[var(--color-text)] placeholder:text-[var(--color-text-muted)]',
-              'font-mono text-sm px-3 py-2.5 rounded-sm',
+              'font-mono text-sm px-3 py-2.5 min-h-[44px] rounded-sm',
               'focus:outline-none focus:border-[var(--color-gold)]',
               'disabled:opacity-50 disabled:cursor-not-allowed',
             ].join(' ')}
@@ -248,7 +248,7 @@ export function NewsletterSignup({
             className={[
               'font-mono text-xs uppercase tracking-[0.14em] font-bold',
               'bg-[var(--color-gold)] text-[var(--color-on-accent)]',
-              'px-5 py-2.5 rounded-sm',
+              'px-5 py-2.5 min-h-[44px] inline-flex items-center justify-center rounded-sm',
               'transition-colors hover:bg-[var(--color-gold-hover)]',
               'disabled:opacity-60 disabled:cursor-not-allowed',
               isWide || isFooter ? 'sm:shrink-0' : '',

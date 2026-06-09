@@ -44,7 +44,7 @@ const LEGAL_LINKS: Array<{to: string; label: string}> = [
 
 function ColumnHeading({children}: {children: React.ReactNode}) {
   return (
-    <h4 className="font-mono text-[11px] uppercase tracking-[0.2em] text-[var(--color-text-muted)] mb-3">
+    <h4 className="font-mono text-[12px] uppercase tracking-[0.2em] text-[var(--color-text-muted)] mb-3">
       {children}
     </h4>
   );
@@ -57,7 +57,7 @@ function FooterNavLink({to, children}: {to: string; children: React.ReactNode}) 
       prefetch="viewport"
       to={to}
       className={({isActive}) =>
-        `text-xs transition-colors ${
+        `text-xs transition-colors flex items-center min-h-[44px] md:min-h-0 ${
           isActive
             ? 'text-[var(--color-text)]'
             : 'text-[var(--color-text-muted)] hover:text-[var(--color-text)]'
@@ -115,7 +115,7 @@ export function Footer({company, turnstileSiteKey}: FooterProps) {
                   href={link.href}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-xs text-[var(--color-text-muted)] hover:text-[var(--color-text)] transition-colors"
+                  className="text-xs text-[var(--color-text-muted)] hover:text-[var(--color-text)] transition-colors flex items-center min-h-[44px] md:min-h-0"
                 >
                   {link.label}
                 </a>
@@ -146,7 +146,7 @@ export function Footer({company, turnstileSiteKey}: FooterProps) {
 
         {/* Bottom bar */}
         <div className="mt-8 pt-5 border-t border-[var(--color-border)] flex flex-col md:flex-row items-center justify-between gap-3">
-          <p className="text-[11px] text-[var(--color-text-muted)] font-mono tracking-wide">
+          <p className="text-[12px] text-[var(--color-text-muted)] font-mono tracking-wide">
             &copy; {new Date().getFullYear()} {company.name}. Hardware:
             CERN-OHL-S. Firmware: GPL/MIT. Open Source Hardware.
           </p>
@@ -154,7 +154,7 @@ export function Footer({company, turnstileSiteKey}: FooterProps) {
             href="https://github.com/incutec-hw"
             target="_blank"
             rel="noopener noreferrer"
-            className="text-[var(--color-text-muted)] hover:text-[var(--color-text)] transition-colors"
+            className="inline-flex items-center justify-center min-h-[44px] min-w-[44px] md:min-h-0 md:min-w-0 text-[var(--color-text-muted)] hover:text-[var(--color-text)] transition-colors"
             aria-label="GitHub"
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
