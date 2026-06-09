@@ -1,5 +1,6 @@
 import {useEffect, useRef, useState} from 'react';
 import {fetchJsonCached, peekJson, prefetchImage} from '~/lib/asset-prefetch';
+import {SCHEMATICS_VERSION} from '~/data/schematics-version';
 
 export type SchematicViewerProps = {
   /** Board handle whose schematic lives at /schematics/<handle>/manifest.json */
@@ -14,8 +15,13 @@ export type SchematicViewerProps = {
 type Sheet = {slug: string; label: string; file: string; w?: number; h?: number};
 type Manifest = {sheets?: Sheet[]};
 
-const manifestUrl = (h: string) => `/schematics/${h}/manifest.json`;
-const sheetUrl = (h: string, file: string) => `/schematics/${h}/${file}`;
+// `?v=` busts Oxygen's 1-year immutable cache when schematics are regenerated in
+// place — the token is the content hash of all exported sheets, baked into the
+// bundle by scripts/export-schematics.mjs.
+const manifestUrl = (h: string) =>
+  `/schematics/${h}/manifest.json?v=${SCHEMATICS_VERSION}`;
+const sheetUrl = (h: string, file: string) =>
+  `/schematics/${h}/${file}?v=${SCHEMATICS_VERSION}`;
 
 /**
  * Paged viewer for a multi-sheet KiCad schematic — the schematic analogue of
