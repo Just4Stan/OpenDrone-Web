@@ -39,6 +39,9 @@ declare global {
     PUBLIC_CUSTOMER_ACCOUNT_API_URL: string;
     PUBLIC_CHECKOUT_DOMAIN: string;
 
+    // Pre-launch banner kill switch: unset/anything ≠ '0' keeps the banner.
+    PUBLIC_PRELAUNCH?: string;
+
     PUBLIC_COMPANY_NAME?: string;
     PUBLIC_COMPANY_ADDRESS?: string;
     PUBLIC_COMPANY_KBO?: string;

@@ -2,7 +2,6 @@ import {Await, Link, useLocation} from 'react-router';
 import {Suspense, useId} from 'react';
 import type {
   CartApiQueryFragment,
-  FooterQuery,
   HeaderQuery,
 } from 'storefrontapi.generated';
 import type {CompanyIdentity} from '~/lib/company';
@@ -21,24 +20,24 @@ import {buildSearchPath} from '~/lib/search';
 
 interface PageLayoutProps {
   cart: Promise<CartApiQueryFragment | null>;
-  footer: Promise<FooterQuery | null>;
   header: HeaderQuery;
   isLoggedIn: Promise<boolean>;
   publicStoreDomain: string;
   company: CompanyIdentity;
   turnstileSiteKey?: string | null;
+  prelaunch?: boolean;
   children?: React.ReactNode;
 }
 
 export function PageLayout({
   cart,
   children = null,
-  footer: _footer,
   header,
   isLoggedIn,
   publicStoreDomain,
   company,
   turnstileSiteKey,
+  prelaunch = true,
 }: PageLayoutProps) {
   const {pathname} = useLocation();
   const isHomepage = pathname === '/';
@@ -53,7 +52,7 @@ export function PageLayout({
           Skip to main content
         </a>
         <RouteProgress />
-        <PlaceholderBanner />
+        {prelaunch && <PlaceholderBanner />}
         {header && (
           <Header
             header={header}
