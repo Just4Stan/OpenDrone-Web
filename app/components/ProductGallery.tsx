@@ -72,6 +72,9 @@ export function ProductGallery({
           aspectRatio="1/1"
           sizes="(min-width: 960px) 60vw, 100vw"
           loading="eager"
+          // This is the PDP's LCP element — without an explicit priority it
+          // competes with the route chunk + fonts at default priority.
+          fetchPriority="high"
         />
         {images.length > 1 && (
           <div className="product-gallery-controls" aria-hidden="false">

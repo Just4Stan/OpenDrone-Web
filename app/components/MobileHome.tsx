@@ -9,7 +9,7 @@ import {ProductItem} from '~/components/ProductItem';
  *
  * The desktop homepage IS the WebGL hero scene + scroll-pinned
  * choreography (see DesktopHome in routes/_index.tsx). That experience is
- * deliberately never loaded on mobile — 14 MB of GLBs and a scroll story
+ * deliberately never loaded on mobile — ~6.3 MB of GLBs and a scroll story
  * tuned for a mouse. Rendering only the desktop tree on a phone left a
  * ~400vh empty void with floating, overlapping CTAs. This component is
  * the mobile counterpart: a plain landing page that gets a visitor to the
