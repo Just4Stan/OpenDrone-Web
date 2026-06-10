@@ -31,8 +31,8 @@ export function CartSummary({cart, layout}: CartSummaryProps) {
       </dl>
       <CartCheckoutActions checkoutUrl={cart?.checkoutUrl} />
       <p className="cart-summary-note">
-        Taxes, shipping, and any discount or gift-card codes are
-        applied on the next page.
+        Prices include VAT. Shipping and any discount or gift-card codes
+        are applied on the next page.
       </p>
       <p className="cart-summary-note">
         By completing this order you accept the Incutec{' '}

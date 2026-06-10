@@ -191,6 +191,35 @@ export default function OrderRoute() {
           <div>
             <p>{fulfillmentStatus}</p>
           </div>
+          {/* Carrier + tracking number inline — Sendcloud writes these back
+              onto the fulfillment; saves a hop to the Shopify status page. */}
+          {order.fulfillments.nodes.some(
+            (f) => f.trackingInformation?.length,
+          ) ? (
+            <>
+              <h3>Tracking</h3>
+              <div>
+                {order.fulfillments.nodes.flatMap(
+                  (f, i) =>
+                    f.trackingInformation?.map((t, j) => (
+                      <p key={`${i}-${j}`}>
+                        {t.url ? (
+                          <a target="_blank" href={t.url} rel="noreferrer">
+                            {t.company ? `${t.company} · ` : ''}
+                            {t.number ?? 'Track parcel'} ↗
+                          </a>
+                        ) : (
+                          <>
+                            {t.company ? `${t.company} · ` : ''}
+                            {t.number}
+                          </>
+                        )}
+                      </p>
+                    )) ?? [],
+                )}
+              </div>
+            </>
+          ) : null}
         </aside>
       </div>
       <p className="account-order-status-link">
