@@ -76,9 +76,7 @@
 
 7.3. The risk of damage and/or loss of products lies with Incutec BV until the moment of delivery to the consumer.
 
-7.4. Incutec BV offers at least **two delivery methods** (Art. VI.45/3 WER: Act of 9 February 2024, applicable since 21 September 2024 for all Belgian webshops). The two methods must be substantially different (e.g., home delivery + parcel point; using two carriers that both offer only home delivery is not sufficient).
-
-> **Note:** Start-ups younger than 3 years are exempt from this obligation. Incutec may invoke this exemption in its early stage.
+7.4. Incutec BV offers at least **two delivery methods** (Art. VI.45/2 WER: Act of 9 February 2024, applicable since 21 September 2024 for all Belgian webshops). The two methods must be substantially different (e.g., home delivery + parcel point; using two carriers that both offer only home delivery is not sufficient).
 
 ### Article 8: Payment
 
@@ -94,7 +92,7 @@
 
 9.2bis. **Goods with digital elements:** Incutec BV's products contain firmware (digital elements) which is necessary for their functioning, within the meaning of Directive (EU) 2019/771 Art. 2(5b). Incutec BV ensures that the consumer is informed of available firmware updates necessary to maintain the product's conformity during the 2-year warranty period. Firmware updates are made available through the open source projects on which the products are based (Betaflight, AM32, ExpressLRS). Incutec BV maintains the hardware-specific support (board target definitions) needed to install these updates.
 
-9.2ter. **Hierarchy of remedies:** In the event of a lack of conformity the consumer has the right to request, at their choice, repair or replacement of the product. Only where repair and replacement are impossible or disproportionate may the consumer request a price reduction or rescission of the contract (Art. VI.83 octies et seq. of the Belgian Code of Economic Law (Book VI) and Art. 1701/1 et seq. of the old Civil Code, as amended by the Act of 20 March 2022 transposing Directive (EU) 2019/771).
+9.2ter. **Hierarchy of remedies:** In the event of a lack of conformity the consumer has the right to request, at their choice, repair or replacement of the product. Only where repair and replacement are impossible or disproportionate may the consumer request a price reduction or rescission of the contract (Art. 1649quinquies of the old Civil Code, as inserted by the Act of 20 March 2022 transposing Directive (EU) 2019/771).
 
 9.3. The warranty does not cover damage caused by:
 - Improper use or installation (deviation from the user manual)

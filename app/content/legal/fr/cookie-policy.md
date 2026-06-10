@@ -20,7 +20,7 @@ Les cookies sont de petits fichiers texte placés sur votre appareil par un site
 |--------|---------|-----------|
 | `cart`, `cart_sig`, `cart_ts`, `_secure_session_id`, `_shopify_tm` | Gestion du panier et de la session (Shopify) | Session |
 | `_tracking_consent`, `_cmp_a` | Mémoriser vos préférences de cookies (Shopify Customer Privacy API) | 6 mois |
-| `__stripe_mid`, `__stripe_sid` | Prévention de la fraude au paiement (Stripe, Art. 129 §1 LCE — Loi du 13 juin 2005, deuxième tiret : strictement nécessaire à la fourniture du service expressément demandé ; Directive ePrivacy 2002/58/CE) | 1 an / session |
+| `__stripe_mid`, `__stripe_sid` | Prévention de la fraude au paiement — placés **uniquement sur les pages de paiement hébergées par Shopify**, pas sur cette boutique (Stripe, Art. 129 §1 LCE — Loi du 13 juin 2005, deuxième tiret : strictement nécessaire à la fourniture du service expressément demandé ; Directive ePrivacy 2002/58/CE) | 1 an / session |
 
 #### Analyse
 
@@ -34,9 +34,9 @@ Incutec BV n’utilise **aucun cookie marketing ou de reciblage** au lancement. 
 
 ### Consentement
 
-- Les cookies non essentiels ne sont **placés qu’après votre consentement explicite** (opt-in).
-- Vous pouvez retirer votre consentement à tout moment via les paramètres de cookies sur notre site.
-- Le refus des cookies non essentiels n’affecte pas le fonctionnement du site.
+- Nous ne plaçons actuellement que des **cookies strictement nécessaires** ; c’est pourquoi aucun bandeau de consentement n’est affiché.
+- Si nous introduisons un jour des cookies non essentiels, ils ne seront **placés qu’après votre consentement explicite** (opt-in), et cette politique sera d’abord mise à jour.
+- La page [paramètres des cookies](/cookie-settings) vous permet d’effacer à tout moment les cookies placés par ce site.
 - **Les murs à cookies sont interdits :** nous ne vous refuserons jamais l’accès au site si vous refusez les cookies.
 
 ### Gestion des cookies

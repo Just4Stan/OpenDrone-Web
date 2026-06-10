@@ -19,7 +19,7 @@ Cookies zijn kleine tekstbestanden die door een website op uw apparaat worden ge
 |--------|------|--------------|
 | `cart`, `cart_sig`, `cart_ts`, `_secure_session_id`, `_shopify_tm` | Winkelwagen- en sessiebeheer (Shopify) | Sessie |
 | `_tracking_consent`, `_cmp_a` | Uw cookievoorkeuren onthouden (Shopify Customer Privacy API) | 6 maanden |
-| `__stripe_mid`, `__stripe_sid` | Fraudepreventie bij betaling (Stripe, Art. 129 §1 LCE — Wet 13 juni 2005, tweede streepje: strikt noodzakelijk voor de gevraagde dienst; ePrivacy Richtlijn 2002/58/EG) | 1 jaar / sessie |
+| `__stripe_mid`, `__stripe_sid` | Fraudepreventie bij betaling — wordt **uitsluitend op de gehoste Shopify-checkoutpagina's** geplaatst tijdens de betaling, niet op deze storefront (Stripe, Art. 129 §1 WEC — Wet van 13 juni 2005, tweede streepje: strikt noodzakelijk voor de uitdrukkelijk gevraagde dienst; ePrivacy-richtlijn 2002/58/EG) | 1 jaar / sessie |
 
 #### Analytische cookies
 
@@ -33,9 +33,9 @@ Incutec BV gebruikt bij de lancering **geen marketing- of remarketingcookies**. 
 
 ### Toestemming
 
-- Niet-essentiële cookies worden **pas geplaatst na uw uitdrukkelijke toestemming** (opt-in).
-- U kunt uw toestemming op elk moment intrekken via de cookie-instellingen op onze website.
-- Het weigeren van niet-essentiële cookies heeft geen invloed op de werking van de website.
+- Wij plaatsen momenteel **uitsluitend strikt noodzakelijke cookies**; daarom tonen wij geen toestemmingsbanner.
+- Als wij ooit niet-essentiële cookies introduceren, worden die **pas geplaatst na uw uitdrukkelijke toestemming** (opt-in), en wordt dit beleid eerst bijgewerkt.
+- Via de pagina [cookie-instellingen](/cookie-settings) kunt u de door deze site geplaatste cookies op elk moment wissen.
 - **Cookie walls zijn verboden:** wij weigeren u nooit toegang tot de website als u cookies weigert.
 
 ### Cookies beheren
@@ -84,7 +84,7 @@ Source: https://www.dataprotectionauthority.be/publications/recommendation-no-01
 | `_tracking_consent`, `_cmp_a` (Customer Privacy API) | Strictly necessary | No |
 | `_shopify_s`, `_shopify_y` (Shopify analytics) | Analytics | Yes, opt-in |
 | `_shopify_sa_t`, `_shopify_sa_p`, `_shopify_d`, `_orig_referrer`, `_landing_page` | Marketing | Yes, opt-in |
-| Stripe `__stripe_mid`, `__stripe_sid` | Strictly necessary (fraud prevention, Art. 129 §1 LCE — Wet 13 juni 2005, tweede streepje: strikt noodzakelijk; ePrivacy 2002/58/EG) | No |
+| Stripe `__stripe_mid`, `__stripe_sid` | Strictly necessary (fraud prevention, Art. 6.1(f) AVG + Art. 129 WEC) | No |
 
 ### Policy text updates before publishing
 - Replace the analytics placeholder with the actual Shopify + Plausible entries above.
