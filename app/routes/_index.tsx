@@ -8,9 +8,9 @@ import {SceneErrorBoundary} from '~/components/SceneErrorBoundary';
 
 // Kick off the HeroScene chunk download at module eval so it races with
 // hydration instead of waiting for useEffect — only on desktop and only
-// when the user hasn't asked for reduced motion. Keeps the 14 MB of GLBs
-// and the r3f runtime off the wire for mobile visitors who won't see
-// the scene anyway.
+// when the user hasn't asked for reduced motion. Keeps the GLBs (~6.3 MB
+// across both sizes; ~3.2 MB for the visible trio) and the r3f runtime off
+// the wire for mobile visitors who won't see the scene anyway.
 const heroScenePromise =
   typeof window !== 'undefined' && shouldLoadHero()
     ? import('~/components/HeroScene')
@@ -132,10 +132,12 @@ function linearstep(edge0: number, edge1: number, x: number) {
 // Hero scroll budget — the 3D scene + phased UI stays pinned for this many
 // screen heights. Pinned budget (spacer − 100, for the h-screen child) is a
 // touch larger than HERO_PROGRESS_VH so progress comfortably reaches 1 and
-// the finished state holds for a brief beat before the sticky releases —
-// without the long dead-scroll tail the old 800vh spacer had.
-const HERO_SPACER_VH_DESKTOP = 220;
-const HERO_SPACER_VH_MOBILE = 220;
+// the finished state holds for a brief beat before the sticky releases.
+// 205 (not the old 220): progress finishes at 100vh and the CTA rise ends at
+// p=0.96, so a 5vh settle beat is enough — the extra 15vh was pinned scroll
+// where nothing on screen changed, reading as a stuck page.
+const HERO_SPACER_VH_DESKTOP = 205;
+const HERO_SPACER_VH_MOBILE = 205;
 // Scroll denominator for 0..1 progress — how many viewport heights of
 // scroll drive the phased animation from start to finish. One viewport
 // height means the whole sequence plays out in a single continuous scroll

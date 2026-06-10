@@ -27,7 +27,10 @@ function useScrollProgress() {
   const targetRef = useRef(0);
   const smoothRef = useRef(0);
   useEffect(() => {
-    window.scrollTo(0, 0);
+    // NOTE: no scrollTo(0,0) here — the route owns the first-visit scroll
+    // reset (_index.tsx). The scene chunk can resolve seconds after the
+    // splash lock releases on slow networks; resetting here teleported a
+    // user who had already scrolled back to the top.
     const onScroll = () => {
       targetRef.current = Math.min(1, Math.max(0, window.scrollY / window.innerHeight));
       invalidate();
@@ -288,6 +291,46 @@ type BuiltModel = {
   fcMats: THREE.Material[];
 };
 
+// Raycast no-op — see addProxyHitbox.
+const NO_RAYCAST = () => {};
+
+/**
+ * Pointer hit-testing used to run against the merged megameshes: three.js
+ * Mesh.raycast is a LINEAR per-triangle scan and the 5" trio carries ~1.27M
+ * render vertices, so r3f's pointermove raycast walked ~700k triangles per
+ * mouse movement over the full-viewport canvas — the main "sometimes laggy"
+ * cause, paid even before the scene becomes interactive.
+ *
+ * Fix: null out raycast on every merged mesh and add ONE invisible box per
+ * board, sized to the group's bounds, as the only raycast target. A
+ * pointermove now tests 3 boxes (36 triangles) instead of ~700k. Hover/click
+ * UX on a bounding box is indistinguishable here (boards are box-shaped and
+ * the interactive state only exists fully exploded); the slightly larger hit
+ * area is a usability win, not a loss.
+ *
+ * material.visible=false keeps the proxy out of the render lists entirely
+ * (zero draw calls) while three's Raycaster still tests its geometry.
+ */
+function addProxyHitbox(group: THREE.Group) {
+  group.updateMatrixWorld(true);
+  const box = new THREE.Box3().setFromObject(group);
+  if (box.isEmpty()) return;
+  group.traverse((obj: any) => {
+    if (obj.isMesh) obj.raycast = NO_RAYCAST;
+  });
+  const size = box.getSize(new THREE.Vector3());
+  const center = box.getCenter(new THREE.Vector3());
+  const proxyMat = new THREE.MeshBasicMaterial();
+  proxyMat.visible = false;
+  const proxy = new THREE.Mesh(
+    new THREE.BoxGeometry(size.x, size.y, size.z),
+    proxyMat,
+  );
+  proxy.position.copy(center);
+  proxy.frustumCulled = false;
+  group.add(proxy);
+}
+
 function disposeBuiltModel(m: BuiltModel) {
   for (const g of [m.frame, m.esc, m.fc]) {
     g.parent?.remove(g);
@@ -399,6 +442,17 @@ function DroneAssembly({
     const yieldToMain = () =>
       new Promise<void>((resolve) => setTimeout(resolve, 0));
 
+    // Idle-gated yield for background builds: each processing stage waits for
+    // a real idle slot instead of racing the user's first scroll. setTimeout(0)
+    // yields the task queue but resumes immediately even mid-scroll; rIC defers
+    // until the frame budget has room (1s timeout so it can't stall forever).
+    const yieldToIdle = () =>
+      new Promise<void>((resolve) => {
+        const ric = (window as any).requestIdleCallback;
+        if (typeof ric === 'function') ric(() => resolve(), {timeout: 1000});
+        else setTimeout(resolve, 50);
+      });
+
     // Load + fully process one size's GLB trio into a BuiltModel. It never
     // touches the scene/refs, so the result can be cached and dropped in later,
     // or built ahead of time for the inactive size. Returns null if cancelled
@@ -409,9 +463,13 @@ function DroneAssembly({
         onProg?: (p: number) => void;
         delayMs?: number;
         shouldCancel: () => boolean;
+        /** Background build: gate every stage on requestIdleCallback so the
+         *  merge/upgrade work never competes with an active scroll. */
+        idleYields?: boolean;
       },
     ): Promise<BuiltModel | null> {
       const {onProg, delayMs = 0, shouldCancel} = opts;
+      const stageYield = opts.idleYields ? yieldToIdle : yieldToMain;
       const packs: Array<{group: THREE.Group}> = [];
       const bail = (): null => {
         for (const p of packs)
@@ -462,15 +520,15 @@ function DroneAssembly({
         frameScene.position.sub(c); escScene.position.sub(c); fcScene.position.sub(c);
         frameScene.updateMatrixWorld(true); escScene.updateMatrixWorld(true); fcScene.updateMatrixWorld(true);
 
-        await yieldToMain(); if (shouldCancel()) return null;
+        await stageYield(); if (shouldCancel()) return null;
         upgradeNonPBRMaterials(escScene);
-        await yieldToMain(); if (shouldCancel()) return null;
+        await stageYield(); if (shouldCancel()) return null;
         upgradeNonPBRMaterials(fcScene);
-        await yieldToMain(); if (shouldCancel()) return null;
+        await stageYield(); if (shouldCancel()) return null;
         dedupeMaterialsByFingerprint(escScene);
-        await yieldToMain(); if (shouldCancel()) return null;
+        await stageYield(); if (shouldCancel()) return null;
         dedupeMaterialsByFingerprint(fcScene);
-        await yieldToMain(); if (shouldCancel()) return null;
+        await stageYield(); if (shouldCancel()) return null;
 
         // Plain dark frame material — flat carbon colour, no woven texture.
         // Stays partly transparent so the boards read through it; the colour is
@@ -490,7 +548,7 @@ function DroneAssembly({
           () => frameMat,
         );
         packs.push(framePack);
-        await yieldToMain(); if (shouldCancel()) return bail();
+        await stageYield(); if (shouldCancel()) return bail();
 
         // ESC + FC: keep original materials, merge meshes sharing a material.
         const mergeByMaterialRef = (scene: THREE.Group) => {
@@ -509,10 +567,10 @@ function DroneAssembly({
         };
         const escPack = mergeByMaterialRef(escScene);
         packs.push(escPack);
-        await yieldToMain(); if (shouldCancel()) return bail();
+        await stageYield(); if (shouldCancel()) return bail();
         const fcPack = mergeByMaterialRef(fcScene);
         packs.push(fcPack);
-        await yieldToMain(); if (shouldCancel()) return bail();
+        await stageYield(); if (shouldCancel()) return bail();
 
         const frameMatsArr: THREE.Material[] = [frameMat];
         const escMatsArr = Array.from(
@@ -555,6 +613,12 @@ function DroneAssembly({
         setShadowFlags(escPack.group, false, false);
         setShadowFlags(fcPack.group, false, false);
 
+        // Swap per-triangle raycasting for invisible bounding-box proxies —
+        // pointer moves stop scanning ~700k triangles (see addProxyHitbox).
+        addProxyHitbox(framePack.group);
+        addProxyHitbox(escPack.group);
+        addProxyHitbox(fcPack.group);
+
         return {
           frame: framePack.group, esc: escPack.group, fc: fcPack.group,
           frameMats: frameMatsArr, escMats: escMatsArr, fcMats: fcMatsArr,
@@ -568,7 +632,7 @@ function DroneAssembly({
     // Drop a built model into the scene. On a toggle, hand the previous trio to
     // the slide-out wrapper (cached, NOT disposed) so it can exit left while the
     // new one slides in from the right. Models are never disposed here.
-    const display = (model: BuiltModel) => {
+    const display = async (model: BuiltModel) => {
       const prev = prevModelRef.current;
       const isToggle = hasDisplayedRef.current && !!prev && prev !== model;
 
@@ -605,9 +669,14 @@ function DroneAssembly({
       // three.js builds a GLSL program per material × light × shadow variant on
       // first render; doing that mid-animation is what made the scene choppy
       // until it "warmed up", and made the first scroll right after a size
-      // toggle lag hard. gl.compile walks the scene and builds them all up
-      // front — on initial load we're behind the splash, so the cost is hidden.
-      try { gl.compile(scene, camera); } catch { /* compile is best-effort */ }
+      // toggle lag hard. compileAsync uses KHR_parallel_shader_compile where
+      // available, so the GPU links programs off the main thread instead of
+      // the old synchronous gl.compile stalling an active scroll.
+      try {
+        await gl.compileAsync(scene, camera);
+      } catch {
+        /* compile is best-effort */
+      }
       invalidate();
     };
 
@@ -626,7 +695,7 @@ function DroneAssembly({
         modelCacheRef.current.set(airframeSize, model);
       }
       if (cancelled) return;
-      display(model);
+      await display(model);
       onReady?.();
 
       // Build the OTHER size lazily, only once the thread is idle — scheduled
@@ -635,26 +704,42 @@ function DroneAssembly({
       if (!modelCacheRef.current.has(other)) {
         const preload = () => {
           if (!aliveRef.current || modelCacheRef.current.has(other)) return;
-          void buildModel(other, {shouldCancel: () => !aliveRef.current}).then((m) => {
+          void buildModel(other, {
+            shouldCancel: () => !aliveRef.current,
+            // Every build stage waits for an idle slot — the background build
+            // used to chain setTimeout(0) and its 50–200ms merge stages landed
+            // exactly during the user's first scroll-through.
+            idleYields: true,
+          }).then(async (m) => {
             if (!m) return;
             if (!aliveRef.current) { disposeBuiltModel(m); return; }
             // Warm the other size's shaders offscreen too, so the eventual
             // 3↔5 toggle (and the scroll right after it) is smooth instead of
-            // stalling on a first-render compile. Briefly parent it into the
-            // (idle) slide-out wrapper, compile, then detach — gl.compile only
-            // builds programs, it never draws, so nothing flashes on screen.
+            // stalling on a first-render compile. Parent it into the (idle)
+            // slide-out wrapper while the programs link. compileAsync yields
+            // to the frame loop, so park the wrapper far outside the frustum
+            // for the duration — an on-screen parent would let interleaved
+            // frames draw a ghost second drone mid-warm.
             const holder = outWrapperRef.current;
             if (holder) {
+              const prevX = holder.position.x;
+              holder.position.x = 1e6;
               holder.add(m.frame, m.esc, m.fc);
-              try { gl.compile(scene, camera); } catch { /* best-effort */ }
+              try {
+                await gl.compileAsync(scene, camera);
+              } catch { /* best-effort */ }
               for (const g of [m.frame, m.esc, m.fc]) holder.remove(g);
+              // A size toggle can claim the wrapper for a real slide-out while
+              // we awaited; only restore the parking offset if it didn't.
+              if (!outgoingRef.current) holder.position.x = prevX;
             }
+            if (!aliveRef.current) { disposeBuiltModel(m); return; }
             modelCacheRef.current.set(other, m);
           });
         };
         const ric = (window as any).requestIdleCallback;
-        if (typeof ric === 'function') ric(preload, {timeout: 5000});
-        else setTimeout(preload, 1500);
+        if (typeof ric === 'function') ric(preload, {timeout: 10000});
+        else setTimeout(preload, 3000);
       }
     })();
 
@@ -1080,6 +1165,75 @@ function PerfProbe({
 }
 
 /**
+ * Adaptive render resolution. The old fixed dpr cap of 1.25 was one quality
+ * point for every GPU: Apple Silicon left sharpness on the table (blurry on
+ * 2× Retina) while weak iGPUs still janked when the exploded boards filled
+ * the screen. This drifts the dpr between 1.0 and min(devicePixelRatio, 1.5)
+ * from measured frame times:
+ *  - a window of consistently fast frames (<9 ms worst) steps UP one notch;
+ *  - sustained jank (≥8 frames >24 ms in a window) steps DOWN and LATCHES —
+ *    a GPU that janked once never gets re-raised, avoiding oscillation and
+ *    repeated render-target reallocations (each setDpr realloc has a cost).
+ * Demand-loop aware: only deltas from continuous rendering bursts count;
+ * multi-second idle gaps between frames are skipped.
+ */
+const DPR_STEPS = [1, 1.25, 1.5];
+function AdaptiveDpr() {
+  const setDpr = useThree((s) => s.setDpr);
+  const idxRef = useRef(1); // start at 1.25 — the previous fixed cap
+  const maxIdxRef = useRef(1);
+  const samplesRef = useRef<number[]>([]);
+  const latchedDownRef = useRef(false);
+
+  useEffect(() => {
+    const native = window.devicePixelRatio || 1;
+    let maxIdx = 0;
+    for (let i = 0; i < DPR_STEPS.length; i++) {
+      if (DPR_STEPS[i] <= Math.min(native, 1.5)) maxIdx = i;
+    }
+    maxIdxRef.current = maxIdx;
+    if (idxRef.current > maxIdx) {
+      idxRef.current = maxIdx;
+      setDpr(DPR_STEPS[maxIdx]);
+    }
+  }, [setDpr]);
+
+  useFrame((_, dt) => {
+    // Demand loop: dt spans idle gaps when nothing invalidated. Only frames
+    // from an active burst (≤100ms apart) say anything about render cost.
+    if (dt <= 0 || dt > 0.1) return;
+    const samples = samplesRef.current;
+    samples.push(dt * 1000);
+    if (samples.length < 60) return;
+
+    let worst = 0;
+    let jank = 0;
+    for (const ms of samples) {
+      if (ms > worst) worst = ms;
+      if (ms > 24) jank += 1;
+    }
+    samples.length = 0;
+
+    const idx = idxRef.current;
+    if (jank >= 8 && idx > 0) {
+      idxRef.current = idx - 1;
+      latchedDownRef.current = true;
+      setDpr(DPR_STEPS[idxRef.current]);
+      invalidate();
+    } else if (
+      !latchedDownRef.current &&
+      worst < 9 &&
+      idx < maxIdxRef.current
+    ) {
+      idxRef.current = idx + 1;
+      setDpr(DPR_STEPS[idxRef.current]);
+      invalidate();
+    }
+  });
+  return null;
+}
+
+/**
  * Hemi ramps down with scroll to preserve the harsh top-down gradient
  * in the rotating hero state (0.72 top sky color vs 0.18 ground in hemi
  * creates a strong vertical lift across the stacked boards) while
@@ -1163,30 +1317,21 @@ export function HeroScene({
   size?: '5' | '3';
 } = {}) {
   const [mounted, setMounted] = useState(false);
-  const [active, setActive] = useState(true);
   const [perf, setPerf] = useState<PerfSample | null>(null);
   const navigate = useNavigate();
   const {targetRef, smoothRef} = useScrollProgress();
   useEffect(() => { setMounted(true); }, []);
 
-  // Pause the WebGL canvas entirely when the tab is hidden or the hero
-  // has scrolled well off-screen. Unmounting the Canvas releases the GPU
-  // context; React re-mounts it instantly when the hero returns to view.
-  useEffect(() => {
-    const update = () => {
-      const visible = document.visibilityState === 'visible';
-      const heroOnScreen =
-        window.scrollY < window.innerHeight * 2; // matches HERO_SPACER_VH
-      setActive(visible && heroOnScreen);
-    };
-    update();
-    document.addEventListener('visibilitychange', update);
-    window.addEventListener('scroll', update, {passive: true});
-    return () => {
-      document.removeEventListener('visibilitychange', update);
-      window.removeEventListener('scroll', update);
-    };
-  }, []);
+  // NOTE: the Canvas is deliberately NOT unmounted when the hero scrolls
+  // off-screen or the tab hides. The old unmount-at-200vh "pause" disposed
+  // the whole per-size model cache, so crossing back above the threshold
+  // mid-scroll replayed fetch → meshopt decode → merge → shader compile on a
+  // fresh WebGL context: a multi-hundred-ms hitch and a visibly missing
+  // drone — and the threshold didn't even match the real 220vh spacer.
+  // With frameloop="demand" a static scene idles at zero cost (the
+  // auto-rotate is already gated on scroll phase + window focus, and a
+  // hidden tab gets no RAF at all), so keeping it mounted is effectively
+  // free and scrolling back up is instant.
 
   if (!mounted) return (
     <div className="absolute inset-0 flex items-center justify-center">
@@ -1195,16 +1340,6 @@ export function HeroScene({
       </div>
     </div>
   );
-
-  if (!active) {
-    return (
-      <div
-        className="absolute inset-0"
-        role="img"
-        aria-label="3D interactive drone assembly viewer (paused)"
-      />
-    );
-  }
 
   return (
     <div className="absolute inset-0" role="img" aria-label="3D interactive drone assembly viewer">
@@ -1222,11 +1357,11 @@ export function HeroScene({
         // frame: a render-target bind/clear + extra depth-material programs for
         // zero visible shadow. Dropping it is a free per-frame win.
         frameloop="demand"
-        // Cap pixel ratio at 1.25. Fragment (fill) cost scales with dpr², and
-        // this scene is fill-bound once the boards explode to fill the screen
-        // (full-screen PBR × 3 lights). 1.25² vs 1.5² is ~30% fewer shaded
-        // pixels every frame — the biggest single lever short of swapping the
-        // PBR materials for matcaps. Barely perceptible at hero distance.
+        // Initial pixel ratio 1.25 — fragment (fill) cost scales with dpr²,
+        // and this scene is fill-bound once the boards explode full-screen.
+        // From here <AdaptiveDpr> drifts the live value between 1.0 and 1.5
+        // off measured frame times: fast GPUs earn back full Retina
+        // sharpness, weak ones shed load before they jank.
         dpr={[1, 1.25]}
         gl={{
           // MSAA off — replaced by an SMAA postprocess pass below. MSAA
@@ -1261,6 +1396,7 @@ export function HeroScene({
         {/* First useFrame in the tree — eases smoothRef toward the raw scroll
             target so every consumer below reads the damped value this frame. */}
         <ScrollDamper targetRef={targetRef} smoothRef={smoothRef} />
+        <AdaptiveDpr />
         <SceneLights scrollRef={smoothRef} />
         <CameraRig scrollRef={smoothRef} />
         <DroneAssembly
