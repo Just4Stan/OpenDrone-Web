@@ -90,8 +90,8 @@ export default function AccountWelcome() {
         </h2>
         <p className="account-welcome-lede">
           You&rsquo;re signed in as <strong>{email}</strong>. Give us a name
-          to put on your orders and we&rsquo;re done — no password to
-          remember, no account to manage.
+          to put on your orders and we&rsquo;re done. No password to
+          remember.
         </p>
       </div>
 

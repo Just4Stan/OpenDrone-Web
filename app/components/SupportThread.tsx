@@ -179,7 +179,7 @@ export function SupportThread({
         firstTick = false;
         const res = await fetch(url, {credentials: 'same-origin'});
         if (res.status === 401) {
-          if (!stopped) setError('Your session expired — refresh to continue.');
+          if (!stopped) setError('Your session expired. Refresh to continue.');
           return;
         }
         const json = (await res.json()) as PollResponse;
@@ -381,10 +381,10 @@ export function SupportThread({
             <div className="od-icon-big" aria-hidden="true">
               ⌗
             </div>
-            <h3>Sent to our Discord — members will reply ASAP.</h3>
+            <h3>Posted to our support channel.</h3>
             <p>
-              Your message was posted as a private thread. The first
-              member to grab it will reply here. We&rsquo;ll email you the
+              Your message was posted as a private thread. Replies usually
+              land within a few hours (CET). We&rsquo;ll email you the
               moment a moderator confirms an answer, so you don&rsquo;t
               need to keep this tab open.
             </p>
@@ -574,8 +574,7 @@ function SupportThreadSidebar({
         </div>
         {pendingReplies > 0 ? (
           <p className="support-sidebar-help">
-            A moderator approves replies before you see them — protects you
-            from drive-by misinformation.
+            A moderator reviews replies before they appear here.
           </p>
         ) : null}
       </section>
@@ -585,7 +584,7 @@ function SupportThreadSidebar({
         <ul className="support-sidebar-links">
           <li>
             <a href="https://discord.gg/ABajnacUsS" target="_blank" rel="noreferrer noopener">
-              Search the Discord — someone may have asked already →
+              Search the Discord first; someone may have asked already →
             </a>
           </li>
           <li>
@@ -599,9 +598,6 @@ function SupportThreadSidebar({
             </a>
           </li>
         </ul>
-        <p className="support-sidebar-help">
-          AI suggestions land here once the bot has read your ticket.
-        </p>
       </section>
     </aside>
   );

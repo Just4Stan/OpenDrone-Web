@@ -90,7 +90,7 @@ function renderFeed({
   return `<?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
-    <title>OpenDrone — Newsletter</title>
+    <title>OpenDrone · Newsletter</title>
     <link>${esc(origin)}/newsletter</link>
     <atom:link href="${esc(origin)}/newsletter.rss" rel="self" type="application/rss+xml" />
     <description>Build notes, hardware releases, and engineering write-ups from OpenDrone.</description>

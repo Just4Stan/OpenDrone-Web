@@ -105,7 +105,6 @@ function CollectionItem({
       )}
       <div className="collection-card-body">
         <h2>{collection.title}</h2>
-        <p>OpenDrone collection</p>
       </div>
     </Link>
   );

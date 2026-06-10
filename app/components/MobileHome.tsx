@@ -81,7 +81,7 @@ export function MobileHome({
       </Suspense>
 
       <Link prefetch="viewport" to="/collections/all" className="home-mobile-browse">
-        Browse the full catalogue
+        Browse the full catalog
         <svg
           width="16"
           height="16"
