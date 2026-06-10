@@ -64,8 +64,16 @@ Incutec BV has not appointed a Data Protection Officer (DPO) because this is not
 | Sendcloud B.V. | Shipping labels and tracking | Netherlands (EU) |
 | Bpost / DHL / DPD (carrier depending on order) | Parcel delivery | EU |
 | Plausible Analytics | Cookieless website analytics | Plausible Insights OÜ — Estonia (EU); hosting in Germany |
+| Polar Advisory BV (accountant) | Invoicing and annual accounts | Belgium |
+| Discord Inc. | Support tickets via the Discord bridge (name, email, message content, attachments) | US — EU-US Data Privacy Framework |
+| Anthropic PBC | AI-assisted draft replies for support tickets | US — data processing agreement with SCCs |
+| Resend (Plus Five Five, Inc.) | Transactional support emails (resume links) | US — SCCs |
+| Upstash, Inc. | Temporary ticket index for the support module | US — SCCs |
+| Cloudflare, Inc. | Turnstile anti-spam verification on forms | US — EU-US Data Privacy Framework |
 
-Incutec BV does not transfer personal data to countries outside the EEA unless adequate safeguards have been put in place (Art. 46 GDPR).
+**Transfers outside the EEA.** For the US processors listed above, Incutec BV transfers personal data on the basis of appropriate safeguards (Art. 46 GDPR): certification under the EU-US Data Privacy Framework or standard contractual clauses (SCCs, Decision 2021/914). Shopify may additionally process data in Canada (adequacy decision) and through sub-processors in the US and Singapore under SCCs. All other processing keeps personal data inside the EEA.
+
+**AI assistance in support.** When you submit a support ticket, the content of your message may be passed to Anthropic to prepare a draft reply. A staff member reviews every reply before it is sent; no automated decision-making takes place.
 
 ### 6. Rights of the data subject
 

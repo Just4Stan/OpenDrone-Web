@@ -29,9 +29,12 @@ const FILES = {
   'herroepingsformulier.md': 'webshop/herroepingsformulier.md',
   'peppol-e-invoicing.md': 'webshop/peppol-e-invoicing.md',
   'export-control-memo.md': 'export-sanctions/export-control-memo.md',
-  'vulnerability-handling-policy.md':
-    'product/vulnerability-handling-policy.md',
-  'end-use-policy.md': 'end-use-policy.md',
+  // NOT synced: vulnerability-handling-policy.md and end-use-policy.md.
+  // Their compliance-repo masters are ENGLISH; the files in
+  // app/content/legal/nl/ are hand-translated Dutch (like en/ and fr/).
+  // A blind sync clobbers the translation with English — happened
+  // 2026-06-10, restored from git. Sync them only if the master ever
+  // becomes the Dutch source of truth.
 };
 
 // NL is the authoritative source synced from the compliance repo.
