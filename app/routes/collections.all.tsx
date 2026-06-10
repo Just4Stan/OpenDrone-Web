@@ -12,7 +12,7 @@ export const meta: Route.MetaFunction = () =>
   buildSeoMeta({
     title: 'All Products',
     description:
-      'Browse every OpenDrone product in one place — open source flight controllers, ESCs, receivers, frames, bundles, and accessories. Filter by category and sort by price or newest.',
+      'Browse every OpenDrone product in one place: open source flight controllers, ESCs, receivers, frames, bundles, and accessories. Filter by category and sort by price or newest.',
     type: 'product',
   });
 

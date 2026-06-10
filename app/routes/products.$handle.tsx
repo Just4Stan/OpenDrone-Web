@@ -771,7 +771,7 @@ export default function Product() {
         hideOptionNames={content.optionAxis ? [content.optionAxis] : undefined}
         bundleLines={isBundle ? bundleLines : undefined}
         bundleDisabled={isBundle ? !bundleAvailable : undefined}
-        bundleCtaLabel={isBundle ? 'Add the stack — both boards' : undefined}
+        bundleCtaLabel={isBundle ? 'Add the stack: both boards' : undefined}
       />
     </div>
   );
@@ -1025,7 +1025,10 @@ export default function Product() {
                 <p className="open-source-card-label">Study</p>
                 <p className="open-source-card-title">GitHub repo ↗</p>
                 <p className="open-source-card-sub">
-                  Schematic · PCB · BOM · 3D STEP · design notes
+                  {/* CAD products (the frame) have no schematic/PCB. */}
+                  {content.teardown?.frameViewer
+                    ? '3D CAD · STEP · hardware BOM'
+                    : 'Schematic · PCB · BOM · 3D STEP · design notes'}
                 </p>
               </a>
               <a
@@ -1051,7 +1054,7 @@ export default function Product() {
             <p className="open-source-card-label">License</p>
             <p className="open-source-card-title">CERN-OHL-S v2 ↗</p>
             <p className="open-source-card-sub">
-              Strong reciprocal — share your changes
+              Strong reciprocal: share your changes
             </p>
           </a>
           {/* The latest commit rides in the same row as the resource cards —
@@ -1110,7 +1113,7 @@ export default function Product() {
           {content.bundle ? (
             <p className="chapter-body">
               The bundle is just OpenFC-Lite and OpenESC shipped together. No
-              combined SKU, no tied hardware — each board is the same one
+              combined SKU, no tied hardware: each board is the same one
               you can buy on its own. What you save is courier-and-handling.
               What you don&apos;t lose is the €1 split: each firmware
               project still gets paid from this order.
@@ -1118,7 +1121,7 @@ export default function Product() {
           ) : (
             <p className="chapter-body">
               Here is the actual parts list. Anything missing from a build,
-              say so — we&apos;ll ship it.
+              say so and we&apos;ll ship it.
             </p>
           )}
           {mergedBox.length > 0 ? (
@@ -1158,7 +1161,15 @@ export default function Product() {
               ))}
             </div>
           ) : null}
-          <ProvenanceCard />
+          <ProvenanceCard
+            designNote={
+              // The frame is a CAD product — "schematic, PCB, BOM" is PCB
+              // wording that doesn't apply to carbon plates.
+              content.teardown?.frameViewer
+                ? 'CAD, materials, hardware kit'
+                : undefined
+            }
+          />
         </Chapter>
       ) : null}
 
@@ -1234,7 +1245,7 @@ export default function Product() {
           }
         >
           <p className="chapter-body">
-            Straight from the repo. If a link 404s, the file moved — open
+            Straight from the repo. If a link 404s, the file moved; open
             an issue on the matching GitHub repo and we&apos;ll point it
             back.
           </p>

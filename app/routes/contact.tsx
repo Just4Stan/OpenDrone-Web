@@ -83,11 +83,11 @@ export async function loader({request, context}: Route.LoaderArgs) {
 }
 
 const COPY = {
-  eyebrow: 'FILE 09 · CONTACT',
+  eyebrow: 'File 09 · Contact',
   title: 'Talk to ',
   titleEm: 'builders',
   titleSuffix: ', not a help desk.',
-  lede: 'OpenDrone is run by a small team. Most questions get answered fastest in our Discord — that’s where the engineers live. If Discord isn’t your thing, open a ticket and we’ll thread it back to the same crew.',
+  lede: 'OpenDrone is run by a small team. Most questions get answered fastest in our Discord; that’s where the engineers are. If Discord isn’t your thing, open a ticket and it reaches the same engineers.',
   bannerText: 'You have an active support ticket',
   bannerLastReply: 'continue where you left off',
   bannerCta: 'Continue thread →',
@@ -98,11 +98,10 @@ const COPY = {
   discordCta: 'Go to server →',
   onlineLabel: 'online',
   membersLabel: 'members',
-  estLabel: 'Est.',
   ticketEyebrow: '→ SECONDARY',
   ticketTitle: 'No Discord? Open a ticket.',
   ticketLede:
-    'Goes to the same Discord crew via a private thread. Sign in so we can link it to your order.',
+    'Reaches the same engineers via a private Discord thread. Sign in so we can link it to your order.',
   ticketCta: 'Open a ticket',
   directEyebrow: '⌖ DIRECT',
   phoneLabel: 'Phone',
@@ -145,7 +144,7 @@ export default function ContactRoute() {
             <span className="od-banner-text">
               {t.bannerText} <strong>#{openTicket.pid}</strong>
             </span>
-            <span className="od-banner-id">— {t.bannerLastReply}</span>
+            <span className="od-banner-id">· {t.bannerLastReply}</span>
           </div>
           <Link prefetch="viewport" to="/account/support" className="od-btn od-btn-primary">
             {t.bannerCta}
@@ -282,7 +281,6 @@ function DiscordInviteCard({
             {copy.membersLabel}
           </span>
         </div>
-        <p className="discord-invite-est">{copy.estLabel} Apr 2026</p>
         {guildPreview.description ? (
           <p className="discord-invite-desc">{guildPreview.description}</p>
         ) : (
