@@ -20,7 +20,7 @@ Cookies are small text files placed on your device by a website when you visit i
 |--------|---------|-----------|
 | `cart`, `cart_sig`, `cart_ts`, `_secure_session_id`, `_shopify_tm` | Cart and session handling (Shopify) | Session |
 | `_tracking_consent`, `_cmp_a` | Remember your cookie preferences (Shopify Customer Privacy API) | 6 months |
-| `__stripe_mid`, `__stripe_sid` | Payment fraud prevention (Stripe, Art. 129 §1 LCE — Belgian Electronic Communications Act of 13 June 2005, second indent: strictly necessary for the provision of the service explicitly requested; ePrivacy Directive 2002/58/EC) | 1 year / session |
+| `__stripe_mid`, `__stripe_sid` | Payment fraud prevention — set **only on Shopify's hosted checkout pages** during payment, not on this storefront (Stripe, Art. 129 §1 LCE — Belgian Electronic Communications Act of 13 June 2005, second indent: strictly necessary for the provision of the service explicitly requested; ePrivacy Directive 2002/58/EC) | 1 year / session |
 
 #### Analytics
 
@@ -34,9 +34,9 @@ Incutec BV uses **no marketing or remarketing cookies** at launch. If that chang
 
 ### Consent
 
-- Non-essential cookies are **only placed after your explicit consent** (opt-in).
-- You may withdraw your consent at any time via the cookie settings on our website.
-- Refusing non-essential cookies does not affect the functioning of the website.
+- We currently set **only strictly necessary cookies**, which is why no consent banner is shown.
+- If we ever introduce non-essential cookies, they will **only be placed after your explicit consent** (opt-in), and this policy will be updated first.
+- The [cookie settings](/cookie-settings) page lets you clear the cookies this site has set at any time.
 - **Cookie walls are prohibited:** we will never refuse you access to the website if you refuse cookies.
 
 ### Managing cookies

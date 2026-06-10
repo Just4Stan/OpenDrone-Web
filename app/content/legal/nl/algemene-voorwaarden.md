@@ -76,9 +76,7 @@
 
 7.3. Het risico van beschadiging en/of vermissing van producten berust tot het moment van bezorging aan de consument bij Incutec BV.
 
-7.4. Incutec BV biedt ten minste **twee leveringswijzen** aan (Art. VI.45/3 WER: Wet van 9 februari 2024, van toepassing sinds 21 september 2024 voor alle Belgische webshops). De twee methoden moeten wezenlijk verschillend zijn (bijv. thuislevering + pakketpunt; twee vervoerders met enkel thuislevering volstaat niet).
-
-> **Noot:** Startups jonger dan 3 jaar zijn vrijgesteld van deze verplichting. Incutec kan hier in de beginfase een beroep op doen.
+7.4. Incutec BV biedt ten minste **twee leveringswijzen** aan (Art. VI.45/2 WER: Wet van 9 februari 2024, van toepassing sinds 21 september 2024 voor alle Belgische webshops). De twee methoden moeten wezenlijk verschillend zijn (bijv. thuislevering + pakketpunt; twee vervoerders met enkel thuislevering volstaat niet).
 
 ### Artikel 8: Betaling
 
@@ -94,7 +92,7 @@
 
 9.2bis. **Goederen met digitale elementen:** De producten van Incutec BV bevatten firmware (digitale elementen) die noodzakelijk is voor de werking ervan, in de zin van Richtlijn (EU) 2019/771 Art. 2(5b). Incutec BV zorgt ervoor dat de consument in kennis wordt gesteld van beschikbare firmware-updates die nodig zijn om de conformiteit van het product te behouden gedurende de garantieperiode van 2 jaar. Firmware-updates worden beschikbaar gesteld via de open source projecten waarop de producten gebaseerd zijn (Betaflight, AM32, ExpressLRS). Incutec BV onderhoudt de hardware-specifieke ondersteuning (board target definitions) die nodig is om deze updates te installeren.
 
-9.2ter. **Volgorde van remedies:** Bij gebrek aan overeenstemming heeft de consument het recht om naar keuze herstelling of vervanging van het product te vragen. Alleen wanneer herstelling en vervanging onmogelijk of onevenredig zijn, kan de consument een prijsvermindering of ontbinding van de overeenkomst vragen (art. 1701/1 e.v. oud Burgerlijk Wetboek + Boek VI WER, Art. VI.83 octies e.v. — Wet van 20 maart 2022, omzetting Richtlijn (EU) 2019/771).
+9.2ter. **Volgorde van remedies:** Bij gebrek aan overeenstemming heeft de consument het recht om naar keuze herstelling of vervanging van het product te vragen. Alleen wanneer herstelling en vervanging onmogelijk of onevenredig zijn, kan de consument een prijsvermindering of ontbinding van de overeenkomst vragen (Art. 1649quinquies oud BW).
 
 9.3. Garantie dekt geen schade veroorzaakt door:
 - Verkeerd gebruik of installatie (afwijking van de gebruikshandleiding)
@@ -222,22 +220,21 @@ Don't link to ec.europa.eu/consumers/odr anymore. The ODR link requirement under
 **Replacement in Art. 14 AV:** Keep Consumentenombudsdienst reference (https://consumentenombudsdienst.be). Remove any ODR-platform link if present. Belgian consumers can also contact ECC Belgium (https://www.eccbelgium.be) for cross-border disputes. Source: https://eur-lex.europa.eu/eli/reg/2024/3228/oj
 
 ### NACEBEL 2025 codes for Incutec BV (declare at KBO via boekhouder/Acerta)
-Based on Incutec's activities (designing + selling FPV electronics, webshop, R&D consulting for Telraam):
+Based on Incutec's activities (designing + manufacturing + selling FPV electronics, webshop, R&D and engineering consulting, education). Verified against the official NACE-BEL 2025 classification 2026-06-09 — the earlier draft used obsolete 2008-format codes (`XX.XX.XX`); 2025 uses 5-digit subclasses (`XX.XXX`) and retail is classified by product, not sales channel.
 
 **Primary:**
-- **26.30.00**: Manufacture of communication equipment (covers radio transmitters/receivers: VTX/VRX, ELRS receivers fall here)
+- **26.300**: Vervaardiging van communicatieapparatuur (radio TX/RX: VTX/VRX, ELRS receivers) — 7-digit detail: 26.30002
 
 **Secondary (declare all that apply):**
-- **26.51.12**: Manufacture of instruments for navigation (flight controllers, GPS modules, IMU-based products)
-- **26.11.00**: Manufacture of electronic components (bare PCBs, custom modules)
-- **46.52.10**: Wholesale of electronic components and telecommunications equipment (B2B sales to hobby retailers)
-- **47.91.14**: Retail sale via internet of computers, peripherals, software and telecommunications equipment (webshop B2C)
-- **47.91.90**: Other retail sale via mail order houses or via internet (catch-all for hobby goods)
-- **72.19.00**: Other research and experimental development on natural sciences and engineering (R&D for Telraam Rear Window)
-- **71.12.19**: Other engineering activities (design-for-manufacture consulting)
-- **85.59.20**: Other education (YouTube / Technovation / future workshops: optional)
+- **26.510**: Vervaardiging van meet-, controle- en navigatie-instrumenten en -apparatuur (flight controllers, GPS, IMU) — detail: 26.51003
+- **26.110**: Vervaardiging van elektronische onderdelen (bare PCBs, modules) — detail: 26.11001 (PCBs) / 26.11003 (modules)
+- **46.500**: Groothandel in informatie- en communicatieapparatuur (B2B). *Replaces old 46.52 — merged in NACE Rev 2.1.*
+- **47.400**: Detailhandel in ICT-apparatuur (webshop B2C: electronics/computers/telecom). *Single product-based code replacing old 47.91.14 + 47.91.90 — channel-based retail codes were abolished.*
+- **72.10**: Speur- en ontwikkelingswerk op natuurwetenschappelijk gebied (R&D). *Replaces old 72.19 — merged with 72.11. Belgian detail: 72.101 / 72.109.*
+- **71.121**: Activiteiten van ingenieurs en aanverwante technische adviseurs (design-for-manufacture consulting) — detail: 71.12101
+- **85.599**: Overige vormen van onderwijs (workshops / maker education: optional)
 
-**Action: have boekhouder declare ALL applicable codes at BTW/KBO registration.** Missing a code can complicate subsidy applications (VLAIO ISS scoring depends on R&D NACE codes) and import duties. NACE-BEL 2025 is in force since 1 Jan 2025: use 2025 codes, not 2008. Source: https://nacebel.codes/, https://statbel.fgov.be/en/about-statbel/methodology/classifications/nace-bel-2025
+**Action: have boekhouder declare ALL applicable codes at BTW/KBO registration.** Missing a code can complicate subsidy applications (VLAIO ISS scoring depends on R&D NACE codes) and import duties. KBO accepts the 5-digit subclass; some ondernemingsloketten prefer the 7-digit detail (shown above). NACE-BEL 2025 (NACE Rev 2.1) in force since 1 Jan 2025. Source: https://nacebel.codes/, https://statbel.fgov.be/en/about-statbel/methodology/classifications/nace-bel-2025
 
 ### OSS VAT registration: TIMING
 The €10K/year pan-EU B2C threshold is calculated on **net** cross-border B2C sales. Below threshold: charge Belgian 21% BTW to all EU consumers, report in regular BTW return. Above threshold: charge destination VAT rate (19% DE, 21% NL, 20% FR, 22% IT, 21% ES).

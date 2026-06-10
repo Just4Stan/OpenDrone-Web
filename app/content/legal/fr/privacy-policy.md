@@ -64,8 +64,16 @@ Incutec BV n’a pas désigné de Délégué à la Protection des Données (DPD)
 | Sendcloud B.V. | Étiquettes d’expédition et suivi | Pays-Bas (UE) |
 | Bpost / DHL / DPD (transporteur selon commande) | Livraison des colis | UE |
 | Plausible Analytics | Analyse de site sans cookies | Plausible Insights OÜ — Estonie (UE) ; hébergement en Allemagne |
+| Polar Advisory BV (comptable) | Facturation et comptes annuels | Belgique |
+| Discord Inc. | Tickets de support via la passerelle Discord (nom, e-mail, contenu des messages, pièces jointes) | É-U — EU-US Data Privacy Framework |
+| Anthropic PBC | Projets de réponses assistés par IA pour les tickets de support | É-U — accord de sous-traitance avec CCT |
+| Resend (Plus Five Five, Inc.) | E-mails transactionnels de support (liens de reprise) | É-U — CCT |
+| Upstash, Inc. | Index temporaire des tickets pour le module de support | É-U — CCT |
+| Cloudflare, Inc. | Vérification anti-spam Turnstile sur les formulaires | É-U — EU-US Data Privacy Framework |
 
-Incutec BV ne transfère pas de données personnelles vers des pays en dehors de l’EEE à moins que des garanties adéquates n’aient été mises en place (Art. 46 RGPD).
+**Transferts hors EEE.** Pour les sous-traitants américains mentionnés ci-dessus, Incutec BV transfère des données personnelles sur la base de garanties appropriées (Art. 46 RGPD) : certification au titre de l’EU-US Data Privacy Framework ou clauses contractuelles types (CCT, Décision 2021/914). Shopify peut en outre traiter des données au Canada (décision d’adéquation) et via des sous-traitants aux États-Unis et à Singapour sous CCT. Tous les autres traitements conservent les données personnelles au sein de l’EEE.
+
+**Assistance IA au support.** Lorsque vous soumettez un ticket de support, le contenu de votre message peut être transmis à Anthropic afin de préparer un projet de réponse. Un collaborateur examine chaque réponse avant son envoi ; aucune prise de décision automatisée n’a lieu.
 
 ### 6. Droits de la personne concernée
 
