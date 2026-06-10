@@ -41,7 +41,7 @@ export async function action({request, context}: Route.ActionArgs) {
     return data<SendResult>(
       {
         ok: false,
-        message: 'Slow down — wait a moment before sending again.',
+        message: 'Slow down. Wait a moment before sending again.',
         code: 'rate-limited',
       },
       {

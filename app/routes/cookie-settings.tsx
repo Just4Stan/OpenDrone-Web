@@ -81,7 +81,7 @@ const STRINGS = {
     intro: [
       'The OpenDrone webshop uses ',
       {strong: 'no marketing cookies'},
-      ' and does not ask for consent — only strictly-necessary cookies are set for cart and checkout. Analytics runs via Plausible, which is cookieless. See also the ',
+      ' and does not ask for consent; only strictly-necessary cookies are set for cart and checkout. Analytics runs via Plausible, which is cookieless. See also the ',
       {link: ['cookie policy', '/cookies']},
       '.',
     ],
@@ -100,7 +100,7 @@ const STRINGS = {
     intro: [
       'De OpenDrone-webshop gebruikt ',
       {strong: 'geen marketingcookies'},
-      ' en vraagt geen toestemming — alleen strikt noodzakelijke cookies worden geplaatst voor winkelwagen en checkout. Analytics loopt via Plausible, dat cookieless is. Zie ook het ',
+      ' en vraagt geen toestemming; alleen strikt noodzakelijke cookies worden geplaatst voor winkelwagen en checkout. Analytics loopt via Plausible, dat cookieless is. Zie ook het ',
       {link: ['cookiebeleid', '/cookies']},
       '.',
     ],
@@ -119,7 +119,7 @@ const STRINGS = {
     intro: [
       'La boutique OpenDrone n’utilise ',
       {strong: 'aucun cookie marketing'},
-      ' et ne demande pas de consentement — seuls des cookies strictement nécessaires sont utilisés pour le panier et le checkout. Les statistiques passent par Plausible, sans cookies. Voir aussi la ',
+      ' et ne demande pas de consentement ; seuls des cookies strictement nécessaires sont utilisés pour le panier et le checkout. Les statistiques passent par Plausible, sans cookies. Voir aussi la ',
       {link: ['politique en matière de cookies', '/cookies']},
       '.',
     ],

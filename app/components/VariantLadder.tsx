@@ -46,7 +46,7 @@ export function VariantLadder({
     <div className="variant-ladder" role="radiogroup" aria-label={`${axis} options`}>
       <p className="variant-ladder-axis">
         {axis}
-        <span className="variant-ladder-axis-hint">— pick your build</span>
+        <span className="variant-ladder-axis-hint">· pick your build</span>
       </p>
       <div className="variant-ladder-track">
         {tiers.map(({value, content, optionValue}) => {

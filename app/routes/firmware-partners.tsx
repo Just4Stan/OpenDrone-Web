@@ -6,7 +6,7 @@ export const meta: Route.MetaFunction = () =>
   buildSeoMeta({
     title: 'Firmware partners · Where your €1 goes',
     description:
-      'OpenDrone ships on Betaflight, AM32 and ExpressLRS. We forward €1 of every order to the upstream maintainers — here is the list.',
+      'OpenDrone ships on Betaflight, AM32 and ExpressLRS. We forward €1 of every order to the upstream maintainers. Here is the list.',
   });
 
 export async function loader(_args: Route.LoaderArgs) {
@@ -24,9 +24,9 @@ type Partner = {
 const PARTNERS: Partner[] = [
   {
     project: 'Betaflight',
-    runsOn: 'OpenFC',
+    runsOn: 'OpenFC-Lite',
     blurb:
-      'Betaflight is the flight controller firmware used in most mini-quad freestyle builds. OpenFC is a Betaflight-target board — the RP2354B port is being upstreamed.',
+      'Betaflight is the flight controller firmware used in most mini-quad freestyle builds. OpenFC-Lite is a Betaflight-target board; the RP2350-platform port is being upstreamed.',
     repoUrl: 'https://github.com/betaflight/betaflight',
     donationUrl: 'https://opencollective.com/betaflight',
   },
@@ -34,13 +34,13 @@ const PARTNERS: Partner[] = [
     project: 'AM32',
     runsOn: 'OpenESC',
     blurb:
-      'AM32 is a multi-MCU ESC firmware alternative to BLHeli, MIT-licensed. OpenESC runs AM32 on AT32F421 channels — same firmware as other AM32 ESCs, no custom fork, no vendor lock-in.',
+      'AM32 is a multi-MCU ESC firmware alternative to BLHeli, MIT-licensed. OpenESC runs AM32 on AT32F421 channels: the same firmware as other AM32 ESCs, no custom fork, no vendor lock-in.',
     repoUrl:
       'https://github.com/AlkaMotors/AM32-MultiRotor-ESC-firmware',
   },
   {
     project: 'ExpressLRS',
-    runsOn: 'OpenRX · OpenFC break-off RX',
+    runsOn: 'OpenRX',
     blurb:
       'ExpressLRS is the open long-range 2.4 GHz / sub-GHz radio protocol. OpenRX targets are upstream (Unified_ESP32C3_2400_RX for Lite, Unified_ESP32C3_LR1121_RX for Mono/Gemini) so you flash with the standard ExpressLRS configurator.',
     repoUrl: 'https://github.com/ExpressLRS/ExpressLRS',
@@ -59,9 +59,9 @@ export default function FirmwarePartnersRoute() {
         </h1>
         <p className="editorial-lead">
           Every OpenDrone board runs on firmware we didn&apos;t write. For every
-          unit sold we forward €1 to the upstream project — one contribution,
+          unit sold we forward €1 to the upstream project: one contribution,
           one transaction, one line item in our books. Here&apos;s the list, with
-          links so you can double-dip if you want.
+          links if you want to give them more directly.
         </p>
       </header>
 
@@ -70,15 +70,14 @@ export default function FirmwarePartnersRoute() {
         <p>
           When you buy a board, the checkout total covers the hardware price plus
           a €1 firmware contribution baked in. We batch those contributions and
-          forward them to the upstream project — GitHub Sponsors, OpenCollective,
-          or a direct bank transfer depending on what the maintainers have set
-          up. We publish the totals on each release so you can see what went
-          where.
+          forward them to the upstream project via GitHub Sponsors,
+          OpenCollective, or a direct bank transfer, depending on what the
+          maintainers have set up.
         </p>
         <p>
-          On the OpenStack bundle (OpenFC + OpenESC) the split doubles: €1 to
-          Betaflight, €1 to AM32. The bundle price is still lower than the two
-          boards bought separately — the maintainers don&apos;t lose their cut.
+          On the OpenStack bundle (OpenFC-Lite + OpenESC) the split doubles: €1
+          to Betaflight, €1 to AM32. The bundle is the same two boards at the
+          same prices, and both maintainers keep their cut.
         </p>
       </section>
 
@@ -114,17 +113,16 @@ export default function FirmwarePartnersRoute() {
       </section>
 
       <section className="editorial-section">
-        <h2 className="editorial-section-title">03 · Want to double the €1?</h2>
+        <h2 className="editorial-section-title">03 · The optional donation</h2>
         <p>
-          At checkout you&apos;ll see an optional donation step — pick €1, €3, €5,
-          €10 or skip. 100% of that line is forwarded on top of the baked-in €1.
-          We don&apos;t keep a cut.
+          At checkout you&apos;ll see an optional donation step: €1, €3, €5, €10
+          or skip. 100% of that line is forwarded on top of the baked-in €1. We
+          don&apos;t keep a cut.
         </p>
         <p>
-          If you&apos;d rather give directly, every project above links to their
-          own donation page. We&apos;d honestly prefer that to a 1% processor fee
-          skimming our route — but the checkout option is there if it&apos;s more
-          convenient.
+          If you&apos;d rather give directly, every project above links to its
+          own donation page. Direct giving skips the payment-processor fee
+          entirely; the checkout option is there if it&apos;s more convenient.
         </p>
       </section>
 

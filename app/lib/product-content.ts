@@ -252,9 +252,9 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
           ['Continuous', '30 A / channel*'],
         ],
         specs: [
-          ['Continuous', '30 A / channel — preliminary, bench characterization pending'],
+          ['Continuous', '30 A / channel (preliminary, bench characterization pending)'],
           ['MOSFETs', 'DOY180N03T, 30 V / 1.0 mΩ'],
-          ['Input', '3–6S LiPo — 6S hard maximum (30 V FETs, TVS-clamped)'],
+          ['Input', '3–6S LiPo, 6S hard maximum (30 V FETs, TVS-clamped)'],
           ['Current sense', 'INA186A3 + 0.2 mΩ shunt · 20 mV/A, 165 A full-scale'],
           ['PCB', '6-layer, 2 oz outer copper, 20×20 mount'],
         ],
@@ -266,7 +266,7 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
           ['Continuous', '50 A / channel*'],
         ],
         specs: [
-          ['Continuous', '50 A / channel — preliminary, bench characterization pending'],
+          ['Continuous', '50 A / channel (preliminary, bench characterization pending)'],
           ['MOSFETs', 'SP40N01GHNK, 40 V / 1.2 mΩ'],
           ['Current sense', 'INA186A3 + 2× 0.2 mΩ shunt · 10 mV/A, 330 A full-scale'],
           ['PCB', '6-layer, 30×30 mount'],
@@ -288,7 +288,7 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
     },
     pairCta: {
       eyebrow: 'Better together',
-      title: 'OpenStack — board on board, zero solder, one checkout.',
+      title: 'OpenStack: board on board, zero solder, one checkout.',
       to: '/products/openstack',
     },
   },
@@ -312,12 +312,12 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
     teardown: {
       title: 'An MCU, an IMU, a radio, and enough UARTs for the rest.',
       body:
-        'The RP2354B carries 520 KB of SRAM, integrated flash, and two PIO blocks. One PIO drives the analog OSD (opamp + mux detect the video syncs and switch between white and black pixels); the other provides two extra software UARTs. The ELRS module is a physical break-off on the same board — snap it off or fly with it attached.',
+        'The RP2354B carries 520 KB of SRAM, integrated flash, and two PIO blocks. One PIO drives the analog OSD (opamp + mux detect the video syncs and switch between white and black pixels); the other provides two extra software UARTs. The ELRS module is a physical break-off on the same board: snap it off or fly with it attached.',
       pins: [
-        {ref: '①', part: 'RP2354B — dual M33 @ 150 MHz'},
+        {ref: '①', part: 'RP2354B, dual M33 @ 150 MHz'},
         {ref: '②', part: 'LSM6DSV16XTR IMU'},
         {ref: '③', part: 'BMP388 barometer'},
-        {ref: '④', part: 'BY25Q128AS — 128 Mbit blackbox'},
+        {ref: '④', part: 'BY25Q128AS, 128 Mbit blackbox'},
         {ref: '⑤', part: 'Break-off ESP32-C3 ELRS RX'},
       ],
     },
@@ -410,7 +410,7 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
     },
     pairCta: {
       eyebrow: 'Better together',
-      title: 'OpenStack — OpenFC + OpenESC, one 30.5 mm stack, one checkout.',
+      title: 'OpenStack: FC + ESC as one stack, one checkout.',
       to: '/products/openstack',
     },
   },
@@ -428,7 +428,7 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
       line2Italic: 'minus',
       line3: 'what you don’t need.',
       lead:
-        'An RP2354 dual-core M33 running Betaflight on a 6-layer board: a 6-axis IMU, microSD blackbox, PIO-driven analog OSD (in development), and a switchable 10 V VTX rail. No barometer, no onboard radio — bring your own RX over UART and keep the board small and cheap.',
+        'An RP2354 dual-core M33 running Betaflight on a 6-layer board: a 6-axis IMU, microSD blackbox, PIO-driven analog OSD (in development), and a switchable 10 V VTX rail. No barometer, no onboard radio. Bring your own RX over UART and keep the board small and cheap.',
     },
     firmware: {
       project: 'Betaflight',
@@ -439,12 +439,12 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
     teardown: {
       title: 'Two PIO blocks doing the work of a fistful of chips.',
       body:
-        'The RP2354 has no analog-OSD peripheral and only two hardware UARTs, so its PIO blocks fake both. One drives the analog OSD front end — a comparator strips the video sync, an op-amp buffers the camera signal, and an SPDT switch injects black and white pixels — while another spins up extra software UARTs. The IMU and the microSD blackbox sit on separate SPI buses, and a switchable 10 V buck feeds the VTX and camera.',
+        'The RP2354 has no analog-OSD peripheral and only two hardware UARTs, so its PIO blocks fake both. One drives the analog OSD front end (a comparator strips the video sync, an op-amp buffers the camera signal, and an SPDT switch injects black and white pixels) while another spins up extra software UARTs. The IMU and the microSD blackbox sit on separate SPI buses, and a switchable 10 V buck feeds the VTX and camera.',
       pins: [
-        {ref: '①', part: 'RP2354 — dual M33 @ 150 MHz'},
+        {ref: '①', part: 'RP2354, dual M33 @ 150 MHz'},
         {ref: '②', part: '6-axis IMU (LGA-14, TDK/ST)'},
         {ref: '③', part: 'microSD blackbox, on SPI'},
-        {ref: '④', part: 'Analog OSD — comparator + op-amp + SPDT'},
+        {ref: '④', part: 'Analog OSD: comparator + op-amp + SPDT'},
         {ref: '⑤', part: 'Switchable 10 V VTX buck'},
       ],
       // boardArt is supplied per variant (openfc-lite-mini / openfc-lite); the
@@ -460,11 +460,11 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
     // to the OpenFC-Lite repos and wire the cards here.
     downloads: [],
     specs: [
-      ['Firmware', 'Betaflight — custom RP2350 target, upstreaming in progress'],
-      ['MCU', 'RP2354 — dual M33 @ 150 MHz, 2 MB flash'],
-      ['IMU', 'ST LSM6DSV16X on SPI — LGA-14 footprint also takes TDK ICM-426xx'],
+      ['Firmware', 'Betaflight, custom RP2350 target (upstreaming in progress)'],
+      ['MCU', 'RP2354, dual M33 @ 150 MHz, 2 MB flash'],
+      ['IMU', 'ST LSM6DSV16X on SPI; LGA-14 footprint also takes TDK ICM-426xx'],
       ['Blackbox', 'microSD card (TF-021B)'],
-      ['OSD', 'Analog, PIO-driven — in development; digital OSD via MSP DisplayPort'],
+      ['OSD', 'Analog, PIO-driven (in development); digital OSD via MSP DisplayPort'],
       ['Motor outputs', '4× DShot, bidirectional telemetry'],
       ['RX', 'External, over UART (CRSF/SBUS)'],
       ['Power', '3S–6S; switchable 10 V + always-on 5 V (3 A-rated bucks)'],
@@ -477,15 +477,15 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
     optionAxis: 'Model',
     variants: {
       '20×20': {
-        tagline: 'The 20×20 mount — RP2354A, QFN-60. The compact stack size.',
+        tagline: 'The 20×20 mount: RP2354A, QFN-60. The compact stack size.',
         highlights: [
           ['Mount', '20×20'],
           ['Size', '20×20 mm'],
         ],
         specs: [
-          ['MCU', 'RP2354A — dual M33 @ 150 MHz, QFN-60 (30 GPIO)'],
+          ['MCU', 'RP2354A, dual M33 @ 150 MHz, QFN-60 (30 GPIO)'],
           ['Betaflight target', 'OPENFC_LITE_MINI_RP2350A'],
-          ['UARTs', '3 — 2 hardware + 1 PIO'],
+          ['UARTs', '3: 2 hardware + 1 PIO'],
           ['Size', '20×20 mm, 6-layer'],
         ],
         boardArt: {
@@ -495,13 +495,13 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
         },
       },
       '30×30': {
-        tagline: 'The 30×30 mount — bigger pads and more I/O.',
+        tagline: 'The 30×30 mount: bigger pads and more I/O.',
         highlights: [
           ['Mount', '30×30'],
           ['Size', '30.5×30.5 mm'],
         ],
         specs: [
-          ['UARTs', '4 — 2 hardware + 2 PIO'],
+          ['UARTs', '4: 2 hardware + 2 PIO'],
           ['Size', '30.5×30.5 mm, 6-layer'],
         ],
         boardArt: {
@@ -513,7 +513,7 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
     },
     pairCta: {
       eyebrow: 'Better together',
-      title: 'OpenStack — OpenFC + OpenESC, one 30.5 mm stack, one checkout.',
+      title: 'OpenStack: FC + ESC as one stack, one checkout.',
       to: '/products/openstack',
     },
   },
@@ -538,7 +538,7 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
       body:
         'Every variant runs on the ESP32-C3 at the MCU layer. Lite uses Semtech SX1281 with the 2450FM07D0034 BPF; Mono and Gemini use Semtech LR1121 with the RFX2401C + SKY13373 + Johanson IPD front-end. Firmware targets upstream to ExpressLRS (Unified_ESP32C3_2400_RX for Lite, Unified_ESP32C3_LR1121_RX for Mono/Gemini).',
       pins: [
-        {ref: '①', part: 'ESP32-C3 — Wi-Fi OTA + CRSF'},
+        {ref: '①', part: 'ESP32-C3, Wi-Fi OTA + CRSF'},
         {ref: '②', part: 'SX1281 (Lite) or LR1121 (Mono/Gemini)'},
         {ref: '③', part: 'RFX2401C + SKY13373 front-end (Mono/Gemini)'},
         {ref: '④', part: 'U.FL or ceramic antenna'},
@@ -558,14 +558,14 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
       ['Firmware', 'ExpressLRS (3.5.0+)'],
       ['Telemetry', 'CRSF'],
       ['MCU', 'ESP32-C3, 4 MB flash'],
-      ['Wi-Fi antenna', 'Dedicated on-board ceramic — separate from the link antenna'],
+      ['Wi-Fi antenna', 'Dedicated on-board ceramic, separate from the link antenna'],
       ['Flashing', 'UART first, then Wi-Fi OTA / BF passthrough'],
       ['License', 'CERN-OHL-S-2.0'],
     ],
     optionAxis: 'Model',
     variants: {
       Lite: {
-        tagline: 'SX1281 on 2.4 GHz with an on-board ceramic antenna — the low-cost default.',
+        tagline: 'SX1281 on 2.4 GHz with an on-board ceramic antenna: the low-cost default.',
         highlights: [
           ['Radio', 'Semtech SX1281'],
           ['Band', '2.4 GHz'],
@@ -575,7 +575,7 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
           ['Radio', 'Semtech SX1281, 2.4 GHz'],
           ['Flash target', 'Unified_ESP32C3_2400_RX'],
           ['Telemetry power', '13 dBm (~20 mW)'],
-          ['Antenna', 'On-board ceramic chip — no antenna wire to tear off'],
+          ['Antenna', 'On-board ceramic chip, no antenna wire to tear off'],
           ['Size', '10.05 × 10.55 mm, 6-layer'],
         ],
         boardArt: {src: '/boards/openrx-lite/board.svg'},
@@ -591,7 +591,7 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
           ['Radio', 'Semtech SX1281, 2.4 GHz'],
           ['Flash target', 'Unified_ESP32C3_2400_RX'],
           ['Telemetry power', '13 dBm (~20 mW)'],
-          ['Antenna', 'U.FL — run the dipole of your choice'],
+          ['Antenna', 'U.FL, run the dipole of your choice'],
           ['Size', '10.05 × 10.55 mm, 6-layer'],
         ],
         inTheBox: [{qty: '1×', item: 'U.FL dipole antenna'}],
@@ -606,7 +606,7 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
           ['Antenna', 'U.FL × 1'],
         ],
         specs: [
-          ['Radio', 'Semtech LR1121 — dual-band from one antenna'],
+          ['Radio', 'Semtech LR1121, dual-band from one antenna'],
           ['Flash target', 'Unified_ESP32C3_LR1121_RX'],
           ['Telemetry power', '12–22 dBm selectable (~158 mW max), 12 dB RX LNA'],
           ['Antenna', 'U.FL, both bands through one RF switch'],
@@ -624,10 +624,10 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
           ['Antenna', 'U.FL × 2'],
         ],
         specs: [
-          ['Radio', '2× Semtech LR1121 — two complete radio chains'],
+          ['Radio', '2× Semtech LR1121, two complete radio chains'],
           ['Flash target', 'Unified_ESP32C3_LR1121_RX'],
           ['Telemetry power', '12–22 dBm per radio (~158 mW), 12 dB RX LNA per chain'],
-          ['Antenna', '2× U.FL — one per radio'],
+          ['Antenna', '2× U.FL, one per radio'],
           ['Flashing', 'UART with on-board BOOT button, Wi-Fi OTA, BF passthrough'],
           ['Size', '17.05 × 15.75 mm, 6-layer'],
         ],
@@ -647,7 +647,7 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
       line2Italic: 'the rest',
       line3: 'bolts into.',
       lead:
-        'CNC carbon-fibre freestyle frame on a 30.5×30.5 stack pattern. Designed in-house and OEM-built to start, with our own machining planned for 2027. OpenFC and OpenESC drop in without spacers.',
+        'CNC carbon-fibre freestyle frame on a 30.5×30.5 stack pattern. Designed in-house, OEM-machined. OpenFC and OpenESC drop in without spacers.',
     },
     firmware: {
       project: '—',
@@ -661,9 +661,9 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
       title: 'It comes apart the way it goes together.',
       body: '',
       pins: [
-        {ref: '①', part: 'Top plate — carbon, carries the camera + VTX bay'},
-        {ref: '②', part: 'Arms — 5 mm carbon, replaced individually', cost: '×4'},
-        {ref: '③', part: 'Bottom plate — 30.5 × 30.5 stack pattern'},
+        {ref: '①', part: 'Top plate: carbon, carries the camera + VTX bay'},
+        {ref: '②', part: 'Arms: 5 mm carbon, replaced individually', cost: '×4'},
+        {ref: '③', part: 'Bottom plate: 30.5 × 30.5 stack pattern'},
         {ref: '④', part: 'M3 aluminium standoffs + hardware kit'},
       ],
       // Fallback model when a tier defines none. Both tiers (3"/5") override
@@ -693,8 +693,6 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
       ['VTX bay', '20 × 20'],
       ['Video systems', 'Analog · DJI O3/O4 · Walksnail · HDZero'],
     ],
-    footnote:
-      "We're looking into setting up our own in-house machining for 2027.",
     // TODO(copy): placeholder variant editorial — wires the "Model" axis +
     // ladder. Shared specs above still read 5-inch; reconcile once the 3"
     // (OpenFrame3) specs land.
@@ -727,7 +725,7 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
       line2Italic: 'Just',
       line3: 'an FC and an ESC.',
       lead:
-        'The stack is OpenFC-Lite and OpenESC bought together. Order each board on its own page and you get the exact same two boards — same hardware, same box, same firmware. Bundling changes one thing: one checkout instead of two, and the second courier saved. Betaflight and AM32 each still get their €1.',
+        'The stack is OpenFC-Lite and OpenESC bought together. Order each board on its own page and you get the exact same two boards: same hardware, same box, same firmware. Bundling changes one thing: one checkout instead of two, and the second courier saved. Betaflight and AM32 each still get their €1.',
     },
     // Firmware set to empty so the single-project €N+€1 chapter is
     // suppressed. The bundle chapter replaces it with a per-component
@@ -741,8 +739,8 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
     // them separately gives the identical hardware. Each line points back to
     // the board whose box it comes from.
     inTheBox: [
-      {qty: '1×', item: 'OpenFC-Lite board', note: 'ships in its own box — ESC harness, grommets, build card'},
-      {qty: '1×', item: 'OpenESC board', note: 'ships in its own box — JST cables, XT pigtail, low-ESR cap, grommets'},
+      {qty: '1×', item: 'OpenFC-Lite board', note: 'ships in its own box with ESC harness, grommets, build card'},
+      {qty: '1×', item: 'OpenESC board', note: 'ships in its own box with JST cables, XT pigtail, low-ESR cap, grommets'},
     ],
     // No combined "OpenStack" repo exists — there is no stack hardware. The
     // schematics, STEP and flashing docs live in each board's own repo; the
@@ -750,17 +748,17 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
     downloads: [],
     specs: [
       ['Includes', 'OpenFC-Lite + OpenESC'],
-      ['Mount', '20×20 or 30×30 — matched pair'],
+      ['Mount', '20×20 or 30×30, matched pair'],
       ['FC firmware', 'Betaflight (RP2354)'],
       ['ESC firmware', 'AM32 (AT32F421 × 4)'],
-      ['Continuous', '30 A (20×20) / 50 A (30×30) per channel — preliminary'],
+      ['Continuous', '30 A (20×20) / 50 A (30×30) per channel (preliminary)'],
       ['Input', '3–6S LiPo'],
-      ['Harness', '8-pin JST SH, plug-and-play FC↔ESC — no signal soldering'],
+      ['Harness', '8-pin JST SH, plug-and-play FC↔ESC, no signal soldering'],
       ['Contribution', '€1 → Betaflight, €1 → AM32'],
       ['License', 'CERN-OHL-S-2.0'],
     ],
     footnote:
-      'Same two boards as their own pages — OpenFC-Lite + OpenESC, at the same prices. One checkout, one parcel, one courier fee instead of two. Firmware splits stay intact — Betaflight and AM32 each get their €1.',
+      'Same two boards as their own pages, OpenFC-Lite + OpenESC, at the same prices. One checkout, one parcel, one courier fee instead of two. Firmware splits stay intact: Betaflight and AM32 each get their €1.',
     // Two stack sizes, picked on the same "Model" axis the FC and ESC use.
     // Each tier is just the matching pair at that mount size — the bundle
     // component handles don't change, only which size variant of each board
@@ -769,7 +767,7 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
     variants: {
       '20×20': {
         label: '20×20 (mini)',
-        tagline: 'OpenFC-Lite-Mini + OpenESC 20×20 — sub-3", cinewhoop, micro.',
+        tagline: 'OpenFC-Lite-Mini + OpenESC 20×20: sub-3", cinewhoop, micro.',
         highlights: [
           ['Pair', 'FC-Lite-Mini + ESC 20×20'],
           ['Mount', '20×20'],
@@ -778,13 +776,13 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
         specs: [
           ['Includes', 'OpenFC-Lite-Mini + OpenESC (20×20)'],
           ['Mount', '20×20'],
-          ['FC', 'OpenFC-Lite-Mini — RP2354A, QFN-60'],
-          ['ESC', 'OpenESC 20×20 — DOY180N03T, 30 V / 1.0 mΩ'],
-          ['Continuous', '30 A / channel — preliminary'],
+          ['FC', 'OpenFC-Lite-Mini, RP2354A QFN-60'],
+          ['ESC', 'OpenESC 20×20, DOY180N03T 30 V / 1.0 mΩ'],
+          ['Continuous', '30 A / channel (preliminary)'],
         ],
       },
       '30×30': {
-        tagline: 'OpenFC-Lite + OpenESC 30×30 — 5", freestyle.',
+        tagline: 'OpenFC-Lite + OpenESC 30×30: 5", freestyle.',
         highlights: [
           ['Pair', 'FC-Lite + ESC 30×30'],
           ['Mount', '30.5×30.5'],
@@ -793,9 +791,9 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
         specs: [
           ['Includes', 'OpenFC-Lite + OpenESC (30×30)'],
           ['Mount', '30.5×30.5'],
-          ['FC', 'OpenFC-Lite — RP2354, 30.5×30.5'],
-          ['ESC', 'OpenESC 30×30 — SP40N01GHNK, 40 V / 1.2 mΩ'],
-          ['Continuous', '50 A / channel — preliminary'],
+          ['FC', 'OpenFC-Lite, RP2354, 30.5×30.5'],
+          ['ESC', 'OpenESC 30×30, SP40N01GHNK 40 V / 1.2 mΩ'],
+          ['Continuous', '50 A / channel (preliminary)'],
         ],
       },
     },
@@ -807,7 +805,7 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
           firmware: 'Betaflight',
           firmwareUrl: 'https://github.com/betaflight/betaflight',
           blurb:
-            'RP2354 dual-core M33 running Betaflight: 6-axis IMU, microSD blackbox, PIO-driven analog OSD (in development) and a switchable 10 V VTX rail. No onboard radio — bring your own RX over UART.',
+            'RP2354 dual-core M33 running Betaflight: 6-axis IMU, microSD blackbox, PIO-driven analog OSD (in development) and a switchable 10 V VTX rail. No onboard radio. Bring your own RX over UART.',
         },
         {
           title: 'OpenESC',

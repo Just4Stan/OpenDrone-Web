@@ -89,7 +89,7 @@ const ClientHeroScene = memo(function ClientHeroScene({
 
 export const meta: Route.MetaFunction = () => {
   return [
-    {title: 'OpenDrone — Open Source Drone Parts'},
+    {title: 'OpenDrone · Open Source Drone Parts'},
     {name: 'description', content: 'Open source flight controllers and ESCs. Designed in Belgium.'},
   ];
 };
@@ -543,7 +543,7 @@ function DesktopHome() {
                 className="hero-load-overflow__skip"
                 onClick={() => setSplashSettled(true)}
               >
-                Skip to catalogue
+                Skip to catalog
                 <svg
                   width="14"
                   height="14"

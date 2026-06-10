@@ -32,7 +32,7 @@ import {Money, flattenConnection} from '@shopify/hydrogen';
 export const meta: Route.MetaFunction = () =>
   buildSeoMeta({
     title: 'Account',
-    description: 'Your OpenDrone dashboard — orders, addresses, profile.',
+    description: 'Your OpenDrone dashboard: orders, addresses, profile.',
     robots: 'noindex,nofollow',
   });
 
@@ -129,8 +129,7 @@ export default function AccountIndex() {
           <span>.</span>
         </h2>
         <p className="account-dashboard-lede">
-          Good to have you back. Pick up where you left off, or start
-          something new.
+          Orders, addresses and support threads, all in one place.
         </p>
       </header>
 
@@ -166,7 +165,7 @@ function SupportCard({openCount}: {openCount: number}) {
         </span>
       ) : (
         <p className="account-dashboard-card-lede">
-          No open tickets — need help?
+          No open tickets. Need help?
         </p>
       )}
       <Link prefetch="viewport"
@@ -181,7 +180,6 @@ function SupportCard({openCount}: {openCount: number}) {
 
 function timeOfDayGreeting(): string {
   const h = new Date().getHours();
-  if (h < 5) return 'Burning the midnight oil,';
   if (h < 12) return 'Good morning,';
   if (h < 18) return 'Good afternoon,';
   return 'Good evening,';
