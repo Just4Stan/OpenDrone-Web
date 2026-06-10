@@ -49,9 +49,14 @@ export const CUSTOMER_ORDER_QUERY = `#graphql
     statusPageUrl
     fulfillmentStatus
     processedAt
-    fulfillments(first: 1) {
+    fulfillments(first: 10) {
       nodes {
         status
+        trackingInformation {
+          number
+          company
+          url
+        }
       }
     }
     totalTax {

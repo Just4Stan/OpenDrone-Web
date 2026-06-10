@@ -655,6 +655,10 @@ export default function Product() {
   const railSentinelRef = useRef<HTMLDivElement>(null);
   const [railPinned, setRailPinned] = useState(false);
   const [railBox, setRailBox] = useState<{right: number} | null>(null);
+  // <960px the pinned rail becomes a bottom bar (price + add-to-cart only):
+  // phones previously had NO sticky buy control at all once the in-hero buy
+  // module scrolled away.
+  const [railMobile, setRailMobile] = useState(false);
   useEffect(() => {
     if (!hasLadder) return;
     const sentinel = railSentinelRef.current;
@@ -668,21 +672,19 @@ export default function Product() {
       // with the content gutter rather than floating over the scrollbar.
       const right = Math.round(document.documentElement.clientWidth - r.right);
       setRailBox({right});
+      setRailMobile(!isDesktop());
     };
     measure();
     const io = new IntersectionObserver(
       ([entry]) =>
         setRailPinned(
-          isDesktop() &&
-            !entry.isIntersecting &&
-            entry.boundingClientRect.top < HEADER,
+          !entry.isIntersecting && entry.boundingClientRect.top < HEADER,
         ),
       {rootMargin: `-${HEADER}px 0px 0px 0px`, threshold: 0},
     );
     io.observe(sentinel);
     const onResize = () => {
       measure();
-      if (!isDesktop()) setRailPinned(false);
     };
     window.addEventListener('resize', onResize);
     return () => {
@@ -755,6 +757,9 @@ export default function Product() {
         ) : selectedVariant?.sku ? (
           <span className="product-buy-sku">SKU {selectedVariant.sku}</span>
         ) : null}
+        {/* Art. VI.45 WER pre-contractual price info: prices are consumer
+            gross prices; only shipping is added later. */}
+        <span className="product-buy-vat">incl. VAT · excl. shipping</span>
       </div>
       <span className={`product-buy-stock${buyAvailable ? '' : ' is-out'}`}>
         {isBundle
@@ -776,19 +781,21 @@ export default function Product() {
     </div>
   );
 
-  // The compact, top-pinned copy. Portaled to <body> so the fixed overlay
-  // escapes the hero's sticky/stacking context — otherwise the chapter media
-  // (sticky to the same top-right spot) paints over it and swallows clicks.
-  // Suppressed (CSS-hidden, not unmounted — an in-flight add-to-cart submit
-  // must survive opening the drawer) while an aside is open so it doesn't sit
-  // on top of the cart.
+  // The compact pinned copy. Desktop: top-right bar with ladder + buy module.
+  // Mobile (<960px): bottom bar with the buy module only — the ladder chips
+  // don't fit and the in-hero selector is a short scroll away. Portaled to
+  // <body> so the fixed overlay escapes the hero's sticky/stacking context —
+  // otherwise the chapter media (sticky to the same top-right spot) paints
+  // over it and swallows clicks. Suppressed (CSS-hidden, not unmounted — an
+  // in-flight add-to-cart submit must survive opening the drawer) while an
+  // aside is open so it doesn't sit on top of the cart.
   const railSuppressed = railPinned && asideType !== 'closed';
   const pinnedRail = (
     <div
-      className={`buy-rail is-pinned${railSuppressed ? ' is-suppressed' : ''}`}
-      style={railBox ? {right: railBox.right} : undefined}
+      className={`buy-rail is-pinned${railMobile ? ' is-mobile' : ''}${railSuppressed ? ' is-suppressed' : ''}`}
+      style={railBox && !railMobile ? {right: railBox.right} : undefined}
     >
-      {railLadder}
+      {railMobile ? null : railLadder}
       {railBuyModule}
     </div>
   );

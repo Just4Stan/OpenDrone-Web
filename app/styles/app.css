@@ -2579,6 +2579,14 @@ button.reset {
   color: var(--color-text-dim);
 }
 
+/* Art. VI.45 WER price microcopy — "incl. VAT · excl. shipping". */
+.product-buy-vat {
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  letter-spacing: 0.04em;
+  color: var(--color-text-dim);
+}
+
 .product-buy .product-form {
   margin: 0;
 }
@@ -2722,6 +2730,58 @@ button.reset {
   display: flex;
   flex-direction: column;
   gap: var(--sp-4);
+}
+
+/* Mobile pinned rail — a bottom bar with price + add-to-cart. Phones had no
+   sticky buy control at all once the in-hero module scrolled away (the
+   top-pinned rail below is ≥960px only). */
+@media (max-width: 959px) {
+  .buy-rail.is-pinned.is-mobile {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 60;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--sp-3);
+    padding: 0.55rem max(0.8rem, env(safe-area-inset-left)) calc(0.55rem + env(safe-area-inset-bottom)) max(0.8rem, env(safe-area-inset-right));
+    background: color-mix(in srgb, var(--color-bg-card) 94%, transparent);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border-top: 1px solid var(--color-border);
+    animation: buy-rail-rise 0.2s ease;
+  }
+  /* Compact: hide the secondary lines, keep price + VAT note + button. */
+  .buy-rail.is-pinned.is-mobile .product-buy {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--sp-3);
+    width: 100%;
+  }
+  .buy-rail.is-pinned.is-mobile .product-buy-stock,
+  .buy-rail.is-pinned.is-mobile .product-buy-sku {
+    display: none;
+  }
+  .buy-rail.is-pinned.is-mobile .product-form button {
+    white-space: nowrap;
+  }
+  .buy-rail.is-pinned.is-mobile.is-suppressed {
+    display: none;
+  }
+  @keyframes buy-rail-rise {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
 }
 
 @media (min-width: 960px) {
