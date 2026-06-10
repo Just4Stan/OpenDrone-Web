@@ -59,14 +59,31 @@ export function links() {
   return [
     {rel: 'preconnect', href: 'https://cdn.shopify.com'},
     {rel: 'preconnect', href: 'https://shop.app'},
-    // Preload the body typeface so first paint doesn't flash the system
-    // fallback then reflow when Inter swaps in. Fonts fetch in CORS mode
-    // even same-origin, so crossorigin is required for the preload to match
-    // the @font-face request and not double-download. Only Inter (body) is
-    // preloaded; JetBrains Mono is used for spec tables below the fold.
+    // Preload the above-the-fold typefaces so first paint doesn't flash
+    // system fallbacks then reflow on swap. Fonts fetch in CORS mode even
+    // same-origin, so crossorigin is required for the preload to match the
+    // @font-face request and not double-download.
+    // - Inter: body text.
+    // - JetBrains Mono: NOT just spec tables — it renders the header nav,
+    //   prices and SKUs sitewide, all above the fold.
+    // - Tokyo (7.4 KB): every brand/product wordmark.
     {
       rel: 'preload',
       href: '/fonts/inter-var.woff2',
+      as: 'font',
+      type: 'font/woff2',
+      crossOrigin: 'anonymous',
+    },
+    {
+      rel: 'preload',
+      href: '/fonts/jetbrains-mono-Regular.woff2',
+      as: 'font',
+      type: 'font/woff2',
+      crossOrigin: 'anonymous',
+    },
+    {
+      rel: 'preload',
+      href: '/fonts/tokyo-regular.woff2',
       as: 'font',
       type: 'font/woff2',
       crossOrigin: 'anonymous',
