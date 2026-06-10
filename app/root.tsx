@@ -12,7 +12,7 @@ import {
 } from 'react-router';
 import type {Route} from './+types/root';
 import favicon from '~/assets/favicon.svg';
-import {FOOTER_QUERY, HEADER_QUERY} from '~/lib/fragments';
+import {HEADER_QUERY} from '~/lib/fragments';
 import resetStyles from '~/styles/reset.css?url';
 import appStyles from '~/styles/app.css?url';
 import {PageLayout} from './components/PageLayout';
@@ -102,6 +102,9 @@ export async function loader(args: Route.LoaderArgs) {
     publicStoreDomain: env.PUBLIC_STORE_DOMAIN,
     company,
     locale,
+    // Pre-launch banner kill switch: defaults ON; set PUBLIC_PRELAUNCH=0 in
+    // Oxygen the day orders open.
+    prelaunch: env.PUBLIC_PRELAUNCH !== '0',
     turnstileSiteKey: env.TURNSTILE_SITE_KEY ?? null,
     shop: getShopAnalytics({
       storefront,
@@ -149,25 +152,14 @@ async function loadCriticalData({context}: Route.LoaderArgs) {
  * Make sure to not throw any errors here, as it will cause the page to 500.
  */
 function loadDeferredData({context}: Route.LoaderArgs) {
-  const {storefront, customerAccount, cart} = context;
+  const {customerAccount, cart} = context;
 
-  // defer the footer query (below the fold)
-  const footer = storefront
-    .query(FOOTER_QUERY, {
-      cache: storefront.CacheLong(),
-      variables: {
-        footerMenuHandle: 'footer', // Adjust to your footer menu handle
-      },
-    })
-    .catch((error: Error) => {
-      // Log query errors, but don't throw them so the page can still render
-      console.error(error);
-      return null;
-    });
+  // NOTE: the Shopify "footer" menu is deliberately not fetched — Footer.tsx
+  // renders hardcoded link arrays. The old deferred FOOTER_QUERY was a dead
+  // Storefront API round-trip on every session.
   return {
     cart: cart.get(),
     isLoggedIn: customerAccount.isLoggedIn(),
-    footer,
   };
 }
 

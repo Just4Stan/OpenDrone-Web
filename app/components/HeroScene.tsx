@@ -975,7 +975,7 @@ function DroneAssembly({
           ref={fcRef}
           onPointerOver={() => hover('fc', true)}
           onPointerOut={() => hover('fc', false)}
-          onClick={() => handleClick('/products/openfc')}
+          onClick={() => handleClick('/products/openfc-lite')}
         />
       </group>
       {/* Holds the previous assembly while it slides out on a size toggle. */}

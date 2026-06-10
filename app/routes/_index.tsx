@@ -425,10 +425,10 @@ function DesktopHome() {
       {/*
         Warm the three flagship PDPs (the live handles the 3D part hotspots
         navigate to) so clicking a part is an instant SPA transition with its
-        loader data already in cache. openfc-lite is the label target but ships
-        DRAFT, so the hotspots use the live openfc/openesc/openframe handles.
+        loader data already in cache. The FC hotspot targets openfc-lite —
+        the live product; the old `openfc` handle is archived in Shopify.
       */}
-      <PrefetchPageLinks page="/products/openfc" />
+      <PrefetchPageLinks page="/products/openfc-lite" />
       <PrefetchPageLinks page="/products/openesc" />
       <PrefetchPageLinks page="/products/openframe" />
 
@@ -624,7 +624,7 @@ function DesktopHome() {
           style={{opacity: labelOpacity}}
         >
           <div ref={fcLabelRef} className="hero-component-label">
-            <Link to="/products/openfc" prefetch="render">
+            <Link to="/products/openfc-lite" prefetch="render">
               Open<span>FC</span>
             </Link>
           </div>
