@@ -54,7 +54,7 @@ export async function action({request, context}: Route.ActionArgs) {
       {
         ok: false,
         message:
-          'Too many tickets from this network — try again in a bit, or join us on Discord.',
+          'Too many tickets from this network. Try again in a bit, or join us on Discord.',
       },
       {
         status: 429,

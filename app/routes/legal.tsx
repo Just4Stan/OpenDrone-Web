@@ -77,9 +77,9 @@ const PAGES: PageEntry[] = [
     slug: 'privacy',
     label: {en: 'Privacy Policy', nl: 'Privacybeleid', fr: 'Politique de Confidentialité'},
     desc: {
-      en: 'GDPR — which personal data we process and why.',
-      nl: 'GDPR — welke persoonsgegevens wij verwerken en waarom.',
-      fr: 'RGPD — quelles données personnelles nous traitons et pourquoi.',
+      en: 'GDPR: which personal data we process and why.',
+      nl: 'GDPR: welke persoonsgegevens wij verwerken en waarom.',
+      fr: 'RGPD : quelles données personnelles nous traitons et pourquoi.',
     },
   },
   {

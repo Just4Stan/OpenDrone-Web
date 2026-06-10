@@ -31,7 +31,7 @@ export const meta: Route.MetaFunction = () => {
   const base = buildSeoMeta({
     title: 'Newsletter',
     description:
-      'Engineering Essentials — build notes, hardware releases, and write-ups from OpenDrone. Subscribe to get each post by email.',
+      'Engineering Essentials: build notes, hardware releases, and write-ups from OpenDrone. Subscribe to get each post by email.',
   });
   return [
     ...base,
@@ -39,7 +39,7 @@ export const meta: Route.MetaFunction = () => {
       tagName: 'link',
       rel: 'alternate',
       type: 'application/rss+xml',
-      title: 'OpenDrone — Newsletter',
+      title: 'OpenDrone · Newsletter',
       href: '/newsletter.rss',
     },
   ];
@@ -205,7 +205,7 @@ export async function action({request, context}: Route.ActionArgs) {
   const ipLimit = checkRateLimit(`newsletter:ip:${ip}`, 5, 10 * 60 * 1000);
   if (!ipLimit.allowed) {
     return data<NewsletterResult>(
-      {ok: false, message: 'Too many requests — try again in a few minutes.'},
+      {ok: false, message: 'Too many requests. Try again in a few minutes.'},
       {
         status: 429,
         headers: {'Retry-After': String(ipLimit.resetInSeconds)},
@@ -309,7 +309,7 @@ export async function action({request, context}: Route.ActionArgs) {
 
     return data<NewsletterResult>({
       ok: true,
-      message: "You're in. Welcome aboard.",
+      message: 'Subscribed. The next post goes to your inbox.',
     });
   } catch (err) {
     console.error('[newsletter] customerCreate failed', err);

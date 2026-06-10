@@ -42,7 +42,7 @@ export async function action({request, context}: Route.ActionArgs) {
   const ipLimit = checkRateLimit(`support-lookup:ip:${ip}`, 3, 10 * 60 * 1000);
   if (!ipLimit.allowed) {
     return data<LookupResult>(
-      {ok: false, message: 'Too many requests — try again later.'},
+      {ok: false, message: 'Too many requests. Try again later.'},
       {
         status: 429,
         headers: {'Retry-After': String(ipLimit.resetInSeconds)},

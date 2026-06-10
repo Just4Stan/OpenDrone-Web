@@ -59,7 +59,7 @@ export function DonationUpsell({
         Add a thank-you to the firmware maintainers.
       </h3>
       <p className="donation-body">
-        100% forwarded on top of the baked-in €1 — we don&apos;t keep any of it.
+        100% forwarded on top of the baked-in €1. We don&apos;t keep any of it.
         Betaflight, AM32, ExpressLRS. Pick a tier or skip.
       </p>
       <div className="donation-tiers">

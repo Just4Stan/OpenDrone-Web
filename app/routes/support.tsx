@@ -11,7 +11,7 @@ import {buildSeoMeta} from '~/lib/seo';
 export const meta: Route.MetaFunction = () =>
   buildSeoMeta({
     title: 'Support',
-    description: 'Open a support ticket — replies routed to our Discord crew.',
+    description: 'Open a support ticket. Replies come from the engineers who design the boards.',
     robots: 'noindex,nofollow',
   });
 
@@ -127,7 +127,7 @@ function SignedOutView({discordInvite}: {discordInvite: string}) {
   return (
     <article className="od-page-frame support-page-frame">
       <header className="od-page-head">
-        <p className="od-eyebrow">FILE 09.A · SUPPORT</p>
+        <p className="od-eyebrow">File 09.A · Support</p>
         <h1>
           Sign in to open
           <br />a <em>support ticket</em>.
@@ -167,10 +167,10 @@ function SignedOutView({discordInvite}: {discordInvite: string}) {
         </div>
         <div className="od-tile">
           <p className="od-tile-eyebrow">↗ ALT PATH</p>
-          <h3>Or come hang out on Discord</h3>
+          <h3>Or join us on Discord</h3>
           <p>
-            Discord doesn&rsquo;t need an account on our side — fastest path
-            for general build questions, tuning, or show-and-tell.
+            Discord doesn&rsquo;t need an account on our side. It&rsquo;s the
+            fastest path for general build questions, tuning, or show-and-tell.
           </p>
           <a
             href={discordInvite}
@@ -289,12 +289,12 @@ function IntakeView({
   return (
     <article className="od-page-frame od-page-narrow">
       <header className="od-page-head">
-        <p className="od-eyebrow">FILE 09.A · OPEN A TICKET</p>
+        <p className="od-eyebrow">File 09.A · Open a ticket</p>
         <h1>
-          Tell us what&rsquo;s <em>not behaving</em>.
+          Describe the <em>problem</em>.
         </h1>
         <p>
-          One thread per issue. We&rsquo;ll reply in the same window — usually
+          One thread per issue. We&rsquo;ll reply in the same window, usually
           within a few hours during CET business time.
         </p>
       </header>
@@ -312,7 +312,7 @@ function IntakeView({
             <div className="od-field-row">
               <div className="od-field">
                 <label htmlFor="sup-product">
-                  Product <span className="od-opt">— optional</span>
+                  Product <span className="od-opt">· optional</span>
                 </label>
                 <select
                   id="sup-product"
@@ -332,7 +332,7 @@ function IntakeView({
               </div>
               <div className="od-field">
                 <label htmlFor="sup-fw">
-                  Firmware version <span className="od-opt">— if known</span>
+                  Firmware version <span className="od-opt">· if known</span>
                 </label>
                 <input
                   id="sup-fw"
@@ -340,7 +340,7 @@ function IntakeView({
                   type="text"
                   className="od-input"
                   maxLength={80}
-                  placeholder="e.g. BLHeli-32 v32.10"
+                  placeholder="e.g. AM32 2.18 / Betaflight 4.5"
                   disabled={busy}
                 />
               </div>
@@ -361,7 +361,7 @@ function IntakeView({
                 required
                 minLength={4}
                 maxLength={120}
-                placeholder="A short title — what's the issue in 5 words?"
+                placeholder="A short title: the issue in 5 words"
                 disabled={busy}
               />
             </div>
@@ -385,7 +385,7 @@ function IntakeView({
             <div className="od-field">
               <label>
                 Attachments{' '}
-                <span className="od-opt">— images, logs, video up to 24 MB</span>
+                <span className="od-opt">· images, logs, video up to 24 MB</span>
               </label>
               <div className="support-attach-strip" aria-label="Attached files">
                 {files.map((f, i) => (
@@ -451,7 +451,7 @@ function IntakeView({
           </form>
         </div>
         <p className="od-help" style={{marginTop: 12, textAlign: 'center'}}>
-          One open ticket at a time — keeps things tidy on both sides.
+          One open ticket at a time keeps things tidy on both sides.
         </p>
         <p className="od-help" style={{marginTop: 8, textAlign: 'center'}}>
           Prefer Discord?{' '}

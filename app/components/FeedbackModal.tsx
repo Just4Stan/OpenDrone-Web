@@ -19,7 +19,7 @@ const QUESTIONS: Array<{
   {
     id: 'helpfulness',
     q: 'How helpful was the answer?',
-    hint: '1 = not at all · 5 = nailed it',
+    hint: '1 = not at all · 5 = solved it',
   },
   {
     id: 'overall',
@@ -185,7 +185,7 @@ export function FeedbackModal({open, onSkip, onSubmitted}: FeedbackModalProps) {
 
         <div className="od-field" style={{marginTop: 14, marginBottom: 0}}>
           <label htmlFor="fb-notes">
-            Anything else? <span className="od-opt">— optional</span>
+            Anything else? <span className="od-opt">· optional</span>
           </label>
           <textarea
             id="fb-notes"
