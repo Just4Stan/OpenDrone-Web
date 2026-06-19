@@ -915,6 +915,18 @@ a:hover {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  transition: transform 0.12s ease, color 0.15s ease;
+}
+
+/* Tap feedback so clicking chrome icons registers immediately. */
+.site-header-icon:active {
+  transform: scale(0.9);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .site-header-icon:active {
+    transform: none;
+  }
 }
 
 @media (max-width: 768px) {
@@ -3092,7 +3104,17 @@ button.reset {
   border: 1px solid var(--color-border);
   border-radius: var(--r-md);
   cursor: pointer;
-  transition: border-color 0.15s ease;
+  transition: border-color 0.15s ease, transform 0.1s ease;
+}
+
+.variant-tier:active:not(:disabled) {
+  transform: scale(0.985);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .variant-tier:active:not(:disabled) {
+    transform: none;
+  }
 }
 
 .variant-tier:hover:not(:disabled):not(.is-selected) {
