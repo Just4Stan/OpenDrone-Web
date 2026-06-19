@@ -8,7 +8,7 @@ import type {
 import type {CompanyIdentity} from '~/lib/company';
 import {Aside} from '~/components/Aside';
 import {Footer} from '~/components/Footer';
-import {Header, HeaderMenu} from '~/components/Header';
+import {Header, HeaderMenu, type HeaderFamilyProduct} from '~/components/Header';
 import {LangToggle} from '~/components/LangToggle';
 import {CartMain} from '~/components/CartMain';
 import {PlaceholderBanner} from '~/components/PlaceholderBanner';
@@ -27,6 +27,7 @@ interface PageLayoutProps {
   company: CompanyIdentity;
   turnstileSiteKey?: string | null;
   prelaunch?: boolean;
+  familyProducts?: Promise<HeaderFamilyProduct[]>;
   children?: React.ReactNode;
 }
 
@@ -39,6 +40,7 @@ export function PageLayout({
   company,
   turnstileSiteKey,
   prelaunch = true,
+  familyProducts,
 }: PageLayoutProps) {
   const {pathname} = useLocation();
   const isHomepage = pathname === '/';
@@ -61,6 +63,7 @@ export function PageLayout({
               cart={cart}
               isLoggedIn={isLoggedIn}
               publicStoreDomain={publicStoreDomain}
+              familyProducts={familyProducts}
             />
           )}
           <main id="main-content" className="site-main">

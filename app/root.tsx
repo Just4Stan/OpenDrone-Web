@@ -12,7 +12,7 @@ import {
 } from 'react-router';
 import type {Route} from './+types/root';
 import favicon from '~/assets/favicon.svg';
-import {HEADER_QUERY} from '~/lib/fragments';
+import {HEADER_QUERY, HEADER_PRODUCTS_QUERY} from '~/lib/fragments';
 import resetStyles from '~/styles/reset.css?url';
 import appStyles from '~/styles/app.css?url';
 import {PageLayout} from './components/PageLayout';
@@ -169,7 +169,7 @@ async function loadCriticalData({context}: Route.LoaderArgs) {
  * Make sure to not throw any errors here, as it will cause the page to 500.
  */
 function loadDeferredData({context}: Route.LoaderArgs) {
-  const {customerAccount, cart} = context;
+  const {customerAccount, cart, storefront} = context;
 
   // NOTE: the Shopify "footer" menu is deliberately not fetched — Footer.tsx
   // renders hardcoded link arrays. The old deferred FOOTER_QUERY was a dead
@@ -177,6 +177,12 @@ function loadDeferredData({context}: Route.LoaderArgs) {
   return {
     cart: cart.get(),
     isLoggedIn: customerAccount.isLoggedIn(),
+    // Deferred so it never blocks TTFB; feeds the header family dropdowns.
+    // Best-effort: a failure resolves to [] so the header still renders.
+    familyProducts: storefront
+      .query(HEADER_PRODUCTS_QUERY, {cache: storefront.CacheLong()})
+      .then((d) => d?.products?.nodes ?? [])
+      .catch(() => []),
   };
 }
 
