@@ -165,8 +165,8 @@ html.light {
 html.light .scene-dim {
   background-color: rgba(247, 246, 243, 0.9);
 }
-html.light .site-header {
-  background: rgba(247, 246, 243, 0.85);
+html.light .site-header-main {
+  background: rgba(247, 246, 243, 0.82);
 }
 html.light .hero-size-slider {
   background: rgba(255, 255, 255, 0.6);
@@ -806,23 +806,44 @@ a:hover {
    Header
    ============================================ */
 
+/* Floating pill header. The .site-header is a transparent fixed band that
+   provides the top gap + side gutters and lets pointer events fall through to
+   the hero; the visible chrome is .site-header-main, a centered rounded pill
+   that stays pinned while scrolling. */
 .site-header {
-  position: sticky;
+  position: fixed;
   top: 0;
+  left: 0;
+  right: 0;
   z-index: 30;
-  background: rgba(13, 13, 16, 0.92);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border-bottom: 1px solid var(--color-border);
+  padding: clamp(0.5rem, 1.6vh, 0.85rem) var(--rail-gutter) 0;
+  pointer-events: none;
 }
 
 .site-header-main {
+  pointer-events: auto;
   display: flex;
   align-items: center;
   height: var(--header-height);
-  width: var(--rail-width);
+  width: 100%;
+  max-width: 1240px;
   margin: 0 auto;
-  padding: 0;
+  padding: 0 1.25rem;
+  background: rgba(13, 13, 16, 0.8);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid var(--color-border);
+  border-radius: var(--r-pill);
+  box-shadow: 0 10px 34px -16px rgba(0, 0, 0, 0.55);
+}
+
+/* Content clears the floating pill on every non-home route (the pill is out of
+   flow). The homepage hero owns the top and the pill floats over it. */
+.site-main {
+  padding-top: calc(var(--header-height) + 2rem);
+}
+.homepage-layout .site-main {
+  padding-top: 0;
 }
 
 .site-header-logo {
