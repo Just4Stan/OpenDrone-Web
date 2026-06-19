@@ -760,6 +760,48 @@ html {
   color: var(--color-text);
 }
 
+/* Hero scroll showcase — a Pod of the on-screen components (FC/ESC/Frame)
+   that rises from the bottom as the hero finishes. Pointer-events re-enabled
+   on the Pod (the riser wrapper is none so the hero stays interactive). */
+.hero-showcase {
+  pointer-events: auto;
+  width: min(620px, 92vw);
+  padding: var(--sp-4);
+}
+.hero-showcase-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--sp-4);
+  margin-bottom: var(--sp-3);
+}
+.hero-showcase-title {
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  color: var(--color-text-muted);
+}
+.hero-showcase-all {
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  letter-spacing: 0.08em;
+  color: var(--color-gold);
+  transition: color 0.15s ease;
+}
+.hero-showcase-all:hover {
+  color: var(--color-gold-hover);
+}
+.hero-showcase-loading {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: var(--sp-4);
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  color: var(--color-text-muted);
+}
+
 @media (max-width: 640px) {
   .hero-wordmark {
     bottom: 1.5rem;
