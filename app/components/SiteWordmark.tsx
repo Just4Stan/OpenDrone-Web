@@ -26,19 +26,34 @@ export function SiteWordmark({className}: {className?: string}) {
           let goldIdx = 0;
           return WORDMARK_LETTERS.map((letter) => {
             const isGold = letter.group === 'drone';
-            // Stagger the shimmer across the "Drone" letters so a faint sheen
-            // sweeps left→right (light catching gold), set per gold letter.
-            const style = isGold
-              ? ({'--gold-index': goldIdx++} as React.CSSProperties)
-              : undefined;
+            if (!isGold) {
+              return (
+                <path
+                  key={letter.index}
+                  d={letter.d}
+                  fill="var(--color-text)"
+                />
+              );
+            }
+            // Each gold letter is a static base path plus a brighter overlay
+            // copy whose opacity is animated (the ambient sheen). Animating the
+            // overlay's opacity — a compositor-only property — keeps the wave on
+            // the GPU instead of repainting the glyph every frame the way the
+            // old `fill` animation did. The per-letter --gold-index staggers the
+            // sweep into a left→right wave.
+            const goldStyle = {
+              '--gold-index': goldIdx++,
+            } as React.CSSProperties;
             return (
-              <path
-                key={letter.index}
-                className={isGold ? 'site-wordmark-gold' : undefined}
-                style={style}
-                d={letter.d}
-                fill={isGold ? 'var(--color-gold)' : 'var(--color-text)'}
-              />
+              <g key={letter.index}>
+                <path d={letter.d} fill="var(--color-gold)" />
+                <path
+                  className="site-wordmark-sheen"
+                  style={goldStyle}
+                  d={letter.d}
+                  fill="color-mix(in srgb, var(--color-gold) 55%, white)"
+                />
+              </g>
             );
           });
         })()}

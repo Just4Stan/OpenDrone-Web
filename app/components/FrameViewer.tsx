@@ -290,6 +290,22 @@ function FrameModel({
     };
   }, []);
 
+  // Drive the demand loop from scroll/resize: each event requests one frame so
+  // the explode tracks the scroll position, then the GPU idles to zero once
+  // scrolling stops. Without this the demand canvas would render once and the
+  // explode would freeze (the old code used frameloop="always", which kept the
+  // GPU at full tilt the entire time this backdrop was near the viewport).
+  useEffect(() => {
+    const onScroll = () => invalidate();
+    window.addEventListener('scroll', onScroll, {passive: true});
+    window.addEventListener('resize', onScroll);
+    invalidate();
+    return () => {
+      window.removeEventListener('scroll', onScroll);
+      window.removeEventListener('resize', onScroll);
+    };
+  }, []);
+
   // Recompute the explode amount from scroll position each rendered frame.
   // The throw spans chapter 1 (teardown) → chapter 2: e = 0 when the teardown
   // chapter's centre sits at the viewport centre (assembled, in view), and
@@ -352,8 +368,9 @@ export function FrameViewer({src, srcs}: FrameViewerProps) {
   // chapter alone would unmount the canvas mid-throw once that chapter scrolls
   // up out of view. The backdrop layer (.frame-viewer fills it, -6vh→-70vh)
   // covers both sections, so observing it keeps the canvas alive for exactly
-  // as long as it's visible. While mounted the canvas runs frameloop="always"
-  // so the explode tracks scroll every frame; off-screen it unmounts.
+  // as long as it's visible. While mounted the canvas runs frameloop="demand":
+  // a scroll/resize listener (see FrameModel) invalidates so the explode tracks
+  // scroll, and the GPU idles to zero between scrolls. Off-screen it unmounts.
   useEffect(() => {
     const el = wrapRef.current;
     if (!el || typeof IntersectionObserver === 'undefined') return;
@@ -374,7 +391,7 @@ export function FrameViewer({src, srcs}: FrameViewerProps) {
         <Canvas
           camera={{position: [0, 0.3, 4.4], fov: 38}}
           style={{background: 'transparent'}}
-          frameloop="always"
+          frameloop="demand"
           dpr={[1, 1.75]}
           gl={{antialias: true, alpha: true, powerPreference: 'default'}}
         >

@@ -438,9 +438,7 @@ html {
   transform-origin: center;
   transform: translate(calc(50vw - 2.5rem - 50%), calc(-50vh + 2.5rem + 50%))
     scale(1.7);
-  /* Snappy S-curve — slow to accelerate, quick through the middle,
-     quick to settle. Same timing as the site-header drop-in below so
-     the wordmark and the chrome land together. */
+  /* Snappy S-curve, same timing as the header drop-in so they land together. */
   transition: transform 0.65s cubic-bezier(0.72, 0, 0.28, 1);
   pointer-events: none;
   line-height: 0;
@@ -576,14 +574,9 @@ html {
   }
 }
 
-/* Settled: the wordmark rotates 90° clockwise and runs down the left display
-   edge like a spine label, freeing the bottom-left for content. */
+/* Settled: horizontal, bottom-left. */
 .hero-wordmark.is-settled {
-  top: 50%;
-  left: 1.4rem;
-  bottom: auto;
-  transform-origin: left center;
-  transform: rotate(90deg) translateX(-50%);
+  transform: translate(0, 0) scale(1);
 }
 
 /* Hero load overflow — appears below the centered wordmark only when
