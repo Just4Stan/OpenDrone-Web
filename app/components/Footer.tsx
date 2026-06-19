@@ -1,4 +1,4 @@
-import {NavLink} from 'react-router';
+import {NavLink} from '~/components/nav';
 import type {HeaderQuery} from 'storefrontapi.generated';
 import type {CompanyIdentity} from '~/lib/company';
 import {CompanyFooterBlock} from '~/components/CompanyFooterBlock';

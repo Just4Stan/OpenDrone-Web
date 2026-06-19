@@ -1136,10 +1136,23 @@ a:hover {
      continuous (no "refresh"). The floating header/island gets its own
      transition name so it PERSISTS and morphs in place across routes rather
      than cross-fading with the page (the Dynamic-Island foundation). */
-  ::view-transition-old(root),
+  ::view-transition-old(root) {
+    animation: vt-page-out 0.24s cubic-bezier(0.4, 0, 1, 1) both;
+  }
   ::view-transition-new(root) {
-    animation-duration: 0.3s;
-    animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+    animation: vt-page-in 0.34s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+  @keyframes vt-page-out {
+    to {
+      opacity: 0;
+      transform: translateY(-10px);
+    }
+  }
+  @keyframes vt-page-in {
+    from {
+      opacity: 0;
+      transform: translateY(14px);
+    }
   }
   .site-header {
     view-transition-name: site-island;
