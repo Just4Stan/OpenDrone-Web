@@ -4585,17 +4585,20 @@ button.reset {
   grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
 }
 
-/* De-boxed: a gold top-hairline (reads like a PCB edge) instead of a full
-   card. Removes the box-around-everything while keeping the grid aligned. */
+/* Subtle bubble — same quiet card as the latest-commit cards beside it so the
+   row reads as one consistent set (a bare top-hairline left the text floating).
+   Kept light: card bg + hairline border, gold on hover. */
 .open-source-card {
   display: block;
-  padding: var(--sp-3) 0 0;
-  border-top: 2px solid color-mix(in srgb, var(--color-gold) 45%, var(--color-border));
-  transition: border-color 0.2s ease;
+  padding: 0.9rem 1.05rem;
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--r-md);
+  transition: border-color 0.2s ease, background 0.2s ease;
 }
 
 .open-source-card:hover {
-  border-top-color: var(--color-gold);
+  border-color: color-mix(in srgb, var(--color-gold) 50%, var(--color-border));
 }
 
 .open-source-card-label {
@@ -4935,19 +4938,23 @@ button.reset {
   padding: 0;
   margin: 0 0 1.5rem;
   display: grid;
-  gap: 0.5rem;
+  gap: 0;
 }
 
+/* De-boxed (Img 6) — a plain parts list, hairline-divided rows instead of a
+   bubble around every line. */
 .in-the-box li {
   display: grid;
   grid-template-columns: 3rem 1fr;
   grid-template-rows: auto auto;
   column-gap: 0.9rem;
   row-gap: 0.15rem;
-  padding: 0.7rem 0.9rem;
-  background: var(--color-bg-card);
-  border: 1px solid var(--color-border);
-  border-radius: 8px;
+  padding: 0.75rem 0.1rem;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.in-the-box li:last-child {
+  border-bottom: none;
 }
 
 .in-the-box-qty {
