@@ -16,6 +16,15 @@ import {Pod} from '~/components/Pod';
 import {ProductPods, type ProductPodItem} from '~/components/ProductPods';
 
 /** Thin shape of a product as read by HEADER_PRODUCTS_QUERY. */
+export type HeaderFamilyVariant = {
+  id: string;
+  title: string;
+  availableForSale?: boolean;
+  image?: {url: string; altText?: string | null} | null;
+  price?: {amount: string; currencyCode: string} | null;
+  selectedOptions?: Array<{name: string; value: string}>;
+};
+
 export type HeaderFamilyProduct = {
   id: string;
   handle: string;
@@ -25,6 +34,7 @@ export type HeaderFamilyProduct = {
   priceRange?: {
     minVariantPrice?: {amount: string; currencyCode: string} | null;
   } | null;
+  variants?: {nodes: HeaderFamilyVariant[]} | null;
 };
 
 interface HeaderProps {
@@ -129,14 +139,41 @@ function FamilyNav({
   function itemsFor(type: string): ProductPodItem[] {
     return (products ?? [])
       .filter((p) => (p.productType || '') === type)
-      .map((p) => ({
-        key: p.handle,
-        to: `/products/${p.handle}`,
-        title: p.title,
-        imageUrl: p.featuredImage?.url ?? null,
-        imageAlt: p.featuredImage?.altText ?? null,
-        price: p.priceRange?.minVariantPrice ?? null,
-      }));
+      .flatMap((p) => {
+        // Real, distinguishable variants (drop the single "Default Title").
+        const variants = (p.variants?.nodes ?? []).filter(
+          (v) => v.title && v.title !== 'Default Title',
+        );
+        // Single-variant product → one row for the product itself.
+        if (variants.length <= 1) {
+          return [
+            {
+              key: p.handle,
+              to: `/products/${p.handle}`,
+              title: p.title,
+              subtitle: p.productType ?? undefined,
+              imageUrl: p.featuredImage?.url ?? null,
+              imageAlt: p.featuredImage?.altText ?? null,
+              price: p.priceRange?.minVariantPrice ?? null,
+            },
+          ];
+        }
+        // Multi-variant → a row per SKU, deep-linking the variant on the PDP.
+        return variants.map((v) => {
+          const params = new URLSearchParams();
+          (v.selectedOptions ?? []).forEach((o) => params.set(o.name, o.value));
+          const qs = params.toString();
+          return {
+            key: v.id,
+            to: `/products/${p.handle}${qs ? `?${qs}` : ''}`,
+            title: p.title,
+            subtitle: v.title,
+            imageUrl: v.image?.url ?? p.featuredImage?.url ?? null,
+            imageAlt: v.image?.altText ?? p.featuredImage?.altText ?? null,
+            price: v.price ?? p.priceRange?.minVariantPrice ?? null,
+          };
+        });
+      });
   }
 
   function chip(cat: (typeof CATEGORY_LINKS)[number]) {
