@@ -152,7 +152,7 @@ export function HeaderMenu({
         if (url === '/' || url === '') return null;
         // Catalog + Contact render in the right-side CTA group; skip
         // them here to avoid duplicate links in the center menu.
-        if (!isMobile && (url === '/collections/all' || url === '/contact')) return null;
+        if (!isMobile && (url === '/collections/all' || url === '/support')) return null;
         const className = isMobile
           ? 'text-sm font-mono uppercase tracking-wider text-[var(--color-text-muted)] hover:text-[var(--color-text)] transition-colors'
           : 'font-mono text-[12px] uppercase tracking-[0.15em] transition-colors text-[var(--color-text-muted)] hover:text-[var(--color-text)]';
@@ -243,7 +243,7 @@ function HeaderCtas({
       </NavLink>
       <NavLink
         prefetch="viewport"
-        to="/contact"
+        to="/support"
         className={({isActive}) =>
           `font-mono text-[12px] uppercase tracking-[0.15em] transition-colors hidden md:block ${
             isActive
@@ -360,7 +360,7 @@ function CartBanner() {
 }
 
 const LOCAL_PAGE_REWRITES: Record<string, string> = {
-  '/pages/contact': '/contact',
+  '/pages/contact': '/support',
 };
 
 const FALLBACK_HEADER_MENU = {

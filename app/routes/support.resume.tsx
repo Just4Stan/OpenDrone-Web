@@ -12,12 +12,12 @@ import {checkRateLimit, clientIp} from '~/lib/rate-limit';
 /**
  * Cross-device resume endpoint. The user clicks a link from their inbox;
  * we verify the signed token and re-issue the cookie that points back at
- * their existing Discord thread. Then we 302 to /contact so the widget
- * boots into "active" phase straight away.
+ * their existing Discord thread. Then we 302 to /support; the re-issued
+ * cookie makes it boot into "active" phase straight away.
  *
  * If the token is malformed, expired, or its thread has been deleted on
- * the Discord side, fall back to /contact with a query flag the widget
- * uses to surface a friendly "this link no longer works" notice.
+ * the Discord side, fall back to /support with a query flag reserved for
+ * a future "this link no longer works" notice.
  */
 
 export async function loader({request, context}: Route.LoaderArgs) {
@@ -33,12 +33,12 @@ export async function loader({request, context}: Route.LoaderArgs) {
   const ip = clientIp(request);
   const rl = checkRateLimit(`support-resume:ip:${ip}`, 10, 60 * 60 * 1000);
   if (!rl.allowed) {
-    return redirect('/contact?support=rate-limited');
+    return redirect('/support?support=rate-limited');
   }
 
   const payload = await verifyResumeToken(env, token);
   if (!payload) {
-    return redirect('/contact?support=invalid-link');
+    return redirect('/support?support=invalid-link');
   }
 
   // Confirm the thread still exists so we don't drop the user into a
@@ -47,7 +47,7 @@ export async function loader({request, context}: Route.LoaderArgs) {
     () => ({thread: null, messages: []}),
   );
   if (!probe.thread) {
-    return redirect('/contact?support=ticket-gone');
+    return redirect('/support?support=ticket-gone');
   }
 
   const ticket: SupportTicket = {
@@ -60,7 +60,7 @@ export async function loader({request, context}: Route.LoaderArgs) {
     ...(payload.pid ? {pid: payload.pid} : {}),
   };
   const cookie = await signTicket(env, ticket);
-  return redirect('/contact?support=resumed', {
+  return redirect('/support?support=resumed', {
     headers: {'Set-Cookie': buildSupportSetCookie(cookie)},
   });
 }
