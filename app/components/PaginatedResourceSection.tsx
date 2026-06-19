@@ -22,16 +22,36 @@ export function PaginatedResourceSection<NodesType>({
 
         return (
           <div>
-            <PreviousLink>
-              {isLoading ? 'Loading...' : <span>↑ Load previous</span>}
+            <PreviousLink
+              className="pagination-link"
+              aria-busy={isLoading || undefined}
+              data-pending={isLoading || undefined}
+            >
+              {isLoading ? (
+                <>
+                  <span className="inline-spinner" aria-hidden="true" /> Loading…
+                </>
+              ) : (
+                <span>↑ Load previous</span>
+              )}
             </PreviousLink>
             {resourcesClassName ? (
               <div className={resourcesClassName}>{resourcesMarkup}</div>
             ) : (
               resourcesMarkup
             )}
-            <NextLink>
-              {isLoading ? 'Loading...' : <span>Load more ↓</span>}
+            <NextLink
+              className="pagination-link"
+              aria-busy={isLoading || undefined}
+              data-pending={isLoading || undefined}
+            >
+              {isLoading ? (
+                <>
+                  <span className="inline-spinner" aria-hidden="true" /> Loading…
+                </>
+              ) : (
+                <span>Load more ↓</span>
+              )}
             </NextLink>
           </div>
         );
