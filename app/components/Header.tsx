@@ -1,5 +1,5 @@
 import {Suspense, useRef, useState} from 'react';
-import {Await, useAsyncValue} from 'react-router';
+import {Await, useAsyncValue, useLocation} from 'react-router';
 import {NavLink} from '~/components/nav';
 import {AnimatePresence} from 'motion/react';
 import {
@@ -69,19 +69,28 @@ export function Header({
   familyProducts,
 }: HeaderProps) {
   const {menu} = header;
+  // Dynamic-Island behaviour: on the hero ("/") the wordmark lives bottom-left
+  // in the 3D scene, so the island stays clean (no logo). On every other route
+  // the logo occupies the left of the bar. `view-transition-name` lets it
+  // animate in (and the island re-flow) on navigation rather than popping.
+  const {pathname} = useLocation();
+  const showLogo = pathname !== '/';
   return (
     <header className="site-header">
       <div className="site-header-main">
         {/* Left: wordmark — "Open" neutral, "Drone" in gold, matches splash */}
-        <NavLink
-          prefetch="viewport"
-          to="/"
-          end
-          className="site-header-logo"
-          aria-label="OpenDrone"
-        >
-          <SiteWordmark className="site-header-wordmark" />
-        </NavLink>
+        {showLogo ? (
+          <NavLink
+            prefetch="viewport"
+            to="/"
+            end
+            className="site-header-logo"
+            aria-label="OpenDrone"
+            style={{viewTransitionName: 'site-logo'}}
+          >
+            <SiteWordmark className="site-header-wordmark" />
+          </NavLink>
+        ) : null}
 
         {/* Center: primary nav + gold category links on the same row */}
         <HeaderMenu
