@@ -329,56 +329,82 @@ html {
 .hero-size-slider {
   position: relative;
   display: inline-flex;
-  padding: 4px; /* PAD in HeroSizeSlider.tsx */
-  border: 1px solid var(--color-border);
+  padding: 5px; /* PAD in HeroSizeSlider.tsx */
+  border: 1px solid var(--color-border-strong);
   border-radius: 999px;
-  background: rgba(13, 13, 16, 0.55);
+  background: rgba(13, 13, 16, 0.6);
   backdrop-filter: blur(8px);
   touch-action: none; /* let the thumb own horizontal drag on touch */
   user-select: none;
 }
 
+/* Thumb sits ABOVE the labels (z 2) so it actually receives the drag — the
+   label buttons (z 1) would otherwise intercept every pointer event. The
+   thumb carries its own label so the gold still shows text. The inset top
+   highlight + grip dots make it read as a tactile, grabbable handle. */
 .hero-size-slider__thumb {
   position: absolute;
-  z-index: 0;
-  top: 4px;
-  bottom: 4px;
-  left: 4px;
-  width: calc(50% - 4px);
+  z-index: 2;
+  top: 5px;
+  bottom: 5px;
+  left: 5px;
+  width: calc(50% - 5px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
   border-radius: 999px;
-  background: var(--color-gold);
-  box-shadow: 0 0 16px rgba(184, 146, 46, 0.45);
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--color-gold) 88%, white) 0%,
+    var(--color-gold) 55%
+  );
+  box-shadow:
+    0 2px 10px -2px rgba(184, 146, 46, 0.55),
+    inset 0 1px 0 rgba(255, 255, 255, 0.35);
   cursor: grab;
+  touch-action: none;
 }
 
 .hero-size-slider__thumb:active {
   cursor: grabbing;
 }
 
+.hero-size-slider__thumb-label {
+  color: var(--color-on-accent);
+  font-family: var(--font-sans);
+  font-size: 0.95rem;
+  font-weight: 600;
+  letter-spacing: -0.005em;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
 .hero-size-slider__opt {
   position: relative;
   z-index: 1;
-  min-width: 3rem;
+  min-width: 8.5rem;
   flex: 1 1 0;
-  padding: 0.4rem 0.9rem;
+  padding: 0.6rem 1.2rem;
   border: none;
   border-radius: 999px;
   background: transparent;
   color: var(--color-text-muted);
-  font-family: var(--font-mono);
-  font-size: 0.85rem;
-  font-weight: 700;
-  letter-spacing: 0.02em;
+  font-family: var(--font-sans);
+  font-size: 0.95rem;
+  font-weight: 600;
+  letter-spacing: -0.005em;
+  white-space: nowrap;
   cursor: pointer;
   transition: color 0.2s ease;
 }
 
-.hero-size-slider__opt:hover:not(.is-active) {
+.hero-size-slider__opt:hover {
   color: var(--color-text);
 }
 
-.hero-size-slider__opt.is-active {
-  color: var(--color-on-accent);
+.hero-size-slider__opt:focus-visible {
+  outline: 2px solid var(--color-gold);
+  outline-offset: 3px;
 }
 
 .hero-size-slider__opt:focus-visible {

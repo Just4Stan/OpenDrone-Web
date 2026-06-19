@@ -351,12 +351,18 @@ function DroneAssembly({
   labelRefs,
   loadDelayMs,
   size: airframeSize,
+  scrubRef,
   onNavigate,
 }: {
   scrollRef: React.RefObject<number>;
   onReady?: () => void;
   onProgress?: (progress: number) => void;
   labelRefs?: LabelRefs;
+  /** Live drag fraction (0→1) from the hero size slider, or null when not
+   *  scrubbing. A ref (not state) so dragging it doesn't re-render the page;
+   *  the render loop reads it each frame. When non-null it drives the
+   *  cross-slide directly so the airframe tracks the thumb 1:1. */
+  scrubRef?: React.RefObject<number | null>;
   /** Client-side navigate, threaded from HeroScene (outside the r3f Canvas,
    *  where Router context is available). Used by the part hotspots so a click
    *  is an instant SPA transition into the prefetched PDP rather than a full
@@ -392,6 +398,12 @@ function DroneAssembly({
   const fcMats = useRef<any[]>([]);
   const hoverState = useRef({frame: 0, esc: 0, fc: 0});
   const hoverTarget = useRef({frame: 0, esc: 0, fc: 0});
+  // Which size is currently shown, and the direction of the active swap along
+  // the size row (+1 = moving toward a later item → incoming slides in from
+  // the right; −1 = toward an earlier item → in from the left). Lets the
+  // cross-slide follow the slider's direction instead of always-from-right.
+  const displayedSizeRef = useRef<'5' | '3'>(airframeSize);
+  const slideDirRef = useRef(1);
   // Per-size processed models, kept alive across toggles so switching back is
   // instant (no re-fetch / re-decode / re-merge). The inactive size is built
   // lazily on idle AFTER the active one is shown, so it never slows first load.
@@ -636,6 +648,15 @@ function DroneAssembly({
       const prev = prevModelRef.current;
       const isToggle = hasDisplayedRef.current && !!prev && prev !== model;
 
+      if (isToggle) {
+        // Direction along the size row [5,3]: moving to a later index slides
+        // in from the right (+1), to an earlier one from the left (−1).
+        const order: Array<'5' | '3'> = ['5', '3'];
+        const d = order.indexOf(airframeSize) - order.indexOf(displayedSizeRef.current);
+        slideDirRef.current = d < 0 ? -1 : 1;
+      }
+      displayedSizeRef.current = airframeSize;
+
       if (isToggle && outWrapperRef.current && wrapperRef.current) {
         finishOutgoing(); // clear any still-in-flight slide-out first
         // Reparent the previous trio into the slide-out wrapper, frozen at the
@@ -872,19 +893,37 @@ function DroneAssembly({
     // scroll transforms (absolute each frame), so x/scale just reset when idle.
     const SLIDE = 1.3;
     const TRANS_DUR = 0.85;
-    if (transitionRef.current < 1) {
-      transitionRef.current = Math.min(1, transitionRef.current + dt / TRANS_DUR);
-      const t = transitionRef.current;
-      // easeInOutCubic — gentle acceleration then deceleration.
-      const e = t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
-      // Zoom-out dip — peaks (~0.82×) mid-swap, settles to 1 at both ends.
+    // easeInOutCubic — gentle acceleration then deceleration.
+    const easeSwap = (t: number) =>
+      t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+    // Apply the cross-slide transform for a given progress t (0→1): the
+    // incoming trio slides in from the right, the frozen outgoing one slides
+    // out left, both dipping back (zoom-out) toward the middle of the swap.
+    const applyCrossSlide = (t: number) => {
+      const e = easeSwap(t);
       const zoom = 1 - 0.18 * Math.sin(Math.PI * t);
-      wrapperRef.current.position.x = SLIDE * (1 - e);
-      wrapperRef.current.scale.multiplyScalar(zoom);
+      // d follows the swipe direction: +1 → incoming from the right, −1 → from
+      // the left, so the airframe travels the same way the slider thumb does.
+      const d = slideDirRef.current || 1;
+      wrapperRef.current!.position.x = d * SLIDE * (1 - e);
+      wrapperRef.current!.scale.multiplyScalar(zoom);
       if (outgoingRef.current && outWrapperRef.current) {
-        outWrapperRef.current.position.x = outBaseXRef.current - SLIDE * e;
+        outWrapperRef.current.position.x = outBaseXRef.current - d * SLIDE * e;
         outWrapperRef.current.scale.setScalar(outBaseScaleRef.current * zoom);
       }
+    };
+
+    const scrubVal = scrubRef?.current ?? null;
+    if (scrubVal != null && outgoingRef.current) {
+      // Slider scrub — the airframe tracks the thumb 1:1 instead of the timer.
+      // Gated on an outgoing trio existing so a scrub that arrives before the
+      // swap is set up (or with the other size still building) just holds.
+      transitionRef.current = THREE.MathUtils.clamp(scrubVal, 0, 1);
+      applyCrossSlide(transitionRef.current);
+      invalidate();
+    } else if (transitionRef.current < 1) {
+      transitionRef.current = Math.min(1, transitionRef.current + dt / TRANS_DUR);
+      applyCrossSlide(transitionRef.current);
       if (transitionRef.current >= 1) {
         wrapperRef.current.position.x = 0;
         finishOutgoing();
@@ -892,6 +931,9 @@ function DroneAssembly({
       invalidate();
     } else {
       wrapperRef.current.position.x = 0;
+      // A scrub released exactly at 1 never enters the timer branch, so clear
+      // any still-parented outgoing trio here. finishOutgoing is idempotent.
+      if (outgoingRef.current) finishOutgoing();
     }
 
     // Frame — becomes more solid during fly-out
@@ -1309,12 +1351,14 @@ export function HeroScene({
   labelRefs,
   loadDelayMs,
   size = '5',
+  scrubRef,
 }: {
   onReady?: () => void;
   onProgress?: (progress: number) => void;
   labelRefs?: LabelRefs;
   loadDelayMs?: number;
   size?: '5' | '3';
+  scrubRef?: React.RefObject<number | null>;
 } = {}) {
   const [mounted, setMounted] = useState(false);
   const [perf, setPerf] = useState<PerfSample | null>(null);
@@ -1406,6 +1450,7 @@ export function HeroScene({
           labelRefs={labelRefs}
           loadDelayMs={loadDelayMs}
           size={size}
+          scrubRef={scrubRef}
           onNavigate={(url) => void navigate(url)}
         />
         <EffectComposer multisampling={0} enableNormalPass={false}>
