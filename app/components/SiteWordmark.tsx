@@ -22,17 +22,26 @@ export function SiteWordmark({className}: {className?: string}) {
       aria-label="OpenDrone"
     >
       <g transform={WORDMARK_GROUP_TRANSFORM} fillRule="evenodd">
-        {WORDMARK_LETTERS.map((letter) => (
-          <path
-            key={letter.index}
-            d={letter.d}
-            fill={
-              letter.group === 'drone'
-                ? 'var(--color-gold)'
-                : 'var(--color-text)'
-            }
-          />
-        ))}
+        {(() => {
+          let goldIdx = 0;
+          return WORDMARK_LETTERS.map((letter) => {
+            const isGold = letter.group === 'drone';
+            // Stagger the shimmer across the "Drone" letters so a faint sheen
+            // sweeps left→right (light catching gold), set per gold letter.
+            const style = isGold
+              ? ({'--gold-index': goldIdx++} as React.CSSProperties)
+              : undefined;
+            return (
+              <path
+                key={letter.index}
+                className={isGold ? 'site-wordmark-gold' : undefined}
+                style={style}
+                d={letter.d}
+                fill={isGold ? 'var(--color-gold)' : 'var(--color-text)'}
+              />
+            );
+          });
+        })()}
       </g>
     </svg>
   );
