@@ -247,6 +247,25 @@ export const HEADER_PRODUCTS_QUERY = `#graphql
             currencyCode
           }
         }
+        variants(first: 12) {
+          nodes {
+            id
+            title
+            availableForSale
+            image {
+              url
+              altText
+            }
+            price {
+              amount
+              currencyCode
+            }
+            selectedOptions {
+              name
+              value
+            }
+          }
+        }
       }
     }
   }
