@@ -469,6 +469,28 @@ export type HomeFeaturedQuery = {
       };
     }
   >;
+  fc?: StorefrontAPI.Maybe<
+    Pick<StorefrontAPI.Product, 'id' | 'handle' | 'title' | 'productType'> & {
+      featuredImage?: StorefrontAPI.Maybe<
+        Pick<StorefrontAPI.Image, 'id' | 'altText' | 'url' | 'width' | 'height'>
+      >;
+      priceRange: {
+        minVariantPrice: Pick<StorefrontAPI.MoneyV2, 'amount' | 'currencyCode'>;
+        maxVariantPrice: Pick<StorefrontAPI.MoneyV2, 'amount' | 'currencyCode'>;
+      };
+    }
+  >;
+  esc?: StorefrontAPI.Maybe<
+    Pick<StorefrontAPI.Product, 'id' | 'handle' | 'title' | 'productType'> & {
+      featuredImage?: StorefrontAPI.Maybe<
+        Pick<StorefrontAPI.Image, 'id' | 'altText' | 'url' | 'width' | 'height'>
+      >;
+      priceRange: {
+        minVariantPrice: Pick<StorefrontAPI.MoneyV2, 'amount' | 'currencyCode'>;
+        maxVariantPrice: Pick<StorefrontAPI.MoneyV2, 'amount' | 'currencyCode'>;
+      };
+    }
+  >;
 };
 
 export type DonationProductQueryVariables = StorefrontAPI.Exact<{
@@ -1384,7 +1406,7 @@ interface GeneratedQueryTypes {
     return: NewsletterFeedQuery;
     variables: NewsletterFeedQueryVariables;
   };
-  '#graphql\n  fragment HomeMoney on MoneyV2 {\n    amount\n    currencyCode\n  }\n  fragment HomeProductCard on Product {\n    id\n    handle\n    title\n    productType\n    featuredImage {\n      id\n      altText\n      url\n      width\n      height\n    }\n    priceRange {\n      minVariantPrice {\n        ...HomeMoney\n      }\n      maxVariantPrice {\n        ...HomeMoney\n      }\n    }\n  }\n  query HomeFeatured($country: CountryCode, $language: LanguageCode)\n  @inContext(country: $country, language: $language) {\n    frame: product(handle: "openframe") {\n      ...HomeProductCard\n    }\n    stack: product(handle: "openstack") {\n      ...HomeProductCard\n    }\n    rx: product(handle: "openrx") {\n      ...HomeProductCard\n    }\n  }\n': {
+  '#graphql\n  fragment HomeMoney on MoneyV2 {\n    amount\n    currencyCode\n  }\n  fragment HomeProductCard on Product {\n    id\n    handle\n    title\n    productType\n    featuredImage {\n      id\n      altText\n      url\n      width\n      height\n    }\n    priceRange {\n      minVariantPrice {\n        ...HomeMoney\n      }\n      maxVariantPrice {\n        ...HomeMoney\n      }\n    }\n  }\n  query HomeFeatured($country: CountryCode, $language: LanguageCode)\n  @inContext(country: $country, language: $language) {\n    frame: product(handle: "openframe") {\n      ...HomeProductCard\n    }\n    stack: product(handle: "openstack") {\n      ...HomeProductCard\n    }\n    rx: product(handle: "openrx") {\n      ...HomeProductCard\n    }\n    fc: product(handle: "openfc-lite") {\n      ...HomeProductCard\n    }\n    esc: product(handle: "openesc") {\n      ...HomeProductCard\n    }\n  }\n': {
     return: HomeFeaturedQuery;
     variables: HomeFeaturedQueryVariables;
   };

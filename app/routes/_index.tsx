@@ -1,6 +1,16 @@
-import {Link, PrefetchPageLinks, useLoaderData} from 'react-router';
+import {Await, Link, PrefetchPageLinks, useLoaderData} from 'react-router';
 import type {Route} from './+types/_index';
-import {useEffect, useRef, useState, useCallback, useMemo, memo} from 'react';
+import {
+  useEffect,
+  useRef,
+  useState,
+  useCallback,
+  useMemo,
+  memo,
+  Suspense,
+} from 'react';
+import {Pod} from '~/components/Pod';
+import {ProductPods} from '~/components/ProductPods';
 import type {CollectionItemFragment} from 'storefrontapi.generated';
 import {HeroWordmark} from '~/components/HeroWordmark';
 import {HeroSizeSlider} from '~/components/HeroSizeSlider';
@@ -113,21 +123,34 @@ export async function loader({request, context}: Route.LoaderArgs) {
   // streaming them keeps TTFB off the Shopify round-trip entirely. Cache
   // long since the catalogue changes rarely. Catch resolves to [] so a
   // storefront hiccup just drops the cards instead of blanking the page.
-  const featured: Promise<CollectionItemFragment[]> = context.storefront
+  const home: Promise<{
+    featured: CollectionItemFragment[];
+    heroStack: CollectionItemFragment[];
+  }> = context.storefront
     .query(HOME_FEATURED_QUERY, {cache: context.storefront.CacheLong()})
     .then((data) => {
       const d = data as {
         frame: CollectionItemFragment | null;
         stack: CollectionItemFragment | null;
         rx: CollectionItemFragment | null;
+        fc: CollectionItemFragment | null;
+        esc: CollectionItemFragment | null;
       };
-      return [d.frame, d.stack, d.rx].filter(
-        (p): p is CollectionItemFragment => Boolean(p),
-      );
+      const keep = (p: CollectionItemFragment | null): p is CollectionItemFragment =>
+        Boolean(p);
+      return {
+        // Mobile flagship line.
+        featured: [d.frame, d.stack, d.rx].filter(keep),
+        // The three components in the 3D hero, for the scroll showcase.
+        heroStack: [d.fc, d.esc, d.frame].filter(keep),
+      };
     })
-    .catch(() => [] as CollectionItemFragment[]);
+    .catch(() => ({featured: [], heroStack: []}));
 
-  return {isMobileHint, featured};
+  const featured = home.then((h) => h.featured);
+  const heroStack = home.then((h) => h.heroStack);
+
+  return {isMobileHint, featured, heroStack};
 }
 
 function linearstep(edge0: number, edge1: number, x: number) {
@@ -165,7 +188,7 @@ let splashHasPlayedThisSession = false;
  * hooks never mount on a phone.
  */
 export default function Homepage() {
-  const {isMobileHint, featured} = useLoaderData<typeof loader>();
+  const {isMobileHint, featured, heroStack} = useLoaderData<typeof loader>();
   const [isMobile, setIsMobile] = useState(isMobileHint);
   useEffect(() => {
     const mq = window.matchMedia('(max-width: 768px)');
@@ -176,10 +199,14 @@ export default function Homepage() {
   }, []);
 
   if (isMobile) return <MobileHome featured={featured} />;
-  return <DesktopHome />;
+  return <DesktopHome heroStack={heroStack} />;
 }
 
-function DesktopHome() {
+function DesktopHome({
+  heroStack,
+}: {
+  heroStack: Promise<CollectionItemFragment[]>;
+}) {
   const scrollRef = useRef(0);
   const rafId = useRef(0);
   const [scrollProgress, setScrollProgress] = useState(0);
@@ -649,48 +676,53 @@ function DesktopHome() {
           </div>
         </div>
 
-        {/* Phase 3: CTA panel — rises from bottom, pushes scene up */}
+        {/* Phase 3: product showcase — rises from the bottom on scroll, a Pod
+            of the components on screen (FC / ESC / Frame) with their renders.
+            Replaces the old single Shop-Now CTA; GitHub now lives top-right. */}
         <div
-          className="absolute left-0 right-0 z-20"
+          className="absolute left-0 right-0 z-20 flex justify-center px-6 pb-8 pointer-events-none"
           style={{
-            bottom: '82px',
+            bottom: '56px',
             transform: `translateY(${(1 - ctaRise) * 100}%)`,
             opacity: ctaRise,
           }}
         >
-          <div
-            className="flex items-center justify-center gap-5 px-6 pb-10 pt-4"
-            style={{
-              // Fade the page background up behind the CTA. Theme-aware: uses
-              // the bg token (dark or light) instead of a hardcoded dark, so it
-              // doesn't show as a grey band in light mode.
-              background:
-                'linear-gradient(to top, color-mix(in srgb, var(--color-bg) 95%, transparent) 60%, transparent 100%)',
-            }}
-          >
-            <Link prefetch="viewport"
-              to="/collections/all"
-              className="inline-flex items-center gap-3 px-10 py-4 bg-[var(--color-gold)] text-[var(--color-on-accent)] font-mono font-bold uppercase tracking-wider rounded shadow-[0_0_24px_rgba(184,146,46,0.45)] hover:shadow-[0_0_36px_rgba(184,146,46,0.65)] hover:bg-[var(--color-gold-hover)] transition-all duration-300 pointer-events-auto"
-              style={{fontSize: 'clamp(0.9rem, 1vw, 1.05rem)'}}
+          <Pod strong className="hero-showcase" ariaLabel="The stack on screen">
+            <div className="hero-showcase-head">
+              <span className="hero-showcase-title">The stack on screen</span>
+              <Link
+                prefetch="viewport"
+                to="/collections/all"
+                className="hero-showcase-all"
+              >
+                All products →
+              </Link>
+            </div>
+            <Suspense
+              fallback={
+                <div className="hero-showcase-loading">
+                  <span className="inline-spinner" aria-hidden="true" /> loading…
+                </div>
+              }
             >
-              Shop Now
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                <line x1="5" y1="12" x2="19" y2="12" />
-                <polyline points="12 5 19 12 12 19" />
-              </svg>
-            </Link>
-            <a
-              href="https://github.com/incutec-hw"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center justify-center w-[52px] h-[52px] border border-[var(--color-text-muted)]/30 text-[var(--color-text)] rounded hover:border-[var(--color-gold)]/50 hover:shadow-[0_0_16px_rgba(184,146,46,0.25)] transition-all duration-300 pointer-events-auto"
-              aria-label="View source on GitHub"
-            >
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/>
-              </svg>
-            </a>
-          </div>
+              <Await resolve={heroStack}>
+                {(items) => (
+                  <ProductPods
+                    layout="grid"
+                    items={items.map((p) => ({
+                      key: p.handle,
+                      to: `/products/${p.handle}`,
+                      title: p.title,
+                      subtitle: p.productType ?? undefined,
+                      imageUrl: p.featuredImage?.url ?? null,
+                      imageAlt: p.featuredImage?.altText ?? null,
+                      price: p.priceRange?.minVariantPrice ?? null,
+                    }))}
+                  />
+                )}
+              </Await>
+            </Suspense>
+          </Pod>
         </div>
         </div>
       </div>
@@ -735,6 +767,12 @@ const HOME_FEATURED_QUERY = `#graphql
       ...HomeProductCard
     }
     rx: product(handle: "openrx") {
+      ...HomeProductCard
+    }
+    fc: product(handle: "openfc-lite") {
+      ...HomeProductCard
+    }
+    esc: product(handle: "openesc") {
       ...HomeProductCard
     }
   }
