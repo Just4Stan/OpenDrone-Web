@@ -2535,6 +2535,38 @@ button.reset {
   margin-bottom: var(--sp-7);
 }
 
+/* Entrance: the PDP no longer snaps in flat. The gallery and the copy lines
+   rise + fade on load with a small stagger (the .chapter reveal curve). Only
+   the non-sticky hero elements animate — the buy module is left untouched so
+   the sticky rail never fights a moving container. */
+@media (prefers-reduced-motion: no-preference) {
+  @keyframes pdp-hero-rise {
+    from {
+      opacity: 0;
+      transform: translateY(14px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+  .product-hero-gallery-col,
+  .product-hero-eyebrow,
+  .product-hero-headline,
+  .product-hero-lead {
+    animation: pdp-hero-rise 0.55s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  }
+  .product-hero-eyebrow {
+    animation-delay: 0.04s;
+  }
+  .product-hero-headline {
+    animation-delay: 0.1s;
+  }
+  .product-hero-lead {
+    animation-delay: 0.16s;
+  }
+}
+
 @media (min-width: 960px) {
   .product-hero {
     grid-template-columns: minmax(0, 1.15fr) minmax(360px, 0.85fr);
