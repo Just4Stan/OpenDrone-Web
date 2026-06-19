@@ -988,6 +988,20 @@ html.splash-settled .homepage-layout .site-header {
   }
 }
 
+/* Reduced motion: the homepage header's translateY drop-in is decorative
+   transform motion. Under reduced-motion the 3D hero never loads and the
+   splash settles instantly, so just present the header in place — no slide,
+   no transition. (Hover color/opacity micro-transitions are left intact;
+   they're not motion in the vestibular sense.) */
+@media (prefers-reduced-motion: reduce) {
+  .homepage-layout .site-header,
+  html.splash-settled .homepage-layout .site-header {
+    transform: none;
+    opacity: 1;
+    transition: none;
+  }
+}
+
 /* ============================================
    Mobile homepage (static, ≤768px) — replaces the WebGL hero + scroll
    choreography with a plain hero, flagship cards, and a catalogue link.
@@ -2636,6 +2650,26 @@ button.reset {
   opacity: 0.45;
   cursor: not-allowed;
   box-shadow: none;
+}
+
+/* Pending (submitting) state — keep the button bright so the spinner reads,
+   overriding the dimmed :disabled look. Source order matters: this must
+   follow :disabled to win at equal specificity. */
+.btn-primary[data-pending] {
+  opacity: 1;
+  cursor: progress;
+}
+
+/* Inline submit spinner. Reuses the board-art-spin keyframe. Sized in `em`
+   so it tracks the button's font-size in any context. */
+.btn-spinner {
+  flex: none;
+  width: 0.9em;
+  height: 0.9em;
+  border: 2px solid color-mix(in srgb, var(--color-on-accent) 30%, transparent);
+  border-top-color: var(--color-on-accent);
+  border-radius: 50%;
+  animation: board-art-spin 0.7s linear infinite;
 }
 
 /* Secondary CTA — outlined, used for Shop Pay express / cart drawer
@@ -9883,5 +9917,10 @@ button.reset {
 @media (prefers-reduced-motion: reduce) {
   .board-art-skeleton-spinner {
     animation-duration: 2.4s;
+  }
+  /* Transient action spinner: slowed but kept — the "Adding…" label already
+     carries the state, the rotation is just reinforcement. */
+  .btn-spinner {
+    animation-duration: 1.6s;
   }
 }
