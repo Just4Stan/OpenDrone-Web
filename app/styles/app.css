@@ -1130,6 +1130,29 @@ a:hover {
       clip-path: circle(150% at var(--vt-x, 100%) var(--vt-y, 0%));
     }
   }
+
+  /* Navigation View Transitions — viewTransition-enabled links cross-fade the
+     page instead of swapping flat, so moving between products / sections feels
+     continuous (no "refresh"). The floating header/island gets its own
+     transition name so it PERSISTS and morphs in place across routes rather
+     than cross-fading with the page (the Dynamic-Island foundation). */
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation-duration: 0.3s;
+    animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  .site-header {
+    view-transition-name: site-island;
+  }
+}
+
+/* Reduced-motion: cut every view-transition animation. */
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation: none !important;
+  }
 }
 
 /* Header icon controls (theme, search, cart, menu). Desktop keeps the compact
