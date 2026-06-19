@@ -868,6 +868,28 @@ a:hover {
   width: auto;
 }
 
+/* Ambient wordmark shimmer — a faint sheen sweeps left→right across the gold
+   "Drone" letters, as if light catches the gold. Deliberately low-amplitude
+   (gold → a hair brighter) and slow; the per-letter delay makes it a wave,
+   not a blink. Off under reduced-motion. */
+@keyframes wordmark-shimmer {
+  0%, 70%, 100% {
+    fill: var(--color-gold);
+  }
+  35% {
+    fill: color-mix(in srgb, var(--color-gold) 55%, white);
+  }
+}
+.site-wordmark-gold {
+  animation: wordmark-shimmer 6s ease-in-out infinite;
+  animation-delay: calc(var(--gold-index, 0) * 0.18s);
+}
+@media (prefers-reduced-motion: reduce) {
+  .site-wordmark-gold {
+    animation: none;
+  }
+}
+
 /* Theme toggle — same muted-icon treatment as the search/cart actions. */
 .theme-toggle {
   display: inline-flex;
