@@ -1,5 +1,6 @@
 import {Await, Link, useLocation} from 'react-router';
 import {Suspense, useId} from 'react';
+import {MotionConfig} from 'motion/react';
 import type {
   CartApiQueryFragment,
   HeaderQuery,
@@ -43,37 +44,39 @@ export function PageLayout({
   const isHomepage = pathname === '/';
 
   return (
-    <Aside.Provider>
-      <CartAside cart={cart} />
-      <SearchAside />
-      <MobileMenuAside header={header} publicStoreDomain={publicStoreDomain} />
-      <div className={isHomepage ? 'homepage-layout' : ''}>
-        <a className="skip-link" href="#main-content">
-          Skip to main content
-        </a>
-        <RouteProgress />
-        {prelaunch && <PlaceholderBanner />}
-        {header && (
-          <Header
-            header={header}
-            cart={cart}
-            isLoggedIn={isLoggedIn}
-            publicStoreDomain={publicStoreDomain}
-          />
-        )}
-        <main id="main-content" className="site-main">
-          {children}
-        </main>
-        {!isHomepage && (
-          <Footer
-            header={header}
-            publicStoreDomain={publicStoreDomain}
-            company={company}
-            turnstileSiteKey={turnstileSiteKey ?? null}
-          />
-        )}
-      </div>
-    </Aside.Provider>
+    <MotionConfig reducedMotion="user">
+      <Aside.Provider>
+        <CartAside cart={cart} />
+        <SearchAside />
+        <MobileMenuAside header={header} publicStoreDomain={publicStoreDomain} />
+        <div className={isHomepage ? 'homepage-layout' : ''}>
+          <a className="skip-link" href="#main-content">
+            Skip to main content
+          </a>
+          <RouteProgress />
+          {prelaunch && <PlaceholderBanner />}
+          {header && (
+            <Header
+              header={header}
+              cart={cart}
+              isLoggedIn={isLoggedIn}
+              publicStoreDomain={publicStoreDomain}
+            />
+          )}
+          <main id="main-content" className="site-main">
+            {children}
+          </main>
+          {!isHomepage && (
+            <Footer
+              header={header}
+              publicStoreDomain={publicStoreDomain}
+              company={company}
+              turnstileSiteKey={turnstileSiteKey ?? null}
+            />
+          )}
+        </div>
+      </Aside.Provider>
+    </MotionConfig>
   );
 }
 
