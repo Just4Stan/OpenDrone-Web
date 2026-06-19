@@ -1,5 +1,6 @@
 import {Suspense, useRef, useState} from 'react';
-import {Await, NavLink, useAsyncValue} from 'react-router';
+import {Await, useAsyncValue} from 'react-router';
+import {NavLink} from '~/components/nav';
 import {AnimatePresence} from 'motion/react';
 import {
   type CartViewPayload,
