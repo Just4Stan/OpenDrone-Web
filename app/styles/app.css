@@ -576,8 +576,14 @@ html {
   }
 }
 
+/* Settled: the wordmark rotates 90° clockwise and runs down the left display
+   edge like a spine label, freeing the bottom-left for content. */
 .hero-wordmark.is-settled {
-  transform: translate(0, 0) scale(1);
+  top: 50%;
+  left: 1.4rem;
+  bottom: auto;
+  transform-origin: left center;
+  transform: rotate(90deg) translateX(-50%);
 }
 
 /* Hero load overflow — appears below the centered wordmark only when
@@ -696,10 +702,37 @@ html {
   pointer-events: auto;
 }
 
+/* GitHub bubble, top-right (a circular pill Pod). Drops in with the other
+   hero chrome once the splash settles. */
+.hero-github {
+  position: absolute;
+  top: calc(var(--header-height) + 1.7rem);
+  right: var(--rail-gutter);
+  z-index: 25;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 46px;
+  height: 46px;
+  color: var(--color-text);
+  transform: translateY(8px);
+  transition: transform 0.6s ease-out 0.5s, color 0.2s ease;
+  pointer-events: none;
+}
+.hero-github.is-visible {
+  transform: translateY(0);
+  pointer-events: auto;
+}
+.hero-github:hover {
+  color: var(--color-gold);
+}
+
 .hero-action-primary {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 0.75rem;
+  min-width: 20rem;
   padding: 1rem 2.25rem;
   background: var(--color-gold);
   color: var(--color-on-accent);
@@ -937,6 +970,16 @@ a:hover {
 
 /* The header bar is a pill Pod — shares the .pod surface tokens so it's the
    same material as the dropdowns / hero showcase / PDP scroll-bubble. */
+/* GPU note: unlike the transient pods (dropdowns, PDP bubble) this pill is on
+   screen on every route AND carries the always-running wordmark sheen. A live
+   `backdrop-filter` is re-evaluated on every composited frame, so any perpetual
+   animation over it pins the GPU re-blurring the full 1240×56 bar at the
+   display refresh rate (measured ~40% idle GPU on a 120 Hz panel, even with the
+   sheen converted to a compositor-only property). We trade the live blur for
+   the more-opaque `--pod-bg-strong` token — it obscures the scrolling backdrop
+   the same way the blur did (legibility is the blur's real job here) at zero
+   per-frame cost, and stays theme-aware. The other pods keep their blur; they're
+   transient, so they never sustain the cost. */
 .site-header-main {
   pointer-events: auto;
   display: flex;
@@ -946,9 +989,7 @@ a:hover {
   max-width: 1240px;
   margin: 0 auto;
   padding: 0 1.25rem;
-  background: var(--pod-bg);
-  backdrop-filter: blur(var(--pod-blur));
-  -webkit-backdrop-filter: blur(var(--pod-blur));
+  background: var(--pod-bg-strong);
   border: 1px solid var(--pod-border);
   border-radius: var(--r-pill);
   box-shadow: var(--pod-shadow);
@@ -985,24 +1026,34 @@ a:hover {
   width: auto;
 }
 
-/* Ambient wordmark shimmer — a faint sheen sweeps left→right across the gold
+/* Ambient wordmark sheen — a faint highlight sweeps left→right across the gold
    "Drone" letters, as if light catches the gold. Deliberately low-amplitude
-   (gold → a hair brighter) and slow; the per-letter delay makes it a wave,
-   not a blink. Off under reduced-motion. */
-@keyframes wordmark-shimmer {
+   (gold → a hair brighter) and slow; the per-letter delay makes it a wave, not
+   a blink. Off under reduced-motion.
+
+   Implemented as a brighter-gold overlay copy of each gold letter (see
+   SiteWordmark) whose OPACITY is animated — not the base letter's `fill`.
+   Opacity is a compositor-only property, so the sweep runs on the GPU without
+   repainting the glyphs each frame. The previous version animated `fill` (a
+   paint property); every frame repainted the wordmark, which — sitting inside
+   the blurred header — forced a full per-frame backdrop re-blur and pinned the
+   GPU. Crossfading a bright copy over the static base reproduces the same
+   gold→brighter→gold sweep visually, at near-zero cost. */
+@keyframes wordmark-sheen {
   0%, 70%, 100% {
-    fill: var(--color-gold);
+    opacity: 0;
   }
   35% {
-    fill: color-mix(in srgb, var(--color-gold) 55%, white);
+    opacity: 1;
   }
 }
-.site-wordmark-gold {
-  animation: wordmark-shimmer 6s ease-in-out infinite;
+.site-wordmark-sheen {
+  opacity: 0;
+  animation: wordmark-sheen 6s ease-in-out infinite;
   animation-delay: calc(var(--gold-index, 0) * 0.18s);
 }
 @media (prefers-reduced-motion: reduce) {
-  .site-wordmark-gold {
+  .site-wordmark-sheen {
     animation: none;
   }
 }
@@ -10203,32 +10254,49 @@ button.reset {
   border: 1px solid rgba(255, 255, 255, 0.12);
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.45),
     0 1px 2px rgba(185, 28, 28, 0.4);
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
+  /* No backdrop-filter: the banner is 95% opaque so the blur was imperceptible,
+     yet the pulsing dot inside it forced a perpetual per-frame re-blur. */
   pointer-events: none;
   user-select: none;
   max-width: calc(100vw - 32px);
 }
 
 .placeholder-banner__dot {
+  position: relative;
   width: 7px;
   height: 7px;
   border-radius: 50%;
   background: #fff;
   flex-shrink: 0;
-  box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.55);
+}
+
+/* Expanding halo. A pseudo-element disc the size of the dot scales up and fades
+   — a compositor-only transform/opacity ripple that reproduces the old
+   box-shadow pulse without animating on the paint path (box-shadow repaints an
+   expanding ring every frame). scale(3.3) ≈ the old 8px spread (7px dot →
+   ~23px). */
+.placeholder-banner__dot::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.55);
+  pointer-events: none;
   animation: placeholder-banner-pulse 2.4s ease-out infinite;
 }
 
 @keyframes placeholder-banner-pulse {
   0% {
-    box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.55);
+    transform: scale(1);
+    opacity: 1;
   }
   70% {
-    box-shadow: 0 0 0 8px rgba(255, 255, 255, 0);
+    transform: scale(3.3);
+    opacity: 0;
   }
   100% {
-    box-shadow: 0 0 0 0 rgba(255, 255, 255, 0);
+    transform: scale(1);
+    opacity: 0;
   }
 }
 
