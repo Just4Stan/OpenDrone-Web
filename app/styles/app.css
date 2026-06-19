@@ -1934,9 +1934,34 @@ button.reset {
 }
 
 .site-footer-inner {
+  position: relative;
   width: var(--rail-width);
   margin: 0 auto;
   padding: 0.5rem 0 1.25rem;
+}
+/* Faint via-grid watermark drifting up the right side of the footer. */
+.site-footer-inner::before {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  pointer-events: none;
+  top: 0;
+  bottom: 0;
+  right: 0;
+  width: 40%;
+  background-image: radial-gradient(
+    circle,
+    var(--color-gold) 1px,
+    transparent 1.5px
+  );
+  background-size: 22px 22px;
+  opacity: 0.1;
+  -webkit-mask-image: radial-gradient(
+    ellipse at right,
+    black,
+    transparent 75%
+  );
+  mask-image: radial-gradient(ellipse at right, black, transparent 75%);
 }
 
 @media (min-width: 768px) {
@@ -1954,11 +1979,62 @@ button.reset {
   margin-inline: auto;
 }
 
+/* PCB via-grid accent — a faint grid of drill-hit dots that fades out, used
+   as a subject-grounded texture in otherwise-empty corners. Kept ≤6% so it
+   reads as engineering paper, never decoration. `z-index:-1` keeps it behind
+   the host's own content. Honors the theme via --color-gold. */
+.pcb-vias {
+  position: relative;
+}
+.pcb-vias::before {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  pointer-events: none;
+  background-image: radial-gradient(
+    circle,
+    var(--color-gold) 1px,
+    transparent 1.5px
+  );
+  background-size: 20px 20px;
+  opacity: 0.06;
+}
+
 .page-header {
+  position: relative;
   display: grid;
   gap: 0.35rem;
   margin-bottom: 1rem;
   max-width: 44rem;
+}
+/* Via grid drifting off the top-right of every page header. */
+.page-header::before {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  pointer-events: none;
+  top: -1.5rem;
+  right: -2rem;
+  width: 16rem;
+  height: 9rem;
+  background-image: radial-gradient(
+    circle,
+    var(--color-gold) 1px,
+    transparent 1.5px
+  );
+  background-size: 20px 20px;
+  opacity: 0.13;
+  -webkit-mask-image: radial-gradient(
+    ellipse at top right,
+    black,
+    transparent 70%
+  );
+  mask-image: radial-gradient(ellipse at top right, black, transparent 70%);
+}
+@media (max-width: 768px) {
+  .page-header::before {
+    display: none;
+  }
 }
 
 .page-eyebrow {
