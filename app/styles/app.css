@@ -1825,11 +1825,12 @@ button.reset {
   border: 1px solid var(--color-border);
 }
 
+/* De-boxed: an empty state is a moment for direction, not a card. Centered
+   text with intentional whitespace reads calmer than a bordered box. */
 .empty-state {
-  background: var(--color-bg-card);
-  border: 1px solid var(--color-border);
-  border-radius: 10px;
-  padding: 3rem 1.5rem;
+  padding: var(--sp-7) var(--sp-4);
+  margin: 0 auto;
+  max-width: 32rem;
   color: var(--color-text-muted);
   text-align: center;
 }
@@ -1870,8 +1871,6 @@ button.reset {
 .collection-card,
 .blog-card,
 .blog-article,
-.policy-card,
-.order-card,
 .account-form-section {
   display: block;
   background: var(--color-bg-card);
@@ -1883,11 +1882,44 @@ button.reset {
 
 .collection-card:hover,
 .blog-card:hover,
-.blog-article:hover,
-.policy-card:hover,
-.order-card:hover {
+.blog-article:hover {
   border-color: color-mix(in srgb, var(--color-gold) 25%, var(--color-border));
   transform: translateY(-1px);
+}
+
+/* Legal links are not products — a transparent row whose title underlines on
+   hover, not a bordered commerce card. */
+.policy-card {
+  display: block;
+  padding: var(--sp-3) 0;
+  border-bottom: 1px solid var(--color-border);
+  color: var(--color-text-muted);
+  transition: color 0.15s ease;
+}
+
+.policy-card:hover {
+  color: var(--color-text);
+}
+
+.policy-card:hover .policy-card-title,
+.policy-card:hover h3 {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  text-decoration-color: var(--color-gold);
+}
+
+/* De-boxed: an order is a hairline list row, its fields flowing inline and
+   wrapping, not a heavy card per order. */
+.order-card {
+  padding: var(--sp-4) 0;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.order-card > div {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--sp-2) var(--sp-4);
 }
 
 .collection-card-body,
@@ -1904,17 +1936,12 @@ button.reset {
 }
 
 .collection-card-body p,
-.blog-card .page-eyebrow,
-.policy-card {
+.blog-card .page-eyebrow {
   color: var(--color-text-muted);
 }
 
 .blog-card {
   padding: 1.1rem;
-}
-
-.policy-card {
-  padding: 1rem;
 }
 
 .blog-card h2,
@@ -1974,11 +2001,10 @@ button.reset {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
+/* De-boxed: each fact is a hairline-separated row, not a tile. */
 .product-facts div {
-  background: var(--color-bg-card);
-  border: 1px solid var(--color-border);
-  border-radius: 8px;
-  padding: 0.85rem;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid var(--color-border);
 }
 
 .product-facts dt {
@@ -4035,18 +4061,17 @@ button.reset {
   grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
 }
 
+/* De-boxed: a gold top-hairline (reads like a PCB edge) instead of a full
+   card. Removes the box-around-everything while keeping the grid aligned. */
 .open-source-card {
   display: block;
-  padding: 1rem 1.15rem;
-  background: var(--color-bg-card);
-  border: 1px solid var(--color-border);
-  border-radius: 10px;
-  transition: border-color 0.2s ease, background 0.2s ease;
+  padding: var(--sp-3) 0 0;
+  border-top: 2px solid color-mix(in srgb, var(--color-gold) 45%, var(--color-border));
+  transition: border-color 0.2s ease;
 }
 
 .open-source-card:hover {
-  border-color: color-mix(in srgb, var(--color-gold) 40%, var(--color-border));
-  background: color-mix(in srgb, var(--color-gold) 4%, var(--color-bg-card));
+  border-top-color: var(--color-gold);
 }
 
 .open-source-card-label {
@@ -4183,17 +4208,17 @@ button.reset {
 /* Provenance card — Designed / Assembled / Next. Pinned inside the
    In-the-box chapter so "where is this made" sits next to the parts
    list, not buried in the legal footer. */
+/* De-boxed: the provenance rows are a spec table, not a card. The only gold
+   left is a short underline under the label. */
 .provenance-card {
-  margin-top: 1.5rem;
-  padding: 1.25rem 1.4rem;
-  background: var(--color-bg-card);
-  border: 1px solid var(--color-border);
-  border-left: 3px solid var(--color-gold);
-  border-radius: 10px;
+  margin-top: var(--sp-5);
 }
 
 .provenance-label {
-  margin: 0 0 0.75rem;
+  display: inline-block;
+  margin: 0 0 var(--sp-3);
+  padding-bottom: var(--sp-2);
+  border-bottom: 2px solid var(--color-gold);
   font-family: var(--font-mono);
   font-size: 11px;
   letter-spacing: 0.2em;
@@ -4257,20 +4282,15 @@ button.reset {
   grid-template-rows: auto auto auto auto;
   column-gap: 0.85rem;
   row-gap: 0.25rem;
-  padding: 1rem 1.15rem;
-  background: var(--color-bg-card);
-  border: 1px solid var(--color-border);
-  border-radius: 10px;
+  padding: var(--sp-3) 0 0;
+  border-top: 2px solid color-mix(in srgb, var(--color-gold) 45%, var(--color-border));
   color: var(--color-text);
   text-decoration: none;
-  transition: border-color 0.2s ease, background 0.2s ease,
-    transform 0.2s ease;
+  transition: border-color 0.2s ease;
 }
 
 .download-card:hover {
-  border-color: color-mix(in srgb, var(--color-gold) 45%, var(--color-border));
-  background: color-mix(in srgb, var(--color-gold) 4%, var(--color-bg-card));
-  transform: translateY(-1px);
+  border-top-color: var(--color-gold);
 }
 
 .download-icon {
@@ -4325,25 +4345,22 @@ button.reset {
    because this is the "what's in the box" moment on a bundle PDP. */
 .bundle-components {
   display: grid;
-  gap: 1rem;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: var(--sp-5);
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
 }
 
 .bundle-component-card {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
-  padding: 1.25rem 1.4rem;
-  background: var(--color-bg-card);
-  border: 1px solid var(--color-border);
-  border-radius: 12px;
+  padding: var(--sp-3) 0 0;
+  border-top: 2px solid color-mix(in srgb, var(--color-gold) 45%, var(--color-border));
   color: var(--color-text);
-  transition: border-color 0.2s ease, background 0.2s ease, transform 0.2s ease;
+  transition: border-color 0.2s ease;
 }
 
 .bundle-component-card:hover {
-  border-color: color-mix(in srgb, var(--color-gold) 45%, var(--color-border));
-  background: color-mix(in srgb, var(--color-gold) 4%, var(--color-bg-card));
+  border-top-color: var(--color-gold);
   color: var(--color-text);
   transform: translateY(-1px);
 }
@@ -4786,12 +4803,11 @@ button.reset {
   padding: 0;
 }
 
+/* De-boxed: a subtotal block is a hairline-separated section, not a card. */
 .cart-summary-page,
 .cart-summary-aside {
-  background: var(--color-bg-card);
-  border: 1px solid var(--color-border);
-  border-radius: 10px;
-  padding: 1rem;
+  padding: var(--sp-4) 0 0;
+  border-top: 1px solid var(--color-border);
 }
 
 .cart-summary-aside {
@@ -4986,17 +5002,20 @@ button.reset {
   gap: 1rem;
 }
 
+/* De-boxed: each result group is a hairline-topped section with an eyebrow,
+   not a card — the box overhead dwarfed small result sets. */
 .search-section {
-  background: var(--color-bg-card);
-  border: 1px solid var(--color-border);
-  border-radius: 10px;
-  padding: 1rem;
+  padding-top: var(--sp-4);
+  border-top: 1px solid var(--color-border);
 }
 
 .search-section h2 {
-  font-family: var(--font-display);
-  font-size: 1.25rem;
-  margin-bottom: 1rem;
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  color: var(--color-text-muted);
+  margin-bottom: var(--sp-4);
 }
 
 .search-results-list {
@@ -5071,11 +5090,10 @@ button.reset {
   border-bottom: 1px solid var(--color-border);
 }
 
+/* De-boxed: account forms sit on the page with generous whitespace instead of
+   a heavy panel. */
 .account-panel {
-  background: color-mix(in srgb, var(--color-bg-card) 92%, black);
-  border: 1px solid var(--color-border);
-  border-radius: 12px;
-  padding: 1.5rem;
+  padding: 0;
 }
 
 .account-section-header {
@@ -6056,12 +6074,12 @@ button.reset {
    Donation upsell in the cart
    ============================================ */
 
+/* De-boxed: bracketed by hairlines instead of a gold-tinted box. */
 .donation-upsell {
-  margin: 1.5rem 0;
-  padding: 1.5rem;
-  background: color-mix(in srgb, var(--color-gold) 5%, var(--color-bg-card));
-  border: 1px solid color-mix(in srgb, var(--color-gold) 30%, var(--color-border));
-  border-radius: 12px;
+  margin: var(--sp-5) 0;
+  padding: var(--sp-5) 0;
+  border-top: 1px solid var(--color-border);
+  border-bottom: 1px solid var(--color-border);
 }
 
 .donation-eyebrow {
