@@ -43,12 +43,14 @@ const ClientHeroScene = memo(function ClientHeroScene({
   labelRefs,
   loadDelayMs,
   size,
+  scrubRef,
 }: {
   onReady?: () => void;
   onProgress?: (progress: number) => void;
   labelRefs?: LabelRefs;
   loadDelayMs?: number;
   size?: '5' | '3';
+  scrubRef?: React.RefObject<number | null>;
 }) {
   const [Scene, setScene] = useState<React.ComponentType<{
     onReady?: () => void;
@@ -56,6 +58,7 @@ const ClientHeroScene = memo(function ClientHeroScene({
     labelRefs?: LabelRefs;
     loadDelayMs?: number;
     size?: '5' | '3';
+    scrubRef?: React.RefObject<number | null>;
   }> | null>(null);
   useEffect(() => {
     if (!shouldLoadHero()) {
@@ -84,6 +87,7 @@ const ClientHeroScene = memo(function ClientHeroScene({
       labelRefs={labelRefs}
       loadDelayMs={loadDelayMs}
       size={size}
+      scrubRef={scrubRef}
     />
   );
 });
@@ -182,6 +186,10 @@ function DesktopHome() {
   // Which airframe the hero shows — 5-inch or 3-inch. Toggling swaps the
   // GLB trio loaded by HeroScene.
   const [heroSize, setHeroSize] = useState<'5' | '3'>('5');
+  // Live drag fraction (0→1) while the size slider is dragged, else null. A ref
+  // (not state) so dragging it 60×/s doesn't re-render the page — the render
+  // loop reads it each frame. The slider writes it; HeroScene reads it.
+  const heroScrubRef = useRef<number | null>(null);
   // Splash starts centered and large. It settles when the 3D scene has
   // finished loading AND a minimum wait has elapsed (so the wordmark
   // always gets a readable beat), or when a max timeout fires as a
@@ -478,6 +486,7 @@ function DesktopHome() {
                 // where the splash was already played in this session.
                 loadDelayMs={splashHasPlayedThisSession ? 0 : 750}
                 size={heroSize}
+                scrubRef={heroScrubRef}
               />
             </SceneErrorBoundary>
             {/* Dim overlay — only covers the 3D scene, not the wordmark.
@@ -595,7 +604,11 @@ function DesktopHome() {
             transition: 'opacity 0.4s ease',
           }}
         >
-          <HeroSizeSlider value={heroSize} onChange={setHeroSize} />
+          <HeroSizeSlider
+            value={heroSize}
+            onChange={setHeroSize}
+            scrubRef={heroScrubRef}
+          />
         </div>
 
         {/* Scroll hint */}

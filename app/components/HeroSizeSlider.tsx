@@ -5,67 +5,99 @@ const SIZES = ['5', '3'] as const;
 type Size = (typeof SIZES)[number];
 
 const PAD = 4; // px — must match .hero-size-slider padding in app.css
+const other = (s: Size): Size => (s === '5' ? '3' : '5');
 
 /**
- * Airframe size control for the hero. Reads as a physical sled: a gold thumb
- * you drag between 5″ and 3″. Crossing the midpoint *commits* the size, which
- * is what fires HeroScene's cross-slide — so the thumb and the airframe's
- * fly-out/fly-in move together, as if you pulled the new size into frame.
+ * Airframe size control for the hero. A gold thumb you drag between 5″ and 3″.
  *
- * The two labels are real buttons underneath the thumb, so the control works
- * by click + keyboard with no drag at all (the drag is a pointer enhancement).
- * Reduced-motion snaps instead of springing.
+ * The drag is a true 1:1 scrub: on drag-start we commit the *target* size,
+ * which sets up HeroScene's cross-slide swap; then each drag frame writes the
+ * thumb's fraction into `scrubRef`, which HeroScene reads to position the
+ * airframe — so the model tracks the thumb continuously. Release past the
+ * midpoint keeps the target; short of it, it reverts (the model slides back).
+ *
+ * The two labels are real buttons, so the control also works by click +
+ * keyboard with no drag (those take the plain timed transition). Reduced-motion
+ * snaps the thumb; the scrub still works but HeroScene's own reduced-motion
+ * handling governs the 3D.
  */
 export function HeroSizeSlider({
   value,
   onChange,
+  scrubRef,
 }: {
   value: Size;
   onChange: (v: Size) => void;
+  /** Shared ref the hero reads each frame for the live scrub fraction. */
+  scrubRef: React.RefObject<number | null>;
 }) {
   const trackRef = useRef<HTMLDivElement>(null);
   const x = useMotionValue(0);
   const [dragging, setDragging] = useState(false);
+  // Which side the thumb is currently over while dragging (drives the active
+  // label). Only changes when the thumb crosses the midpoint, so no per-frame
+  // re-render. null when idle → fall back to `value`.
+  const [preview, setPreview] = useState<Size | null>(null);
   const reduce = useReducedMotion();
 
-  // Distance the thumb travels from the 5″ slot to the 3″ slot. The thumb is
-  // exactly half the inner width, so travel === innerWidth / 2.
+  // Where the drag began, and which size it's heading toward. Captured at
+  // drag-start so direction is stable for the whole gesture.
+  const fromRef = useRef<Size>(value);
+  const targetRef = useRef<Size>(other(value));
+
   const travel = () => {
     const el = trackRef.current;
     if (!el) return 0;
     return (el.clientWidth - PAD * 2) / 2;
   };
-  const targetX = (v: Size) => (v === '5' ? 0 : travel());
+  const slotX = (v: Size) => (v === '5' ? 0 : travel());
 
-  // Park the thumb on the committed side whenever the value changes from the
-  // outside (click, keyboard, or a drag commit) — but never while dragging,
-  // so the finger stays in control.
+  // Park the thumb on the committed side when value changes from outside a
+  // drag (click, keyboard, or a settled drag). Never while dragging.
   useEffect(() => {
     if (dragging) return;
-    const dest = targetX(value);
+    const dest = slotX(value);
     if (reduce) {
       x.set(dest);
       return;
     }
-    const controls = animate(x, dest, {
-      type: 'spring',
-      stiffness: 360,
-      damping: 34,
-    });
+    const controls = animate(x, dest, {type: 'spring', stiffness: 360, damping: 34});
     return () => controls.stop();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [value, dragging, reduce]);
 
-  // While dragging, commit as soon as the thumb crosses the midpoint (with a
-  // little hysteresis so it doesn't flicker right at 50%). Committing mid-drag
-  // is what makes the airframe start flying while your finger is still moving.
+  function onDragStart() {
+    const from = value;
+    fromRef.current = from;
+    targetRef.current = other(from);
+    setDragging(true);
+    setPreview(from);
+    // Commit the target now so HeroScene sets up the cross-slide swap; the
+    // scrub (starting at 0) holds it showing `from` until the thumb moves.
+    scrubRef.current = 0;
+    onChange(targetRef.current);
+  }
+
   function onDrag() {
     const t = travel();
     if (t <= 0) return;
-    const frac = x.get() / t;
-    const next: Size = frac > 0.55 ? '3' : frac < 0.45 ? '5' : value;
-    if (next !== value) onChange(next);
+    const frac = Math.min(1, Math.max(0, Math.abs(x.get() - slotX(fromRef.current)) / t));
+    scrubRef.current = frac;
+    const side = frac > 0.5 ? targetRef.current : fromRef.current;
+    setPreview((p) => (p === side ? p : side));
   }
+
+  function onDragEnd() {
+    const t = travel();
+    const frac = t > 0 ? Math.abs(x.get() - slotX(fromRef.current)) / t : 0;
+    const final = frac > 0.5 ? targetRef.current : fromRef.current;
+    scrubRef.current = null;
+    setDragging(false);
+    setPreview(null);
+    onChange(final); // commit (no-op if already target) or revert (slides back)
+  }
+
+  const active = preview ?? value;
 
   return (
     <div
@@ -82,16 +114,16 @@ export function HeroSizeSlider({
         dragConstraints={trackRef}
         dragElastic={0.04}
         dragMomentum={false}
-        onDragStart={() => setDragging(true)}
+        onDragStart={onDragStart}
         onDrag={onDrag}
-        onDragEnd={() => setDragging(false)}
+        onDragEnd={onDragEnd}
         whileTap={{scale: 0.97}}
       />
       {SIZES.map((s) => (
         <button
           key={s}
           type="button"
-          className={`hero-size-slider__opt${value === s ? ' is-active' : ''}`}
+          className={`hero-size-slider__opt${active === s ? ' is-active' : ''}`}
           aria-pressed={value === s}
           onClick={() => onChange(s)}
         >
