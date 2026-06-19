@@ -1,4 +1,4 @@
-import {useSearchParams} from 'react-router';
+import {useNavigation, useSearchParams} from 'react-router';
 import type {ProductCollectionSortKeys} from '@shopify/hydrogen/storefront-api-types';
 
 export type SortKey = ProductCollectionSortKeys;
@@ -25,12 +25,18 @@ export function resolveSort(value: string | null): SortOption {
 
 export function CollectionSort() {
   const [searchParams, setSearchParams] = useSearchParams();
+  const navigation = useNavigation();
   const active = searchParams.get('sort') ?? 'featured';
+  // Dim + disable while the re-sorted collection is loading so the click
+  // visibly registers instead of looking inert.
+  const busy = navigation.state !== 'idle';
   return (
-    <label className="collection-sort">
+    <label className="collection-sort" data-pending={busy || undefined}>
       <span className="collection-sort-label">Sort</span>
       <select
         value={active}
+        aria-busy={busy || undefined}
+        disabled={busy}
         onChange={(e) => {
           const next = new URLSearchParams(searchParams);
           const v = e.target.value;
