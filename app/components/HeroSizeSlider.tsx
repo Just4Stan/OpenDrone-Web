@@ -4,7 +4,14 @@ import {animate, motion, useMotionValue, useReducedMotion} from 'motion/react';
 const SIZES = ['5', '3'] as const;
 type Size = (typeof SIZES)[number];
 
-const PAD = 4; // px — must match .hero-size-slider padding in app.css
+// Full names invite a swipe more than a bare 5″/3″. Add more entries here as
+// more airframes land — the control is a row of these.
+const LABELS: Record<Size, string> = {
+  '5': '5″ Freestyle',
+  '3': '3″ Freestyle',
+};
+
+const PAD = 5; // px — must match .hero-size-slider padding in app.css
 const other = (s: Size): Size => (s === '5' ? '3' : '5');
 
 /**
@@ -119,21 +126,18 @@ export function HeroSizeSlider({
         onDragEnd={onDragEnd}
         whileTap={{scale: 0.97}}
       >
-        <span className="hero-size-slider__thumb-label">
-          {active}
-          <span aria-hidden="true">&Prime;</span>
-        </span>
+        <span className="hero-size-slider__thumb-label">{LABELS[active]}</span>
       </motion.div>
       {SIZES.map((s) => (
         <button
           key={s}
           type="button"
           className={`hero-size-slider__opt${active === s ? ' is-active' : ''}`}
+          aria-label={LABELS[s]}
           aria-pressed={value === s}
           onClick={() => onChange(s)}
         >
-          {s}
-          <span aria-hidden="true">&Prime;</span>
+          {LABELS[s]}
         </button>
       ))}
     </div>

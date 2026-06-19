@@ -398,6 +398,12 @@ function DroneAssembly({
   const fcMats = useRef<any[]>([]);
   const hoverState = useRef({frame: 0, esc: 0, fc: 0});
   const hoverTarget = useRef({frame: 0, esc: 0, fc: 0});
+  // Which size is currently shown, and the direction of the active swap along
+  // the size row (+1 = moving toward a later item → incoming slides in from
+  // the right; −1 = toward an earlier item → in from the left). Lets the
+  // cross-slide follow the slider's direction instead of always-from-right.
+  const displayedSizeRef = useRef<'5' | '3'>(airframeSize);
+  const slideDirRef = useRef(1);
   // Per-size processed models, kept alive across toggles so switching back is
   // instant (no re-fetch / re-decode / re-merge). The inactive size is built
   // lazily on idle AFTER the active one is shown, so it never slows first load.
@@ -641,6 +647,15 @@ function DroneAssembly({
     const display = async (model: BuiltModel) => {
       const prev = prevModelRef.current;
       const isToggle = hasDisplayedRef.current && !!prev && prev !== model;
+
+      if (isToggle) {
+        // Direction along the size row [5,3]: moving to a later index slides
+        // in from the right (+1), to an earlier one from the left (−1).
+        const order: Array<'5' | '3'> = ['5', '3'];
+        const d = order.indexOf(airframeSize) - order.indexOf(displayedSizeRef.current);
+        slideDirRef.current = d < 0 ? -1 : 1;
+      }
+      displayedSizeRef.current = airframeSize;
 
       if (isToggle && outWrapperRef.current && wrapperRef.current) {
         finishOutgoing(); // clear any still-in-flight slide-out first
@@ -887,10 +902,13 @@ function DroneAssembly({
     const applyCrossSlide = (t: number) => {
       const e = easeSwap(t);
       const zoom = 1 - 0.18 * Math.sin(Math.PI * t);
-      wrapperRef.current!.position.x = SLIDE * (1 - e);
+      // d follows the swipe direction: +1 → incoming from the right, −1 → from
+      // the left, so the airframe travels the same way the slider thumb does.
+      const d = slideDirRef.current || 1;
+      wrapperRef.current!.position.x = d * SLIDE * (1 - e);
       wrapperRef.current!.scale.multiplyScalar(zoom);
       if (outgoingRef.current && outWrapperRef.current) {
-        outWrapperRef.current.position.x = outBaseXRef.current - SLIDE * e;
+        outWrapperRef.current.position.x = outBaseXRef.current - d * SLIDE * e;
         outWrapperRef.current.scale.setScalar(outBaseScaleRef.current * zoom);
       }
     };
