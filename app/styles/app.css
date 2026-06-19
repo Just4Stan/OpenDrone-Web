@@ -352,7 +352,6 @@ html {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 0.5rem;
   border-radius: 999px;
   background: linear-gradient(
     180deg,
@@ -366,33 +365,16 @@ html {
   touch-action: none;
 }
 
-/* Grip dots — a small swipe affordance to the left of the label. */
-.hero-size-slider__thumb::before {
-  content: '';
-  flex: none;
-  width: 3px;
-  height: 16px;
-  border-radius: 3px;
-  background-image: radial-gradient(
-    circle,
-    color-mix(in srgb, var(--color-on-accent) 55%, transparent) 1px,
-    transparent 1.4px
-  );
-  background-size: 3px 5px;
-  background-repeat: repeat-y;
-  opacity: 0.8;
-}
-
 .hero-size-slider__thumb:active {
   cursor: grabbing;
 }
 
 .hero-size-slider__thumb-label {
   color: var(--color-on-accent);
-  font-family: var(--font-mono);
+  font-family: var(--font-sans);
   font-size: 0.95rem;
-  font-weight: 700;
-  letter-spacing: 0.01em;
+  font-weight: 600;
+  letter-spacing: -0.005em;
   white-space: nowrap;
   pointer-events: none;
 }
@@ -407,10 +389,10 @@ html {
   border-radius: 999px;
   background: transparent;
   color: var(--color-text-muted);
-  font-family: var(--font-mono);
+  font-family: var(--font-sans);
   font-size: 0.95rem;
-  font-weight: 700;
-  letter-spacing: 0.01em;
+  font-weight: 600;
+  letter-spacing: -0.005em;
   white-space: nowrap;
   cursor: pointer;
   transition: color 0.2s ease;
