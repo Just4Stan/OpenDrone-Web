@@ -65,12 +65,33 @@ export function ThemeToggle({className}: {className?: string}) {
     return () => mq.removeEventListener('change', onChange);
   }, []);
 
-  function toggle() {
+  function toggle(e?: React.MouseEvent) {
     // Read the live theme from the DOM rather than React state — state can
     // lag the DOM by a render, which would mis-toggle on rapid clicks.
     const next: Theme = getActiveTheme() === 'dark' ? 'light' : 'dark';
-    applyTheme(next);
-    setTheme(next);
+    const apply = () => {
+      applyTheme(next);
+      setTheme(next);
+    };
+    // Circular reveal from the click point via the View Transitions API. The
+    // new theme wipes in as an expanding circle. Falls back to an instant swap
+    // where unsupported or under reduced-motion.
+    const startVT = (document as Document & {
+      startViewTransition?: (cb: () => void) => unknown;
+    }).startViewTransition?.bind(document);
+    const reduce =
+      typeof window !== 'undefined' &&
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (!startVT || reduce) {
+      apply();
+      return;
+    }
+    const root = document.documentElement;
+    root.style.setProperty('--vt-x', `${e?.clientX ?? window.innerWidth - 40}px`);
+    root.style.setProperty('--vt-y', `${e?.clientY ?? 40}px`);
+    root.classList.add('theme-vt');
+    const vt = startVT(apply) as {finished?: Promise<void>};
+    void vt?.finished?.finally(() => root.classList.remove('theme-vt'));
   }
 
   const next = theme === 'dark' ? 'light' : 'dark';
