@@ -3,6 +3,7 @@ import type {Route} from './+types/_index';
 import {useEffect, useRef, useState, useCallback, useMemo, memo} from 'react';
 import type {CollectionItemFragment} from 'storefrontapi.generated';
 import {HeroWordmark} from '~/components/HeroWordmark';
+import {HeroSizeSlider} from '~/components/HeroSizeSlider';
 import {MobileHome} from '~/components/MobileHome';
 import {SceneErrorBoundary} from '~/components/SceneErrorBoundary';
 
@@ -594,19 +595,7 @@ function DesktopHome() {
             transition: 'opacity 0.4s ease',
           }}
         >
-          <div className="hero-size-toggle" role="group" aria-label="Airframe size">
-            {(['5', '3'] as const).map((s) => (
-              <button
-                key={s}
-                type="button"
-                className={`hero-size-toggle__btn${heroSize === s ? ' is-active' : ''}`}
-                aria-pressed={heroSize === s}
-                onClick={() => setHeroSize(s)}
-              >
-                {s}&Prime;
-              </button>
-            ))}
-          </div>
+          <HeroSizeSlider value={heroSize} onChange={setHeroSize} />
         </div>
 
         {/* Scroll hint */}
