@@ -47,7 +47,9 @@ a {
 }
 
 a:hover {
-  text-decoration: underline;
+  /* No underline on hover — links cue hover via colour/brightness instead
+     (app.css owns the per-context hover styles). Underline-on-hover is opted
+     into explicitly where wanted (prose/legal/support links). */
   cursor: pointer;
 }
 
