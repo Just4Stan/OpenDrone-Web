@@ -446,6 +446,7 @@ function CartBadge({count}: {count: number}) {
   return (
     <a
       href="/cart"
+      data-cart-target=""
       className="site-header-icon text-[var(--color-text-muted)] hover:text-[var(--color-text)] transition-colors"
       onClick={(e) => {
         e.preventDefault();
