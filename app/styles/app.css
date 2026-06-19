@@ -338,21 +338,37 @@ html {
   user-select: none;
 }
 
+/* Thumb sits ABOVE the labels (z 2) so it actually receives the drag — the
+   label buttons (z 1) would otherwise intercept every pointer event. The
+   thumb carries its own label so the gold still shows text. */
 .hero-size-slider__thumb {
   position: absolute;
-  z-index: 0;
+  z-index: 2;
   top: 4px;
   bottom: 4px;
   left: 4px;
   width: calc(50% - 4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
   border-radius: 999px;
   background: var(--color-gold);
   box-shadow: 0 0 16px rgba(184, 146, 46, 0.45);
   cursor: grab;
+  touch-action: none;
 }
 
 .hero-size-slider__thumb:active {
   cursor: grabbing;
+}
+
+.hero-size-slider__thumb-label {
+  color: var(--color-on-accent);
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  pointer-events: none;
 }
 
 .hero-size-slider__opt {
@@ -373,12 +389,13 @@ html {
   transition: color 0.2s ease;
 }
 
-.hero-size-slider__opt:hover:not(.is-active) {
+.hero-size-slider__opt:hover {
   color: var(--color-text);
 }
 
-.hero-size-slider__opt.is-active {
-  color: var(--color-on-accent);
+.hero-size-slider__opt:focus-visible {
+  outline: 2px solid var(--color-gold);
+  outline-offset: 3px;
 }
 
 .hero-size-slider__opt:focus-visible {

@@ -118,7 +118,12 @@ export function HeroSizeSlider({
         onDrag={onDrag}
         onDragEnd={onDragEnd}
         whileTap={{scale: 0.97}}
-      />
+      >
+        <span className="hero-size-slider__thumb-label">
+          {active}
+          <span aria-hidden="true">&Prime;</span>
+        </span>
+      </motion.div>
       {SIZES.map((s) => (
         <button
           key={s}
