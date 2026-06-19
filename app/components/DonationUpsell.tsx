@@ -73,17 +73,27 @@ export function DonationUpsell({
                 action={CartForm.ACTIONS.LinesRemove}
                 inputs={{lineIds: [existingLine.id]}}
               >
-                <button
-                  type="submit"
-                  className="donation-tier donation-tier-active"
-                  aria-pressed="true"
-                >
-                  <span className="donation-tier-label">{variant.title}</span>
-                  <span className="donation-tier-price">
-                    <Money data={variant.price} />
-                  </span>
-                  <span className="donation-tier-remove">Remove</span>
-                </button>
+                {(fetcher) => {
+                  const pending = fetcher.state !== 'idle';
+                  return (
+                    <button
+                      type="submit"
+                      className="donation-tier donation-tier-active"
+                      aria-pressed="true"
+                      aria-busy={pending || undefined}
+                      data-pending={pending || undefined}
+                      disabled={pending}
+                    >
+                      <span className="donation-tier-label">{variant.title}</span>
+                      <span className="donation-tier-price">
+                        <Money data={variant.price} />
+                      </span>
+                      <span className="donation-tier-remove">
+                        {pending ? 'Removing…' : 'Remove'}
+                      </span>
+                    </button>
+                  );
+                }}
               </CartForm>
             );
           }
@@ -96,12 +106,27 @@ export function DonationUpsell({
                 lines: [{merchandiseId: variant.id, quantity: 1}],
               }}
             >
-              <button type="submit" className="donation-tier">
-                <span className="donation-tier-label">{variant.title}</span>
-                <span className="donation-tier-price">
-                  <Money data={variant.price} />
-                </span>
-              </button>
+              {(fetcher) => {
+                const pending = fetcher.state !== 'idle';
+                return (
+                  <button
+                    type="submit"
+                    className="donation-tier"
+                    aria-busy={pending || undefined}
+                    data-pending={pending || undefined}
+                    disabled={pending}
+                  >
+                    <span className="donation-tier-label">{variant.title}</span>
+                    <span className="donation-tier-price">
+                      {pending ? (
+                        <span className="inline-spinner" aria-hidden="true" />
+                      ) : (
+                        <Money data={variant.price} />
+                      )}
+                    </span>
+                  </button>
+                );
+              }}
             </CartForm>
           );
         })}

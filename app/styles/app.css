@@ -2839,6 +2839,28 @@ button.reset {
   animation: board-art-spin 0.7s linear infinite;
 }
 
+/* Generic inline spinner that inherits text color — drop it into any link or
+   text button to show a pending fetch. */
+.inline-spinner {
+  display: inline-block;
+  width: 0.85em;
+  height: 0.85em;
+  vertical-align: -0.12em;
+  margin-right: 0.15em;
+  border: 2px solid color-mix(in srgb, currentColor 28%, transparent);
+  border-top-color: currentColor;
+  border-radius: 50%;
+  animation: board-art-spin 0.7s linear infinite;
+}
+
+/* Sort control dims + shows progress while the re-sorted page loads. */
+.collection-sort[data-pending] {
+  opacity: 0.6;
+}
+.collection-sort[data-pending] select {
+  cursor: progress;
+}
+
 /* Secondary CTA — outlined, used for Shop Pay express / cart drawer
    secondary actions. */
 .btn-secondary {
@@ -10104,7 +10126,8 @@ button.reset {
   }
   /* Transient action spinner: slowed but kept — the "Adding…" label already
      carries the state, the rotation is just reinforcement. */
-  .btn-spinner {
+  .btn-spinner,
+  .inline-spinner {
     animation-duration: 1.6s;
   }
 }
