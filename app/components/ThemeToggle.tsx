@@ -1,10 +1,25 @@
 import {useEffect, useState} from 'react';
+import {AnimatePresence, motion} from 'motion/react';
+import {DURATION, EASE} from '~/lib/motion';
 import {
   applyTheme,
   getActiveTheme,
   THEME_STORAGE_KEY,
   type Theme,
 } from '~/lib/theme';
+
+const MOON = (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+  </svg>
+);
+
+const SUN = (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <circle cx="12" cy="12" r="4" />
+    <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41" />
+  </svg>
+);
 
 /**
  * Light/dark switch. Renders the icon for the theme it will switch TO.
@@ -59,49 +74,34 @@ export function ThemeToggle({className}: {className?: string}) {
   }
 
   const next = theme === 'dark' ? 'light' : 'dark';
+  // Moon while in light mode (tap → dark), sun while in dark (tap → light).
+  // Before mount, show the sun so SSR/first paint is stable.
+  const showMoon = mounted && theme === 'light';
 
   return (
-    <button
+    <motion.button
       type="button"
       onClick={toggle}
       className={`theme-toggle${className ? ' ' + className : ''}`}
       aria-label={`Switch to ${next} mode`}
       title={`Switch to ${next} mode`}
       suppressHydrationWarning
+      whileTap={{scale: 0.88}}
     >
-      {/* Show the moon while in light mode (tap → dark), sun while in dark
-          mode (tap → light). aria-hidden until mounted so SSR markup is
-          stable; the head script has already themed the page regardless. */}
-      {mounted && theme === 'light' ? (
-        <svg
-          width="18"
-          height="18"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          aria-hidden="true"
+      {/* Crossfade + rotate the icon on toggle so the theme change is
+          acknowledged. */}
+      <AnimatePresence mode="wait" initial={false}>
+        <motion.span
+          key={showMoon ? 'moon' : 'sun'}
+          style={{display: 'inline-flex'}}
+          initial={{rotate: -90, opacity: 0}}
+          animate={{rotate: 0, opacity: 1}}
+          exit={{rotate: 90, opacity: 0}}
+          transition={{duration: DURATION.fast, ease: [...EASE.out]}}
         >
-          <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
-        </svg>
-      ) : (
-        <svg
-          width="18"
-          height="18"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          aria-hidden="true"
-        >
-          <circle cx="12" cy="12" r="4" />
-          <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41" />
-        </svg>
-      )}
-    </button>
+          {showMoon ? MOON : SUN}
+        </motion.span>
+      </AnimatePresence>
+    </motion.button>
   );
 }
