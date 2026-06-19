@@ -3407,12 +3407,16 @@ button.reset {
   .buy-rail.is-pinned {
     position: fixed;
     top: calc(var(--header-height) + 1.1rem);
-    left: 50%;
+    /* Right-anchored to the header pill's right edge (same offset:
+       max(rail-gutter, (100vw − 1240)/2)), content-sized so it shrink-wraps the
+       SKUs + price + CTA and grows leftward with each variant — no dead space. */
+    right: max(var(--rail-gutter), calc((100vw - 1240px) / 2));
+    left: auto;
     z-index: 60;
     flex-direction: row;
     align-items: center;
     gap: var(--sp-3);
-    padding: 0.4rem 0.5rem 0.4rem 0.9rem;
+    padding: 0.4rem 0.4rem 0.4rem 0.9rem;
     background: var(--pod-bg);
     backdrop-filter: blur(var(--pod-blur));
     -webkit-backdrop-filter: blur(var(--pod-blur));
@@ -3429,16 +3433,14 @@ button.reset {
     display: none;
   }
 
-  /* Combine the centring translateX with the drop so they don't fight; `both`
-     keeps the centred end state after the animation. */
   @keyframes buy-rail-drop {
     from {
       opacity: 0;
-      transform: translate(-50%, -10px) scale(0.98);
+      transform: translateY(-10px) scale(0.98);
     }
     to {
       opacity: 1;
-      transform: translate(-50%, 0) scale(1);
+      transform: translateY(0) scale(1);
     }
   }
 
@@ -3460,9 +3462,10 @@ button.reset {
   }
   .buy-rail.is-pinned .variant-tier {
     flex: 0 1 auto;
-    padding: 0.3rem 0.7rem;
+    padding: 0.3rem 0.8rem;
     gap: 0;
-    border-radius: var(--r-sm);
+    /* Concentric with the stadium rail (both clamp to height/2). */
+    border-radius: var(--r-pill);
   }
   .buy-rail.is-pinned .variant-tier-tagline,
   .buy-rail.is-pinned .variant-tier-cells,
@@ -3501,9 +3504,12 @@ button.reset {
     display: none;
   }
   .buy-rail.is-pinned .product-form .btn-primary {
-    padding: 0.42rem 0.95rem;
+    width: auto;
+    padding: 0.42rem 1.05rem;
     font-size: var(--fs-sm);
     white-space: nowrap;
+    /* Concentric stadium inside the rail's stadium — no more rounded-rect. */
+    border-radius: var(--r-pill);
   }
 }
 
