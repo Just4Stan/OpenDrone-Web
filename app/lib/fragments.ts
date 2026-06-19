@@ -225,6 +225,33 @@ export const HEADER_QUERY = `#graphql
   ${MENU_FRAGMENT}
 ` as const;
 
+// Lightweight catalogue read for the header family dropdowns + hero showcase.
+// Deferred (non-blocking) and CacheLong — just enough per product to render a
+// thumbnail Pod. Grouped by productType client-side into FC/ESC/RX/Frame/Stack.
+export const HEADER_PRODUCTS_QUERY = `#graphql
+  query HeaderProducts($country: CountryCode, $language: LanguageCode)
+  @inContext(country: $country, language: $language) {
+    products(first: 100, sortKey: TITLE) {
+      nodes {
+        id
+        handle
+        title
+        productType
+        featuredImage {
+          url
+          altText
+        }
+        priceRange {
+          minVariantPrice {
+            amount
+            currencyCode
+          }
+        }
+      }
+    }
+  }
+` as const;
+
 export const FOOTER_QUERY = `#graphql
   query Footer(
     $country: CountryCode

@@ -10,8 +10,10 @@ export type ProductPodItem = {
   subtitle?: string;
   imageUrl?: string | null;
   imageAlt?: string | null;
-  price?: React.ComponentProps<typeof Money>['data'] | null;
+  price?: {amount: string; currencyCode: string} | null;
 };
+
+type MoneyData = React.ComponentProps<typeof Money>['data'];
 
 /**
  * A row/grid of product thumbnails — the SHARED content behind both the hero
@@ -63,7 +65,7 @@ export function ProductPods({
           </span>
           {it.price ? (
             <span className="product-pod-price">
-              <Money data={it.price} />
+              <Money data={it.price as MoneyData} />
             </span>
           ) : null}
         </Link>
