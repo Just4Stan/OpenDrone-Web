@@ -4109,7 +4109,9 @@ button.reset {
   align-items: stretch;
   gap: 6px;
   padding: 10px 9px 11px;
-  border-radius: 16px;
+  /* Container a notch rounder than its pills (--r-lg) so the nesting reads
+     concentric. */
+  border-radius: var(--r-pod);
   background: color-mix(in srgb, var(--color-bg) 50%, transparent);
   border: 1px solid color-mix(in srgb, var(--color-gold) 13%, transparent);
   -webkit-backdrop-filter: blur(6px);
@@ -4185,7 +4187,8 @@ button.reset {
   text-align: center;
   color: var(--color-text-dim);
   padding: 0.48em 0.4em;
-  border-radius: 999px;
+  /* Standardised viewer-pill radius (schematic sheets + PCB layers share it). */
+  border-radius: var(--r-lg);
   transition: color 0.2s, background 0.2s, border-color 0.2s, transform 0.2s,
     box-shadow 0.2s;
 }
@@ -4212,7 +4215,7 @@ button.reset {
   align-items: flex-start;
   gap: 2px;
   text-align: left;
-  border-radius: 12px;
+  border-radius: var(--r-lg);
   padding: 0.44em 0.72em;
 }
 .board-folder-tab-name {
