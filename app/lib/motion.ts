@@ -54,3 +54,25 @@ export const staggerContainer = {
     transition: {staggerChildren: 0.06, delayChildren: 0.02},
   },
 } as const;
+
+/**
+ * The site's signature surface motion: a Pod *expands from its origin* rather
+ * than just appearing — dropdowns from their chip, the hero showcase from the
+ * shop button, the PDP scroll-bubble into place. Set `transform-origin` on the
+ * element to the trigger edge so it grows from the right spot.
+ */
+export const popOpen = {
+  closed: {opacity: 0, scale: 0.96, y: -4},
+  open: {
+    opacity: 1,
+    scale: 1,
+    y: 0,
+    transition: {duration: DURATION.base, ease: EASE.out},
+  },
+  exit: {
+    opacity: 0,
+    scale: 0.97,
+    y: -4,
+    transition: {duration: DURATION.fast, ease: EASE.out},
+  },
+} as const;
