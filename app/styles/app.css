@@ -1067,6 +1067,35 @@ a:hover {
   margin-left: clamp(1rem, 2vw, 2.5rem);
 }
 
+/* Family chip + its hover-drop Pod. The wrap carries the absolute centering so
+   the Pod itself is free to run the popOpen transform. */
+.header-cat {
+  position: relative;
+  display: inline-flex;
+}
+.header-cat-pod-wrap {
+  position: absolute;
+  top: calc(100% + 0.6rem);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 40;
+}
+.header-cat-pod {
+  width: max-content;
+  min-width: 15rem;
+  max-width: 24rem;
+  padding: var(--sp-2);
+}
+/* Invisible hover bridge so moving from chip to Pod doesn't cross a dead gap. */
+.header-cat-pod-wrap::before {
+  content: '';
+  position: absolute;
+  top: -0.6rem;
+  left: 0;
+  right: 0;
+  height: 0.6rem;
+}
+
 .site-header-categories a {
   font-family: var(--font-mono);
   font-size: var(--fs-sm);

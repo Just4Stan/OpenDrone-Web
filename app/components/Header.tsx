@@ -1,5 +1,6 @@
-import {Suspense} from 'react';
+import {Suspense, useRef, useState} from 'react';
 import {Await, NavLink, useAsyncValue} from 'react-router';
+import {AnimatePresence} from 'motion/react';
 import {
   type CartViewPayload,
   useAnalytics,
@@ -10,12 +11,27 @@ import {useAside} from '~/components/Aside';
 import {LangToggle} from '~/components/LangToggle';
 import {ThemeToggle} from '~/components/ThemeToggle';
 import {SiteWordmark} from '~/components/SiteWordmark';
+import {Pod} from '~/components/Pod';
+import {ProductPods, type ProductPodItem} from '~/components/ProductPods';
+
+/** Thin shape of a product as read by HEADER_PRODUCTS_QUERY. */
+export type HeaderFamilyProduct = {
+  id: string;
+  handle: string;
+  title: string;
+  productType?: string | null;
+  featuredImage?: {url: string; altText?: string | null} | null;
+  priceRange?: {
+    minVariantPrice?: {amount: string; currencyCode: string} | null;
+  } | null;
+};
 
 interface HeaderProps {
   header: HeaderQuery;
   cart: Promise<CartApiQueryFragment | null>;
   isLoggedIn: Promise<boolean>;
   publicStoreDomain: string;
+  familyProducts?: Promise<HeaderFamilyProduct[]>;
 }
 
 type Viewport = 'desktop' | 'mobile';
@@ -24,12 +40,14 @@ type Viewport = 'desktop' | 'mobile';
 // Accessories no longer get a dedicated link here — they live (with
 // everything else) on the aggregated All Products page, reachable via the
 // "All Products" CTA on the right, filterable by category there.
-const CATEGORY_LINKS: Array<{label: string; to: string}> = [
-  {label: 'FC', to: '/products/openfc-lite'},
-  {label: 'ESC', to: '/products/openesc'},
-  {label: 'Stack', to: '/products/openstack'},
-  {label: 'RX', to: '/products/openrx'},
-  {label: 'Frame', to: '/products/openframe'},
+// Each family chip links to its representative PDP and, on hover, drops a Pod
+// listing every SKU of that Shopify `productType`.
+const CATEGORY_LINKS: Array<{label: string; to: string; type: string}> = [
+  {label: 'FC', to: '/products/openfc-lite', type: 'Flight Controller'},
+  {label: 'ESC', to: '/products/openesc', type: 'ESC'},
+  {label: 'Stack', to: '/products/openstack', type: 'Bundle'},
+  {label: 'RX', to: '/products/openrx', type: 'Receiver'},
+  {label: 'Frame', to: '/products/openframe', type: 'Frame'},
 ];
 
 export function Header({
@@ -37,6 +55,7 @@ export function Header({
   isLoggedIn,
   cart,
   publicStoreDomain,
+  familyProducts,
 }: HeaderProps) {
   const {menu} = header;
   return (
@@ -66,34 +85,110 @@ export function Header({
             own accented bubble as the route into the full catalogue. No
             dividers — the bubbles do the grouping. CATEGORY_LINKS is ordered
             [FC, ESC, Stack, RX, Frame]. */}
-        <nav className="site-header-categories" aria-label="Product categories">
-          <span className="site-header-cat-group">
-            {CATEGORY_LINKS.slice(0, 3).map((cat) => (
-              <NavLink key={cat.label} prefetch="viewport" to={cat.to}>
-                {cat.label}
-              </NavLink>
-            ))}
-          </span>
-          {CATEGORY_LINKS.slice(3).map((cat) => (
-            <span className="site-header-cat-group" key={cat.label}>
-              <NavLink prefetch="viewport" to={cat.to}>
-                {cat.label}
-              </NavLink>
-            </span>
-          ))}
-          <NavLink
-            prefetch="viewport"
-            to="/collections/all"
-            className="site-header-cat-all"
-          >
-            All Products
-          </NavLink>
-        </nav>
+        <FamilyNav familyProducts={familyProducts} />
 
         {/* Right: actions */}
         <HeaderCtas isLoggedIn={isLoggedIn} cart={cart} />
       </div>
     </header>
+  );
+}
+
+/**
+ * The gold family chips (FC/ESC/Stack/RX/Frame) — segmented bubbles that, on
+ * hover/focus, drop a Pod listing every SKU of that productType (thumbnail +
+ * title + price). The chip itself still links to the family's PDP. Deferred
+ * product data is resolved once on first hover so the chips render instantly.
+ * Desktop-only (the nav is hidden below 900px). Same Pod material + popOpen
+ * motion as the hero showcase.
+ */
+function FamilyNav({
+  familyProducts,
+}: {
+  familyProducts?: Promise<HeaderFamilyProduct[]>;
+}) {
+  const [products, setProducts] = useState<HeaderFamilyProduct[] | null>(null);
+  const [open, setOpen] = useState<string | null>(null);
+  const closeTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+
+  function ensureProducts() {
+    if (products || !familyProducts) return;
+    familyProducts.then((p) => setProducts(p)).catch(() => setProducts([]));
+  }
+  function openFamily(label: string) {
+    ensureProducts();
+    clearTimeout(closeTimer.current);
+    setOpen(label);
+  }
+  function scheduleClose() {
+    clearTimeout(closeTimer.current);
+    closeTimer.current = setTimeout(() => setOpen(null), 140);
+  }
+
+  function itemsFor(type: string): ProductPodItem[] {
+    return (products ?? [])
+      .filter((p) => (p.productType || '') === type)
+      .map((p) => ({
+        key: p.handle,
+        to: `/products/${p.handle}`,
+        title: p.title,
+        imageUrl: p.featuredImage?.url ?? null,
+        imageAlt: p.featuredImage?.altText ?? null,
+        price: p.priceRange?.minVariantPrice ?? null,
+      }));
+  }
+
+  function chip(cat: (typeof CATEGORY_LINKS)[number]) {
+    const items = itemsFor(cat.type);
+    return (
+      <span
+        className="header-cat"
+        key={cat.label}
+        onMouseEnter={() => openFamily(cat.label)}
+        onMouseLeave={scheduleClose}
+        onFocus={() => openFamily(cat.label)}
+        onBlur={scheduleClose}
+      >
+        <NavLink prefetch="viewport" to={cat.to}>
+          {cat.label}
+        </NavLink>
+        <span className="header-cat-pod-wrap">
+          <AnimatePresence>
+            {open === cat.label && items.length > 0 ? (
+              <Pod
+                animate
+                origin="top center"
+                className="header-cat-pod"
+                role="menu"
+                ariaLabel={`${cat.label} products`}
+              >
+                <ProductPods items={items} layout="row" />
+              </Pod>
+            ) : null}
+          </AnimatePresence>
+        </span>
+      </span>
+    );
+  }
+
+  return (
+    <nav className="site-header-categories" aria-label="Product categories">
+      <span className="site-header-cat-group">
+        {CATEGORY_LINKS.slice(0, 3).map(chip)}
+      </span>
+      {CATEGORY_LINKS.slice(3).map((cat) => (
+        <span className="site-header-cat-group" key={cat.label}>
+          {chip(cat)}
+        </span>
+      ))}
+      <NavLink
+        prefetch="viewport"
+        to="/collections/all"
+        className="site-header-cat-all"
+      >
+        All Products
+      </NavLink>
+    </nav>
   );
 }
 
