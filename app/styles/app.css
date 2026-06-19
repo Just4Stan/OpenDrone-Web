@@ -2864,26 +2864,26 @@ button.reset {
   .buy-rail.is-pinned .variant-ladder-axis {
     display: none;
   }
-  .buy-rail.is-pinned .variant-toggle {
+  .buy-rail.is-pinned .variant-ladder-track {
+    display: flex;
     flex-wrap: nowrap;
-    padding: 2px;
-    gap: 2px;
+    gap: var(--sp-2);
+    grid-template-columns: none;
   }
-  .buy-rail.is-pinned .variant-toggle-seg {
+  .buy-rail.is-pinned .variant-tier {
     flex: 0 1 auto;
-    min-width: 0;
     padding: 0.3rem 0.7rem;
+    gap: 0;
+    border-radius: var(--r-sm);
   }
-  .buy-rail.is-pinned .variant-toggle-flag {
+  .buy-rail.is-pinned .variant-tier-tagline,
+  .buy-rail.is-pinned .variant-tier-cells,
+  .buy-rail.is-pinned .variant-tier-flag {
     display: none;
   }
-  .buy-rail.is-pinned .variant-toggle-label {
+  .buy-rail.is-pinned .variant-tier-name {
     font-size: var(--fs-sm);
     white-space: nowrap;
-  }
-  /* The spec panel is redundant in the compact pinned rail — just the toggle. */
-  .buy-rail.is-pinned .variant-panel {
-    display: none;
   }
 
   /* Buy module → compact price + small add-to-cart, no card chrome. */
@@ -2952,139 +2952,123 @@ button.reset {
   color: var(--color-text-dim);
 }
 
-/* Segmented toggle: one track, equal-width segments, a gold thumb that
-   slides between them (Motion layoutId). Reads as a physical switch, not a
-   row of cards. Wraps to two rows only when a line has 4 tiers (OpenRX) in a
-   narrow column. */
-.variant-toggle {
-  position: relative;
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--sp-1);
-  padding: var(--sp-1);
-  background: var(--color-bg-elevated);
-  border: 1px solid var(--color-border);
-  border-radius: var(--r-pill);
-}
-
-.variant-toggle-seg {
-  position: relative;
-  flex: 1 1 0;
-  min-width: 5.5rem;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.4rem;
-  padding: 0.6rem 0.9rem;
-  border: none;
-  background: none;
-  border-radius: var(--r-pill);
-  cursor: pointer;
-  color: var(--color-text-muted);
-  transition: color 0.18s ease;
-}
-
-.variant-toggle-seg:hover:not(:disabled):not(.is-selected) {
-  color: var(--color-text);
-}
-
-.variant-toggle-seg.is-selected {
-  color: var(--color-on-accent);
-}
-
-.variant-toggle-seg.is-soldout,
-.variant-toggle-seg.is-comingsoon {
-  opacity: 0.45;
-  cursor: not-allowed;
-}
-
-.variant-toggle-seg:focus-visible {
-  outline: 2px solid var(--color-gold);
-  outline-offset: 2px;
-}
-
-/* The sliding fill. Sits behind the label (z-order) and fills the segment. */
-.variant-toggle-thumb {
-  position: absolute;
-  inset: 0;
-  z-index: 0;
-  background: var(--color-gold);
-  border-radius: var(--r-pill);
-  box-shadow: 0 4px 14px -6px color-mix(in srgb, var(--color-gold) 70%, transparent);
-}
-
-.variant-toggle-label {
-  position: relative;
-  z-index: 1;
-  font-family: var(--font-display);
-  font-weight: 600;
-  font-size: var(--fs-sm);
-  letter-spacing: -0.005em;
-  white-space: nowrap;
-}
-
-.variant-toggle-flag {
-  position: relative;
-  z-index: 1;
-  font-family: var(--font-mono);
-  font-size: var(--fs-xs);
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  color: var(--color-text-dim);
-}
-
-/* Spec panel — the chosen variant's details, pulled into frame from the side
-   the user moved toward. min-height holds the row count steady so the
-   cross-slide doesn't reflow the page; overflow clips the incoming/outgoing
-   edges so the slide reads cleanly. */
-.variant-panel {
-  position: relative;
-  min-height: 3.4rem;
-  overflow: hidden;
-}
-
-.variant-panel-inner {
-  display: flex;
-  flex-direction: column;
+.variant-ladder-track {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
   gap: var(--sp-2);
 }
 
-.variant-panel-tagline {
-  margin: 0;
+.variant-tier {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  text-align: left;
+  padding: var(--sp-3) var(--sp-4);
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--r-md);
+  cursor: pointer;
+  transition: border-color 0.15s ease;
+}
+
+.variant-tier:hover:not(:disabled):not(.is-selected) {
+  border-color: var(--color-text-muted);
+}
+
+/* Card content sits above the gliding selection highlight. */
+.variant-tier-head,
+.variant-tier-tagline,
+.variant-tier-cells {
+  position: relative;
+  z-index: 1;
+}
+
+/* Selected look lives on a layoutId element so it *glides* between cards on
+   selection instead of snapping. The base card keeps its neutral border to
+   avoid layout shift; this draws the gold ring + tint on top. */
+.variant-tier-glow {
+  position: absolute;
+  inset: -1px;
+  z-index: 0;
+  border-radius: var(--r-md);
+  background: color-mix(in srgb, var(--color-gold) 6%, transparent);
+  box-shadow: 0 0 0 1.5px var(--color-gold);
+  pointer-events: none;
+}
+
+.variant-tier.is-soldout {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Coming-soon: designed model, not yet purchasable. Greyed + dashed edge
+   to read as a placeholder distinct from a sold-out variant. */
+.variant-tier.is-comingsoon {
+  opacity: 0.55;
+  cursor: not-allowed;
+  border-style: dashed;
+}
+
+.variant-tier.is-comingsoon:hover {
+  border-color: var(--color-border);
+}
+
+.variant-tier-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-2);
+}
+
+.variant-tier-name {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: var(--fs-base);
+  letter-spacing: -0.01em;
+  color: var(--color-text);
+}
+
+.variant-tier-flag {
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  letter-spacing: 0.04em;
+  color: var(--color-text-dim);
+}
+
+.variant-tier-flag.is-selected {
+  color: var(--color-gold);
+}
+
+.variant-tier-tagline {
   font-family: var(--font-sans);
-  font-size: var(--fs-sm);
+  font-size: var(--fs-xs);
   line-height: 1.45;
   color: var(--color-text-dim);
 }
 
-.variant-panel-cells {
+.variant-tier-cells {
   display: flex;
   flex-direction: column;
-  gap: 0.3rem;
+  gap: 0.2rem;
+  margin-top: 0.1rem;
 }
 
-.variant-panel-cell {
+.variant-tier-cell {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
-  gap: var(--sp-3);
-  padding-bottom: 0.3rem;
-  border-bottom: 1px solid color-mix(in srgb, var(--color-border) 60%, transparent);
+  gap: var(--sp-2);
   font-family: var(--font-mono);
   font-size: var(--fs-xs);
   line-height: 1.4;
 }
 
-.variant-panel-cell:last-child {
-  border-bottom: none;
-  padding-bottom: 0;
-}
-
-.variant-panel-cell-k {
+.variant-tier-cell-k {
   color: var(--color-text-muted);
 }
 
-.variant-panel-cell-v {
+.variant-tier-cell-v {
   text-align: right;
   color: var(--color-text);
   font-variant-numeric: tabular-nums;
