@@ -1,5 +1,6 @@
 import {type FetcherWithComponents} from 'react-router';
 import {CartForm, type OptimisticCartLineInput} from '@shopify/hydrogen';
+import {flyToCart} from '~/lib/fly-to-cart';
 
 export function AddToCartButton({
   analytics,
@@ -7,12 +8,15 @@ export function AddToCartButton({
   disabled,
   lines,
   onClick,
+  flyImage,
 }: {
   analytics?: unknown;
   children: React.ReactNode;
   disabled?: boolean;
   lines: Array<OptimisticCartLineInput>;
   onClick?: () => void;
+  /** Product/variant image that flies into the cart icon on add. */
+  flyImage?: string | null;
 }) {
   return (
     <CartForm route="/cart" inputs={{lines}} action={CartForm.ACTIONS.LinesAdd}>
@@ -27,7 +31,15 @@ export function AddToCartButton({
             />
             <button
               type="submit"
-              onClick={onClick}
+              onClick={(e) => {
+                if (!(disabled ?? pending)) {
+                  flyToCart(
+                    e.currentTarget.getBoundingClientRect(),
+                    flyImage,
+                  );
+                }
+                onClick?.();
+              }}
               disabled={disabled ?? pending}
               aria-busy={pending || undefined}
               data-pending={pending || undefined}
