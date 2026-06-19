@@ -1046,6 +1046,13 @@ a:hover {
   line-height: 0;
 }
 
+/* Hero: logo slot stays in the layout (so the nav chips never shift between
+   routes) but is faded out — the 3D scene owns the wordmark there. */
+.site-header-logo.is-hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
 .site-header-logo img,
 .site-header-wordmark {
   display: block;

@@ -1,4 +1,4 @@
-import {Suspense, useRef, useState} from 'react';
+import {Suspense, useEffect, useRef, useState} from 'react';
 import {Await, useAsyncValue, useLocation} from 'react-router';
 import {NavLink} from '~/components/nav';
 import {AnimatePresence} from 'motion/react';
@@ -70,27 +70,28 @@ export function Header({
 }: HeaderProps) {
   const {menu} = header;
   // Dynamic-Island behaviour: on the hero ("/") the wordmark lives bottom-left
-  // in the 3D scene, so the island stays clean (no logo). On every other route
-  // the logo occupies the left of the bar. `view-transition-name` lets it
-  // animate in (and the island re-flow) on navigation rather than popping.
+  // in the 3D scene, so the bar shows no logo there. On every other route it
+  // occupies the left of the bar. The slot is ALWAYS rendered (just faded out
+  // on the hero) so the nav chips never shift position between routes — only the
+  // logo fades in/out. view-transition-name lets it animate across navigations.
   const {pathname} = useLocation();
   const showLogo = pathname !== '/';
   return (
     <header className="site-header">
       <div className="site-header-main">
         {/* Left: wordmark — "Open" neutral, "Drone" in gold, matches splash */}
-        {showLogo ? (
-          <NavLink
-            prefetch="viewport"
-            to="/"
-            end
-            className="site-header-logo"
-            aria-label="OpenDrone"
-            style={{viewTransitionName: 'site-logo'}}
-          >
-            <SiteWordmark className="site-header-wordmark" />
-          </NavLink>
-        ) : null}
+        <NavLink
+          prefetch="viewport"
+          to="/"
+          end
+          className={`site-header-logo${showLogo ? '' : ' is-hidden'}`}
+          aria-label="OpenDrone"
+          aria-hidden={showLogo ? undefined : true}
+          tabIndex={showLogo ? undefined : -1}
+          style={{viewTransitionName: 'site-logo'}}
+        >
+          <SiteWordmark className="site-header-wordmark" />
+        </NavLink>
 
         {/* Center: primary nav + gold category links on the same row */}
         <HeaderMenu
@@ -130,6 +131,15 @@ function FamilyNav({
   const [products, setProducts] = useState<HeaderFamilyProduct[] | null>(null);
   const [open, setOpen] = useState<string | null>(null);
   const closeTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const location = useLocation();
+
+  // Close the hover dropdown on any navigation — otherwise clicking a SKU drops
+  // you on the page with the menu still stuck open (mouseleave never fires when
+  // the pointer is over the navigating link).
+  useEffect(() => {
+    clearTimeout(closeTimer.current);
+    setOpen(null);
+  }, [location.pathname, location.search]);
 
   function ensureProducts() {
     if (products || !familyProducts) return;
