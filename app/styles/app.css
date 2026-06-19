@@ -1024,6 +1024,28 @@ a:hover {
   color: var(--color-text);
 }
 
+/* Circular theme reveal — the new theme wipes in as a circle expanding from
+   the toggle click point (set on --vt-x/--vt-y in ThemeToggle). Old stays put,
+   new clips open over it. Only active while .theme-vt is on <html>, so it
+   never affects any other view transition. JS skips this under reduced-motion
+   and where unsupported. */
+@supports (view-transition-name: root) {
+  html.theme-vt::view-transition-old(root) {
+    animation: none;
+  }
+  html.theme-vt::view-transition-new(root) {
+    animation: theme-circle-in 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+  @keyframes theme-circle-in {
+    from {
+      clip-path: circle(0% at var(--vt-x, 100%) var(--vt-y, 0%));
+    }
+    to {
+      clip-path: circle(150% at var(--vt-x, 100%) var(--vt-y, 0%));
+    }
+  }
+}
+
 /* Header icon controls (theme, search, cart, menu). Desktop keeps the compact
    icon footprint; on phones each gets a 44x44 minimum hit area (Apple HIG /
    WCAG 2.5.5) without enlarging the glyph itself. Negative inline margin
