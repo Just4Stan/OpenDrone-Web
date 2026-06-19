@@ -191,7 +191,7 @@ export function ProductItem({
   // Plain card — a single link wrapping the whole tile.
   if (!hasModels) {
     return (
-      <Link className="product-card" prefetch="viewport" to={url}>
+      <Link className="product-card" prefetch="viewport" viewTransition to={url}>
         {inner}
       </Link>
     );
@@ -203,7 +203,12 @@ export function ProductItem({
   // and each model is a sibling link below it.
   return (
     <div className="product-card has-models">
-      <Link className="product-card-link" prefetch="viewport" to={variantUrl}>
+      <Link
+        className="product-card-link"
+        prefetch="viewport"
+        viewTransition
+        to={variantUrl}
+      >
         {inner}
       </Link>
       {modelStrip}

@@ -40,6 +40,7 @@ export function ProductPods({
           to={it.to}
           className="product-pod"
           prefetch="intent"
+          viewTransition
           onMouseEnter={() => onHover?.(it.key)}
           onMouseLeave={() => onHover?.(null)}
           onFocus={() => onHover?.(it.key)}
