@@ -132,6 +132,7 @@ export function ProductForm({
         onClick={() => {
           open('cart');
         }}
+        flyImage={selectedVariant?.image?.url}
         lines={
           isBundle
             ? bundleLines!

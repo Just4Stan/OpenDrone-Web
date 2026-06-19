@@ -757,9 +757,9 @@ export default function Product() {
         ) : selectedVariant?.sku ? (
           <span className="product-buy-sku">SKU {selectedVariant.sku}</span>
         ) : null}
-        {/* Art. VI.45 WER pre-contractual price info: prices are consumer
-            gross prices; only shipping is added later. */}
-        <span className="product-buy-vat">incl. VAT · excl. shipping</span>
+        {/* Art. VI.45 WER pre-contractual price info (prices incl. VAT, excl.
+            shipping) lives in the cart summary now — kept out of the buy bar so
+            it doesn't crowd the price/CTA. */}
       </div>
       <span className={`product-buy-stock${buyAvailable ? '' : ' is-out'}`}>
         {isBundle
