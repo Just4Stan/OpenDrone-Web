@@ -11555,3 +11555,57 @@ button.reset {
     font-size: 12px;
   }
 }
+
+/* ============================================================
+   MOBILE EXPLORATION — board layers, schematic, frame (island-v2)
+   The desktop hid .chapter-media below 880px, so the PCB layer
+   explorer and exploded frame — the whole point of the product
+   story — were absent on phones (text-only chapters reading as
+   a void). Bring them back as a flat, touch-first single-column
+   view: active layer full-width, pill tabs switch layers, tap a
+   component to spotlight it. Standard, screen-efficient, no
+   desktop 3D fan / sticky / gutter math.
+   ============================================================ */
+@media (max-width: 1023px) {
+  /* Un-hide the board explorer; it sits in normal flow under the copy. */
+  .chapter-media:has(.board-art) {
+    display: block;
+    position: static;
+    top: auto;
+    margin-top: var(--sp-4);
+  }
+
+  /* Flatten the fanned 3D stack: only the active sheet renders, flat and
+     full-width. No perspective, no depth fan, no fly-in. The stack keeps its
+     square aspect so the board fills the column at a stable height. */
+  .board-folder-stack {
+    perspective: none;
+    transform-style: flat;
+    margin-top: 0;
+  }
+  .board-art .board-sheet {
+    transform: none !important;
+    animation: none !important;
+    transition: opacity 0.28s ease;
+    filter: none;
+    opacity: 0;
+    z-index: 1;
+    pointer-events: none;
+  }
+  .board-art .board-sheet.is-active {
+    opacity: 1;
+    z-index: 2;
+    pointer-events: auto;
+  }
+  /* The rail's first-reveal opacity-0 hold (is-armed) never clears without the
+     fly animation — force it visible on mobile. */
+  .board-art.is-armed .board-folder-rail,
+  .board-art.is-flying .board-folder-rail {
+    opacity: 1;
+  }
+
+  /* The board chapter's desktop sticky-media offset doesn't apply once flat. */
+  .chapter:has(.board-art) .chapter-media {
+    margin-top: var(--sp-4);
+  }
+}

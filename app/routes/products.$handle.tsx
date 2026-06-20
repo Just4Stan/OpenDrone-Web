@@ -856,11 +856,20 @@ export default function Product() {
       setHoveredUnion(pin.box === 'union');
       setHoveredGroups(pin.boxGroups);
     };
+    // Is this row's footprint set the one currently lit? (used for tap-toggle)
+    const isActive =
+      hoverable &&
+      hoveredRefs.length === refs!.length &&
+      refs!.every((r) => hoveredRefs.includes(r));
+    // Touch has no hover: a tap toggles this row's spotlight on/off. On desktop
+    // the click toggle is harmless — hover already drives the highlight.
+    const tap = () => (isActive ? clearHover() : enter());
     // No per-row onMouseLeave — clearing happens on the container leave so the
     // spotlight stays lit while moving between rows (onBlur covers keyboard).
     const handlers = hoverable
       ? {
           onMouseEnter: enter,
+          onClick: tap,
           onFocus: enter,
           onBlur: clearHover,
           tabIndex: 0,
