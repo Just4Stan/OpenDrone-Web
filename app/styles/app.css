@@ -4503,11 +4503,12 @@ button.reset {
     opacity: 1;
   }
 }
-/* The animation is applied once the board is revealed but held PAUSED at its
+/* The animation is applied while ARMED (board revealed) but held PAUSED at its
    first frame (sheets off-screen left) until `.is-flying` is added — which the
-   component does only when the board reaches the centre of the viewport. Then it
-   plays out slowly so the layers really read as flying in. */
-.board-art.is-revealed .board-sheet {
+   component does only when the board reaches the centre of the viewport. Both
+   classes drop once the fly finishes, so a SKU swap shows the board at rest
+   (no re-fly). Plays slowly so the layers really read as flying in. */
+.board-art.is-armed .board-sheet {
   animation: board-sheet-fly 1.5s cubic-bezier(0.16, 0.84, 0.3, 1) both;
   animation-delay: calc(var(--depth) * 0.13s);
   animation-play-state: paused;
@@ -4515,8 +4516,28 @@ button.reset {
 .board-art.is-flying .board-sheet {
   animation-play-state: running;
 }
+/* Perf: while flying, drop the per-layer drop-shadow/glow + the rail's live blur
+   (they force a full re-rasterize of every large layer / the bar every frame).
+   When the fly ends `.is-flying` is removed and the base filter transitions back
+   in over 0.45s — the glow eases in once the board is static. */
+.board-art.is-flying .board-sheet,
+.board-art.is-flying .board-sheet.is-active {
+  filter: none;
+  /* promote each flying layer to its own GPU texture so the sweep is a pure
+     compositor transform (no per-frame raster of the 3k-path SVG) */
+  will-change: transform;
+}
+.board-art.is-flying .board-folder-rail {
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+/* Lock layer + part selection during the fly so interaction can't fight it. */
+.board-art.is-flying .board-sheet,
+.board-art.is-flying .board-folder-rail {
+  pointer-events: none;
+}
 @media (prefers-reduced-motion: reduce) {
-  .board-art.is-revealed .board-sheet {
+  .board-art.is-armed .board-sheet {
     animation: none;
   }
 }
@@ -5023,6 +5044,10 @@ button.reset {
   display: grid;
   gap: 0.85rem;
   max-width: 30rem;
+}
+/* Locked while the board fly-in animates — a hover mustn't fight the animation. */
+.teardown-sides.is-locked {
+  pointer-events: none;
 }
 .teardown-side {
   /* zero the global `section { padding: 1rem 0 }` so rows fill the bubble edge

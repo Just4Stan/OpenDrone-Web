@@ -724,6 +724,9 @@ export default function Product() {
   const [hoveredGroups, setHoveredGroups] = useState<string[][] | undefined>(
     undefined,
   );
+  // True while the board's first-reveal fly-in is animating — locks the parts
+  // list so a hover can't fight the animation.
+  const [boardFlying, setBoardFlying] = useState(false);
   // Clear all hover highlight state. Called only when the pointer leaves the
   // whole list (not between rows) so the spotlight stays lit and just moves from
   // row to row — no off/on flicker crossing the dividers/gaps.
@@ -1233,6 +1236,7 @@ export default function Product() {
                 highlightRefs={hoveredRefs}
                 highlightUnion={hoveredUnion}
                 highlightGroups={hoveredGroups}
+                onFlying={setBoardFlying}
               />
             ) : undefined
           }
@@ -1255,7 +1259,10 @@ export default function Product() {
               )
             : null}
           {groupedPins.top.length > 0 && groupedPins.bottom.length > 0 ? (
-            <div className="teardown-sides" onMouseLeave={clearHover}>
+            <div
+              className={`teardown-sides${boardFlying ? ' is-locked' : ''}`}
+              onMouseLeave={clearHover}
+            >
               <section className="teardown-side">
                 <ul className="teardown-pins">
                   {groupedPins.top.map(renderPin)}
@@ -1268,7 +1275,10 @@ export default function Product() {
               </section>
             </div>
           ) : (
-            <div className="teardown-sides" onMouseLeave={clearHover}>
+            <div
+              className={`teardown-sides${boardFlying ? ' is-locked' : ''}`}
+              onMouseLeave={clearHover}
+            >
               <section className="teardown-side">
                 <ul className="teardown-pins">
                   {[

@@ -43,6 +43,9 @@ export type BoardArtProps = {
   /** Draw one union box per subarray (e.g. ESC motor pads grouped by motor → 4
    *  boxes). Each entry is a list of refdes; takes precedence over union/each. */
   highlightGroups?: string[][];
+  /** Called with `true` while the first-reveal fly-in is animating and `false`
+   *  when it finishes, so the parent can lock part-list interaction meanwhile. */
+  onFlying?: (active: boolean) => void;
 };
 
 /** One component from `components.json` — coords already in the board viewBox. */
@@ -225,6 +228,7 @@ export function BoardArt({
   highlightRefs,
   highlightUnion,
   highlightGroups,
+  onFlying,
 }: BoardArtProps) {
   const ref = useRef<HTMLDivElement | null>(null);
   const bodyRef = useRef<HTMLDivElement | null>(null);
@@ -391,6 +395,30 @@ export function BoardArt({
     return () => io.disconnect();
   }, []);
 
+  // `flyDone` ends the entrance: it strips the animation so a SKU swap (the
+  // component stays mounted, new sheets inherit the classes) shows the new board
+  // instantly at full scale instead of re-flying. While the fly runs we tell the
+  // parent (to lock part selection) and the CSS drops the heavy filters.
+  const [flyDone, setFlyDone] = useState(false);
+  useEffect(() => {
+    if (!flyIn || flyDone) return;
+    // Honour reduced-motion: no animation, no lock — settle immediately.
+    if (
+      typeof window !== 'undefined' &&
+      window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
+    ) {
+      setFlyDone(true);
+      return;
+    }
+    onFlying?.(true);
+    // duration (1.5s) + last layer's stagger (7 × 0.13s) + a small buffer
+    const t = setTimeout(() => {
+      setFlyDone(true);
+      onFlying?.(false);
+    }, 1500 + 7 * 130 + 250);
+    return () => clearTimeout(t);
+  }, [flyIn, flyDone, onFlying]);
+
   // Resolve the layer sheets for the active board: a cache hit (the active board
   // or a pre-parsed sibling) renders instantly; otherwise parse the freshly
   // fetched text for THIS src; while a not-yet-parsed tier is loading, keep the
@@ -526,7 +554,7 @@ export function BoardArt({
       if (scheduled) cancelAnimationFrame(scheduled);
       window.removeEventListener('resize', schedule);
     };
-  }, [sheets, revealed]);
+  }, [sheets, revealed, flyDone]);
 
   // The realistic FACE currently shown: 'F' (Front face) / 'B' (Back face), or
   // null for any copper layer. Highlights only appear on the faces — a copper
@@ -712,8 +740,8 @@ export function BoardArt({
     <div
       ref={ref}
       className={`board-art board-folder${revealed ? ' is-revealed' : ''}${
-        flyIn ? ' is-flying' : ''
-      }`}
+        revealed && !flyDone ? ' is-armed' : ''
+      }${flyIn && !flyDone ? ' is-flying' : ''}`}
       data-board={handle}
     >
       {sheets.length ? (
