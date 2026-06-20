@@ -603,6 +603,11 @@ export default function Product() {
   // `boardArt` wins, otherwise the shared `teardown.boardArt` (the default
   // board) is shown. Lines without per-tier art just keep the default.
   const activeBoardArt = activeVariant?.boardArt ?? content.teardown?.boardArt;
+  // The teardown pin list follows the tier the same way the board art does:
+  // each board in a line has its own refdes layout, so a tier's own `pins`
+  // win over the shared `teardown.pins` default. Keeps the hover-highlight
+  // refdes matched to the board currently shown.
+  const activePins = activeVariant?.pins ?? content.teardown?.pins ?? [];
   // CAD products (the frame) carry an exploded 3D viewer instead of a
   // layered board SVG; when present it takes the teardown media slot. Like
   // boardArt, a tier's own model (3" vs 5") wins over the shared default.
@@ -655,6 +660,10 @@ export default function Product() {
   const railSentinelRef = useRef<HTMLDivElement>(null);
   const [railPinned, setRailPinned] = useState(false);
   const [railBox, setRailBox] = useState<{right: number} | null>(null);
+  // Refdes of the teardown pin the visitor is hovering/focusing — highlighted
+  // on the board by BoardArt. Lives here (the common ancestor of the pin list
+  // and the board) so a hover lights the matching footprint.
+  const [hoveredRefs, setHoveredRefs] = useState<string[]>([]);
   // <960px the pinned rail becomes a bottom bar (price + add-to-cart only):
   // phones previously had NO sticky buy control at all once the in-hero buy
   // module scrolled away.
@@ -952,6 +961,11 @@ export default function Product() {
                 inspectUrl={activeBoardArt.inspectUrl}
                 layerFns={activeBoardArt.layers}
                 handle={product.handle}
+                componentsSrc={activeBoardArt.src.replace(
+                  /board\.svg$/,
+                  'components.json',
+                )}
+                highlightRefs={hoveredRefs}
               />
             ) : undefined
           }
@@ -960,15 +974,37 @@ export default function Product() {
             <p className="chapter-body">{content.teardown.body}</p>
           ) : null}
           <ul className="teardown-pins">
-            {content.teardown.pins.map((pin) => (
-              <li key={pin.ref}>
-                <span className="teardown-pin-ref">{pin.ref}</span>
-                <span className="teardown-pin-part">{pin.part}</span>
-                {pin.cost ? (
-                  <span className="teardown-pin-cost">{pin.cost}</span>
-                ) : null}
-              </li>
-            ))}
+            {activePins.map((pin) => {
+              const refs = pin.refs;
+              const hoverable = !!refs?.length;
+              // Hover/focus a pin to highlight its footprint(s) on the board.
+              // Keyboard focus mirrors mouse hover for a11y. Pins without refs
+              // (other product lines) stay plain, non-interactive list items.
+              const handlers = hoverable
+                ? {
+                    onMouseEnter: () => setHoveredRefs(refs),
+                    onMouseLeave: () => setHoveredRefs([]),
+                    onFocus: () => setHoveredRefs(refs),
+                    onBlur: () => setHoveredRefs([]),
+                    tabIndex: 0,
+                  }
+                : {};
+              return (
+                <li
+                  key={pin.ref}
+                  className={
+                    hoverable ? 'teardown-pin teardown-pin-hoverable' : undefined
+                  }
+                  {...handlers}
+                >
+                  <span className="teardown-pin-ref">{pin.ref}</span>
+                  <span className="teardown-pin-part">{pin.part}</span>
+                  {pin.cost ? (
+                    <span className="teardown-pin-cost">{pin.cost}</span>
+                  ) : null}
+                </li>
+              );
+            })}
           </ul>
           {!frameViewer && activeBoardArt?.inspectUrl ? (
             <a

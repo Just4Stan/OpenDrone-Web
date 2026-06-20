@@ -63,6 +63,7 @@ const KICAD_PYTHON =
   '/Applications/KiCad/KiCad.app/Contents/Frameworks/Python.framework/Versions/Current/bin/python3';
 
 const OUTLINE_SCRIPT = resolve(here, 'board-outline.py');
+const COMPONENTS_SCRIPT = resolve(here, 'board-components.py');
 const CONFIG_PATH = resolve(here, 'boards.config.json');
 
 // Every copper layer of a (up to) 6-layer stackup, plus the board outline.
@@ -81,14 +82,51 @@ const FILENAME_TO_SLUG = {
   B_Cu: 'b',
 };
 
-// Physical top→bottom order. The folder viewer stacks the copper sheets in this
-// order; edge-cuts is the shared board silhouette, emitted first so it sits
-// under the copper as the "sheet" shape.
-const STACK_ORDER = ['edge-cuts', 'f', 'in1', 'in2', 'in3', 'in4', 'b'];
+// Document order = SVG paint order (earlier = lower in the stack, later = on
+// top). `back` is the realistic bottom-of-board composite, painted first so it
+// sits at the very bottom; then edge-cuts (the shared silhouette) and the
+// copper sheets; then `front`, the realistic top-of-board composite, painted
+// last so it sits at the very top. The copper folder viewer ignores the
+// `front`/`back` composites (see BoardArt.parseSheets).
+const STACK_ORDER = ['back', 'edge-cuts', 'f', 'in1', 'in2', 'in3', 'in4', 'b', 'front'];
 
 // All copper is shown from the top now (the stack reads as looking straight
 // down through the board), so nothing is mirrored.
 const MIRROR_SLUGS = new Set();
+
+// Realistic composite faces. Each is a stack of technical layers exported as
+// one SVG per layer (multi mode, SAME page frame as the copper export) and
+// recoloured to read as a real board: soldermask base, gold exposed copper,
+// white silkscreen. The order here is the within-composite paint order
+// (bottom → top of that face).
+//   - Copper sits under the mask, so we tint it the mask (board) colour.
+//   - The *.Mask layer geometry is the mask OPENING — i.e. exposed copper —
+//     so we fill it gold to read as bare pads/lands.
+//   - Silkscreen on top, white.
+// The Edge.Cuts technical layer is exported too so the per-layer frame is
+// pinned identically; we drop its body (the outline group already draws it).
+const COMPOSITE_TECH_LAYERS = {
+  front: ['F.Cu', 'F.Mask', 'F.Silkscreen'],
+  back: ['B.Cu', 'B.Mask', 'B.Silkscreen'],
+};
+// kicad-cli output filename suffix → role within the composite (for fill).
+const TECH_FILENAME_TO_ROLE = {
+  F_Cu: 'copper',
+  B_Cu: 'copper',
+  F_Mask: 'mask',
+  B_Mask: 'mask',
+  F_Silkscreen: 'silk',
+  B_Silkscreen: 'silk',
+};
+// Fills for a realistic flat top-down board look (matte green soldermask,
+// ENIG-ish gold for exposed copper, white silk). These are baked into the SVG
+// (not theme tokens) because they represent the physical board, not site UI.
+const COMPOSITE_FILL = {
+  base: '#0b6b3a', // soldermask base (board colour) — the mask-covered field
+  copper: '#0a5e33', // copper under mask — slightly darker than the base field
+  mask: '#d9b779', // exposed copper / pads — ENIG gold
+  silk: '#f4f4ef', // silkscreen — off-white
+};
 
 const TAU = Math.PI * 2;
 /** Max arc/bezier chord ≈ this many radians per sample — fine enough that a
@@ -343,6 +381,35 @@ function boardOutline(pcbPath) {
 }
 
 /**
+ * Every real component (footprint with pads) via the same pcbnew API and unit
+ * conversion as the outline (see scripts/board-components.py), so its
+ * coordinates share the board-native frame. Returns `{ components: [...] }`
+ * in mm, board frame.
+ */
+function boardComponents(pcbPath) {
+  const out = execFileSync(KICAD_PYTHON, [COMPONENTS_SCRIPT, pcbPath], {
+    encoding: 'utf8',
+    maxBuffer: 64 * 1024 * 1024,
+  });
+  return JSON.parse(out);
+}
+
+/**
+ * Force every fill/stroke colour in a layer body to a single colour. KiCad's
+ * per-layer SVG paints geometry in the PCB-editor theme colour; for the
+ * realistic composite we override it with our own board-look palette. Both
+ * presentation-attribute (`fill="…"`) and CSS-style (`style="fill:…"`) forms
+ * are rewritten; `none` is left alone so unfilled strokes stay strokes.
+ */
+function forceFill(body, colour) {
+  return body
+    .replace(/fill:#[0-9a-fA-F]{6}/g, `fill:${colour}`)
+    .replace(/stroke:#[0-9a-fA-F]{6}/g, `stroke:${colour}`)
+    .replace(/fill="#[0-9a-fA-F]{6}"/g, `fill="${colour}"`)
+    .replace(/stroke="#[0-9a-fA-F]{6}"/g, `stroke="${colour}"`);
+}
+
+/**
  * Build a clip-path `d` from the outline rings, translated from the
  * board's native frame into the kicad-cli page frame. The two frames
  * relate by a pure translation (1:1 mm, no scale), so we align by their
@@ -426,6 +493,99 @@ function buildBoard(pcbPath, handle) {
     // Mirror axis = board's vertical centre, so mirrored B.Cu stays in place.
     const mirrorTx = (bbox.minX * 2 + bbox.width).toFixed(4);
 
+    // ---- Realistic front/back composite faces -----------------------------
+    // Export the technical layers (same page frame as the copper export, so
+    // they share the master viewBox 1:1) and stack them into recoloured
+    // groups. Verify the emitted frame matches before trusting the overlay.
+    const techDir = join(tmp, 'tech');
+    const allTech = [
+      ...new Set(
+        [...COMPOSITE_TECH_LAYERS.front, ...COMPOSITE_TECH_LAYERS.back].concat(
+          'Edge.Cuts',
+        ),
+      ),
+    ];
+    execSync(
+      [
+        KICAD_CLI,
+        'pcb export svg',
+        `--output ${JSON.stringify(techDir + '/')}`,
+        '--mode-multi',
+        `--layers ${allTech.join(',')}`,
+        '--page-size-mode 2',
+        '--exclude-drawing-sheet',
+        '--fit-page-to-board',
+        '--check-zones',
+        JSON.stringify(pcbPath),
+      ].join(' '),
+      {stdio: 'inherit'},
+    );
+
+    // KiCad slugs the silkscreen file as `*-F_Silkscreen.svg` etc.
+    const LAYER_TO_SUFFIX = {
+      'F.Cu': 'F_Cu',
+      'B.Cu': 'B_Cu',
+      'F.Mask': 'F_Mask',
+      'B.Mask': 'B_Mask',
+      'F.Silkscreen': 'F_Silkscreen',
+      'B.Silkscreen': 'B_Silkscreen',
+    };
+
+    // The copper export's page frame (from the Edge.Cuts file we already read).
+    const cliPageM = /viewBox="([\d.eE+-]+)\s+([\d.eE+-]+)\s+([\d.eE+-]+)\s+([\d.eE+-]+)"/.exec(
+      edgeCutsRaw,
+    );
+    const cliPageW = cliPageM ? parseFloat(cliPageM[3]) : bbox.width;
+    const cliPageH = cliPageM ? parseFloat(cliPageM[4]) : bbox.height;
+
+    /** Verify a tech layer's emitted viewBox matches the master page frame so
+     *  the composite pixel-overlaps the copper. The copper export and this one
+     *  both use --page-size-mode 2 --fit-page-to-board, so the page frame is
+     *  identical (0 0 W H); we assert it rather than silently misalign. */
+    const techFrameOk = (raw) => {
+      const m = /viewBox="([\d.eE+-]+)\s+([\d.eE+-]+)\s+([\d.eE+-]+)\s+([\d.eE+-]+)"/.exec(
+        raw,
+      );
+      if (!m) return false;
+      const w = parseFloat(m[3]);
+      const h = parseFloat(m[4]);
+      // Same page frame the copper layers used (edgeCutsBBox is computed in it).
+      return (
+        Math.abs(parseFloat(m[1])) < 1e-3 &&
+        Math.abs(parseFloat(m[2])) < 1e-3 &&
+        Math.abs(w - cliPageW) < 1e-2 &&
+        Math.abs(h - cliPageH) < 1e-2
+      );
+    };
+
+    for (const [face, techLayers] of Object.entries(COMPOSITE_TECH_LAYERS)) {
+      // Soldermask base rectangle (the board field), clipped to the outline.
+      const baseRect = `    <rect x="${r4(bbox.minX)}" y="${r4(bbox.minY)}" width="${r4(
+        bbox.width,
+      )}" height="${r4(bbox.height)}" fill="${COMPOSITE_FILL.base}"/>`;
+      const parts = [baseRect];
+      for (const layer of techLayers) {
+        const suffix = LAYER_TO_SUFFIX[layer];
+        const file = join(techDir, `${projectBase}-${suffix}.svg`);
+        if (!existsSync(file)) continue;
+        const raw = readFileSync(file, 'utf8');
+        if (!techFrameOk(raw)) {
+          throw new Error(
+            `Tech layer ${layer} frame ${(/viewBox="[^"]*"/.exec(raw) || [])[0]} ` +
+              `≠ master page frame (0 0 ${cliPageW} ${cliPageH}) for ${pcbPath}`,
+          );
+        }
+        const role = TECH_FILENAME_TO_ROLE[suffix];
+        parts.push(
+          `    <g class="composite-${role}">\n${forceFill(
+            layerBody(raw),
+            COMPOSITE_FILL[role],
+          )}\n    </g>`,
+        );
+      }
+      perLayer[face] = parts.join('\n');
+    }
+
     const layers = STACK_ORDER.map((slug) => {
       const body = perLayer[slug];
       if (!body) return '';
@@ -458,6 +618,49 @@ ${layers}
     const pts = outline.rings.reduce((n, r) => n + r.length, 0);
     console.log(
       `Wrote ${outPath} (${sizeKb} KB, viewBox=${viewBox}) — clipped to board outline (${outline.rings.length} ring(s), ${pts} pts)`,
+    );
+
+    // ---- components.json --------------------------------------------------
+    // Same (dx, dy) the outline clip uses: viewBox = native + (dx, dy). The
+    // two pcbnew scripts share LoadBoard + ToMM, so outline.bbox.min and
+    // component coords are in one native frame; translating by this delta puts
+    // every component into the master viewBox frame, ready to draw directly.
+    const dx = bbox.minX - outline.bbox.minX;
+    const dy = bbox.minY - outline.bbox.minY;
+    const r4n = (v) => +v.toFixed(4);
+    const {components: nativeComps} = boardComponents(pcbPath);
+    const components = nativeComps.map((c) => {
+      const entry = {
+        ref: c.ref,
+        value: c.value,
+        footprint: c.footprint,
+        layer: c.layer,
+        x: r4n(c.x + dx),
+        y: r4n(c.y + dy),
+        rot: c.rot,
+        bbox: {
+          x: r4n(c.bbox.x + dx),
+          y: r4n(c.bbox.y + dy),
+          w: r4n(c.bbox.w),
+          h: r4n(c.bbox.h),
+        },
+      };
+      if (c.courtyard) {
+        entry.courtyard = c.courtyard.map(([x, y]) => [r4n(x + dx), r4n(y + dy)]);
+      }
+      return entry;
+    });
+    const componentsJson = {
+      handle,
+      viewBox,
+      units: 'mm',
+      components,
+    };
+    const compPath = join(outDir, 'components.json');
+    writeFileSync(compPath, JSON.stringify(componentsJson));
+    console.log(
+      `Wrote ${compPath} (${components.length} components, ` +
+        `dx=${r4n(dx)} dy=${r4n(dy)})`,
     );
   } finally {
     rmSync(tmp, {recursive: true, force: true});

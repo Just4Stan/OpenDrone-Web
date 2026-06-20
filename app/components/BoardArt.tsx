@@ -1,5 +1,10 @@
 import {useEffect, useMemo, useRef, useState} from 'react';
-import {fetchTextCached, peekText} from '~/lib/asset-prefetch';
+import {
+  fetchJsonCached,
+  fetchTextCached,
+  peekJson,
+  peekText,
+} from '~/lib/asset-prefetch';
 
 export type BoardArtProps = {
   /** Public path to the layered SVG, e.g. /boards/openesc/board.svg */
@@ -15,7 +20,41 @@ export type BoardArtProps = {
    *  shown beside each name in the rail. Slugs left unset fall back to a
    *  position-based guess (see {@link layerFunction}). */
   layerFns?: Record<string, string>;
+  /** Public path to the component manifest (`components.json`) for the active
+   *  board. Fetched lazily; when a `highlightRefs` ref matches a component its
+   *  footprint is drawn as a gold highlight over the active sheet. */
+  componentsSrc?: string;
+  /** Refdes (case-sensitive) to highlight on the board — typically the refs of
+   *  the teardown pin the visitor is hovering/focusing. */
+  highlightRefs?: string[];
 };
+
+/** One component from `components.json` — coords already in the board viewBox. */
+type BoardComponent = {
+  ref: string;
+  layer?: string;
+  bbox?: {x: number; y: number; w: number; h: number};
+  courtyard?: Array<[number, number]>;
+};
+type BoardManifest = {viewBox?: string; components?: BoardComponent[]};
+
+/** Module cache of parsed component manifests, keyed by componentsSrc. */
+const manifestCache = new Map<
+  string,
+  {viewBox: string; map: Map<string, BoardComponent>}
+>();
+
+function parseManifest(raw: unknown): {
+  viewBox: string;
+  map: Map<string, BoardComponent>;
+} {
+  const m = (raw ?? {}) as BoardManifest;
+  const map = new Map<string, BoardComponent>();
+  for (const c of m.components ?? []) {
+    if (c?.ref) map.set(c.ref, c);
+  }
+  return {viewBox: m.viewBox ?? '', map};
+}
 
 /**
  * Short function blurb for a copper layer. A content-supplied `override` wins;
@@ -30,23 +69,38 @@ function layerFunction(
   override?: Record<string, string>,
 ): string {
   if (override?.[slug]) return override[slug];
-  if (index === 0 || index === total - 1) return 'Signal + components';
-  if (index === 1 || index === total - 2) return 'Ground plane';
+  // The realistic composite faces describe the physical board side, not a
+  // copper stack position — they must NOT get the position-based guess.
+  if (slug === 'front') return 'Component side';
+  if (slug === 'back') return 'Solder side';
+  // The position guess applies to the copper sheets only. Front sits at index 0
+  // and back at index total-1, so exclude those ends from the copper logic by
+  // measuring position within the copper run (front=1st sheet, back=last).
+  const copperFirst = index === 1; // first copper sheet (after front)
+  const copperLast = index === total - 2; // last copper sheet (before back)
+  if (copperFirst || copperLast) return 'Signal + components';
+  if (index === 2 || index === total - 3) return 'Ground plane';
   return 'Signal + power';
 }
 
 /** Human label for each known layer slug, in physical top→bottom order. */
 const LAYER_LABELS: Record<string, string> = {
+  front: 'Front',
   f: 'F.Cu',
   in1: 'In1',
   in2: 'In2',
   in3: 'In3',
   in4: 'In4',
   b: 'B.Cu',
+  back: 'Back',
   // legacy 3-layer boards (export-board-art.mjs pre-folder)
   copper: 'Top',
   'b-copper': 'Bottom',
 };
+
+/** Folder stack order: realistic front first, the copper stack top→bottom, the
+ *  realistic back last. Any unknown layer slug falls in after the knowns. */
+const SHEET_ORDER = ['front', 'f', 'in1', 'in2', 'in3', 'in4', 'b', 'back'];
 
 type Sheet = {slug: string; label: string; html: string};
 
@@ -69,19 +123,35 @@ function parseSheets(raw: string): Sheet[] {
     const viewBox = svg.getAttribute('viewBox') ?? '';
     const defs = svg.querySelector('defs')?.outerHTML ?? '';
     const edgeInner = doc.getElementById('layer-edge-cuts')?.innerHTML ?? '';
-    const copper = Array.from(svg.querySelectorAll('[id^="layer-"]')).filter(
+    // The folder shows the realistic faces (front/back) plus every copper layer;
+    // `layer-edge-cuts` is the outline, drawn as a faint underlay, never a sheet.
+    const layers = Array.from(svg.querySelectorAll('[id^="layer-"]')).filter(
       (g) => g.id !== 'layer-edge-cuts',
     ) as SVGElement[];
-    return copper.map((g) => {
+    // Order front → copper(f,in1…b) → back; unknown slugs sort after the knowns.
+    layers.sort((a, b) => {
+      const ia = SHEET_ORDER.indexOf(a.id.replace(/^layer-/, ''));
+      const ib = SHEET_ORDER.indexOf(b.id.replace(/^layer-/, ''));
+      return (ia < 0 ? 99 : ia) - (ib < 0 ? 99 : ib);
+    });
+    return layers.map((g) => {
       const slug = g.id.replace(/^layer-/, '');
+      // The realistic faces have baked colours and an opaque board background;
+      // the faint edge underlay would be hidden behind them, so skip it (and
+      // tag the sheet so CSS can opt them out of any copper-only treatment).
+      const isFace = slug === 'front' || slug === 'back';
+      const edge = isFace
+        ? ''
+        : `<g class="board-sheet-edge">${edgeInner}</g>`;
+      const faceClass = isFace ? ` board-sheet-svg-${slug}` : '';
       return {
         slug,
         label: LAYER_LABELS[slug] ?? slug.toUpperCase(),
         html:
           `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${viewBox}" ` +
-          `preserveAspectRatio="xMidYMid meet" class="board-sheet-svg">` +
+          `preserveAspectRatio="xMidYMid meet" class="board-sheet-svg${faceClass}">` +
           `<defs>${defs}</defs>` +
-          `<g class="board-sheet-edge">${edgeInner}</g>` +
+          `${edge}` +
           `${g.outerHTML}</svg>`,
       };
     });
@@ -114,7 +184,15 @@ async function warmParsed(src: string): Promise<Sheet[]> {
  *
  * Fetched lazily (only as the section nears the viewport).
  */
-export function BoardArt({src, srcs, handle, inspectUrl, layerFns}: BoardArtProps) {
+export function BoardArt({
+  src,
+  srcs,
+  handle,
+  inspectUrl,
+  layerFns,
+  componentsSrc,
+  highlightRefs,
+}: BoardArtProps) {
   const ref = useRef<HTMLDivElement | null>(null);
   const bodyRef = useRef<HTMLDivElement | null>(null);
   const railRef = useRef<HTMLDivElement | null>(null);
@@ -130,6 +208,19 @@ export function BoardArt({src, srcs, handle, inspectUrl, layerFns}: BoardArtProp
   // is parsed, and never re-parses a board the cache already holds.
   const rawSrcRef = useRef<string | null>(peekText(src) != null ? src : null);
   const lastSheetsRef = useRef<Sheet[]>([]);
+  const overlayRef = useRef<SVGSVGElement | null>(null);
+  // Parsed component manifest for the active board (viewBox + ref→component
+  // map). Seeded from cache so a warmed tier highlights with no fetch.
+  const [manifest, setManifest] = useState<{
+    viewBox: string;
+    map: Map<string, BoardComponent>;
+  } | null>(() => {
+    if (!componentsSrc) return null;
+    const cached = manifestCache.get(componentsSrc);
+    if (cached) return cached;
+    const peeked = peekJson(componentsSrc);
+    return peeked ? parseManifest(peeked) : null;
+  });
 
   // Lazy gate: fetch nothing until the section nears the viewport.
   useEffect(() => {
@@ -153,6 +244,31 @@ export function BoardArt({src, srcs, handle, inspectUrl, layerFns}: BoardArtProp
     io.observe(el);
     return () => io.disconnect();
   }, []);
+
+  // Lazily fetch + parse the component manifest for the active board (reuses the
+  // shared JSON cache + a parsed-manifest cache), so hovering a teardown pin can
+  // resolve refdes → footprint geometry without a per-hover round-trip.
+  useEffect(() => {
+    if (!inView || !componentsSrc) return;
+    const cached = manifestCache.get(componentsSrc);
+    if (cached) {
+      setManifest(cached);
+      return;
+    }
+    let alive = true;
+    fetchJsonCached<unknown>(componentsSrc)
+      .then((data) => {
+        if (!alive) return;
+        const parsed =
+          manifestCache.get(componentsSrc) ?? parseManifest(data);
+        manifestCache.set(componentsSrc, parsed);
+        setManifest(parsed);
+      })
+      .catch(() => {});
+    return () => {
+      alive = false;
+    };
+  }, [inView, componentsSrc]);
 
   // Load the active board once in view and warm every sibling tier in the
   // background. The previously shown board stays on screen until the new SVG
@@ -370,6 +486,85 @@ export function BoardArt({src, srcs, handle, inspectUrl, layerFns}: BoardArtProp
     };
   }, [sheets, revealed]);
 
+  // Resolve the hovered refdes to drawable footprint outlines. Coords are
+  // already in the board viewBox frame, so each becomes a courtyard polygon (or
+  // a bbox rect when no courtyard is present) drawn directly — no math. Drawn
+  // regardless of which sheet is active: a back-side part highlighted while the
+  // front face is up is the intended x-ray look-through.
+  const highlights = useMemo(() => {
+    if (!manifest || !highlightRefs?.length) return [];
+    const out: Array<{ref: string; points?: string; rect?: number[]}> = [];
+    for (const r of highlightRefs) {
+      const c = manifest.map.get(r);
+      if (!c) continue;
+      if (c.courtyard?.length) {
+        out.push({
+          ref: r,
+          points: c.courtyard.map(([x, y]) => `${x},${y}`).join(' '),
+        });
+      } else if (c.bbox) {
+        out.push({ref: r, rect: [c.bbox.x, c.bbox.y, c.bbox.w, c.bbox.h]});
+      }
+    }
+    return out;
+  }, [manifest, highlightRefs]);
+  const overlayViewBox = manifest?.viewBox ?? '';
+  const hasHighlights = highlights.length > 0;
+
+  // Register the highlight overlay pixel-exactly over the ACTIVE sheet. The
+  // active sheet floats up/forward via CSS transform, so we can't rely on the
+  // static layout box: measure the active sheet's rendered <svg> rect relative
+  // to the stack and size/position the overlay to match. Because both the
+  // overlay and the sheet use the SAME viewBox + xMidYMid meet, matching the box
+  // guarantees the drawn footprints align to the parts. Re-runs on active
+  // change, reveal, sheets reload, and resize (rAF-coalesced); a short rAF chain
+  // lets the float transition settle before the final measure.
+  useEffect(() => {
+    const overlay = overlayRef.current;
+    const stack = bodyRef.current?.querySelector(
+      '.board-folder-stack',
+    ) as HTMLElement | null;
+    if (!overlay || !stack || !overlayViewBox) return;
+    const measure = () => {
+      const svg = stack.querySelector(
+        '.board-sheet.is-active svg',
+      ) as SVGSVGElement | null;
+      if (!svg) return;
+      const s = svg.getBoundingClientRect();
+      const base = stack.getBoundingClientRect();
+      overlay.style.left = `${s.left - base.left}px`;
+      overlay.style.top = `${s.top - base.top}px`;
+      overlay.style.width = `${s.width}px`;
+      overlay.style.height = `${s.height}px`;
+    };
+    // Measure now, again next frame, and once more after the float settles, so
+    // the overlay lands on the final transformed box rather than mid-animation.
+    let raf1 = 0;
+    let raf2 = 0;
+    measure();
+    raf1 = requestAnimationFrame(() => {
+      measure();
+      raf2 = requestAnimationFrame(measure);
+    });
+    const settle = window.setTimeout(measure, 650);
+    let scheduled = 0;
+    const schedule = () => {
+      if (scheduled) return;
+      scheduled = requestAnimationFrame(() => {
+        scheduled = 0;
+        measure();
+      });
+    };
+    window.addEventListener('resize', schedule);
+    return () => {
+      cancelAnimationFrame(raf1);
+      cancelAnimationFrame(raf2);
+      if (scheduled) cancelAnimationFrame(scheduled);
+      window.clearTimeout(settle);
+      window.removeEventListener('resize', schedule);
+    };
+  }, [active, revealed, sheets, overlayViewBox]);
+
   // Step through the stack, clamped to its ends (used by chevrons / keys / wheel).
   const step = (delta: number) =>
     setActive((i) => Math.min(sheets.length - 1, Math.max(0, i + delta)));
@@ -444,6 +639,41 @@ export function BoardArt({src, srcs, handle, inspectUrl, layerFns}: BoardArtProp
                 dangerouslySetInnerHTML={{__html: s.html}}
               />
             ))}
+            {/* Highlight overlay — an absolutely-positioned svg sharing the
+                board viewBox + xMidYMid meet, sized/placed (by the measuring
+                effect) to cover the active sheet's rendered box, so footprint
+                outlines register pixel-exactly. Coordinates come straight from
+                components.json. */}
+            {overlayViewBox ? (
+              <svg
+                ref={overlayRef}
+                className={`board-highlight-overlay${
+                  hasHighlights ? ' is-on' : ''
+                }`}
+                viewBox={overlayViewBox}
+                preserveAspectRatio="xMidYMid meet"
+                aria-hidden="true"
+              >
+                {highlights.map((h) =>
+                  h.points ? (
+                    <polygon
+                      key={h.ref}
+                      className="board-highlight-shape"
+                      points={h.points}
+                    />
+                  ) : h.rect ? (
+                    <rect
+                      key={h.ref}
+                      className="board-highlight-shape"
+                      x={h.rect[0]}
+                      y={h.rect[1]}
+                      width={h.rect[2]}
+                      height={h.rect[3]}
+                    />
+                  ) : null,
+                )}
+              </svg>
+            ) : null}
           </div>
         </div>
       ) : null}
