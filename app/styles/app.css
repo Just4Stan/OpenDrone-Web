@@ -4927,6 +4927,34 @@ button.reset {
 /* A single narrow column so the callouts stack vertically instead of spreading
    a wide grid across the chapter — the freed horizontal space goes to the
    board + its (now richer) layer rail. */
+/* Subtle connector lines from each pin bubble to its layer-rail face box (drawn
+   on a fixed full-viewport SVG, positioned imperatively in the PDP). */
+.teardown-links {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  pointer-events: none;
+  z-index: 2;
+  overflow: visible;
+}
+.teardown-links path {
+  fill: none;
+  stroke: var(--color-gold);
+  stroke-width: 1.5;
+  opacity: 0.28;
+  stroke-linecap: round;
+}
+.teardown-links circle {
+  fill: var(--color-gold);
+  opacity: 0.5;
+}
+@media (max-width: 879px) {
+  .teardown-links {
+    display: none;
+  }
+}
+
 /* Two side "bubbles" (Top / Bottom), each a mini-table of component rows. The
    gradient + inset top-light give the card some depth instead of a flat slab. */
 .teardown-sides {
@@ -4935,6 +4963,9 @@ button.reset {
   max-width: 30rem;
 }
 .teardown-side {
+  /* zero the global `section { padding: 1rem 0 }` so rows fill the bubble edge
+     to edge (no dead space above the first row / below the last). */
+  padding: 0;
   background: linear-gradient(
     180deg,
     var(--color-bg-elevated),
@@ -5006,6 +5037,9 @@ button.reset {
 .teardown-pin-hoverable:hover,
 .teardown-pin-hoverable:focus-visible {
   background: color-mix(in srgb, var(--color-gold) 13%, transparent);
+  /* extend the tint 1px upward so the sub-pixel gap at the divider (rows have
+     fractional heights) is covered — no uncovered sliver at the row's top. */
+  box-shadow: 0 -1px 0 0 color-mix(in srgb, var(--color-gold) 13%, transparent);
   outline: none;
 }
 .teardown-pin-hoverable:hover .teardown-pin-part,

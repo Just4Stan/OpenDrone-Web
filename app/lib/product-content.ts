@@ -21,6 +21,9 @@ export type ChapterPin = {
    *  'union' draws ONE box around the whole group — use for dense arrays like the
    *  bulk ceramic-cap grid where individual boxes look like noise. */
   box?: 'each' | 'union';
+  /** Draw one union box PER subarray (e.g. ESC motor pads grouped by motor → 4
+   *  boxes of 3 phases). `refs` stays the flat union for matching + spotlight. */
+  boxGroups?: string[][];
 };
 
 /**
@@ -241,6 +244,13 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
             'U4~ESC3_MotorA_1', 'U4~ESC3_MotorA_2', 'U4~ESC3_MotorB_1', 'U4~ESC3_MotorB_2', 'U4~ESC3_MotorC_1', 'U4~ESC3_MotorC_2',
             'U4~ESC4_MotorA_1', 'U4~ESC4_MotorA_2', 'U4~ESC4_MotorB_1', 'U4~ESC4_MotorB_2', 'U4~ESC4_MotorC_1', 'U4~ESC4_MotorC_2',
           ],
+          // one box per motor (3 phases × 2 pads each)
+          boxGroups: [
+            ['U4~ESC1_MotorA_1', 'U4~ESC1_MotorA_2', 'U4~ESC1_MotorB_1', 'U4~ESC1_MotorB_2', 'U4~ESC1_MotorC_1', 'U4~ESC1_MotorC_2'],
+            ['U4~ESC2_MotorA_1', 'U4~ESC2_MotorA_2', 'U4~ESC2_MotorB_1', 'U4~ESC2_MotorB_2', 'U4~ESC2_MotorC_1', 'U4~ESC2_MotorC_2'],
+            ['U4~ESC3_MotorA_1', 'U4~ESC3_MotorA_2', 'U4~ESC3_MotorB_1', 'U4~ESC3_MotorB_2', 'U4~ESC3_MotorC_1', 'U4~ESC3_MotorC_2'],
+            ['U4~ESC4_MotorA_1', 'U4~ESC4_MotorA_2', 'U4~ESC4_MotorB_1', 'U4~ESC4_MotorB_2', 'U4~ESC4_MotorC_1', 'U4~ESC4_MotorC_2'],
+          ],
         },
         {
           ref: '⑩',
@@ -359,6 +369,13 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
               'U3~ESC2_MotorA_1', 'U3~ESC2_MotorA_2', 'U3~ESC2_MotorB_1', 'U3~ESC2_MotorB_2', 'U3~ESC2_MotorC_1', 'U3~ESC2_MotorC_2',
               'U3~ESC3_MotorA_1', 'U3~ESC3_MotorA_2', 'U3~ESC3_MotorB_1', 'U3~ESC3_MotorB_2', 'U3~ESC3_MotorC_1', 'U3~ESC3_MotorC_2',
               'U3~ESC4_MotorA_1', 'U3~ESC4_MotorA_2', 'U3~ESC4_MotorB_1', 'U3~ESC4_MotorB_2', 'U3~ESC4_MotorC_1', 'U3~ESC4_MotorC_2',
+            ],
+            // one box per motor (3 phases × 2 pads each)
+            boxGroups: [
+              ['U3~ESC1_MotorA_1', 'U3~ESC1_MotorA_2', 'U3~ESC1_MotorB_1', 'U3~ESC1_MotorB_2', 'U3~ESC1_MotorC_1', 'U3~ESC1_MotorC_2'],
+              ['U3~ESC2_MotorA_1', 'U3~ESC2_MotorA_2', 'U3~ESC2_MotorB_1', 'U3~ESC2_MotorB_2', 'U3~ESC2_MotorC_1', 'U3~ESC2_MotorC_2'],
+              ['U3~ESC3_MotorA_1', 'U3~ESC3_MotorA_2', 'U3~ESC3_MotorB_1', 'U3~ESC3_MotorB_2', 'U3~ESC3_MotorC_1', 'U3~ESC3_MotorC_2'],
+              ['U3~ESC4_MotorA_1', 'U3~ESC4_MotorA_2', 'U3~ESC4_MotorB_1', 'U3~ESC4_MotorB_2', 'U3~ESC4_MotorC_1', 'U3~ESC4_MotorC_2'],
             ],
           },
           {

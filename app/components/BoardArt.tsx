@@ -40,6 +40,9 @@ export type BoardArtProps = {
   /** When true, draw ONE box around the union of all `highlightRefs` instead of a
    *  box per refdes — for dense arrays (e.g. the bulk ceramic-cap grid). */
   highlightUnion?: boolean;
+  /** Draw one union box per subarray (e.g. ESC motor pads grouped by motor → 4
+   *  boxes). Each entry is a list of refdes; takes precedence over union/each. */
+  highlightGroups?: string[][];
 };
 
 /** One component from `components.json` — coords already in the board viewBox. */
@@ -221,6 +224,7 @@ export function BoardArt({
   componentsSrc,
   highlightRefs,
   highlightUnion,
+  highlightGroups,
 }: BoardArtProps) {
   const ref = useRef<HTMLDivElement | null>(null);
   const bodyRef = useRef<HTMLDivElement | null>(null);
@@ -586,23 +590,30 @@ export function BoardArt({
     const g = document.createElementNS(NS, 'g');
     g.setAttribute('class', 'board-hilite');
 
-    // Dense arrays (e.g. the bulk-cap grid) ask for ONE box around the whole
-    // group — individual boxes read as noise. Collapse to the union rect.
-    const boxes =
-      highlightUnion && highlights.length > 1
-        ? [
-            {
-              ref: 'union',
-              rect: (() => {
-                const x0 = Math.min(...highlights.map((h) => h.rect[0]));
-                const y0 = Math.min(...highlights.map((h) => h.rect[1]));
-                const x1 = Math.max(...highlights.map((h) => h.rect[0] + h.rect[2]));
-                const y1 = Math.max(...highlights.map((h) => h.rect[1] + h.rect[3]));
-                return [x0, y0, x1 - x0, y1 - y0];
-              })(),
-            },
-          ]
-        : highlights;
+    // Box layout: per-refdes by default; ONE union box for dense arrays
+    // (`highlightUnion`, e.g. the bulk-cap grid); or one union box per subgroup
+    // (`highlightGroups`, e.g. ESC motor pads grouped by motor → 4 boxes).
+    const unionRect = (rs: Array<{rect: number[]}>) => {
+      const x0 = Math.min(...rs.map((h) => h.rect[0]));
+      const y0 = Math.min(...rs.map((h) => h.rect[1]));
+      const x1 = Math.max(...rs.map((h) => h.rect[0] + h.rect[2]));
+      const y1 = Math.max(...rs.map((h) => h.rect[1] + h.rect[3]));
+      return [x0, y0, x1 - x0, y1 - y0];
+    };
+    let boxes: Array<{ref: string; rect: number[]}>;
+    if (highlightGroups?.length) {
+      boxes = highlightGroups
+        .map((group) => {
+          const set = new Set(group);
+          const rs = highlights.filter((h) => set.has(h.ref));
+          return rs.length ? {ref: 'group', rect: unionRect(rs)} : null;
+        })
+        .filter((b): b is {ref: string; rect: number[]} => b !== null);
+    } else if (highlightUnion && highlights.length > 1) {
+      boxes = [{ref: 'union', rect: unionRect(highlights)}];
+    } else {
+      boxes = highlights;
+    }
 
     // SPOTLIGHT: DIM the board everywhere EXCEPT a window at each highlight box
     // (one mask hole + one brighten rect per box — overlapping boxes just merge
@@ -679,7 +690,15 @@ export function BoardArt({
     }
     svg.appendChild(g);
     return () => g.remove();
-  }, [active, revealed, sheets, highlights, manifest, highlightUnion]);
+  }, [
+    active,
+    revealed,
+    sheets,
+    highlights,
+    manifest,
+    highlightUnion,
+    highlightGroups,
+  ]);
 
   // Step through the stack, clamped to its ends (used by chevrons / keys / wheel).
   const step = (delta: number) =>
@@ -728,6 +747,7 @@ export function BoardArt({
                 <button
                   type="button"
                   key={s.slug}
+                  data-slug={s.slug}
                   className={i === active ? 'is-active' : undefined}
                   aria-pressed={i === active}
                   onClick={() => setActive(i)}

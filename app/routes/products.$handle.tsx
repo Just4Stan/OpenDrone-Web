@@ -720,6 +720,10 @@ export default function Product() {
   const [hoveredRefs, setHoveredRefs] = useState<string[]>([]);
   // Whether the hovered pin wants ONE union box (dense arrays) vs a box per part.
   const [hoveredUnion, setHoveredUnion] = useState(false);
+  // Per-group boxes (e.g. ESC motor pads → one box per motor), if the pin sets them.
+  const [hoveredGroups, setHoveredGroups] = useState<string[][] | undefined>(
+    undefined,
+  );
   // One teardown-pin <li>: the part label (+ optional count); hover/focus
   // highlights its footprint(s) on the board (keyboard mirrors mouse for a11y).
   const renderPin = (pin: ChapterPin) => {
@@ -728,10 +732,12 @@ export default function Product() {
     const enter = () => {
       setHoveredRefs(refs ?? []);
       setHoveredUnion(pin.box === 'union');
+      setHoveredGroups(pin.boxGroups);
     };
     const leave = () => {
       setHoveredRefs([]);
       setHoveredUnion(false);
+      setHoveredGroups(undefined);
     };
     const handlers = hoverable
       ? {
@@ -761,6 +767,130 @@ export default function Product() {
     document.documentElement.classList.toggle('board-focus', on);
     return () => document.documentElement.classList.remove('board-focus');
   }, [hoveredRefs]);
+  // Subtle connector lines tying each Top/Bottom pin bubble to its matching face
+  // box in the board's layer rail, so it reads "these parts live on that side".
+  // Drawn on a fixed, full-viewport SVG and recomputed on scroll/resize (the
+  // board is sticky while the list scrolls, so the endpoints drift). Imperative
+  // via rAF so scrolling doesn't trigger React re-renders.
+  const teardownLinksRef = useRef<SVGSVGElement>(null);
+  // The link SVG is portaled to <body> so its `position: fixed` is viewport-
+  // relative (a transformed ancestor — board column / page-transition wrapper —
+  // would otherwise contain `fixed`, throwing the coords off and making it
+  // scroll at the wrong rate). Mount client-side only to avoid SSR mismatch.
+  const [linksMounted, setLinksMounted] = useState(false);
+  useEffect(() => setLinksMounted(true), []);
+  useEffect(() => {
+    const svg = teardownLinksRef.current;
+    if (!svg) return;
+    const paths = svg.querySelectorAll('path');
+    const dots = svg.querySelectorAll('circle');
+    let raf = 0;
+    const draw = () => {
+      raf = 0;
+      const bubbles = document.querySelectorAll<HTMLElement>('.teardown-side');
+      const hide = (i: number) => {
+        paths[i]?.setAttribute('d', '');
+        dots[i * 2]?.setAttribute('r', '0');
+        dots[i * 2 + 1]?.setAttribute('r', '0');
+      };
+      if (bubbles.length < 2) return [0, 1].forEach(hide);
+      const ends = [
+        document.querySelector<HTMLElement>(
+          '.board-folder-tabs [data-slug="front"]',
+        ),
+        document.querySelector<HTMLElement>(
+          '.board-folder-tabs [data-slug="back"]',
+        ),
+      ];
+      const H = window.innerHeight;
+      svg.setAttribute('width', String(window.innerWidth));
+      svg.setAttribute('height', String(H));
+      [
+        [bubbles[0], ends[0]],
+        [bubbles[1], ends[1]],
+      ].forEach(([b, r], i) => {
+        const p = paths[i];
+        if (!p) return;
+        if (!b || !r) return hide(i);
+        const bb = b.getBoundingClientRect();
+        const rr = r.getBoundingClientRect();
+        // true element edges (where the node dots sit)
+        const bx = bb.right;
+        const by = bb.top + bb.height / 2;
+        const rx = rr.left;
+        const ry = rr.top + rr.height / 2;
+        // Draw whenever the line's vertical span overlaps the viewport at all
+        // (endpoints may sit off-screen — the line just clips), so it doesn't
+        // vanish the moment a bubble touches the top/bottom edge.
+        const visible =
+          rr.width > 0 && rx > bx && Math.max(by, ry) > 0 && Math.min(by, ry) < H;
+        if (!visible) return hide(i);
+        // overlap a few px INTO each element so the stroke visibly touches it
+        const x0 = bx - 5;
+        const x1 = rx + 5;
+        const dx = Math.max(40, (x1 - x0) * 0.5);
+        p.setAttribute(
+          'd',
+          `M${x0},${by} C${x0 + dx},${by} ${x1 - dx},${ry} ${x1},${ry}`,
+        );
+        const cb = dots[i * 2];
+        const cr = dots[i * 2 + 1];
+        if (cb) {
+          cb.setAttribute('cx', String(bx));
+          cb.setAttribute('cy', String(by));
+          cb.setAttribute('r', '3.5');
+        }
+        if (cr) {
+          cr.setAttribute('cx', String(rx));
+          cr.setAttribute('cy', String(ry));
+          cr.setAttribute('r', '3.5');
+        }
+      });
+    };
+    // Redraw EVERY frame while the teardown list is on screen, so the links
+    // track the (sticky board vs scrolling list) positions with zero lag —
+    // scroll-event throttling let them drift/disconnect on fast scrolls. The
+    // loop is gated by an IntersectionObserver so it isn't running off-screen.
+    let running = false;
+    const loop = () => {
+      draw();
+      raf = running ? requestAnimationFrame(loop) : 0;
+    };
+    const start = () => {
+      if (!running) {
+        running = true;
+        raf = requestAnimationFrame(loop);
+      }
+    };
+    const stop = () => {
+      running = false;
+      if (raf) cancelAnimationFrame(raf);
+      raf = 0;
+      draw();
+    };
+    draw();
+    // Board SVG + rail stream in async — nudge a few redraws after mount.
+    const timers = [150, 500, 1200].map((t) => setTimeout(draw, t));
+    const target = document.querySelector('.teardown-sides');
+    let io: IntersectionObserver | null = null;
+    if (target && 'IntersectionObserver' in window) {
+      io = new IntersectionObserver(
+        (entries) => (entries[0].isIntersecting ? start() : stop()),
+        {rootMargin: '300px 0px'},
+      );
+      io.observe(target);
+    } else {
+      start();
+    }
+    window.addEventListener('resize', draw);
+    return () => {
+      io?.disconnect();
+      running = false;
+      if (raf) cancelAnimationFrame(raf);
+      timers.forEach(clearTimeout);
+      window.removeEventListener('resize', draw);
+    };
+  }, [activeBoardArt, groupedPins, linksMounted]);
   // <960px the pinned rail becomes a bottom bar (price + add-to-cart only):
   // phones previously had NO sticky buy control at all once the in-hero buy
   // module scrolled away.
@@ -1064,10 +1194,28 @@ export default function Product() {
                 )}
                 highlightRefs={hoveredRefs}
                 highlightUnion={hoveredUnion}
+                highlightGroups={hoveredGroups}
               />
             ) : undefined
           }
         >
+          {linksMounted
+            ? createPortal(
+                <svg
+                  ref={teardownLinksRef}
+                  className="teardown-links"
+                  aria-hidden="true"
+                >
+                  <path d="" />
+                  <path d="" />
+                  <circle r="0" />
+                  <circle r="0" />
+                  <circle r="0" />
+                  <circle r="0" />
+                </svg>,
+                document.body,
+              )
+            : null}
           {groupedPins.top.length > 0 && groupedPins.bottom.length > 0 ? (
             <div className="teardown-sides">
               <section className="teardown-side">
