@@ -23,6 +23,12 @@ interface NewsletterSignupProps {
   className?: string;
   /** Cloudflare Turnstile public site key — widget is skipped when null. */
   turnstileSiteKey?: string | null;
+  /**
+   * Signed-in customer's marketing state (null = guest). When `subscribed`,
+   * the form is replaced by a confirmation panel; otherwise the email field is
+   * prefilled with the account address so a signed-in visitor needn't retype it.
+   */
+  account?: {email: string; subscribed: boolean} | null;
 }
 
 type TurnstileRenderOpts = {
@@ -41,6 +47,7 @@ export function NewsletterSignup({
   variant = 'compact',
   className = '',
   turnstileSiteKey = null,
+  account = null,
 }: NewsletterSignupProps) {
   const fetcher = useFetcher<NewsletterActionData>();
   const formRef = useRef<HTMLFormElement>(null);
@@ -137,6 +144,7 @@ export function NewsletterSignup({
 
   const isWide = variant === 'wide';
   const isFooter = variant === 'footer';
+  const alreadySubscribed = account?.subscribed === true;
   const message = clientError ?? serverMessage;
   const messageTone = clientError
     ? 'error'
@@ -188,6 +196,30 @@ export function NewsletterSignup({
         </p>
       </div>
 
+      {alreadySubscribed ? (
+        <div
+          className={
+            isWide
+              ? 'flex flex-col gap-1'
+              : 'flex flex-col gap-1 md:items-end md:text-right'
+          }
+          role="status"
+        >
+          <p className="font-mono text-[12px] uppercase tracking-[0.14em] text-[var(--color-gold)]">
+            ✓ You&rsquo;re subscribed
+          </p>
+          <p className="text-[12px] text-[var(--color-text-muted)] leading-snug">
+            Build notes land in your inbox. Manage it anytime in your{' '}
+            <a
+              href="/account"
+              className="underline underline-offset-2 hover:text-[var(--color-text)]"
+            >
+              account
+            </a>
+            .
+          </p>
+        </div>
+      ) : (
       <fetcher.Form
         ref={formRef}
         method="post"
@@ -229,6 +261,7 @@ export function NewsletterSignup({
             autoComplete="email"
             inputMode="email"
             placeholder="you@domain.com"
+            defaultValue={account?.email ?? undefined}
             disabled={isSubmitting}
             onFocus={markInteracted}
             onChange={markInteracted}
@@ -308,6 +341,7 @@ export function NewsletterSignup({
           </p>
         ) : null}
       </fetcher.Form>
+      )}
     </section>
   );
 }
