@@ -5112,10 +5112,40 @@ button.reset {
   stroke-width: 1.5;
   opacity: 0.28;
   stroke-linecap: round;
+  /* Hidden until the entrance is done: pathLength=100 (set in JSX) lets us hide
+     via a full dash offset, then draw the line in left→right by easing it to 0. */
+  stroke-dasharray: 100;
+  stroke-dashoffset: 100;
 }
 .teardown-links circle {
   fill: var(--color-gold);
+  opacity: 0;
+}
+/* The lines are the last thing in: stroke-draw from the bubble (left) to the rail
+   (right), then light the end dots as the line reaches each side. */
+.teardown-links.is-drawn path {
+  stroke-dashoffset: 0;
+  transition: stroke-dashoffset 1.1s ease;
+}
+.teardown-links.is-drawn circle {
   opacity: 0.5;
+  transition: opacity 0.35s ease;
+}
+/* bubble-end dots (left) appear as the draw starts; rail-end dots (right) as it
+   arrives. draw() writes them in pairs: odd = bubble, even = rail. */
+.teardown-links.is-drawn circle:nth-of-type(odd) {
+  transition-delay: 0.08s;
+}
+.teardown-links.is-drawn circle:nth-of-type(even) {
+  transition-delay: 0.95s;
+}
+@media (prefers-reduced-motion: reduce) {
+  .teardown-links path {
+    transition: none;
+  }
+  .teardown-links.is-drawn path {
+    stroke-dashoffset: 0;
+  }
 }
 @media (max-width: 879px) {
   .teardown-links {

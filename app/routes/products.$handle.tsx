@@ -755,6 +755,31 @@ export default function Product() {
     const t = setTimeout(() => setTextIn(true), 7000);
     return () => clearTimeout(t);
   }, []);
+  // The connector lines are the LAST thing in: after the fly finishes (layers
+  // selectable), they stroke-draw from the bubbles to the rail. Trigger ~0.4s
+  // after the fly completes (boardFlying true→false).
+  const [linesReady, setLinesReady] = useState(false);
+  const flewRef = useRef(false);
+  useEffect(() => {
+    if (boardFlying) {
+      flewRef.current = true;
+      return;
+    }
+    if (flewRef.current && !linesReady) {
+      const t = setTimeout(() => setLinesReady(true), 400);
+      return () => clearTimeout(t);
+    }
+  }, [boardFlying, linesReady]);
+  useEffect(() => {
+    // Fallback: draw them in even if the board never flies (reduced motion / not
+    // centred). Reduced motion gets them immediately (no draw animation).
+    if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) {
+      setLinesReady(true);
+      return;
+    }
+    const t = setTimeout(() => setLinesReady(true), 6000);
+    return () => clearTimeout(t);
+  }, []);
   // Clear all hover highlight state. Called only when the pointer leaves the
   // whole list (not between rows) so the spotlight stays lit and just moves from
   // row to row — no off/on flicker crossing the dividers/gaps.
@@ -1290,11 +1315,14 @@ export default function Product() {
             ? createPortal(
                 <svg
                   ref={teardownLinksRef}
-                  className="teardown-links"
+                  className={`teardown-links${linesReady ? ' is-drawn' : ''}`}
                   aria-hidden="true"
                 >
-                  <path d="" />
-                  <path d="" />
+                  {/* pathLength normalises each line to 100 so the dash draw-in
+                      (stroke-dashoffset 100→0) is length-independent even as the
+                      path is recomputed on scroll. */}
+                  <path d="" pathLength={100} />
+                  <path d="" pathLength={100} />
                   <circle r="0" />
                   <circle r="0" />
                   <circle r="0" />
