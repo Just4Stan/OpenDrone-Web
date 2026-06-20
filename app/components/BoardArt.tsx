@@ -617,8 +617,10 @@ export function BoardArt({
     const svg = stack.querySelector('.board-sheet.is-active svg');
     if (!svg) return;
     const vb = manifest?.viewBox?.split(/\s+/).map(Number);
-    const clipId = (svg.querySelector('clipPath') as SVGClipPathElement | null)
-      ?.id;
+    const outlineClip = svg.querySelector(
+      'clipPath',
+    ) as SVGClipPathElement | null;
+    const clipId = outlineClip?.id;
     const g = document.createElementNS(NS, 'g');
     g.setAttribute('class', 'board-hilite');
 
@@ -693,7 +695,7 @@ export function BoardArt({
       dim.setAttribute('height', String(rh));
       dim.setAttribute('class', 'board-hilite-dim');
       dim.setAttribute('mask', 'url(#od-spot)');
-      if (clipId) dim.setAttribute('clip-path', `url(#${clipId})`);
+      if (clipId) dim.setAttribute("clip-path", `url(#${clipId})`);
       g.appendChild(dim);
       // Brighten inside each box a touch (clipped to the board outline).
       for (const h of boxes) {
@@ -704,7 +706,7 @@ export function BoardArt({
         bright.setAttribute('height', String(h.rect[3]));
         bright.setAttribute('rx', '0.5');
         bright.setAttribute('class', 'board-hilite-bright');
-        if (clipId) bright.setAttribute('clip-path', `url(#${clipId})`);
+        if (clipId) bright.setAttribute("clip-path", `url(#${clipId})`);
         g.appendChild(bright);
       }
     }

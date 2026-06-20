@@ -1415,9 +1415,6 @@ html.hero-incutec-hint .incutec-hint {
   opacity: 0;
   animation: wordmark-sheen 6s ease-in-out infinite;
   animation-delay: calc(var(--gold-index, 0) * 0.18s);
-  /* promote to a compositor layer so the opacity sweep is a GPU-only op, not a
-     per-frame SVG repaint */
-  will-change: opacity;
 }
 
 /* When the window is unfocused / tab hidden, freeze the always-running ambient
@@ -3754,8 +3751,6 @@ button.reset {
     gap: var(--sp-3);
     padding: 0.55rem max(0.8rem, env(safe-area-inset-left)) calc(0.55rem + env(safe-area-inset-bottom)) max(0.8rem, env(safe-area-inset-right));
     background: var(--pod-bg-strong);
-    backdrop-filter: blur(var(--pod-blur));
-    -webkit-backdrop-filter: blur(var(--pod-blur));
     border-top: 1px solid var(--pod-border);
     animation: buy-rail-rise 0.2s ease;
   }
@@ -3808,9 +3803,10 @@ button.reset {
     align-items: center;
     gap: var(--sp-3);
     padding: 0.4rem 0.4rem 0.4rem 0.9rem;
-    background: var(--pod-bg);
-    backdrop-filter: blur(var(--pod-blur));
-    -webkit-backdrop-filter: blur(var(--pod-blur));
+    /* Opaque tile, no live blur — this pinned bar sits on screen the whole time
+       you're scrolled into the PDP, so a per-frame backdrop blur was a constant
+       GPU drain (same trade the header pill already makes). */
+    background: var(--pod-bg-strong);
     border: 1px solid var(--pod-border);
     border-radius: var(--r-pill);
     box-shadow: var(--pod-shadow);
@@ -4089,9 +4085,9 @@ button.reset {
   align-items: center;
   gap: var(--sp-3);
   padding: 0.6rem var(--sp-5);
-  background: color-mix(in srgb, var(--color-bg) 92%, transparent);
-  backdrop-filter: saturate(140%) blur(10px);
-  -webkit-backdrop-filter: saturate(140%) blur(10px);
+  /* opaque tile instead of a live blur — see the rail/header notes: the blur was
+     re-evaluated every composited frame while this bar sits pinned on the PDP. */
+  background: var(--pod-bg-strong);
   border-top: 1px solid var(--color-border);
   transform: translateY(100%);
   transition: transform 0.25s ease;
@@ -4448,14 +4444,6 @@ button.reset {
   perspective: 1700px;
   transform-style: preserve-3d;
 }
-/* `--fly` is an entrance-only horizontal offset (0 at rest) prepended to every
-   sheet transform; the first-reveal animation sweeps it in from the left. It's a
-   registered property so it can be animated (plain custom props can't). */
-@property --fly {
-  syntax: '<length>';
-  inherits: false;
-  initial-value: 0px;
-}
 .board-sheet {
   position: absolute;
   inset: 0;
@@ -4466,7 +4454,7 @@ button.reset {
   cursor: pointer;
   transform-origin: 50% 50%;
   /* Fan the stack back-and-down by physical layer index (--depth). */
-  transform: translateX(var(--fly, 0px)) translateY(calc(var(--depth) * 7%))
+  transform: translateY(calc(var(--depth) * 7%))
     translateX(calc(var(--depth) * 2.4%)) translateZ(calc(var(--depth) * -70px))
     scale(calc(1 - var(--depth) * 0.035));
   z-index: calc(30 - var(--depth));
@@ -4480,8 +4468,7 @@ button.reset {
     drop-shadow(0 14px 22px rgba(0, 0, 0, 0.55));
 }
 .board-sheet.is-active {
-  transform: translateX(var(--fly, 0px)) translateY(-11%) translateZ(120px)
-    scale(1.05);
+  transform: translateY(-11%) translateZ(120px) scale(1.05);
   z-index: 50;
   filter: saturate(0.95) contrast(1.05)
     drop-shadow(0 0 26px color-mix(in srgb, var(--color-gold) 38%, transparent))
@@ -4492,14 +4479,14 @@ button.reset {
    .is-revealed class is added on first scroll-into-view and never removed). */
 @keyframes board-sheet-fly {
   from {
-    --fly: -68vw;
+    translate: -68vw 0;
     opacity: 0;
   }
   55% {
     opacity: 1;
   }
   to {
-    --fly: 0px;
+    translate: 0 0;
     opacity: 1;
   }
 }
@@ -4520,16 +4507,29 @@ button.reset {
    (they force a full re-rasterize of every large layer / the bar every frame).
    When the fly ends `.is-flying` is removed and the base filter transitions back
    in over 0.45s — the glow eases in once the board is static. */
-.board-art.is-flying .board-sheet,
+.board-art.is-flying .board-sheet {
+  /* Keep the cheap brightness/saturate dim (so the layers' brightness already
+     matches the resting state — no pop when the fly ends), but drop only the
+     expensive drop-shadow during the move. It fades back in via the 0.45s filter
+     transition once the classes are removed → seamless settle. */
+  filter: brightness(0.55) saturate(0.7);
+}
 .board-art.is-flying .board-sheet.is-active {
-  filter: none;
-  /* promote each flying layer to its own GPU texture so the sweep is a pure
-     compositor transform (no per-frame raster of the 3k-path SVG) */
-  will-change: transform;
+  filter: saturate(0.95) contrast(1.05);
 }
 .board-art.is-flying .board-folder-rail {
   -webkit-backdrop-filter: none;
   backdrop-filter: none;
+}
+/* The rail is positioned (via JS) against the board's settled left edge, which is
+   wrong while the sheets are off-screen mid-fly — so keep it hidden until the fly
+   finishes (place() re-runs on flyDone), then fade it in already in place. No
+   snap. */
+.board-art.is-armed .board-folder-rail {
+  opacity: 0;
+}
+.board-folder-rail {
+  transition: opacity 0.4s ease 0.1s;
 }
 /* Lock layer + part selection during the fly so interaction can't fight it. */
 .board-art.is-flying .board-sheet,
@@ -4581,10 +4581,12 @@ button.reset {
   /* Container is a notch rounder than its pills (--r-lg) so the nesting reads
      concentric. */
   border-radius: var(--r-pod);
-  background: color-mix(in srgb, var(--color-bg) 50%, transparent);
+  /* Opaque tile instead of a live `backdrop-filter: blur` — the blur was
+     re-evaluated on every composited frame (heavy idle GPU, same trap the header
+     comment documents). The strong token obscures the board behind it the same
+     way the blur did, at zero per-frame cost. */
+  background: var(--pod-bg-strong);
   border: 1px solid color-mix(in srgb, var(--color-gold) 13%, transparent);
-  -webkit-backdrop-filter: blur(6px);
-  backdrop-filter: blur(6px);
   outline: none;
 }
 /* Each board layer carries a name (F.Cu / In1) plus a function blurb ("Ground
