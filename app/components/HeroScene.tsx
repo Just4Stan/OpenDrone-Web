@@ -7,6 +7,7 @@ import * as THREE from 'three';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {MeshoptDecoder} from 'three/addons/libs/meshopt_decoder.module.js';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
+import {HERO_AIRFRAME_KEYS, DEFAULT_HERO_SIZE} from '~/lib/hero-airframes';
 
 // The hero GLBs use EXT_meshopt_compression (the Onshape assemblies are
 // decimated to a few MB/size this way). MeshoptDecoder decodes on the main
@@ -376,9 +377,10 @@ function DroneAssembly({
    *  thread for its first frames. Cached visits already see ms-scale loads
    *  so the delay there is invisible. */
   loadDelayMs?: number;
-  /** Which airframe to show — '5' (5-inch) or '3' (3-inch). Each maps to a
-   *  size-specific GLB trio (frame{N}/fc{N}/esc{N}). Changing it reloads. */
-  size: '5' | '3';
+  /** Which airframe to show — a HERO_AIRFRAMES key (e.g. '5' / '3'). Each maps
+   *  to a size-specific GLB trio (frame{key}/fc{key}/esc{key}). Changing it
+   *  reloads. */
+  size: string;
 }) {
   const {camera, gl, scene, size} = useThree();
   const tmpVec = useRef(new THREE.Vector3()).current;
@@ -418,12 +420,12 @@ function DroneAssembly({
   // the size row (+1 = moving toward a later item → incoming slides in from
   // the right; −1 = toward an earlier item → in from the left). Lets the
   // cross-slide follow the slider's direction instead of always-from-right.
-  const displayedSizeRef = useRef<'5' | '3'>(airframeSize);
+  const displayedSizeRef = useRef<string>(airframeSize);
   const slideDirRef = useRef(1);
   // Per-size processed models, kept alive across toggles so switching back is
   // instant (no re-fetch / re-decode / re-merge). The inactive size is built
   // lazily on idle AFTER the active one is shown, so it never slows first load.
-  const modelCacheRef = useRef<Map<'5' | '3', BuiltModel>>(new Map());
+  const modelCacheRef = useRef<Map<string, BuiltModel>>(new Map());
   // Cross-slide transition progress for the most recent swap (0→1). Starts at 1
   // (settled) so the very first model doesn't animate in. On a toggle the new
   // assembly slides in from the right while the previous one slides out to the
@@ -486,7 +488,7 @@ function DroneAssembly({
     // or built ahead of time for the inactive size. Returns null if cancelled
     // or on error (freeing any partial GPU resources first).
     async function buildModel(
-      sz: '5' | '3',
+      sz: string,
       opts: {
         onProg?: (p: number) => void;
         delayMs?: number;
@@ -665,9 +667,9 @@ function DroneAssembly({
       const isToggle = hasDisplayedRef.current && !!prev && prev !== model;
 
       if (isToggle) {
-        // Direction along the size row [5,3]: moving to a later index slides
-        // in from the right (+1), to an earlier one from the left (−1).
-        const order: Array<'5' | '3'> = ['5', '3'];
+        // Direction along the registry's size row: moving to a later index
+        // slides in from the right (+1), to an earlier one from the left (−1).
+        const order = HERO_AIRFRAME_KEYS;
         const d = order.indexOf(airframeSize) - order.indexOf(displayedSizeRef.current);
         slideDirRef.current = d < 0 ? -1 : 1;
       }
@@ -735,48 +737,52 @@ function DroneAssembly({
       await display(model);
       onReady?.();
 
-      // Build the OTHER size lazily, only once the thread is idle — scheduled
-      // AFTER the active model is shown so it never delays the initial load.
-      const other: '5' | '3' = airframeSize === '5' ? '3' : '5';
-      if (!modelCacheRef.current.has(other)) {
-        const preload = () => {
-          if (!aliveRef.current || modelCacheRef.current.has(other)) return;
-          void buildModel(other, {
-            shouldCancel: () => !aliveRef.current,
-            // Every build stage waits for an idle slot — the background build
-            // used to chain setTimeout(0) and its 50–200ms merge stages landed
-            // exactly during the user's first scroll-through.
-            idleYields: true,
-          }).then(async (m) => {
-            if (!m) return;
-            if (!aliveRef.current) { disposeBuiltModel(m); return; }
-            // Warm the other size's shaders offscreen too, so the eventual
-            // 3↔5 toggle (and the scroll right after it) is smooth instead of
-            // stalling on a first-render compile. Parent it into the (idle)
-            // slide-out wrapper while the programs link. compileAsync yields
-            // to the frame loop, so park the wrapper far outside the frustum
-            // for the duration — an on-screen parent would let interleaved
-            // frames draw a ghost second drone mid-warm.
-            const holder = outWrapperRef.current;
-            if (holder) {
-              const prevX = holder.position.x;
-              holder.position.x = 1e6;
-              holder.add(m.frame, m.esc, m.fc);
-              try {
-                await gl.compileAsync(scene, camera);
-              } catch { /* best-effort */ }
-              for (const g of [m.frame, m.esc, m.fc]) holder.remove(g);
-              // A size toggle can claim the wrapper for a real slide-out while
-              // we awaited; only restore the parking offset if it didn't.
-              if (!outgoingRef.current) holder.position.x = prevX;
-            }
-            if (!aliveRef.current) { disposeBuiltModel(m); return; }
-            modelCacheRef.current.set(other, m);
-          });
-        };
+      // Build the OTHER size(s) lazily, only once the thread is idle —
+      // scheduled AFTER the active model is shown so it never delays the
+      // initial load. With >2 registry sizes each remaining one is built in
+      // turn; the chained idle callbacks keep them off the first scroll.
+      const others = HERO_AIRFRAME_KEYS.filter((k) => k !== airframeSize);
+      const preloadSize = (sz: string) => {
+        if (!aliveRef.current || modelCacheRef.current.has(sz)) return;
+        void buildModel(sz, {
+          shouldCancel: () => !aliveRef.current,
+          // Every build stage waits for an idle slot — the background build
+          // used to chain setTimeout(0) and its 50–200ms merge stages landed
+          // exactly during the user's first scroll-through.
+          idleYields: true,
+        }).then(async (m) => {
+          if (!m) return;
+          if (!aliveRef.current) { disposeBuiltModel(m); return; }
+          // Warm the size's shaders offscreen too, so the eventual toggle (and
+          // the scroll right after it) is smooth instead of stalling on a
+          // first-render compile. Parent it into the (idle) slide-out wrapper
+          // while the programs link. compileAsync yields to the frame loop, so
+          // park the wrapper far outside the frustum for the duration — an
+          // on-screen parent would let interleaved frames draw a ghost second
+          // drone mid-warm.
+          const holder = outWrapperRef.current;
+          if (holder) {
+            const prevX = holder.position.x;
+            holder.position.x = 1e6;
+            holder.add(m.frame, m.esc, m.fc);
+            try {
+              await gl.compileAsync(scene, camera);
+            } catch { /* best-effort */ }
+            for (const g of [m.frame, m.esc, m.fc]) holder.remove(g);
+            // A size toggle can claim the wrapper for a real slide-out while
+            // we awaited; only restore the parking offset if it didn't.
+            if (!outgoingRef.current) holder.position.x = prevX;
+          }
+          if (!aliveRef.current) { disposeBuiltModel(m); return; }
+          modelCacheRef.current.set(sz, m);
+        });
+      };
+      for (const sz of others) {
+        if (modelCacheRef.current.has(sz)) continue;
+        const schedule = () => preloadSize(sz);
         const ric = (window as any).requestIdleCallback;
-        if (typeof ric === 'function') ric(preload, {timeout: 10000});
-        else setTimeout(preload, 3000);
+        if (typeof ric === 'function') ric(schedule, {timeout: 10000});
+        else setTimeout(schedule, 3000);
       }
     })();
 
@@ -1443,7 +1449,7 @@ export function HeroScene({
   onProgress,
   labelRefs,
   loadDelayMs,
-  size = '5',
+  size = DEFAULT_HERO_SIZE,
   scrubRef,
   spotlightRef,
 }: {
@@ -1451,7 +1457,7 @@ export function HeroScene({
   onProgress?: (progress: number) => void;
   labelRefs?: LabelRefs;
   loadDelayMs?: number;
-  size?: '5' | '3';
+  size?: string;
   scrubRef?: React.RefObject<number | null>;
   spotlightRef?: React.RefObject<'fc' | 'esc' | 'frame' | null>;
 } = {}) {
