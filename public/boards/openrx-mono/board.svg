@@ -4,6 +4,9 @@
       <path d="M 9.8798 0.1255 L 9.9363 0.1336 L 9.9912 0.1497 L 10.0431 0.1735 L 10.0912 0.2044 L 10.1344 0.2418 L 10.1718 0.2850 L 10.2027 0.3331 L 10.2265 0.3850 L 10.2426 0.4399 L 10.2507 0.4964 L 10.2512 0.5250 L 10.2512 16.0250 L 10.2507 16.0536 L 10.2426 16.1101 L 10.2265 16.1650 L 10.2027 16.2169 L 10.1718 16.2650 L 10.1344 16.3082 L 10.0912 16.3456 L 10.0431 16.3765 L 9.9912 16.4003 L 9.9363 16.4164 L 9.8798 16.4245 L 9.8512 16.4250 L 0.6512 16.4250 L 0.6226 16.4245 L 0.5661 16.4164 L 0.5112 16.4003 L 0.4593 16.3765 L 0.4112 16.3456 L 0.3680 16.3082 L 0.3306 16.2650 L 0.2997 16.2169 L 0.2759 16.1650 L 0.2598 16.1101 L 0.2517 16.0536 L 0.2512 16.0250 L 0.2512 0.5250 L 0.2517 0.4964 L 0.2598 0.4399 L 0.2759 0.3850 L 0.2997 0.3331 L 0.3306 0.2850 L 0.3680 0.2418 L 0.4112 0.2044 L 0.4593 0.1735 L 0.5112 0.1497 L 0.5661 0.1336 L 0.6226 0.1255 L 0.6512 0.1250 L 9.8512 0.1250 Z" clip-rule="evenodd"/>
     </clipPath>
   </defs>
+  <g id="layer-back" class="board-layer board-layer-back">
+    <image href="/boards/openrx-mono/back.png" x="-2.9807" y="-0.0218" width="16.4533" height="16.4468" preserveAspectRatio="none" image-rendering="optimizeQuality"/>
+  </g>
   <g id="layer-edge-cuts" class="board-layer board-layer-edge-cuts">
 <g style="fill:#000000; fill-opacity:1.0000;stroke:#000000; stroke-opacity:1.0000;
 stroke-linecap:round; stroke-linejoin:round;"
@@ -28794,5 +28797,8 @@ Z" />
 <g style="fill:#FFFFFF; fill-opacity:1.0000; stroke:none;">
 <circle cx="4.4812" cy="17.1250" r="0.2000" /> 
 </g>
+  </g>
+  <g id="layer-front" class="board-layer board-layer-front">
+    <image href="/boards/openrx-mono/front.png" x="-2.9702" y="-0.0218" width="16.4533" height="16.4468" preserveAspectRatio="none" image-rendering="optimizeQuality"/>
   </g>
 </svg>

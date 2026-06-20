@@ -4,6 +4,9 @@
       <path d="M 10.2307 0.0755 L 10.2891 0.0832 L 10.3460 0.0984 L 10.4004 0.1210 L 10.4515 0.1504 L 10.4982 0.1863 L 10.5399 0.2280 L 10.5758 0.2747 L 10.6052 0.3258 L 10.6278 0.3802 L 10.6430 0.4371 L 10.6507 0.4955 L 10.6512 0.5250 L 10.6512 10.1250 L 10.6507 10.1545 L 10.6430 10.2129 L 10.6278 10.2698 L 10.6052 10.3242 L 10.5758 10.3753 L 10.5399 10.4220 L 10.4982 10.4637 L 10.4515 10.4996 L 10.4004 10.5290 L 10.3460 10.5516 L 10.2891 10.5668 L 10.2307 10.5745 L 10.2012 10.5750 L 1.1012 10.5750 L 1.0717 10.5745 L 1.0133 10.5668 L 0.9564 10.5516 L 0.9020 10.5290 L 0.8509 10.4996 L 0.8042 10.4637 L 0.7625 10.4220 L 0.7266 10.3753 L 0.6972 10.3242 L 0.6746 10.2698 L 0.6594 10.2129 L 0.6517 10.1545 L 0.6512 10.1250 L 0.6512 0.5250 L 0.6517 0.4955 L 0.6594 0.4371 L 0.6746 0.3802 L 0.6972 0.3258 L 0.7266 0.2747 L 0.7625 0.2280 L 0.8042 0.1863 L 0.8509 0.1504 L 0.9020 0.1210 L 0.9564 0.0984 L 1.0133 0.0832 L 1.0717 0.0755 L 1.1012 0.0750 L 10.2012 0.0750 Z" clip-rule="evenodd"/>
     </clipPath>
   </defs>
+  <g id="layer-back" class="board-layer board-layer-back">
+    <image href="/boards/openrx-lite-ufl/back.png" x="0.4035" y="0.075" width="10.4953" height="10.5" preserveAspectRatio="none" image-rendering="optimizeQuality"/>
+  </g>
   <g id="layer-edge-cuts" class="board-layer board-layer-edge-cuts">
 <g style="fill:#000000; fill-opacity:1.0000;stroke:#000000; stroke-opacity:1.0000;
 stroke-linecap:round; stroke-linejoin:round;"
@@ -16716,5 +16719,8 @@ Z" />
 <g style="fill:#FFFFFF; fill-opacity:1.0000; stroke:none;">
 <circle cx="2.3352" cy="11.2750" r="0.2000" /> 
 </g>
+  </g>
+  <g id="layer-front" class="board-layer board-layer-front">
+    <image href="/boards/openrx-lite-ufl/front.png" x="0.4035" y="0.075" width="10.4953" height="10.5" preserveAspectRatio="none" image-rendering="optimizeQuality"/>
   </g>
 </svg>
