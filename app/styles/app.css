@@ -874,6 +874,11 @@ html {
 .hero-buy-btn {
   pointer-events: auto;
 }
+/* Wraps the swappable stack so the exiting (absolute) stack anchors to the same
+   bottom baseline as the incoming one during the size cross-slide. */
+.hero-buy-swap {
+  position: relative;
+}
 .hero-buy-stack {
   display: flex;
   flex-direction: column-reverse;
@@ -881,6 +886,10 @@ html {
      and leave a phantom band above the button. Inter-card spacing is instead
      baked into each card's reveal (inline margin scaled by progress). */
   gap: 0;
+  /* Cross-slide zoom dip scales from the bottom (the bubble/Shop anchor) so the
+     stack's base stays put while it pulls back mid-swap. */
+  transform-origin: bottom center;
+  will-change: transform, opacity;
 }
 
 /* A single revealing product card. max-height / opacity / transform are driven
@@ -4669,6 +4678,12 @@ button.reset {
    Size scales with the board across aspect ratios. */
 .board-folder-rail {
   width: clamp(150px, 13vw, 200px);
+  /* place() repositions the rail (inline transform). At flyDone it switches from
+     the during-fly stack estimate to the exact active-sheet edge — a small jump
+     that read as a left "twitch" right as the glow faded in. Transition the
+     transform so any reposition glides instead of snapping. (The fly-in animates
+     the separate `translate` property, so it's untouched.) */
+  transition: transform 0.35s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 /* Schematic sheets are full words (MCU / BLACKBOX / CONNECTORS), so size the
    rail to its longest label — capped — instead of clipping inside a fixed
