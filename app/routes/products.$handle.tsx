@@ -738,23 +738,45 @@ export default function Product() {
   // a fallback so it always reveals even if the board never flies (reduced motion
   // / never centred).
   const [textIn, setTextIn] = useState(false);
-  // Slide the text in ~0.6s after the board fly STARTS — right as the last
-  // layers are landing, timed like a "9th layer" — rather than waiting for the
-  // whole fly to finish.
+  // Slide the teardown copy in from the left once the section is actually on
+  // screen — a beat after it centres (the board's layers are flying in), so it
+  // reads like a final layer. Driven by the section's OWN visibility (not a blind
+  // timer, which fired before the user scrolled down → the slide played offscreen
+  // and was never seen).
+  useEffect(() => {
+    if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) {
+      setTextIn(true);
+      return;
+    }
+    const el = document.querySelector('.teardown-sides');
+    if (!el) {
+      setTextIn(true); // no teardown list to gate
+      return;
+    }
+    let timer = 0;
+    const io = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((e) => e.isIntersecting)) {
+          io.disconnect();
+          timer = window.setTimeout(() => setTextIn(true), 600);
+        }
+      },
+      {rootMargin: '-40% 0px -40% 0px'},
+    );
+    io.observe(el);
+    return () => {
+      io.disconnect();
+      if (timer) clearTimeout(timer);
+    };
+  }, []);
+  // Co-trigger: the board's own fly starting is a sure sign the teardown is on
+  // screen, so slide the copy in a beat later too (belt-and-suspenders with the
+  // observer above — textIn latches, so whichever fires first wins).
   useEffect(() => {
     if (!boardFlying) return;
     const t = setTimeout(() => setTextIn(true), 600);
     return () => clearTimeout(t);
   }, [boardFlying]);
-  useEffect(() => {
-    // Reduced motion (or the board never flies): reveal the text immediately.
-    if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) {
-      setTextIn(true);
-      return;
-    }
-    const t = setTimeout(() => setTextIn(true), 7000);
-    return () => clearTimeout(t);
-  }, []);
   // The connector lines are the LAST thing in: after the fly finishes (layers
   // selectable), they stroke-draw from the bubbles to the rail. Trigger ~0.4s
   // after the fly completes (boardFlying true→false).
