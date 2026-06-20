@@ -1756,8 +1756,8 @@ html.anim-paused .board-sheet.is-active {
      overshoot bounce. Gated on `hero-header-in`, which the homepage sets ~2s
      after the splash settles (or on first scroll). */
   transition:
-    transform 0.7s cubic-bezier(0.16, 1, 0.3, 1),
-    opacity 0.4s ease-out 0.1s;
+    transform 0.3s cubic-bezier(0.16, 1, 0.3, 1),
+    opacity 0.3s ease-out 0.1s;
 }
 
 html.hero-header-in .homepage-layout .site-header {
@@ -4566,9 +4566,31 @@ button.reset {
 .board-art.is-flying .board-folder-rail {
   pointer-events: none;
 }
+/* The layer rail flies in too — a small slide + fade from the left, gated by the
+   same entrance trigger as the sheets, timed early (during the layer fly) so it's
+   present as the copy arrives. Animates the `translate` PROPERTY, leaving the
+   inline `transform` that place() sets for gutter positioning untouched. */
+@keyframes board-rail-fly {
+  from {
+    opacity: 0;
+    translate: -28px 0;
+  }
+  to {
+    opacity: 1;
+    translate: 0 0;
+  }
+}
+.board-art.is-armed .board-folder-rail {
+  animation: board-rail-fly 0.7s cubic-bezier(0.16, 0.84, 0.3, 1) 0.45s both;
+  animation-play-state: paused;
+}
+.board-art.is-flying .board-folder-rail {
+  animation-play-state: running;
+}
 @media (prefers-reduced-motion: reduce) {
   .board-art.is-armed .board-sheet,
-  .board-art.is-armed .board-sheet:not(.is-active) {
+  .board-art.is-armed .board-sheet:not(.is-active),
+  .board-art.is-armed .board-folder-rail {
     animation: none;
   }
 }

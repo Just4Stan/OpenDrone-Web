@@ -819,9 +819,10 @@ export function BoardArt({
     >
       {sheets.length ? (
         <div className="board-folder-body" ref={bodyRef}>
-          {/* Roving keyboard-nav group: arrows/wheel step the layer stack.
-              The interactive controls (buttons) live inside; the group itself
-              is focusable to capture arrow/wheel nav. */}
+          {/* Roving keyboard-nav group: arrow keys step the layer stack. The
+              interactive controls (buttons) live inside; the group itself is
+              focusable to capture arrow nav. Wheel is intentionally NOT captured
+              — scrolling over the panel scrolls the page like anywhere else. */}
           {/* eslint-disable jsx-a11y/no-noninteractive-element-interactions, jsx-a11y/no-noninteractive-tabindex */}
           <div
             className="board-folder-rail"
@@ -837,10 +838,6 @@ export function BoardArt({
                 e.preventDefault();
                 step(-1);
               }
-            }}
-            onWheel={(e) => {
-              if (Math.abs(e.deltaY) < 2) return;
-              step(e.deltaY > 0 ? 1 : -1);
             }}
           >
             <span className="board-folder-rail-head">
