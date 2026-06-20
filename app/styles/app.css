@@ -4544,17 +4544,36 @@ button.reset {
     board-sheet-grey 0.5s ease calc(var(--depth) * 0.11s + 1s) forwards;
   animation-play-state: paused;
 }
-/* Unpause ALL sheets when flying. The :not(.is-active) selector matches the
-   specificity (0,4,0) of the armed grey rule above so its `paused` doesn't win
-   for non-active layers (that bug left only the active layer flying in). */
+/* The active layer's gold glow eases in with a long, gentle fade right after it
+   lands — instead of snapping on the instant the fly ends. Landing-driven timing,
+   same idea as the greys, so the whole stack settles as one smooth motion. */
+.board-art.is-armed .board-sheet.is-active {
+  animation: board-sheet-fly 1.2s cubic-bezier(0.16, 0.84, 0.3, 1) 0s both,
+    board-sheet-glow 0.9s ease 1.1s forwards;
+  animation-play-state: paused;
+}
+/* Unpause ALL sheets when flying. The :not(.is-active) / .is-active selectors
+   match the (0,4,0) specificity of the armed rules above so their `paused`
+   doesn't win (that bug left only the active layer flying in). */
 .board-art.is-flying .board-sheet,
-.board-art.is-flying .board-sheet:not(.is-active) {
+.board-art.is-flying .board-sheet:not(.is-active),
+.board-art.is-flying .board-sheet.is-active {
   animation-play-state: running;
 }
 @keyframes board-sheet-grey {
   to {
     filter: brightness(0.55) saturate(0.7)
       drop-shadow(0 14px 22px rgba(0, 0, 0, 0.55));
+  }
+}
+@keyframes board-sheet-glow {
+  from {
+    filter: none;
+  }
+  to {
+    filter: saturate(0.95) contrast(1.05)
+      drop-shadow(0 0 26px color-mix(in srgb, var(--color-gold) 38%, transparent))
+      drop-shadow(0 26px 34px rgba(0, 0, 0, 0.55));
   }
 }
 /* During the fly, every layer starts at full brightness with no shadow — each
@@ -4594,6 +4613,7 @@ button.reset {
 @media (prefers-reduced-motion: reduce) {
   .board-art.is-armed .board-sheet,
   .board-art.is-armed .board-sheet:not(.is-active),
+  .board-art.is-armed .board-sheet.is-active,
   .board-art.is-armed .board-folder-rail {
     animation: none;
   }

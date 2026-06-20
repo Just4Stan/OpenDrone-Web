@@ -609,7 +609,17 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
           part: 'Analog OSD',
           refs: ['U12', 'U11', 'U10'],
         },
-        {ref: '⑤', part: 'Switchable VTX / 5 V buck', refs: ['U3', 'U4']},
+        {
+          ref: '⑤',
+          part: 'Switchable VTX / 5 V buck',
+          refs: ['U3', 'U4'],
+          // One enlarged box per buck region: the IC + its inductor + in/out caps,
+          // so it reads as "the whole buck", not just the chip.
+          boxGroups: [
+            ['U3', 'L2', 'C22', 'C24'],
+            ['U4', 'L3', 'C23', 'C25'],
+          ],
+        },
         {ref: '⑥', part: 'Gyro 1.8 V LDO', refs: ['U6']},
         {ref: '⑥b', part: '3.3 V logic LDO', refs: ['U7']},
         {ref: '⑦', part: 'USB-C + power mux', refs: ['USB1', 'U5']},
@@ -683,7 +693,16 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
             part: 'Analog OSD',
             refs: ['U2', 'U1', 'U18'],
           },
-          {ref: '⑤', part: 'Switchable VTX / 5 V buck', refs: ['U3', 'U4']},
+          {
+            ref: '⑤',
+            part: 'Switchable VTX / 5 V buck',
+            refs: ['U3', 'U4'],
+            // One enlarged box per buck region: IC + inductor + in/out caps.
+            boxGroups: [
+              ['U3', 'L2', 'C24', 'C26'],
+              ['U4', 'L3', 'C25', 'C29'],
+            ],
+          },
           {ref: '⑥', part: 'Gyro 1.8 V LDO', refs: ['U6']},
           {ref: '⑥b', part: '3.3 V logic LDO', refs: ['U7']},
           {ref: '⑦', part: 'USB-C + power mux', refs: ['USB1', 'U5']},
