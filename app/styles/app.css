@@ -1835,47 +1835,49 @@ html.hero-header-in .homepage-layout .site-header {
 .home-mobile-stage {
   position: relative;
   align-self: stretch;
-  height: clamp(220px, 62vw, 320px);
+  height: clamp(210px, 56vw, 300px);
   margin-bottom: 0.25rem;
   display: grid;
   place-items: center;
 }
 .home-mobile-glow {
   position: absolute;
-  inset: 0;
+  inset: -8% -4%;
   background: radial-gradient(
-    circle at 50% 46%,
-    color-mix(in srgb, var(--color-gold) 30%, transparent) 0%,
-    color-mix(in srgb, var(--color-gold) 9%, transparent) 34%,
-    transparent 66%
+    circle at 50% 50%,
+    color-mix(in srgb, var(--color-gold) 34%, transparent) 0%,
+    color-mix(in srgb, var(--color-gold) 11%, transparent) 38%,
+    transparent 70%
   );
   filter: blur(2px);
   pointer-events: none;
 }
+/* Boards fill the stage: bigger renders with tight, balanced offsets so the
+   pair reads as one centred cluster (not two corners), with the glow under it. */
 .home-mobile-board {
   position: absolute;
-  width: clamp(150px, 46vw, 230px);
+  width: clamp(178px, 54vw, 264px);
   height: auto;
   border-radius: var(--r-md);
   filter: drop-shadow(0 18px 30px rgba(0, 0, 0, 0.45));
   will-change: transform;
 }
 .home-mobile-board--rear {
-  transform: translate(22%, 16%) rotate(7deg) scale(0.86);
-  opacity: 0.78;
+  transform: translate(15%, 9%) rotate(8deg) scale(0.85);
+  opacity: 0.8;
   animation: home-board-float-rear 7s ease-in-out infinite;
 }
 .home-mobile-board--front {
-  transform: translate(-20%, -12%) rotate(-5deg);
+  transform: translate(-13%, -4%) rotate(-6deg);
   animation: home-board-float-front 6s ease-in-out infinite;
 }
 @keyframes home-board-float-front {
-  0%, 100% { transform: translate(-20%, -12%) rotate(-5deg); }
-  50% { transform: translate(-20%, -16%) rotate(-5deg); }
+  0%, 100% { transform: translate(-13%, -4%) rotate(-6deg); }
+  50% { transform: translate(-13%, -7%) rotate(-6deg); }
 }
 @keyframes home-board-float-rear {
-  0%, 100% { transform: translate(22%, 16%) rotate(7deg) scale(0.86); }
-  50% { transform: translate(22%, 20%) rotate(7deg) scale(0.86); }
+  0%, 100% { transform: translate(15%, 9%) rotate(8deg) scale(0.85); }
+  50% { transform: translate(15%, 12%) rotate(8deg) scale(0.85); }
 }
 @media (prefers-reduced-motion: reduce) {
   .home-mobile-board--front,
@@ -1899,7 +1901,7 @@ html.hero-header-in .homepage-layout .site-header {
   font-size: 1rem;
   line-height: 1.55;
   color: var(--color-text-muted);
-  max-width: 38ch;
+  max-width: 44ch;
 }
 
 /* Dynamic-Island action pill: a floating pod that holds the gold Shop button
@@ -1910,6 +1912,21 @@ html.hero-header-in .homepage-layout .site-header {
   gap: 0.6rem;
   margin-top: 0.35rem;
   padding: 0.4rem;
+}
+/* In dark mode --pod-bg sits a hair off the near-black page, so the pill read
+   as two loose buttons rather than a capsule. Lift the surface + border so the
+   island is unmistakably a discrete floating pod (light mode already reads). */
+html:not(.light) .home-mobile-cta.pod {
+  background: var(--color-bg-elevated);
+  border-color: var(--color-border-strong);
+}
+/* The GitHub mark is the secondary action — keep it a clear 44px touch target
+   but visually quieter than the gold Shop CTA. */
+.home-mobile-cta .hero-action-secondary {
+  min-width: 44px;
+  min-height: 44px;
+  width: 48px;
+  height: 48px;
 }
 
 .home-mobile-featured {
@@ -11702,5 +11719,77 @@ button.reset {
   .catalog-main .products-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 0.75rem;
+  }
+}
+
+/* ---- Council pass 1: kill remaining voids + make touch explorers legible --- */
+@media (max-width: 1023px) {
+  /* Schematic stage was a fixed 72vh box; a sparse sheet left a tall black
+     void with the "Open schematic" link stranded far below. Shrink it. */
+  .schematic-page {
+    height: min(52vh, 440px);
+  }
+
+  /* Touch has no hover, so tappable component rows looked like a static spec
+     table. Give them a persistent resting cue (faint left bar), a full-gold
+     bar + tint when active (tapped), and a small locate glyph — so the rows
+     clearly read as "tap me to find this on the board". */
+  .teardown-pin-hoverable {
+    position: relative;
+  }
+  .teardown-pin-hoverable::before {
+    transform: scaleY(0.5);
+    opacity: 0.35;
+  }
+  .teardown-pin-hoverable.is-active::before {
+    transform: scaleY(1);
+    opacity: 1;
+  }
+  .teardown-pin-hoverable.is-active {
+    background: color-mix(in srgb, var(--color-gold) 14%, transparent);
+  }
+
+  /* Discoverability hint under the teardown title (mobile only — desktop has
+     hover to teach the interaction). */
+  .teardown-hint {
+    display: block;
+    margin: 0 0 0.85rem;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    letter-spacing: 0.06em;
+    line-height: 1.5;
+    color: var(--color-text-muted);
+  }
+  .teardown-hint::before {
+    content: '';
+    display: inline-block;
+    width: 7px;
+    height: 7px;
+    margin-right: 0.5em;
+    border-radius: 50%;
+    background: var(--color-gold);
+    vertical-align: middle;
+  }
+
+  /* The deep-dive links ("Inspect interactively", "Open schematic") were 10px
+     and --color-text-dim — nearly invisible on dark. Make them read as the CTA
+     they are: a bordered ghost chip. */
+  .board-art-inspect {
+    color: var(--color-text);
+    border: 1px solid var(--color-border-strong);
+    border-radius: var(--r-pill);
+    padding: 0.55rem 1rem;
+    letter-spacing: 0.14em;
+  }
+  .board-art-inspect:hover {
+    border-color: var(--color-gold);
+    color: var(--color-gold);
+  }
+}
+/* The hint is mobile-only; the desktop layout teaches via hover. (Scoped to the
+   desktop range so it can't override the mobile display:block above.) */
+@media (min-width: 1024px) {
+  .teardown-hint {
+    display: none;
   }
 }
