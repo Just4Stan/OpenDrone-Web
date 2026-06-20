@@ -586,7 +586,8 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
           refs: ['U12', 'U11', 'U10'],
         },
         {ref: '⑤', part: 'Switchable VTX / 5 V buck', refs: ['U3', 'U4']},
-        {ref: '⑥', part: 'Gyro 1.8 V + 3.3 V logic LDOs', refs: ['U6', 'U7']},
+        {ref: '⑥', part: 'Gyro 1.8 V LDO', refs: ['U6']},
+        {ref: '⑥b', part: '3.3 V logic LDO', refs: ['U7']},
         {ref: '⑦', part: 'USB-C + power mux', refs: ['USB1', 'U5']},
         {
           ref: '⑧',
@@ -596,8 +597,9 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
         {
           ref: '⑨',
           part: 'I/O solder pads',
-          refs: ['J9', 'J13', 'J43', 'J44', 'J48', 'J49', 'J52', 'J54', 'J15', 'J18', 'J10', 'J11', 'J23', 'J24', 'J2', 'J32', 'J33', 'J34', 'J21'],
+          refs: ['J35', 'J37', 'J39', 'J41', 'J9', 'J13', 'J43', 'J44', 'J48', 'J49', 'J52', 'J54', 'J15', 'J18', 'J10', 'J11', 'J23', 'J24', 'J2', 'J32', 'J33', 'J34', 'J21'],
           chips: [
+            {label: 'DSHOT', refs: ['J35', 'J37', 'J39', 'J41']},
             {label: 'UART', refs: ['J9', 'J13', 'J43', 'J44', 'J48', 'J49', 'J52', 'J54']},
             {label: 'I2C', refs: ['J15', 'J18']},
             {label: 'LED', refs: ['J10', 'J11', 'J23', 'J24']},
@@ -660,7 +662,8 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
             refs: ['U2', 'U1', 'U18'],
           },
           {ref: '⑤', part: 'Switchable VTX / 5 V buck', refs: ['U3', 'U4']},
-          {ref: '⑥', part: 'Gyro 1.8 V + 3.3 V logic LDOs', refs: ['U6', 'U7']},
+          {ref: '⑥', part: 'Gyro 1.8 V LDO', refs: ['U6']},
+          {ref: '⑥b', part: '3.3 V logic LDO', refs: ['U7']},
           {ref: '⑦', part: 'USB-C + power mux', refs: ['USB1', 'U5']},
           {
             ref: '⑧',
@@ -670,8 +673,9 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
           {
             ref: '⑨',
             part: 'I/O solder pads',
-            refs: ['J8', 'J12', 'J43', 'J44', 'J48', 'J49', 'J15', 'J18', 'J10', 'J24', 'J32', 'J33', 'J34', 'J21'],
+            refs: ['J35', 'J37', 'J39', 'J41', 'J8', 'J12', 'J43', 'J44', 'J48', 'J49', 'J15', 'J18', 'J10', 'J24', 'J32', 'J33', 'J34', 'J21'],
             chips: [
+              {label: 'DSHOT', refs: ['J35', 'J37', 'J39', 'J41']},
               {label: 'UART', refs: ['J8', 'J12', 'J43', 'J44', 'J48', 'J49']},
               {label: 'I2C', refs: ['J15', 'J18']},
               {label: 'LED', refs: ['J10', 'J24']},
