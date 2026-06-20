@@ -1262,10 +1262,13 @@ export default function Product() {
           }
           media={
             !frameViewer && activeBoardArt ? (
-              // No key: keep the component mounted across tier switches so it
-              // swaps between warmed boards instantly (no remount, no refetch,
-              // no blank frame). `srcs` lets it prefetch every tier up front.
+              // Key by product HANDLE (not src): stays mounted across TIER swaps
+              // so it swaps between warmed boards instantly (no remount/refetch),
+              // but REMOUNTS on a product switch (FC↔ESC↔RX) so the one-shot
+              // fly-in re-arms and plays for the new board. `srcs` prefetches the
+              // tiers up front.
               <BoardArt
+                key={product.handle}
                 src={activeBoardArt.src}
                 srcs={boardArtSrcs}
                 inspectUrl={activeBoardArt.inspectUrl}
