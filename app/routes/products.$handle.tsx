@@ -738,12 +738,12 @@ export default function Product() {
   // a fallback so it always reveals even if the board never flies (reduced motion
   // / never centred).
   const [textIn, setTextIn] = useState(false);
-  // Slide the text in ~0.9s after the board fly STARTS — i.e. right as the last
+  // Slide the text in ~0.6s after the board fly STARTS — right as the last
   // layers are landing, timed like a "9th layer" — rather than waiting for the
   // whole fly to finish.
   useEffect(() => {
     if (!boardFlying) return;
-    const t = setTimeout(() => setTextIn(true), 900);
+    const t = setTimeout(() => setTextIn(true), 600);
     return () => clearTimeout(t);
   }, [boardFlying]);
   useEffect(() => {
