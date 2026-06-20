@@ -40,8 +40,22 @@ type DiscordEnv = {
 // etc.). Extracted here (not in scrubber.ts) so discord.ts has no
 // cross-module dependency.
 export function firstNameOnly(full: string): string {
+  // Strip bidi overrides (U+202A-202E, U+2066-2069) + C0/C1 control
+  // chars from the first name before it is written into the public
+  // Discord thread (`**<name>:**`). Without this a Trojan-Source
+  // RLO/LRO in a Shopify account name could reverse line order in
+  // staff's Discord view — the class the message/filename sanitisers
+  // already defend against.
   const token = full.trim().split(/\s+/)[0] ?? '';
-  return token.slice(0, 40) || 'Customer';
+  let cleaned = '';
+  for (const ch of token) {
+    const c = ch.codePointAt(0) ?? 0;
+    const bidi = (c >= 0x202a && c <= 0x202e) || (c >= 0x2066 && c <= 0x2069);
+    const ctrl =
+      c <= 0x08 || c === 0x0b || (c >= 0x0c && c <= 0x1f) || (c >= 0x7f && c <= 0x9f);
+    if (!bidi && !ctrl) cleaned += ch;
+  }
+  return cleaned.slice(0, 40) || 'Customer';
 }
 
 export type DiscordMessage = {

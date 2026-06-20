@@ -2,6 +2,7 @@ import {data} from 'react-router';
 import type {Route} from './+types/api.support.cleanup';
 import {deleteThread, fetchAllThreadMessages} from '~/lib/support/discord';
 import {scrubForPublic} from '~/lib/support/scrubber';
+import {constantTimeEqual} from '~/lib/support/session';
 import {
   archiveTicket,
   getFeedback,
@@ -50,7 +51,10 @@ export async function action({request, context}: Route.ActionArgs) {
     );
   }
   const auth = request.headers.get('authorization') ?? '';
-  if (auth !== `Bearer ${secret}`) {
+  // Constant-time compare — this bearer gate is the only thing standing
+  // between the public internet and destructive thread+index deletion,
+  // so don't leak the secret a byte at a time via `!==` short-circuit.
+  if (!constantTimeEqual(auth, `Bearer ${secret}`)) {
     return data<CleanupResult>(
       {ok: false, message: 'Unauthorized.'},
       {status: 401},

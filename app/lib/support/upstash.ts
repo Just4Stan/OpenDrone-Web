@@ -74,6 +74,42 @@ export function getTicketStore(env: UpstashEnv): TicketStore | null {
   };
 }
 
+/**
+ * Fixed-window rate limit, backed by Upstash so the counter is shared
+ * across all Worker isolates (unlike the in-memory limiter, which each
+ * isolate keeps privately and an attacker can sidestep by spreading
+ * requests). Standard INCR + EXPIRE-on-first-hit pattern.
+ *
+ * Returns `{allowed, count}`, or `null` when Upstash isn't configured —
+ * the caller falls back to the in-memory limiter in that case. Also
+ * returns `null` on any Upstash error so a transient KV outage fails
+ * soft (degrade to in-memory) rather than locking the endpoint.
+ */
+export async function globalRateLimit(
+  env: UpstashEnv,
+  key: string,
+  limit: number,
+  windowSeconds: number,
+): Promise<{allowed: boolean; count: number} | null> {
+  const url = env.UPSTASH_REDIS_REST_URL?.replace(/\/$/, '');
+  const token = env.UPSTASH_REDIS_REST_TOKEN;
+  if (!url || !token) return null;
+  try {
+    const r = await call(url, token, ['INCR', `rl:${key}`]);
+    const count = typeof r === 'number' ? r : Number(r) || 0;
+    // Set the TTL only when we created the key (count === 1); on later
+    // hits the window is already ticking. Worst case (a crash between
+    // INCR and EXPIRE) leaves a key without TTL — INCR keeps climbing so
+    // it stays blocked, which fails closed for that one key, acceptable.
+    if (count === 1) {
+      await call(url, token, ['EXPIRE', `rl:${key}`, String(windowSeconds)]);
+    }
+    return {allowed: count <= limit, count};
+  } catch {
+    return null;
+  }
+}
+
 async function call(
   url: string,
   token: string,

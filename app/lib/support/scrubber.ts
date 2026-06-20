@@ -80,13 +80,18 @@ const PATTERNS: Pattern[] = [
   },
   // IBAN — country code + 2 check digits + 11–30 alphanumeric.
   // Match with optional spaces every 4 chars (standard presentation).
+  // `i` flag: people type IBANs lowercase ("be68 ...") as often as upper,
+  // and an unredacted IBAN in the public channel is a real PII leak.
   {
     name: 'iban',
-    re: /\b[A-Z]{2}\d{2}(?:[ ]?[A-Z0-9]){11,30}\b/g,
+    re: /\b[A-Z]{2}\d{2}(?:[ ]?[A-Z0-9]){11,30}\b/gi,
     replace: '[iban redacted]',
   },
-  // Belgian national number. Classic presentation with dots + dash, and
-  // the 11-digit unpunctuated form. Order matters — punctuated first.
+  // Belgian national number — punctuated presentation only
+  // (YY.MM.DD-XXX.XX). The bare 11-digit form is intentionally NOT
+  // matched: a naked \d{11} would swallow Discord snowflakes, order
+  // numbers, and firmware values. We accept that gap rather than
+  // over-redact legitimate content.
   {
     name: 'be-natl-punct',
     re: /\b\d{2}\.\d{2}\.\d{2}-\d{3}\.\d{2}\b/g,
