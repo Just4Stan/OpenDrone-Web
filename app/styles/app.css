@@ -5930,6 +5930,9 @@ button.reset {
   display: grid;
   gap: 1rem;
   grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  /* Size each card to its own content instead of stretching to the tallest in
+     the row — that stretch is what left big empty gaps under the shorter cards. */
+  align-items: start;
 }
 
 .account-dashboard-card {
@@ -6002,22 +6005,54 @@ button.reset {
   margin: 0;
 }
 
-.account-dashboard-cta {
+/* Primary card action — styled as an actual (soft-gold) button so it reads as
+   clickable, not as another line of text. Shared by the dashboard card CTAs and
+   the newsletter toggle. */
+.account-dashboard-cta,
+.account-dash-support .od-tile-link {
+  align-self: flex-start;
   display: inline-flex;
   align-items: center;
+  gap: 0.35rem;
   font-family: var(--font-mono);
   font-size: 12px;
   font-weight: 700;
-  letter-spacing: 0.14em;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--color-gold);
+  background: var(--color-gold-soft);
+  border: 1px solid color-mix(in srgb, var(--color-gold) 45%, transparent);
+  border-radius: var(--r-md);
+  padding: 0.5rem 0.85rem;
   margin-top: auto;
-  padding-top: 0.25rem;
-  transition: color 150ms ease;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background 150ms ease, border-color 150ms ease, color 150ms ease;
 }
 
-.account-dashboard-cta:hover {
+.account-dashboard-cta:hover,
+.account-dash-support .od-tile-link:hover {
+  background: color-mix(in srgb, var(--color-gold) 18%, transparent);
+  border-color: var(--color-gold);
   color: var(--color-gold-hover);
+}
+
+.account-dashboard-cta:disabled,
+.account-dash-support .od-tile-link:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Card footer that pairs a primary button with a secondary text link. */
+.account-dashboard-card-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 1rem;
+  margin-top: auto;
+}
+.account-dashboard-card-actions .account-dashboard-cta {
+  margin-top: 0;
 }
 
 .account-dashboard-orders {
@@ -8975,17 +9010,8 @@ button.reset {
   letter-spacing: 0.14em;
   color: var(--od-ink-dim);
 }
-.account-dash-support .od-tile-link {
-  font-family: var(--font-mono);
-  font-size: 12px;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--od-pcb-gold-2);
-  text-decoration: none;
-  margin-top: auto;
-  padding-top: 8px;
-}
-.account-dash-support .od-tile-link:hover {color: var(--od-pcb-gold);}
+/* (button styling for .account-dash-support .od-tile-link lives with the shared
+   .account-dashboard-cta rule above) */
 
 /* ---------- Mobile breakpoints --------------------------- */
 @media (max-width: 720px) {
