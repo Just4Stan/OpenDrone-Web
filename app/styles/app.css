@@ -4930,10 +4930,12 @@ button.reset {
 /* Subtle connector lines from each pin bubble to its layer-rail face box (drawn
    on a fixed full-viewport SVG, positioned imperatively in the PDP). */
 .teardown-links {
+  /* position/size set imperatively to the lines' bounding box (gutter only) —
+     NOT full-viewport, so it isn't a screen-sized compositing layer. */
   position: fixed;
-  inset: 0;
-  width: 100vw;
-  height: 100vh;
+  left: 0;
+  top: 0;
+  display: none;
   pointer-events: none;
   z-index: 2;
   overflow: visible;

@@ -724,6 +724,14 @@ export default function Product() {
   const [hoveredGroups, setHoveredGroups] = useState<string[][] | undefined>(
     undefined,
   );
+  // Clear all hover highlight state. Called only when the pointer leaves the
+  // whole list (not between rows) so the spotlight stays lit and just moves from
+  // row to row — no off/on flicker crossing the dividers/gaps.
+  const clearHover = () => {
+    setHoveredRefs([]);
+    setHoveredUnion(false);
+    setHoveredGroups(undefined);
+  };
   // One teardown-pin <li>: the part label (+ optional count); hover/focus
   // highlights its footprint(s) on the board (keyboard mirrors mouse for a11y).
   const renderPin = (pin: ChapterPin) => {
@@ -741,16 +749,14 @@ export default function Product() {
                 setHoveredUnion(false);
                 setHoveredGroups(undefined);
               };
-              const off = () => setHoveredRefs([]);
               return (
                 <button
                   type="button"
                   key={chip.label}
                   className="teardown-io-chip"
                   onMouseEnter={on}
-                  onMouseLeave={off}
                   onFocus={on}
-                  onBlur={off}
+                  onBlur={clearHover}
                 >
                   {chip.label}
                 </button>
@@ -766,17 +772,13 @@ export default function Product() {
       setHoveredUnion(pin.box === 'union');
       setHoveredGroups(pin.boxGroups);
     };
-    const leave = () => {
-      setHoveredRefs([]);
-      setHoveredUnion(false);
-      setHoveredGroups(undefined);
-    };
+    // No per-row onMouseLeave — clearing happens on the container leave so the
+    // spotlight stays lit while moving between rows (onBlur covers keyboard).
     const handlers = hoverable
       ? {
           onMouseEnter: enter,
-          onMouseLeave: leave,
           onFocus: enter,
-          onBlur: leave,
+          onBlur: clearHover,
           tabIndex: 0,
         }
       : {};
@@ -820,12 +822,10 @@ export default function Product() {
     const draw = () => {
       raf = 0;
       const bubbles = document.querySelectorAll<HTMLElement>('.teardown-side');
-      const hide = (i: number) => {
-        paths[i]?.setAttribute('d', '');
-        dots[i * 2]?.setAttribute('r', '0');
-        dots[i * 2 + 1]?.setAttribute('r', '0');
+      const hideSvg = () => {
+        svg.style.display = 'none';
       };
-      if (bubbles.length < 2) return [0, 1].forEach(hide);
+      if (bubbles.length < 2) return hideSvg();
       const ends = [
         document.querySelector<HTMLElement>(
           '.board-folder-tabs [data-slug="front"]',
@@ -835,49 +835,77 @@ export default function Product() {
         ),
       ];
       const H = window.innerHeight;
-      svg.setAttribute('width', String(window.innerWidth));
-      svg.setAttribute('height', String(H));
-      [
-        [bubbles[0], ends[0]],
-        [bubbles[1], ends[1]],
-      ].forEach(([b, r], i) => {
-        const p = paths[i];
-        if (!p) return;
-        if (!b || !r) return hide(i);
+      // Collect the visible segments (bubble edge → rail-box edge).
+      const segs: Array<{i: number; bx: number; by: number; rx: number; ry: number}> =
+        [];
+      for (let i = 0; i < 2; i++) {
+        const b = bubbles[i];
+        const r = ends[i];
+        if (!b || !r) continue;
         const bb = b.getBoundingClientRect();
         const rr = r.getBoundingClientRect();
-        // true element edges (where the node dots sit)
         const bx = bb.right;
         const by = bb.top + bb.height / 2;
         const rx = rr.left;
         const ry = rr.top + rr.height / 2;
-        // Draw whenever the line's vertical span overlaps the viewport at all
-        // (endpoints may sit off-screen — the line just clips), so it doesn't
-        // vanish the moment a bubble touches the top/bottom edge.
-        const visible =
-          rr.width > 0 && rx > bx && Math.max(by, ry) > 0 && Math.min(by, ry) < H;
-        if (!visible) return hide(i);
-        // overlap a few px INTO each element so the stroke visibly touches it
-        const x0 = bx - 5;
-        const x1 = rx + 5;
+        if (rr.width > 0 && rx > bx && Math.max(by, ry) > 0 && Math.min(by, ry) < H)
+          segs.push({i, bx, by, rx, ry});
+      }
+      const present = new Set(segs.map((s) => s.i));
+      for (let i = 0; i < 2; i++) {
+        if (present.has(i)) continue;
+        paths[i]?.setAttribute('d', '');
+        dots[i * 2]?.setAttribute('r', '0');
+        dots[i * 2 + 1]?.setAttribute('r', '0');
+      }
+      if (!segs.length) return hideSvg();
+      // Size + position the SVG to JUST the lines' bounding box (in the empty
+      // gutter) — NOT the whole viewport. A full-screen fixed overlay forced the
+      // compositor to re-blend the entire page over every animating element each
+      // frame (idle GPU). A small box overlapping nothing is nearly free.
+      const PAD = 12;
+      let minX = Infinity;
+      let minY = Infinity;
+      let maxX = -Infinity;
+      let maxY = -Infinity;
+      for (const s of segs) {
+        minX = Math.min(minX, s.bx - 5, s.rx + 5);
+        maxX = Math.max(maxX, s.bx - 5, s.rx + 5);
+        minY = Math.min(minY, s.by, s.ry);
+        maxY = Math.max(maxY, s.by, s.ry);
+      }
+      const ox = minX - PAD;
+      const oy = minY - PAD;
+      const w = maxX - minX + 2 * PAD;
+      const h = maxY - minY + 2 * PAD;
+      svg.style.display = 'block';
+      svg.style.left = `${ox}px`;
+      svg.style.top = `${oy}px`;
+      svg.style.width = `${w}px`;
+      svg.style.height = `${h}px`;
+      svg.setAttribute('width', String(w));
+      svg.setAttribute('height', String(h));
+      for (const s of segs) {
+        const x0 = s.bx - 5;
+        const x1 = s.rx + 5;
         const dx = Math.max(40, (x1 - x0) * 0.5);
-        p.setAttribute(
+        const X = (v: number) => v - ox;
+        const Y = (v: number) => v - oy;
+        paths[s.i].setAttribute(
           'd',
-          `M${x0},${by} C${x0 + dx},${by} ${x1 - dx},${ry} ${x1},${ry}`,
+          `M${X(x0)},${Y(s.by)} C${X(x0 + dx)},${Y(s.by)} ${X(x1 - dx)},${Y(
+            s.ry,
+          )} ${X(x1)},${Y(s.ry)}`,
         );
-        const cb = dots[i * 2];
-        const cr = dots[i * 2 + 1];
-        if (cb) {
-          cb.setAttribute('cx', String(bx));
-          cb.setAttribute('cy', String(by));
-          cb.setAttribute('r', '3.5');
-        }
-        if (cr) {
-          cr.setAttribute('cx', String(rx));
-          cr.setAttribute('cy', String(ry));
-          cr.setAttribute('r', '3.5');
-        }
-      });
+        const cb = dots[s.i * 2];
+        const cr = dots[s.i * 2 + 1];
+        cb.setAttribute('cx', String(X(s.bx)));
+        cb.setAttribute('cy', String(Y(s.by)));
+        cb.setAttribute('r', '3.5');
+        cr.setAttribute('cx', String(X(s.rx)));
+        cr.setAttribute('cy', String(Y(s.ry)));
+        cr.setAttribute('r', '3.5');
+      }
     };
     // Redraw on scroll/resize only (rAF-throttled) — NOT a continuous loop,
     // which pinned the GPU at idle. The portal (viewport-fixed coords) is what
@@ -1227,7 +1255,7 @@ export default function Product() {
               )
             : null}
           {groupedPins.top.length > 0 && groupedPins.bottom.length > 0 ? (
-            <div className="teardown-sides">
+            <div className="teardown-sides" onMouseLeave={clearHover}>
               <section className="teardown-side">
                 <ul className="teardown-pins">
                   {groupedPins.top.map(renderPin)}
@@ -1240,7 +1268,7 @@ export default function Product() {
               </section>
             </div>
           ) : (
-            <div className="teardown-sides">
+            <div className="teardown-sides" onMouseLeave={clearHover}>
               <section className="teardown-side">
                 <ul className="teardown-pins">
                   {[
