@@ -28,6 +28,23 @@ describe('firstNameOnly', () => {
   it('handles single-word names', () => {
     assert.equal(firstNameOnly('Vitroid'), 'Vitroid');
   });
+
+  it('strips bidi overrides (Trojan-Source) before it hits Discord', () => {
+    // U+202E RLO in a Shopify account name must not survive into the
+    // public thread, where it could reverse staff's line order.
+    const rlo = String.fromCodePoint(0x202e);
+    const lri = String.fromCodePoint(0x2066);
+    const pdi = String.fromCodePoint(0x2069);
+    assert.equal(firstNameOnly(`Ali${rlo}ce`), 'Alice');
+    assert.equal(firstNameOnly(`${lri}Bob${pdi}`), 'Bob');
+  });
+
+  it('strips C0/C1 control chars', () => {
+    const nul = String.fromCodePoint(0x00);
+    const c1 = String.fromCodePoint(0x9f);
+    assert.equal(firstNameOnly(`Ja${nul}ne`), 'Jane');
+    assert.equal(firstNameOnly(`A${c1}B`), 'AB');
+  });
 });
 
 describe('postStaffMetadata', () => {

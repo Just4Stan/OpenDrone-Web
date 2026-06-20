@@ -29,6 +29,13 @@ describe('scrubForPublic — redactions', () => {
     assert.match(r.content, /\[iban redacted\]/);
   });
 
+  it('redacts a lowercase IBAN', () => {
+    // People type IBANs lowercase as often as upper — must still redact.
+    const r = scrubForPublic('wire to be68 5390 0754 7034 today');
+    assert.match(r.content, /\[iban redacted\]/);
+    assert.doesNotMatch(r.content, /5390/);
+  });
+
   it('redacts BE national number (punctuated)', () => {
     const r = scrubForPublic('rijksregister 85.07.12-123.45 voor de verzekering');
     assert.match(r.content, /\[id redacted\]/);
