@@ -13,6 +13,7 @@ import {
 import type {Route} from './+types/root';
 import favicon from '~/assets/favicon.svg';
 import {HEADER_QUERY, HEADER_PRODUCTS_QUERY} from '~/lib/fragments';
+import {CUSTOMER_NEWSLETTER_STATE_QUERY} from '~/graphql/customer-account/NewsletterStateQuery';
 import resetStyles from '~/styles/reset.css?url';
 import appStyles from '~/styles/app.css?url';
 import {PageLayout} from './components/PageLayout';
@@ -171,12 +172,33 @@ async function loadCriticalData({context}: Route.LoaderArgs) {
 function loadDeferredData({context}: Route.LoaderArgs) {
   const {customerAccount, cart, storefront} = context;
 
+  const isLoggedIn = customerAccount.isLoggedIn();
+
+  // Marketing-consent state for the signed-in customer so the footer newsletter
+  // can be subscription-aware (no re-asking a subscribed user for their email).
+  // Deferred + best-effort: resolves to null for guests or on any error.
+  const newsletterAccount = isLoggedIn
+    .then(async (loggedIn) => {
+      if (!loggedIn) return null;
+      const {data} = await customerAccount.query(
+        CUSTOMER_NEWSLETTER_STATE_QUERY,
+      );
+      const email = data?.customer?.emailAddress;
+      if (!email?.emailAddress) return null;
+      return {
+        email: email.emailAddress,
+        subscribed: email.marketingState === 'SUBSCRIBED',
+      };
+    })
+    .catch(() => null);
+
   // NOTE: the Shopify "footer" menu is deliberately not fetched — Footer.tsx
   // renders hardcoded link arrays. The old deferred FOOTER_QUERY was a dead
   // Storefront API round-trip on every session.
   return {
     cart: cart.get(),
-    isLoggedIn: customerAccount.isLoggedIn(),
+    isLoggedIn,
+    newsletterAccount,
     // Deferred so it never blocks TTFB; feeds the header family dropdowns.
     // Best-effort: a failure resolves to [] so the header still renders.
     familyProducts: storefront
@@ -205,6 +227,19 @@ export function Layout({children}: {children?: React.ReactNode}) {
           nonce={nonce}
           suppressHydrationWarning
           dangerouslySetInnerHTML={{__html: THEME_INIT_SCRIPT}}
+        />
+        {/* Pause all CSS animations while the window is unfocused or the tab is
+            hidden — the ambient infinite animations (wordmark sheen, banner
+            ping, etc.) otherwise keep the GPU compositing every frame even when
+            no one is looking. Full fidelity returns the instant the window is
+            focused. Inline + pre-paint so it's active before first frame. */}
+        <script
+          nonce={nonce}
+          suppressHydrationWarning
+          dangerouslySetInnerHTML={{
+            __html:
+              "(function(){var r=document.documentElement;function u(){r.classList.toggle('anim-paused',document.hidden||!document.hasFocus());}addEventListener('focus',u);addEventListener('blur',u);document.addEventListener('visibilitychange',u);u();})();",
+          }}
         />
         <link rel="stylesheet" href={resetStyles}></link>
         <link rel="stylesheet" href={appStyles}></link>

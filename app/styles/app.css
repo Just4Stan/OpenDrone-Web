@@ -1415,6 +1415,17 @@ html.hero-incutec-hint .incutec-hint {
   opacity: 0;
   animation: wordmark-sheen 6s ease-in-out infinite;
   animation-delay: calc(var(--gold-index, 0) * 0.18s);
+  /* promote to a compositor layer so the opacity sweep is a GPU-only op, not a
+     per-frame SVG repaint */
+  will-change: opacity;
+}
+
+/* When the window is unfocused / tab hidden, freeze every animation — nothing is
+   being watched, so don't keep the compositor (and GPU) busy. */
+html.anim-paused *,
+html.anim-paused *::before,
+html.anim-paused *::after {
+  animation-play-state: paused !important;
 }
 @media (prefers-reduced-motion: reduce) {
   .site-wordmark-sheen {
