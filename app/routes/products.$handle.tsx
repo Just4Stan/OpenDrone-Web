@@ -1242,7 +1242,7 @@ export default function Product() {
         <Chapter
           number={chapterNums.teardown}
           label="Teardown"
-          title={content.teardown.title}
+          title="Some layers of copper with components on top"
           textReveal={frameViewer ? undefined : textIn}
           backdrop={
             frameViewer ? (
@@ -1363,7 +1363,9 @@ export default function Product() {
             <SchematicViewer
               handle={schematicHandle}
               handles={schematicHandles}
-              inspectUrl={activeBoardArt?.inspectUrl}
+              inspectUrl={
+                activeBoardArt?.schematicUrl ?? activeBoardArt?.inspectUrl
+              }
             />
           ) : undefined
         }
@@ -1478,10 +1480,7 @@ export default function Product() {
                 <em>two maintainers paid.</em>
               </>
             ) : (
-              <>
-                Everything that ships,{' '}
-                <em>down to the grommet.</em>
-              </>
+              'What you get'
             )
           }
         >
@@ -1493,12 +1492,7 @@ export default function Product() {
               What you don&apos;t lose is the €1 split: each firmware
               project still gets paid from this order.
             </p>
-          ) : (
-            <p className="chapter-body">
-              Here is the actual parts list. Anything missing from a build,
-              say so and we&apos;ll ship it.
-            </p>
-          )}
+          ) : null}
           {mergedBox.length > 0 ? (
             <ul className="in-the-box">
               {mergedBox.map((it) => (
@@ -1558,8 +1552,7 @@ export default function Product() {
           label="The €1"
           title={
             <>
-              What <em>you</em> pay, what the{' '}
-              <em>people who wrote the firmware</em> get.
+              What <em>you</em> pay, what the <em>developers</em> get.
             </>
           }
           media={
@@ -1590,7 +1583,7 @@ export default function Product() {
         <Chapter
           number={chapterNums.specs}
           label="Datasheet"
-          title="Every spec, in one table."
+          title="Every spec, one table"
           noMedia
         >
           <dl className="spec-table">
