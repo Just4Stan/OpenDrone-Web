@@ -3020,7 +3020,14 @@ button.reset {
     align-self: start;
     max-height: calc(100vh - var(--header-height) - var(--sp-5));
     overflow-y: auto;
+    /* overflow-x is *coerced* to auto here: the spec forces a non-visible
+       value on the cross axis whenever the other axis isn't visible. That clip
+       ate the left edge of the selected variant-tier's gold ring (it sits ~2.5px
+       outside the card via inset:-1px + box-shadow). A small inline pad shifts
+       all column content in together (alignment preserved) so the ring clears
+       the clip edge. */
     overflow-x: visible;
+    padding-inline: var(--sp-1);
     /* Hide scrollbar but keep scrollability — buy module shouldn't show
        a chrome scrollbar when the right rail is shorter than the page. */
     scrollbar-width: none;
