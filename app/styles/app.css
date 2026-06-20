@@ -1042,22 +1042,28 @@ a:hover {
 .site-header-logo {
   display: inline-flex;
   align-items: center;
+  /* Fixed slot width = the wider (OpenDrone) wordmark, so swapping it for the
+     narrower Incutec mark on the hero never shifts the nav chips. */
+  min-width: 6.5rem;
   transition: opacity 0.15s ease;
   line-height: 0;
 }
 
-/* Hero: logo slot stays in the layout (so the nav chips never shift between
-   routes) but is faded out — the 3D scene owns the wordmark there. */
-.site-header-logo.is-hidden {
-  opacity: 0;
-  pointer-events: none;
-}
-
 .site-header-logo img,
-.site-header-wordmark {
+.site-header-wordmark,
+.site-header-incutec {
   display: block;
   height: 1.25rem;
   width: auto;
+}
+
+/* Incutec mark sits a touch larger and nudged in, so its left edge lands on the
+   centre of the pill's rounded-left end — reads as concentric with the corner. */
+.site-header-incutec {
+  height: 1.5rem;
+}
+.site-header-logo--incutec {
+  padding-left: 0.4rem;
 }
 
 /* Inline SVG wordmark fills "Open" with body text + "Drone" with gold via
@@ -1236,6 +1242,12 @@ a:hover {
   min-width: 15rem;
   max-width: 24rem;
   padding: var(--sp-2);
+}
+/* The chip radius rule (.site-header-cat-group a → pill) also matches the pod's
+   product links; pin them to a radius concentric with the --r-pod pod instead
+   of inheriting the full stadium. */
+.site-header-categories .header-cat-pod .product-pod {
+  border-radius: var(--r-lg);
 }
 /* Invisible hover bridge so moving from chip to Pod doesn't cross a dead gap. */
 .header-cat-pod-wrap::before {
