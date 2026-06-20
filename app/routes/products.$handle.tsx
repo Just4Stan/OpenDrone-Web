@@ -37,6 +37,7 @@ import {
   PRODUCT_CONTENT_FALLBACK,
 } from '~/lib/product-content';
 import type {
+  ChapterPin,
   DownloadAsset,
   DownloadKind,
   ProductContent,
@@ -603,6 +604,64 @@ export default function Product() {
   // `boardArt` wins, otherwise the shared `teardown.boardArt` (the default
   // board) is shown. Lines without per-tier art just keep the default.
   const activeBoardArt = activeVariant?.boardArt ?? content.teardown?.boardArt;
+  // The teardown pin list follows the tier the same way the board art does:
+  // each board in a line has its own refdes layout, so a tier's own `pins`
+  // win over the shared `teardown.pins` default. Keeps the hover-highlight
+  // refdes matched to the board currently shown.
+  const activePins = activeVariant?.pins ?? content.teardown?.pins ?? [];
+  // Group the teardown pins by board side — Top (front) first, then Bottom
+  // (back) — reading each refdes's side from the board's components.json. Done
+  // at runtime so it stays accurate per tier with no manual side tagging.
+  const componentsSrc = activeBoardArt?.src.replace(
+    /board\.svg$/,
+    'components.json',
+  );
+  const [pinSides, setPinSides] = useState<Map<string, 'F' | 'B'>>(new Map());
+  useEffect(() => {
+    if (!componentsSrc) return;
+    let alive = true;
+    fetch(componentsSrc)
+      .then((r) => r.json())
+      .then((d) => {
+        if (!alive) return;
+        const comps =
+          (d as {components?: Array<{ref?: string; layer?: string}>})
+            ?.components ?? [];
+        const m = new Map<string, 'F' | 'B'>();
+        for (const c of comps) {
+          if (c.ref && (c.layer === 'F' || c.layer === 'B')) m.set(c.ref, c.layer);
+        }
+        setPinSides(m);
+      })
+      .catch(() => {});
+    return () => {
+      alive = false;
+    };
+  }, [componentsSrc]);
+  // Partition pins by the dominant side of their refs. Until the map loads (or
+  // for pins with no resolvable side) pins fall into `other`, rendered flat.
+  const groupedPins = useMemo(() => {
+    const top: ChapterPin[] = [];
+    const bottom: ChapterPin[] = [];
+    const other: ChapterPin[] = [];
+    for (const pin of activePins) {
+      if (!pin.refs?.length || pinSides.size === 0) {
+        other.push(pin);
+        continue;
+      }
+      let f = 0;
+      let b = 0;
+      for (const r of pin.refs) {
+        const s = pinSides.get(r);
+        if (s === 'F') f++;
+        else if (s === 'B') b++;
+      }
+      if (f === 0 && b === 0) other.push(pin);
+      else if (f >= b) top.push(pin);
+      else bottom.push(pin);
+    }
+    return {top, bottom, other};
+  }, [activePins, pinSides]);
   // CAD products (the frame) carry an exploded 3D viewer instead of a
   // layered board SVG; when present it takes the teardown media slot. Like
   // boardArt, a tier's own model (3" vs 5") wins over the shared default.
@@ -655,6 +714,53 @@ export default function Product() {
   const railSentinelRef = useRef<HTMLDivElement>(null);
   const [railPinned, setRailPinned] = useState(false);
   const [railBox, setRailBox] = useState<{right: number} | null>(null);
+  // Refdes of the teardown pin the visitor is hovering/focusing — highlighted
+  // on the board by BoardArt. Lives here (the common ancestor of the pin list
+  // and the board) so a hover lights the matching footprint.
+  const [hoveredRefs, setHoveredRefs] = useState<string[]>([]);
+  // Whether the hovered pin wants ONE union box (dense arrays) vs a box per part.
+  const [hoveredUnion, setHoveredUnion] = useState(false);
+  // One teardown-pin <li>: the part label (+ optional count); hover/focus
+  // highlights its footprint(s) on the board (keyboard mirrors mouse for a11y).
+  const renderPin = (pin: ChapterPin) => {
+    const refs = pin.refs;
+    const hoverable = !!refs?.length;
+    const enter = () => {
+      setHoveredRefs(refs ?? []);
+      setHoveredUnion(pin.box === 'union');
+    };
+    const leave = () => {
+      setHoveredRefs([]);
+      setHoveredUnion(false);
+    };
+    const handlers = hoverable
+      ? {
+          onMouseEnter: enter,
+          onMouseLeave: leave,
+          onFocus: enter,
+          onBlur: leave,
+          tabIndex: 0,
+        }
+      : {};
+    return (
+      <li
+        key={pin.ref}
+        className={hoverable ? 'teardown-pin teardown-pin-hoverable' : undefined}
+        {...handlers}
+      >
+        <span className="teardown-pin-part">{pin.part}</span>
+        <span className="teardown-pin-cost">{pin.cost ?? '×1'}</span>
+      </li>
+    );
+  };
+  // While a component is highlighted, dim the rest of the page a touch (light
+  // mode) so the eye is drawn to the board — a focus accent. Toggled via a class
+  // on <html> so the dim (an ::after overlay) + the board's lift are pure CSS.
+  useEffect(() => {
+    const on = hoveredRefs.length > 0;
+    document.documentElement.classList.toggle('board-focus', on);
+    return () => document.documentElement.classList.remove('board-focus');
+  }, [hoveredRefs]);
   // <960px the pinned rail becomes a bottom bar (price + add-to-cart only):
   // phones previously had NO sticky buy control at all once the in-hero buy
   // module scrolled away.
@@ -667,10 +773,13 @@ export default function Product() {
     const HEADER = 56; // --header-height
     const isDesktop = () => window.matchMedia('(min-width: 960px)').matches;
     const measure = () => {
-      const r = section.getBoundingClientRect();
-      // clientWidth excludes the scrollbar, so the rail's right edge lines up
-      // with the content gutter rather than floating over the scrollbar.
-      const right = Math.round(document.documentElement.clientWidth - r.right);
+      // Anchor the pinned rail's right edge to the floating header pill's right
+      // edge so the two pills line up exactly (fall back to the hero section if
+      // the header isn't found). clientWidth excludes the scrollbar so the edge
+      // sits on the content gutter, not over the scrollbar.
+      const headerEl = document.querySelector('.site-header-main');
+      const refRight = (headerEl ?? section).getBoundingClientRect().right;
+      const right = Math.round(document.documentElement.clientWidth - refRight);
       setRailBox({right});
       setRailMobile(!isDesktop());
     };
@@ -949,24 +1058,42 @@ export default function Product() {
                 inspectUrl={activeBoardArt.inspectUrl}
                 layerFns={activeBoardArt.layers}
                 handle={product.handle}
+                componentsSrc={activeBoardArt.src.replace(
+                  /board\.svg$/,
+                  'components.json',
+                )}
+                highlightRefs={hoveredRefs}
+                highlightUnion={hoveredUnion}
               />
             ) : undefined
           }
         >
-          {content.teardown.body ? (
-            <p className="chapter-body">{content.teardown.body}</p>
-          ) : null}
-          <ul className="teardown-pins">
-            {content.teardown.pins.map((pin) => (
-              <li key={pin.ref}>
-                <span className="teardown-pin-ref">{pin.ref}</span>
-                <span className="teardown-pin-part">{pin.part}</span>
-                {pin.cost ? (
-                  <span className="teardown-pin-cost">{pin.cost}</span>
-                ) : null}
-              </li>
-            ))}
-          </ul>
+          {groupedPins.top.length > 0 && groupedPins.bottom.length > 0 ? (
+            <div className="teardown-sides">
+              <section className="teardown-side">
+                <ul className="teardown-pins">
+                  {groupedPins.top.map(renderPin)}
+                </ul>
+              </section>
+              <section className="teardown-side">
+                <ul className="teardown-pins">
+                  {[...groupedPins.bottom, ...groupedPins.other].map(renderPin)}
+                </ul>
+              </section>
+            </div>
+          ) : (
+            <div className="teardown-sides">
+              <section className="teardown-side">
+                <ul className="teardown-pins">
+                  {[
+                    ...groupedPins.top,
+                    ...groupedPins.bottom,
+                    ...groupedPins.other,
+                  ].map(renderPin)}
+                </ul>
+              </section>
+            </div>
+          )}
           {!frameViewer && activeBoardArt?.inspectUrl ? (
             <a
               className="board-art-inspect teardown-inspect"

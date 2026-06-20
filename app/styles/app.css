@@ -4245,6 +4245,13 @@ button.reset {
     position: sticky;
     top: calc(var(--header-height) + var(--sp-4));
   }
+  /* The teardown board fills its column to the top, where the pinned buy bar
+     (variant + price + Add to cart) floats — it was covering the top row of the
+     board (e.g. the JST connector). Drop the board's sticky media below the buy
+     bar so nothing up there is occluded. */
+  .chapter-media:has(.board-art) {
+    top: calc(var(--header-height) + var(--sp-4) + 3.75rem);
+  }
   /* Schematic chapter: text + cards sit on top, the schematic spans the full
    * content width below. Single column so the dense sheet uses every pixel. */
   .chapter[data-wide-media] {
@@ -4920,46 +4927,136 @@ button.reset {
 /* A single narrow column so the callouts stack vertically instead of spreading
    a wide grid across the chapter — the freed horizontal space goes to the
    board + its (now richer) layer rail. */
+/* Two side "bubbles" (Top / Bottom), each a mini-table of component rows. The
+   gradient + inset top-light give the card some depth instead of a flat slab. */
+.teardown-sides {
+  display: grid;
+  gap: 0.85rem;
+  max-width: 30rem;
+}
+.teardown-side {
+  background: linear-gradient(
+    180deg,
+    var(--color-bg-elevated),
+    var(--color-bg-card)
+  );
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--color-text) 6%, transparent);
+}
+/* Rows inside a bubble form a table: each row gets ONE divider line, no per-row
+   card — so there's no boundary between components as you scroll/hover down. */
 .teardown-pins {
   list-style: none;
   padding: 0;
   margin: 0;
-  display: grid;
-  gap: 0.5rem;
-  grid-template-columns: 1fr;
-  max-width: 30rem;
 }
-
 .teardown-pins li {
-  display: grid;
-  grid-template-columns: 2rem 1fr auto;
-  align-items: baseline;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   gap: 0.75rem;
-  padding: 0.65rem 0.85rem;
-  background: var(--color-bg-card);
-  border: 1px solid var(--color-border);
-  border-radius: 8px;
+  /* extra left pad leaves room for the hover accent bar without shifting text */
+  padding: 0.55rem 0.7rem 0.55rem 0.95rem;
+  border-bottom: 1px solid
+    color-mix(in srgb, var(--color-border) 60%, transparent);
+  position: relative;
 }
-
-.teardown-pin-ref {
-  color: var(--color-gold);
-  font-family: var(--font-display);
-  font-weight: 700;
-  font-size: 1.1rem;
-  line-height: 1;
+.teardown-pins li:last-child {
+  border-bottom: none;
 }
 
 .teardown-pin-part {
   color: var(--color-text);
   font-size: 0.9rem;
+  transition: color 0.12s;
 }
 
+/* count/qty badge (e.g. ×24) as a small mono pill */
 .teardown-pin-cost {
+  flex: none;
   font-family: var(--font-mono);
-  font-size: 11px;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  color: var(--color-text-muted);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  padding: 0.1rem 0.45rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--color-gold) 14%, transparent);
+  color: var(--color-gold);
+}
+
+/* A pin that maps to footprints on the board: interactive. Hover fills the whole
+   row (instant — no fade that looks half-painted while the cursor moves) and a
+   gold accent bar wipes in on the left for a bit of life. */
+.teardown-pin-hoverable {
+  cursor: pointer;
+}
+.teardown-pin-hoverable::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: var(--color-gold);
+  transform: scaleY(0);
+  transform-origin: center;
+  transition: transform 0.14s ease;
+}
+.teardown-pin-hoverable:hover,
+.teardown-pin-hoverable:focus-visible {
+  background: color-mix(in srgb, var(--color-gold) 13%, transparent);
+  outline: none;
+}
+.teardown-pin-hoverable:hover .teardown-pin-part,
+.teardown-pin-hoverable:focus-visible .teardown-pin-part {
+  color: var(--color-gold);
+}
+.teardown-pin-hoverable:hover::before,
+.teardown-pin-hoverable:focus-visible::before {
+  transform: scaleY(1);
+}
+
+/* === Component highlights === Drawn ANCHORED inside the active sheet's <svg>
+   (BoardArt appends a `<g class="board-hilite">`), so they scroll with the board
+   and sit exactly on the part. Only present on the Front/Back faces — never on a
+   copper layer. The whole group fades in on hover. */
+.board-hilite {
+  pointer-events: none;
+  animation: board-hilite-in 0.25s ease both;
+}
+/* Dim veil over the board OUTSIDE the spotlight window (masked + clipped to the
+   board outline) so everything but the selected part(s) recedes. Over the board
+   face only (not the page), so it reads the same in both themes. */
+.board-hilite-dim {
+  fill: #05070a;
+  opacity: 0.5;
+  pointer-events: none;
+}
+/* Brighten INSIDE the spotlight window a touch (screen blend lifts the part's
+   luminance without washing it to a flat fill). */
+.board-hilite-bright {
+  fill: #fff;
+  opacity: 0.16;
+  mix-blend-mode: screen;
+  pointer-events: none;
+}
+/* The crisp gold box is the primary "this is selected" marker, drawn on top of
+   the dim. Non-scaling stroke keeps it ~2px at any board zoom. */
+.board-highlight-shape {
+  fill: color-mix(in srgb, var(--color-gold) 10%, transparent);
+  stroke: var(--color-gold);
+  stroke-width: 2;
+  vector-effect: non-scaling-stroke;
+  pointer-events: none;
+}
+@keyframes board-hilite-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 /* Open source cards */
@@ -6252,6 +6349,9 @@ button.reset {
   display: grid;
   gap: 1rem;
   grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  /* Size each card to its own content instead of stretching to the tallest in
+     the row — that stretch is what left big empty gaps under the shorter cards. */
+  align-items: start;
 }
 
 .account-dashboard-card {
@@ -6324,22 +6424,54 @@ button.reset {
   margin: 0;
 }
 
-.account-dashboard-cta {
+/* Primary card action — styled as an actual (soft-gold) button so it reads as
+   clickable, not as another line of text. Shared by the dashboard card CTAs and
+   the newsletter toggle. */
+.account-dashboard-cta,
+.account-dash-support .od-tile-link {
+  align-self: flex-start;
   display: inline-flex;
   align-items: center;
+  gap: 0.35rem;
   font-family: var(--font-mono);
   font-size: 12px;
   font-weight: 700;
-  letter-spacing: 0.14em;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--color-gold);
+  background: var(--color-gold-soft);
+  border: 1px solid color-mix(in srgb, var(--color-gold) 45%, transparent);
+  border-radius: var(--r-md);
+  padding: 0.5rem 0.85rem;
   margin-top: auto;
-  padding-top: 0.25rem;
-  transition: color 150ms ease;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background 150ms ease, border-color 150ms ease, color 150ms ease;
 }
 
-.account-dashboard-cta:hover {
+.account-dashboard-cta:hover,
+.account-dash-support .od-tile-link:hover {
+  background: color-mix(in srgb, var(--color-gold) 18%, transparent);
+  border-color: var(--color-gold);
   color: var(--color-gold-hover);
+}
+
+.account-dashboard-cta:disabled,
+.account-dash-support .od-tile-link:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Card footer that pairs a primary button with a secondary text link. */
+.account-dashboard-card-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 1rem;
+  margin-top: auto;
+}
+.account-dashboard-card-actions .account-dashboard-cta {
+  margin-top: 0;
 }
 
 .account-dashboard-orders {
@@ -9297,17 +9429,8 @@ button.reset {
   letter-spacing: 0.14em;
   color: var(--od-ink-dim);
 }
-.account-dash-support .od-tile-link {
-  font-family: var(--font-mono);
-  font-size: 12px;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--od-pcb-gold-2);
-  text-decoration: none;
-  margin-top: auto;
-  padding-top: 8px;
-}
-.account-dash-support .od-tile-link:hover {color: var(--od-pcb-gold);}
+/* (button styling for .account-dash-support .od-tile-link lives with the shared
+   .account-dashboard-cta rule above) */
 
 /* ---------- Mobile breakpoints --------------------------- */
 @media (max-width: 720px) {

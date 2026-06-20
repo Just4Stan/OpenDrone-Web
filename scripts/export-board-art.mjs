@@ -4,6 +4,17 @@
  *
  *   node scripts/export-board-art.mjs <path-to-.kicad_pcb> <product-handle>
  *   node scripts/export-board-art.mjs --all      # every board in boards.config.json
+ *   node scripts/export-board-art.mjs --all --components-only
+ *   node scripts/export-board-art.mjs <pcb> <handle> --components-only
+ *
+ * --components-only regenerates ONLY public/boards/<handle>/components.json
+ * (the per-footprint highlight boxes from board-components.py) and DOES NOT
+ * touch board.svg / front.png / back.png. It runs no kicad-cli svg export and
+ * no render_board.py — so it's the fast, render-free path to pick up a
+ * board-components.py change (e.g. a bbox fix) without re-rendering the art.
+ * It reuses the existing board.svg's viewBox as the shared frame, so the new
+ * boxes line up with the unchanged art; run the full pipeline first if a board
+ * has no board.svg yet. Exposed as `npm run gen:components`.
  *
  * Pipeline (per board):
  *   1. `kicad-cli pcb export svg --mode-multi` emits one SVG per copper
@@ -53,9 +64,12 @@
  * Rerun whenever a hardware rev ships. Idempotent.
  */
 import {execSync, execFileSync} from 'node:child_process';
+import {createHash} from 'node:crypto';
 import {
   mkdtempSync,
   readFileSync,
+  readdirSync,
+  statSync,
   rmSync,
   writeFileSync,
   mkdirSync,
@@ -649,50 +663,99 @@ ${layers}
     );
 
     // ---- components.json --------------------------------------------------
-    // Same (dx, dy) the outline clip uses: viewBox = native + (dx, dy). The
-    // two pcbnew scripts share LoadBoard + ToMM, so outline.bbox.min and
-    // component coords are in one native frame; translating by this delta puts
-    // every component into the master viewBox frame, ready to draw directly.
-    const dx = bbox.minX - outline.bbox.minX;
-    const dy = bbox.minY - outline.bbox.minY;
-    const r4n = (v) => +v.toFixed(4);
-    const {components: nativeComps} = boardComponents(pcbPath);
-    const components = nativeComps.map((c) => {
-      const entry = {
-        ref: c.ref,
-        value: c.value,
-        footprint: c.footprint,
-        layer: c.layer,
-        x: r4n(c.x + dx),
-        y: r4n(c.y + dy),
-        rot: c.rot,
-        bbox: {
-          x: r4n(c.bbox.x + dx),
-          y: r4n(c.bbox.y + dy),
-          w: r4n(c.bbox.w),
-          h: r4n(c.bbox.h),
-        },
-      };
-      if (c.courtyard) {
-        entry.courtyard = c.courtyard.map(([x, y]) => [r4n(x + dx), r4n(y + dy)]);
-      }
-      return entry;
-    });
-    const componentsJson = {
-      handle,
-      viewBox,
-      units: 'mm',
-      components,
-    };
-    const compPath = join(outDir, 'components.json');
-    writeFileSync(compPath, JSON.stringify(componentsJson));
-    console.log(
-      `Wrote ${compPath} (${components.length} components, ` +
-        `dx=${r4n(dx)} dy=${r4n(dy)})`,
-    );
+    writeComponents(pcbPath, handle, outDir, bbox, outline, viewBox);
   } finally {
     rmSync(tmp, {recursive: true, force: true});
   }
+}
+
+/**
+ * Write public/boards/<handle>/components.json from board-components.py.
+ *
+ * `bbox` is the Edge.Cuts bbox in the kicad-cli page frame ({minX,minY,...});
+ * `outline` is the pcbnew board outline; `viewBox` is the master viewBox string.
+ * Same (dx, dy) the outline clip uses: viewBox = native + (dx, dy). The two
+ * pcbnew scripts share LoadBoard + ToMM, so outline.bbox.min and component
+ * coords are in one native frame; translating by this delta puts every
+ * component into the master viewBox frame, ready to draw directly.
+ *
+ * Shared by the full pipeline (buildBoard) and the render-free --components-only
+ * path (buildComponentsOnly), so both emit byte-identical component geometry.
+ */
+function writeComponents(pcbPath, handle, outDir, bbox, outline, viewBox) {
+  const dx = bbox.minX - outline.bbox.minX;
+  const dy = bbox.minY - outline.bbox.minY;
+  const r4n = (v) => +v.toFixed(4);
+  const {components: nativeComps} = boardComponents(pcbPath);
+  const components = nativeComps.map((c) => {
+    const entry = {
+      ref: c.ref,
+      value: c.value,
+      footprint: c.footprint,
+      layer: c.layer,
+      x: r4n(c.x + dx),
+      y: r4n(c.y + dy),
+      rot: c.rot,
+      bbox: {
+        x: r4n(c.bbox.x + dx),
+        y: r4n(c.bbox.y + dy),
+        w: r4n(c.bbox.w),
+        h: r4n(c.bbox.h),
+      },
+    };
+    if (c.courtyard) {
+      entry.courtyard = c.courtyard.map(([x, y]) => [r4n(x + dx), r4n(y + dy)]);
+    }
+    return entry;
+  });
+  const componentsJson = {
+    handle,
+    viewBox,
+    units: 'mm',
+    components,
+  };
+  const compPath = join(outDir, 'components.json');
+  writeFileSync(compPath, JSON.stringify(componentsJson));
+  console.log(
+    `Wrote ${compPath} (${components.length} components, ` +
+      `dx=${r4n(dx)} dy=${r4n(dy)})`,
+  );
+}
+
+/**
+ * Regenerate ONLY components.json for one board — no kicad-cli, no render.
+ *
+ * Reuses the EXISTING board.svg's viewBox as the shared frame so the new
+ * highlight boxes register with the already-rendered art. The viewBox min
+ * corner IS the Edge.Cuts bbox min in the page frame (buildBoard derives one
+ * from the other), so we reconstruct the {minX,minY} bbox from it and recompute
+ * (dx, dy) against the live pcbnew outline. board.svg / front.png / back.png are
+ * never touched. Requires board.svg to exist (run the full pipeline once first).
+ */
+function buildComponentsOnly(pcbPath, handle) {
+  const outDir = resolve(here, '..', 'public', 'boards', handle);
+  const svgPath = join(outDir, 'board.svg');
+  if (!existsSync(svgPath)) {
+    throw new Error(
+      `no board.svg at ${svgPath} — run the full pipeline once before ` +
+        `--components-only (it needs the existing viewBox to align to).`,
+    );
+  }
+  const svg = readFileSync(svgPath, 'utf8');
+  const m = svg.match(/viewBox="([^"]+)"/);
+  if (!m) throw new Error(`no viewBox in ${svgPath}`);
+  const viewBox = m[1].trim();
+  const [vx, vy, vw, vh] = viewBox.split(/\s+/).map(Number);
+  if ([vx, vy, vw, vh].some((n) => !isFinite(n))) {
+    throw new Error(`bad viewBox "${viewBox}" in ${svgPath}`);
+  }
+  // viewBox min corner = Edge.Cuts bbox min in the kicad-cli page frame.
+  const bbox = {minX: vx, minY: vy, width: vw, height: vh};
+  const outline = boardOutline(pcbPath);
+  if (!outline.bbox) {
+    throw new Error(`pcbnew returned no board outline bbox for ${pcbPath}`);
+  }
+  writeComponents(pcbPath, handle, outDir, bbox, outline, viewBox);
 }
 
 /** Read the local board manifest (handle → .kicad_pcb path). */
@@ -712,16 +775,63 @@ function loadConfig() {
   return boards;
 }
 
+// Bake a content version into the bundle so BoardArt can bust the CDN's 1-year
+// immutable cache on the (unversioned) board.svg + front/back.png URLs. Oxygen
+// serves everything under public/ with `max-age=31536000`, so an in-place regen
+// (or a re-render that produces an IC-less → IC-full board face) never reaches
+// returning visitors unless the request URL changes. We hash every exported
+// board.svg + front.png + back.png — sorted, content-based, NO timestamps so the
+// digest is stable when nothing changed — and write it to a TS module BoardArt
+// imports; it appends `?v=<digest>` to the svg fetch AND to the face <image>
+// hrefs. Regenerate → digest changes → cached browsers refetch. Mirrors
+// scripts/export-schematics.mjs. See app/components/BoardArt.tsx.
+function writeVersionFile() {
+  const base = resolve(here, '..', 'public', 'boards');
+  const h = createHash('sha256');
+  const files = [];
+  for (const handle of readdirSync(base).sort()) {
+    const dir = join(base, handle);
+    if (!statSync(dir).isDirectory()) continue;
+    for (const f of readdirSync(dir).sort()) {
+      if (f === 'board.svg' || f === 'front.png' || f === 'back.png') {
+        files.push(join(dir, f));
+      }
+    }
+  }
+  for (const f of files) h.update(readFileSync(f));
+  const v = h.digest('hex').slice(0, 12);
+  const out = resolve(here, '..', 'app', 'data', 'board-art-version.ts');
+  writeFileSync(
+    out,
+    `// AUTO-GENERATED by scripts/export-board-art.mjs — do not edit by hand.\n` +
+      `// Content hash of every exported board.svg + front.png + back.png. BoardArt\n` +
+      `// appends it as ?v= to bust Oxygen's 1-year immutable asset cache when board\n` +
+      `// art is regenerated in place.\n` +
+      `export const BOARD_ART_VERSION = '${v}';\n`,
+  );
+  console.log(`Wrote ${out} — version ${v}`);
+}
+
 function usage() {
   console.error(
     'Usage:\n' +
       '  node scripts/export-board-art.mjs <path-to-.kicad_pcb> <handle>\n' +
-      '  node scripts/export-board-art.mjs --all',
+      '  node scripts/export-board-art.mjs --all\n' +
+      '  node scripts/export-board-art.mjs --all --components-only\n' +
+      '  node scripts/export-board-art.mjs <pcb> <handle> --components-only\n' +
+      '\n' +
+      '  --components-only  regenerate ONLY components.json (no svg/render).',
   );
   process.exit(2);
 }
 
-const args = process.argv.slice(2);
+const rawArgs = process.argv.slice(2);
+const componentsOnly = rawArgs.includes('--components-only');
+const args = rawArgs.filter((a) => a !== '--components-only');
+// In --components-only mode we skip kicad-cli svg + render and only rewrite
+// components.json (board.svg / front.png / back.png are left untouched).
+const build = componentsOnly ? buildComponentsOnly : buildBoard;
+
 if (args[0] === '--all') {
   const boards = loadConfig();
   const failures = [];
@@ -731,18 +841,24 @@ if (args[0] === '--all') {
       continue;
     }
     try {
-      buildBoard(pcb, handle);
+      build(pcb, handle);
     } catch (err) {
       failures.push(`${handle}: ${err.message}`);
     }
   }
+  // Refresh the cache-bust token from the on-disk outputs — runs on both the
+  // full render path and the render-free --components-only path, so the token
+  // can be rebaked without re-rendering. The hash covers board.svg/front/back
+  // PNGs, so a render-free run that doesn't touch them yields the same token.
+  writeVersionFile();
   if (failures.length) {
     console.error(`\n${failures.length} board(s) failed:`);
     for (const f of failures) console.error(`  - ${f}`);
     process.exit(1);
   }
 } else if (args.length === 2) {
-  buildBoard(args[0], args[1]);
+  build(args[0], args[1]);
+  writeVersionFile();
 } else {
   usage();
 }
