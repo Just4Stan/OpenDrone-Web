@@ -198,8 +198,10 @@ function FamilyNav({
           return {
             key: v.id,
             to: `/products/${p.handle}${qs ? `?${qs}` : ''}`,
-            title: p.title,
-            subtitle: v.title,
+            // SKU/variant name is the headline (gold); the family line is the
+            // dim context beneath it.
+            title: v.title,
+            subtitle: p.title,
             imageUrl: v.image?.url ?? p.featuredImage?.url ?? null,
             imageAlt: v.image?.altText ?? p.featuredImage?.altText ?? null,
             price: v.price ?? p.priceRange?.minVariantPrice ?? null,
