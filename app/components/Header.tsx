@@ -74,6 +74,16 @@ const CATEGORY_LINKS: Array<{label: string; to: string; type: string}> = [
   {label: 'Frame', to: '/products/openframe', type: 'Frame'},
 ];
 
+/** Fuller family names for the mobile drawer (the desktop FamilyNav chips use
+ *  the terse FC/ESC/… labels; the drawer has room to spell them out). */
+const MOBILE_FAMILY_LABEL: Record<string, string> = {
+  'Flight Controller': 'Flight Controllers',
+  ESC: 'ESCs',
+  Bundle: 'Stacks',
+  Receiver: 'Receivers',
+  Frame: 'Frames',
+};
+
 export function Header({
   header,
   isLoggedIn,
@@ -314,16 +324,55 @@ export function HeaderMenu({
       }
       role="navigation"
     >
+      {/* Mobile drawer only: surface Search + the product families + Home up
+          top. The desktop header carries these in its own bar / FamilyNav,
+          which is hidden on phones — without this the drawer was four links in
+          a sea of empty panel and the whole product taxonomy vanished. */}
       {isMobile && (
-        <NavLink
-          end
-          onClick={close}
-          prefetch="viewport"
-          to="/"
-          className="text-sm font-mono uppercase tracking-wider text-[var(--color-text-muted)] hover:text-[var(--color-text)] transition-colors"
-        >
-          Home
-        </NavLink>
+        <>
+          <NavLink
+            onClick={close}
+            prefetch="intent"
+            to="/search"
+            className="site-mobile-nav-search"
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <circle cx="11" cy="11" r="7" />
+              <line x1="21" y1="21" x2="16.65" y2="16.65" />
+            </svg>
+            Search products
+          </NavLink>
+          <p className="site-mobile-nav-label">Shop</p>
+          {CATEGORY_LINKS.map((c) => (
+            <NavLink
+              key={c.to}
+              onClick={close}
+              prefetch="viewport"
+              to={c.to}
+              className="text-sm font-mono uppercase tracking-wider text-[var(--color-text-muted)] hover:text-[var(--color-text)] transition-colors"
+            >
+              {MOBILE_FAMILY_LABEL[c.type] ?? c.label}
+            </NavLink>
+          ))}
+          <NavLink
+            onClick={close}
+            prefetch="viewport"
+            to="/collections/all"
+            className="text-sm font-mono uppercase tracking-wider text-[var(--color-text-muted)] hover:text-[var(--color-text)] transition-colors"
+          >
+            All products
+          </NavLink>
+          <p className="site-mobile-nav-label">More</p>
+          <NavLink
+            end
+            onClick={close}
+            prefetch="viewport"
+            to="/"
+            className="text-sm font-mono uppercase tracking-wider text-[var(--color-text-muted)] hover:text-[var(--color-text)] transition-colors"
+          >
+            Home
+          </NavLink>
+        </>
       )}
       {(menu || FALLBACK_HEADER_MENU).items.map((item) => {
         if (!item.url) return null;
@@ -408,6 +457,19 @@ export function HeaderMenu({
         >
           Newsletter
         </NavLink>
+      ) : null}
+      {isMobile ? (
+        <>
+          <p className="site-mobile-nav-label">Account</p>
+          <NavLink
+            onClick={close}
+            prefetch="intent"
+            to="/account"
+            className="text-sm font-mono uppercase tracking-wider text-[var(--color-text-muted)] hover:text-[var(--color-text)] transition-colors"
+          >
+            Account / Sign in
+          </NavLink>
+        </>
       ) : null}
     </nav>
   );
