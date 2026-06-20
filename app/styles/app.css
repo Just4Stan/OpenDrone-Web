@@ -4996,6 +4996,14 @@ button.reset {
   font-weight: 600;
 }
 
+/* A few chapter titles are one long sentence — let them use the full left
+ * column so they stay on a single line, wrapping only when the column genuinely
+ * runs out of room (narrow viewports). The 24ch cap above suits shorter heads. */
+.chapter:has(.teardown-sides) .chapter-title,
+.chapter:has(.firmware-split) .chapter-title {
+  max-width: none;
+}
+
 .chapter-body {
   font-family: var(--font-sans);
   font-size: var(--fs-base);
@@ -5088,6 +5096,11 @@ button.reset {
   gap: 0.75rem;
   /* extra left pad leaves room for the hover accent bar without shifting text */
   padding: 0.55rem 0.7rem 0.55rem 0.95rem;
+  /* kill the global `li { margin-bottom: 0.5rem }` (reset.css) — that gap between
+     rows is a hover dead zone: the cursor crossing it hits no row, so the
+     spotlight drops out and flickers. Rows are contiguous, divided only by the
+     1px border. */
+  margin: 0;
   border-bottom: 1px solid
     color-mix(in srgb, var(--color-border) 60%, transparent);
   position: relative;
@@ -5135,10 +5148,19 @@ button.reset {
 .teardown-pin-hoverable:hover,
 .teardown-pin-hoverable:focus-visible {
   background: color-mix(in srgb, var(--color-gold) 13%, transparent);
-  /* extend the tint 1px upward so the sub-pixel gap at the divider (rows have
-     fractional heights) is covered — no uncovered sliver at the row's top. */
+  /* extend the tint 1px upward to fill where the divider above used to sit (the
+     :has rule below turns it transparent), so the whole row reads as one gold
+     block with no uncovered sliver at the top. */
   box-shadow: 0 -1px 0 0 color-mix(in srgb, var(--color-gold) 13%, transparent);
   outline: none;
+}
+/* Kill the divider directly ABOVE the hovered row — it belongs to the previous
+   row, so the hovered row's fill can't reach it; left visible it reads as a dark
+   sliver at the row's top (the "dead zone"). Gone, the box-shadow fills clean
+   bubble-bg with the same gold tint → seamless, and the spotlight slides
+   row-to-row with no flicker. */
+.teardown-pins li:has(+ .teardown-pin-hoverable:hover) {
+  border-bottom-color: transparent;
 }
 
 /* I/O chip row: one row holding a horizontal set of hoverable pad-group chips. */
