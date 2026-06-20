@@ -197,9 +197,6 @@ export default function AccountIndex() {
           {displayName}
           <span>.</span>
         </h2>
-        <p className="account-dashboard-lede">
-          Orders, addresses and support threads, all in one place.
-        </p>
       </header>
 
       <div className="account-dashboard-grid">
@@ -295,12 +292,18 @@ function SupportCard({openCount}: {openCount: number}) {
           No open tickets. Need help?
         </p>
       )}
-      <Link prefetch="viewport"
-        to={isActive ? '/account/support' : '/support'}
-        className="od-tile-link"
-      >
-        {isActive ? 'Continue thread →' : 'Open a ticket →'}
-      </Link>
+      <div className="account-dashboard-card-actions">
+        <Link prefetch="viewport" to="/support" className="account-dashboard-cta">
+          Open a ticket →
+        </Link>
+        <Link
+          prefetch="viewport"
+          to="/account/support"
+          className="account-dashboard-card-link"
+        >
+          Ticket history →
+        </Link>
+      </div>
     </section>
   );
 }
