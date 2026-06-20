@@ -251,7 +251,7 @@ export function Layout({children}: {children?: React.ReactNode}) {
           suppressHydrationWarning
           dangerouslySetInnerHTML={{
             __html:
-              "(function(){var r=document.documentElement;function u(){r.classList.toggle('anim-paused',document.hidden||!document.hasFocus());}addEventListener('focus',u);addEventListener('blur',u);document.addEventListener('visibilitychange',u);u();})();",
+              "(function(){var r=document.documentElement,t,idle=false;function paused(){return document.hidden||!document.hasFocus()||idle;}function u(){r.classList.toggle('anim-paused',paused());}function active(){idle=false;u();clearTimeout(t);t=setTimeout(function(){idle=true;u();},4000);}addEventListener('focus',active);addEventListener('blur',u);document.addEventListener('visibilitychange',u);['pointermove','pointerdown','keydown','wheel','scroll'].forEach(function(e){addEventListener(e,active,{passive:true});});active();})();",
           }}
         />
         <link rel="stylesheet" href={resetStyles}></link>

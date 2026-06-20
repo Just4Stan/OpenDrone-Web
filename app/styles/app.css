@@ -1430,6 +1430,23 @@ html.anim-paused .latest-commit-dot,
 html.anim-paused .support-typing span {
   animation-play-state: paused !important;
 }
+/* …and strip the GPU-heavy live blurs + board drop-shadows while idle/unfocused,
+   so nothing keeps re-compositing when no one's interacting. They transition back
+   in on focus/interaction. This is what keeps full fidelity when active but ~0
+   GPU otherwise (the user's "don't drain when I'm in the terminal"). */
+html.anim-paused .board-folder-rail,
+html.anim-paused .buy-rail.is-pinned,
+html.anim-paused .product-stickybar {
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+  background: var(--pod-bg-strong);
+}
+html.anim-paused .board-sheet {
+  filter: brightness(0.55) saturate(0.7);
+}
+html.anim-paused .board-sheet.is-active {
+  filter: saturate(0.95) contrast(1.05);
+}
 @media (prefers-reduced-motion: reduce) {
   .site-wordmark-sheen {
     animation: none;
@@ -3803,10 +3820,9 @@ button.reset {
     align-items: center;
     gap: var(--sp-3);
     padding: 0.4rem 0.4rem 0.4rem 0.9rem;
-    /* Opaque tile, no live blur — this pinned bar sits on screen the whole time
-       you're scrolled into the PDP, so a per-frame backdrop blur was a constant
-       GPU drain (same trade the header pill already makes). */
-    background: var(--pod-bg-strong);
+    background: var(--pod-bg);
+    -webkit-backdrop-filter: blur(var(--pod-blur));
+    backdrop-filter: blur(var(--pod-blur));
     border: 1px solid var(--pod-border);
     border-radius: var(--r-pill);
     box-shadow: var(--pod-shadow);
@@ -4085,9 +4101,9 @@ button.reset {
   align-items: center;
   gap: var(--sp-3);
   padding: 0.6rem var(--sp-5);
-  /* opaque tile instead of a live blur — see the rail/header notes: the blur was
-     re-evaluated every composited frame while this bar sits pinned on the PDP. */
-  background: var(--pod-bg-strong);
+  background: color-mix(in srgb, var(--color-bg) 92%, transparent);
+  backdrop-filter: saturate(140%) blur(10px);
+  -webkit-backdrop-filter: saturate(140%) blur(10px);
   border-top: 1px solid var(--color-border);
   transform: translateY(100%);
   transition: transform 0.25s ease;
@@ -4554,12 +4570,10 @@ button.reset {
   /* Container is a notch rounder than its pills (--r-lg) so the nesting reads
      concentric. */
   border-radius: var(--r-pod);
-  /* Opaque tile instead of a live `backdrop-filter: blur` — the blur was
-     re-evaluated on every composited frame (heavy idle GPU, same trap the header
-     comment documents). The strong token obscures the board behind it the same
-     way the blur did, at zero per-frame cost. */
-  background: var(--pod-bg-strong);
+  background: color-mix(in srgb, var(--color-bg) 50%, transparent);
   border: 1px solid color-mix(in srgb, var(--color-gold) 13%, transparent);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
   outline: none;
 }
 /* Each board layer carries a name (F.Cu / In1) plus a function blurb ("Ground
