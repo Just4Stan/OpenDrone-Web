@@ -4459,85 +4459,52 @@ button.reset {
     scale(calc(1 - var(--depth) * 0.035));
   z-index: calc(30 - var(--depth));
   transition: transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1), filter 0.45s ease;
-  /* Dim + flatten the un-selected sheets so the active one reads clearly. */
-  filter: brightness(0.55) saturate(0.7)
-    drop-shadow(0 14px 22px rgba(0, 0, 0, 0.55));
+  /* Dim the un-selected sheets so the active one reads clearly. NO drop-shadow:
+     a blur filter on every large layer was the dominant per-frame board GPU cost
+     (rasterize → blur → composite each frame it paints). Depth now comes from
+     the 3D perspective + scale + this brightness dimming alone. */
+  filter: brightness(0.55) saturate(0.7);
 }
 .board-sheet:hover {
-  filter: brightness(0.78) saturate(0.85)
-    drop-shadow(0 14px 22px rgba(0, 0, 0, 0.55));
+  filter: brightness(0.78) saturate(0.85);
 }
 .board-sheet.is-active {
   transform: translateY(-11%) translateZ(120px) scale(1.05);
   z-index: 50;
-  filter: saturate(0.95) contrast(1.05)
-    drop-shadow(0 0 26px color-mix(in srgb, var(--color-gold) 38%, transparent))
-    drop-shadow(0 26px 34px rgba(0, 0, 0, 0.55));
+  filter: saturate(0.95) contrast(1.05);
 }
-/* First-reveal entrance: each layer flies in from the left to its resting fan
-   position, staggered by --depth, uncovering the teardown text. Runs once (the
-   .is-revealed class is added on first scroll-into-view and never removed). */
-@keyframes board-sheet-fly {
+/* First-reveal entrance: the whole board body (rail + layer stack, already in
+   their final fan, positions, filters and scale) slides in from the left as ONE
+   unit. Nothing about the resting depiction changes — it's purely a translate
+   that ends at 0 — so there is no plop/jump when it finishes. Held off-screen
+   (paused) until the board reaches the viewport centre (.is-flying is added);
+   the classes drop once done so a SKU swap shows the board instantly. The
+   relative rail↔board placement is translate-invariant, so it stays correct
+   throughout the slide. */
+@keyframes board-fly-in {
   from {
-    translate: -68vw 0;
+    translate: -45vw 0;
     opacity: 0;
-  }
-  55% {
-    opacity: 1;
   }
   to {
     translate: 0 0;
     opacity: 1;
   }
 }
-/* The animation is applied while ARMED (board revealed) but held PAUSED at its
-   first frame (sheets off-screen left) until `.is-flying` is added — which the
-   component does only when the board reaches the centre of the viewport. Both
-   classes drop once the fly finishes, so a SKU swap shows the board at rest
-   (no re-fly). Plays slowly so the layers really read as flying in. */
-.board-art.is-armed .board-sheet {
-  animation: board-sheet-fly 1.5s cubic-bezier(0.16, 0.84, 0.3, 1) both;
-  animation-delay: calc(var(--depth) * 0.13s);
+.board-art.is-armed .board-folder-body {
+  animation: board-fly-in 1.1s cubic-bezier(0.16, 0.84, 0.3, 1) both;
   animation-play-state: paused;
 }
-.board-art.is-flying .board-sheet {
+.board-art.is-flying .board-folder-body {
   animation-play-state: running;
 }
-/* Perf: while flying, drop the per-layer drop-shadow/glow + the rail's live blur
-   (they force a full re-rasterize of every large layer / the bar every frame).
-   When the fly ends `.is-flying` is removed and the base filter transitions back
-   in over 0.45s — the glow eases in once the board is static. */
-.board-art.is-flying .board-sheet {
-  /* Keep the cheap brightness/saturate dim (so the layers' brightness already
-     matches the resting state — no pop when the fly ends), but drop only the
-     expensive drop-shadow during the move. It fades back in via the 0.45s filter
-     transition once the classes are removed → seamless settle. */
-  filter: brightness(0.55) saturate(0.7);
-}
-.board-art.is-flying .board-sheet.is-active {
-  filter: saturate(0.95) contrast(1.05);
-}
-.board-art.is-flying .board-folder-rail {
-  -webkit-backdrop-filter: none;
-  backdrop-filter: none;
-}
-/* The rail is positioned (via JS) against the board's settled left edge, which is
-   wrong while the sheets are off-screen mid-fly — so keep it hidden until the fly
-   finishes (place() re-runs on flyDone), then fade it in already in place. No
-   snap. */
-.board-art.is-armed .board-folder-rail {
-  opacity: 0;
-}
-.board-folder-rail {
-  transition: opacity 0.4s ease 0.1s;
-}
-/* Lock layer + part selection during the fly so interaction can't fight it. */
+/* Lock layer + part selection during the slide so interaction can't fight it. */
 .board-art.is-flying .board-sheet,
 .board-art.is-flying .board-folder-rail {
   pointer-events: none;
 }
 @media (prefers-reduced-motion: reduce) {
-  .board-art.is-armed .board-sheet {
+  .board-art.is-armed .board-folder-body {
     animation: none;
   }
 }
