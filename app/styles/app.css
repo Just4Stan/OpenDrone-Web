@@ -1435,6 +1435,7 @@ html.anim-paused .support-typing span {
    in on focus/interaction. This is what keeps full fidelity when active but ~0
    GPU otherwise (the user's "don't drain when I'm in the terminal"). */
 html.anim-paused .board-folder-rail,
+html.anim-paused .schematic-rail,
 html.anim-paused .buy-rail.is-pinned,
 html.anim-paused .product-stickybar {
   -webkit-backdrop-filter: none !important;
@@ -4519,6 +4520,14 @@ button.reset {
 }
 .board-art.is-flying .board-sheet {
   animation-play-state: running;
+}
+/* During the fly, show EVERY layer at full brightness with no shadow — so each
+   one flies in clearly distinguishable (not greyed/masked) — and it's cheaper
+   (no drop-shadow blur mid-flight). The resting dim/glow eases back in via the
+   0.45s filter transition once the layers land. */
+.board-art.is-flying .board-sheet,
+.board-art.is-flying .board-sheet.is-active {
+  filter: none;
 }
 /* Lock layer + part selection during the fly so interaction can't fight it. */
 .board-art.is-flying .board-sheet,

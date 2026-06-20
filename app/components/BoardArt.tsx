@@ -1,4 +1,4 @@
-import {useEffect, useMemo, useRef, useState} from 'react';
+import {useEffect, useId, useMemo, useRef, useState} from 'react';
 import {
   fetchJsonCached,
   fetchTextCached,
@@ -233,6 +233,10 @@ export function BoardArt({
   const ref = useRef<HTMLDivElement | null>(null);
   const bodyRef = useRef<HTMLDivElement | null>(null);
   const railRef = useRef<HTMLDivElement | null>(null);
+  // Instance-unique suffix for the spotlight SVG ids, so two mounted BoardArts
+  // can never collide on `od-dim`/`od-bright`/`od-spot` (SVG id resolution would
+  // otherwise pick the first in document order → wrong board masked).
+  const uid = useId().replace(/:/g, '');
   // `raw` is the SVG text currently on screen. Seed from cache so a tier that
   // was warmed earlier paints immediately with no blank frame.
   const [raw, setRaw] = useState<string | null>(
@@ -318,7 +322,6 @@ export function BoardArt({
   useEffect(() => {
     if (!inView) return;
     let alive = true;
-    let warmId: number | undefined;
     fetchTextCached(versioned(src))
       .then((text) => {
         if (!alive) return;
@@ -329,35 +332,14 @@ export function BoardArt({
         rawSrcRef.current = src;
         setRaw(text);
         setFailed(parsed.length === 0);
-        // Pre-parse every sibling tier in the background so a click is an
-        // instant cache hit. Kicked off on idle (with a short timeout cap) so it
-        // never competes with the active board's first paint, but still lands
-        // well before the user finishes reading and clicks a tier.
-        if (srcs) {
-          const warm = () => {
-            for (const s of srcs) {
-              if (s !== src && !parsedCache.has(s)) {
-                void warmParsed(s).catch(() => {});
-              }
-            }
-          };
-          warmId =
-            typeof requestIdleCallback !== 'undefined'
-              ? requestIdleCallback(warm, {timeout: 1500})
-              : (setTimeout(warm, 250) as unknown as number);
-        }
       })
       .catch(() => {
         if (alive) setFailed(true);
       });
     return () => {
       alive = false;
-      if (warmId != null) {
-        if (typeof cancelIdleCallback !== 'undefined') cancelIdleCallback(warmId);
-        else clearTimeout(warmId);
-      }
     };
-  }, [inView, src, srcs]);
+  }, [inView, src]);
 
   // Fade the board in once its SVG is in hand — driven off `raw`, not the fetch
   // effect's `alive` flag. A large SVG's parse can block the main thread long
@@ -411,13 +393,38 @@ export function BoardArt({
       return;
     }
     onFlying?.(true);
-    // duration (1.5s) + last layer's stagger (7 × 0.13s) + a small buffer
+    // animation 1.2s + last layer's stagger (7 × 0.11s) + a small buffer
     const t = setTimeout(() => {
       setFlyDone(true);
       onFlying?.(false);
-    }, 1500 + 7 * 130 + 250);
+    }, 1200 + 7 * 110 + 250);
     return () => clearTimeout(t);
   }, [flyIn, flyDone, onFlying]);
+
+  // Pre-parse sibling tiers ONLY after the entrance finishes — parsing every
+  // other board's multi-thousand-path SVG is heavy main-thread work that, if it
+  // landed mid-fly, janked the compositor animation. Deferring it to flyDone
+  // gives the entrance the main thread to itself; the warm still lands long
+  // before a tier click.
+  useEffect(() => {
+    if (!flyDone || !srcs) return;
+    let cancelled = false;
+    const warm = () => {
+      if (cancelled) return;
+      for (const s of srcs) {
+        if (s !== src && !parsedCache.has(s)) void warmParsed(s).catch(() => {});
+      }
+    };
+    const id: number =
+      typeof requestIdleCallback !== 'undefined'
+        ? requestIdleCallback(warm, {timeout: 1500})
+        : (setTimeout(warm, 250) as unknown as number);
+    return () => {
+      cancelled = true;
+      if (typeof cancelIdleCallback !== 'undefined') cancelIdleCallback(id);
+      else clearTimeout(id);
+    };
+  }, [flyDone, srcs, src]);
 
   // Resolve the layer sheets for the active board: a cache hit (the active board
   // or a pre-parsed sibling) renders instantly; otherwise parse the freshly
@@ -664,7 +671,7 @@ export function BoardArt({
         // bleed). Then re-show the face at full brightness inside each highlight
         // box, on top of the dim. No outline clip → no bright port sliver.
         const dimMask = document.createElementNS(NS, 'mask');
-        dimMask.setAttribute('id', 'od-dim');
+        dimMask.setAttribute('id', `od-dim-${uid}`);
         dimMask.setAttribute('maskUnits', 'userSpaceOnUse');
         dimMask.setAttribute('mask-type', 'alpha');
         dimMask.setAttribute('x', String(rx0));
@@ -675,7 +682,7 @@ export function BoardArt({
         defs.appendChild(dimMask);
         boxes.forEach((h, i) => {
           const clip = document.createElementNS(NS, 'clipPath');
-          clip.setAttribute('id', `od-bright-${i}`);
+          clip.setAttribute('id', `od-bright-${uid}-${i}`);
           clip.setAttribute('clipPathUnits', 'userSpaceOnUse');
           const cr = document.createElementNS(NS, 'rect');
           cr.setAttribute('x', String(h.rect[0]));
@@ -693,13 +700,13 @@ export function BoardArt({
         dim.setAttribute('width', String(rw));
         dim.setAttribute('height', String(rh));
         dim.setAttribute('class', 'board-hilite-dim');
-        dim.setAttribute('mask', 'url(#od-dim)');
+        dim.setAttribute('mask', `url(#od-dim-${uid})`);
         g.appendChild(dim);
         // Re-show the face bright inside each box (clipped), on top of the dim.
         boxes.forEach((h, i) => {
           const bface = faceImg.cloneNode(true) as SVGElement;
           bface.removeAttribute('id');
-          bface.setAttribute('clip-path', `url(#od-bright-${i})`);
+          bface.setAttribute('clip-path', `url(#od-bright-${uid}-${i})`);
           bface.setAttribute('class', 'board-hilite-face');
           g.appendChild(bface);
         });
@@ -707,7 +714,7 @@ export function BoardArt({
         // Fallback (no face image): dim a board-bbox rect with holes per box,
         // clipped to the outline.
         const mask = document.createElementNS(NS, 'mask');
-        mask.setAttribute('id', 'od-spot');
+        mask.setAttribute('id', `od-spot-${uid}`);
         mask.setAttribute('maskUnits', 'userSpaceOnUse');
         mask.setAttribute('x', String(rx0));
         mask.setAttribute('y', String(ry0));
@@ -738,7 +745,7 @@ export function BoardArt({
         dim.setAttribute('width', String(rw));
         dim.setAttribute('height', String(rh));
         dim.setAttribute('class', 'board-hilite-dim');
-        dim.setAttribute('mask', 'url(#od-spot)');
+        dim.setAttribute('mask', `url(#od-spot-${uid})`);
         dim.setAttribute('clip-path', `url(#${clipId})`);
         g.appendChild(dim);
       }
@@ -765,6 +772,7 @@ export function BoardArt({
     manifest,
     highlightUnion,
     highlightGroups,
+    uid,
   ]);
 
   // Step through the stack, clamped to its ends (used by chevrons / keys / wheel).
@@ -840,7 +848,7 @@ export function BoardArt({
                 aria-label={`Show ${s.label} layer`}
                 aria-pressed={i === active}
                 onClick={() => setActive(i)}
-                // eslint-disable-next-line react/no-danger
+                 
                 dangerouslySetInnerHTML={{__html: s.html}}
               />
             ))}
