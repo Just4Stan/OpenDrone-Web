@@ -1,6 +1,7 @@
 import {
   Link,
   redirect,
+  useFetcher,
   useLoaderData,
   useOutletContext,
   useSearchParams,
@@ -19,6 +20,11 @@ import type {
 import {CUSTOMER_DETAILS_QUERY} from '~/graphql/customer-account/CustomerDetailsQuery';
 import {CUSTOMER_ORDERS_QUERY} from '~/graphql/customer-account/CustomerOrdersQuery';
 import {SUPPORT_CUSTOMER_PREFILL_QUERY} from '~/graphql/customer-account/SupportPrefillQuery';
+import {CUSTOMER_NEWSLETTER_STATE_QUERY} from '~/graphql/customer-account/NewsletterStateQuery';
+import {
+  CUSTOMER_EMAIL_MARKETING_SUBSCRIBE_MUTATION,
+  CUSTOMER_EMAIL_MARKETING_UNSUBSCRIBE_MUTATION,
+} from '~/graphql/customer-account/NewsletterMutations';
 import {buildSeoMeta} from '~/lib/seo';
 import {countOpenForCustomer} from '~/lib/support/ticket-index';
 import {Money, flattenConnection} from '@shopify/hydrogen';
@@ -59,9 +65,10 @@ export async function loader({request, context}: Route.LoaderArgs) {
     }
   }
 
-  // Recent orders and the support-prefill lookup are independent; run them
-  // in parallel so the dashboard waits one customerAccount round-trip, not two.
-  const [recentOrders, prefillResult] = await Promise.all([
+  // Recent orders, the support-prefill lookup, and newsletter consent are
+  // independent; run them in parallel so the dashboard waits one
+  // customerAccount round-trip, not three.
+  const [recentOrders, prefillResult, newsletterResult] = await Promise.all([
     customerAccount
       .query(CUSTOMER_ORDERS_QUERY, {
         variables: {
@@ -71,9 +78,13 @@ export async function loader({request, context}: Route.LoaderArgs) {
       })
       .catch(() => null),
     customerAccount.query(SUPPORT_CUSTOMER_PREFILL_QUERY).catch(() => null),
+    customerAccount.query(CUSTOMER_NEWSLETTER_STATE_QUERY).catch(() => null),
   ]);
 
   const orders = recentOrders?.data?.customer?.orders?.nodes ?? [];
+  const newsletterSubscribed =
+    newsletterResult?.data?.customer?.emailAddress?.marketingState ===
+    'SUBSCRIBED';
 
   // Open ticket count for the support tile — needs the customer id from the
   // prefill query above, so this Redis read runs after. Fail open.
@@ -85,11 +96,69 @@ export async function loader({request, context}: Route.LoaderArgs) {
     /* fail open — tile renders the no-tickets variant */
   }
 
-  return {orders, justOnboarded, openTicketCount};
+  return {orders, justOnboarded, openTicketCount, newsletterSubscribed};
+}
+
+// Toggle the signed-in customer's email-marketing consent from the dashboard's
+// newsletter card. Honours the footer's "manage it anytime in your account".
+export async function action({request, context}: Route.ActionArgs) {
+  const {customerAccount} = context;
+  await customerAccount.handleAuthStatus();
+
+  const form = await request.formData();
+  const intent = String(form.get('intent') ?? '');
+  if (intent !== 'subscribe' && intent !== 'unsubscribe') {
+    return {ok: false, subscribed: null, error: 'Unknown action.'};
+  }
+
+  try {
+    if (intent === 'unsubscribe') {
+      const {data, errors} = await customerAccount.mutate(
+        CUSTOMER_EMAIL_MARKETING_UNSUBSCRIBE_MUTATION,
+      );
+      const payload = data?.customerEmailMarketingUnsubscribe;
+      if (errors?.length || payload?.userErrors?.length) {
+        throw new Error(
+          payload?.userErrors?.[0]?.message ??
+            errors?.[0]?.message ??
+            'Update failed.',
+        );
+      }
+      return {
+        ok: true,
+        subscribed:
+          payload?.emailAddress?.marketingState === 'SUBSCRIBED',
+        error: null,
+      };
+    }
+    const {data, errors} = await customerAccount.mutate(
+      CUSTOMER_EMAIL_MARKETING_SUBSCRIBE_MUTATION,
+    );
+    const payload = data?.customerEmailMarketingSubscribe;
+    if (errors?.length || payload?.userErrors?.length) {
+      throw new Error(
+        payload?.userErrors?.[0]?.message ??
+          errors?.[0]?.message ??
+          'Update failed.',
+      );
+    }
+    return {
+      ok: true,
+      subscribed: payload?.emailAddress?.marketingState === 'SUBSCRIBED',
+      error: null,
+    };
+  } catch (error) {
+    return {
+      ok: false,
+      subscribed: null,
+      error: error instanceof Error ? error.message : 'Update failed.',
+    };
+  }
 }
 
 export default function AccountIndex() {
-  const {orders, justOnboarded, openTicketCount} = useLoaderData<typeof loader>();
+  const {orders, justOnboarded, openTicketCount, newsletterSubscribed} =
+    useLoaderData<typeof loader>();
   const {customer} = useOutletContext<{customer: CustomerFragment}>();
   const [searchParams, setSearchParams] = useSearchParams();
   const firstName = customer.firstName?.trim();
@@ -136,11 +205,69 @@ export default function AccountIndex() {
       <div className="account-dashboard-grid">
         <OrdersCard orders={orders} />
         <AddressCard customer={customer} />
+        <NewsletterCard subscribed={newsletterSubscribed} />
         <SupportCard openCount={openTicketCount} />
         <CommunityCard />
         <BuildCard />
       </div>
     </div>
+  );
+}
+
+function NewsletterCard({subscribed}: {subscribed: boolean}) {
+  const fetcher = useFetcher<typeof action>();
+  const pending = fetcher.state !== 'idle';
+  // Reflect the optimistic/just-returned state, falling back to the loader.
+  const isSubscribed =
+    fetcher.data && fetcher.data.ok && fetcher.data.subscribed !== null
+      ? fetcher.data.subscribed
+      : subscribed;
+  const error = fetcher.data && !fetcher.data.ok ? fetcher.data.error : null;
+
+  return (
+    <section
+      className={`account-dashboard-card account-dash-support${
+        isSubscribed ? ' is-active' : ''
+      }`}
+    >
+      <p className="account-dashboard-eyebrow-mono">
+        Newsletter · Engineering Essentials
+      </p>
+      <h3 className="account-dashboard-card-title">Build notes</h3>
+      <p className="account-dashboard-card-lede">
+        {isSubscribed
+          ? 'Subscribed — new posts land in your inbox.'
+          : 'Get product releases and build notes by email.'}
+      </p>
+      <fetcher.Form method="post">
+        <input
+          type="hidden"
+          name="intent"
+          value={isSubscribed ? 'unsubscribe' : 'subscribe'}
+        />
+        <button
+          type="submit"
+          className="od-tile-link"
+          disabled={pending}
+          aria-busy={pending || undefined}
+        >
+          {pending
+            ? 'Saving…'
+            : isSubscribed
+              ? 'Unsubscribe →'
+              : 'Subscribe →'}
+        </button>
+      </fetcher.Form>
+      {error ? (
+        <p
+          role="alert"
+          className="account-dashboard-card-lede"
+          style={{color: 'var(--color-text)', marginTop: '0.5rem'}}
+        >
+          {error}
+        </p>
+      ) : null}
+    </section>
   );
 }
 
