@@ -24,6 +24,11 @@ export type ChapterPin = {
   /** Draw one union box PER subarray (e.g. ESC motor pads grouped by motor → 4
    *  boxes of 3 phases). `refs` stays the flat union for matching + spotlight. */
   boxGroups?: string[][];
+  /** Render this pin as a single row of horizontal I/O "chips" instead of plain
+   *  text — each chip highlights its own refs on hover (e.g. the FC's UART / I2C
+   *  / LED / CAM / VTX / BUZZER solder-pad groups in one row). `refs` should be
+   *  the union of all chips so side-grouping + connector lines still work. */
+  chips?: Array<{label: string; refs: string[]}>;
 };
 
 /**
@@ -590,13 +595,17 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
         },
         {
           ref: '⑨',
-          part: 'UART pads',
-          refs: ['J9', 'J13', 'J43', 'J44', 'J48', 'J49', 'J52', 'J54'],
+          part: 'I/O solder pads',
+          refs: ['J9', 'J13', 'J43', 'J44', 'J48', 'J49', 'J52', 'J54', 'J15', 'J18', 'J10', 'J11', 'J23', 'J24', 'J2', 'J32', 'J33', 'J34', 'J21'],
+          chips: [
+            {label: 'UART', refs: ['J9', 'J13', 'J43', 'J44', 'J48', 'J49', 'J52', 'J54']},
+            {label: 'I2C', refs: ['J15', 'J18']},
+            {label: 'LED', refs: ['J10', 'J11', 'J23', 'J24']},
+            {label: 'CAM', refs: ['J2', 'J32']},
+            {label: 'VTX', refs: ['J33', 'J34']},
+            {label: 'BUZZER', refs: ['J21']},
+          ],
         },
-        {ref: '⑩', part: 'Camera + VTX pads', refs: ['J2', 'J32', 'J33', 'J34']},
-        {ref: '⑪', part: 'I2C pads', refs: ['J15', 'J18']},
-        {ref: '⑫', part: 'Buzzer pad', refs: ['J21']},
-        {ref: '⑬', part: 'LED strip pads', refs: ['J10', 'J11', 'J23', 'J24']},
       ],
       // boardArt is supplied per variant (openfc-lite-mini / openfc-lite); the
       // PDP swaps the layer reveal as the ladder selects a mount size.
@@ -660,13 +669,17 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
           },
           {
             ref: '⑨',
-            part: 'UART pads',
-            refs: ['J8', 'J12', 'J43', 'J44', 'J48', 'J49'],
+            part: 'I/O solder pads',
+            refs: ['J8', 'J12', 'J43', 'J44', 'J48', 'J49', 'J15', 'J18', 'J10', 'J24', 'J32', 'J33', 'J34', 'J21'],
+            chips: [
+              {label: 'UART', refs: ['J8', 'J12', 'J43', 'J44', 'J48', 'J49']},
+              {label: 'I2C', refs: ['J15', 'J18']},
+              {label: 'LED', refs: ['J10', 'J24']},
+              {label: 'CAM', refs: ['J32']},
+              {label: 'VTX', refs: ['J33', 'J34']},
+              {label: 'BUZZER', refs: ['J21']},
+            ],
           },
-          {ref: '⑩', part: 'Camera + VTX pads', refs: ['J32', 'J33', 'J34']},
-          {ref: '⑪', part: 'I2C pads', refs: ['J15', 'J18']},
-          {ref: '⑫', part: 'Buzzer pad', refs: ['J21']},
-          {ref: '⑬', part: 'LED strip pads', refs: ['J10', 'J24']},
         ],
         boardArt: {
           src: '/boards/openfc-lite-mini/board.svg',

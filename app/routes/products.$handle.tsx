@@ -728,6 +728,38 @@ export default function Product() {
   // highlights its footprint(s) on the board (keyboard mirrors mouse for a11y).
   const renderPin = (pin: ChapterPin) => {
     const refs = pin.refs;
+    // Chip-row pin (e.g. FC I/O pads): one row, a horizontal set of chips, each
+    // highlighting its own pad group on hover/focus.
+    if (pin.chips?.length) {
+      return (
+        <li key={pin.ref} className="teardown-pin teardown-io-row">
+          <span className="teardown-io-tag">I/O</span>
+          <div className="teardown-io-chips">
+            {pin.chips.map((chip) => {
+              const on = () => {
+                setHoveredRefs(chip.refs);
+                setHoveredUnion(false);
+                setHoveredGroups(undefined);
+              };
+              const off = () => setHoveredRefs([]);
+              return (
+                <button
+                  type="button"
+                  key={chip.label}
+                  className="teardown-io-chip"
+                  onMouseEnter={on}
+                  onMouseLeave={off}
+                  onFocus={on}
+                  onBlur={off}
+                >
+                  {chip.label}
+                </button>
+              );
+            })}
+          </div>
+        </li>
+      );
+    }
     const hoverable = !!refs?.length;
     const enter = () => {
       setHoveredRefs(refs ?? []);
@@ -847,48 +879,26 @@ export default function Product() {
         }
       });
     };
-    // Redraw EVERY frame while the teardown list is on screen, so the links
-    // track the (sticky board vs scrolling list) positions with zero lag —
-    // scroll-event throttling let them drift/disconnect on fast scrolls. The
-    // loop is gated by an IntersectionObserver so it isn't running off-screen.
-    let running = false;
-    const loop = () => {
-      draw();
-      raf = running ? requestAnimationFrame(loop) : 0;
-    };
-    const start = () => {
-      if (!running) {
-        running = true;
-        raf = requestAnimationFrame(loop);
-      }
-    };
-    const stop = () => {
-      running = false;
-      if (raf) cancelAnimationFrame(raf);
-      raf = 0;
-      draw();
+    // Redraw on scroll/resize only (rAF-throttled) — NOT a continuous loop,
+    // which pinned the GPU at idle. The portal (viewport-fixed coords) is what
+    // keeps the links connected; a per-event redraw tracks scroll fine.
+    const onScroll = () => {
+      if (!raf)
+        raf = requestAnimationFrame(() => {
+          raf = 0;
+          draw();
+        });
     };
     draw();
     // Board SVG + rail stream in async — nudge a few redraws after mount.
     const timers = [150, 500, 1200].map((t) => setTimeout(draw, t));
-    const target = document.querySelector('.teardown-sides');
-    let io: IntersectionObserver | null = null;
-    if (target && 'IntersectionObserver' in window) {
-      io = new IntersectionObserver(
-        (entries) => (entries[0].isIntersecting ? start() : stop()),
-        {rootMargin: '300px 0px'},
-      );
-      io.observe(target);
-    } else {
-      start();
-    }
-    window.addEventListener('resize', draw);
+    window.addEventListener('scroll', onScroll, {passive: true, capture: true});
+    window.addEventListener('resize', onScroll);
     return () => {
-      io?.disconnect();
-      running = false;
-      if (raf) cancelAnimationFrame(raf);
+      window.removeEventListener('scroll', onScroll, {capture: true});
+      window.removeEventListener('resize', onScroll);
       timers.forEach(clearTimeout);
-      window.removeEventListener('resize', draw);
+      if (raf) cancelAnimationFrame(raf);
     };
   }, [activeBoardArt, groupedPins, linksMounted]);
   // <960px the pinned rail becomes a bottom bar (price + add-to-cart only):

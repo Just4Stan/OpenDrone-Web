@@ -5042,6 +5042,45 @@ button.reset {
   box-shadow: 0 -1px 0 0 color-mix(in srgb, var(--color-gold) 13%, transparent);
   outline: none;
 }
+
+/* I/O chip row: one row holding a horizontal set of hoverable pad-group chips. */
+.teardown-pins li.teardown-io-row {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+.teardown-io-tag {
+  flex: none;
+  font-size: 0.7rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+.teardown-io-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+.teardown-io-chip {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  border: 1px solid var(--color-border);
+  background: color-mix(in srgb, var(--color-text) 4%, transparent);
+  color: var(--color-text);
+  cursor: pointer;
+  transition: background 0.12s, border-color 0.12s, color 0.12s;
+}
+.teardown-io-chip:hover,
+.teardown-io-chip:focus-visible {
+  background: color-mix(in srgb, var(--color-gold) 16%, transparent);
+  border-color: color-mix(in srgb, var(--color-gold) 55%, transparent);
+  color: var(--color-gold);
+  outline: none;
+}
 .teardown-pin-hoverable:hover .teardown-pin-part,
 .teardown-pin-hoverable:focus-visible .teardown-pin-part {
   color: var(--color-gold);
