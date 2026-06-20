@@ -11724,10 +11724,19 @@ button.reset {
 
 /* ---- Council pass 1: kill remaining voids + make touch explorers legible --- */
 @media (max-width: 1023px) {
-  /* Schematic stage was a fixed 72vh box; a sparse sheet left a tall black
-     void with the "Open schematic" link stranded far below. Shrink it. */
+  /* Schematic stage was a fixed 72vh box, so a wide/sparse sheet left ~⅔ of it
+     black. Size the stage to the active sheet's real aspect ratio (--sheet-ar
+     from the manifest) so it hugs the drawing — capped so a tall sheet can't run
+     off-screen. The wide OVERVIEW sheet now fills its box instead of stranding a
+     half-screen of void. */
   .schematic-page {
-    height: min(52vh, 440px);
+    /* Out of flex sizing so aspect-ratio derives height from a definite width
+       (the sheet img is position:absolute, so flex-auto height collapses to 0). */
+    flex: none;
+    width: 100%;
+    height: auto;
+    aspect-ratio: var(--sheet-ar, 5 / 2);
+    max-height: min(52vh, 440px);
   }
 
   /* Touch has no hover, so tappable component rows looked like a static spec
@@ -11884,5 +11893,46 @@ button.reset {
      the floor list), so it stayed 11px — match the specificity here. */
   .rn-year .rn-year-count {
     font-size: 12px;
+  }
+}
+
+/* ---- Council pass 3: empty-cart launchpad + schematic stays sized to sheet -- */
+/* Empty cart: family chips below the Shop-all CTA turn the dead screen into an
+   exploration launchpad. Visible in both the page and the drawer cart. */
+.cart-empty-explore {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-top: 1.1rem;
+  max-width: 24rem;
+}
+.cart-empty-chip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 40px;
+  padding: 0 0.9rem;
+  border-radius: var(--r-pill);
+  border: 1px solid var(--color-border-strong);
+  background: var(--color-bg-card);
+  color: var(--color-text);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  transition: border-color 0.18s ease, color 0.18s ease;
+}
+.cart-empty-chip:hover {
+  border-color: var(--color-gold);
+  color: var(--color-gold);
+}
+@media (max-width: 1023px) {
+  /* Consent / form checkboxes were ~13px hit targets — enlarge on touch. */
+  input[type='checkbox'] {
+    width: 20px;
+    height: 20px;
+  }
+  .cart-empty-chip {
+    min-height: 44px;
   }
 }

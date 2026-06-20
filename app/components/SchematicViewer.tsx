@@ -194,7 +194,14 @@ export function SchematicViewer({handle, handles, inspectUrl}: SchematicViewerPr
               </div>
             </div>
             {/* eslint-enable jsx-a11y/no-noninteractive-element-interactions, jsx-a11y/no-noninteractive-tabindex */}
-            <div className="schematic-page">
+            <div
+              className="schematic-page"
+              style={
+                current?.w && current?.h
+                  ? ({['--sheet-ar' as string]: `${current.w} / ${current.h}`} as React.CSSProperties)
+                  : undefined
+              }
+            >
               {current ? (
                 <img
                   key={`${dh}:${current.slug}`}
