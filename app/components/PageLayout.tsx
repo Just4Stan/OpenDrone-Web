@@ -14,6 +14,9 @@ import {CartMain} from '~/components/CartMain';
 import {PlaceholderBanner} from '~/components/PlaceholderBanner';
 import {RouteProgress} from '~/components/RouteProgress';
 
+/** Resolved marketing-consent state for the signed-in customer (null = guest). */
+export type NewsletterAccount = {email: string; subscribed: boolean} | null;
+
 interface PageLayoutProps {
   cart: Promise<CartApiQueryFragment | null>;
   header: HeaderQuery;
@@ -23,6 +26,7 @@ interface PageLayoutProps {
   turnstileSiteKey?: string | null;
   prelaunch?: boolean;
   familyProducts?: Promise<HeaderFamilyProduct[]>;
+  newsletterAccount?: Promise<NewsletterAccount>;
   children?: React.ReactNode;
 }
 
@@ -36,6 +40,7 @@ export function PageLayout({
   turnstileSiteKey,
   prelaunch = true,
   familyProducts,
+  newsletterAccount,
 }: PageLayoutProps) {
   const {pathname} = useLocation();
   const isHomepage = pathname === '/';
@@ -69,6 +74,7 @@ export function PageLayout({
               publicStoreDomain={publicStoreDomain}
               company={company}
               turnstileSiteKey={turnstileSiteKey ?? null}
+              newsletterAccount={newsletterAccount}
             />
           )}
         </div>
@@ -90,7 +96,6 @@ function CartAside({cart}: {cart: PageLayoutProps['cart']}) {
     </Aside>
   );
 }
-
 
 function MobileMenuAside({
   header,

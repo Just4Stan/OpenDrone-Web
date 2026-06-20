@@ -1,6 +1,9 @@
+import {Suspense} from 'react';
+import {Await} from 'react-router';
 import {NavLink} from '~/components/nav';
 import type {HeaderQuery} from 'storefrontapi.generated';
 import type {CompanyIdentity} from '~/lib/company';
+import type {NewsletterAccount} from '~/components/PageLayout';
 import {CompanyFooterBlock} from '~/components/CompanyFooterBlock';
 import {NewsletterSignup} from '~/components/NewsletterSignup';
 
@@ -9,6 +12,7 @@ interface FooterProps {
   publicStoreDomain: string;
   company: CompanyIdentity;
   turnstileSiteKey?: string | null;
+  newsletterAccount?: Promise<NewsletterAccount>;
 }
 
 const SHOP_LINKS: Array<{to: string; label: string}> = [
@@ -24,6 +28,7 @@ const OPEN_SOURCE_LINKS: Array<{href: string; label: string}> = [
 ];
 
 const COMPANY_LINKS: Array<{to: string; label: string}> = [
+  {to: '/incutec', label: 'Who’s Incutec'},
   {to: '/open-source', label: 'How we open source'},
   {to: '/firmware-partners', label: 'Firmware partners'},
   {to: '/legal', label: 'Legal / Imprint'},
@@ -69,17 +74,45 @@ function FooterNavLink({to, children}: {to: string; children: React.ReactNode}) 
   );
 }
 
-export function Footer({company, turnstileSiteKey}: FooterProps) {
+export function Footer({
+  company,
+  turnstileSiteKey,
+  newsletterAccount,
+}: FooterProps) {
   return (
     <footer className="mt-auto border-t border-[var(--color-border)]">
       <div className="site-footer-inner">
         {/* Newsletter — separated by a hairline + whitespace, not a card box.
-            The form carries its own hierarchy. */}
+            The form carries its own hierarchy. Subscription-aware: the deferred
+            account state swaps the form for a "you're subscribed" panel (or
+            prefills the email for a signed-in non-subscriber). Falls back to the
+            plain form for guests / while the deferred state resolves. */}
         <div className="mb-8 pb-8 border-b border-[var(--color-border)]">
-          <NewsletterSignup
-            variant="footer"
-            turnstileSiteKey={turnstileSiteKey ?? null}
-          />
+          {newsletterAccount ? (
+            <Suspense
+              fallback={
+                <NewsletterSignup
+                  variant="footer"
+                  turnstileSiteKey={turnstileSiteKey ?? null}
+                />
+              }
+            >
+              <Await resolve={newsletterAccount} errorElement={null}>
+                {(account) => (
+                  <NewsletterSignup
+                    variant="footer"
+                    turnstileSiteKey={turnstileSiteKey ?? null}
+                    account={account ?? null}
+                  />
+                )}
+              </Await>
+            </Suspense>
+          ) : (
+            <NewsletterSignup
+              variant="footer"
+              turnstileSiteKey={turnstileSiteKey ?? null}
+            />
+          )}
         </div>
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           {/* Company identity */}
