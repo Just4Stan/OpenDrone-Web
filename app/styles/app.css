@@ -6083,7 +6083,7 @@ button.reset {
   flex-direction: column;
   align-items: center;
   text-align: center;
-  padding: 2.5rem 1.25rem 2rem;
+  padding: 1.25rem 1.25rem 2rem;
   gap: 0.85rem;
 }
 
@@ -11791,5 +11791,66 @@ button.reset {
 @media (min-width: 1024px) {
   .teardown-hint {
     display: none;
+  }
+}
+
+/* ---- Council pass 1: mobile nav drawer (search + families + account) ------ */
+@media (max-width: 1023px) {
+  /* The drawer was --aside-width:400px → full-screen on a phone, and the
+     tap-outside-to-close strip collapsed to 0 (100% - 400px). Make it a panel
+     so a backdrop strip stays tappable. */
+  :root {
+    --aside-width: min(86vw, 360px);
+  }
+  /* The × was a ~10×23px hit target — the worst on the site. Floor it to 44px. */
+  .overlay aside header .close {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 44px;
+    min-height: 44px;
+    margin-right: -10px;
+    font-size: 1.7rem;
+    line-height: 1;
+  }
+  /* Drawer can scroll if the fuller menu runs long. */
+  .overlay aside main {
+    overflow-y: auto;
+  }
+  .site-mobile-nav {
+    gap: 0.15rem;
+  }
+  /* Section dividers in the drawer (Shop / More / Account). */
+  .site-mobile-nav-label {
+    margin: 0.85rem 0 0.1rem;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--color-text-dim);
+  }
+  .site-mobile-nav-label:first-child {
+    margin-top: 0;
+  }
+  /* Search affordance — a pill input-lookalike at the top of the drawer. */
+  .site-mobile-nav-search {
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+    min-height: 44px;
+    margin-bottom: 0.5rem;
+    padding: 0 0.9rem;
+    border-radius: var(--r-pill);
+    border: 1px solid var(--color-border-strong);
+    background: var(--color-bg-card);
+    color: var(--color-text-muted);
+    font-family: var(--font-mono);
+    font-size: 13px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+  .site-mobile-nav-search:hover {
+    border-color: var(--color-gold);
+    color: var(--color-text);
   }
 }
