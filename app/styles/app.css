@@ -1420,11 +1420,17 @@ html.hero-incutec-hint .incutec-hint {
   will-change: opacity;
 }
 
-/* When the window is unfocused / tab hidden, freeze every animation — nothing is
-   being watched, so don't keep the compositor (and GPU) busy. */
-html.anim-paused *,
-html.anim-paused *::before,
-html.anim-paused *::after {
+/* When the window is unfocused / tab hidden, freeze the always-running ambient
+   animations (the only continuous GPU cost) so they don't keep the compositor
+   busy while nobody's watching. Scoped to those infinite decorations — NOT a
+   global `*`, which would also freeze one-time entrances (the board fly-in,
+   chapter reveals) mid-flight and strand them off-screen. */
+html.anim-paused .site-wordmark-sheen,
+html.anim-paused .placeholder-banner__dot,
+html.anim-paused .hero-drag-hint.is-visible,
+html.anim-paused .hero-scroll-hint.is-visible svg,
+html.anim-paused .latest-commit-dot,
+html.anim-paused .support-typing span {
   animation-play-state: paused !important;
 }
 @media (prefers-reduced-motion: reduce) {
@@ -4442,6 +4448,14 @@ button.reset {
   perspective: 1700px;
   transform-style: preserve-3d;
 }
+/* `--fly` is an entrance-only horizontal offset (0 at rest) prepended to every
+   sheet transform; the first-reveal animation sweeps it in from the left. It's a
+   registered property so it can be animated (plain custom props can't). */
+@property --fly {
+  syntax: '<length>';
+  inherits: false;
+  initial-value: 0px;
+}
 .board-sheet {
   position: absolute;
   inset: 0;
@@ -4452,8 +4466,9 @@ button.reset {
   cursor: pointer;
   transform-origin: 50% 50%;
   /* Fan the stack back-and-down by physical layer index (--depth). */
-  transform: translateY(calc(var(--depth) * 7%)) translateX(calc(var(--depth) * 2.4%))
-    translateZ(calc(var(--depth) * -70px)) scale(calc(1 - var(--depth) * 0.035));
+  transform: translateX(var(--fly, 0px)) translateY(calc(var(--depth) * 7%))
+    translateX(calc(var(--depth) * 2.4%)) translateZ(calc(var(--depth) * -70px))
+    scale(calc(1 - var(--depth) * 0.035));
   z-index: calc(30 - var(--depth));
   transition: transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1), filter 0.45s ease;
   /* Dim + flatten the un-selected sheets so the active one reads clearly. */
@@ -4465,11 +4480,37 @@ button.reset {
     drop-shadow(0 14px 22px rgba(0, 0, 0, 0.55));
 }
 .board-sheet.is-active {
-  transform: translateY(-11%) translateZ(120px) scale(1.05);
+  transform: translateX(var(--fly, 0px)) translateY(-11%) translateZ(120px)
+    scale(1.05);
   z-index: 50;
   filter: saturate(0.95) contrast(1.05)
     drop-shadow(0 0 26px color-mix(in srgb, var(--color-gold) 38%, transparent))
     drop-shadow(0 26px 34px rgba(0, 0, 0, 0.55));
+}
+/* First-reveal entrance: each layer flies in from the left to its resting fan
+   position, staggered by --depth, uncovering the teardown text. Runs once (the
+   .is-revealed class is added on first scroll-into-view and never removed). */
+@keyframes board-sheet-fly {
+  from {
+    --fly: -68vw;
+    opacity: 0;
+  }
+  55% {
+    opacity: 1;
+  }
+  to {
+    --fly: 0px;
+    opacity: 1;
+  }
+}
+.board-art.is-revealed .board-sheet {
+  animation: board-sheet-fly 0.8s cubic-bezier(0.16, 0.84, 0.3, 1) both;
+  animation-delay: calc(var(--depth) * 0.075s + 0.15s);
+}
+@media (prefers-reduced-motion: reduce) {
+  .board-art.is-revealed .board-sheet {
+    animation: none;
+  }
 }
 .board-sheet-svg {
   display: block;
