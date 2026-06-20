@@ -744,6 +744,9 @@ export default function Product() {
   // timer, which fired before the user scrolled down → the slide played offscreen
   // and was never seen).
   useEffect(() => {
+    // Re-arm on every product switch (the PDP stays mounted across nav, so this
+    // must reset or the new product's copy would already be "in").
+    setTextIn(false);
     if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) {
       setTextIn(true);
       return;
@@ -768,7 +771,7 @@ export default function Product() {
       io.disconnect();
       if (timer) clearTimeout(timer);
     };
-  }, []);
+  }, [product.handle]);
   // Co-trigger: the board's own fly starting is a sure sign the teardown is on
   // screen, so slide the copy in a beat later too (belt-and-suspenders with the
   // observer above — textIn latches, so whichever fires first wins).
@@ -792,16 +795,19 @@ export default function Product() {
       return () => clearTimeout(t);
     }
   }, [boardFlying, linesReady]);
+  // Re-arm the connector lines on every product switch (the PDP stays mounted
+  // across nav, only BoardArt remounts). Without this they'd keep their already-
+  // drawn state instead of redrawing for the new board. Reduced motion shows them
+  // immediately with no draw animation. (No blind timer — if the board never
+  // flies there's no rail for the lines to connect to, so they stay hidden.)
   useEffect(() => {
-    // Fallback: draw them in even if the board never flies (reduced motion / not
-    // centred). Reduced motion gets them immediately (no draw animation).
+    setLinesReady(false);
+    flewRef.current = false;
+    setBoardFlying(false);
     if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) {
       setLinesReady(true);
-      return;
     }
-    const t = setTimeout(() => setLinesReady(true), 6000);
-    return () => clearTimeout(t);
-  }, []);
+  }, [product.handle]);
   // Clear all hover highlight state. Called only when the pointer leaves the
   // whole list (not between rows) so the spotlight stays lit and just moves from
   // row to row — no off/on flicker crossing the dividers/gaps.
