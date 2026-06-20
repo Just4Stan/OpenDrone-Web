@@ -1,17 +1,17 @@
-import {Await, Link, PrefetchPageLinks, useLoaderData} from 'react-router';
+import {Await, PrefetchPageLinks, useLoaderData} from 'react-router';
+import {Link} from '~/components/nav';
+import {Money} from '@shopify/hydrogen';
 import type {Route} from './+types/_index';
 import {
   useEffect,
   useRef,
   useState,
   useCallback,
-  useMemo,
   memo,
   Suspense,
 } from 'react';
-import {Pod} from '~/components/Pod';
-import {ProductPods} from '~/components/ProductPods';
 import type {CollectionItemFragment} from 'storefrontapi.generated';
+import {INCUTEC_HINT_SEEN_KEY} from '~/lib/incutec-hint';
 import {HeroWordmark} from '~/components/HeroWordmark';
 import {HeroSizeSlider} from '~/components/HeroSizeSlider';
 import {MobileHome} from '~/components/MobileHome';
@@ -54,6 +54,7 @@ const ClientHeroScene = memo(function ClientHeroScene({
   loadDelayMs,
   size,
   scrubRef,
+  spotlightRef,
 }: {
   onReady?: () => void;
   onProgress?: (progress: number) => void;
@@ -61,6 +62,7 @@ const ClientHeroScene = memo(function ClientHeroScene({
   loadDelayMs?: number;
   size?: '5' | '3';
   scrubRef?: React.RefObject<number | null>;
+  spotlightRef?: React.RefObject<'fc' | 'esc' | 'frame' | null>;
 }) {
   const [Scene, setScene] = useState<React.ComponentType<{
     onReady?: () => void;
@@ -69,6 +71,7 @@ const ClientHeroScene = memo(function ClientHeroScene({
     loadDelayMs?: number;
     size?: '5' | '3';
     scrubRef?: React.RefObject<number | null>;
+    spotlightRef?: React.RefObject<'fc' | 'esc' | 'frame' | null>;
   }> | null>(null);
   useEffect(() => {
     if (!shouldLoadHero()) {
@@ -98,6 +101,7 @@ const ClientHeroScene = memo(function ClientHeroScene({
       loadDelayMs={loadDelayMs}
       size={size}
       scrubRef={scrubRef}
+      spotlightRef={spotlightRef}
     />
   );
 });
@@ -125,7 +129,10 @@ export async function loader({request, context}: Route.LoaderArgs) {
   // storefront hiccup just drops the cards instead of blanking the page.
   const home: Promise<{
     featured: CollectionItemFragment[];
-    heroStack: CollectionItemFragment[];
+    heroStacks: {
+      five: CollectionItemFragment[];
+      three: CollectionItemFragment[];
+    };
   }> = context.storefront
     .query(HOME_FEATURED_QUERY, {cache: context.storefront.CacheLong()})
     .then((data) => {
@@ -135,22 +142,30 @@ export async function loader({request, context}: Route.LoaderArgs) {
         rx: CollectionItemFragment | null;
         fc: CollectionItemFragment | null;
         esc: CollectionItemFragment | null;
+        fcMini: CollectionItemFragment | null;
+        escMini: CollectionItemFragment | null;
       };
       const keep = (p: CollectionItemFragment | null): p is CollectionItemFragment =>
         Boolean(p);
       return {
         // Mobile flagship line.
         featured: [d.frame, d.stack, d.rx].filter(keep),
-        // The three components in the 3D hero, for the scroll showcase.
-        heroStack: [d.fc, d.esc, d.frame].filter(keep),
+        // The three components in the 3D hero, per airframe size. The 3" stack
+        // points its FC/ESC cards at the -mini PDPs; the frame is shared. Falls
+        // back to the 5" product if a -mini handle isn't live yet, so the card
+        // still renders (linking to the standard part) instead of vanishing.
+        heroStacks: {
+          five: [d.fc, d.esc, d.frame].filter(keep),
+          three: [d.fcMini ?? d.fc, d.escMini ?? d.esc, d.frame].filter(keep),
+        },
       };
     })
-    .catch(() => ({featured: [], heroStack: []}));
+    .catch(() => ({featured: [], heroStacks: {five: [], three: []}}));
 
   const featured = home.then((h) => h.featured);
-  const heroStack = home.then((h) => h.heroStack);
+  const heroStacks = home.then((h) => h.heroStacks);
 
-  return {isMobileHint, featured, heroStack};
+  return {isMobileHint, featured, heroStacks};
 }
 
 function linearstep(edge0: number, edge1: number, x: number) {
@@ -188,7 +203,7 @@ let splashHasPlayedThisSession = false;
  * hooks never mount on a phone.
  */
 export default function Homepage() {
-  const {isMobileHint, featured, heroStack} = useLoaderData<typeof loader>();
+  const {isMobileHint, featured, heroStacks} = useLoaderData<typeof loader>();
   const [isMobile, setIsMobile] = useState(isMobileHint);
   useEffect(() => {
     const mq = window.matchMedia('(max-width: 768px)');
@@ -199,13 +214,16 @@ export default function Homepage() {
   }, []);
 
   if (isMobile) return <MobileHome featured={featured} />;
-  return <DesktopHome heroStack={heroStack} />;
+  return <DesktopHome heroStacks={heroStacks} />;
 }
 
 function DesktopHome({
-  heroStack,
+  heroStacks,
 }: {
-  heroStack: Promise<CollectionItemFragment[]>;
+  heroStacks: Promise<{
+    five: CollectionItemFragment[];
+    three: CollectionItemFragment[];
+  }>;
 }) {
   const scrollRef = useRef(0);
   const rafId = useRef(0);
@@ -217,6 +235,10 @@ function DesktopHome({
   // (not state) so dragging it 60×/s doesn't re-render the page — the render
   // loop reads it each frame. The slider writes it; HeroScene reads it.
   const heroScrubRef = useRef<number | null>(null);
+  // Which board the visitor is hovering on the right-side product cards, or
+  // null. A ref (not state) so hovering doesn't re-render the page; HeroScene
+  // reads it each frame to pin that board's spotlight on.
+  const heroSpotlightRef = useRef<'fc' | 'esc' | 'frame' | null>(null);
   // Splash starts centered and large. It settles when the 3D scene has
   // finished loading AND a minimum wait has elapsed (so the wordmark
   // always gets a readable beat), or when a max timeout fires as a
@@ -264,15 +286,19 @@ function DesktopHome({
     // hit 100% before the models are actually parsed.
     setProgress((prev) => Math.max(prev, Math.min(p, 0.95)));
   }, []);
-  const fcLabelRef = useRef<HTMLDivElement>(null);
-  const frameLabelRef = useRef<HTMLDivElement>(null);
-  const escLabelRef = useRef<HTMLDivElement>(null);
-  // Stable object so <ClientHeroScene>'s memo isn't defeated by a fresh literal
-  // every (scroll-driven) render. The refs themselves never change identity.
-  const labelRefs = useMemo(
-    () => ({fc: fcLabelRef, frame: frameLabelRef, esc: escLabelRef}),
-    [],
-  );
+  // "drag to rotate" hint — pops up a few seconds after the splash settles if
+  // the visitor hasn't touched anything yet, and dismisses on the first drag or
+  // scroll. The drone auto-rotates on its own, so this only nudges discovery of
+  // the drag-to-view interaction.
+  const [showDragHint, setShowDragHint] = useState(false);
+  const [interacted, setInteracted] = useState(false);
+  // The top product header bar drops in a beat AFTER the rest of the islands
+  // have splashed in — 2s after the splash settles — so the hero reads first
+  // and the chrome arrives second. Starting to scroll brings it in early. On
+  // repeat visits (splash already played) it's in from the first frame. When
+  // it lands it shoves the airframe selector down to make room (see the
+  // selector's `top` below, which keys off this).
+  const [headerIn, setHeaderIn] = useState(splashHasPlayedThisSession);
   const tick = useCallback(() => {
     setScrollProgress(scrollRef.current);
     rafId.current = 0;
@@ -402,6 +428,76 @@ function DesktopHome({
     document.documentElement.classList.add('splash-settled');
   }, [splashSettled]);
 
+  // Arm the drag hint ~4s after the splash settles, unless the visitor has
+  // already interacted (dragged or scrolled).
+  useEffect(() => {
+    if (!splashSettled || interacted) return;
+    const t = window.setTimeout(() => setShowDragHint(true), 4000);
+    return () => window.clearTimeout(t);
+  }, [splashSettled, interacted]);
+
+  // First drag (pointerdown anywhere) or first real scroll dismisses the hint
+  // for good.
+  useEffect(() => {
+    if (!splashSettled || interacted) return;
+    const done = () => {
+      setInteracted(true);
+      setShowDragHint(false);
+    };
+    const onScroll = () => {
+      if (window.scrollY > 4) done();
+    };
+    window.addEventListener('pointerdown', done, {once: true});
+    window.addEventListener('scroll', onScroll, {passive: true});
+    return () => {
+      window.removeEventListener('pointerdown', done);
+      window.removeEventListener('scroll', onScroll);
+    };
+  }, [splashSettled, interacted]);
+
+  // Bring the top header bar in 2s after the splash settles, or immediately if
+  // the visitor starts scrolling. Once in, it stays in (and the class persists
+  // across SPA nav like splash-settled does, so it doesn't re-hide on return).
+  useEffect(() => {
+    if (!splashSettled || headerIn) return;
+    const t = window.setTimeout(() => setHeaderIn(true), 2000);
+    const onScroll = () => {
+      if (window.scrollY > 4) setHeaderIn(true);
+    };
+    window.addEventListener('scroll', onScroll, {passive: true});
+    return () => {
+      window.clearTimeout(t);
+      window.removeEventListener('scroll', onScroll);
+    };
+  }, [splashSettled, headerIn]);
+
+  useEffect(() => {
+    if (headerIn) document.documentElement.classList.add('hero-header-in');
+  }, [headerIn]);
+
+  // A beat after the header bar lands (3s), drop a small "Who's incutec?" hint
+  // out from under the Incutec mark, nudging discovery of the company page.
+  // Once the visitor has clicked through (flag in localStorage) the hint is
+  // retired — don't arm it, and clear any stale class from this session.
+  useEffect(() => {
+    if (!headerIn) return;
+    let seen = false;
+    try {
+      seen = localStorage.getItem(INCUTEC_HINT_SEEN_KEY) === '1';
+    } catch {
+      /* storage blocked — treat as not-yet-seen */
+    }
+    if (seen) {
+      document.documentElement.classList.remove('hero-incutec-hint');
+      return;
+    }
+    const t = window.setTimeout(
+      () => document.documentElement.classList.add('hero-incutec-hint'),
+      3000,
+    );
+    return () => window.clearTimeout(t);
+  }, [headerIn]);
+
   const heroSpacerVh = isMobile ? HERO_SPACER_VH_MOBILE : HERO_SPACER_VH_DESKTOP;
   const heroProgressVh = isMobile
     ? HERO_PROGRESS_VH_MOBILE
@@ -429,6 +525,177 @@ function DesktopHome({
     };
   }, [tick, heroProgressVh]);
 
+  // Scroll guiderails — step snapping through the hero. The hero pins for one
+  // viewport of progress (heroProgressVh = 1), so progress p maps 1:1 to scrollY
+  // over [0, innerHeight]. We define four stops along that range; one scroll
+  // gesture advances exactly one stop so OpenFC, then OpenESC, then OpenFrame
+  // reveal one after the other and a hard fling can't skip past them. A short
+  // lock after each step swallows trackpad inertia; the animation is quick
+  // (~440ms) so mouse-wheel users aren't held up. Past the last stop, scrolling
+  // is handed back to the browser so the footer below scrolls normally.
+  useEffect(() => {
+    if (isMobile || !splashSettled) return;
+    // Stop positions as fractions of one viewport of scroll: nothing → FC →
+    // ESC → Frame. Must bracket the reveal windows in REVEAL_WINDOWS so each
+    // stop rests on a fully-revealed card.
+    const STOPS = [0, 0.34, 0.67, 1.0];
+    const stopY = (i: number) =>
+      Math.round(STOPS[i] * window.innerHeight * heroProgressVh);
+    const lastStopY = () => stopY(STOPS.length - 1);
+    const nearestIndex = () => {
+      const y = window.scrollY;
+      let best = 0;
+      let bestD = Infinity;
+      for (let i = 0; i < STOPS.length; i++) {
+        const d = Math.abs(stopY(i) - y);
+        if (d < bestD) {
+          bestD = d;
+          best = i;
+        }
+      }
+      return best;
+    };
+
+    let idx = nearestIndex();
+    let raf = 0;
+    let lockUntil = 0;
+    // Reverse breather — scrolling back up to the top requires a deliberate,
+    // sustained upward gesture, not a single flick. We accumulate upward delta
+    // and only jump to the top once it clears REVERSE_THRESHOLD; any downward
+    // input zeroes the buffer, and the buffer decays if the up-input stalls
+    // (REVERSE_DECAY_MS). This stops a stray up-jitter mid-downward-scroll from
+    // yanking the visitor back to the top by accident.
+    const REVERSE_THRESHOLD = 200;
+    const REVERSE_DECAY_MS = 350;
+    let upAccum = 0;
+    let lastUp = 0;
+    // Damped step: a longer, eased glide plus a generous cooldown so the reveals
+    // can't be rushed. One step per ~820ms — a fling's inertia lands inside the
+    // cooldown and is swallowed (no skipping), a slow scroll paces one at a
+    // time, and a mouse-wheel click still steps on the next deliberate notch.
+    const DUR = 600;
+    const COOLDOWN = DUR + 220;
+    // easeInOutCubic — gentle acceleration and deceleration for a damped feel.
+    const ease = (t: number) =>
+      t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+
+    const animateTo = (targetY: number) => {
+      cancelAnimationFrame(raf);
+      const startY = window.scrollY;
+      const dist = targetY - startY;
+      const t0 = performance.now();
+      lockUntil = t0 + COOLDOWN;
+      if (Math.abs(dist) < 1) return;
+      const stepFrame = (now: number) => {
+        const t = Math.min(1, (now - t0) / DUR);
+        window.scrollTo(0, Math.round(startY + dist * ease(t)));
+        if (t < 1) raf = requestAnimationFrame(stepFrame);
+      };
+      raf = requestAnimationFrame(stepFrame);
+    };
+
+    // Drive one step from a scroll gesture. Returns whether to preventDefault
+    // (true = we own this gesture; false = hand it back to the page).
+    const onGesture = (dir: 1 | -1): boolean => {
+      // Past the last stop → in the footer; let the page scroll and keep idx
+      // pinned so scrolling back up resumes stepping.
+      if (window.scrollY > lastStopY() + 4) {
+        idx = STOPS.length - 1;
+        return false;
+      }
+      if (performance.now() < lockUntil) return true; // cooldown — swallow
+      // Scroll back → skip straight to the top with no reverse animation (the
+      // scene damper snaps backward too). The forward reveals only ever play
+      // on the way down.
+      if (dir < 0) {
+        if (window.scrollY <= 1) return false; // already at the top → let it be
+        window.scrollTo(0, 0);
+        idx = 0;
+        lockUntil = performance.now() + 220;
+        return true;
+      }
+      const next = idx + 1;
+      if (next > STOPS.length - 1) return false; // past the last stop → footer
+      idx = next;
+      animateTo(stopY(idx));
+      return true;
+    };
+
+    // Upward intent gate — feed it the magnitude of an up-scroll. Returns true
+    // once a deliberate, sustained up-gesture has built past the threshold, at
+    // which point the caller should reverse. Holds (swallows) sub-threshold ups
+    // so the page stays pinned at the current stop while the buffer fills.
+    const wantsReverse = (mag: number): boolean => {
+      // Out of the stepping range (already at top / down in the footer) — no
+      // accumulation, let the normal path decide.
+      if (window.scrollY <= 1 || window.scrollY > lastStopY() + 4) return false;
+      const now = performance.now();
+      if (now - lastUp > REVERSE_DECAY_MS) upAccum = 0; // stalled → start fresh
+      lastUp = now;
+      upAccum += mag;
+      if (upAccum < REVERSE_THRESHOLD) return false;
+      upAccum = 0;
+      return true;
+    };
+
+    const onWheel = (e: WheelEvent) => {
+      if (e.deltaY > 0) {
+        upAccum = 0; // downward intent cancels any pending reverse
+        if (onGesture(1)) e.preventDefault();
+        return;
+      }
+      // Upward: swallow it (hold position) and only reverse once the buffer
+      // clears the threshold.
+      if (window.scrollY > 1 && window.scrollY <= lastStopY() + 4) {
+        e.preventDefault();
+        if (wantsReverse(-e.deltaY)) onGesture(-1);
+      }
+    };
+
+    let touchY = 0;
+    const onTouchStart = (e: TouchEvent) => {
+      touchY = e.touches[0]?.clientY ?? 0;
+    };
+    const onTouchMove = (e: TouchEvent) => {
+      const y = e.touches[0]?.clientY ?? 0;
+      const dy = touchY - y;
+      if (dy > 0) {
+        upAccum = 0; // downward drag cancels any pending reverse
+        if (Math.abs(dy) < 14 && performance.now() >= lockUntil) return;
+        if (onGesture(1)) {
+          e.preventDefault();
+          touchY = y;
+        }
+        return;
+      }
+      // Upward drag — same breather as the wheel before snapping to the top.
+      if (window.scrollY > 1 && window.scrollY <= lastStopY() + 4) {
+        e.preventDefault();
+        touchY = y;
+        if (wantsReverse(-dy)) onGesture(-1);
+      }
+    };
+
+    // Keep idx synced when native (footer) scrolling brings us back into range.
+    const onScrollSync = () => {
+      if (performance.now() >= lockUntil && window.scrollY <= lastStopY() + 4) {
+        idx = nearestIndex();
+      }
+    };
+
+    window.addEventListener('wheel', onWheel, {passive: false});
+    window.addEventListener('touchstart', onTouchStart, {passive: true});
+    window.addEventListener('touchmove', onTouchMove, {passive: false});
+    window.addEventListener('scroll', onScrollSync, {passive: true});
+    return () => {
+      cancelAnimationFrame(raf);
+      window.removeEventListener('wheel', onWheel);
+      window.removeEventListener('touchstart', onTouchStart);
+      window.removeEventListener('touchmove', onTouchMove);
+      window.removeEventListener('scroll', onScrollSync);
+    };
+  }, [isMobile, splashSettled, heroProgressVh]);
+
   // Lock page scroll until the intro animation has fully settled. Without
   // this, a flick-scroll mid-animation jumps the splash → settled
   // transform on the wordmark, which looks broken (the wordmark warps
@@ -449,14 +716,16 @@ function DesktopHome({
     };
   }, [splashSettled]);
 
-  const heroTextOpacity = Math.max(0, 1 - scrollProgress * 4);
-  // Phase timing (single 0..1 progress shared with the 3D scene). The model
-  // finishes exploding at p≈0.65 (flyOut smoothstep ends there), so labels
-  // and the CTA are sequenced AFTER that so the names don't pop in while the
-  // parts are still flying apart. Everything lands by ~0.95, leaving the tail
-  // of the scroll as a brief settled-state hold before the page ends.
-  const labelOpacity = linearstep(0.72, 0.84, scrollProgress);
-  const ctaRise = linearstep(0.84, 0.96, scrollProgress);
+  // Per-card reveal windows (shared 0..1 progress with the 3D scene). Each
+  // product pops out of the Shop bubble in turn — FC, then ESC, then the frame
+  // last. These windows MUST match the smoothstep windows in HeroScene's
+  // useFrame, which spotlight the matching board + pull the camera back as the
+  // frame (last card) reveals. Reversing the scroll reverses all of it.
+  const REVEAL_WINDOWS: Array<[number, number]> = [
+    [0.08, 0.3], // FC   — revealed by the 0.34 stop
+    [0.4, 0.62], // ESC  — revealed by the 0.67 stop
+    [0.72, 0.94], // Frame — revealed by the 1.0 stop
+  ];
 
   return (
     <div className="homepage">
@@ -492,13 +761,7 @@ function DesktopHome({
               touchAction: 'pan-y',
             }}
           >
-            <div
-              className="absolute inset-0"
-              style={{
-                background:
-                  'radial-gradient(ellipse at 50% 45%, rgba(80, 65, 20, 0.3) 0%, transparent 60%)',
-              }}
-            />
+            <div className="absolute inset-0 hero-scene-glow" />
             {/* If the WebGL scene crashes (no GPU, lost context, …) the
                 boundary releases the splash so the visitor isn't trapped behind
                 the dim/scroll-lock — the wordmark + CTAs below stay usable. */}
@@ -506,7 +769,6 @@ function DesktopHome({
               <ClientHeroScene
                 onReady={handleSceneReady}
                 onProgress={handleSceneProgress}
-                labelRefs={labelRefs}
                 // Hold the GLB fetch + parse + processing for the first
                 // ~750ms so the wireframe wordmark animation gets a
                 // clean main thread. Skipped entirely on return visits
@@ -514,6 +776,7 @@ function DesktopHome({
                 loadDelayMs={splashHasPlayedThisSession ? 0 : 750}
                 size={heroSize}
                 scrubRef={heroScrubRef}
+                spotlightRef={heroSpotlightRef}
               />
             </SceneErrorBoundary>
             {/* Dim overlay — only covers the 3D scene, not the wordmark.
@@ -547,7 +810,9 @@ function DesktopHome({
               <h1
                 className={`hero-wordmark${splashSettled ? ' is-settled' : ''}`}
                 style={{
-                  opacity: splashSettled ? heroTextOpacity : 1,
+                  // Stays put bottom-left through the whole scroll now — the
+                  // brand anchors the hero while the product cards reveal.
+                  opacity: 1,
                   ...(splashSettled
                     ? {}
                     : {
@@ -596,28 +861,104 @@ function DesktopHome({
             </div>
           ) : null}
 
-          {/* GitHub bubble — top-right, out of the way (moved up from the
-              bottom-right to free room for the shop bubble / showcase). */}
+          {/* GitHub logo — bare mark (no circle), vertically centred on the
+              left of the screen. Persists through the scroll. */}
           <a
             href="https://github.com/incutec-hw"
             target="_blank"
             rel="noopener noreferrer"
-            className={`hero-github pod pod--pill${splashSettled ? ' is-visible' : ''}`}
-            style={{opacity: splashSettled ? heroTextOpacity : 0}}
+            className={`hero-github${splashSettled ? ' is-visible' : ''}`}
+            style={{opacity: splashSettled ? 1 : 0}}
             aria-label="GitHub"
           >
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
+            <svg width="88" height="88" viewBox="0 0 24 24" fill="currentColor">
               <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z" />
             </svg>
           </a>
 
-          {/* Shop CTA bottom-right — 2× wider, the anchor for the scroll
-              product showcase. */}
+          {/* Buy bubble — bottom-right. The Shop button is the anchor; as the
+              user scrolls, the on-screen hardware (FC → ESC → Frame) pops out
+              of it one by one, the stack growing upward. Each card's reveal is
+              driven off scrollProgress and mirrors the spotlight in HeroScene.
+              Scrolling back up retracts them in reverse. */}
           <div
-            className={`hero-actions${splashSettled ? ' is-visible' : ''}`}
-            style={{opacity: splashSettled ? heroTextOpacity : 0}}
+            className={`hero-buy${splashSettled ? ' is-visible' : ''}`}
+            style={{opacity: splashSettled ? 1 : 0}}
           >
-            <Link prefetch="viewport" to="/collections/all" className="hero-action-primary">
+            <Suspense fallback={null}>
+              <Await resolve={heroStacks}>
+                {(stacks) => {
+                  // Pick the stack for the selected airframe — the 3" cards link
+                  // to the -mini PDPs. Order is always [FC, ESC, Frame], so the
+                  // index maps directly to the 3D board the card spotlights.
+                  const items = heroSize === '3' ? stacks.three : stacks.five;
+                  const BOARD_KEYS = ['fc', 'esc', 'frame'] as const;
+                  return (
+                  <div className="hero-buy-stack" aria-hidden={scrollProgress < 0.1}>
+                    {items.slice(0, 3).map((p, i) => {
+                      const [lo, hi] = REVEAL_WINDOWS[i] ?? [1, 1];
+                      const r = linearstep(lo, hi, scrollProgress);
+                      const price = p.priceRange?.minVariantPrice ?? null;
+                      const boardKey = BOARD_KEYS[i];
+                      const setSpot = (v: 'fc' | 'esc' | 'frame' | null) => {
+                        heroSpotlightRef.current = v;
+                      };
+                      return (
+                        <Link
+                          key={p.handle}
+                          to={`/products/${p.handle}`}
+                          prefetch="intent"
+                          className="hero-reveal-card"
+                          style={{
+                            maxHeight: `${(r * 7.5).toFixed(3)}rem`,
+                            marginTop: `${(r * 0.55).toFixed(3)}rem`,
+                            opacity: r,
+                            transform: `translateY(${((1 - r) * 28).toFixed(1)}px)`,
+                            pointerEvents: r > 0.6 ? 'auto' : 'none',
+                          }}
+                          tabIndex={r > 0.6 ? undefined : -1}
+                          aria-hidden={r <= 0.6}
+                          onMouseEnter={() => setSpot(boardKey)}
+                          onMouseLeave={() => setSpot(null)}
+                          onFocus={() => setSpot(boardKey)}
+                          onBlur={() => setSpot(null)}
+                        >
+                          <span className="hero-reveal-media">
+                            {p.featuredImage?.url ? (
+                              <img
+                                src={p.featuredImage.url}
+                                alt={p.featuredImage.altText ?? ''}
+                                loading="lazy"
+                                decoding="async"
+                              />
+                            ) : (
+                              <span className="hero-reveal-ph" aria-hidden="true" />
+                            )}
+                          </span>
+                          <span className="hero-reveal-text">
+                            <span className="hero-reveal-title">{p.title}</span>
+                            {p.productType ? (
+                              <span className="hero-reveal-sub">{p.productType}</span>
+                            ) : null}
+                          </span>
+                          {price ? (
+                            <span className="hero-reveal-price">
+                              <Money data={price} />
+                            </span>
+                          ) : null}
+                        </Link>
+                      );
+                    })}
+                  </div>
+                  );
+                }}
+              </Await>
+            </Suspense>
+            <Link
+              prefetch="viewport"
+              to="/collections/all"
+              className="hero-action-primary hero-buy-btn"
+            >
               Shop
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                 <line x1="5" y1="12" x2="19" y2="12" />
@@ -627,13 +968,17 @@ function DesktopHome({
           </div>
 
         {/* Airframe size toggle — swaps the 5" / 3" GLB trio in the hero.
-            Fades in with the rest of the hero UI once the splash settles and
-            fades back out as the user scrolls into the explode phases. */}
+            Stays visible through the scroll so the toggle is always reachable. */}
         <div
-          className="absolute top-24 left-1/2 -translate-x-1/2 z-20 pointer-events-auto"
+          className="absolute left-1/2 -translate-x-1/2 z-20 pointer-events-auto"
           style={{
-            opacity: splashSettled ? heroTextOpacity : 0,
-            transition: 'opacity 0.4s ease',
+            // Springs down from the top edge when the splash settles, resting
+            // high (2.5rem). When the header bar lands ~2s later it shoves the
+            // selector down to 6rem — the spring `top` transition sells the push.
+            top: !splashSettled ? '-3rem' : headerIn ? '6rem' : '2.5rem',
+            opacity: splashSettled ? 1 : 0,
+            transition:
+              'top 0.7s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.4s ease',
           }}
         >
           <HeroSizeSlider
@@ -651,78 +996,32 @@ function DesktopHome({
           <div className="w-px h-5 bg-gradient-to-b from-[var(--color-text-muted)] to-transparent animate-pulse" />
         </div>
 
-        {/* Phase 2: Component labels — each div sits below its 3D model.
-            HeroScene writes `transform: translate(x, y)` imperatively
-            every frame based on the model's world-space bounding box so
-            labels track the geometry even as the assembly rotates. */}
+        {/* Drag-to-view hint — appears a few seconds in if the visitor hasn't
+            touched the drone yet, dismissed on first drag/scroll. */}
         <div
-          className="hero-component-labels"
-          style={{opacity: labelOpacity}}
+          className={`hero-drag-hint${showDragHint ? ' is-visible' : ''}`}
+          aria-hidden="true"
         >
-          <div ref={fcLabelRef} className="hero-component-label">
-            <Link to="/products/openfc-lite" prefetch="render">
-              Open<span>FC</span>
-            </Link>
-          </div>
-          <div ref={frameLabelRef} className="hero-component-label">
-            <Link to="/products/openframe" prefetch="render">
-              Open<span>Frame</span>
-            </Link>
-          </div>
-          <div ref={escLabelRef} className="hero-component-label">
-            <Link to="/products/openesc" prefetch="render">
-              Open<span>ESC</span>
-            </Link>
-          </div>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <polyline points="7 8 3 12 7 16" />
+            <polyline points="17 8 21 12 17 16" />
+            <line x1="3" y1="12" x2="21" y2="12" />
+          </svg>
+          drag to rotate
         </div>
 
-        {/* Phase 3: product showcase — rises from the bottom on scroll, a Pod
-            of the components on screen (FC / ESC / Frame) with their renders.
-            Replaces the old single Shop-Now CTA; GitHub now lives top-right. */}
+        {/* Scroll-to-explore cue — anchored at the bottom of the hero, shares the
+            drag hint's lifecycle (fades in a few seconds in, dismissed on the
+            first drag/scroll). */}
         <div
-          className="absolute left-0 right-0 z-20 flex justify-center px-6 pb-8 pointer-events-none"
-          style={{
-            bottom: '56px',
-            transform: `translateY(${(1 - ctaRise) * 100}%)`,
-            opacity: ctaRise,
-          }}
+          className={`hero-scroll-hint${showDragHint ? ' is-visible' : ''}`}
+          aria-hidden="true"
         >
-          <Pod strong className="hero-showcase" ariaLabel="The stack on screen">
-            <div className="hero-showcase-head">
-              <span className="hero-showcase-title">The stack on screen</span>
-              <Link
-                prefetch="viewport"
-                to="/collections/all"
-                className="hero-showcase-all"
-              >
-                All products →
-              </Link>
-            </div>
-            <Suspense
-              fallback={
-                <div className="hero-showcase-loading">
-                  <span className="inline-spinner" aria-hidden="true" /> loading…
-                </div>
-              }
-            >
-              <Await resolve={heroStack}>
-                {(items) => (
-                  <ProductPods
-                    layout="grid"
-                    items={items.map((p) => ({
-                      key: p.handle,
-                      to: `/products/${p.handle}`,
-                      title: p.title,
-                      subtitle: p.productType ?? undefined,
-                      imageUrl: p.featuredImage?.url ?? null,
-                      imageAlt: p.featuredImage?.altText ?? null,
-                      price: p.priceRange?.minVariantPrice ?? null,
-                    }))}
-                  />
-                )}
-              </Await>
-            </Suspense>
-          </Pod>
+          scroll to explore
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <polyline points="8 7 12 11 16 7" />
+            <polyline points="8 13 12 17 16 13" />
+          </svg>
         </div>
         </div>
       </div>
@@ -773,6 +1072,12 @@ const HOME_FEATURED_QUERY = `#graphql
       ...HomeProductCard
     }
     esc: product(handle: "openesc") {
+      ...HomeProductCard
+    }
+    fcMini: product(handle: "openfc-lite-mini") {
+      ...HomeProductCard
+    }
+    escMini: product(handle: "openesc-mini") {
       ...HomeProductCard
     }
   }

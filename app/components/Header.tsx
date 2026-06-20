@@ -15,6 +15,18 @@ import {SiteWordmark} from '~/components/SiteWordmark';
 import {IncutecWordmark} from '~/components/IncutecWordmark';
 import {Pod} from '~/components/Pod';
 import {ProductPods, type ProductPodItem} from '~/components/ProductPods';
+import {INCUTEC_HINT_SEEN_KEY} from '~/lib/incutec-hint';
+
+/** Retire the hero "Who's incutec?" hint: persist the dismissal and pull the
+ *  class so it can't flash on a same-session SPA return to the homepage. */
+function dismissIncutecHint() {
+  try {
+    localStorage.setItem(INCUTEC_HINT_SEEN_KEY, '1');
+  } catch {
+    /* storage blocked (private mode) — the nudge just isn't persisted */
+  }
+  document.documentElement.classList.remove('hero-incutec-hint');
+}
 
 /** Thin shape of a product as read by HEADER_PRODUCTS_QUERY. */
 export type HeaderFamilyVariant = {
@@ -81,18 +93,33 @@ export function Header({
   return (
     <header className="site-header">
       <div className="site-header-main">
-        {/* Left: brand slot — OpenDrone home link, or Incutec credit on the hero. */}
+        {/* Left: brand slot — OpenDrone home link, or Incutec credit on the hero.
+            On the hero the mark links to the in-site Incutec company page, and a
+            "Who's incutec?" hint drops out from under it a beat after the header
+            lands (gated on `html.hero-incutec-hint`, set by the homepage). */}
         {isHero ? (
-          <a
-            href="https://incutec.eu"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="site-header-logo site-header-logo--incutec"
-            aria-label="Incutec — incutec.eu"
-            style={{viewTransitionName: 'site-logo'}}
-          >
-            <IncutecWordmark className="site-header-incutec" />
-          </a>
+          <span className="site-header-incutec-slot">
+            <NavLink
+              prefetch="intent"
+              to="/incutec"
+              className="site-header-logo site-header-logo--incutec"
+              aria-label="Incutec — the company behind OpenDrone"
+              style={{viewTransitionName: 'site-logo'}}
+              onClick={dismissIncutecHint}
+            >
+              <IncutecWordmark className="site-header-incutec" />
+            </NavLink>
+            <NavLink
+              prefetch="intent"
+              to="/incutec"
+              className="incutec-hint"
+              tabIndex={-1}
+              aria-hidden="true"
+              onClick={dismissIncutecHint}
+            >
+              Who&apos;s incutec?
+            </NavLink>
+          </span>
         ) : (
           <NavLink
             prefetch="viewport"

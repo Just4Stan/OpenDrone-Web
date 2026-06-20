@@ -9,7 +9,15 @@
  * Missing entry = product renders with a minimal fallback layout.
  */
 
-export type ChapterPin = {ref: string; part: string; cost?: string};
+export type ChapterPin = {
+  ref: string;
+  part: string;
+  cost?: string;
+  /** Refdes (case-sensitive, e.g. "U2", "Card1") this pin points at on the
+   *  board. Hovering/focusing the pin highlights these footprints in BoardArt,
+   *  matched against `/boards/<handle>/components.json`. */
+  refs?: string[];
+};
 
 /**
  * Physical item that ships in the box. `qty` is free text so entries
@@ -103,6 +111,12 @@ export type VariantContent = {
    *  `scripts/export-board-art.mjs <kicad_pcb> <handle>` — one handle per
    *  physical PCB (see scripts/boards.config.json). */
   boardArt?: {src: string; inspectUrl?: string; layers?: Record<string, string>};
+  /** Per-tier teardown component list. Each board in a line has its own
+   *  refdes layout, so the pin list + hover-highlight must follow the tier the
+   *  same way `boardArt` does. When set, these override `teardown.pins` for the
+   *  selected tier; tiers without their own pins fall back to `teardown.pins`.
+   *  Keep the `refs` keyed to the tier's `/boards/<handle>/components.json`. */
+  pins?: ChapterPin[];
   /** Per-tier exploded 3D model (same shape as `teardown.frameViewer`). The
    *  CAD analogue of `boardArt` for frames: the 3" and 5" tiers each carry
    *  their own GLB so the teardown viewer explodes the selected model. Tiers
@@ -198,11 +212,21 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
       title: "Isn't it beautiful?",
       body:
         'ESCs have to carry a lot of current so optimized power routing matters. You can see it right here or check the interactive KiCad viewer. Each AT32 microcontroller is running AM32. A large array of low-ESR, high-capacitance ceramic capacitors feeds the fast switching of the MOSFETs to reduce voltage spikes. TVS diodes clamp any spikes that still get too high.',
+      // refs keyed to /boards/openesc/components.json (20×20 board, the default
+      // tier). The 30×30 tier overrides these in its variant `pins`.
       pins: [
-        {ref: '①', part: 'AT32F421 MCU', cost: '×4'},
-        {ref: '②', part: 'NSG2065Q gate driver', cost: '×4'},
-        {ref: '③', part: 'Low Rds(on) MOSFET', cost: '×24'},
-        {ref: '④', part: 'INA186A3 high-side current sense', cost: '×1'},
+        {ref: '①', part: 'AT32F421 motor MCU', cost: '×4', refs: ['U2', 'U6', 'U8', 'U10']},
+        {ref: '②', part: 'NSG2065Q gate driver', cost: '×4', refs: ['U3', 'U7', 'U9', 'U11']},
+        {
+          ref: '③',
+          part: 'DOY180N03 power MOSFET',
+          cost: '×24',
+          refs: ['Q1', 'Q2', 'Q3', 'Q4', 'Q5', 'Q6', 'Q7', 'Q8', 'Q9', 'Q10', 'Q11', 'Q12', 'Q13', 'Q14', 'Q15', 'Q16', 'Q17', 'Q18', 'Q19', 'Q20', 'Q21', 'Q22', 'Q23', 'Q24'],
+        },
+        {ref: '④', part: 'INA186A3 current sense', refs: ['U12']},
+        {ref: '⑤', part: '0.2 mΩ sense shunt', refs: ['Rsense1']},
+        {ref: '⑥', part: 'TLV767 3.3 V LDO', refs: ['U1']},
+        {ref: '⑦', part: 'LMR54406 buck', refs: ['U13']},
       ],
       boardArt: {
         src: '/boards/openesc/board.svg',
@@ -270,6 +294,21 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
           ['MOSFETs', 'SP40N01GHNK, 40 V / 1.2 mΩ'],
           ['Current sense', 'INA186A3 + 2× 0.2 mΩ shunt · 10 mV/A, 330 A full-scale'],
           ['PCB', '6-layer, 30×30 mount'],
+        ],
+        // refs keyed to /boards/openesc-30x30/components.json.
+        pins: [
+          {ref: '①', part: 'AT32F421 motor MCU', cost: '×4', refs: ['U2', 'U5', 'U7', 'U9']},
+          {ref: '②', part: 'NSG2065Q gate driver', cost: '×4', refs: ['U4', 'U6', 'U8', 'U10']},
+          {
+            ref: '③',
+            part: 'SP40N01 power MOSFET',
+            cost: '×24',
+            refs: ['Q1', 'Q2', 'Q3', 'Q4', 'Q5', 'Q6', 'Q7', 'Q8', 'Q9', 'Q10', 'Q11', 'Q12', 'Q13', 'Q14', 'Q15', 'Q16', 'Q17', 'Q18', 'Q19', 'Q20', 'Q21', 'Q22', 'Q23', 'Q24'],
+          },
+          {ref: '④', part: 'INA186A3 current sense', refs: ['U12']},
+          {ref: '⑤', part: '0.2 mΩ sense shunt', cost: '×2', refs: ['Rsense1', 'Rsense2']},
+          {ref: '⑥', part: 'TLV767 3.3 V LDO', refs: ['U15']},
+          {ref: '⑦', part: 'LMR54406 buck', refs: ['U13']},
         ],
         boardArt: {
           src: '/boards/openesc-30x30/board.svg',
@@ -440,12 +479,20 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
       title: 'Two PIO blocks doing the work of a fistful of chips.',
       body:
         'The RP2354 has no analog-OSD peripheral and only two hardware UARTs, so its PIO blocks fake both. One drives the analog OSD front end (a comparator strips the video sync, an op-amp buffers the camera signal, and an SPDT switch injects black and white pixels) while another spins up extra software UARTs. The IMU and the microSD blackbox sit on separate SPI buses, and a switchable 10 V buck feeds the VTX and camera.',
+      // `refs` keyed to the live components.json so hovering a pin highlights
+      // the real footprint(s) on the board (case-sensitive refdes).
       pins: [
-        {ref: '①', part: 'RP2354, dual M33 @ 150 MHz'},
-        {ref: '②', part: '6-axis IMU (LGA-14, TDK/ST)'},
-        {ref: '③', part: 'microSD blackbox, on SPI'},
-        {ref: '④', part: 'Analog OSD: comparator + op-amp + SPDT'},
-        {ref: '⑤', part: 'Switchable 10 V VTX buck'},
+        {ref: '①', part: 'RP2354B — dual M33 @ 150 MHz', refs: ['U2']},
+        {ref: '②', part: 'LSM6DSV16X — 6-axis IMU', refs: ['U9']},
+        {ref: '③', part: 'microSD blackbox (SPI)', refs: ['Card1']},
+        {
+          ref: '④',
+          part: 'Analog OSD: comparator + SPDT mux',
+          refs: ['U12', 'U10'],
+        },
+        {ref: '⑤', part: 'Switchable VTX buck (×2)', refs: ['U3', 'U4']},
+        {ref: '⑥', part: 'Sensor + MCU LDO rails', refs: ['U6', 'U7']},
+        {ref: '⑦', part: 'USB-C + power-mux + ESD', refs: ['USB1', 'U5', 'D8']},
       ],
       // boardArt is supplied per variant (openfc-lite-mini / openfc-lite); the
       // PDP swaps the layer reveal as the ladder selects a mount size.
@@ -487,6 +534,17 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
           ['Betaflight target', 'OPENFC_LITE_MINI_RP2350A'],
           ['UARTs', '3: 2 hardware + 1 PIO'],
           ['Size', '20×20 mm, 6-layer'],
+        ],
+        // The mini has its own refdes layout (RP2354A QFN-60, no op-amp in the
+        // OSD front end). refs keyed to /boards/openfc-lite-mini/components.json.
+        pins: [
+          {ref: '①', part: 'RP2354A — dual M33 @ 150 MHz', refs: ['U10']},
+          {ref: '②', part: 'LSM6DSV16X — 6-axis IMU', refs: ['U9']},
+          {ref: '③', part: 'microSD blackbox (SPI)', refs: ['Card1']},
+          {ref: '④', part: 'Analog OSD: comparator + SPDT mux', refs: ['U2', 'U18']},
+          {ref: '⑤', part: 'Switchable VTX buck (×2)', refs: ['U3', 'U4']},
+          {ref: '⑥', part: 'Sensor + MCU LDO rails', refs: ['U6', 'U7']},
+          {ref: '⑦', part: 'USB-C + power-mux + ESD', refs: ['USB1', 'U5', 'D9']},
         ],
         boardArt: {
           src: '/boards/openfc-lite-mini/board.svg',
@@ -537,11 +595,16 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
       title: 'One ESP32-C3, one (or two) radios, careful RF.',
       body:
         'Every variant runs on the ESP32-C3 at the MCU layer. Lite uses Semtech SX1281 with the 2450FM07D0034 BPF; Mono and Gemini use Semtech LR1121 with the RFX2401C + SKY13373 + Johanson IPD front-end. Firmware targets upstream to ExpressLRS (Unified_ESP32C3_2400_RX for Lite, Unified_ESP32C3_LR1121_RX for Mono/Gemini).',
+      // Fallback set (matches the Lite tier); each variant overrides with its
+      // own refs keyed to that board's components.json.
       pins: [
-        {ref: '①', part: 'ESP32-C3, Wi-Fi OTA + CRSF'},
-        {ref: '②', part: 'SX1281 (Lite) or LR1121 (Mono/Gemini)'},
-        {ref: '③', part: 'RFX2401C + SKY13373 front-end (Mono/Gemini)'},
-        {ref: '④', part: 'U.FL or ceramic antenna'},
+        {ref: '①', part: 'SX1281 — 2.4 GHz LoRa radio', refs: ['U3']},
+        {ref: '②', part: 'ESP32-C3 — ELRS MCU', refs: ['U1']},
+        {ref: '③', part: 'TLV75533 — 3.3 V LDO', refs: ['U2']},
+        {ref: '④', part: '52 MHz radio TCXO', refs: ['OSC1']},
+        {ref: '⑤', part: '2.4 GHz SAW filter', refs: ['FL1']},
+        {ref: '⑥', part: 'On-board antenna', refs: ['AE1', 'AE2']},
+        {ref: '⑦', part: 'WS2812 status LED', refs: ['D1']},
       ],
     },
     inTheBox: [
@@ -578,6 +641,15 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
           ['Antenna', 'On-board ceramic chip, no antenna wire to tear off'],
           ['Size', '10.05 × 10.55 mm, 6-layer'],
         ],
+        pins: [
+          {ref: '①', part: 'SX1281 — 2.4 GHz LoRa radio', refs: ['U3']},
+          {ref: '②', part: 'ESP32-C3 — ELRS MCU', refs: ['U1']},
+          {ref: '③', part: 'TLV75533 — 3.3 V LDO', refs: ['U2']},
+          {ref: '④', part: '52 MHz radio TCXO', refs: ['OSC1']},
+          {ref: '⑤', part: '2.4 GHz SAW filter', refs: ['FL1']},
+          {ref: '⑥', part: 'On-board ceramic antenna', refs: ['AE1', 'AE2']},
+          {ref: '⑦', part: 'WS2812 status LED', refs: ['D1']},
+        ],
         boardArt: {src: '/boards/openrx-lite/board.svg'},
       },
       'Lite-UFL': {
@@ -595,6 +667,15 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
           ['Size', '10.05 × 10.55 mm, 6-layer'],
         ],
         inTheBox: [{qty: '1×', item: 'U.FL dipole antenna'}],
+        pins: [
+          {ref: '①', part: 'SX1281 — 2.4 GHz LoRa radio', refs: ['U3']},
+          {ref: '②', part: 'ESP32-C3 — ELRS MCU', refs: ['U1']},
+          {ref: '③', part: 'TLV75533 — 3.3 V LDO', refs: ['U2']},
+          {ref: '④', part: '52 MHz radio TCXO', refs: ['OSC1']},
+          {ref: '⑤', part: '2.4 GHz SAW filter', refs: ['FL1']},
+          {ref: '⑥', part: 'U.FL antenna connector', refs: ['J1']},
+          {ref: '⑦', part: 'WS2812 status LED', refs: ['D1']},
+        ],
         boardArt: {src: '/boards/openrx-lite-ufl/board.svg'},
       },
       Mono: {
@@ -613,6 +694,15 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
           ['Size', '10.05 × 16.35 mm, 6-layer'],
         ],
         inTheBox: [{qty: '1×', item: 'U.FL dipole antenna'}],
+        pins: [
+          {ref: '①', part: 'LR1121 — multi-band LoRa radio', refs: ['U3']},
+          {ref: '②', part: 'ESP32-C3 — ELRS MCU', refs: ['U1']},
+          {ref: '③', part: 'RFX2401C — 2.4 GHz PA + LNA', refs: ['U4']},
+          {ref: '④', part: 'SKY13373 — RF band switch', refs: ['U5']},
+          {ref: '⑤', part: 'TLV75533 — 3.3 V LDO', refs: ['U2']},
+          {ref: '⑥', part: '32 MHz radio TCXO', refs: ['OSC1']},
+          {ref: '⑦', part: 'U.FL antenna connector', refs: ['J1']},
+        ],
         boardArt: {src: '/boards/openrx-mono/board.svg'},
       },
       Gemini: {
@@ -633,6 +723,15 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
         ],
         inTheBox: [
           {qty: '2×', item: 'U.FL dipole antenna', note: 'diversity pair'},
+        ],
+        pins: [
+          {ref: '①', part: 'LR1121 — multi-band LoRa radio (×2)', refs: ['U3', 'U6']},
+          {ref: '②', part: 'ESP32-C3 — ELRS MCU', refs: ['U1']},
+          {ref: '③', part: 'RFX2401C — 2.4 GHz PA + LNA (×2)', refs: ['U4', 'U7']},
+          {ref: '④', part: 'SKY13373 — RF band switch (×2)', refs: ['U5', 'U8']},
+          {ref: '⑤', part: 'TLV75533 — 3.3 V LDO', refs: ['U2']},
+          {ref: '⑥', part: '32 MHz radio TCXO', refs: ['OSC1']},
+          {ref: '⑦', part: 'U.FL antenna connectors (×2)', refs: ['J1', 'J2']},
         ],
         boardArt: {src: '/boards/openrx-gemini/board.svg'},
       },
