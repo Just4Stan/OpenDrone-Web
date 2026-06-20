@@ -5282,6 +5282,12 @@ button.reset {
    copper layer. The whole group fades in on hover. */
 .board-hilite {
   pointer-events: none;
+}
+/* Fade in ONLY on first appearance (cursor entering the list from nothing). When
+   moving row-to-row the group is rebuilt every hover; replaying the fade then made
+   the whole spotlight flash out/in. `is-fresh` (added by BoardArt only when there
+   was no prior highlight) keeps the dim constant and just moves the bright spot. */
+.board-hilite.is-fresh {
   animation: board-hilite-in 0.25s ease both;
 }
 /* Dim veil over the board OUTSIDE the spotlight window (masked + clipped to the

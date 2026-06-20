@@ -237,6 +237,10 @@ export function BoardArt({
   // can never collide on `od-dim`/`od-bright`/`od-spot` (SVG id resolution would
   // otherwise pick the first in document order → wrong board masked).
   const uid = useId().replace(/:/g, '');
+  // Whether the previous render already had a highlight group on the board — so a
+  // row-to-row move (highlight→highlight) skips the fade-in and just repositions
+  // the spotlight, while a fresh entry (none→highlight) still fades in.
+  const hadHilite = useRef(false);
   // `raw` is the SVG text currently on screen. Seed from cache so a tier that
   // was warmed earlier paints immediately with no blank frame.
   const [raw, setRaw] = useState<string | null>(
@@ -644,7 +648,10 @@ export function BoardArt({
     if (!stack) return;
     const NS = 'http://www.w3.org/2000/svg';
     stack.querySelectorAll('g.board-hilite').forEach((g) => g.remove());
-    if (!highlights.length) return;
+    if (!highlights.length) {
+      hadHilite.current = false;
+      return;
+    }
     const svg = stack.querySelector('.board-sheet.is-active svg');
     if (!svg) return;
     const vb = manifest?.viewBox?.split(/\s+/).map(Number);
@@ -653,7 +660,9 @@ export function BoardArt({
     ) as SVGClipPathElement | null;
     const clipId = outlineClip?.id;
     const g = document.createElementNS(NS, 'g');
-    g.setAttribute('class', 'board-hilite');
+    // Fade in only the first time (no prior highlight); on a row-to-row move keep
+    // the dim constant and just reposition — no flash.
+    g.setAttribute('class', hadHilite.current ? 'board-hilite' : 'board-hilite is-fresh');
 
     // Box layout: per-refdes by default; ONE union box for dense arrays
     // (`highlightUnion`, e.g. the bulk-cap grid); or one union box per subgroup
@@ -793,6 +802,7 @@ export function BoardArt({
       g.appendChild(rect);
     }
     svg.appendChild(g);
+    hadHilite.current = true;
     return () => g.remove();
   }, [
     active,
