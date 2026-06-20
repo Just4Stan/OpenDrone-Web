@@ -12,6 +12,7 @@ import {useAside} from '~/components/Aside';
 import {LangToggle} from '~/components/LangToggle';
 import {ThemeToggle} from '~/components/ThemeToggle';
 import {SiteWordmark} from '~/components/SiteWordmark';
+import {IncutecWordmark} from '~/components/IncutecWordmark';
 import {Pod} from '~/components/Pod';
 import {ProductPods, type ProductPodItem} from '~/components/ProductPods';
 
@@ -69,29 +70,41 @@ export function Header({
   familyProducts,
 }: HeaderProps) {
   const {menu} = header;
-  // Dynamic-Island behaviour: on the hero ("/") the wordmark lives bottom-left
-  // in the 3D scene, so the bar shows no logo there. On every other route it
-  // occupies the left of the bar. The slot is ALWAYS rendered (just faded out
-  // on the hero) so the nav chips never shift position between routes — only the
-  // logo fades in/out. view-transition-name lets it animate across navigations.
+  // Dynamic-Island logo slot. On the hero ("/") the OpenDrone wordmark already
+  // lives bottom-left in the 3D scene, so the bar instead credits the parent
+  // company — the Incutec mark linking to incutec.eu (OpenDrone is an Incutec
+  // product brand). On every other route the slot is the OpenDrone wordmark
+  // home link. The slot is a fixed width so the nav chips never shift between
+  // routes; view-transition-name animates the swap across navigations.
   const {pathname} = useLocation();
-  const showLogo = pathname !== '/';
+  const isHero = pathname === '/';
   return (
     <header className="site-header">
       <div className="site-header-main">
-        {/* Left: wordmark — "Open" neutral, "Drone" in gold, matches splash */}
-        <NavLink
-          prefetch="viewport"
-          to="/"
-          end
-          className={`site-header-logo${showLogo ? '' : ' is-hidden'}`}
-          aria-label="OpenDrone"
-          aria-hidden={showLogo ? undefined : true}
-          tabIndex={showLogo ? undefined : -1}
-          style={{viewTransitionName: 'site-logo'}}
-        >
-          <SiteWordmark className="site-header-wordmark" />
-        </NavLink>
+        {/* Left: brand slot — OpenDrone home link, or Incutec credit on the hero. */}
+        {isHero ? (
+          <a
+            href="https://incutec.eu"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="site-header-logo site-header-logo--incutec"
+            aria-label="Incutec — incutec.eu"
+            style={{viewTransitionName: 'site-logo'}}
+          >
+            <IncutecWordmark className="site-header-incutec" />
+          </a>
+        ) : (
+          <NavLink
+            prefetch="viewport"
+            to="/"
+            end
+            className="site-header-logo"
+            aria-label="OpenDrone"
+            style={{viewTransitionName: 'site-logo'}}
+          >
+            <SiteWordmark className="site-header-wordmark" />
+          </NavLink>
+        )}
 
         {/* Center: primary nav + gold category links on the same row */}
         <HeaderMenu
