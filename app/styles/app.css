@@ -4282,6 +4282,19 @@ button.reset {
   .chapter-media:has(.board-art) {
     top: calc(var(--header-height) + var(--sp-4) + 3.75rem);
   }
+  /* The teardown copy slides in from the left AFTER the board layers fly in
+     (the PDP drops data-text-pending once the fly completes). Scoped to the
+     board chapter via :has(.board-art) so other chapters are untouched. */
+  .chapter:has(.board-art) .chapter-index,
+  .chapter:has(.board-art) .chapter-body-col {
+    transition: opacity 0.55s ease,
+      translate 0.6s cubic-bezier(0.16, 0.84, 0.3, 1);
+  }
+  .chapter[data-text-pending] .chapter-index,
+  .chapter[data-text-pending] .chapter-body-col {
+    opacity: 0;
+    translate: -30px 0;
+  }
   /* Schematic chapter: text + cards sit on top, the schematic spans the full
    * content width below. Single column so the dense sheet uses every pixel. */
   .chapter[data-wide-media] {

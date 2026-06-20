@@ -381,11 +381,16 @@ function Chapter({
   wideMedia,
   bigMedia,
   noMedia,
+  textReveal,
 }: {
   number: string;
   label: string;
   title: React.ReactNode;
   children: React.ReactNode;
+  /** When defined, gate the body text's slide-in on this flag (false = held off
+   *  to the left, hidden). Used by the teardown so the copy slides in only after
+   *  the board layers have flown in. Undefined = no gating (normal reveal). */
+  textReveal?: boolean;
   /** Optional live media node — when omitted, the chapter renders the
    *  geometric placeholder glyph for this chapter number. */
   media?: React.ReactNode;
@@ -411,6 +416,7 @@ function Chapter({
       data-wide-media={wideMedia ? '' : undefined}
       data-big-media={bigMedia ? '' : undefined}
       data-no-media={noMedia ? '' : undefined}
+      data-text-pending={textReveal === false ? '' : undefined}
     >
       {backdrop ? <div className="chapter-backdrop">{backdrop}</div> : null}
       <div className="chapter-index">
@@ -727,6 +733,25 @@ export default function Product() {
   // True while the board's first-reveal fly-in is animating — locks the parts
   // list so a hover can't fight the animation.
   const [boardFlying, setBoardFlying] = useState(false);
+  // The teardown text slides in from the left AFTER the board layers finish
+  // flying in: flip `textIn` when the fly completes (boardFlying true→false), with
+  // a fallback so it always reveals even if the board never flies (reduced motion
+  // / never centred).
+  const [textIn, setTextIn] = useState(false);
+  const prevFlyingRef = useRef(false);
+  useEffect(() => {
+    if (prevFlyingRef.current && !boardFlying) setTextIn(true);
+    prevFlyingRef.current = boardFlying;
+  }, [boardFlying]);
+  useEffect(() => {
+    // Reduced motion (or no board fly): reveal the text immediately, no slide.
+    if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) {
+      setTextIn(true);
+      return;
+    }
+    const t = setTimeout(() => setTextIn(true), 7000);
+    return () => clearTimeout(t);
+  }, []);
   // Clear all hover highlight state. Called only when the pointer leaves the
   // whole list (not between rows) so the spotlight stays lit and just moves from
   // row to row — no off/on flicker crossing the dividers/gaps.
@@ -1084,7 +1109,7 @@ export default function Product() {
     <div className="product-page">
       <script
         type="application/ld+json"
-        // eslint-disable-next-line react/no-danger
+         
         dangerouslySetInnerHTML={{__html: JSON.stringify(productJsonLd)}}
       />
       {/* === HERO: gallery left, copy + sticky buy module right === */}
@@ -1202,6 +1227,7 @@ export default function Product() {
           number={chapterNums.teardown}
           label="Teardown"
           title={content.teardown.title}
+          textReveal={frameViewer ? undefined : textIn}
           backdrop={
             frameViewer ? (
               // No key on src: keep the canvas mounted across tier switches so
