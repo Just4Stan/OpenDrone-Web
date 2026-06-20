@@ -1756,7 +1756,7 @@ html.anim-paused .board-sheet.is-active {
      overshoot bounce. Gated on `hero-header-in`, which the homepage sets ~2s
      after the splash settles (or on first scroll). */
   transition:
-    transform 0.72s cubic-bezier(0.16, 1, 0.3, 1),
+    transform 0.7s cubic-bezier(0.16, 1, 0.3, 1),
     opacity 0.4s ease-out 0.1s;
 }
 
@@ -4527,17 +4527,36 @@ button.reset {
   }
 }
 .board-art.is-armed .board-sheet {
-  animation: board-sheet-fly 1.2s cubic-bezier(0.16, 0.84, 0.3, 1) both;
-  animation-delay: calc(var(--depth) * 0.11s);
+  animation: board-sheet-fly 1.2s cubic-bezier(0.16, 0.84, 0.3, 1)
+    calc(var(--depth) * 0.11s) both;
+  animation-play-state: paused;
+}
+/* Non-active layers grey out one-by-one as each lands — in fly order, so the
+   first layer to fly in is the first to grey — instead of all snapping grey at
+   the end. A second, layered animation (sharing the same paused/running gate)
+   eases the filter from the bright fly state to the resting dim, staggered by
+   --depth and timed to begin ~as each layer arrives. Same total duration; the
+   greying just starts sooner (over the fly's tail). The active layer is excluded
+   — it stays bright and gains its glow at the end. */
+.board-art.is-armed .board-sheet:not(.is-active) {
+  animation: board-sheet-fly 1.2s cubic-bezier(0.16, 0.84, 0.3, 1)
+      calc(var(--depth) * 0.11s) both,
+    board-sheet-grey 0.5s ease calc(var(--depth) * 0.11s + 1s) forwards;
   animation-play-state: paused;
 }
 .board-art.is-flying .board-sheet {
   animation-play-state: running;
 }
-/* During the fly, show EVERY layer at full brightness with no shadow — so each
-   one flies in clearly distinguishable (not greyed/masked) — and it's cheaper
-   (no drop-shadow blur mid-flight). The resting dim/glow eases back in via the
-   0.45s filter transition once the layers land. */
+@keyframes board-sheet-grey {
+  to {
+    filter: brightness(0.55) saturate(0.7)
+      drop-shadow(0 14px 22px rgba(0, 0, 0, 0.55));
+  }
+}
+/* During the fly, every layer starts at full brightness with no shadow — each
+   flies in clearly distinguishable (not greyed/masked) — then the non-active
+   ones grey via the staggered animation above; the active one stays bright.
+   (Animations override this, so it's the bright base before each grey begins.) */
 .board-art.is-flying .board-sheet,
 .board-art.is-flying .board-sheet.is-active {
   filter: none;
@@ -4548,7 +4567,8 @@ button.reset {
   pointer-events: none;
 }
 @media (prefers-reduced-motion: reduce) {
-  .board-art.is-armed .board-sheet {
+  .board-art.is-armed .board-sheet,
+  .board-art.is-armed .board-sheet:not(.is-active) {
     animation: none;
   }
 }
