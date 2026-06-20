@@ -14,6 +14,7 @@ import {ThemeToggle} from '~/components/ThemeToggle';
 import {SiteWordmark} from '~/components/SiteWordmark';
 import {IncutecWordmark} from '~/components/IncutecWordmark';
 import {Pod} from '~/components/Pod';
+import {SearchForm} from '~/components/SearchForm';
 import {ProductPods, type ProductPodItem} from '~/components/ProductPods';
 import {INCUTEC_HINT_SEEN_KEY} from '~/lib/incutec-hint';
 
@@ -330,18 +331,28 @@ export function HeaderMenu({
           a sea of empty panel and the whole product taxonomy vanished. */}
       {isMobile && (
         <>
-          <NavLink
-            onClick={close}
-            prefetch="intent"
-            to="/search"
+          <SearchForm
+            action="/search"
             className="site-mobile-nav-search"
+            onSubmit={() => close()}
           >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <circle cx="11" cy="11" r="7" />
-              <line x1="21" y1="21" x2="16.65" y2="16.65" />
-            </svg>
-            Search products
-          </NavLink>
+            {({inputRef}) => (
+              <>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                  <circle cx="11" cy="11" r="7" />
+                  <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                </svg>
+                <input
+                  ref={inputRef}
+                  type="search"
+                  name="q"
+                  placeholder="Search products"
+                  aria-label="Search products"
+                  enterKeyHint="search"
+                />
+              </>
+            )}
+          </SearchForm>
           <p className="site-mobile-nav-label">Shop</p>
           {CATEGORY_LINKS.map((c) => (
             <NavLink
