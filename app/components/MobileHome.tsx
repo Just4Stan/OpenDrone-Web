@@ -1,37 +1,91 @@
 import {Suspense} from 'react';
 import {Await, Link} from 'react-router';
+import {motion, useReducedMotion, type MotionProps} from 'motion/react';
 import type {CollectionItemFragment} from 'storefrontapi.generated';
 import {HeroWordmark} from '~/components/HeroWordmark';
 import {ProductItem} from '~/components/ProductItem';
 
 /**
- * Static, non-interactive homepage for phones (≤768px).
- *
- * The desktop homepage IS the WebGL hero scene + scroll-pinned
- * choreography (see DesktopHome in routes/_index.tsx). That experience is
- * deliberately never loaded on mobile — ~6.3 MB of GLBs and a scroll story
- * tuned for a mouse. Rendering only the desktop tree on a phone left a
- * ~400vh empty void with floating, overlapping CTAs. This component is
- * the mobile counterpart: a plain landing page that gets a visitor to the
- * flagship products and the catalogue with no 3D and no scroll tricks.
+ * Phone homepage (≤768px). The desktop homepage IS the WebGL hero scene +
+ * scroll-pinned choreography (DesktopHome in routes/_index.tsx) — ~6.3 MB of
+ * GLBs and a scroll story tuned for a mouse, deliberately never loaded on a
+ * phone. This is the mobile counterpart: not a plain fallback but a hero in its
+ * own right — the animated wordmark, a floating "stack" of the real board
+ * renders under a gold glow (the desktop hero's product showcase, distilled),
+ * and a Dynamic-Island Shop pill — then a clear path to the flagship line and
+ * the full catalogue. No 3D, no scroll tricks: fast, legible, touch-first.
  */
 export function MobileHome({
   featured,
 }: {
   featured: Promise<CollectionItemFragment[]>;
 }) {
+  const reduce = useReducedMotion();
+
+  // Staggered entrance: each block rises + fades a beat after the last. Skipped
+  // wholesale under prefers-reduced-motion (rendered static, no transform).
+  const rise = (i: number): MotionProps =>
+    reduce
+      ? {}
+      : {
+          initial: {opacity: 0, y: 18},
+          animate: {opacity: 1, y: 0},
+          transition: {
+            duration: 0.55,
+            delay: i * 0.09,
+            ease: [0.22, 1, 0.36, 1],
+          },
+        };
+
   return (
     <div className="home-mobile">
       <section className="home-mobile-hero">
-        <h1 className="home-mobile-wordmark" aria-label="OpenDrone">
+        {/* Floating board "stack" — the two flagship boards (FC over ESC),
+            offset like the OpenStack bundle, on a gold-glow island. The desktop
+            hero's rotatable 3D trio, distilled to a still that loads instantly. */}
+        <motion.div className="home-mobile-stage" {...rise(0)} aria-hidden="true">
+          <span className="home-mobile-glow" />
+          <img
+            className="home-mobile-board home-mobile-board--rear"
+            src="/boards/openesc/front.png"
+            alt=""
+            width={520}
+            height={520}
+            loading="eager"
+            decoding="async"
+          />
+          <img
+            className="home-mobile-board home-mobile-board--front"
+            src="/boards/openfc-lite/front.png"
+            alt=""
+            width={520}
+            height={520}
+            loading="eager"
+            decoding="async"
+          />
+        </motion.div>
+
+        <motion.h1
+          className="home-mobile-wordmark"
+          aria-label="OpenDrone"
+          {...rise(1)}
+        >
           <HeroWordmark progress={1} className="is-filled" />
-        </h1>
-        <p className="home-mobile-tagline">
-          Open-source flight controllers, ESCs, and frames. Designed in
-          Belgium.
-        </p>
-        <div className="home-mobile-cta">
-          <Link prefetch="viewport" to="/collections/all" className="hero-action-primary">
+        </motion.h1>
+
+        <motion.p className="home-mobile-tagline" {...rise(2)}>
+          Open-source flight controllers, ESCs, and frames. Designed in Belgium —
+          every layer published so you can study it, not just fly it.
+        </motion.p>
+
+        {/* Dynamic-Island action pill — the same floating-pod material as the
+            desktop header/showcase, sized for thumbs. */}
+        <motion.div className="home-mobile-cta pod pod--pill" {...rise(3)}>
+          <Link
+            prefetch="viewport"
+            to="/collections/all"
+            className="hero-action-primary"
+          >
             Shop
             <svg
               width="20"
@@ -56,7 +110,7 @@ export function MobileHome({
               <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z" />
             </svg>
           </a>
-        </div>
+        </motion.div>
       </section>
 
       <Suspense fallback={null}>
@@ -80,7 +134,11 @@ export function MobileHome({
         </Await>
       </Suspense>
 
-      <Link prefetch="viewport" to="/collections/all" className="home-mobile-browse">
+      <Link
+        prefetch="viewport"
+        to="/collections/all"
+        className="home-mobile-browse"
+      >
         Browse the full catalog
         <svg
           width="16"
