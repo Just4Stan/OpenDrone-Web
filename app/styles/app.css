@@ -1211,6 +1211,17 @@ a:hover {
   }
 }
 
+/* The hamburger is the only nav on mobile (the center menu, family chips and
+   text links are all hidden ≤768px). It must NOT show on desktop — but the
+   Tailwind `md:hidden` utility loses the cascade to `.site-header-icon`'s
+   `display: inline-flex`, so hide it explicitly here (this rule wins by source
+   order over .site-header-icon). */
+@media (min-width: 769px) {
+  .site-header-menu-toggle {
+    display: none;
+  }
+}
+
 .site-header-logo:hover {
   opacity: 0.85;
 }
