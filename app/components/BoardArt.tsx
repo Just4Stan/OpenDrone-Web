@@ -241,6 +241,17 @@ export function BoardArt({
   // row-to-row move (highlight→highlight) skips the fade-in and just repositions
   // the spotlight, while a fresh entry (none→highlight) still fades in.
   const hadHilite = useRef(false);
+  // One spotlight group per board FACE (keyed by that face's <svg> node), built
+  // ONCE and then only repositioned/hidden. Re-cloning the board <image> on
+  // every hover — to dim + re-light the board — is what flashed the spotlight;
+  // caching per face means the dim veil and the decoded image clone are never
+  // rebuilt, so neither a row-to-row move nor a front/back flip can flash. The
+  // group is hidden (not destroyed) when nothing is highlighted, so re-entering
+  // the list is instant too. Entries whose <svg> leaves the DOM (tier swap) are
+  // pruned each run.
+  const spotCache = useRef<
+    Map<Element, {g: Element; brightClip: Element | null}>
+  >(new Map());
   // `raw` is the SVG text currently on screen. Seed from cache so a tier that
   // was warmed earlier paints immediately with no blank frame.
   const [raw, setRaw] = useState<string | null>(
@@ -647,22 +658,28 @@ export function BoardArt({
     const stack = bodyRef.current?.querySelector('.board-folder-stack');
     if (!stack) return;
     const NS = 'http://www.w3.org/2000/svg';
-    stack.querySelectorAll('g.board-hilite').forEach((g) => g.remove());
-    if (!highlights.length) {
+    const cache = spotCache.current;
+
+    // Prune cached spotlights whose face left the DOM (tier / board swap).
+    for (const [el, entry] of cache) {
+      if (!el.isConnected) {
+        entry.g.remove();
+        cache.delete(el);
+      }
+    }
+
+    const svg = stack.querySelector('.board-sheet.is-active svg');
+
+    // No highlight (or no face yet) → hide every cached spotlight (keep it built
+    // so re-entering the list is instant + flash-free), and arm the next entry
+    // to fade in fresh.
+    if (!highlights.length || !svg) {
+      for (const entry of cache.values()) {
+        entry.g.setAttribute('class', 'board-hilite is-hidden');
+      }
       hadHilite.current = false;
       return;
     }
-    const svg = stack.querySelector('.board-sheet.is-active svg');
-    if (!svg) return;
-    const vb = manifest?.viewBox?.split(/\s+/).map(Number);
-    const outlineClip = svg.querySelector(
-      'clipPath',
-    ) as SVGClipPathElement | null;
-    const clipId = outlineClip?.id;
-    const g = document.createElementNS(NS, 'g');
-    // Fade in only the first time (no prior highlight); on a row-to-row move keep
-    // the dim constant and just reposition — no flash.
-    g.setAttribute('class', hadHilite.current ? 'board-hilite' : 'board-hilite is-fresh');
 
     // Box layout: per-refdes by default; ONE union box for dense arrays
     // (`highlightUnion`, e.g. the bulk-cap grid); or one union box per subgroup
@@ -689,12 +706,71 @@ export function BoardArt({
       boxes = highlights;
     }
 
-    // SPOTLIGHT: DIM the board everywhere EXCEPT a window at each highlight box
-    // (one mask hole + one brighten rect per box — overlapping boxes just merge
-    // in the mask, never break). The dim region is the board bbox + a margin
-    // (NOT a giant rect — a huge masked element overflows the browser's mask
-    // buffer and only renders a corner), clipped to the board outline so it
-    // covers the whole board shape with no hard cut-off lines.
+    // Fill the per-box geometry into a live group: the lit window(s) — one union
+    // clipPath (a <rect> per box) shared by a SINGLE bright face image — plus the
+    // gold boxes. Leaves the dim veil + cloned face image alone, so a move only
+    // slides the lit window; the dim never re-rasterises, the image never
+    // re-decodes (that was the flash).
+    const paintWindows = (brightClip: Element, group: Element) => {
+      while (brightClip.firstChild) brightClip.removeChild(brightClip.firstChild);
+      for (const h of boxes) {
+        const cr = document.createElementNS(NS, 'rect');
+        cr.setAttribute('x', String(h.rect[0]));
+        cr.setAttribute('y', String(h.rect[1]));
+        cr.setAttribute('width', String(h.rect[2]));
+        cr.setAttribute('height', String(h.rect[3]));
+        cr.setAttribute('rx', '0.5');
+        brightClip.appendChild(cr);
+      }
+      group
+        .querySelectorAll('.board-highlight-shape')
+        .forEach((n) => n.remove());
+      for (const h of boxes) {
+        const rect = document.createElementNS(NS, 'rect');
+        rect.setAttribute('x', String(h.rect[0]));
+        rect.setAttribute('y', String(h.rect[1]));
+        rect.setAttribute('width', String(h.rect[2]));
+        rect.setAttribute('height', String(h.rect[3]));
+        rect.setAttribute('rx', '0.4');
+        rect.setAttribute('class', 'board-highlight-shape');
+        group.appendChild(rect);
+      }
+    };
+
+    // Hide spotlights cached for OTHER faces (only the active face shows one).
+    for (const [el, entry] of cache) {
+      if (el !== svg) entry.g.setAttribute('class', 'board-hilite is-hidden');
+    }
+
+    // Fade in only when entering the list from nothing; a row move or face flip
+    // mid-hover shows instantly (no fade, no flash).
+    const cls = hadHilite.current ? 'board-hilite' : 'board-hilite is-fresh';
+
+    // REUSE this face's cached spotlight: un-hide + just slide the lit window.
+    const hit = cache.get(svg);
+    if (hit && hit.g.isConnected && hit.brightClip) {
+      hit.g.setAttribute('class', cls);
+      paintWindows(hit.brightClip, hit.g);
+      hadHilite.current = true;
+      return;
+    }
+
+    // FRESH BUILD for this face (first time it's lit). The dim veil + ONE bright
+    // face clone + union clip are built ONCE here and cached; later hovers on
+    // this face take the reuse path above.
+    svg.querySelectorAll('g.board-hilite').forEach((g) => g.remove());
+    cache.delete(svg);
+    const vb = manifest?.viewBox?.split(/\s+/).map(Number);
+    const outlineClip = svg.querySelector(
+      'clipPath',
+    ) as SVGClipPathElement | null;
+    const clipId = outlineClip?.id;
+    const g = document.createElementNS(NS, 'g');
+    g.setAttribute('class', cls);
+
+    // SPOTLIGHT: DIM the board everywhere EXCEPT the lit window(s). The dim
+    // region is the board bbox + a margin (NOT a giant rect — a huge masked
+    // element overflows the browser's mask buffer and only renders a corner).
     if (vb && vb.length === 4 && vb.every((n) => Number.isFinite(n))) {
       const M = Math.max(vb[2], vb[3]); // generous region (covers any overhang)
       const rx0 = vb[0] - M;
@@ -707,8 +783,9 @@ export function BoardArt({
         // Dim the WHOLE board picture — including ports that overhang the
         // Edge.Cuts outline — by masking a dark layer with the FACE IMAGE's
         // ALPHA (covers exactly the rendered board + ports, soft edges, no page
-        // bleed). Then re-show the face at full brightness inside each highlight
-        // box, on top of the dim. No outline clip → no bright port sliver.
+        // bleed). Then re-show ONE bright face clipped to a single union clipPath
+        // (one <rect> per box) on top — so a row move only edits those rects, not
+        // the image clones. No outline clip → no bright port sliver.
         const dimMask = document.createElementNS(NS, 'mask');
         dimMask.setAttribute('id', `od-dim-${uid}`);
         dimMask.setAttribute('maskUnits', 'userSpaceOnUse');
@@ -719,19 +796,10 @@ export function BoardArt({
         dimMask.setAttribute('height', String(rh));
         dimMask.appendChild(faceImg.cloneNode(true));
         defs.appendChild(dimMask);
-        boxes.forEach((h, i) => {
-          const clip = document.createElementNS(NS, 'clipPath');
-          clip.setAttribute('id', `od-bright-${uid}-${i}`);
-          clip.setAttribute('clipPathUnits', 'userSpaceOnUse');
-          const cr = document.createElementNS(NS, 'rect');
-          cr.setAttribute('x', String(h.rect[0]));
-          cr.setAttribute('y', String(h.rect[1]));
-          cr.setAttribute('width', String(h.rect[2]));
-          cr.setAttribute('height', String(h.rect[3]));
-          cr.setAttribute('rx', '0.5');
-          clip.appendChild(cr);
-          defs.appendChild(clip);
-        });
+        const brightClip = document.createElementNS(NS, 'clipPath');
+        brightClip.setAttribute('id', `od-bright-${uid}`);
+        brightClip.setAttribute('clipPathUnits', 'userSpaceOnUse');
+        defs.appendChild(brightClip);
         g.appendChild(defs);
         const dim = document.createElementNS(NS, 'rect');
         dim.setAttribute('x', String(rx0));
@@ -741,17 +809,20 @@ export function BoardArt({
         dim.setAttribute('class', 'board-hilite-dim');
         dim.setAttribute('mask', `url(#od-dim-${uid})`);
         g.appendChild(dim);
-        // Re-show the face bright inside each box (clipped), on top of the dim.
-        boxes.forEach((h, i) => {
-          const bface = faceImg.cloneNode(true) as SVGElement;
-          bface.removeAttribute('id');
-          bface.setAttribute('clip-path', `url(#od-bright-${uid}-${i})`);
-          bface.setAttribute('class', 'board-hilite-face');
-          g.appendChild(bface);
-        });
+        const bface = faceImg.cloneNode(true) as SVGElement;
+        bface.removeAttribute('id');
+        bface.setAttribute('clip-path', `url(#od-bright-${uid})`);
+        bface.setAttribute('class', 'board-hilite-face');
+        g.appendChild(bface);
+        // Lit window(s) + gold boxes — the only parts that move between rows.
+        paintWindows(brightClip, g);
+        svg.appendChild(g);
+        cache.set(svg, {g, brightClip});
+        hadHilite.current = true;
+        return;
       } else if (clipId) {
         // Fallback (no face image): dim a board-bbox rect with holes per box,
-        // clipped to the outline.
+        // clipped to the outline. No <image> here, so rebuilding can't flash.
         const mask = document.createElementNS(NS, 'mask');
         mask.setAttribute('id', `od-spot-${uid}`);
         mask.setAttribute('maskUnits', 'userSpaceOnUse');
@@ -790,7 +861,7 @@ export function BoardArt({
       }
     }
 
-    // Gold box per part, on top.
+    // Gold box per part, on top (fallback / no-viewBox path — no reusable clip).
     for (const h of boxes) {
       const rect = document.createElementNS(NS, 'rect');
       rect.setAttribute('x', String(h.rect[0]));
@@ -802,8 +873,8 @@ export function BoardArt({
       g.appendChild(rect);
     }
     svg.appendChild(g);
+    cache.set(svg, {g, brightClip: null});
     hadHilite.current = true;
-    return () => g.remove();
   }, [
     active,
     revealed,
@@ -812,8 +883,33 @@ export function BoardArt({
     manifest,
     highlightUnion,
     highlightGroups,
+    visibleFace,
     uid,
   ]);
+
+  // Memoise the sheet stack so a hover never re-renders these <button>s. A hover
+  // changes highlight props on the PARENT, re-rendering BoardArt; React was then
+  // re-applying each dangerouslySetInnerHTML and rebuilding the board <svg> on
+  // every hover — re-decoding the board image and flashing the spotlight. Keyed
+  // on [sheets, active] only, the element array is referentially stable across
+  // hovers, so React skips this subtree entirely: the svg nodes stay put and the
+  // imperatively-injected highlight overlay is reused (above) instead of rebuilt.
+  const stackSheets = useMemo(
+    () =>
+      sheets.map((s, i) => (
+        <button
+          type="button"
+          key={s.slug}
+          className={`board-sheet${i === active ? ' is-active' : ''}`}
+          style={{['--depth' as string]: i}}
+          aria-label={`Show ${s.label} layer`}
+          aria-pressed={i === active}
+          onClick={() => setActive(i)}
+          dangerouslySetInnerHTML={{__html: s.html}}
+        />
+      )),
+    [sheets, active],
+  );
 
   // Step through the stack, clamped to its ends (used by chevrons / keys / wheel).
   const step = (delta: number) =>
@@ -876,19 +972,7 @@ export function BoardArt({
           </div>
           {/* eslint-enable jsx-a11y/no-noninteractive-element-interactions, jsx-a11y/no-noninteractive-tabindex */}
           <div className="board-folder-stack">
-            {sheets.map((s, i) => (
-              <button
-                type="button"
-                key={s.slug}
-                className={`board-sheet${i === active ? ' is-active' : ''}`}
-                style={{['--depth' as string]: i}}
-                aria-label={`Show ${s.label} layer`}
-                aria-pressed={i === active}
-                onClick={() => setActive(i)}
-                 
-                dangerouslySetInnerHTML={{__html: s.html}}
-              />
-            ))}
+            {stackSheets}
             {/* Component highlights are injected into the active sheet's own
                 <svg> by the effect above (so they inherit its viewBox + every
                 transform); there is no separate overlay element here. */}
