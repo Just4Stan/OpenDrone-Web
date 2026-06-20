@@ -472,8 +472,6 @@ export function BoardArt({
     const MARGIN = 22; // clearance between the rail and the text content
     const DEFAULT_W = 2.45; // board blow-up factor at full size (matches CSS)
     const chapter = root.closest('.chapter');
-    const activeSvg = () =>
-      body.querySelector('.board-sheet.is-active svg') as SVGElement | null;
     const leftOf = (el: Element) => el.getBoundingClientRect().left;
     const widthOf = (el: Element) => el.getBoundingClientRect().width;
     const setBoardW = (w: number) =>
@@ -507,32 +505,28 @@ export function BoardArt({
       }
       rail.classList.remove('is-compact');
       rail.style.transform = '';
-      setBoardW(DEFAULT_W);
-      let svg = activeSvg();
-      if (!svg) return;
+      setBoardW(DEFAULT_W); // keep the board at full size; compact the rail if tight
+      const stack = body.querySelector('.board-folder-stack');
+      if (!stack) return;
+      const sr = stack.getBoundingClientRect();
+      // Measure the STACK (the layer container), NOT the active sheet: the sheets
+      // are flown off-screen during the entrance, so measuring one would mis-place
+      // the rail mid-animation and snap it at the end. The stack box never
+      // translates. The active sheet floats up scaled ~1.05, so the board's
+      // visual left edge bleeds ~3% past the stack box — account for that.
+      const boardLeft = sr.left - sr.width * 0.03;
       const railFull = widthOf(rail);
       const textRight = contentRight();
       // Board's left edge must clear this for the full rail to sit in the gutter.
       const fullFloor = textRight + MARGIN + railFull + GAP;
-      // The board's left edge decreases as `--board-w` grows, so "full rail
-      // fits" holds at small w and fails at large w. Binary-search the largest
-      // w that still fits — the biggest board that keeps the whole menu. (The
-      // active sheet's scale bleed makes the exact relationship non-obvious, so
-      // we search rather than solve.)
-      // Prefer a BIG board: keep it at full size and COMPACT the rail when the
-      // gutter is tight, rather than shrinking the board to fit the full rail.
-      setBoardW(DEFAULT_W);
-      svg = activeSvg();
-      if (!svg) return;
       let target: number;
-      if (leftOf(svg) >= fullFloor) {
-        target = leftOf(svg) - GAP - railFull; // full rail fits in the gutter
+      if (boardLeft >= fullFloor) {
+        target = boardLeft - GAP - railFull; // full rail fits in the gutter
       } else {
         // Names-only rail: hug the board if it fits, else overlay its left edge
         // — floored so it never crosses the copy.
         rail.classList.add('is-compact');
         const compactWidth = widthOf(rail);
-        const boardLeft = leftOf(svg);
         target = Math.max(textRight + MARGIN, boardLeft - GAP - compactWidth);
       }
       rail.style.transform = `translateX(${target - leftOf(rail)}px)`;
@@ -656,58 +650,97 @@ export function BoardArt({
     // buffer and only renders a corner), clipped to the board outline so it
     // covers the whole board shape with no hard cut-off lines.
     if (vb && vb.length === 4 && vb.every((n) => Number.isFinite(n))) {
-      const M = Math.max(vb[2], vb[3]); // generous margin (covers any overhang)
+      const M = Math.max(vb[2], vb[3]); // generous region (covers any overhang)
       const rx0 = vb[0] - M;
       const ry0 = vb[1] - M;
       const rw = vb[2] + 2 * M;
       const rh = vb[3] + 2 * M;
       const defs = document.createElementNS(NS, 'defs');
-      const mask = document.createElementNS(NS, 'mask');
-      mask.setAttribute('id', 'od-spot');
-      mask.setAttribute('maskUnits', 'userSpaceOnUse');
-      mask.setAttribute('x', String(rx0));
-      mask.setAttribute('y', String(ry0));
-      mask.setAttribute('width', String(rw));
-      mask.setAttribute('height', String(rh));
-      const base = document.createElementNS(NS, 'rect'); // white = dim applies
-      base.setAttribute('x', String(rx0));
-      base.setAttribute('y', String(ry0));
-      base.setAttribute('width', String(rw));
-      base.setAttribute('height', String(rh));
-      base.setAttribute('fill', '#fff');
-      mask.appendChild(base);
-      for (const h of boxes) {
-        const hole = document.createElementNS(NS, 'rect'); // black = window (no dim)
-        hole.setAttribute('x', String(h.rect[0]));
-        hole.setAttribute('y', String(h.rect[1]));
-        hole.setAttribute('width', String(h.rect[2]));
-        hole.setAttribute('height', String(h.rect[3]));
-        hole.setAttribute('rx', '0.5');
-        hole.setAttribute('fill', '#000');
-        mask.appendChild(hole);
-      }
-      defs.appendChild(mask);
-      g.appendChild(defs);
-      const dim = document.createElementNS(NS, 'rect');
-      dim.setAttribute('x', String(rx0));
-      dim.setAttribute('y', String(ry0));
-      dim.setAttribute('width', String(rw));
-      dim.setAttribute('height', String(rh));
-      dim.setAttribute('class', 'board-hilite-dim');
-      dim.setAttribute('mask', 'url(#od-spot)');
-      if (clipId) dim.setAttribute("clip-path", `url(#${clipId})`);
-      g.appendChild(dim);
-      // Brighten inside each box a touch (clipped to the board outline).
-      for (const h of boxes) {
-        const bright = document.createElementNS(NS, 'rect');
-        bright.setAttribute('x', String(h.rect[0]));
-        bright.setAttribute('y', String(h.rect[1]));
-        bright.setAttribute('width', String(h.rect[2]));
-        bright.setAttribute('height', String(h.rect[3]));
-        bright.setAttribute('rx', '0.5');
-        bright.setAttribute('class', 'board-hilite-bright');
-        if (clipId) bright.setAttribute("clip-path", `url(#${clipId})`);
-        g.appendChild(bright);
+      const faceImg = svg.querySelector('image');
+      if (faceImg) {
+        // Dim the WHOLE board picture — including ports that overhang the
+        // Edge.Cuts outline — by masking a dark layer with the FACE IMAGE's
+        // ALPHA (covers exactly the rendered board + ports, soft edges, no page
+        // bleed). Then re-show the face at full brightness inside each highlight
+        // box, on top of the dim. No outline clip → no bright port sliver.
+        const dimMask = document.createElementNS(NS, 'mask');
+        dimMask.setAttribute('id', 'od-dim');
+        dimMask.setAttribute('maskUnits', 'userSpaceOnUse');
+        dimMask.setAttribute('mask-type', 'alpha');
+        dimMask.setAttribute('x', String(rx0));
+        dimMask.setAttribute('y', String(ry0));
+        dimMask.setAttribute('width', String(rw));
+        dimMask.setAttribute('height', String(rh));
+        dimMask.appendChild(faceImg.cloneNode(true));
+        defs.appendChild(dimMask);
+        boxes.forEach((h, i) => {
+          const clip = document.createElementNS(NS, 'clipPath');
+          clip.setAttribute('id', `od-bright-${i}`);
+          clip.setAttribute('clipPathUnits', 'userSpaceOnUse');
+          const cr = document.createElementNS(NS, 'rect');
+          cr.setAttribute('x', String(h.rect[0]));
+          cr.setAttribute('y', String(h.rect[1]));
+          cr.setAttribute('width', String(h.rect[2]));
+          cr.setAttribute('height', String(h.rect[3]));
+          cr.setAttribute('rx', '0.5');
+          clip.appendChild(cr);
+          defs.appendChild(clip);
+        });
+        g.appendChild(defs);
+        const dim = document.createElementNS(NS, 'rect');
+        dim.setAttribute('x', String(rx0));
+        dim.setAttribute('y', String(ry0));
+        dim.setAttribute('width', String(rw));
+        dim.setAttribute('height', String(rh));
+        dim.setAttribute('class', 'board-hilite-dim');
+        dim.setAttribute('mask', 'url(#od-dim)');
+        g.appendChild(dim);
+        // Re-show the face bright inside each box (clipped), on top of the dim.
+        boxes.forEach((h, i) => {
+          const bface = faceImg.cloneNode(true) as SVGElement;
+          bface.removeAttribute('id');
+          bface.setAttribute('clip-path', `url(#od-bright-${i})`);
+          bface.setAttribute('class', 'board-hilite-face');
+          g.appendChild(bface);
+        });
+      } else if (clipId) {
+        // Fallback (no face image): dim a board-bbox rect with holes per box,
+        // clipped to the outline.
+        const mask = document.createElementNS(NS, 'mask');
+        mask.setAttribute('id', 'od-spot');
+        mask.setAttribute('maskUnits', 'userSpaceOnUse');
+        mask.setAttribute('x', String(rx0));
+        mask.setAttribute('y', String(ry0));
+        mask.setAttribute('width', String(rw));
+        mask.setAttribute('height', String(rh));
+        const base = document.createElementNS(NS, 'rect');
+        base.setAttribute('x', String(rx0));
+        base.setAttribute('y', String(ry0));
+        base.setAttribute('width', String(rw));
+        base.setAttribute('height', String(rh));
+        base.setAttribute('fill', '#fff');
+        mask.appendChild(base);
+        for (const h of boxes) {
+          const hole = document.createElementNS(NS, 'rect');
+          hole.setAttribute('x', String(h.rect[0]));
+          hole.setAttribute('y', String(h.rect[1]));
+          hole.setAttribute('width', String(h.rect[2]));
+          hole.setAttribute('height', String(h.rect[3]));
+          hole.setAttribute('rx', '0.5');
+          hole.setAttribute('fill', '#000');
+          mask.appendChild(hole);
+        }
+        defs.appendChild(mask);
+        g.appendChild(defs);
+        const dim = document.createElementNS(NS, 'rect');
+        dim.setAttribute('x', String(rx0));
+        dim.setAttribute('y', String(ry0));
+        dim.setAttribute('width', String(rw));
+        dim.setAttribute('height', String(rh));
+        dim.setAttribute('class', 'board-hilite-dim');
+        dim.setAttribute('mask', 'url(#od-spot)');
+        dim.setAttribute('clip-path', `url(#${clipId})`);
+        g.appendChild(dim);
       }
     }
 

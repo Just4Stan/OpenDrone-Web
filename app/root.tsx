@@ -1,3 +1,4 @@
+import {useEffect} from 'react';
 import {Analytics, getShopAnalytics, useNonce} from '@shopify/hydrogen';
 import {
   Outlet,
@@ -21,6 +22,7 @@ import {getCompanyIdentity} from '~/lib/company';
 import {localeFromPathname, seoLocaleTag} from '~/lib/i18n';
 import {buildOrgJsonLd} from '~/lib/seo';
 import {THEME_COLORS, THEME_INIT_SCRIPT} from '~/lib/theme';
+import {installViewTransitionGuard} from '~/lib/view-transition';
 
 export type RootLoader = typeof loader;
 
@@ -213,6 +215,17 @@ export function Layout({children}: {children?: React.ReactNode}) {
   const data = useRouteLoaderData<RootLoader>('root');
   const htmlLang = (data?.locale || 'en_US').split('_')[0] || 'en';
   const orgJsonLd = data?.company ? buildOrgJsonLd(data.company) : null;
+
+  // Make every view transition resilient: route React Router's navigation
+  // transitions (and the manual theme-toggle reveal) through one guard that
+  // tracks the in-flight transition and swallows AbortError/InvalidStateError
+  // when one is skipped/interrupted. Without this, overlapping transitions
+  // threw `InvalidStateError: Transition was aborted because of invalid state`
+  // and could leave a route half-rendered (the PDP board stuck pre-reveal).
+  // Idempotent + client-only.
+  useEffect(() => {
+    installViewTransitionGuard();
+  }, []);
 
   return (
     <html lang={htmlLang} className="dark" suppressHydrationWarning>
