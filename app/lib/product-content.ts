@@ -234,7 +234,7 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
         {ref: '⑤', part: '0.2 mΩ sense shunt', refs: ['Rsense1']},
         {ref: '⑥', part: 'TLV767 3.3 V LDO', refs: ['U1']},
         {ref: '⑦', part: 'LMR54406 buck', refs: ['U13']},
-        {ref: '⑧', part: 'JST-SH FC connector — Betaflight connector standard', refs: ['J1']},
+        {ref: '⑧', part: 'JST-SH FC connector', refs: ['J1']},
         {
           ref: '⑨',
           part: 'Motor solder pads',
@@ -254,7 +254,7 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
         },
         {
           ref: '⑩',
-          part: 'Battery pads — B+ / B− solder lugs',
+          part: 'Battery pads',
           // The two big PTH lugs where the battery leads solder: CSA+ is the
           // post-shunt B+ terminal, GND_1 is the B− terminal. +BATT is the raw
           // pre-shunt rail tap. The 4 corner mounting holes are NOT here (they
@@ -263,14 +263,14 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
         },
         {
           ref: '⑪',
-          part: 'Signal pads — current sense + telemetry',
+          part: 'Signal pads',
           // CURR = current-sense output; M1–M4 = per-motor telemetry; GND_2 the
           // small signal-row ground. NOT the +BATT power rail or the CSA+ lug.
           refs: ['U4~CURR', 'U4~M1', 'U4~M2', 'U4~M3', 'U4~M4', 'U4~GND_2'],
         },
         {
           ref: '⑫',
-          part: 'Bulk ceramic capacitor array — 10 µF low-ESR, feeds MOSFET switching',
+          part: 'Bulk ceramic capacitor array',
           cost: '×20',
           box: 'union',
           refs: ['CL32', 'CL33', 'CL34', 'CL35', 'CL36', 'CL38', 'CL39', 'CL40', 'CL42', 'CL43', 'CL44', 'CL45', 'CL46', 'CL47', 'CL48', 'CL49', 'CL50', 'CL51', 'CL54', 'CL55'],
@@ -360,7 +360,7 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
           {ref: '⑤', part: '0.2 mΩ sense shunt', cost: '×2', refs: ['Rsense1', 'Rsense2']},
           {ref: '⑥', part: 'TLV767 3.3 V LDO', refs: ['U15']},
           {ref: '⑦', part: 'LMR54406 buck', refs: ['U13']},
-          {ref: '⑧', part: 'JST-SH FC connector — Betaflight connector standard', refs: ['J1']},
+          {ref: '⑧', part: 'JST-SH FC connector', refs: ['J1']},
           {
             ref: '⑨',
             part: 'Motor solder pads',
@@ -380,21 +380,21 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
           },
           {
             ref: '⑩',
-            part: 'Battery pads — B+ / B− solder lugs',
+            part: 'Battery pads',
             // Big PTH lugs for the battery leads: CSA+ post-shunt B+, GND_1 B−,
             // +BATT the raw pre-shunt rail tap. Corner mounting holes excluded.
             refs: ['U3~CSA+', 'U3~+BATT', 'U3~GND_1'],
           },
           {
             ref: '⑪',
-            part: 'Signal pads — current sense + telemetry',
+            part: 'Signal pads',
             // CURR = current-sense; M1–M4 = telemetry; GND_2 the signal-row
             // ground. Not the +BATT rail or the CSA+ lug.
             refs: ['U3~CURR', 'U3~M1', 'U3~M2', 'U3~M3', 'U3~M4', 'U3~GND_2'],
           },
           {
             ref: '⑫',
-            part: 'Bulk ceramic capacitor array — 10 µF low-ESR, feeds MOSFET switching',
+            part: 'Bulk ceramic capacitor array',
             cost: '×48',
             box: 'union',
             refs: ['C2', 'C3', 'C6', 'C7', 'C8', 'C9', 'C13', 'C14', 'C15', 'C16', 'C17', 'C18', 'C19', 'C20', 'C24', 'C25', 'C26', 'C27', 'C28', 'C29', 'C30', 'C31', 'C43', 'C44', 'C45', 'C69', 'C70', 'C71', 'C72', 'C79', 'C80', 'C82', 'C83', 'C84', 'C85', 'C87', 'C88', 'C95', 'C96', 'C97', 'C98', 'C99', 'C100', 'C101', 'C105', 'C106', 'C107', 'C108'],
@@ -577,20 +577,20 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
         {ref: '③', part: 'microSD blackbox (SPI)', refs: ['Card1']},
         {
           ref: '④',
-          part: 'Analog OSD: sync comparator + video op-amp + SPDT mux',
+          part: 'Analog OSD',
           refs: ['U12', 'U11', 'U10'],
         },
-        {ref: '⑤', part: 'Switchable VTX / 5 V buck — LMR51430 (×2)', refs: ['U3', 'U4']},
+        {ref: '⑤', part: 'Switchable VTX / 5 V buck', refs: ['U3', 'U4']},
         {ref: '⑥', part: 'Gyro 1.8 V + 3.3 V logic LDOs', refs: ['U6', 'U7']},
         {ref: '⑦', part: 'USB-C + power mux', refs: ['USB1', 'U5']},
         {
           ref: '⑧',
-          part: 'JST-SH I/O connectors — Betaflight connector standard',
+          part: 'JST-SH I/O connectors',
           refs: ['P1', 'U8', 'U13', 'U14', 'CN1'],
         },
         {
           ref: '⑨',
-          part: 'UART pads (any runs CRSF / GPS / etc.)',
+          part: 'UART pads',
           refs: ['J9', 'J13', 'J43', 'J44', 'J48', 'J49', 'J52', 'J54'],
         },
         {ref: '⑩', part: 'Camera + VTX pads', refs: ['J2', 'J32', 'J33', 'J34']},
@@ -647,20 +647,20 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
           {ref: '③', part: 'microSD blackbox (SPI)', refs: ['Card1']},
           {
             ref: '④',
-            part: 'Analog OSD: sync comparator + video op-amp + SPDT mux',
+            part: 'Analog OSD',
             refs: ['U2', 'U1', 'U18'],
           },
-          {ref: '⑤', part: 'Switchable VTX / 5 V buck — LMR51430 (×2)', refs: ['U3', 'U4']},
+          {ref: '⑤', part: 'Switchable VTX / 5 V buck', refs: ['U3', 'U4']},
           {ref: '⑥', part: 'Gyro 1.8 V + 3.3 V logic LDOs', refs: ['U6', 'U7']},
           {ref: '⑦', part: 'USB-C + power mux', refs: ['USB1', 'U5']},
           {
             ref: '⑧',
-            part: 'JST-SH I/O connectors — Betaflight connector standard',
+            part: 'JST-SH I/O connectors',
             refs: ['P1', 'U8'],
           },
           {
             ref: '⑨',
-            part: 'UART pads (any runs CRSF / GPS / etc.)',
+            part: 'UART pads',
             refs: ['J8', 'J12', 'J43', 'J44', 'J48', 'J49'],
           },
           {ref: '⑩', part: 'Camera + VTX pads', refs: ['J32', 'J33', 'J34']},
