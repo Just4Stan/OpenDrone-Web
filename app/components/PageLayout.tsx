@@ -1,5 +1,5 @@
-import {Await, Link, useLocation} from 'react-router';
-import {Suspense, useId} from 'react';
+import {Await, useLocation} from 'react-router';
+import {Suspense} from 'react';
 import {MotionConfig} from 'motion/react';
 import type {
   CartApiQueryFragment,
@@ -13,11 +13,9 @@ import {LangToggle} from '~/components/LangToggle';
 import {CartMain} from '~/components/CartMain';
 import {PlaceholderBanner} from '~/components/PlaceholderBanner';
 import {RouteProgress} from '~/components/RouteProgress';
-import {
-  SearchFormPredictive,
-} from '~/components/SearchFormPredictive';
-import {SearchResultsPredictive} from '~/components/SearchResultsPredictive';
-import {buildSearchPath} from '~/lib/search';
+
+/** Resolved marketing-consent state for the signed-in customer (null = guest). */
+export type NewsletterAccount = {email: string; subscribed: boolean} | null;
 
 interface PageLayoutProps {
   cart: Promise<CartApiQueryFragment | null>;
@@ -28,6 +26,7 @@ interface PageLayoutProps {
   turnstileSiteKey?: string | null;
   prelaunch?: boolean;
   familyProducts?: Promise<HeaderFamilyProduct[]>;
+  newsletterAccount?: Promise<NewsletterAccount>;
   children?: React.ReactNode;
 }
 
@@ -41,6 +40,7 @@ export function PageLayout({
   turnstileSiteKey,
   prelaunch = true,
   familyProducts,
+  newsletterAccount,
 }: PageLayoutProps) {
   const {pathname} = useLocation();
   const isHomepage = pathname === '/';
@@ -49,7 +49,6 @@ export function PageLayout({
     <MotionConfig reducedMotion="user">
       <Aside.Provider>
         <CartAside cart={cart} />
-        <SearchAside />
         <MobileMenuAside header={header} publicStoreDomain={publicStoreDomain} />
         <div className={isHomepage ? 'homepage-layout' : ''}>
           <a className="skip-link" href="#main-content">
@@ -75,6 +74,7 @@ export function PageLayout({
               publicStoreDomain={publicStoreDomain}
               company={company}
               turnstileSiteKey={turnstileSiteKey ?? null}
+              newsletterAccount={newsletterAccount}
             />
           )}
         </div>
@@ -93,88 +93,6 @@ function CartAside({cart}: {cart: PageLayoutProps['cart']}) {
           }}
         </Await>
       </Suspense>
-    </Aside>
-  );
-}
-
-function SearchAside() {
-  const queriesDatalistId = useId();
-  return (
-    <Aside type="search" heading="SEARCH">
-      <div className="predictive-search">
-        <br />
-        <SearchFormPredictive>
-          {({fetchResults, goToSearch, inputRef}) => (
-            <>
-              <input
-                name="q"
-                onChange={fetchResults}
-                onFocus={fetchResults}
-                placeholder="Search"
-                ref={inputRef}
-                type="search"
-                list={queriesDatalistId}
-              />
-              &nbsp;
-              <button onClick={goToSearch}>Search</button>
-            </>
-          )}
-        </SearchFormPredictive>
-
-        <SearchResultsPredictive>
-          {({items, total, term, state, closeSearch}) => {
-            const {articles, collections, pages, products, queries} = items;
-
-            if (state === 'loading' && term.current) {
-              return <div>Loading...</div>;
-            }
-
-            if (!total) {
-              return <SearchResultsPredictive.Empty term={term} />;
-            }
-
-            return (
-              <>
-                <SearchResultsPredictive.Queries
-                  queries={queries}
-                  queriesDatalistId={queriesDatalistId}
-                />
-                <SearchResultsPredictive.Products
-                  products={products}
-                  closeSearch={closeSearch}
-                  term={term}
-                />
-                <SearchResultsPredictive.Collections
-                  collections={collections}
-                  closeSearch={closeSearch}
-                  term={term}
-                />
-                <SearchResultsPredictive.Pages
-                  pages={pages}
-                  closeSearch={closeSearch}
-                  term={term}
-                />
-                <SearchResultsPredictive.Articles
-                  articles={articles}
-                  closeSearch={closeSearch}
-                  term={term}
-                />
-                {term.current && total ? (
-                  <Link prefetch="viewport"
-                    onClick={closeSearch}
-                    to={buildSearchPath(term.current)}
-                  >
-                    <p>
-                      View all results for <q>{term.current}</q>
-                      &nbsp; →
-                    </p>
-                  </Link>
-                ) : null}
-              </>
-            );
-          }}
-        </SearchResultsPredictive>
-      </div>
     </Aside>
   );
 }

@@ -26,7 +26,8 @@ const ROUTES = [
   ['collections', '/collections'],
   ['catalog', '/collections/all'],
   ['product-openframe', '/products/openframe'], // FrameViewer (touch drag)
-  ['product-openfc', '/products/openfc'], // BoardArt + FirmwareSplit
+  ['product-openstack', '/products/openstack'], // BoardArt + FirmwareSplit + Schematic
+  ['product-openesc', '/products/openesc'], // BoardArt (ESC)
   ['product-battery-strap', '/products/battery-strap'], // simple product
   ['cart', '/cart'],
   ['search', '/search?q=esc'],

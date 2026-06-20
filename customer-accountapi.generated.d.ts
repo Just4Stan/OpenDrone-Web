@@ -529,6 +529,61 @@ export type CustomerUpdateMutation = {
   }>;
 };
 
+export type CustomerEmailMarketingSubscribeMutationVariables =
+  CustomerAccountAPI.Exact<{[key: string]: never}>;
+
+export type CustomerEmailMarketingSubscribeMutation = {
+  customerEmailMarketingSubscribe?: CustomerAccountAPI.Maybe<{
+    emailAddress?: CustomerAccountAPI.Maybe<
+      Pick<
+        CustomerAccountAPI.CustomerEmailAddress,
+        'emailAddress' | 'marketingState'
+      >
+    >;
+    userErrors: Array<
+      Pick<
+        CustomerAccountAPI.UserErrorsCustomerEmailMarketingUserErrors,
+        'field' | 'message' | 'code'
+      >
+    >;
+  }>;
+};
+
+export type CustomerEmailMarketingUnsubscribeMutationVariables =
+  CustomerAccountAPI.Exact<{[key: string]: never}>;
+
+export type CustomerEmailMarketingUnsubscribeMutation = {
+  customerEmailMarketingUnsubscribe?: CustomerAccountAPI.Maybe<{
+    emailAddress?: CustomerAccountAPI.Maybe<
+      Pick<
+        CustomerAccountAPI.CustomerEmailAddress,
+        'emailAddress' | 'marketingState'
+      >
+    >;
+    userErrors: Array<
+      Pick<
+        CustomerAccountAPI.UserErrorsCustomerEmailMarketingUserErrors,
+        'field' | 'message' | 'code'
+      >
+    >;
+  }>;
+};
+
+export type CustomerNewsletterStateQueryVariables = CustomerAccountAPI.Exact<{
+  [key: string]: never;
+}>;
+
+export type CustomerNewsletterStateQuery = {
+  customer: {
+    emailAddress?: CustomerAccountAPI.Maybe<
+      Pick<
+        CustomerAccountAPI.CustomerEmailAddress,
+        'emailAddress' | 'marketingState'
+      >
+    >;
+  };
+};
+
 export type SupportCustomerPrefillQueryVariables = CustomerAccountAPI.Exact<{
   [key: string]: never;
 }>;
@@ -565,6 +620,10 @@ interface GeneratedQueryTypes {
     return: CustomerOrdersQuery;
     variables: CustomerOrdersQueryVariables;
   };
+  '#graphql\n  query CustomerNewsletterState {\n    customer {\n      emailAddress {\n        emailAddress\n        marketingState\n      }\n    }\n  }\n': {
+    return: CustomerNewsletterStateQuery;
+    variables: CustomerNewsletterStateQueryVariables;
+  };
   '#graphql\n  query SupportCustomerPrefill {\n    customer {\n      id\n      firstName\n      lastName\n      emailAddress { emailAddress }\n    }\n  }\n': {
     return: SupportCustomerPrefillQuery;
     variables: SupportCustomerPrefillQueryVariables;
@@ -591,6 +650,14 @@ interface GeneratedMutationTypes {
   '#graphql\n  mutation customerUpdate(\n    $customer: CustomerUpdateInput!\n    $language: LanguageCode\n  ) @inContext(language: $language) {\n    customerUpdate(input: $customer) {\n      customer {\n        firstName\n        lastName\n        emailAddress {\n          emailAddress\n        }\n        phoneNumber {\n          phoneNumber\n        }\n      }\n      userErrors {\n        code\n        field\n        message\n      }\n    }\n  }\n': {
     return: CustomerUpdateMutation;
     variables: CustomerUpdateMutationVariables;
+  };
+  '#graphql\n  mutation CustomerEmailMarketingSubscribe {\n    customerEmailMarketingSubscribe {\n      emailAddress {\n        emailAddress\n        marketingState\n      }\n      userErrors {\n        field\n        message\n        code\n      }\n    }\n  }\n': {
+    return: CustomerEmailMarketingSubscribeMutation;
+    variables: CustomerEmailMarketingSubscribeMutationVariables;
+  };
+  '#graphql\n  mutation CustomerEmailMarketingUnsubscribe {\n    customerEmailMarketingUnsubscribe {\n      emailAddress {\n        emailAddress\n        marketingState\n      }\n      userErrors {\n        field\n        message\n        code\n      }\n    }\n  }\n': {
+    return: CustomerEmailMarketingUnsubscribeMutation;
+    variables: CustomerEmailMarketingUnsubscribeMutationVariables;
   };
 }
 

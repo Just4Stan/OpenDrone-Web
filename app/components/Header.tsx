@@ -1,4 +1,4 @@
-import {Suspense, useRef, useState} from 'react';
+import {Suspense, useEffect, useRef, useState} from 'react';
 import {Await, useAsyncValue, useLocation} from 'react-router';
 import {NavLink} from '~/components/nav';
 import {AnimatePresence} from 'motion/react';
@@ -12,8 +12,21 @@ import {useAside} from '~/components/Aside';
 import {LangToggle} from '~/components/LangToggle';
 import {ThemeToggle} from '~/components/ThemeToggle';
 import {SiteWordmark} from '~/components/SiteWordmark';
+import {IncutecWordmark} from '~/components/IncutecWordmark';
 import {Pod} from '~/components/Pod';
 import {ProductPods, type ProductPodItem} from '~/components/ProductPods';
+import {INCUTEC_HINT_SEEN_KEY} from '~/lib/incutec-hint';
+
+/** Retire the hero "Who's incutec?" hint: persist the dismissal and pull the
+ *  class so it can't flash on a same-session SPA return to the homepage. */
+function dismissIncutecHint() {
+  try {
+    localStorage.setItem(INCUTEC_HINT_SEEN_KEY, '1');
+  } catch {
+    /* storage blocked (private mode) — the nudge just isn't persisted */
+  }
+  document.documentElement.classList.remove('hero-incutec-hint');
+}
 
 /** Thin shape of a product as read by HEADER_PRODUCTS_QUERY. */
 export type HeaderFamilyVariant = {
@@ -69,17 +82,45 @@ export function Header({
   familyProducts,
 }: HeaderProps) {
   const {menu} = header;
-  // Dynamic-Island behaviour: on the hero ("/") the wordmark lives bottom-left
-  // in the 3D scene, so the island stays clean (no logo). On every other route
-  // the logo occupies the left of the bar. `view-transition-name` lets it
-  // animate in (and the island re-flow) on navigation rather than popping.
+  // Dynamic-Island logo slot. On the hero ("/") the OpenDrone wordmark already
+  // lives bottom-left in the 3D scene, so the bar instead credits the parent
+  // company — the Incutec mark linking to incutec.eu (OpenDrone is an Incutec
+  // product brand). On every other route the slot is the OpenDrone wordmark
+  // home link. The slot is a fixed width so the nav chips never shift between
+  // routes; view-transition-name animates the swap across navigations.
   const {pathname} = useLocation();
-  const showLogo = pathname !== '/';
+  const isHero = pathname === '/';
   return (
     <header className="site-header">
       <div className="site-header-main">
-        {/* Left: wordmark — "Open" neutral, "Drone" in gold, matches splash */}
-        {showLogo ? (
+        {/* Left: brand slot — OpenDrone home link, or Incutec credit on the hero.
+            On the hero the mark links to the in-site Incutec company page, and a
+            "Who's incutec?" hint drops out from under it a beat after the header
+            lands (gated on `html.hero-incutec-hint`, set by the homepage). */}
+        {isHero ? (
+          <span className="site-header-incutec-slot">
+            <NavLink
+              prefetch="intent"
+              to="/incutec"
+              className="site-header-logo site-header-logo--incutec"
+              aria-label="Incutec — the company behind OpenDrone"
+              style={{viewTransitionName: 'site-logo'}}
+              onClick={dismissIncutecHint}
+            >
+              <IncutecWordmark className="site-header-incutec" />
+            </NavLink>
+            <NavLink
+              prefetch="intent"
+              to="/incutec"
+              className="incutec-hint"
+              tabIndex={-1}
+              aria-hidden="true"
+              onClick={dismissIncutecHint}
+            >
+              Who&apos;s incutec?
+            </NavLink>
+          </span>
+        ) : (
           <NavLink
             prefetch="viewport"
             to="/"
@@ -90,7 +131,7 @@ export function Header({
           >
             <SiteWordmark className="site-header-wordmark" />
           </NavLink>
-        ) : null}
+        )}
 
         {/* Center: primary nav + gold category links on the same row */}
         <HeaderMenu
@@ -130,6 +171,15 @@ function FamilyNav({
   const [products, setProducts] = useState<HeaderFamilyProduct[] | null>(null);
   const [open, setOpen] = useState<string | null>(null);
   const closeTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const location = useLocation();
+
+  // Close the hover dropdown on any navigation — otherwise clicking a SKU drops
+  // you on the page with the menu still stuck open (mouseleave never fires when
+  // the pointer is over the navigating link).
+  useEffect(() => {
+    clearTimeout(closeTimer.current);
+    setOpen(null);
+  }, [location.pathname, location.search]);
 
   function ensureProducts() {
     if (products || !familyProducts) return;
@@ -175,8 +225,10 @@ function FamilyNav({
           return {
             key: v.id,
             to: `/products/${p.handle}${qs ? `?${qs}` : ''}`,
-            title: p.title,
-            subtitle: v.title,
+            // SKU/variant name is the headline (gold); the family line is the
+            // dim context beneath it.
+            title: v.title,
+            subtitle: p.title,
             imageUrl: v.image?.url ?? p.featuredImage?.url ?? null,
             imageAlt: v.image?.altText ?? p.featuredImage?.altText ?? null,
             price: v.price ?? p.priceRange?.minVariantPrice ?? null,
@@ -408,7 +460,6 @@ function HeaderCtas({
         </Suspense>
       </NavLink>
       <ThemeToggle className="site-header-icon" />
-      <SearchToggle />
       <CartToggle cart={cart} />
       <HeaderMenuMobileToggle />
     </nav>
@@ -419,7 +470,7 @@ function HeaderMenuMobileToggle() {
   const {open} = useAside();
   return (
     <button
-      className="site-header-icon md:hidden text-[var(--color-text-muted)] hover:text-[var(--color-text)] transition-colors"
+      className="site-header-icon site-header-menu-toggle text-[var(--color-text-muted)] hover:text-[var(--color-text)] transition-colors"
       onClick={() => open('mobile')}
       aria-label="Menu"
     >
@@ -427,22 +478,6 @@ function HeaderMenuMobileToggle() {
         <line x1="4" y1="7" x2="20" y2="7" />
         <line x1="4" y1="12" x2="20" y2="12" />
         <line x1="4" y1="17" x2="20" y2="17" />
-      </svg>
-    </button>
-  );
-}
-
-function SearchToggle() {
-  const {open} = useAside();
-  return (
-    <button
-      className="site-header-icon text-[var(--color-text-muted)] hover:text-[var(--color-text)] transition-colors"
-      onClick={() => open('search')}
-      aria-label="Search"
-    >
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-        <circle cx="11" cy="11" r="8" />
-        <line x1="21" y1="21" x2="16.65" y2="16.65" />
       </svg>
     </button>
   );

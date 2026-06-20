@@ -1,4 +1,5 @@
 import {Await, PrefetchPageLinks, useLoaderData} from 'react-router';
+import {AnimatePresence, motion, useReducedMotion} from 'motion/react';
 import {Link} from '~/components/nav';
 import {Money} from '@shopify/hydrogen';
 import type {Route} from './+types/_index';
@@ -11,9 +12,18 @@ import {
   Suspense,
 } from 'react';
 import type {CollectionItemFragment} from 'storefrontapi.generated';
+import type {MoneyV2} from '@shopify/hydrogen/storefront-api-types';
 import {INCUTEC_HINT_SEEN_KEY} from '~/lib/incutec-hint';
 import {HeroWordmark} from '~/components/HeroWordmark';
 import {HeroSizeSlider} from '~/components/HeroSizeSlider';
+import {
+  HERO_AIRFRAMES,
+  HERO_AIRFRAME_KEYS,
+  HERO_BOARDS,
+  HERO_VARIANT_AXIS,
+  DEFAULT_HERO_SIZE,
+  type HeroBoardKey,
+} from '~/lib/hero-airframes';
 import {MobileHome} from '~/components/MobileHome';
 import {SceneErrorBoundary} from '~/components/SceneErrorBoundary';
 
@@ -60,7 +70,7 @@ const ClientHeroScene = memo(function ClientHeroScene({
   onProgress?: (progress: number) => void;
   labelRefs?: LabelRefs;
   loadDelayMs?: number;
-  size?: '5' | '3';
+  size?: string;
   scrubRef?: React.RefObject<number | null>;
   spotlightRef?: React.RefObject<'fc' | 'esc' | 'frame' | null>;
 }) {
@@ -69,7 +79,7 @@ const ClientHeroScene = memo(function ClientHeroScene({
     onProgress?: (progress: number) => void;
     labelRefs?: LabelRefs;
     loadDelayMs?: number;
-    size?: '5' | '3';
+    size?: string;
     scrubRef?: React.RefObject<number | null>;
     spotlightRef?: React.RefObject<'fc' | 'esc' | 'frame' | null>;
   }> | null>(null);
@@ -113,6 +123,118 @@ export const meta: Route.MetaFunction = () => {
   ];
 };
 
+type HomeMoney = Pick<MoneyV2, 'amount' | 'currencyCode'>;
+type HomeVariant = {
+  id: string;
+  availableForSale: boolean;
+  price: HomeMoney;
+  image?: {url: string; altText: string | null} | null;
+  selectedOptions: Array<{name: string; value: string}>;
+};
+// FC/ESC come back with their variant list so a size can pick its Model variant.
+type HomeProduct = CollectionItemFragment & {variants?: {nodes: HomeVariant[]}};
+type HomeFeaturedResult = {
+  frame: CollectionItemFragment | null;
+  stack: CollectionItemFragment | null;
+  rx: CollectionItemFragment | null;
+  fc: HomeProduct | null;
+  esc: HomeProduct | null;
+};
+
+// A ready-to-render hero reveal card — resolved server-side so the view stays
+// data-driven (the client just maps over the active size's stack).
+export type HeroCard = {
+  boardKey: HeroBoardKey;
+  handle: string;
+  /** PDP link, including `?Model=…` for size-variant boards. */
+  url: string;
+  title: string;
+  productType: string | null;
+  image: {url: string; altText: string | null} | null;
+  price: HomeMoney | null;
+};
+/** Keyed by airframe size key (see HERO_AIRFRAMES). */
+export type HeroStacks = Record<string, HeroCard[]>;
+
+function emptyHeroStacks(): HeroStacks {
+  const stacks: HeroStacks = {};
+  for (const af of HERO_AIRFRAMES) stacks[af.key] = [];
+  return stacks;
+}
+
+// Resolve each airframe size's [FC, ESC, Frame] cards from the queried
+// products. Size-variant boards (FC/ESC) match the size's `model` against the
+// product's "Model" option values, linking to that variant and using its
+// price; a size with no matching variant falls back to the base product link
+// + min price so the card still renders. Fully driven by the HERO_AIRFRAMES /
+// HERO_BOARDS registry — adding a size needs no change here.
+function buildHeroStacks(d: HomeFeaturedResult): HeroStacks {
+  const byBoard: Record<HeroBoardKey, HomeProduct | null> = {
+    fc: d.fc,
+    esc: d.esc,
+    frame: (d.frame as HomeProduct | null) ?? null,
+  };
+  const stacks: HeroStacks = {};
+  for (const af of HERO_AIRFRAMES) {
+    const cards: HeroCard[] = [];
+    for (const board of HERO_BOARDS) {
+      const p = byBoard[board.boardKey];
+      if (!p) continue;
+      let url = `/products/${board.handle}`;
+      let price: HomeMoney | null = p.priceRange?.minVariantPrice ?? null;
+      // Default to the product's featured image; a matched size variant
+      // overrides it below (the featured image is the mini/first variant).
+      let image = p.featuredImage
+        ? {url: p.featuredImage.url, altText: p.featuredImage.altText ?? null}
+        : null;
+      const model = board.sizeVariant ? af.model : undefined;
+      if (model) {
+        const axis = HERO_VARIANT_AXIS.toLowerCase();
+        const want = model.trim().toLowerCase();
+        const variant = p.variants?.nodes?.find((v) =>
+          v.selectedOptions?.some(
+            (o) =>
+              o.name.trim().toLowerCase() === axis &&
+              o.value.trim().toLowerCase() === want,
+          ),
+        );
+        if (variant) {
+          // Link with the value the LIVE variant carries (preserves exact
+          // casing/encoding) so the PDP resolves it cleanly.
+          const liveValue =
+            variant.selectedOptions?.find(
+              (o) => o.name.trim().toLowerCase() === axis,
+            )?.value ?? model;
+          url += `?${HERO_VARIANT_AXIS}=${encodeURIComponent(liveValue)}`;
+          if (variant.price) price = variant.price;
+          if (variant.image)
+            image = {
+              url: variant.image.url,
+              altText: variant.image.altText ?? null,
+            };
+        }
+      }
+      cards.push({
+        boardKey: board.boardKey,
+        handle: board.handle,
+        url,
+        // Size-variant boards spell out which mount they are (e.g. "OpenESC
+        // 30×30") so the two airframes' cards aren't indistinguishable; the
+        // shared frame keeps its plain title.
+        title:
+          board.sizeVariant && !p.title.includes(af.model)
+            ? `${p.title} ${af.model}`
+            : p.title,
+        productType: p.productType ?? null,
+        image,
+        price,
+      });
+    }
+    stacks[af.key] = cards;
+  }
+  return stacks;
+}
+
 export async function loader({request, context}: Route.LoaderArgs) {
   // UA hint picks the SSR layout so a phone gets the static MobileHome on
   // first paint instead of rendering the desktop 3D tree (and its
@@ -129,38 +251,25 @@ export async function loader({request, context}: Route.LoaderArgs) {
   // storefront hiccup just drops the cards instead of blanking the page.
   const home: Promise<{
     featured: CollectionItemFragment[];
-    heroStacks: {
-      five: CollectionItemFragment[];
-      three: CollectionItemFragment[];
-    };
+    heroStacks: HeroStacks;
   }> = context.storefront
     .query(HOME_FEATURED_QUERY, {cache: context.storefront.CacheLong()})
     .then((data) => {
-      const d = data as {
-        frame: CollectionItemFragment | null;
-        stack: CollectionItemFragment | null;
-        rx: CollectionItemFragment | null;
-        fc: CollectionItemFragment | null;
-        esc: CollectionItemFragment | null;
-        fcMini: CollectionItemFragment | null;
-        escMini: CollectionItemFragment | null;
-      };
+      const d = data as HomeFeaturedResult;
       const keep = (p: CollectionItemFragment | null): p is CollectionItemFragment =>
         Boolean(p);
       return {
         // Mobile flagship line.
         featured: [d.frame, d.stack, d.rx].filter(keep),
-        // The three components in the 3D hero, per airframe size. The 3" stack
-        // points its FC/ESC cards at the -mini PDPs; the frame is shared. Falls
-        // back to the 5" product if a -mini handle isn't live yet, so the card
-        // still renders (linking to the standard part) instead of vanishing.
-        heroStacks: {
-          five: [d.fc, d.esc, d.frame].filter(keep),
-          three: [d.fcMini ?? d.fc, d.escMini ?? d.esc, d.frame].filter(keep),
-        },
+        // The three hero boards, resolved per airframe size. FC + ESC are
+        // single products with a size variant axis ("Model"): each size links
+        // them to its own variant (?Model=…) and shows that variant's price.
+        // The frame is one shared SKU. Built off the HERO_AIRFRAMES registry,
+        // so a new size is a config edit — see app/lib/hero-airframes.ts.
+        heroStacks: buildHeroStacks(d),
       };
     })
-    .catch(() => ({featured: [], heroStacks: {five: [], three: []}}));
+    .catch(() => ({featured: [], heroStacks: emptyHeroStacks()}));
 
   const featured = home.then((h) => h.featured);
   const heroStacks = home.then((h) => h.heroStacks);
@@ -187,6 +296,39 @@ const HERO_SPACER_VH_MOBILE = 205;
 // gesture, instead of needing several wheel/trackpad flicks to get through.
 const HERO_PROGRESS_VH_DESKTOP = 1;
 const HERO_PROGRESS_VH_MOBILE = 1;
+
+// Buy-card stack swap on a size change — a horizontal cross-slide timed to MATCH
+// the 3D airframe's cross-slide so the cards and the drone move as one gesture.
+// Mirrors HeroScene's swap: same duration (TRANS_DUR), same easeInOutCubic, same
+// direction, and the same mid-swap zoom dip (both stacks pull back toward the
+// middle of the travel). `custom` is the direction (+1 = the new size sits later
+// in the registry, so its cards fly in from the right and the old stack flies
+// out left; −1 = reverse). The exiting stack is taken out of flow (absolute,
+// bottom-anchored to match .hero-buy-stack's column-reverse) so it doesn't shove
+// the Shop button while both stacks overlap mid-swap.
+const HERO_SWAP_DUR = 0.85; // seconds — must track HeroScene TRANS_DUR
+const HERO_SWAP_EASE = [0.65, 0, 0.35, 1] as const; // easeInOutCubic ≈ HeroScene easeSwap
+const HERO_SWAP_DIST = 110; // px of horizontal travel
+const HERO_SWAP_DIP = 0.9; // mid-swap scale (the zoom-out dip), ~ HeroScene's 0.18 sine dip
+const HERO_STACK_SWAP = {
+  enter: (dir: number) => ({x: dir * HERO_SWAP_DIST, opacity: 0, scale: HERO_SWAP_DIP}),
+  center: {
+    x: 0,
+    opacity: 1,
+    scale: 1,
+    transition: {duration: HERO_SWAP_DUR, ease: HERO_SWAP_EASE},
+  },
+  exit: (dir: number) => ({
+    x: -dir * HERO_SWAP_DIST,
+    opacity: 0,
+    scale: HERO_SWAP_DIP,
+    position: 'absolute' as const,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    transition: {duration: HERO_SWAP_DUR, ease: HERO_SWAP_EASE},
+  }),
+};
 
 // Module-scoped flag that survives across remounts of the homepage during
 // a single browser session. Hard refresh tears down the JS module and
@@ -220,17 +362,31 @@ export default function Homepage() {
 function DesktopHome({
   heroStacks,
 }: {
-  heroStacks: Promise<{
-    five: CollectionItemFragment[];
-    three: CollectionItemFragment[];
-  }>;
+  heroStacks: Promise<HeroStacks>;
 }) {
   const scrollRef = useRef(0);
   const rafId = useRef(0);
   const [scrollProgress, setScrollProgress] = useState(0);
   // Which airframe the hero shows — 5-inch or 3-inch. Toggling swaps the
   // GLB trio loaded by HeroScene.
-  const [heroSize, setHeroSize] = useState<'5' | '3'>('5');
+  const [heroSize, setHeroSize] = useState<string>(DEFAULT_HERO_SIZE);
+  const reduceMotion = useReducedMotion();
+  // Slide direction for the buy-card swap, mirroring the 3D cross-slide: +1 =
+  // moving to a later registry index (new cards fly in from the right, old fly
+  // out left), −1 = the reverse. A ref because AnimatePresence reads it via the
+  // `custom` prop at exit/enter time — no extra render needed. Written by
+  // changeHeroSize before the size state updates.
+  const heroSwapDirRef = useRef(1);
+  const changeHeroSize = useCallback((next: string) => {
+    setHeroSize((prev) => {
+      if (next !== prev) {
+        const order = HERO_AIRFRAME_KEYS;
+        const d = order.indexOf(next) - order.indexOf(prev);
+        heroSwapDirRef.current = d < 0 ? -1 : 1;
+      }
+      return next;
+    });
+  }, []);
   // Live drag fraction (0→1) while the size slider is dragged, else null. A ref
   // (not state) so dragging it 60×/s doesn't re-render the page — the render
   // loop reads it each frame. The slider writes it; HeroScene reads it.
@@ -455,12 +611,12 @@ function DesktopHome({
     };
   }, [splashSettled, interacted]);
 
-  // Bring the top header bar in 2s after the splash settles, or immediately if
+  // Bring the top header bar in 1s after the splash settles, or immediately if
   // the visitor starts scrolling. Once in, it stays in (and the class persists
   // across SPA nav like splash-settled does, so it doesn't re-hide on return).
   useEffect(() => {
     if (!splashSettled || headerIn) return;
-    const t = window.setTimeout(() => setHeaderIn(true), 2000);
+    const t = window.setTimeout(() => setHeaderIn(true), 1000);
     const onScroll = () => {
       if (window.scrollY > 4) setHeaderIn(true);
     };
@@ -888,25 +1044,34 @@ function DesktopHome({
             <Suspense fallback={null}>
               <Await resolve={heroStacks}>
                 {(stacks) => {
-                  // Pick the stack for the selected airframe — the 3" cards link
-                  // to the -mini PDPs. Order is always [FC, ESC, Frame], so the
-                  // index maps directly to the 3D board the card spotlights.
-                  const items = heroSize === '3' ? stacks.three : stacks.five;
-                  const BOARD_KEYS = ['fc', 'esc', 'frame'] as const;
+                  // The active size's resolved cards, already in [FC, ESC, Frame]
+                  // order with the right per-size variant URL + price baked in by
+                  // the loader. Index maps directly to the 3D board it spotlights.
+                  const items = stacks[heroSize] ?? [];
+                  const dir = heroSwapDirRef.current;
                   return (
-                  <div className="hero-buy-stack" aria-hidden={scrollProgress < 0.1}>
-                    {items.slice(0, 3).map((p, i) => {
+                  <div className="hero-buy-swap">
+                  <AnimatePresence custom={dir} initial={false} mode="sync">
+                  <motion.div
+                    key={heroSize}
+                    className="hero-buy-stack"
+                    aria-hidden={scrollProgress < 0.1}
+                    custom={dir}
+                    variants={HERO_STACK_SWAP}
+                    initial={reduceMotion ? false : 'enter'}
+                    animate="center"
+                    exit={reduceMotion ? undefined : 'exit'}
+                  >
+                    {items.slice(0, 3).map((card, i) => {
                       const [lo, hi] = REVEAL_WINDOWS[i] ?? [1, 1];
                       const r = linearstep(lo, hi, scrollProgress);
-                      const price = p.priceRange?.minVariantPrice ?? null;
-                      const boardKey = BOARD_KEYS[i];
-                      const setSpot = (v: 'fc' | 'esc' | 'frame' | null) => {
+                      const setSpot = (v: HeroBoardKey | null) => {
                         heroSpotlightRef.current = v;
                       };
                       return (
                         <Link
-                          key={p.handle}
-                          to={`/products/${p.handle}`}
+                          key={card.boardKey}
+                          to={card.url}
                           prefetch="intent"
                           className="hero-reveal-card"
                           style={{
@@ -918,16 +1083,16 @@ function DesktopHome({
                           }}
                           tabIndex={r > 0.6 ? undefined : -1}
                           aria-hidden={r <= 0.6}
-                          onMouseEnter={() => setSpot(boardKey)}
+                          onMouseEnter={() => setSpot(card.boardKey)}
                           onMouseLeave={() => setSpot(null)}
-                          onFocus={() => setSpot(boardKey)}
+                          onFocus={() => setSpot(card.boardKey)}
                           onBlur={() => setSpot(null)}
                         >
                           <span className="hero-reveal-media">
-                            {p.featuredImage?.url ? (
+                            {card.image?.url ? (
                               <img
-                                src={p.featuredImage.url}
-                                alt={p.featuredImage.altText ?? ''}
+                                src={card.image.url}
+                                alt={card.image.altText ?? ''}
                                 loading="lazy"
                                 decoding="async"
                               />
@@ -936,19 +1101,21 @@ function DesktopHome({
                             )}
                           </span>
                           <span className="hero-reveal-text">
-                            <span className="hero-reveal-title">{p.title}</span>
-                            {p.productType ? (
-                              <span className="hero-reveal-sub">{p.productType}</span>
+                            <span className="hero-reveal-title">{card.title}</span>
+                            {card.productType ? (
+                              <span className="hero-reveal-sub">{card.productType}</span>
                             ) : null}
                           </span>
-                          {price ? (
+                          {card.price ? (
                             <span className="hero-reveal-price">
-                              <Money data={price} />
+                              <Money data={card.price} />
                             </span>
                           ) : null}
                         </Link>
                       );
                     })}
+                  </motion.div>
+                  </AnimatePresence>
                   </div>
                   );
                 }}
@@ -983,7 +1150,7 @@ function DesktopHome({
         >
           <HeroSizeSlider
             value={heroSize}
-            onChange={setHeroSize}
+            onChange={changeHeroSize}
             scrubRef={heroScrubRef}
           />
         </div>
@@ -1057,6 +1224,28 @@ const HOME_FEATURED_QUERY = `#graphql
       }
     }
   }
+  fragment HomeProductVariants on Product {
+    variants(first: 30) {
+      nodes {
+        id
+        availableForSale
+        price {
+          ...HomeMoney
+        }
+        image {
+          id
+          altText
+          url
+          width
+          height
+        }
+        selectedOptions {
+          name
+          value
+        }
+      }
+    }
+  }
   query HomeFeatured($country: CountryCode, $language: LanguageCode)
   @inContext(country: $country, language: $language) {
     frame: product(handle: "openframe") {
@@ -1070,15 +1259,11 @@ const HOME_FEATURED_QUERY = `#graphql
     }
     fc: product(handle: "openfc-lite") {
       ...HomeProductCard
+      ...HomeProductVariants
     }
     esc: product(handle: "openesc") {
       ...HomeProductCard
-    }
-    fcMini: product(handle: "openfc-lite-mini") {
-      ...HomeProductCard
-    }
-    escMini: product(handle: "openesc-mini") {
-      ...HomeProductCard
+      ...HomeProductVariants
     }
   }
 ` as const;

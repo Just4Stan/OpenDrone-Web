@@ -22,17 +22,21 @@ export type HeroAirframe = {
   key: string;
   /** Slider label. */
   label: string;
-  /** The Shopify "Model" option value for each size-variant board, keyed by
-   *  boardKey. The FC and ESC use DIFFERENT vocabularies for the same physical
-   *  size — ESC is mount-named (`20×20`/`30×30`, × = U+00D7), FC is tier-named
-   *  (`Lite Mini`/`Lite`) — so each board needs its own value here. Matched
-   *  case-insensitively against the live variant option values. */
-  variant: Record<string, string>;
+  /** The Shopify "Model" option value this size maps to — mount-named
+   *  (`20×20`/`30×30`, × = U+00D7), the SAME axis for both the FC and the ESC.
+   *  Matched case-insensitively against the live variant option values, so the
+   *  size-variant cards (and the PDP they link to) resolve to this variant.
+   *
+   *  NOTE: the FC product's live Shopify variants must be named `20×20`/`30×30`
+   *  to match (the OpenESC already is). Any FC variant still tier-named
+   *  (`Lite`/`Lite Mini`) won't match and that card falls back to the base
+   *  product link — rename them in Shopify to fix. */
+  model: string;
 };
 
 export const HERO_AIRFRAMES: HeroAirframe[] = [
-  {key: '5', label: '5″ Freestyle', variant: {fc: 'Lite', esc: '30×30'}},
-  {key: '3', label: '3″ Freestyle', variant: {fc: 'Lite Mini', esc: '20×20'}},
+  {key: '5', label: '5″ Freestyle', model: '30×30'},
+  {key: '3', label: '3″ Freestyle', model: '20×20'},
 ];
 
 export const HERO_AIRFRAME_KEYS: string[] = HERO_AIRFRAMES.map((a) => a.key);

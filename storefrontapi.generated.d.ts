@@ -446,6 +446,25 @@ export type HomeProductCardFragment = Pick<
   };
 };
 
+export type HomeProductVariantsFragment = {
+  variants: {
+    nodes: Array<
+      Pick<StorefrontAPI.ProductVariant, 'id' | 'availableForSale'> & {
+        price: Pick<StorefrontAPI.MoneyV2, 'amount' | 'currencyCode'>;
+        image?: StorefrontAPI.Maybe<
+          Pick<
+            StorefrontAPI.Image,
+            'id' | 'altText' | 'url' | 'width' | 'height'
+          >
+        >;
+        selectedOptions: Array<
+          Pick<StorefrontAPI.SelectedOption, 'name' | 'value'>
+        >;
+      }
+    >;
+  };
+};
+
 export type HomeFeaturedQueryVariables = StorefrontAPI.Exact<{
   country?: StorefrontAPI.InputMaybe<StorefrontAPI.CountryCode>;
   language?: StorefrontAPI.InputMaybe<StorefrontAPI.LanguageCode>;
@@ -494,6 +513,22 @@ export type HomeFeaturedQuery = {
         minVariantPrice: Pick<StorefrontAPI.MoneyV2, 'amount' | 'currencyCode'>;
         maxVariantPrice: Pick<StorefrontAPI.MoneyV2, 'amount' | 'currencyCode'>;
       };
+      variants: {
+        nodes: Array<
+          Pick<StorefrontAPI.ProductVariant, 'id' | 'availableForSale'> & {
+            price: Pick<StorefrontAPI.MoneyV2, 'amount' | 'currencyCode'>;
+            image?: StorefrontAPI.Maybe<
+              Pick<
+                StorefrontAPI.Image,
+                'id' | 'altText' | 'url' | 'width' | 'height'
+              >
+            >;
+            selectedOptions: Array<
+              Pick<StorefrontAPI.SelectedOption, 'name' | 'value'>
+            >;
+          }
+        >;
+      };
     }
   >;
   esc?: StorefrontAPI.Maybe<
@@ -504,6 +539,22 @@ export type HomeFeaturedQuery = {
       priceRange: {
         minVariantPrice: Pick<StorefrontAPI.MoneyV2, 'amount' | 'currencyCode'>;
         maxVariantPrice: Pick<StorefrontAPI.MoneyV2, 'amount' | 'currencyCode'>;
+      };
+      variants: {
+        nodes: Array<
+          Pick<StorefrontAPI.ProductVariant, 'id' | 'availableForSale'> & {
+            price: Pick<StorefrontAPI.MoneyV2, 'amount' | 'currencyCode'>;
+            image?: StorefrontAPI.Maybe<
+              Pick<
+                StorefrontAPI.Image,
+                'id' | 'altText' | 'url' | 'width' | 'height'
+              >
+            >;
+            selectedOptions: Array<
+              Pick<StorefrontAPI.SelectedOption, 'name' | 'value'>
+            >;
+          }
+        >;
       };
     }
   >;
@@ -1422,7 +1473,7 @@ interface GeneratedQueryTypes {
     return: NewsletterFeedQuery;
     variables: NewsletterFeedQueryVariables;
   };
-  '#graphql\n  fragment HomeMoney on MoneyV2 {\n    amount\n    currencyCode\n  }\n  fragment HomeProductCard on Product {\n    id\n    handle\n    title\n    productType\n    featuredImage {\n      id\n      altText\n      url\n      width\n      height\n    }\n    priceRange {\n      minVariantPrice {\n        ...HomeMoney\n      }\n      maxVariantPrice {\n        ...HomeMoney\n      }\n    }\n  }\n  query HomeFeatured($country: CountryCode, $language: LanguageCode)\n  @inContext(country: $country, language: $language) {\n    frame: product(handle: "openframe") {\n      ...HomeProductCard\n    }\n    stack: product(handle: "openstack") {\n      ...HomeProductCard\n    }\n    rx: product(handle: "openrx") {\n      ...HomeProductCard\n    }\n    fc: product(handle: "openfc-lite") {\n      ...HomeProductCard\n    }\n    esc: product(handle: "openesc") {\n      ...HomeProductCard\n    }\n  }\n': {
+  '#graphql\n  fragment HomeMoney on MoneyV2 {\n    amount\n    currencyCode\n  }\n  fragment HomeProductCard on Product {\n    id\n    handle\n    title\n    productType\n    featuredImage {\n      id\n      altText\n      url\n      width\n      height\n    }\n    priceRange {\n      minVariantPrice {\n        ...HomeMoney\n      }\n      maxVariantPrice {\n        ...HomeMoney\n      }\n    }\n  }\n  fragment HomeProductVariants on Product {\n    variants(first: 30) {\n      nodes {\n        id\n        availableForSale\n        price {\n          ...HomeMoney\n        }\n        image {\n          id\n          altText\n          url\n          width\n          height\n        }\n        selectedOptions {\n          name\n          value\n        }\n      }\n    }\n  }\n  query HomeFeatured($country: CountryCode, $language: LanguageCode)\n  @inContext(country: $country, language: $language) {\n    frame: product(handle: "openframe") {\n      ...HomeProductCard\n    }\n    stack: product(handle: "openstack") {\n      ...HomeProductCard\n    }\n    rx: product(handle: "openrx") {\n      ...HomeProductCard\n    }\n    fc: product(handle: "openfc-lite") {\n      ...HomeProductCard\n      ...HomeProductVariants\n    }\n    esc: product(handle: "openesc") {\n      ...HomeProductCard\n      ...HomeProductVariants\n    }\n  }\n': {
     return: HomeFeaturedQuery;
     variables: HomeFeaturedQueryVariables;
   };
