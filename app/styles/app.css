@@ -4544,7 +4544,11 @@ button.reset {
     board-sheet-grey 0.5s ease calc(var(--depth) * 0.11s + 1s) forwards;
   animation-play-state: paused;
 }
-.board-art.is-flying .board-sheet {
+/* Unpause ALL sheets when flying. The :not(.is-active) selector matches the
+   specificity (0,4,0) of the armed grey rule above so its `paused` doesn't win
+   for non-active layers (that bug left only the active layer flying in). */
+.board-art.is-flying .board-sheet,
+.board-art.is-flying .board-sheet:not(.is-active) {
   animation-play-state: running;
 }
 @keyframes board-sheet-grey {
