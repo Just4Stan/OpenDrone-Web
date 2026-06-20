@@ -11972,3 +11972,11 @@ button.reset {
     margin: 0 0 0.15rem;
   }
 }
+
+/* The fixed PRE-LAUNCH placeholder pill (z-index 80) floats over the cart/menu
+   drawer's lower rows when one is open. It's pointer-events:none so it never
+   blocks a tap, but hide it while any aside/overlay is expanded so the drawer
+   reads clean. (Temporary pre-launch artifact; removed at launch regardless.) */
+body:has(.overlay.expanded) .placeholder-banner {
+  display: none;
+}
