@@ -4503,9 +4503,17 @@ button.reset {
     opacity: 1;
   }
 }
+/* The animation is applied once the board is revealed but held PAUSED at its
+   first frame (sheets off-screen left) until `.is-flying` is added — which the
+   component does only when the board reaches the centre of the viewport. Then it
+   plays out slowly so the layers really read as flying in. */
 .board-art.is-revealed .board-sheet {
-  animation: board-sheet-fly 0.8s cubic-bezier(0.16, 0.84, 0.3, 1) both;
-  animation-delay: calc(var(--depth) * 0.075s + 0.15s);
+  animation: board-sheet-fly 1.5s cubic-bezier(0.16, 0.84, 0.3, 1) both;
+  animation-delay: calc(var(--depth) * 0.13s);
+  animation-play-state: paused;
+}
+.board-art.is-flying .board-sheet {
+  animation-play-state: running;
 }
 @media (prefers-reduced-motion: reduce) {
   .board-art.is-revealed .board-sheet {

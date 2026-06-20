@@ -368,6 +368,29 @@ export function BoardArt({
     return () => cancelAnimationFrame(r);
   }, [raw]);
 
+  // Trigger the layer fly-in only once the board reaches the centre band of the
+  // viewport (not the moment the chapter scrolls in) so it reads as a deliberate
+  // reveal. One-shot; the sheets sit off-screen (paused) until it fires.
+  const [flyIn, setFlyIn] = useState(false);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el || typeof IntersectionObserver === 'undefined') {
+      setFlyIn(true);
+      return;
+    }
+    const io = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((e) => e.isIntersecting)) {
+          io.disconnect();
+          setFlyIn(true);
+        }
+      },
+      {rootMargin: '-38% 0px -38% 0px', threshold: 0},
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
+
   // Resolve the layer sheets for the active board: a cache hit (the active board
   // or a pre-parsed sibling) renders instantly; otherwise parse the freshly
   // fetched text for THIS src; while a not-yet-parsed tier is loading, keep the
@@ -420,7 +443,6 @@ export function BoardArt({
     const GAP = 18; // clearance between the rail and the board's left edge
     const MARGIN = 22; // clearance between the rail and the text content
     const DEFAULT_W = 2.45; // board blow-up factor at full size (matches CSS)
-    const MIN_W = 1.7; // smallest the board shrinks to before the rail compacts
     const chapter = root.closest('.chapter');
     const activeSvg = () =>
       body.querySelector('.board-sheet.is-active svg') as SVGElement | null;
@@ -469,35 +491,17 @@ export function BoardArt({
       // w that still fits — the biggest board that keeps the whole menu. (The
       // active sheet's scale bleed makes the exact relationship non-obvious, so
       // we search rather than solve.)
-      const fitsAt = (w: number) => {
-        setBoardW(w);
-        const s = activeSvg();
-        return s ? leftOf(s) >= fullFloor : true;
-      };
-      let needCompact = false;
-      if (fitsAt(DEFAULT_W)) {
-        setBoardW(DEFAULT_W); // roomy — no shrink needed
-      } else if (!fitsAt(MIN_W)) {
-        setBoardW(MIN_W); // even the smallest board can't free the gutter
-        needCompact = true;
-      } else {
-        let lo = MIN_W;
-        let hi = DEFAULT_W;
-        for (let i = 0; i < 6; i++) {
-          const mid = (lo + hi) / 2;
-          if (fitsAt(mid)) lo = mid;
-          else hi = mid;
-        }
-        setBoardW(lo);
-      }
+      // Prefer a BIG board: keep it at full size and COMPACT the rail when the
+      // gutter is tight, rather than shrinking the board to fit the full rail.
+      setBoardW(DEFAULT_W);
       svg = activeSvg();
       if (!svg) return;
       let target: number;
-      if (!needCompact) {
-        target = leftOf(svg) - GAP - railFull; // full rail, in the gutter
+      if (leftOf(svg) >= fullFloor) {
+        target = leftOf(svg) - GAP - railFull; // full rail fits in the gutter
       } else {
-        // Names-only rail; hug the (minimum) board if it now fits, else overlay
-        // it — never crossing the copy.
+        // Names-only rail: hug the board if it fits, else overlay its left edge
+        // — floored so it never crosses the copy.
         rail.classList.add('is-compact');
         const compactWidth = widthOf(rail);
         const boardLeft = leftOf(svg);
@@ -707,7 +711,9 @@ export function BoardArt({
   return (
     <div
       ref={ref}
-      className={`board-art board-folder${revealed ? ' is-revealed' : ''}`}
+      className={`board-art board-folder${revealed ? ' is-revealed' : ''}${
+        flyIn ? ' is-flying' : ''
+      }`}
       data-board={handle}
     >
       {sheets.length ? (
