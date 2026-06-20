@@ -16,6 +16,7 @@ import {
   type PublicMessage,
 } from '~/lib/support/scrubber';
 import {filterByApproval} from '~/lib/support/moderation';
+import {computeCursorTarget} from '~/lib/support/poll-cursor';
 import {
   AI_DRAFT_PREFIX,
   AI_SUMMARY_PREFIX,
@@ -40,12 +41,14 @@ import {
 
 export type PollStats = {
   // Helper-authored messages delivered in this poll (post-moderation,
-  // post-scrubber). Widget accumulates across polls.
+  // post-scrubber). Informational — the widget derives its live visible
+  // count from the message list.
   deltaVisible: number;
-  // Helper-authored messages held back by the moderation gate or
-  // dropped by the scrubber in this poll. Surfaced as "X awaiting
-  // confirmation" so the customer knows replies exist even if held.
-  deltaPending: number;
+  // SNAPSHOT of helper-authored messages currently held by the
+  // moderation gate (enforce mode only). Surfaced as "X awaiting
+  // confirmation"; the widget assigns this directly each poll, so it
+  // falls back to zero as soon as a moderator approves the held replies.
+  pending: number;
 };
 
 type PollResult =
@@ -217,7 +220,20 @@ export async function loader({request, context}: Route.LoaderArgs) {
     });
   }
 
-  const newestId = messages.length ? messages[messages.length - 1].id : null;
+  // Only enforce-mode drops are "held": in log/off mode the dropped set
+  // is still delivered, so those messages are terminal and the cursor
+  // may pass them. Scrubber-blocked and bot system messages (dropped in
+  // the projection loop above, not in filtered.dropped) are terminal too
+  // — they never change — so they don't pin the cursor either.
+  const heldIds =
+    filtered.mode === 'enforce'
+      ? new Set(filtered.dropped.map((d) => d.message.id))
+      : new Set<string>();
+  const cursorTarget = computeCursorTarget(
+    messages,
+    heldIds,
+    ticket.lastCursor,
+  );
 
   const headers: Record<string, string> = {
     'Cache-Control': 'no-store',
@@ -285,13 +301,14 @@ export async function loader({request, context}: Route.LoaderArgs) {
   }
 
   // Roll the cursor forward into the signed cookie so the next poll asks
-  // only for what's newer than what we just delivered.
-  const cursorChanged = newestId && newestId !== ticket.lastCursor;
+  // only for what's newer than what we just delivered — but never past a
+  // message still awaiting moderation (see cursorTarget above).
+  const cursorChanged = cursorTarget && cursorTarget !== ticket.lastCursor;
   const replyAtChanged = cookieReplyEmailAt !== (ticket.lastReplyEmailAt ?? 0);
   if (cursorChanged || replyAtChanged) {
     const rolled = {
       ...ticket,
-      lastCursor: cursorChanged ? newestId : ticket.lastCursor,
+      lastCursor: cursorChanged ? cursorTarget : ticket.lastCursor,
       lastReplyEmailAt: cookieReplyEmailAt,
     };
     headers['Set-Cookie'] = buildSupportSetCookie(await signTicket(env, rolled));
@@ -381,20 +398,31 @@ export async function loader({request, context}: Route.LoaderArgs) {
     }
   }
 
-  // Stats for the sidebar. Visible = scrubber-passed helper messages;
-  // pending = held by moderation gate OR dropped by scrubber. Both are
-  // delta values for *this* poll — the widget accumulates across polls.
+  // Stats for the sidebar.
+  //   deltaVisible — scrubber-passed helper messages delivered this poll
+  //     (a delta; the widget derives the live "visible" count from the
+  //     message list itself, so this is informational).
+  //   pending — a SNAPSHOT of how many helper messages are currently held
+  //     by the moderation gate. Because the cursor now parks behind held
+  //     messages, the same pending message recurs in every poll window
+  //     until it's approved; an accumulating delta would inflate without
+  //     bound and never decrement. A snapshot the widget assigns directly
+  //     rises when a reply is held and falls to zero the moment a
+  //     moderator ✅'s it. Only enforce mode genuinely holds messages — in
+  //     log/off mode the "dropped" set is still delivered, so nothing is
+  //     pending.
   const deltaVisible = projected.filter((m) => m.role === 'helper').length;
-  const deltaPending = filtered.dropped.filter(
-    (d) => !d.message.author.bot,
-  ).length;
+  const pending =
+    filtered.mode === 'enforce'
+      ? filtered.dropped.filter((d) => !d.message.author.bot).length
+      : 0;
 
   return data<PollResult>(
     {
       ok: true,
       messages: projected,
       closed: thread.archived || thread.locked,
-      stats: {deltaVisible, deltaPending},
+      stats: {deltaVisible, pending},
     },
     {headers},
   );
