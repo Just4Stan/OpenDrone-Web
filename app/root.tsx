@@ -231,7 +231,10 @@ export function Layout({children}: {children?: React.ReactNode}) {
     <html lang={htmlLang} className="dark" suppressHydrationWarning>
       <head>
         <meta charSet="utf-8" />
-        <meta name="viewport" content="width=device-width,initial-scale=1" />
+        <meta
+          name="viewport"
+          content="width=device-width,initial-scale=1,viewport-fit=cover"
+        />
         <meta name="theme-color" content={THEME_COLORS.dark} />
         {/* Resolve + apply the theme before first paint so a light-mode
             visitor never sees a dark flash. Must run before the stylesheet

@@ -11376,3 +11376,182 @@ button.reset {
     animation-duration: 1.6s;
   }
 }
+
+/* ============================================================
+   MOBILE OPTIMIZATION PASS  (feat/island-v2)
+   One consolidated, viewport-scoped layer for the touch
+   experience. Everything here is gated under the canonical
+   mobile cutoff (max-width: 1023px = MOBILE_MAX in
+   app/lib/use-media-query.ts) so desktop is untouched.
+   Ordered: A) safe-area env  B) overflow kills
+   C) tap-target floors  D) micro-label legibility floors.
+   ============================================================ */
+
+/* A) Safe-area inset custom props — resolve to 0 where unsupported.
+   viewport-fit=cover (root.tsx) is what makes env() non-zero on
+   notched phones. Fixed chrome reads these so nothing hides under
+   the notch / home indicator. */
+:root {
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left: env(safe-area-inset-left, 0px);
+  --safe-right: env(safe-area-inset-right, 0px);
+}
+
+@media (max-width: 1023px) {
+  /* ---- B) Horizontal-overflow kills ------------------------------------ */
+
+  /* The MobileHome CTA reuses the desktop hero button, which carries a
+     min-width:26rem (416px) anchor — far past a phone's width. Let it fill
+     the column and shrink instead, and allow the row to wrap so the GitHub
+     square never gets shoved off-screen. */
+  .home-mobile-cta {
+    flex-wrap: wrap;
+    gap: 0.6rem;
+  }
+  .home-mobile-cta .hero-action-primary {
+    min-width: 0;
+    flex: 1 1 auto;
+    min-height: 44px;
+    padding-inline: 1.5rem;
+  }
+
+  /* The catalog sort control (label + native select) wouldn't shrink, so the
+     toolbar overran the viewport by ~7px. Let it shrink and the toolbar wrap. */
+  .catalog-toolbar {
+    flex-wrap: wrap;
+  }
+  .collection-sort,
+  .collection-sort select {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  /* FirmwareSplit's amount row overran the PDP on a 320px screen. Let it
+     wrap and keep its numbers inside the viewport. */
+  .firmware-split-amounts {
+    flex-wrap: wrap;
+  }
+  .firmware-split-total {
+    min-width: 0;
+  }
+
+  /* Catalog content (catalog-main) was 315px inside a 298px grid track: the
+     single `1fr` column = minmax(auto, 1fr), whose `auto` floor is min-content,
+     so a wide child (toolbar/cards) stretched the track past the viewport.
+     minmax(0, 1fr) drops the floor to 0 and min-width:0 lets the grid item
+     shrink to the track — content reflows instead of forcing page scroll. */
+  .catalog-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .catalog-sidebar,
+  .catalog-filter-group,
+  .catalog-filter-list,
+  .catalog-main {
+    min-width: 0;
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+
+  /* Header inner row was 362px wide on a 320px phone — keep brand + icons
+     within the viewport. */
+  .site-header-main {
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+
+  /* ---- C) Tap-target floors (WCAG 2.5.5 — 44px) ------------------------ */
+  /* Block/inline-block interactive controls that rendered under 44px tall on
+     a phone. Inline-flex + min-height centres existing content without
+     reflowing it; a touch of inline padding widens the hit area. */
+  .catalog-filter,
+  .collection-sort select,
+  .collection-sort-control,
+  .trust-chip,
+  .home-mobile-browse,
+  .board-art-inspect,
+  .search-submit,
+  .product-gallery-arrow,
+  .hero-cta-primary,
+  .board-folder-tabs button,
+  .schematic-rail-tabs button {
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+  }
+  /* Mobile slide-out nav links — full-width 44px touch rows. */
+  .site-mobile-nav a {
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+  }
+  /* Arrows are square — give them width too. */
+  .product-gallery-arrow {
+    min-width: 44px;
+    justify-content: center;
+  }
+  /* The home "browse the full catalog" underline link — keep its underline
+     hugging the text, not the padded box. */
+  .home-mobile-browse {
+    align-self: flex-start;
+  }
+
+  /* ---- D) Micro-label legibility floors -------------------------------- */
+  /* A curated set of uppercase/mono micro-labels rendered at ~10.3px. On a
+     phone that's below the 12px comfortable-reading floor; nudge them to
+     11.5px (still clearly a label, just legible). Scoped to the exact
+     classes the audit flagged so body copy scale is untouched. */
+  .product-hero-eyebrow,
+  .product-buy-sku,
+  .product-buy-stock,
+  .variant-ladder-axis,
+  .variant-ladder-axis-hint,
+  .variant-tier-flag,
+  .variant-tier-cell-k,
+  .variant-tier-cell-v,
+  .variant-tier-tagline,
+  .chapter-number,
+  .chapter-label,
+  .product-card-meta,
+  .teardown-pin-cost,
+  .section-label,
+  .product-gallery-counter,
+  .page-eyebrow,
+  .incutec-hint,
+  .catalog-filter-head,
+  .collection-sort-label,
+  .open-source-card-label,
+  .open-source-card-sub,
+  .rn-year-count,
+  .rn-version,
+  .rn-tag,
+  .partner-label,
+  .board-art-inspect,
+  .board-art-skeleton-label,
+  .latest-commit-label,
+  .provenance-label,
+  .provenance-row-label,
+  .bundle-component-firmware,
+  .chapter-footnote,
+  .trust-chip {
+    font-size: 12px;
+  }
+  /* Corner badges (New/Sale/Coming soon) and the pre-launch tag read at
+     ~10px — floor them to the 12px mobile legibility minimum. */
+  .product-card-badge,
+  .placeholder-banner__tag {
+    font-size: 12px;
+  }
+
+  /* Systemic root: the base font is 15px, so Tailwind's rem-based `text-xs`
+     (0.75rem) and the --fs-xs token (11px) both land below the 12px mobile
+     floor wherever they're used. Floor them once here instead of chasing
+     every utility-styled label. Plain class selectors outrank the layered
+     Tailwind utility, so this wins on mobile only. */
+  :root {
+    --fs-xs: 12px; /* 11px token -> 12px mobile floor */
+  }
+  .text-xs {
+    font-size: 12px;
+  }
+}
