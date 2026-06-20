@@ -738,13 +738,16 @@ export default function Product() {
   // a fallback so it always reveals even if the board never flies (reduced motion
   // / never centred).
   const [textIn, setTextIn] = useState(false);
-  const prevFlyingRef = useRef(false);
+  // Slide the text in ~0.9s after the board fly STARTS — i.e. right as the last
+  // layers are landing, timed like a "9th layer" — rather than waiting for the
+  // whole fly to finish.
   useEffect(() => {
-    if (prevFlyingRef.current && !boardFlying) setTextIn(true);
-    prevFlyingRef.current = boardFlying;
+    if (!boardFlying) return;
+    const t = setTimeout(() => setTextIn(true), 900);
+    return () => clearTimeout(t);
   }, [boardFlying]);
   useEffect(() => {
-    // Reduced motion (or no board fly): reveal the text immediately, no slide.
+    // Reduced motion (or the board never flies): reveal the text immediately.
     if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) {
       setTextIn(true);
       return;
@@ -946,8 +949,20 @@ export default function Product() {
         });
     };
     draw();
-    // Board SVG + rail stream in async — nudge a few redraws after mount.
+    // Board SVG + rail stream in async — nudge a few redraws after mount (these
+    // re-run whenever the deps change, so they also catch the post-entrance
+    // settle when boardFlying flips false).
     const timers = [150, 500, 1200].map((t) => setTimeout(draw, t));
+    // While the entrance runs (board fly + text slide), the bubbles AND the rail
+    // move via CSS transforms that fire no scroll/resize — so redraw every frame
+    // so the connector lines track them live (and stay connected after, with no
+    // scroll needed). Bounded to the entrance via boardFlying, NOT perpetual.
+    let loopRaf = 0;
+    const loop = () => {
+      draw();
+      loopRaf = boardFlying ? requestAnimationFrame(loop) : 0;
+    };
+    if (boardFlying) loopRaf = requestAnimationFrame(loop);
     window.addEventListener('scroll', onScroll, {passive: true, capture: true});
     window.addEventListener('resize', onScroll);
     return () => {
@@ -955,8 +970,9 @@ export default function Product() {
       window.removeEventListener('resize', onScroll);
       timers.forEach(clearTimeout);
       if (raf) cancelAnimationFrame(raf);
+      if (loopRaf) cancelAnimationFrame(loopRaf);
     };
-  }, [activeBoardArt, groupedPins, linksMounted]);
+  }, [activeBoardArt, groupedPins, linksMounted, boardFlying]);
   // <960px the pinned rail becomes a bottom bar (price + add-to-cart only):
   // phones previously had NO sticky buy control at all once the in-hero buy
   // module scrolled away.
