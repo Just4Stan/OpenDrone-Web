@@ -3,6 +3,7 @@ import {useEffect, useReducer, useRef, useState} from 'react';
 import * as THREE from 'three';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {MeshoptDecoder} from 'three/addons/libs/meshopt_decoder.module.js';
+import {useIsMobile} from '~/lib/use-media-query';
 
 // Memoise fetched GLB bytes by URL so a model that's been loaded once (e.g. the
 // other tier, preloaded in the background) never hits the network again — the
@@ -208,10 +209,15 @@ function FrameModel({
   containerRef: React.RefObject<HTMLDivElement | null>;
 }) {
   const groupRef = useRef<THREE.Group>(null);
-  // Fixed three-quarter top view; shifted right in its own local x so the
-  // model sits off to the right and the left arms fan into the text.
+  // Fixed three-quarter top view. On desktop it's shifted right in its own local
+  // x so the model sits off to the right and the left arms fan into the text.
+  // On mobile the viewer is a centred square above the copy, so the offset is
+  // dropped and the model scaled up to fill it (otherwise it floats in a corner
+  // of a black void — the desktop right-bias has nothing to fan into).
+  const isMobile = useIsMobile();
   const rot = {x: 0.42, y: -0.5};
-  const offsetX = 1.0;
+  const offsetX = isMobile ? 0 : 1.0;
+  const rigScale = isMobile ? 1.35 : 1;
   // All loaded models, keyed by src. Only the active one is `visible`.
   const models = useRef<Map<string, Model>>(new Map());
   const [, bump] = useReducer((c: number) => c + 1, 0);
@@ -267,7 +273,8 @@ function FrameModel({
     if (!groupRef.current) return;
     groupRef.current.rotation.set(rot.x, rot.y, 0);
     groupRef.current.position.x = offsetX;
-  }, [rot.x, rot.y]);
+    groupRef.current.scale.setScalar(rigScale);
+  }, [rot.x, rot.y, offsetX, rigScale]);
 
   // Instant tier switch: show the requested model, hide the rest. If the model
   // hasn't finished loading yet it simply becomes visible once it lands.
