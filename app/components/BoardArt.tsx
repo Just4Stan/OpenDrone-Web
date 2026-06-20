@@ -455,21 +455,19 @@ export function BoardArt({
   // Fit the layer rail into the gutter between the teardown copy and the board,
   // measuring where the *text* and the *board* actually are (not their grid
   // columns). The board is blown up past its column and bleeds left for drama,
-  // so its left edge sits at/past the text column's right edge — but the copy
-  // rarely fills that column, leaving a real gutter to its right. Priority,
-  // matching how a reader expects it to degrade:
-  //   1. Park the full rail in the gutter, a margin clear of the board (the
-  //      roomy default — untouched on wide screens).
-  //   2. When the gutter is too tight, shrink the board (`--board-w`, down to
-  //      MIN_W) just enough to reopen a full-rail gutter — the board gives up
-  //      size to keep the whole menu visible.
-  //   3. Only when even the smallest board can't free the room: drop the rail
-  //      to names-only (`is-compact`) and, if still tight, slide it over the
-  //      board — always floored so it clears the copy.
-  // The board's right edge is pinned (CSS keeps width + margin = 125%), so
-  // shrinking only pulls its left edge rightward. Re-runs (rAF-coalesced) on
-  // resize; the active sheet's settled left edge is the same for every layer,
-  // so we don't key it on `active` (which would measure mid-float-animation).
+  // so its visible left edge sits at/past the text column's right edge — but the
+  // copy at the rail's vertical level rarely fills that column, leaving a real
+  // gutter to its right. Priority, matching how a reader expects it to degrade:
+  //   1. Full rail centred in the gutter, clear of both copy and board (the
+  //      roomy default — wide screens).
+  //   2. When the gutter is too tight for the full pill, drop the rail to
+  //      names-only (`is-compact`) and centre that in the gutter instead.
+  //   3. When even the names-only pill can't fit, floor it at the copy (so it
+  //      never crosses the text) and let it overlay the board's edge — the
+  //      last-resort overlay.
+  // Re-runs (rAF-coalesced) on resize; the active sheet's settled left edge is
+  // the same for every layer, so we don't key it on `active` (which would
+  // measure mid-float-animation).
   useEffect(() => {
     const rail = railRef.current;
     const body = bodyRef.current;
@@ -483,9 +481,15 @@ export function BoardArt({
     const widthOf = (el: Element) => el.getBoundingClientRect().width;
     const setBoardW = (w: number) =>
       root.style.setProperty('--board-w', `${w * 100}%`);
-    // Rightmost edge of the actual rendered teardown copy — a Range gives the
-    // tight text bounds (longest wrapped line), not the full column box.
-    const contentRight = () => {
+    // Rightmost edge of the teardown copy that sits at the RAIL'S vertical level
+    // — a Range gives the tight text bounds (longest wrapped line), not the full
+    // column box. The rail floats centred on the board, BELOW the chapter title:
+    // on a narrow viewport that title wraps wide (its right edge runs ~180px past
+    // the component list) but it ends well above the rail, so it shares no
+    // horizontal lane with it. Counting it shoved the rail onto the board even
+    // though the real gutter (component list → board) was wide open. So skip any
+    // copy whose vertical span sits entirely outside [bandTop, bandBottom].
+    const contentRight = (bandTop: number, bandBottom: number) => {
       const els = chapter?.querySelectorAll(
         '.chapter-title, .chapter-body, .teardown-pins li, .board-art-inspect',
       );
@@ -495,6 +499,8 @@ export function BoardArt({
       }
       let max = -Infinity;
       for (const el of els) {
+        const box = el.getBoundingClientRect();
+        if (box.bottom <= bandTop || box.top >= bandBottom) continue;
         const range = document.createRange();
         range.selectNodeContents(el);
         const rect = range.getBoundingClientRect();
@@ -516,25 +522,49 @@ export function BoardArt({
       const stack = body.querySelector('.board-folder-stack');
       if (!stack) return;
       const sr = stack.getBoundingClientRect();
-      // Measure the STACK (the layer container), NOT the active sheet: the sheets
-      // are flown off-screen during the entrance, so measuring one would mis-place
-      // the rail mid-animation and snap it at the end. The stack box never
-      // translates. The active sheet floats up scaled ~1.05, so the board's
-      // visual left edge bleeds ~3% past the stack box — account for that.
-      const boardLeft = sr.left - sr.width * 0.03;
+      // Board's VISIBLE left edge. The active sheet is scaled up (~1.05) and is
+      // rendered WIDER than its stack column, centred over it, so the visible
+      // board bleeds left of the stack box — by an amount that is NOT a fixed
+      // fraction of the stack (the sheet keeps roughly its own size as the column
+      // narrows, so the bleed grows as the column shrinks). Once the entrance has
+      // settled (flyDone) the active sheet's rect is stable and gives the exact
+      // edge, so read it directly. DURING the fly the sheets are flown off-screen
+      // and the sheet rect would mis-place the rail and snap it at the end — so
+      // fall back to the never-translating stack box (rough but only momentary).
+      const activeSheet = stack.querySelector(
+        '.board-sheet.is-active svg, .board-sheet.is-active img',
+      );
+      const sheetRect = flyDone ? activeSheet?.getBoundingClientRect() : null;
+      const boardLeft =
+        sheetRect && sheetRect.width ? sheetRect.left : sr.left - sr.width * 0.065;
       const railFull = widthOf(rail);
-      const textRight = contentRight();
-      // Board's left edge must clear this for the full rail to sit in the gutter.
-      const fullFloor = textRight + MARGIN + railFull + GAP;
+      // The rail floats centred on the board; the stack box is its stable vertical
+      // anchor. Inset the band a little from the stack's top so the chapter title
+      // — which can dip a hair into the stack's top edge — never gets counted as
+      // copy in the rail's lane (it lives above the rail).
+      const bandTop = sr.top + sr.height * 0.1;
+      const textRight = contentRight(bandTop, sr.bottom);
+      // The gutter is the clear span between the copy and the board, with the
+      // mandated clearances carved out at each end.
+      const gutterStart = textRight + MARGIN; // nearest the rail may sit to the copy
+      const gutterEnd = boardLeft - GAP; // nearest the rail may sit to the board
+      // Centre a pill of the given width in the gutter, but ALWAYS keep its right
+      // edge at/left of gutterEnd (the board-side wall) — so even if boardLeft is
+      // measured a hair generous, the rail can't creep onto the silk. When the
+      // pill can't fit, this still floors at gutterStart so it never crosses the
+      // copy (it may then overlap the board's edge — the last-resort overlay).
+      const placeWidth = (w: number) => {
+        const slack = gutterEnd - gutterStart - w;
+        const centred = gutterStart + slack / 2;
+        return Math.min(Math.max(centred, gutterStart), Math.max(gutterStart, gutterEnd - w));
+      };
       let target: number;
-      if (boardLeft >= fullFloor) {
-        target = boardLeft - GAP - railFull; // full rail fits in the gutter
+      if (gutterEnd - gutterStart >= railFull) {
+        target = placeWidth(railFull); // full rail fits, centred in the gutter
       } else {
-        // Names-only rail: hug the board if it fits, else overlay its left edge
-        // — floored so it never crosses the copy.
+        // Too tight for the full pill — drop to names-only and re-fit.
         rail.classList.add('is-compact');
-        const compactWidth = widthOf(rail);
-        target = Math.max(textRight + MARGIN, boardLeft - GAP - compactWidth);
+        target = placeWidth(widthOf(rail));
       }
       rail.style.transform = `translateX(${target - leftOf(rail)}px)`;
     };
