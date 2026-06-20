@@ -11936,3 +11936,39 @@ button.reset {
     min-height: 44px;
   }
 }
+
+/* ---- Council pass 4: search results read as cards, not a thin lonely row --- */
+@media (max-width: 1023px) {
+  .search-results-item {
+    border-top: none;
+    padding-top: 0;
+  }
+  .search-product-link {
+    gap: 0.9rem;
+    padding: 0.7rem 0.85rem;
+    border: 1px solid var(--color-border);
+    border-radius: var(--r-md);
+    background: var(--color-bg-card);
+    min-height: 72px;
+    transition: border-color 0.18s ease;
+  }
+  .search-product-link:hover {
+    border-color: var(--color-gold);
+  }
+  /* Bigger thumbnail than the inline 50px the markup requests. */
+  .search-product-link img {
+    width: 56px !important;
+    height: 56px !important;
+    object-fit: contain;
+    border-radius: var(--r-sm);
+    flex: 0 0 auto;
+  }
+  .search-product-link > div {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+  .search-product-link p {
+    font-weight: 600;
+    margin: 0 0 0.15rem;
+  }
+}
