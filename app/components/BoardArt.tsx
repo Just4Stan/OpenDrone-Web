@@ -1,10 +1,20 @@
-import {useEffect, useMemo, useRef, useState} from 'react';
+import {useEffect, useId, useMemo, useRef, useState} from 'react';
 import {
   fetchJsonCached,
   fetchTextCached,
   peekJson,
   peekText,
 } from '~/lib/asset-prefetch';
+import {BOARD_ART_VERSION} from '~/data/board-art-version';
+
+// `?v=` busts Oxygen's 1-year immutable cache when board art is regenerated in
+// place — the token is the content hash of every board.svg + front/back PNG,
+// baked into the bundle by scripts/export-board-art.mjs. We version BOTH the
+// board.svg fetch URL AND the face <image> hrefs (front.png/back.png) it
+// references, so a re-render (e.g. an IC-less → IC-full face) refetches both the
+// markup and the bitmaps instead of serving the stale cached render forever.
+const versioned = (url: string) =>
+  BOARD_ART_VERSION ? `${url}?v=${BOARD_ART_VERSION}` : url;
 
 export type BoardArtProps = {
   /** Public path to the layered SVG, e.g. /boards/openesc/board.svg */
@@ -27,6 +37,15 @@ export type BoardArtProps = {
   /** Refdes (case-sensitive) to highlight on the board — typically the refs of
    *  the teardown pin the visitor is hovering/focusing. */
   highlightRefs?: string[];
+  /** When true, draw ONE box around the union of all `highlightRefs` instead of a
+   *  box per refdes — for dense arrays (e.g. the bulk ceramic-cap grid). */
+  highlightUnion?: boolean;
+  /** Draw one union box per subarray (e.g. ESC motor pads grouped by motor → 4
+   *  boxes). Each entry is a list of refdes; takes precedence over union/each. */
+  highlightGroups?: string[][];
+  /** Called with `true` while the first-reveal fly-in is animating and `false`
+   *  when it finishes, so the parent can lock part-list interaction meanwhile. */
+  onFlying?: (active: boolean) => void;
 };
 
 /** One component from `components.json` — coords already in the board viewBox. */
@@ -85,14 +104,14 @@ function layerFunction(
 
 /** Human label for each known layer slug, in physical top→bottom order. */
 const LAYER_LABELS: Record<string, string> = {
-  front: 'Front',
-  f: 'F.Cu',
+  front: 'Top',
+  f: 'Top Cu',
   in1: 'In1',
   in2: 'In2',
   in3: 'In3',
   in4: 'In4',
-  b: 'B.Cu',
-  back: 'Back',
+  b: 'Bottom Cu',
+  back: 'Bottom',
   // legacy 3-layer boards (export-board-art.mjs pre-folder)
   copper: 'Top',
   'b-copper': 'Bottom',
@@ -134,6 +153,19 @@ function parseSheets(raw: string): Sheet[] {
       const ib = SHEET_ORDER.indexOf(b.id.replace(/^layer-/, ''));
       return (ia < 0 ? 99 : ia) - (ib < 0 ? 99 : ib);
     });
+    // Version the face <image> hrefs (front.png/back.png) so a re-render busts
+    // the PNGs' immutable cache too — the same content hash as the svg fetch, so
+    // markup and bitmaps refetch together. Done on the parsed DOM before
+    // serialization; copper layers carry no <image> so they're unaffected.
+    for (const img of Array.from(svg.querySelectorAll('image'))) {
+      const href =
+        img.getAttribute('href') ?? img.getAttribute('xlink:href');
+      if (href && !href.includes('?v=')) {
+        const v = versioned(href);
+        if (img.hasAttribute('href')) img.setAttribute('href', v);
+        if (img.hasAttribute('xlink:href')) img.setAttribute('xlink:href', v);
+      }
+    }
     return layers.map((g) => {
       const slug = g.id.replace(/^layer-/, '');
       // The realistic faces have baked colours and an opaque board background;
@@ -165,7 +197,9 @@ function parseSheets(raw: string): Sheet[] {
 async function warmParsed(src: string): Promise<Sheet[]> {
   const hit = parsedCache.get(src);
   if (hit) return hit;
-  const text = await fetchTextCached(src);
+  // Fetch the versioned URL (shared asset cache key) but key parsedCache by the
+  // bare src so the rest of the component addresses boards by their stable path.
+  const text = await fetchTextCached(versioned(src));
   const existing = parsedCache.get(src);
   if (existing) return existing;
   const parsed = parseSheets(text);
@@ -192,23 +226,50 @@ export function BoardArt({
   layerFns,
   componentsSrc,
   highlightRefs,
+  highlightUnion,
+  highlightGroups,
+  onFlying,
 }: BoardArtProps) {
   const ref = useRef<HTMLDivElement | null>(null);
   const bodyRef = useRef<HTMLDivElement | null>(null);
   const railRef = useRef<HTMLDivElement | null>(null);
+  // Instance-unique suffix for the spotlight SVG ids, so two mounted BoardArts
+  // can never collide on `od-dim`/`od-bright`/`od-spot` (SVG id resolution would
+  // otherwise pick the first in document order → wrong board masked).
+  const uid = useId().replace(/:/g, '');
+  // Whether the previous render already had a highlight group on the board — so a
+  // row-to-row move (highlight→highlight) skips the fade-in and just repositions
+  // the spotlight, while a fresh entry (none→highlight) still fades in.
+  const hadHilite = useRef(false);
+  // One spotlight group per board FACE (keyed by that face's <svg> node), built
+  // ONCE and then only repositioned/hidden. Re-cloning the board <image> on
+  // every hover — to dim + re-light the board — is what flashed the spotlight;
+  // caching per face means the dim veil and the decoded image clone are never
+  // rebuilt, so neither a row-to-row move nor a front/back flip can flash. The
+  // group is hidden (not destroyed) when nothing is highlighted, so re-entering
+  // the list is instant too. Entries whose <svg> leaves the DOM (tier swap) are
+  // pruned each run.
+  const spotCache = useRef<
+    Map<Element, {g: Element; brightClip: Element | null}>
+  >(new Map());
   // `raw` is the SVG text currently on screen. Seed from cache so a tier that
   // was warmed earlier paints immediately with no blank frame.
-  const [raw, setRaw] = useState<string | null>(() => peekText(src) ?? null);
-  const [revealed, setRevealed] = useState<boolean>(() => peekText(src) != null);
+  const [raw, setRaw] = useState<string | null>(
+    () => peekText(versioned(src)) ?? null,
+  );
+  const [revealed, setRevealed] = useState<boolean>(
+    () => peekText(versioned(src)) != null,
+  );
   const [failed, setFailed] = useState(false);
   const [active, setActive] = useState(0);
   const [inView, setInView] = useState(false);
   // Which src the current `raw` text belongs to, and the last non-empty parsed
   // board — so a tier switch keeps the prior board on screen until the new one
   // is parsed, and never re-parses a board the cache already holds.
-  const rawSrcRef = useRef<string | null>(peekText(src) != null ? src : null);
+  const rawSrcRef = useRef<string | null>(
+    peekText(versioned(src)) != null ? src : null,
+  );
   const lastSheetsRef = useRef<Sheet[]>([]);
-  const overlayRef = useRef<SVGSVGElement | null>(null);
   // Parsed component manifest for the active board (viewBox + ref→component
   // map). Seeded from cache so a warmed tier highlights with no fetch.
   const [manifest, setManifest] = useState<{
@@ -276,8 +337,7 @@ export function BoardArt({
   useEffect(() => {
     if (!inView) return;
     let alive = true;
-    let warmId: number | undefined;
-    fetchTextCached(src)
+    fetchTextCached(versioned(src))
       .then((text) => {
         if (!alive) return;
         // Parse + cache the active board if not already cached, so the memo
@@ -287,35 +347,14 @@ export function BoardArt({
         rawSrcRef.current = src;
         setRaw(text);
         setFailed(parsed.length === 0);
-        // Pre-parse every sibling tier in the background so a click is an
-        // instant cache hit. Kicked off on idle (with a short timeout cap) so it
-        // never competes with the active board's first paint, but still lands
-        // well before the user finishes reading and clicks a tier.
-        if (srcs) {
-          const warm = () => {
-            for (const s of srcs) {
-              if (s !== src && !parsedCache.has(s)) {
-                void warmParsed(s).catch(() => {});
-              }
-            }
-          };
-          warmId =
-            typeof requestIdleCallback !== 'undefined'
-              ? requestIdleCallback(warm, {timeout: 1500})
-              : (setTimeout(warm, 250) as unknown as number);
-        }
       })
       .catch(() => {
         if (alive) setFailed(true);
       });
     return () => {
       alive = false;
-      if (warmId != null) {
-        if (typeof cancelIdleCallback !== 'undefined') cancelIdleCallback(warmId);
-        else clearTimeout(warmId);
-      }
     };
-  }, [inView, src, srcs]);
+  }, [inView, src]);
 
   // Fade the board in once its SVG is in hand — driven off `raw`, not the fetch
   // effect's `alive` flag. A large SVG's parse can block the main thread long
@@ -329,6 +368,78 @@ export function BoardArt({
     );
     return () => cancelAnimationFrame(r);
   }, [raw]);
+
+  // Trigger the layer fly-in only once the board reaches the centre band of the
+  // viewport (not the moment the chapter scrolls in) so it reads as a deliberate
+  // reveal. One-shot; the sheets sit off-screen (paused) until it fires.
+  const [flyIn, setFlyIn] = useState(false);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el || typeof IntersectionObserver === 'undefined') {
+      setFlyIn(true);
+      return;
+    }
+    const io = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((e) => e.isIntersecting)) {
+          io.disconnect();
+          setFlyIn(true);
+        }
+      },
+      {rootMargin: '-38% 0px -38% 0px', threshold: 0},
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
+
+  // `flyDone` ends the entrance: it strips the animation so a SKU swap (the
+  // component stays mounted, new sheets inherit the classes) shows the new board
+  // instantly at full scale instead of re-flying. While the fly runs we tell the
+  // parent (to lock part selection) and the CSS drops the heavy filters.
+  const [flyDone, setFlyDone] = useState(false);
+  useEffect(() => {
+    if (!flyIn || flyDone) return;
+    // Honour reduced-motion: no animation, no lock — settle immediately.
+    if (
+      typeof window !== 'undefined' &&
+      window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
+    ) {
+      setFlyDone(true);
+      return;
+    }
+    onFlying?.(true);
+    // animation 1.2s + last layer's stagger (7 × 0.11s) + a small buffer
+    const t = setTimeout(() => {
+      setFlyDone(true);
+      onFlying?.(false);
+    }, 1200 + 7 * 110 + 250);
+    return () => clearTimeout(t);
+  }, [flyIn, flyDone, onFlying]);
+
+  // Pre-parse sibling tiers ONLY after the entrance finishes — parsing every
+  // other board's multi-thousand-path SVG is heavy main-thread work that, if it
+  // landed mid-fly, janked the compositor animation. Deferring it to flyDone
+  // gives the entrance the main thread to itself; the warm still lands long
+  // before a tier click.
+  useEffect(() => {
+    if (!flyDone || !srcs) return;
+    let cancelled = false;
+    const warm = () => {
+      if (cancelled) return;
+      for (const s of srcs) {
+        if (s !== src && !parsedCache.has(s)) void warmParsed(s).catch(() => {});
+      }
+    };
+    const id: number =
+      typeof requestIdleCallback !== 'undefined'
+        ? requestIdleCallback(warm, {timeout: 1500})
+        : (setTimeout(warm, 250) as unknown as number);
+    return () => {
+      cancelled = true;
+      if (typeof cancelIdleCallback !== 'undefined') cancelIdleCallback(id);
+      else clearTimeout(id);
+    };
+  }, [flyDone, srcs, src]);
 
   // Resolve the layer sheets for the active board: a cache hit (the active board
   // or a pre-parsed sibling) renders instantly; otherwise parse the freshly
@@ -359,21 +470,19 @@ export function BoardArt({
   // Fit the layer rail into the gutter between the teardown copy and the board,
   // measuring where the *text* and the *board* actually are (not their grid
   // columns). The board is blown up past its column and bleeds left for drama,
-  // so its left edge sits at/past the text column's right edge — but the copy
-  // rarely fills that column, leaving a real gutter to its right. Priority,
-  // matching how a reader expects it to degrade:
-  //   1. Park the full rail in the gutter, a margin clear of the board (the
-  //      roomy default — untouched on wide screens).
-  //   2. When the gutter is too tight, shrink the board (`--board-w`, down to
-  //      MIN_W) just enough to reopen a full-rail gutter — the board gives up
-  //      size to keep the whole menu visible.
-  //   3. Only when even the smallest board can't free the room: drop the rail
-  //      to names-only (`is-compact`) and, if still tight, slide it over the
-  //      board — always floored so it clears the copy.
-  // The board's right edge is pinned (CSS keeps width + margin = 125%), so
-  // shrinking only pulls its left edge rightward. Re-runs (rAF-coalesced) on
-  // resize; the active sheet's settled left edge is the same for every layer,
-  // so we don't key it on `active` (which would measure mid-float-animation).
+  // so its visible left edge sits at/past the text column's right edge — but the
+  // copy at the rail's vertical level rarely fills that column, leaving a real
+  // gutter to its right. Priority, matching how a reader expects it to degrade:
+  //   1. Full rail centred in the gutter, clear of both copy and board (the
+  //      roomy default — wide screens).
+  //   2. When the gutter is too tight for the full pill, drop the rail to
+  //      names-only (`is-compact`) and centre that in the gutter instead.
+  //   3. When even the names-only pill can't fit, floor it at the copy (so it
+  //      never crosses the text) and let it overlay the board's edge — the
+  //      last-resort overlay.
+  // Re-runs (rAF-coalesced) on resize; the active sheet's settled left edge is
+  // the same for every layer, so we don't key it on `active` (which would
+  // measure mid-float-animation).
   useEffect(() => {
     const rail = railRef.current;
     const body = bodyRef.current;
@@ -382,17 +491,20 @@ export function BoardArt({
     const GAP = 18; // clearance between the rail and the board's left edge
     const MARGIN = 22; // clearance between the rail and the text content
     const DEFAULT_W = 2.45; // board blow-up factor at full size (matches CSS)
-    const MIN_W = 1.7; // smallest the board shrinks to before the rail compacts
     const chapter = root.closest('.chapter');
-    const activeSvg = () =>
-      body.querySelector('.board-sheet.is-active svg') as SVGElement | null;
     const leftOf = (el: Element) => el.getBoundingClientRect().left;
     const widthOf = (el: Element) => el.getBoundingClientRect().width;
     const setBoardW = (w: number) =>
       root.style.setProperty('--board-w', `${w * 100}%`);
-    // Rightmost edge of the actual rendered teardown copy — a Range gives the
-    // tight text bounds (longest wrapped line), not the full column box.
-    const contentRight = () => {
+    // Rightmost edge of the teardown copy that sits at the RAIL'S vertical level
+    // — a Range gives the tight text bounds (longest wrapped line), not the full
+    // column box. The rail floats centred on the board, BELOW the chapter title:
+    // on a narrow viewport that title wraps wide (its right edge runs ~180px past
+    // the component list) but it ends well above the rail, so it shares no
+    // horizontal lane with it. Counting it shoved the rail onto the board even
+    // though the real gutter (component list → board) was wide open. So skip any
+    // copy whose vertical span sits entirely outside [bandTop, bandBottom].
+    const contentRight = (bandTop: number, bandBottom: number) => {
       const els = chapter?.querySelectorAll(
         '.chapter-title, .chapter-body, .teardown-pins li, .board-art-inspect',
       );
@@ -402,6 +514,8 @@ export function BoardArt({
       }
       let max = -Infinity;
       for (const el of els) {
+        const box = el.getBoundingClientRect();
+        if (box.bottom <= bandTop || box.top >= bandBottom) continue;
         const range = document.createRange();
         range.selectNodeContents(el);
         const rect = range.getBoundingClientRect();
@@ -419,51 +533,53 @@ export function BoardArt({
       }
       rail.classList.remove('is-compact');
       rail.style.transform = '';
-      setBoardW(DEFAULT_W);
-      let svg = activeSvg();
-      if (!svg) return;
+      setBoardW(DEFAULT_W); // keep the board at full size; compact the rail if tight
+      const stack = body.querySelector('.board-folder-stack');
+      if (!stack) return;
+      const sr = stack.getBoundingClientRect();
+      // Board's VISIBLE left edge. The active sheet is scaled up (~1.05) and is
+      // rendered WIDER than its stack column, centred over it, so the visible
+      // board bleeds left of the stack box — by an amount that is NOT a fixed
+      // fraction of the stack (the sheet keeps roughly its own size as the column
+      // narrows, so the bleed grows as the column shrinks). Once the entrance has
+      // settled (flyDone) the active sheet's rect is stable and gives the exact
+      // edge, so read it directly. DURING the fly the sheets are flown off-screen
+      // and the sheet rect would mis-place the rail and snap it at the end — so
+      // fall back to the never-translating stack box (rough but only momentary).
+      const activeSheet = stack.querySelector(
+        '.board-sheet.is-active svg, .board-sheet.is-active img',
+      );
+      const sheetRect = flyDone ? activeSheet?.getBoundingClientRect() : null;
+      const boardLeft =
+        sheetRect && sheetRect.width ? sheetRect.left : sr.left - sr.width * 0.065;
       const railFull = widthOf(rail);
-      const textRight = contentRight();
-      // Board's left edge must clear this for the full rail to sit in the gutter.
-      const fullFloor = textRight + MARGIN + railFull + GAP;
-      // The board's left edge decreases as `--board-w` grows, so "full rail
-      // fits" holds at small w and fails at large w. Binary-search the largest
-      // w that still fits — the biggest board that keeps the whole menu. (The
-      // active sheet's scale bleed makes the exact relationship non-obvious, so
-      // we search rather than solve.)
-      const fitsAt = (w: number) => {
-        setBoardW(w);
-        const s = activeSvg();
-        return s ? leftOf(s) >= fullFloor : true;
+      // The rail floats centred on the board; the stack box is its stable vertical
+      // anchor. Inset the band a little from the stack's top so the chapter title
+      // — which can dip a hair into the stack's top edge — never gets counted as
+      // copy in the rail's lane (it lives above the rail).
+      const bandTop = sr.top + sr.height * 0.1;
+      const textRight = contentRight(bandTop, sr.bottom);
+      // The gutter is the clear span between the copy and the board, with the
+      // mandated clearances carved out at each end.
+      const gutterStart = textRight + MARGIN; // nearest the rail may sit to the copy
+      const gutterEnd = boardLeft - GAP; // nearest the rail may sit to the board
+      // Centre a pill of the given width in the gutter, but ALWAYS keep its right
+      // edge at/left of gutterEnd (the board-side wall) — so even if boardLeft is
+      // measured a hair generous, the rail can't creep onto the silk. When the
+      // pill can't fit, this still floors at gutterStart so it never crosses the
+      // copy (it may then overlap the board's edge — the last-resort overlay).
+      const placeWidth = (w: number) => {
+        const slack = gutterEnd - gutterStart - w;
+        const centred = gutterStart + slack / 2;
+        return Math.min(Math.max(centred, gutterStart), Math.max(gutterStart, gutterEnd - w));
       };
-      let needCompact = false;
-      if (fitsAt(DEFAULT_W)) {
-        setBoardW(DEFAULT_W); // roomy — no shrink needed
-      } else if (!fitsAt(MIN_W)) {
-        setBoardW(MIN_W); // even the smallest board can't free the gutter
-        needCompact = true;
-      } else {
-        let lo = MIN_W;
-        let hi = DEFAULT_W;
-        for (let i = 0; i < 6; i++) {
-          const mid = (lo + hi) / 2;
-          if (fitsAt(mid)) lo = mid;
-          else hi = mid;
-        }
-        setBoardW(lo);
-      }
-      svg = activeSvg();
-      if (!svg) return;
       let target: number;
-      if (!needCompact) {
-        target = leftOf(svg) - GAP - railFull; // full rail, in the gutter
+      if (gutterEnd - gutterStart >= railFull) {
+        target = placeWidth(railFull); // full rail fits, centred in the gutter
       } else {
-        // Names-only rail; hug the (minimum) board if it now fits, else overlay
-        // it — never crossing the copy.
+        // Too tight for the full pill — drop to names-only and re-fit.
         rail.classList.add('is-compact');
-        const compactWidth = widthOf(rail);
-        const boardLeft = leftOf(svg);
-        target = Math.max(textRight + MARGIN, boardLeft - GAP - compactWidth);
+        target = placeWidth(widthOf(rail));
       }
       rail.style.transform = `translateX(${target - leftOf(rail)}px)`;
     };
@@ -484,86 +600,316 @@ export function BoardArt({
       if (scheduled) cancelAnimationFrame(scheduled);
       window.removeEventListener('resize', schedule);
     };
-  }, [sheets, revealed]);
+  }, [sheets, revealed, flyDone]);
 
-  // Resolve the hovered refdes to drawable footprint outlines. Coords are
-  // already in the board viewBox frame, so each becomes a courtyard polygon (or
-  // a bbox rect when no courtyard is present) drawn directly — no math. Drawn
-  // regardless of which sheet is active: a back-side part highlighted while the
-  // front face is up is the intended x-ray look-through.
+  // The realistic FACE currently shown: 'F' (Front face) / 'B' (Back face), or
+  // null for any copper layer. Highlights only appear on the faces — a copper
+  // layer isn't "a PCB-mounted component", so no box there.
+  const visibleFace =
+    sheets[active]?.slug === 'front'
+      ? 'F'
+      : sheets[active]?.slug === 'back'
+        ? 'B'
+        : null;
+
+  // On a new hover, flip the stack to the FACE that mounts the part (front for
+  // F-side parts, back for B-side) so the box always lands on a face, never a
+  // copper layer. Deps exclude `active` (read via ref) so manual layer paging
+  // isn't fought; only a hover triggers a flip.
+  const activeRef = useRef(active);
+  activeRef.current = active;
+  useEffect(() => {
+    if (!manifest || !highlightRefs?.length) return;
+    const comps = highlightRefs
+      .map((r) => manifest.map.get(r))
+      .filter(Boolean) as BoardComponent[];
+    if (!comps.length) return;
+    const fCount = comps.filter((c) => c.layer === 'F').length;
+    const targetFace = fCount >= comps.length - fCount ? 'front' : 'back';
+    const idx = sheets.findIndex((s) => s.slug === targetFace);
+    if (idx >= 0 && idx !== activeRef.current) setActive(idx);
+  }, [manifest, highlightRefs, sheets]);
+
+  // Footprint boxes for parts mounted on the visible FACE only. A padded bbox
+  // rect (mm, in the board viewBox frame) — drawn anchored INSIDE the sheet svg
+  // so it scrolls with the board and sits exactly on the part.
   const highlights = useMemo(() => {
-    if (!manifest || !highlightRefs?.length) return [];
-    const out: Array<{ref: string; points?: string; rect?: number[]}> = [];
+    if (!manifest || !highlightRefs?.length || !visibleFace) return [];
+    const PAD = 0.4; // mm breathing room so the box comfortably encloses the part
+    const out: Array<{ref: string; rect: number[]}> = [];
     for (const r of highlightRefs) {
       const c = manifest.map.get(r);
-      if (!c) continue;
-      if (c.courtyard?.length) {
-        out.push({
-          ref: r,
-          points: c.courtyard.map(([x, y]) => `${x},${y}`).join(' '),
-        });
-      } else if (c.bbox) {
-        out.push({ref: r, rect: [c.bbox.x, c.bbox.y, c.bbox.w, c.bbox.h]});
-      }
+      if (!c || c.layer !== visibleFace || !c.bbox) continue;
+      out.push({
+        ref: r,
+        rect: [c.bbox.x - PAD, c.bbox.y - PAD, c.bbox.w + 2 * PAD, c.bbox.h + 2 * PAD],
+      });
     }
     return out;
-  }, [manifest, highlightRefs]);
-  const overlayViewBox = manifest?.viewBox ?? '';
-  const hasHighlights = highlights.length > 0;
-
-  // Register the highlight overlay pixel-exactly over the ACTIVE sheet. The
-  // active sheet floats up/forward via CSS transform, so we can't rely on the
-  // static layout box: measure the active sheet's rendered <svg> rect relative
-  // to the stack and size/position the overlay to match. Because both the
-  // overlay and the sheet use the SAME viewBox + xMidYMid meet, matching the box
-  // guarantees the drawn footprints align to the parts. Re-runs on active
-  // change, reveal, sheets reload, and resize (rAF-coalesced); a short rAF chain
-  // lets the float transition settle before the final measure.
+  }, [manifest, highlightRefs, visibleFace]);
+  // Draw the highlight ANCHORED inside the active sheet's own <svg>, so it
+  // scrolls with the board and sits exactly on the part (it shares the viewBox +
+  // every transform). Per hover we append a <g> with: a subtle dim veil over the
+  // face (clipped to the board outline, with a feathered hole at each part) and a
+  // gold box outline per part on top. Only runs on a FACE (highlights is empty
+  // on copper layers), so there's never a box on an inner layer. No screen-space
+  // overlay, no scroll tracking — fully anchored + deterministic.
   useEffect(() => {
-    const overlay = overlayRef.current;
-    const stack = bodyRef.current?.querySelector(
-      '.board-folder-stack',
-    ) as HTMLElement | null;
-    if (!overlay || !stack || !overlayViewBox) return;
-    const measure = () => {
-      const svg = stack.querySelector(
-        '.board-sheet.is-active svg',
-      ) as SVGSVGElement | null;
-      if (!svg) return;
-      const s = svg.getBoundingClientRect();
-      const base = stack.getBoundingClientRect();
-      overlay.style.left = `${s.left - base.left}px`;
-      overlay.style.top = `${s.top - base.top}px`;
-      overlay.style.width = `${s.width}px`;
-      overlay.style.height = `${s.height}px`;
+    const stack = bodyRef.current?.querySelector('.board-folder-stack');
+    if (!stack) return;
+    const NS = 'http://www.w3.org/2000/svg';
+    const cache = spotCache.current;
+
+    // Prune cached spotlights whose face left the DOM (tier / board swap).
+    for (const [el, entry] of cache) {
+      if (!el.isConnected) {
+        entry.g.remove();
+        cache.delete(el);
+      }
+    }
+
+    const svg = stack.querySelector('.board-sheet.is-active svg');
+
+    // No highlight (or no face yet) → hide every cached spotlight (keep it built
+    // so re-entering the list is instant + flash-free), and arm the next entry
+    // to fade in fresh.
+    if (!highlights.length || !svg) {
+      for (const entry of cache.values()) {
+        entry.g.setAttribute('class', 'board-hilite is-hidden');
+      }
+      hadHilite.current = false;
+      return;
+    }
+
+    // Box layout: per-refdes by default; ONE union box for dense arrays
+    // (`highlightUnion`, e.g. the bulk-cap grid); or one union box per subgroup
+    // (`highlightGroups`, e.g. ESC motor pads grouped by motor → 4 boxes).
+    const unionRect = (rs: Array<{rect: number[]}>) => {
+      const x0 = Math.min(...rs.map((h) => h.rect[0]));
+      const y0 = Math.min(...rs.map((h) => h.rect[1]));
+      const x1 = Math.max(...rs.map((h) => h.rect[0] + h.rect[2]));
+      const y1 = Math.max(...rs.map((h) => h.rect[1] + h.rect[3]));
+      return [x0, y0, x1 - x0, y1 - y0];
     };
-    // Measure now, again next frame, and once more after the float settles, so
-    // the overlay lands on the final transformed box rather than mid-animation.
-    let raf1 = 0;
-    let raf2 = 0;
-    measure();
-    raf1 = requestAnimationFrame(() => {
-      measure();
-      raf2 = requestAnimationFrame(measure);
-    });
-    const settle = window.setTimeout(measure, 650);
-    let scheduled = 0;
-    const schedule = () => {
-      if (scheduled) return;
-      scheduled = requestAnimationFrame(() => {
-        scheduled = 0;
-        measure();
-      });
+    let boxes: Array<{ref: string; rect: number[]}>;
+    if (highlightGroups?.length) {
+      boxes = highlightGroups
+        .map((group) => {
+          const set = new Set(group);
+          const rs = highlights.filter((h) => set.has(h.ref));
+          return rs.length ? {ref: 'group', rect: unionRect(rs)} : null;
+        })
+        .filter((b): b is {ref: string; rect: number[]} => b !== null);
+    } else if (highlightUnion && highlights.length > 1) {
+      boxes = [{ref: 'union', rect: unionRect(highlights)}];
+    } else {
+      boxes = highlights;
+    }
+
+    // Fill the per-box geometry into a live group: the lit window(s) — one union
+    // clipPath (a <rect> per box) shared by a SINGLE bright face image — plus the
+    // gold boxes. Leaves the dim veil + cloned face image alone, so a move only
+    // slides the lit window; the dim never re-rasterises, the image never
+    // re-decodes (that was the flash).
+    const paintWindows = (brightClip: Element, group: Element) => {
+      while (brightClip.firstChild) brightClip.removeChild(brightClip.firstChild);
+      for (const h of boxes) {
+        const cr = document.createElementNS(NS, 'rect');
+        cr.setAttribute('x', String(h.rect[0]));
+        cr.setAttribute('y', String(h.rect[1]));
+        cr.setAttribute('width', String(h.rect[2]));
+        cr.setAttribute('height', String(h.rect[3]));
+        cr.setAttribute('rx', '0.5');
+        brightClip.appendChild(cr);
+      }
+      group
+        .querySelectorAll('.board-highlight-shape')
+        .forEach((n) => n.remove());
+      for (const h of boxes) {
+        const rect = document.createElementNS(NS, 'rect');
+        rect.setAttribute('x', String(h.rect[0]));
+        rect.setAttribute('y', String(h.rect[1]));
+        rect.setAttribute('width', String(h.rect[2]));
+        rect.setAttribute('height', String(h.rect[3]));
+        rect.setAttribute('rx', '0.4');
+        rect.setAttribute('class', 'board-highlight-shape');
+        group.appendChild(rect);
+      }
     };
-    window.addEventListener('resize', schedule);
-    return () => {
-      cancelAnimationFrame(raf1);
-      cancelAnimationFrame(raf2);
-      if (scheduled) cancelAnimationFrame(scheduled);
-      window.clearTimeout(settle);
-      window.removeEventListener('resize', schedule);
-    };
-  }, [active, revealed, sheets, overlayViewBox]);
+
+    // Hide spotlights cached for OTHER faces (only the active face shows one).
+    for (const [el, entry] of cache) {
+      if (el !== svg) entry.g.setAttribute('class', 'board-hilite is-hidden');
+    }
+
+    // Fade in only when entering the list from nothing; a row move or face flip
+    // mid-hover shows instantly (no fade, no flash).
+    const cls = hadHilite.current ? 'board-hilite' : 'board-hilite is-fresh';
+
+    // REUSE this face's cached spotlight: un-hide + just slide the lit window.
+    const hit = cache.get(svg);
+    if (hit && hit.g.isConnected && hit.brightClip) {
+      hit.g.setAttribute('class', cls);
+      paintWindows(hit.brightClip, hit.g);
+      hadHilite.current = true;
+      return;
+    }
+
+    // FRESH BUILD for this face (first time it's lit). The dim veil + ONE bright
+    // face clone + union clip are built ONCE here and cached; later hovers on
+    // this face take the reuse path above.
+    svg.querySelectorAll('g.board-hilite').forEach((g) => g.remove());
+    cache.delete(svg);
+    const vb = manifest?.viewBox?.split(/\s+/).map(Number);
+    const outlineClip = svg.querySelector(
+      'clipPath',
+    ) as SVGClipPathElement | null;
+    const clipId = outlineClip?.id;
+    const g = document.createElementNS(NS, 'g');
+    g.setAttribute('class', cls);
+
+    // SPOTLIGHT: DIM the board everywhere EXCEPT the lit window(s). The dim
+    // region is the board bbox + a margin (NOT a giant rect — a huge masked
+    // element overflows the browser's mask buffer and only renders a corner).
+    if (vb && vb.length === 4 && vb.every((n) => Number.isFinite(n))) {
+      const M = Math.max(vb[2], vb[3]); // generous region (covers any overhang)
+      const rx0 = vb[0] - M;
+      const ry0 = vb[1] - M;
+      const rw = vb[2] + 2 * M;
+      const rh = vb[3] + 2 * M;
+      const defs = document.createElementNS(NS, 'defs');
+      const faceImg = svg.querySelector('image');
+      if (faceImg) {
+        // Dim the WHOLE board picture — including ports that overhang the
+        // Edge.Cuts outline — by masking a dark layer with the FACE IMAGE's
+        // ALPHA (covers exactly the rendered board + ports, soft edges, no page
+        // bleed). Then re-show ONE bright face clipped to a single union clipPath
+        // (one <rect> per box) on top — so a row move only edits those rects, not
+        // the image clones. No outline clip → no bright port sliver.
+        const dimMask = document.createElementNS(NS, 'mask');
+        dimMask.setAttribute('id', `od-dim-${uid}`);
+        dimMask.setAttribute('maskUnits', 'userSpaceOnUse');
+        dimMask.setAttribute('mask-type', 'alpha');
+        dimMask.setAttribute('x', String(rx0));
+        dimMask.setAttribute('y', String(ry0));
+        dimMask.setAttribute('width', String(rw));
+        dimMask.setAttribute('height', String(rh));
+        dimMask.appendChild(faceImg.cloneNode(true));
+        defs.appendChild(dimMask);
+        const brightClip = document.createElementNS(NS, 'clipPath');
+        brightClip.setAttribute('id', `od-bright-${uid}`);
+        brightClip.setAttribute('clipPathUnits', 'userSpaceOnUse');
+        defs.appendChild(brightClip);
+        g.appendChild(defs);
+        const dim = document.createElementNS(NS, 'rect');
+        dim.setAttribute('x', String(rx0));
+        dim.setAttribute('y', String(ry0));
+        dim.setAttribute('width', String(rw));
+        dim.setAttribute('height', String(rh));
+        dim.setAttribute('class', 'board-hilite-dim');
+        dim.setAttribute('mask', `url(#od-dim-${uid})`);
+        g.appendChild(dim);
+        const bface = faceImg.cloneNode(true) as SVGElement;
+        bface.removeAttribute('id');
+        bface.setAttribute('clip-path', `url(#od-bright-${uid})`);
+        bface.setAttribute('class', 'board-hilite-face');
+        g.appendChild(bface);
+        // Lit window(s) + gold boxes — the only parts that move between rows.
+        paintWindows(brightClip, g);
+        svg.appendChild(g);
+        cache.set(svg, {g, brightClip});
+        hadHilite.current = true;
+        return;
+      } else if (clipId) {
+        // Fallback (no face image): dim a board-bbox rect with holes per box,
+        // clipped to the outline. No <image> here, so rebuilding can't flash.
+        const mask = document.createElementNS(NS, 'mask');
+        mask.setAttribute('id', `od-spot-${uid}`);
+        mask.setAttribute('maskUnits', 'userSpaceOnUse');
+        mask.setAttribute('x', String(rx0));
+        mask.setAttribute('y', String(ry0));
+        mask.setAttribute('width', String(rw));
+        mask.setAttribute('height', String(rh));
+        const base = document.createElementNS(NS, 'rect');
+        base.setAttribute('x', String(rx0));
+        base.setAttribute('y', String(ry0));
+        base.setAttribute('width', String(rw));
+        base.setAttribute('height', String(rh));
+        base.setAttribute('fill', '#fff');
+        mask.appendChild(base);
+        for (const h of boxes) {
+          const hole = document.createElementNS(NS, 'rect');
+          hole.setAttribute('x', String(h.rect[0]));
+          hole.setAttribute('y', String(h.rect[1]));
+          hole.setAttribute('width', String(h.rect[2]));
+          hole.setAttribute('height', String(h.rect[3]));
+          hole.setAttribute('rx', '0.5');
+          hole.setAttribute('fill', '#000');
+          mask.appendChild(hole);
+        }
+        defs.appendChild(mask);
+        g.appendChild(defs);
+        const dim = document.createElementNS(NS, 'rect');
+        dim.setAttribute('x', String(rx0));
+        dim.setAttribute('y', String(ry0));
+        dim.setAttribute('width', String(rw));
+        dim.setAttribute('height', String(rh));
+        dim.setAttribute('class', 'board-hilite-dim');
+        dim.setAttribute('mask', `url(#od-spot-${uid})`);
+        dim.setAttribute('clip-path', `url(#${clipId})`);
+        g.appendChild(dim);
+      }
+    }
+
+    // Gold box per part, on top (fallback / no-viewBox path — no reusable clip).
+    for (const h of boxes) {
+      const rect = document.createElementNS(NS, 'rect');
+      rect.setAttribute('x', String(h.rect[0]));
+      rect.setAttribute('y', String(h.rect[1]));
+      rect.setAttribute('width', String(h.rect[2]));
+      rect.setAttribute('height', String(h.rect[3]));
+      rect.setAttribute('rx', '0.4');
+      rect.setAttribute('class', 'board-highlight-shape');
+      g.appendChild(rect);
+    }
+    svg.appendChild(g);
+    cache.set(svg, {g, brightClip: null});
+    hadHilite.current = true;
+  }, [
+    active,
+    revealed,
+    sheets,
+    highlights,
+    manifest,
+    highlightUnion,
+    highlightGroups,
+    visibleFace,
+    uid,
+  ]);
+
+  // Memoise the sheet stack so a hover never re-renders these <button>s. A hover
+  // changes highlight props on the PARENT, re-rendering BoardArt; React was then
+  // re-applying each dangerouslySetInnerHTML and rebuilding the board <svg> on
+  // every hover — re-decoding the board image and flashing the spotlight. Keyed
+  // on [sheets, active] only, the element array is referentially stable across
+  // hovers, so React skips this subtree entirely: the svg nodes stay put and the
+  // imperatively-injected highlight overlay is reused (above) instead of rebuilt.
+  const stackSheets = useMemo(
+    () =>
+      sheets.map((s, i) => (
+        <button
+          type="button"
+          key={s.slug}
+          className={`board-sheet${i === active ? ' is-active' : ''}`}
+          style={{['--depth' as string]: i}}
+          aria-label={`Show ${s.label} layer`}
+          aria-pressed={i === active}
+          onClick={() => setActive(i)}
+          dangerouslySetInnerHTML={{__html: s.html}}
+        />
+      )),
+    [sheets, active],
+  );
 
   // Step through the stack, clamped to its ends (used by chevrons / keys / wheel).
   const step = (delta: number) =>
@@ -572,14 +918,17 @@ export function BoardArt({
   return (
     <div
       ref={ref}
-      className={`board-art board-folder${revealed ? ' is-revealed' : ''}`}
+      className={`board-art board-folder${revealed ? ' is-revealed' : ''}${
+        revealed && !flyDone ? ' is-armed' : ''
+      }${flyIn && !flyDone ? ' is-flying' : ''}`}
       data-board={handle}
     >
       {sheets.length ? (
         <div className="board-folder-body" ref={bodyRef}>
-          {/* Roving keyboard-nav group: arrows/wheel step the layer stack.
-              The interactive controls (buttons) live inside; the group itself
-              is focusable to capture arrow/wheel nav. */}
+          {/* Roving keyboard-nav group: arrow keys step the layer stack. The
+              interactive controls (buttons) live inside; the group itself is
+              focusable to capture arrow nav. Wheel is intentionally NOT captured
+              — scrolling over the panel scrolls the page like anywhere else. */}
           {/* eslint-disable jsx-a11y/no-noninteractive-element-interactions, jsx-a11y/no-noninteractive-tabindex */}
           <div
             className="board-folder-rail"
@@ -596,10 +945,6 @@ export function BoardArt({
                 step(-1);
               }
             }}
-            onWheel={(e) => {
-              if (Math.abs(e.deltaY) < 2) return;
-              step(e.deltaY > 0 ? 1 : -1);
-            }}
           >
             <span className="board-folder-rail-head">
               Layer
@@ -612,6 +957,7 @@ export function BoardArt({
                 <button
                   type="button"
                   key={s.slug}
+                  data-slug={s.slug}
                   className={i === active ? 'is-active' : undefined}
                   aria-pressed={i === active}
                   onClick={() => setActive(i)}
@@ -626,54 +972,10 @@ export function BoardArt({
           </div>
           {/* eslint-enable jsx-a11y/no-noninteractive-element-interactions, jsx-a11y/no-noninteractive-tabindex */}
           <div className="board-folder-stack">
-            {sheets.map((s, i) => (
-              <button
-                type="button"
-                key={s.slug}
-                className={`board-sheet${i === active ? ' is-active' : ''}`}
-                style={{['--depth' as string]: i}}
-                aria-label={`Show ${s.label} layer`}
-                aria-pressed={i === active}
-                onClick={() => setActive(i)}
-                // eslint-disable-next-line react/no-danger
-                dangerouslySetInnerHTML={{__html: s.html}}
-              />
-            ))}
-            {/* Highlight overlay — an absolutely-positioned svg sharing the
-                board viewBox + xMidYMid meet, sized/placed (by the measuring
-                effect) to cover the active sheet's rendered box, so footprint
-                outlines register pixel-exactly. Coordinates come straight from
-                components.json. */}
-            {overlayViewBox ? (
-              <svg
-                ref={overlayRef}
-                className={`board-highlight-overlay${
-                  hasHighlights ? ' is-on' : ''
-                }`}
-                viewBox={overlayViewBox}
-                preserveAspectRatio="xMidYMid meet"
-                aria-hidden="true"
-              >
-                {highlights.map((h) =>
-                  h.points ? (
-                    <polygon
-                      key={h.ref}
-                      className="board-highlight-shape"
-                      points={h.points}
-                    />
-                  ) : h.rect ? (
-                    <rect
-                      key={h.ref}
-                      className="board-highlight-shape"
-                      x={h.rect[0]}
-                      y={h.rect[1]}
-                      width={h.rect[2]}
-                      height={h.rect[3]}
-                    />
-                  ) : null,
-                )}
-              </svg>
-            ) : null}
+            {stackSheets}
+            {/* Component highlights are injected into the active sheet's own
+                <svg> by the effect above (so they inherit its viewBox + every
+                transform); there is no separate overlay element here. */}
           </div>
         </div>
       ) : null}

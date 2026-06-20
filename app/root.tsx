@@ -1,3 +1,4 @@
+import {useEffect} from 'react';
 import {Analytics, getShopAnalytics, useNonce} from '@shopify/hydrogen';
 import {
   Outlet,
@@ -21,6 +22,7 @@ import {getCompanyIdentity} from '~/lib/company';
 import {localeFromPathname, seoLocaleTag} from '~/lib/i18n';
 import {buildOrgJsonLd} from '~/lib/seo';
 import {THEME_COLORS, THEME_INIT_SCRIPT} from '~/lib/theme';
+import {installViewTransitionGuard} from '~/lib/view-transition';
 
 export type RootLoader = typeof loader;
 
@@ -214,11 +216,25 @@ export function Layout({children}: {children?: React.ReactNode}) {
   const htmlLang = (data?.locale || 'en_US').split('_')[0] || 'en';
   const orgJsonLd = data?.company ? buildOrgJsonLd(data.company) : null;
 
+  // Make every view transition resilient: route React Router's navigation
+  // transitions (and the manual theme-toggle reveal) through one guard that
+  // tracks the in-flight transition and swallows AbortError/InvalidStateError
+  // when one is skipped/interrupted. Without this, overlapping transitions
+  // threw `InvalidStateError: Transition was aborted because of invalid state`
+  // and could leave a route half-rendered (the PDP board stuck pre-reveal).
+  // Idempotent + client-only.
+  useEffect(() => {
+    installViewTransitionGuard();
+  }, []);
+
   return (
     <html lang={htmlLang} className="dark" suppressHydrationWarning>
       <head>
         <meta charSet="utf-8" />
-        <meta name="viewport" content="width=device-width,initial-scale=1" />
+        <meta
+          name="viewport"
+          content="width=device-width,initial-scale=1,viewport-fit=cover"
+        />
         <meta name="theme-color" content={THEME_COLORS.dark} />
         {/* Resolve + apply the theme before first paint so a light-mode
             visitor never sees a dark flash. Must run before the stylesheet
@@ -227,6 +243,19 @@ export function Layout({children}: {children?: React.ReactNode}) {
           nonce={nonce}
           suppressHydrationWarning
           dangerouslySetInnerHTML={{__html: THEME_INIT_SCRIPT}}
+        />
+        {/* Pause all CSS animations while the window is unfocused or the tab is
+            hidden — the ambient infinite animations (wordmark sheen, banner
+            ping, etc.) otherwise keep the GPU compositing every frame even when
+            no one is looking. Full fidelity returns the instant the window is
+            focused. Inline + pre-paint so it's active before first frame. */}
+        <script
+          nonce={nonce}
+          suppressHydrationWarning
+          dangerouslySetInnerHTML={{
+            __html:
+              "(function(){var r=document.documentElement,t,idle=false;function paused(){return document.hidden||!document.hasFocus()||idle;}function u(){r.classList.toggle('anim-paused',paused());}function active(){idle=false;u();clearTimeout(t);t=setTimeout(function(){idle=true;u();},4000);}addEventListener('focus',active);addEventListener('blur',u);document.addEventListener('visibilitychange',u);['pointermove','pointerdown','keydown','wheel','scroll'].forEach(function(e){addEventListener(e,active,{passive:true});});active();})();",
+          }}
         />
         <link rel="stylesheet" href={resetStyles}></link>
         <link rel="stylesheet" href={appStyles}></link>

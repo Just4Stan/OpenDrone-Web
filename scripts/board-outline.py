@@ -15,11 +15,20 @@ Run with KiCad's bundled interpreter, e.g. on macOS:
 Output (stdout) is JSON:
   {
     "bbox": {"minX", "minY", "width", "height"},   # mm
+    "outlineCount": <int>,                          # disjoint outer outlines
     "rings": [ [[x, y], ...], ... ]                 # mm, board frame
   }
 Every ring (outer outlines and inner cutouts alike) is emitted as a flat
 list of points; clip with fill-rule="evenodd" so cutouts subtract
 regardless of winding.
+
+`outlineCount` is the number of SEPARATE outer outlines (pcbnew
+SHAPE_POLY_SET.OutlineCount()) — NOT the total ring count, which also
+includes inner cutouts (mounting slots, drilled holes routed in
+Edge.Cuts). A single board with cutouts has outlineCount == 1; a
+production PANEL resolves to several disjoint outer outlines
+(outlineCount > 1). The export script uses this to refuse panels, which
+would otherwise render the whole array into one viewBox.
 """
 import json
 import sys
@@ -74,6 +83,7 @@ def main() -> int:
                 "width": max_x - min_x,
                 "height": max_y - min_y,
             },
+            "outlineCount": poly.OutlineCount(),
             "rings": rings,
         },
         sys.stdout,

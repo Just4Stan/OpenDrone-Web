@@ -4,6 +4,17 @@
  *
  *   node scripts/export-board-art.mjs <path-to-.kicad_pcb> <product-handle>
  *   node scripts/export-board-art.mjs --all      # every board in boards.config.json
+ *   node scripts/export-board-art.mjs --all --components-only
+ *   node scripts/export-board-art.mjs <pcb> <handle> --components-only
+ *
+ * --components-only regenerates ONLY public/boards/<handle>/components.json
+ * (the per-footprint highlight boxes from board-components.py) and DOES NOT
+ * touch board.svg / front.png / back.png. It runs no kicad-cli svg export and
+ * no render_board.py — so it's the fast, render-free path to pick up a
+ * board-components.py change (e.g. a bbox fix) without re-rendering the art.
+ * It reuses the existing board.svg's viewBox as the shared frame, so the new
+ * boxes line up with the unchanged art; run the full pipeline first if a board
+ * has no board.svg yet. Exposed as `npm run gen:components`.
  *
  * Pipeline (per board):
  *   1. `kicad-cli pcb export svg --mode-multi` emits one SVG per copper
@@ -17,8 +28,22 @@
  *      B.Cu are clipped to the outline (Edge.Cuts is the outline, so it
  *      is left unclipped). B.Cu is mirrored about the board's vertical
  *      centre on an inner group so the clip still resolves in the
- *      un-mirrored frame — that gives a clean flip-to-back view.
- *   4. Result is written to `public/boards/<handle>/board.svg`.
+ *      un-mirrored frame — that gives a clean flip-to-back view. Each
+ *      copper layer KEEPS its own kicad-cli theme colour (red F.Cu, blue
+ *      B.Cu, distinct inner-layer hues) so the folder viewer is colour-
+ *      coded per layer.
+ *   4. The realistic front/back faces are PHOTOREAL orthographic 3D
+ *      renders (OpenDrone's canonical render_board.py — strips vias +
+ *      solder paste so vias render filled/capped, the SAME images used for
+ *      the GitHub README and Shopify product shots), saved as
+ *      front.png / back.png and embedded as `<image>` in the master
+ *      viewBox. The render registers with the copper/components frame by
+ *      a single (scale, offset[, back mirror]) derived from the rendered
+ *      board-substrate silhouette → Edge.Cuts bbox. This shows real
+ *      component 3D bodies with correct silk/mask/copper layering (silk
+ *      clipped by mask openings — copper wins) that a flat vector
+ *      composite can't reproduce.
+ *   5. Result is written to `public/boards/<handle>/board.svg`.
  *
  * <BoardArt /> inlines this file and addresses the layer groups by id:
  * CSS drives the entrance reveal and the gold glow, and the Top/Bottom
@@ -39,9 +64,12 @@
  * Rerun whenever a hardware rev ships. Idempotent.
  */
 import {execSync, execFileSync} from 'node:child_process';
+import {createHash} from 'node:crypto';
 import {
   mkdtempSync,
   readFileSync,
+  readdirSync,
+  statSync,
   rmSync,
   writeFileSync,
   mkdirSync,
@@ -64,7 +92,12 @@ const KICAD_PYTHON =
 
 const OUTLINE_SCRIPT = resolve(here, 'board-outline.py');
 const COMPONENTS_SCRIPT = resolve(here, 'board-components.py');
+const RENDER_FIT_SCRIPT = resolve(here, 'board-render-fit.py');
 const CONFIG_PATH = resolve(here, 'boards.config.json');
+
+// ImageMagick — used to horizontally mirror the bottom render into the
+// look-through top-down frame (and only there; render + detection do the math).
+const MAGICK = process.env.MAGICK || 'magick';
 
 // Every copper layer of a (up to) 6-layer stackup, plus the board outline.
 // Boards with fewer layers simply don't emit the missing inner files; we skip
@@ -94,39 +127,27 @@ const STACK_ORDER = ['back', 'edge-cuts', 'f', 'in1', 'in2', 'in3', 'in4', 'b', 
 // down through the board), so nothing is mirrored.
 const MIRROR_SLUGS = new Set();
 
-// Realistic composite faces. Each is a stack of technical layers exported as
-// one SVG per layer (multi mode, SAME page frame as the copper export) and
-// recoloured to read as a real board: soldermask base, gold exposed copper,
-// white silkscreen. The order here is the within-composite paint order
-// (bottom → top of that face).
-//   - Copper sits under the mask, so we tint it the mask (board) colour.
-//   - The *.Mask layer geometry is the mask OPENING — i.e. exposed copper —
-//     so we fill it gold to read as bare pads/lands.
-//   - Silkscreen on top, white.
-// The Edge.Cuts technical layer is exported too so the per-layer frame is
-// pinned identically; we drop its body (the outline group already draws it).
-const COMPOSITE_TECH_LAYERS = {
-  front: ['F.Cu', 'F.Mask', 'F.Silkscreen'],
-  back: ['B.Cu', 'B.Mask', 'B.Silkscreen'],
-};
-// kicad-cli output filename suffix → role within the composite (for fill).
-const TECH_FILENAME_TO_ROLE = {
-  F_Cu: 'copper',
-  B_Cu: 'copper',
-  F_Mask: 'mask',
-  B_Mask: 'mask',
-  F_Silkscreen: 'silk',
-  B_Silkscreen: 'silk',
-};
-// Fills for a realistic flat top-down board look (matte green soldermask,
-// ENIG-ish gold for exposed copper, white silk). These are baked into the SVG
-// (not theme tokens) because they represent the physical board, not site UI.
-const COMPOSITE_FILL = {
-  base: '#0b6b3a', // soldermask base (board colour) — the mask-covered field
-  copper: '#0a5e33', // copper under mask — slightly darker than the base field
-  mask: '#d9b779', // exposed copper / pads — ENIG gold
-  silk: '#f4f4ef', // silkscreen — off-white
-};
+// Each copper layer KEEPS its own kicad-cli theme colour — kicad-cli paints
+// F.Cu red (~#C83434), B.Cu blue (~#4D7FC4), and the inner layers in distinct
+// hues. The folder viewer is meant to be colour-coded per layer, so we do NOT
+// recolour them to a single copper tone.
+
+// Photoreal orthographic 3D renders are the realistic front/back faces, made by
+// OpenDrone's canonical render_board.py (the SAME renderer behind the GitHub
+// README + Shopify product images). It STRIPS VIAS and solder paste (vias
+// render filled/capped, not as open holes), renders orthographic with a
+// transparent background, and squares+centres the output to 1568². We then
+// detect the rendered board-substrate silhouette and embed the PNG as an
+// <image> mapped substrate→Edge.Cuts bbox (a pure scale+offset; the back is
+// additionally mirrored into the look-through top-down frame so back-side parts
+// sit at their true XY under the copper/components).
+const RENDER_PX = 1568; // render_board.py squares+centres to 1568².
+// Side per face; back is mirrored after rendering.
+const RENDER_SIDE = {front: 'top', back: 'bottom'};
+// OpenDrone's canonical renderer (vias+paste stripped, orthographic, square).
+const RENDER_BOARD_PY =
+  process.env.RENDER_BOARD_PY ||
+  '/Users/stan/OpenDrone/tools/render_board.py';
 
 const TAU = Math.PI * 2;
 /** Max arc/bezier chord ≈ this many radians per sample — fine enough that a
@@ -395,18 +416,29 @@ function boardComponents(pcbPath) {
 }
 
 /**
- * Force every fill/stroke colour in a layer body to a single colour. KiCad's
- * per-layer SVG paints geometry in the PCB-editor theme colour; for the
- * realistic composite we override it with our own board-look palette. Both
- * presentation-attribute (`fill="…"`) and CSS-style (`style="fill:…"`) forms
- * are rewritten; `none` is left alone so unfilled strokes stay strokes.
+ * Locate the board SUBSTRATE (pixel bbox) in a render PNG via the pcbnew-python
+ * helper (PIL lives there). It returns the bbox of the SOLDERMASK substrate (the
+ * green board area), NOT the full alpha silhouette: overhanging metal — USB
+ * shells, connector bodies, U.FL, antennas, edge/castellated pads that overshoot
+ * the routed edge — is excluded so the face registers to the Edge.Cuts extent
+ * that the copper layers + component highlights share (not to proud parts, which
+ * was the old misalignment bug). `expectAspect` is the Edge.Cuts bbox aspect
+ * (w/h); the helper cross-validates the detected substrate against it and FAILS
+ * LOUDLY if they disagree beyond tolerance (detection went wrong → don't emit a
+ * bad fit). With `mirror`, the PNG is flipped horizontally first so the frame
+ * lands in the un-mirrored look-through frame. `right`/`bottom` are half-open
+ * (one past the last substrate pixel) so `right-left` is the covered pixel span.
+ * Returns `{imgW, imgH, left, right, top, bottom, mirror, aspect, aspectDevPct}`.
  */
-function forceFill(body, colour) {
-  return body
-    .replace(/fill:#[0-9a-fA-F]{6}/g, `fill:${colour}`)
-    .replace(/stroke:#[0-9a-fA-F]{6}/g, `stroke:${colour}`)
-    .replace(/fill="#[0-9a-fA-F]{6}"/g, `fill="${colour}"`)
-    .replace(/stroke="#[0-9a-fA-F]{6}"/g, `stroke="${colour}"`);
+function renderFit(pngPath, mirror, expectAspect) {
+  const a = [RENDER_FIT_SCRIPT, pngPath];
+  if (mirror) a.push('--mirror');
+  if (expectAspect != null) a.push('--expect-aspect', String(expectAspect));
+  const out = execFileSync(KICAD_PYTHON, a, {
+    encoding: 'utf8',
+    maxBuffer: 64 * 1024 * 1024,
+  });
+  return JSON.parse(out);
 }
 
 /**
@@ -485,6 +517,18 @@ function buildBoard(pcbPath, handle) {
     if (!outline.rings || !outline.rings.length) {
       throw new Error(`pcbnew returned no board outline for ${pcbPath}`);
     }
+    // Panel guard: a single board (even with cutouts/slots) is ONE outer
+    // outline; a production panel resolves to several disjoint outer outlines.
+    // `outlineCount` counts only the OUTER outlines (not inner cutout rings), so
+    // a board with mounting slots still passes. Refuse a panel — it would render
+    // the whole array into one viewBox several boards wide.
+    if (outline.outlineCount > 1) {
+      throw new Error(
+        `${pcbPath} has ${outline.outlineCount} disjoint board outlines — ` +
+          `this looks like a PANEL. Point boards.config.json at the SINGLE-board ` +
+          `source .kicad_pcb, not a production panel.`,
+      );
+    }
 
     const clipId = `board-clip-${handle}`;
     const clipD = outlineClipPath(outline, bbox);
@@ -493,105 +537,103 @@ function buildBoard(pcbPath, handle) {
     // Mirror axis = board's vertical centre, so mirrored B.Cu stays in place.
     const mirrorTx = (bbox.minX * 2 + bbox.width).toFixed(4);
 
-    // ---- Realistic front/back composite faces -----------------------------
-    // Export the technical layers (same page frame as the copper export, so
-    // they share the master viewBox 1:1) and stack them into recoloured
-    // groups. Verify the emitted frame matches before trusting the overlay.
-    const techDir = join(tmp, 'tech');
-    const allTech = [
-      ...new Set(
-        [...COMPOSITE_TECH_LAYERS.front, ...COMPOSITE_TECH_LAYERS.back].concat(
-          'Edge.Cuts',
-        ),
-      ),
-    ];
+    // ---- Photoreal front/back faces (orthographic 3D renders) -------------
+    // Render both sides with OpenDrone's canonical render_board.py — it strips
+    // vias + solder paste (vias render filled/capped, not as open holes),
+    // renders orthographic on a transparent bg, and squares+centres each side
+    // to 1568². These are the SAME images used for the README/Shopify shots.
+    // It backs up the .kicad_pcb, edits a throwaway copy in-place for the
+    // render, then restores the original BYTE-IDENTICAL (verified with cmp).
+    const topRaw = join(tmp, 'top-raw.png');
+    const botRaw = join(tmp, 'bottom-raw.png');
     execSync(
       [
-        KICAD_CLI,
-        'pcb export svg',
-        `--output ${JSON.stringify(techDir + '/')}`,
-        '--mode-multi',
-        `--layers ${allTech.join(',')}`,
-        '--page-size-mode 2',
-        '--exclude-drawing-sheet',
-        '--fit-page-to-board',
-        '--check-zones',
+        KICAD_PYTHON,
+        JSON.stringify(RENDER_BOARD_PY),
         JSON.stringify(pcbPath),
+        `--top ${JSON.stringify(topRaw)}`,
+        `--bottom ${JSON.stringify(botRaw)}`,
+        `--size ${RENDER_PX}`,
       ].join(' '),
       {stdio: 'inherit'},
     );
+    const rawForSide = {top: topRaw, bottom: botRaw};
 
-    // KiCad slugs the silkscreen file as `*-F_Silkscreen.svg` etc.
-    const LAYER_TO_SUFFIX = {
-      'F.Cu': 'F_Cu',
-      'B.Cu': 'B_Cu',
-      'F.Mask': 'F_Mask',
-      'B.Mask': 'B_Mask',
-      'F.Silkscreen': 'F_Silkscreen',
-      'B.Silkscreen': 'B_Silkscreen',
-    };
+    // Detect each side's routed-substrate silhouette in the PNG and compute the
+    // linear substrate-pixels → viewBox-mm map. The back PNG is saved mirrored
+    // so it embeds in the un-mirrored look-through frame (its detected
+    // silhouette is measured on the same flipped image). Each face is an
+    // <image> placed so the substrate silhouette registers with the
+    // copper/components viewBox — the UI's highlight boxes land on the chips.
+    for (const [face, side] of Object.entries(RENDER_SIDE)) {
+      const rawPng = rawForSide[side];
+      if (!existsSync(rawPng)) {
+        throw new Error(`render_board.py produced no ${side} render for ${pcbPath}`);
+      }
 
-    // The copper export's page frame (from the Edge.Cuts file we already read).
-    const cliPageM = /viewBox="([\d.eE+-]+)\s+([\d.eE+-]+)\s+([\d.eE+-]+)\s+([\d.eE+-]+)"/.exec(
-      edgeCutsRaw,
-    );
-    const cliPageW = cliPageM ? parseFloat(cliPageM[3]) : bbox.width;
-    const cliPageH = cliPageM ? parseFloat(cliPageM[4]) : bbox.height;
-
-    /** Verify a tech layer's emitted viewBox matches the master page frame so
-     *  the composite pixel-overlaps the copper. The copper export and this one
-     *  both use --page-size-mode 2 --fit-page-to-board, so the page frame is
-     *  identical (0 0 W H); we assert it rather than silently misalign. */
-    const techFrameOk = (raw) => {
-      const m = /viewBox="([\d.eE+-]+)\s+([\d.eE+-]+)\s+([\d.eE+-]+)\s+([\d.eE+-]+)"/.exec(
-        raw,
-      );
-      if (!m) return false;
-      const w = parseFloat(m[3]);
-      const h = parseFloat(m[4]);
-      // Same page frame the copper layers used (edgeCutsBBox is computed in it).
-      return (
-        Math.abs(parseFloat(m[1])) < 1e-3 &&
-        Math.abs(parseFloat(m[2])) < 1e-3 &&
-        Math.abs(w - cliPageW) < 1e-2 &&
-        Math.abs(h - cliPageH) < 1e-2
-      );
-    };
-
-    for (const [face, techLayers] of Object.entries(COMPOSITE_TECH_LAYERS)) {
-      // Soldermask base rectangle (the board field), clipped to the outline.
-      const baseRect = `    <rect x="${r4(bbox.minX)}" y="${r4(bbox.minY)}" width="${r4(
-        bbox.width,
-      )}" height="${r4(bbox.height)}" fill="${COMPOSITE_FILL.base}"/>`;
-      const parts = [baseRect];
-      for (const layer of techLayers) {
-        const suffix = LAYER_TO_SUFFIX[layer];
-        const file = join(techDir, `${projectBase}-${suffix}.svg`);
-        if (!existsSync(file)) continue;
-        const raw = readFileSync(file, 'utf8');
-        if (!techFrameOk(raw)) {
-          throw new Error(
-            `Tech layer ${layer} frame ${(/viewBox="[^"]*"/.exec(raw) || [])[0]} ` +
-              `≠ master page frame (0 0 ${cliPageW} ${cliPageH}) for ${pcbPath}`,
-          );
-        }
-        const role = TECH_FILENAME_TO_ROLE[suffix];
-        parts.push(
-          `    <g class="composite-${role}">\n${forceFill(
-            layerBody(raw),
-            COMPOSITE_FILL[role],
-          )}\n    </g>`,
+      // Back is mirrored into the look-through frame; front stays as-is.
+      const mirror = face === 'back';
+      const facePng = join(outDir, `${face}.png`);
+      if (mirror) {
+        execSync(
+          `${MAGICK} ${JSON.stringify(rawPng)} -flop ${JSON.stringify(facePng)}`,
+          {stdio: 'inherit'},
+        );
+      } else {
+        execSync(
+          `${MAGICK} ${JSON.stringify(rawPng)} ${JSON.stringify(facePng)}`,
+          {stdio: 'inherit'},
         );
       }
-      perLayer[face] = parts.join('\n');
+
+      // Measure the SOLDERMASK SUBSTRATE bbox on the SAVED (mirrored, for back)
+      // image so pixel coords match the embedded PNG exactly. Cross-validate the
+      // detected substrate aspect against the Edge.Cuts bbox aspect — the helper
+      // throws if they disagree, so a detection failure can't emit a bad fit.
+      const fit = renderFit(facePng, false, bbox.width / bbox.height);
+      const spanX = fit.right - fit.left;
+      const spanY = fit.bottom - fit.top;
+      if (spanX <= 0 || spanY <= 0) {
+        throw new Error(`Bad substrate bbox for ${face} of ${pcbPath}`);
+      }
+      console.log(
+        `    ${face} substrate fit: ${spanX}x${spanY}px ` +
+          `aspect=${fit.aspect} (Edge.Cuts ${(bbox.width / bbox.height).toFixed(4)}, ` +
+          `dev=${fit.aspectDevPct}%)`,
+      );
+      // Substrate bbox [left,right) → viewBox [minX, minX+width] (= the Edge.Cuts
+      // bbox); same for Y. The substrate bbox is the routed green board area, so
+      // this maps the board (outline + mounting-hole ears) inside the viewBox and
+      // ignores proud overhanging metal. <image> scales the full PNG (0..imgW)
+      // into a rect, so size the rect by px/mm and offset it so the substrate
+      // edge sits on the viewBox edge.
+      const sx = bbox.width / spanX; // mm per px
+      const sy = bbox.height / spanY;
+      const imgX = r4(bbox.minX - fit.left * sx);
+      const imgY = r4(bbox.minY - fit.top * sy);
+      const imgW = r4(fit.imgW * sx);
+      const imgH = r4(fit.imgH * sy);
+      // Absolute public href: the board SVG is inlined into the PDP via
+      // DOMParser (see app/components/BoardArt.tsx), so a relative href would
+      // resolve against the page URL, not the SVG path. Point at the public dir.
+      perLayer[face] =
+        `    <image href="/boards/${handle}/${face}.png" x="${imgX}" y="${imgY}" ` +
+        `width="${imgW}" height="${imgH}" ` +
+        `preserveAspectRatio="none" image-rendering="optimizeQuality"/>`;
     }
 
     const layers = STACK_ORDER.map((slug) => {
-      const body = perLayer[slug];
+      let body = perLayer[slug];
       if (!body) return '';
       if (slug === 'edge-cuts') {
         return `  <g id="layer-${slug}" class="board-layer board-layer-${slug}">\n${body}\n  </g>`;
       }
+      // Photoreal faces are full PNGs (silk/mask/copper already composited and
+      // clipped by the renderer); don't outline-clip them.
+      if (slug === 'front' || slug === 'back') {
+        return `  <g id="layer-${slug}" class="board-layer board-layer-${slug}">\n${body}\n  </g>`;
+      }
+      // Copper sheets keep their own kicad-cli theme colour — no recolour.
       const clipAttr = ` clip-path="url(#${clipId})"`;
       if (MIRROR_SLUGS.has(slug)) {
         // Clip on the outer (untransformed) group so it resolves in the
@@ -621,50 +663,99 @@ ${layers}
     );
 
     // ---- components.json --------------------------------------------------
-    // Same (dx, dy) the outline clip uses: viewBox = native + (dx, dy). The
-    // two pcbnew scripts share LoadBoard + ToMM, so outline.bbox.min and
-    // component coords are in one native frame; translating by this delta puts
-    // every component into the master viewBox frame, ready to draw directly.
-    const dx = bbox.minX - outline.bbox.minX;
-    const dy = bbox.minY - outline.bbox.minY;
-    const r4n = (v) => +v.toFixed(4);
-    const {components: nativeComps} = boardComponents(pcbPath);
-    const components = nativeComps.map((c) => {
-      const entry = {
-        ref: c.ref,
-        value: c.value,
-        footprint: c.footprint,
-        layer: c.layer,
-        x: r4n(c.x + dx),
-        y: r4n(c.y + dy),
-        rot: c.rot,
-        bbox: {
-          x: r4n(c.bbox.x + dx),
-          y: r4n(c.bbox.y + dy),
-          w: r4n(c.bbox.w),
-          h: r4n(c.bbox.h),
-        },
-      };
-      if (c.courtyard) {
-        entry.courtyard = c.courtyard.map(([x, y]) => [r4n(x + dx), r4n(y + dy)]);
-      }
-      return entry;
-    });
-    const componentsJson = {
-      handle,
-      viewBox,
-      units: 'mm',
-      components,
-    };
-    const compPath = join(outDir, 'components.json');
-    writeFileSync(compPath, JSON.stringify(componentsJson));
-    console.log(
-      `Wrote ${compPath} (${components.length} components, ` +
-        `dx=${r4n(dx)} dy=${r4n(dy)})`,
-    );
+    writeComponents(pcbPath, handle, outDir, bbox, outline, viewBox);
   } finally {
     rmSync(tmp, {recursive: true, force: true});
   }
+}
+
+/**
+ * Write public/boards/<handle>/components.json from board-components.py.
+ *
+ * `bbox` is the Edge.Cuts bbox in the kicad-cli page frame ({minX,minY,...});
+ * `outline` is the pcbnew board outline; `viewBox` is the master viewBox string.
+ * Same (dx, dy) the outline clip uses: viewBox = native + (dx, dy). The two
+ * pcbnew scripts share LoadBoard + ToMM, so outline.bbox.min and component
+ * coords are in one native frame; translating by this delta puts every
+ * component into the master viewBox frame, ready to draw directly.
+ *
+ * Shared by the full pipeline (buildBoard) and the render-free --components-only
+ * path (buildComponentsOnly), so both emit byte-identical component geometry.
+ */
+function writeComponents(pcbPath, handle, outDir, bbox, outline, viewBox) {
+  const dx = bbox.minX - outline.bbox.minX;
+  const dy = bbox.minY - outline.bbox.minY;
+  const r4n = (v) => +v.toFixed(4);
+  const {components: nativeComps} = boardComponents(pcbPath);
+  const components = nativeComps.map((c) => {
+    const entry = {
+      ref: c.ref,
+      value: c.value,
+      footprint: c.footprint,
+      layer: c.layer,
+      x: r4n(c.x + dx),
+      y: r4n(c.y + dy),
+      rot: c.rot,
+      bbox: {
+        x: r4n(c.bbox.x + dx),
+        y: r4n(c.bbox.y + dy),
+        w: r4n(c.bbox.w),
+        h: r4n(c.bbox.h),
+      },
+    };
+    if (c.courtyard) {
+      entry.courtyard = c.courtyard.map(([x, y]) => [r4n(x + dx), r4n(y + dy)]);
+    }
+    return entry;
+  });
+  const componentsJson = {
+    handle,
+    viewBox,
+    units: 'mm',
+    components,
+  };
+  const compPath = join(outDir, 'components.json');
+  writeFileSync(compPath, JSON.stringify(componentsJson));
+  console.log(
+    `Wrote ${compPath} (${components.length} components, ` +
+      `dx=${r4n(dx)} dy=${r4n(dy)})`,
+  );
+}
+
+/**
+ * Regenerate ONLY components.json for one board — no kicad-cli, no render.
+ *
+ * Reuses the EXISTING board.svg's viewBox as the shared frame so the new
+ * highlight boxes register with the already-rendered art. The viewBox min
+ * corner IS the Edge.Cuts bbox min in the page frame (buildBoard derives one
+ * from the other), so we reconstruct the {minX,minY} bbox from it and recompute
+ * (dx, dy) against the live pcbnew outline. board.svg / front.png / back.png are
+ * never touched. Requires board.svg to exist (run the full pipeline once first).
+ */
+function buildComponentsOnly(pcbPath, handle) {
+  const outDir = resolve(here, '..', 'public', 'boards', handle);
+  const svgPath = join(outDir, 'board.svg');
+  if (!existsSync(svgPath)) {
+    throw new Error(
+      `no board.svg at ${svgPath} — run the full pipeline once before ` +
+        `--components-only (it needs the existing viewBox to align to).`,
+    );
+  }
+  const svg = readFileSync(svgPath, 'utf8');
+  const m = svg.match(/viewBox="([^"]+)"/);
+  if (!m) throw new Error(`no viewBox in ${svgPath}`);
+  const viewBox = m[1].trim();
+  const [vx, vy, vw, vh] = viewBox.split(/\s+/).map(Number);
+  if ([vx, vy, vw, vh].some((n) => !isFinite(n))) {
+    throw new Error(`bad viewBox "${viewBox}" in ${svgPath}`);
+  }
+  // viewBox min corner = Edge.Cuts bbox min in the kicad-cli page frame.
+  const bbox = {minX: vx, minY: vy, width: vw, height: vh};
+  const outline = boardOutline(pcbPath);
+  if (!outline.bbox) {
+    throw new Error(`pcbnew returned no board outline bbox for ${pcbPath}`);
+  }
+  writeComponents(pcbPath, handle, outDir, bbox, outline, viewBox);
 }
 
 /** Read the local board manifest (handle → .kicad_pcb path). */
@@ -684,16 +775,63 @@ function loadConfig() {
   return boards;
 }
 
+// Bake a content version into the bundle so BoardArt can bust the CDN's 1-year
+// immutable cache on the (unversioned) board.svg + front/back.png URLs. Oxygen
+// serves everything under public/ with `max-age=31536000`, so an in-place regen
+// (or a re-render that produces an IC-less → IC-full board face) never reaches
+// returning visitors unless the request URL changes. We hash every exported
+// board.svg + front.png + back.png — sorted, content-based, NO timestamps so the
+// digest is stable when nothing changed — and write it to a TS module BoardArt
+// imports; it appends `?v=<digest>` to the svg fetch AND to the face <image>
+// hrefs. Regenerate → digest changes → cached browsers refetch. Mirrors
+// scripts/export-schematics.mjs. See app/components/BoardArt.tsx.
+function writeVersionFile() {
+  const base = resolve(here, '..', 'public', 'boards');
+  const h = createHash('sha256');
+  const files = [];
+  for (const handle of readdirSync(base).sort()) {
+    const dir = join(base, handle);
+    if (!statSync(dir).isDirectory()) continue;
+    for (const f of readdirSync(dir).sort()) {
+      if (f === 'board.svg' || f === 'front.png' || f === 'back.png') {
+        files.push(join(dir, f));
+      }
+    }
+  }
+  for (const f of files) h.update(readFileSync(f));
+  const v = h.digest('hex').slice(0, 12);
+  const out = resolve(here, '..', 'app', 'data', 'board-art-version.ts');
+  writeFileSync(
+    out,
+    `// AUTO-GENERATED by scripts/export-board-art.mjs — do not edit by hand.\n` +
+      `// Content hash of every exported board.svg + front.png + back.png. BoardArt\n` +
+      `// appends it as ?v= to bust Oxygen's 1-year immutable asset cache when board\n` +
+      `// art is regenerated in place.\n` +
+      `export const BOARD_ART_VERSION = '${v}';\n`,
+  );
+  console.log(`Wrote ${out} — version ${v}`);
+}
+
 function usage() {
   console.error(
     'Usage:\n' +
       '  node scripts/export-board-art.mjs <path-to-.kicad_pcb> <handle>\n' +
-      '  node scripts/export-board-art.mjs --all',
+      '  node scripts/export-board-art.mjs --all\n' +
+      '  node scripts/export-board-art.mjs --all --components-only\n' +
+      '  node scripts/export-board-art.mjs <pcb> <handle> --components-only\n' +
+      '\n' +
+      '  --components-only  regenerate ONLY components.json (no svg/render).',
   );
   process.exit(2);
 }
 
-const args = process.argv.slice(2);
+const rawArgs = process.argv.slice(2);
+const componentsOnly = rawArgs.includes('--components-only');
+const args = rawArgs.filter((a) => a !== '--components-only');
+// In --components-only mode we skip kicad-cli svg + render and only rewrite
+// components.json (board.svg / front.png / back.png are left untouched).
+const build = componentsOnly ? buildComponentsOnly : buildBoard;
+
 if (args[0] === '--all') {
   const boards = loadConfig();
   const failures = [];
@@ -703,18 +841,24 @@ if (args[0] === '--all') {
       continue;
     }
     try {
-      buildBoard(pcb, handle);
+      build(pcb, handle);
     } catch (err) {
       failures.push(`${handle}: ${err.message}`);
     }
   }
+  // Refresh the cache-bust token from the on-disk outputs — runs on both the
+  // full render path and the render-free --components-only path, so the token
+  // can be rebaked without re-rendering. The hash covers board.svg/front/back
+  // PNGs, so a render-free run that doesn't touch them yields the same token.
+  writeVersionFile();
   if (failures.length) {
     console.error(`\n${failures.length} board(s) failed:`);
     for (const f of failures) console.error(`  - ${f}`);
     process.exit(1);
   }
 } else if (args.length === 2) {
-  buildBoard(args[0], args[1]);
+  build(args[0], args[1]);
+  writeVersionFile();
 } else {
   usage();
 }

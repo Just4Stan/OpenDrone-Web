@@ -222,8 +222,13 @@ export default function Collection() {
     setSearchParams(next, {preventScrollReset: true});
   };
 
-  const filterLink = (label: string, active: boolean, onClick: () => void) => (
-    <li>
+  const filterLink = (
+    key: string,
+    label: string,
+    active: boolean,
+    onClick: () => void,
+  ) => (
+    <li key={key}>
       <button
         type="button"
         className={`catalog-filter${active ? ' is-active' : ''}`}
@@ -253,18 +258,18 @@ export default function Collection() {
             <div className="catalog-filter-group">
               <h2 className="catalog-filter-head">Categories</h2>
               <ul className="catalog-filter-list">
-                {filterLink('All products', !activeType && !onlySale, () => {
+                {filterLink('all', 'All products', !activeType && !onlySale, () => {
                   const next = new URLSearchParams(searchParams);
                   next.delete('type');
                   next.delete('sale');
                   setSearchParams(next, {preventScrollReset: true});
                 })}
                 {anyOnSale &&
-                  filterLink('On sale', onlySale, () =>
+                  filterLink('on-sale', 'On sale', onlySale, () =>
                     setParam('sale', onlySale ? null : '1'),
                   )}
                 {categories.map((c) =>
-                  filterLink(c.label, activeType === c.value, () =>
+                  filterLink(c.value, c.label, activeType === c.value, () =>
                     setParam('type', activeType === c.value ? null : c.value),
                   ),
                 )}

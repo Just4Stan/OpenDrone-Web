@@ -7,6 +7,7 @@ import {
   THEME_STORAGE_KEY,
   type Theme,
 } from '~/lib/theme';
+import {safeStartViewTransition} from '~/lib/view-transition';
 
 const MOON = (
   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -75,23 +76,26 @@ export function ThemeToggle({className}: {className?: string}) {
     };
     // Circular reveal from the click point via the View Transitions API. The
     // new theme wipes in as an expanding circle. Falls back to an instant swap
-    // where unsupported or under reduced-motion.
-    const startVT = (document as Document & {
-      startViewTransition?: (cb: () => void) => unknown;
-    }).startViewTransition?.bind(document);
-    const reduce =
-      typeof window !== 'undefined' &&
-      window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    if (!startVT || reduce) {
-      apply();
-      return;
-    }
+    // where unsupported, under reduced-motion, or — critically — while another
+    // transition (e.g. a React Router navigation) is already in flight: starting
+    // one then would abort the other and throw
+    // `InvalidStateError: Transition was aborted because of invalid state`.
+    // safeStartViewTransition guards all of that, always applies the theme, and
+    // never throws/rejects.
     const root = document.documentElement;
     root.style.setProperty('--vt-x', `${e?.clientX ?? window.innerWidth - 40}px`);
     root.style.setProperty('--vt-y', `${e?.clientY ?? 40}px`);
     root.classList.add('theme-vt');
-    const vt = startVT(apply) as {finished?: Promise<void>};
-    void vt?.finished?.finally(() => root.classList.remove('theme-vt'));
+    const vt = safeStartViewTransition(apply);
+    if (!vt) {
+      // Ran the swap directly (no transition) — drop the marker class again so
+      // it can't leak into a later transition.
+      root.classList.remove('theme-vt');
+      return;
+    }
+    void Promise.resolve(vt.finished)
+      .catch(() => {})
+      .finally(() => root.classList.remove('theme-vt'));
   }
 
   const next = theme === 'dark' ? 'light' : 'dark';
