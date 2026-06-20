@@ -667,10 +667,13 @@ export default function Product() {
     const HEADER = 56; // --header-height
     const isDesktop = () => window.matchMedia('(min-width: 960px)').matches;
     const measure = () => {
-      const r = section.getBoundingClientRect();
-      // clientWidth excludes the scrollbar, so the rail's right edge lines up
-      // with the content gutter rather than floating over the scrollbar.
-      const right = Math.round(document.documentElement.clientWidth - r.right);
+      // Anchor the pinned rail's right edge to the floating header pill's right
+      // edge so the two pills line up exactly (fall back to the hero section if
+      // the header isn't found). clientWidth excludes the scrollbar so the edge
+      // sits on the content gutter, not over the scrollbar.
+      const headerEl = document.querySelector('.site-header-main');
+      const refRight = (headerEl ?? section).getBoundingClientRect().right;
+      const right = Math.round(document.documentElement.clientWidth - refRight);
       setRailBox({right});
       setRailMobile(!isDesktop());
     };
