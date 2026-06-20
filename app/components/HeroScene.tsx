@@ -111,10 +111,8 @@ function smoothstep(edge0: number, edge1: number, x: number) {
   return t * t * (3 - 2 * t);
 }
 
-// Module-level reusable Color instances — saves two allocations per
-// useFrame tick (which at 120Hz is ~14k allocs/min into the GC).
-const GOLD_TINT = new THREE.Color(0xb8922e);
-const BLACK = new THREE.Color(0x000000);
+// Warm gold emissive for the selected part's glow (brand accent).
+const GLOW_TINT = new THREE.Color(0xc79a32);
 
 /**
  * KiCad/Blender GLB exports typically produce a fresh material instance
@@ -352,6 +350,7 @@ function DroneAssembly({
   loadDelayMs,
   size: airframeSize,
   scrubRef,
+  spotlightRef,
   onNavigate,
 }: {
   scrollRef: React.RefObject<number>;
@@ -363,6 +362,10 @@ function DroneAssembly({
    *  the render loop reads it each frame. When non-null it drives the
    *  cross-slide directly so the airframe tracks the thumb 1:1. */
   scrubRef?: React.RefObject<number | null>;
+  /** Which board the visitor is hovering on the right-side product cards, or
+   *  null. A ref (not state) so hovering doesn't re-render the page; the render
+   *  loop reads it each frame and pins that board's spotlight to full. */
+  spotlightRef?: React.RefObject<'fc' | 'esc' | 'frame' | null>;
   /** Client-side navigate, threaded from HeroScene (outside the r3f Canvas,
    *  where Router context is available). Used by the part hotspots so a click
    *  is an instant SPA transition into the prefetched PDP rather than a full
@@ -381,6 +384,9 @@ function DroneAssembly({
   const tmpVec = useRef(new THREE.Vector3()).current;
   const bboxVec = useRef(new THREE.Vector3()).current;
   const bbox = useRef(new THREE.Box3()).current;
+  // Reused temporaries for the "lift the focused board toward the camera" math.
+  const camLocalVec = useRef(new THREE.Vector3()).current;
+  const tmpQuat = useRef(new THREE.Quaternion()).current;
   const wrapperRef = useRef<Group>(null);
   const frameRef = useRef<Group>(null);
   const escRef = useRef<Group>(null);
@@ -398,6 +404,16 @@ function DroneAssembly({
   const fcMats = useRef<any[]>([]);
   const hoverState = useRef({frame: 0, esc: 0, fc: 0});
   const hoverTarget = useRef({frame: 0, esc: 0, fc: 0});
+  // Seconds parked on the frame stop — used to hold the frame's spotlight for a
+  // beat after it reveals, then fade it out so the very end settles unlit.
+  const frameHoldRef = useRef(0);
+  // Latched scroll direction. While scrolling BACK (up) the per-part highlight
+  // choreography is skipped — only the camera zoom eases smoothly back in.
+  const reverseRef = useRef(false);
+  // Smoothed pitch/roll so the board-view tilt eases back to rest on scroll-back
+  // instead of snapping when the focus is suppressed.
+  const tiltXRef = useRef(0.45);
+  const tiltZRef = useRef(0.05);
   // Which size is currently shown, and the direction of the active swap along
   // the size row (+1 = moving toward a later item → incoming slides in from
   // the right; −1 = toward an earlier item → in from the left). Lets the
@@ -838,52 +854,112 @@ function DroneAssembly({
     const p = scrollRef.current;
     dampedP.current = p;
 
-    // Animation curves
-    // Phase 1 (0-0.35): zoom out from stack to reveal full drone
-    // Phase 2 (0.35-0.7): parts fly out to side-by-side
-    const zoomOut = smoothstep(0, 0.35, p);
-    const flyOut = smoothstep(0.3, 0.65, p);
-    const flatten = smoothstep(0.2, 0.55, p);
-    const rotSlow = smoothstep(0, 0.5, p);
-    const frameOpacity = smoothstep(0.3, 0.55, p);
-    const dragInf = 1 - flyOut * 0.9;
+    // The drone no longer explodes on scroll — it stays assembled and turning
+    // the whole time. Scroll instead pops the product cards out of the Shop
+    // bubble on the right (see _index.tsx) and, in here, (a) spotlights the
+    // matching board as each card reveals and (b) pulls the camera back a touch
+    // once the frame — the LAST card — appears, so the whole airframe reads.
+    // These reveal windows MUST match the linearstep windows the route uses to
+    // pop the cards, or the glow and the card fall out of sync. Spread out with
+    // dwell gaps between them so each card is a deliberate, separate scroll
+    // beat rather than a continuous sweep.
+    // Each reveal plays out within one snap-step gap (stops at p ≈ 0, 0.34,
+    // 0.67, 1.0 — see the step controller in _index.tsx), so each board's card
+    // is fully shown by the time the scroll settles on its stop.
+    const fcReveal = smoothstep(0.08, 0.3, p);
+    const escReveal = smoothstep(0.4, 0.62, p);
+    const frameReveal = smoothstep(0.72, 0.94, p);
 
-    // Auto-rotate — only while the window is focused. Blurred, it freezes so the
-    // demand loop can stop re-arming (see the invalidate gate at the bottom).
+    // Latch scroll direction. Scrolling back (p decreasing) suppresses the
+    // per-part highlight choreography so it doesn't replay in reverse — the
+    // camera zoom still eases smoothly because CameraRig reads p directly, not
+    // this gate.
+    if (p < prevP - 0.0008) reverseRef.current = true;
+    else if (p > prevP + 0.0008) reverseRef.current = false;
+    const playing = reverseRef.current ? 0 : 1;
+
+    // Per-board focus weights — which centre board the spotlight is on.
+    // fcFocus peaks at the FC stop, escFocus at the ESC stop; boardFocus is 1
+    // while either is held, 0 at the top and once the frame reveals. Gated by
+    // `playing` so the highlights only run on the way down.
+    const fcFocus = fcReveal * (1 - escReveal) * playing;
+    const escFocus = escReveal * (1 - frameReveal) * playing;
+    const boardFocus = fcFocus + escFocus;
+
+    // Frame highlight with a timed hold: once parked on the frame stop the frame
+    // stays highlighted for ~1.5s and then fades, so it gets a real beat in the
+    // spotlight before the end settles unlit (a pure scroll-position fade would
+    // be over in a frame since the stop sits at p≈1).
+    if (frameReveal > 0.98) frameHoldRef.current += dt;
+    else frameHoldRef.current = 0;
+    const FRAME_HOLD = 1.5;
+    const FRAME_FADE = 0.6;
+    const frameHi =
+      frameReveal *
+      (1 - smoothstep(FRAME_HOLD, FRAME_HOLD + FRAME_FADE, frameHoldRef.current)) *
+      playing;
+
+    // Halt the auto-rotate while scrolling through the FC/ESC reveals so the
+    // board being inspected holds still. Spin runs at the very top (the idle
+    // hero) and resumes once the frame is revealed (zoomed out) at the end.
+    const rotateAmt = Math.max(1 - smoothstep(0, 0.06, p), frameReveal);
     if (!dragging.current && focusedRef.current) {
-      rotRef.current += dt * THREE.MathUtils.lerp(0.12, 0.0, rotSlow);
+      rotRef.current += dt * 0.12 * rotateAmt;
     }
 
     // Always decay drag after release — absorb into rotRef to avoid unwinding
     if (!dragging.current) {
       const decayRate = Math.min(1, 3 * dt);
-      const absorbY = dragRef.current.y * decayRate * dragInf;
+      const absorbY = dragRef.current.y * decayRate;
       const absorbX = dragRef.current.x * decayRate;
       rotRef.current += absorbY;
-      dragRef.current.y -= absorbY / (dragInf || 1);
+      dragRef.current.y -= absorbY;
       dragRef.current.x -= absorbX;
       // Snap to zero when close enough
       if (Math.abs(dragRef.current.y) < 0.0005) dragRef.current.y = 0;
       if (Math.abs(dragRef.current.x) < 0.0005) dragRef.current.x = 0;
     }
 
-    // Rotation
-    const autoRot = rotRef.current + dragRef.current.y * dragInf;
-    const targetY = Math.round(autoRot / (Math.PI * 2)) * (Math.PI * 2);
-    wrapperRef.current.rotation.y = THREE.MathUtils.lerp(autoRot, targetY, flyOut * flyOut);
-    wrapperRef.current.rotation.x = THREE.MathUtils.lerp(
-      0.45 + dragRef.current.x * dragInf, 0, flatten
+    // Rotation — assembled pose, perpetual spin + drag. No explode-driven
+    // settling anymore, so the model tracks autoRot/drag directly.
+    // Y azimuth: free spin (+ drag) normally; while a centre board is held, ease
+    // to a slight 3/4 angle off front (not dead-on) so the board reads with some
+    // depth instead of flat-on.
+    const FOCUS_AZIMUTH = 0.4; // ~23° off front
+    // Ease the spin accumulator ITSELF toward the nearest front-facing 3/4 angle
+    // as a board takes focus — rather than overriding the display on top of a
+    // frozen spin value. That way, releasing focus on the way back leaves the
+    // drone AT this front view and the spin simply resumes from here; it no
+    // longer snaps back to whatever angle it was at before you scrolled in.
+    const frontTarget =
+      Math.round(rotRef.current / (Math.PI * 2)) * (Math.PI * 2) + FOCUS_AZIMUTH;
+    rotRef.current = THREE.MathUtils.lerp(
+      rotRef.current,
+      frontTarget,
+      Math.min(1, boardFocus * 6 * dt),
     );
-    wrapperRef.current.rotation.z = THREE.MathUtils.lerp(0.05, 0, flatten);
+    wrapperRef.current.rotation.y = rotRef.current + dragRef.current.y;
+    // X tilt: resting 3/4 view normally. FC reads from a slight downward front
+    // angle; ESC sits beneath it, so it gets a steeper look-down so the FC
+    // doesn't cover it. Each board's angle is weighted by its own focus.
+    const FC_TILT = 0.32; // slight angle from the front
+    const ESC_TILT = 0.62; // steeper look-down to clear the FC
+    const targetTiltX =
+      (1 - boardFocus) * 0.45 + fcFocus * FC_TILT + escFocus * ESC_TILT;
+    const targetTiltZ = (1 - boardFocus) * 0.05;
+    // Ease pitch/roll toward target so that when focus is suppressed on the way
+    // back, the tilt settles to rest smoothly instead of snapping.
+    const tiltEase = Math.min(1, 6 * dt);
+    tiltXRef.current += (targetTiltX - tiltXRef.current) * tiltEase;
+    tiltZRef.current += (targetTiltZ - tiltZRef.current) * tiltEase;
+    wrapperRef.current.rotation.x = tiltXRef.current + dragRef.current.x;
+    wrapperRef.current.rotation.z = tiltZRef.current;
 
-    // Scale — small enough to fit all 3 on screen
-    wrapperRef.current.scale.setScalar(THREE.MathUtils.lerp(7, 8, flyOut));
-
-    // Rest lift — at the top of the hero (pre-scroll) the assembly otherwise
-    // sits low in frame; raise it so the stack reads centered. Eases back to 0
-    // as the explode begins so the side-by-side layout stays vertically centred.
-    const restLift = 1 - smoothstep(0, 0.3, p);
-    wrapperRef.current.position.y = restLift * 0.07;
+    // Scale + lift are constant — the assembled drone keeps a fixed size; the
+    // end-of-scroll zoom-out is done by pulling the CAMERA back (CameraRig),
+    // not by shrinking the model.
+    wrapperRef.current.scale.setScalar(7);
+    wrapperRef.current.position.y = 0.07;
 
     // Cross-slide — on a size toggle the incoming assembly slides in from the
     // right while the outgoing one (frozen in outWrapperRef) slides out to the
@@ -891,7 +967,14 @@ function DroneAssembly({
     // (zoom out) toward the middle of the swap, and the horizontal motion uses
     // an ease-in-out so it starts and stops gently. Applied on top of the
     // scroll transforms (absolute each frame), so x/scale just reset when idle.
-    const SLIDE = 1.3;
+    // Scale the slide distance with how far the camera has pulled back. At the
+    // frame reveal the camera zooms all the way out, so the frustum is ~2× wider
+    // at the model plane; a fixed 1.3-unit slide no longer carried the outgoing
+    // trio past the edge, so it was still on screen when finishOutgoing detached
+    // it — reading as the old model "just disappearing". Scaling by the camera
+    // distance (0.72 = the zoomed-in baseline) keeps the outgoing fully off
+    // screen before removal at any zoom level.
+    const SLIDE = 1.3 * Math.max(1, camera.position.length() / 0.72);
     const TRANS_DUR = 0.85;
     // easeInOutCubic — gentle acceleration then deceleration.
     const easeSwap = (t: number) =>
@@ -936,71 +1019,89 @@ function DroneAssembly({
       if (outgoingRef.current) finishOutgoing();
     }
 
-    // Frame — becomes more solid during fly-out
-    frameRef.current.position.set(
-      0,
-      THREE.MathUtils.lerp(0, 0.012, flyOut),
-      THREE.MathUtils.lerp(0, 0.025, flyOut),
-    );
-    // Frame stays semi-transparent in BOTH themes so the boards show through.
-    // Dark mode uses a much darker carbon grey (and more transparency) so it
-    // reads as a true black frame against the dark page; light mode stays a
-    // mid grey, a touch more solid so the pale page doesn't wash it out.
-    const b = lightRef.current
-      ? THREE.MathUtils.lerp(0x6e, 0x96, flyOut)
-      : THREE.MathUtils.lerp(0x14, 0x22, flyOut);
-    for (const mat of frameMats.current) {
-      if (!mat?.transparent) continue;
-      mat.opacity = lightRef.current
-        ? (flyOut < 0.5 ? THREE.MathUtils.lerp(0.72, 0.9, frameOpacity) : 0.9)
-        : (flyOut < 0.5 ? THREE.MathUtils.lerp(0.4, 0.58, frameOpacity) : 0.58);
-      mat.color.setRGB(b / 255, b / 255, b / 255);
+    frameRef.current.position.set(0, 0, 0);
+    frameRef.current.scale.setScalar(1);
+
+    // Highlight focus — smoothed per-part target (scroll reveal + hover
+    // override). The frame's hold (frameHi) gives it a beat before settling.
+    const hovered = spotlightRef?.current ?? null;
+    if (hovered) {
+      // Hovering a product card selects ONLY that part and overrides the scroll
+      // focus entirely — otherwise the hovered part AND the scroll-focused part
+      // were both "selected" at once (both lifted toward the camera and glowed),
+      // which collided into a broken-looking double state.
+      hoverTarget.current.fc = hovered === 'fc' ? 1 : 0;
+      hoverTarget.current.esc = hovered === 'esc' ? 1 : 0;
+      hoverTarget.current.frame = hovered === 'frame' ? 1 : 0;
+    } else {
+      hoverTarget.current.fc = fcFocus;
+      hoverTarget.current.esc = escFocus;
+      hoverTarget.current.frame = frameHi;
     }
-    frameRef.current.scale.setScalar(THREE.MathUtils.lerp(1, 0.45, flyOut));
-
-    // Spread the side-boards wider on wider viewports. The multiplier
-    // grows with aspect — ultrawide gets the most spread, near-square
-    // stays tight so cards don't run off the edges.
-    const aspect = size.width / Math.max(1, size.height);
-    const spreadMul = THREE.MathUtils.clamp(0.55 + (aspect - 1.3) * 0.55, 0.85, 1.5);
-    const spread = 0.05 * spreadMul;
-
-    // FC — slides left (closer to center)
-    fcRef.current.position.set(
-      THREE.MathUtils.lerp(0, -spread, flyOut),
-      THREE.MathUtils.lerp(0, 0.008, flyOut),
-      THREE.MathUtils.lerp(0, 0.04, flyOut),
-    );
-
-    // ESC — slides right (closer to center)
-    escRef.current.position.set(
-      THREE.MathUtils.lerp(0, spread, flyOut),
-      THREE.MathUtils.lerp(0, 0.008, flyOut),
-      THREE.MathUtils.lerp(0, 0.04, flyOut),
-    );
-
-    // Hover effect — gold emissive lift on the hovered board. Replaces a
-    // per-board PointLight wash that previously cost a real light bind +
-    // per-fragment shading across every surface it touched.
     let glowAnimating = false;
-    // Clear hover when scrolled back before interactive threshold
-    if (p < 0.65) {
-      hoverTarget.current.frame = 0;
-      hoverTarget.current.esc = 0;
-      hoverTarget.current.fc = 0;
-      document.body.style.cursor = '';
-    }
+    let anyFocus = 0;
     for (const key of ['frame', 'esc', 'fc'] as const) {
       const target = hoverTarget.current[key];
       const prev = hoverState.current[key];
       hoverState.current[key] += (target - prev) * Math.min(1, 8 * dt);
       if (Math.abs(hoverState.current[key] - target) > 0.01) glowAnimating = true;
-      const intensity = hoverState.current[key];
-      const mats = key === 'frame' ? frameMats : key === 'esc' ? escMats : fcMats;
-      for (const m of mats.current) {
-        if (!m || !('emissive' in m)) continue;
-        (m as any).emissive.copy(BLACK).lerp(GOLD_TINT, intensity * 0.18);
-        (m as any).emissiveIntensity = intensity * 0.85;
+      if (hoverState.current[key] > anyFocus) anyFocus = hoverState.current[key];
+    }
+
+    // Spotlight ONE component at a time. Two cheap, robust moves (NO transparency
+    // — that sorted badly and jumbled the overlapping boards):
+    //  1. Lift the focused board toward the camera so it pops clear of the stack
+    //     instead of hiding behind the board above it.
+    //  2. Darken everything that isn't focused (multiply its base colour down) so
+    //     the lit component stands alone. Opaque throughout → no sort artifacts.
+    const LIFT = 0.02;
+    camLocalVec
+      .copy(camera.position)
+      .normalize()
+      .applyQuaternion(tmpQuat.copy(wrapperRef.current.quaternion).invert());
+    fcRef.current.position
+      .copy(camLocalVec)
+      .multiplyScalar(LIFT * hoverState.current.fc);
+    escRef.current.position
+      .copy(camLocalVec)
+      .multiplyScalar(LIFT * hoverState.current.esc);
+
+    const DIM = 0.82; // how hard non-focused parts darken
+    const GLOW = 0.06; // gold emissive strength on the selected part (subtle)
+    const brightOf = (f: number) => Math.max(0.2, 1 - (anyFocus - f) * DIM);
+    // Darken non-focused parts (colour) AND glow the focused one (gold emissive
+    // scaled by its own focus, so it lights up as it's selected and fades out
+    // again as focus moves on).
+    const applyPart = (matsRef: React.MutableRefObject<any[]>, focus: number) => {
+      const bright = brightOf(focus);
+      for (const m of matsRef.current) {
+        if (!m || !m.color) continue;
+        if (!m.userData.baseColor) m.userData.baseColor = m.color.clone();
+        m.color.copy(m.userData.baseColor).multiplyScalar(bright);
+        if (m.emissive) {
+          m.emissive.copy(GLOW_TINT);
+          m.emissiveIntensity = focus * GLOW;
+        }
+      }
+    };
+    applyPart(fcMats, hoverState.current.fc);
+    applyPart(escMats, hoverState.current.esc);
+
+    // Frame — fixed (less-transparent) opacity that firms up while it's the
+    // focused product; its grey darkens when a board holds the focus, and it
+    // glows gold while the frame itself is selected.
+    const frameFocus = hoverState.current.frame;
+    const frameBright = brightOf(frameFocus);
+    const fb = ((lightRef.current ? 0x6e : 0x14) / 255) * frameBright;
+    const frameBase = lightRef.current ? 0.58 : 0.6;
+    const frameHiOp = lightRef.current ? 0.82 : 0.92;
+    for (const m of frameMats.current) {
+      if (!m) continue;
+      m.opacity = THREE.MathUtils.lerp(frameBase, frameHiOp, frameFocus);
+      if (m.color) m.color.setRGB(fb, fb, fb);
+      if (m.emissive) {
+        m.emissive.copy(GLOW_TINT);
+        m.emissiveIntensity = frameFocus * GLOW * 0.6;
       }
     }
 
@@ -1050,7 +1151,7 @@ function DroneAssembly({
     // Auto-rotate keeps the loop alive only while focused — a blurred window
     // (still "visible", so visibilitychange never fired) otherwise burns the GPU
     // at full rate on a rotation no one is watching.
-    const isAutoRotating = rotSlow < 0.99 && focusedRef.current;
+    const isAutoRotating = focusedRef.current; // perpetual spin while focused
     const hasDragMomentum =
       Math.abs(dragRef.current.x) > 0.0005 ||
       Math.abs(dragRef.current.y) > 0.0005;
@@ -1065,7 +1166,11 @@ function DroneAssembly({
     }
   });
 
-  const isInteractive = useCallback(() => scrollRef.current >= 0.65, [scrollRef]);
+  // The drone is always assembled now, so the three boards overlap spatially and
+  // there's no unambiguous part to click/hover. Disable per-part interaction —
+  // the spotlight is driven by scroll reveal, and clicking the stack should do
+  // nothing rather than navigate to a guessed PDP. Drag-to-rotate still works.
+  const isInteractive = useCallback(() => false, []);
 
   const handleClick = useCallback((url: string) => {
     if (!dragMoved.current && isInteractive()) {
@@ -1283,21 +1388,14 @@ function AdaptiveDpr() {
  * shadows read clearly. Key and rim stay constant — that earlier
  * dimming was what caused the dark→light→dark feel.
  */
-function SceneLights({scrollRef}: {scrollRef: React.RefObject<number>}) {
-  const hemiRef = useRef<THREE.HemisphereLight>(null);
-
-  useFrame(() => {
-    if (!hemiRef.current) return;
-    const t = 1 - smoothstep(0.5, 0.85, scrollRef.current);
-    hemiRef.current.intensity = THREE.MathUtils.lerp(0.3, 0.72, t);
-  });
-
+function SceneLights() {
+  // Constant lighting — highlighting is done per-object (fading the
+  // non-focused parts' opacity in DroneAssembly), not by touching the lights,
+  // so a single board can be isolated instead of the whole scene reacting.
   return (
     <>
-      <hemisphereLight ref={hemiRef} args={['#cfdaeb', '#1a1d22', 0.72]} />
-      {/* Warm key light. No longer casts — nothing in the scene was set to
-          receive a real cast shadow (boards are out of shadows, frame only
-          "received" with no casters), so shadow rendering was pure overhead. */}
+      <hemisphereLight args={['#cfdaeb', '#1a1d22', 0.72]} />
+      {/* Warm key light. No casts — nothing receives a real shadow. */}
       <spotLight
         position={[0, 2.4, 0.9]}
         angle={0.58}
@@ -1307,12 +1405,7 @@ function SceneLights({scrollRef}: {scrollRef: React.RefObject<number>}) {
         intensity={32}
         color="#ffe8cc"
       />
-      {/* Cool fill / rim from behind-left. Was a second spotLight — converted
-          to a directionalLight: it casts no shadow and only needs to wash the
-          dark side, so the per-fragment cone+distance attenuation a spotLight
-          pays for was wasted. A directional is a plain dot-product, noticeably
-          cheaper at this fill rate. Aim is position → origin (default target).
-          Intensity retuned for the directional model (no decay/distance). */}
+      {/* Cool fill / rim from behind-left. */}
       <directionalLight
         position={[-1.4, 0.35, -0.7]}
         intensity={0.8}
@@ -1328,17 +1421,17 @@ function CameraRig({scrollRef}: {scrollRef: React.RefObject<number>}) {
   useFrame(() => {
     const p = scrollRef.current;
 
-    // Phase 1: zoom out from tight stack view
-    // Phase 2: pull back to show all 3 side by side
-    const zoomOut = smoothstep(0, 0.35, p);
-    const pullBack = smoothstep(0.3, 0.65, p);
+    // Hold the tight assembled view through the FC + ESC reveals, then pull the
+    // camera back ONLY once it reaches the frame (the last card) so the whole
+    // airframe clears the edges. Window matches HeroScene's frame reveal.
+    const pull = smoothstep(0.72, 1.0, p);
 
     camera.position.set(
       0,
-      THREE.MathUtils.lerp(0.15, 0.35, zoomOut) + THREE.MathUtils.lerp(0, -0.05, pullBack),
-      THREE.MathUtils.lerp(0.7, 1.2, zoomOut) + THREE.MathUtils.lerp(0, 0.3, pullBack),
+      THREE.MathUtils.lerp(0.15, 0.3, pull),
+      THREE.MathUtils.lerp(0.7, 1.5, pull),
     );
-    camera.lookAt(0, THREE.MathUtils.lerp(0, 0.03, pullBack), 0);
+    camera.lookAt(0, 0, 0);
   });
   return null;
 }
@@ -1352,6 +1445,7 @@ export function HeroScene({
   loadDelayMs,
   size = '5',
   scrubRef,
+  spotlightRef,
 }: {
   onReady?: () => void;
   onProgress?: (progress: number) => void;
@@ -1359,6 +1453,7 @@ export function HeroScene({
   loadDelayMs?: number;
   size?: '5' | '3';
   scrubRef?: React.RefObject<number | null>;
+  spotlightRef?: React.RefObject<'fc' | 'esc' | 'frame' | null>;
 } = {}) {
   const [mounted, setMounted] = useState(false);
   const [perf, setPerf] = useState<PerfSample | null>(null);
@@ -1441,7 +1536,7 @@ export function HeroScene({
             target so every consumer below reads the damped value this frame. */}
         <ScrollDamper targetRef={targetRef} smoothRef={smoothRef} />
         <AdaptiveDpr />
-        <SceneLights scrollRef={smoothRef} />
+        <SceneLights />
         <CameraRig scrollRef={smoothRef} />
         <DroneAssembly
           scrollRef={smoothRef}
@@ -1451,6 +1546,7 @@ export function HeroScene({
           loadDelayMs={loadDelayMs}
           size={size}
           scrubRef={scrubRef}
+          spotlightRef={spotlightRef}
           onNavigate={(url) => void navigate(url)}
         />
         <EffectComposer multisampling={0} enableNormalPass={false}>

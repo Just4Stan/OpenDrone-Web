@@ -695,29 +695,73 @@ html {
   pointer-events: auto;
 }
 
-/* GitHub bubble, top-right (a circular pill Pod). Drops in with the other
-   hero chrome once the splash settles. */
+/* GitHub mark — bare logo (no circle/pod), vertically centred on the left edge
+   of the screen. Drops in once the splash settles and stays put through the
+   scroll. `margin-top` does the vertical centring so the drop-in
+   `transform: translateY()` is free to animate. */
 .hero-github {
   position: absolute;
-  top: calc(var(--header-height) + 1.7rem);
-  right: var(--rail-gutter);
+  top: 50%;
+  margin-top: -44px; /* half of height — vertical centre on the left edge */
+  left: var(--rail-gutter);
   z-index: 25;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 46px;
-  height: 46px;
+  width: 88px;
+  height: 88px;
   color: var(--color-text);
-  transform: translateY(8px);
-  transition: transform 0.6s ease-out 0.5s, color 0.2s ease;
+  /* Hidden resting state — parked off the left edge. The is-visible class
+     glides it in from there. */
+  transform: translateX(-160%);
+  opacity: 0;
+  transition: color 0.2s ease;
   pointer-events: none;
 }
 .hero-github.is-visible {
-  transform: translateY(0);
+  opacity: 1;
   pointer-events: auto;
+  animation: island-splash-left 0.7s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 .hero-github:hover {
   color: var(--color-gold);
+}
+
+/* Island entrances — the floating "islands" glide in from their nearest screen
+   edge and settle with a single smooth deceleration (easeOutExpo on the
+   .is-visible rule). No overshoot, no squash — a clean, weighted slide that
+   reads premium rather than springy/cheap. */
+@keyframes island-splash-left {
+  0% {
+    opacity: 0;
+    transform: translateX(-160%);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+@keyframes island-splash-bottom {
+  0% {
+    opacity: 0;
+    transform: translateY(150%);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Reduced motion: no splash, no spring — just present the islands in place. */
+@media (prefers-reduced-motion: reduce) {
+  .hero-github,
+  .hero-github.is-visible,
+  .hero-buy,
+  .hero-buy.is-visible {
+    animation: none;
+    transform: none;
+    opacity: 1;
+  }
 }
 
 .hero-action-primary {
@@ -725,7 +769,7 @@ html {
   align-items: center;
   justify-content: center;
   gap: 0.75rem;
-  min-width: 20rem;
+  min-width: 26rem; /* 30% wider than the old 20rem anchor */
   padding: 1rem 2.25rem;
   background: var(--color-gold);
   color: var(--color-on-accent);
@@ -800,6 +844,223 @@ html {
   font-family: var(--font-mono);
   font-size: var(--fs-xs);
   color: var(--color-text-muted);
+}
+
+/* Buy bubble — bottom-right anchor. The Shop button sits at the bottom; the
+   product cards stack ABOVE it and grow upward as they reveal (column-reverse
+   so the first revealed card, FC, sits nearest the button and the frame ends
+   up on top). Container is pointer-events:none so the gaps between revealed
+   cards pass clicks/drags through to the drone behind; the button and each
+   revealed card re-enable their own pointer events. */
+.hero-buy {
+  position: absolute;
+  bottom: 2.5rem;
+  right: 2.5rem;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.5rem;
+  /* Hidden resting state — parked below the bottom edge. is-visible glides it
+     up from there. */
+  transform: translateY(150%);
+  opacity: 0;
+  pointer-events: none;
+}
+.hero-buy.is-visible {
+  opacity: 1;
+  animation: island-splash-bottom 0.7s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.hero-buy-btn {
+  pointer-events: auto;
+}
+.hero-buy-stack {
+  display: flex;
+  flex-direction: column-reverse;
+  /* gap:0 — a fixed gap would reserve space for the collapsed (0-height) cards
+     and leave a phantom band above the button. Inter-card spacing is instead
+     baked into each card's reveal (inline margin scaled by progress). */
+  gap: 0;
+}
+
+/* A single revealing product card. max-height / opacity / transform are driven
+   inline per scroll frame (scrubbed off scrollProgress), so they carry NO CSS
+   transition — only the hover affordances do — otherwise the transition would
+   fight the per-frame scrub and lag behind the scroll. overflow:hidden lets the
+   inline max-height clip the card as it grows out of the bubble. */
+.hero-reveal-card {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.85rem 1rem;
+  overflow: hidden;
+  background: var(--pod-bg-strong);
+  backdrop-filter: blur(var(--pod-blur));
+  -webkit-backdrop-filter: blur(var(--pod-blur));
+  border: 1px solid var(--pod-border);
+  border-radius: var(--r-md);
+  box-shadow: var(--pod-shadow);
+  color: var(--color-text);
+  transition: border-color 0.15s ease;
+}
+.hero-reveal-card:hover {
+  border-color: color-mix(in srgb, var(--color-gold) 50%, transparent);
+}
+.hero-reveal-media {
+  flex: 0 0 auto;
+  width: 4.25rem;
+  height: 4.25rem;
+  border-radius: var(--r-sm);
+  overflow: hidden;
+  background: var(--color-bg-elevated);
+  display: grid;
+  place-items: center;
+}
+.hero-reveal-media img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+.hero-reveal-ph {
+  width: 100%;
+  height: 100%;
+  background: var(--color-bg-card);
+}
+.hero-reveal-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+.hero-reveal-title {
+  font-size: var(--fs-md);
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.hero-reveal-sub {
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+.hero-reveal-price {
+  flex: 0 0 auto;
+  font-family: var(--font-mono);
+  font-size: var(--fs-md);
+  color: var(--color-gold);
+}
+
+/* Drag-to-view hint — centred over the drone, fades in after a few idle
+   seconds and dismisses on first interaction. */
+.hero-drag-hint {
+  position: absolute;
+  top: 60%;
+  left: 50%;
+  transform: translate(-50%, 0);
+  z-index: 20;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.4rem 0.85rem;
+  border-radius: var(--r-pill);
+  background: var(--pod-bg);
+  border: 1px solid var(--pod-border);
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.5s ease, transform 0.5s ease;
+}
+.hero-drag-hint.is-visible {
+  opacity: 1;
+  transform: translate(-50%, -6px);
+  animation: hero-drag-bob 2.4s ease-in-out 0.5s infinite;
+}
+.hero-drag-hint svg {
+  color: var(--color-gold);
+}
+@keyframes hero-drag-bob {
+  0%, 100% { transform: translate(-50%, -6px); }
+  50% { transform: translate(-50%, -10px); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .hero-drag-hint.is-visible {
+    animation: none;
+  }
+}
+
+/* Scroll-to-explore cue — anchored at the bottom of the hero, fades in with the
+   drag hint and dismisses on first interaction. Stacks vertically (label over a
+   bobbing double-chevron) to read as a downward invitation. */
+.hero-scroll-hint {
+  position: absolute;
+  bottom: 2.2rem;
+  left: 50%;
+  transform: translate(-50%, 0);
+  z-index: 20;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.5s ease;
+}
+.hero-scroll-hint.is-visible {
+  opacity: 1;
+}
+.hero-scroll-hint svg {
+  color: var(--color-gold);
+}
+.hero-scroll-hint.is-visible svg {
+  animation: hero-scroll-bob 2.4s ease-in-out 0.5s infinite;
+}
+@keyframes hero-scroll-bob {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(5px); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .hero-scroll-hint.is-visible svg {
+    animation: none;
+  }
+}
+
+/* Hero scene glow — a soft warm radial behind the drone so the stage isn't a
+   flat slab of background. Dark mode lifts the centre with a gold-tinted glow;
+   light mode (twin below) tints the centre warm and feathers a faint vignette
+   to the edges so it reads as a gradient instead of one flat colour. */
+.hero-scene-glow {
+  background: radial-gradient(
+    ellipse at 50% 45%,
+    rgba(80, 65, 20, 0.3) 0%,
+    transparent 60%
+  );
+}
+html.light .hero-scene-glow {
+  background:
+    radial-gradient(
+      ellipse at 50% 45%,
+      rgba(199, 154, 50, 0.18) 0%,
+      transparent 50%
+    ),
+    radial-gradient(
+      ellipse at 50% 42%,
+      transparent 15%,
+      rgba(38, 36, 40, 0.28) 70%,
+      rgba(28, 26, 32, 0.45) 100%
+    );
 }
 
 @media (max-width: 640px) {
@@ -989,6 +1250,61 @@ a:hover {
    Header
    ============================================ */
 
+/* Incutec brand slot (hero only) — wraps the mark so the "Who's incutec?" hint
+   can drop out from beneath it. The hint is hidden until the homepage sets
+   `html.hero-incutec-hint` (~3s after the header lands), then glides down. */
+.site-header-incutec-slot {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+.incutec-hint {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  margin-top: 0.55rem;
+  display: inline-flex;
+  align-items: center;
+  padding: 0.4rem 0.75rem;
+  background: var(--color-gold);
+  color: var(--color-on-accent);
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+  border-radius: var(--r-md);
+  box-shadow: var(--pod-shadow);
+  opacity: 0;
+  transform: translateY(-6px);
+  pointer-events: none;
+  transition: opacity 0.45s ease, transform 0.45s cubic-bezier(0.16, 1, 0.3, 1);
+}
+/* Little caret pointing up at the mark. */
+.incutec-hint::before {
+  content: '';
+  position: absolute;
+  top: -5px;
+  left: 1rem;
+  width: 10px;
+  height: 10px;
+  background: var(--color-gold);
+  transform: rotate(45deg);
+  border-radius: 1px;
+}
+html.hero-incutec-hint .incutec-hint {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+.incutec-hint:hover,
+.incutec-hint:focus-visible {
+  /* Keep the dark ink — the global `a:hover` would otherwise recolor the text
+     gold, leaving it gold-on-gold with no contrast. */
+  background: var(--color-gold-hover);
+  color: var(--color-on-accent);
+}
+
 /* Floating pill header. The .site-header is a transparent fixed band that
    provides the top gap + side gutters and lets pointer events fall through to
    the hero; the visible chrome is .site-header-main, a centered rounded pill
@@ -1042,15 +1358,28 @@ a:hover {
 .site-header-logo {
   display: inline-flex;
   align-items: center;
+  /* Fixed slot width = the wider (OpenDrone) wordmark, so swapping it for the
+     narrower Incutec mark on the hero never shifts the nav chips. */
+  min-width: 6.5rem;
   transition: opacity 0.15s ease;
   line-height: 0;
 }
 
 .site-header-logo img,
-.site-header-wordmark {
+.site-header-wordmark,
+.site-header-incutec {
   display: block;
   height: 1.25rem;
   width: auto;
+}
+
+/* Incutec mark sits a touch larger and nudged in, so its left edge lands on the
+   centre of the pill's rounded-left end — reads as concentric with the corner. */
+.site-header-incutec {
+  height: 1.5rem;
+}
+.site-header-logo--incutec {
+  padding-left: 0.4rem;
 }
 
 /* Inline SVG wordmark fills "Open" with body text + "Drone" with gold via
@@ -1198,6 +1527,17 @@ a:hover {
   }
 }
 
+/* The hamburger is the only nav on mobile (the center menu, family chips and
+   text links are all hidden ≤768px). It must NOT show on desktop — but the
+   Tailwind `md:hidden` utility loses the cascade to `.site-header-icon`'s
+   `display: inline-flex`, so hide it explicitly here (this rule wins by source
+   order over .site-header-icon). */
+@media (min-width: 769px) {
+  .site-header-menu-toggle {
+    display: none;
+  }
+}
+
 .site-header-logo:hover {
   opacity: 0.85;
 }
@@ -1229,6 +1569,29 @@ a:hover {
   min-width: 15rem;
   max-width: 24rem;
   padding: var(--sp-2);
+}
+/* The chip rules (.site-header-categories a / .site-header-cat-group a) also
+   match the pod's product links — they bled gold colour, UPPERCASE tracking and
+   a 0.7 opacity onto the whole dropdown row, which washed the text out (worst in
+   light mode). Reset the row to full contrast, pin a concentric radius, then
+   style each line explicitly: the SKU title gold, family + price neutral. */
+.site-header-categories .header-cat-pod .product-pod {
+  border-radius: var(--r-lg);
+  opacity: 1;
+  padding: var(--sp-2);
+  text-transform: none;
+  letter-spacing: normal;
+}
+.site-header-categories .header-cat-pod .product-pod-title {
+  color: var(--color-gold);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.site-header-categories .header-cat-pod .product-pod-subtitle {
+  color: var(--color-text-muted);
+}
+.site-header-categories .header-cat-pod .product-pod-price {
+  color: var(--color-text);
 }
 /* Invisible hover bridge so moving from chip to Pod doesn't cross a dead gap. */
 .header-cat-pod-wrap::before {
@@ -1357,12 +1720,15 @@ a:hover {
   width: 100%;
   transform: translateY(-100%);
   opacity: 0;
+  /* Smooth weighted drop (easeOutExpo) — glides down and settles without an
+     overshoot bounce. Gated on `hero-header-in`, which the homepage sets ~2s
+     after the splash settles (or on first scroll). */
   transition:
-    transform 0.65s cubic-bezier(0.72, 0, 0.28, 1),
+    transform 0.72s cubic-bezier(0.16, 1, 0.3, 1),
     opacity 0.4s ease-out 0.1s;
 }
 
-html.splash-settled .homepage-layout .site-header {
+html.hero-header-in .homepage-layout .site-header {
   transform: translateY(0);
   opacity: 1;
 }
@@ -1394,7 +1760,7 @@ html.splash-settled .homepage-layout .site-header {
    they're not motion in the vestibular sense.) */
 @media (prefers-reduced-motion: reduce) {
   .homepage-layout .site-header,
-  html.splash-settled .homepage-layout .site-header {
+  html.hero-header-in .homepage-layout .site-header {
     transform: none;
     opacity: 1;
     transition: none;
@@ -2984,7 +3350,14 @@ button.reset {
     align-self: start;
     max-height: calc(100vh - var(--header-height) - var(--sp-5));
     overflow-y: auto;
+    /* overflow-x is *coerced* to auto here: the spec forces a non-visible
+       value on the cross axis whenever the other axis isn't visible. That clip
+       ate the left edge of the selected variant-tier's gold ring (it sits ~2.5px
+       outside the card via inset:-1px + box-shadow). A small inline pad shifts
+       all column content in together (alignment preserved) so the ring clears
+       the clip edge. */
     overflow-x: visible;
+    padding-inline: var(--sp-1);
     /* Hide scrollbar but keep scrollability — buy module shouldn't show
        a chrome scrollbar when the right rail is shorter than the page. */
     scrollbar-width: none;
@@ -3404,15 +3777,20 @@ button.reset {
   /* The scroll-bubble: a pill Pod (same material as the header pill) that
      forms below the floating header once the in-page buy box scrolls away,
      centred under it so it reads as docked to the header. */
+  /* Right-anchored to the header pill's right edge (same offset:
+     max(rail-gutter, (100vw − 1240)/2)) and content-sized, so it shrink-wraps
+     the SKUs + price + CTA and grows leftward as variants are added — no dead
+     space on the right. */
   .buy-rail.is-pinned {
     position: fixed;
     top: calc(var(--header-height) + 1.1rem);
-    left: 50%;
+    right: max(var(--rail-gutter), calc((100vw - 1240px) / 2));
+    left: auto;
     z-index: 60;
     flex-direction: row;
     align-items: center;
     gap: var(--sp-3);
-    padding: 0.4rem 0.5rem 0.4rem 0.9rem;
+    padding: 0.4rem 0.4rem 0.4rem 0.9rem;
     background: var(--pod-bg);
     backdrop-filter: blur(var(--pod-blur));
     -webkit-backdrop-filter: blur(var(--pod-blur));
@@ -3434,11 +3812,11 @@ button.reset {
   @keyframes buy-rail-drop {
     from {
       opacity: 0;
-      transform: translate(-50%, -10px) scale(0.98);
+      transform: translateY(-10px) scale(0.98);
     }
     to {
       opacity: 1;
-      transform: translate(-50%, 0) scale(1);
+      transform: translateY(0) scale(1);
     }
   }
 
@@ -3460,9 +3838,15 @@ button.reset {
   }
   .buy-rail.is-pinned .variant-tier {
     flex: 0 1 auto;
-    padding: 0.3rem 0.7rem;
+    padding: 0.3rem 0.8rem;
     gap: 0;
-    border-radius: var(--r-sm);
+    /* Concentric with the stadium rail (both clamp to height/2). */
+    border-radius: var(--r-pill);
+  }
+  /* The selected-tier gold ring is a stadium here too — without this it kept the
+     ladder's --r-md corners and read as a rounded-rect inside the pill. */
+  .buy-rail.is-pinned .variant-tier-glow {
+    border-radius: var(--r-pill);
   }
   .buy-rail.is-pinned .variant-tier-tagline,
   .buy-rail.is-pinned .variant-tier-cells,
@@ -3501,9 +3885,12 @@ button.reset {
     display: none;
   }
   .buy-rail.is-pinned .product-form .btn-primary {
-    padding: 0.42rem 0.95rem;
+    width: auto;
+    padding: 0.42rem 1.05rem;
     font-size: var(--fs-sm);
     white-space: nowrap;
+    /* Concentric stadium inside the rail's stadium — no more rounded-rect. */
+    border-radius: var(--r-pill);
   }
 }
 
@@ -4103,7 +4490,9 @@ button.reset {
   align-items: stretch;
   gap: 6px;
   padding: 10px 9px 11px;
-  border-radius: 16px;
+  /* Container is a notch rounder than its pills (--r-lg) so the nesting reads
+     concentric. */
+  border-radius: var(--r-pod);
   background: color-mix(in srgb, var(--color-bg) 50%, transparent);
   border: 1px solid color-mix(in srgb, var(--color-gold) 13%, transparent);
   -webkit-backdrop-filter: blur(6px);
@@ -4179,7 +4568,8 @@ button.reset {
   text-align: center;
   color: var(--color-text-dim);
   padding: 0.48em 0.4em;
-  border-radius: 999px;
+  /* Standardised viewer-pill radius (schematic sheets + PCB layers share it). */
+  border-radius: var(--r-lg);
   transition: color 0.2s, background 0.2s, border-color 0.2s, transform 0.2s,
     box-shadow 0.2s;
 }
@@ -4206,7 +4596,7 @@ button.reset {
   align-items: flex-start;
   gap: 2px;
   text-align: left;
-  border-radius: 12px;
+  border-radius: var(--r-lg);
   padding: 0.44em 0.72em;
 }
 .board-folder-tab-name {
@@ -4579,17 +4969,20 @@ button.reset {
   grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
 }
 
-/* De-boxed: a gold top-hairline (reads like a PCB edge) instead of a full
-   card. Removes the box-around-everything while keeping the grid aligned. */
+/* Subtle bubble — same quiet card as the latest-commit cards beside it so the
+   row reads as one consistent set (a bare top-hairline left the text floating).
+   Kept light: card bg + hairline border, gold on hover. */
 .open-source-card {
   display: block;
-  padding: var(--sp-3) 0 0;
-  border-top: 2px solid color-mix(in srgb, var(--color-gold) 45%, var(--color-border));
-  transition: border-color 0.2s ease;
+  padding: 0.9rem 1.05rem;
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--r-md);
+  transition: border-color 0.2s ease, background 0.2s ease;
 }
 
 .open-source-card:hover {
-  border-top-color: var(--color-gold);
+  border-color: color-mix(in srgb, var(--color-gold) 50%, var(--color-border));
 }
 
 .open-source-card-label {
@@ -4929,19 +5322,23 @@ button.reset {
   padding: 0;
   margin: 0 0 1.5rem;
   display: grid;
-  gap: 0.5rem;
+  gap: 0;
 }
 
+/* De-boxed (Img 6) — a plain parts list, hairline-divided rows instead of a
+   bubble around every line. */
 .in-the-box li {
   display: grid;
   grid-template-columns: 3rem 1fr;
   grid-template-rows: auto auto;
   column-gap: 0.9rem;
   row-gap: 0.15rem;
-  padding: 0.7rem 0.9rem;
-  background: var(--color-bg-card);
-  border: 1px solid var(--color-border);
-  border-radius: 8px;
+  padding: 0.75rem 0.1rem;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.in-the-box li:last-child {
+  border-bottom: none;
 }
 
 .in-the-box-qty {
