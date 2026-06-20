@@ -11832,7 +11832,8 @@ button.reset {
   .site-mobile-nav-label:first-child {
     margin-top: 0;
   }
-  /* Search affordance — a pill input-lookalike at the top of the drawer. */
+  /* Search affordance — a real search field at the top of the drawer (submits
+     to /search and closes the drawer). The form is the pill; the input fills it. */
   .site-mobile-nav-search {
     display: flex;
     align-items: center;
@@ -11844,13 +11845,44 @@ button.reset {
     border: 1px solid var(--color-border-strong);
     background: var(--color-bg-card);
     color: var(--color-text-muted);
-    font-family: var(--font-mono);
-    font-size: 13px;
-    letter-spacing: 0.05em;
-    text-transform: uppercase;
   }
-  .site-mobile-nav-search:hover {
+  .site-mobile-nav-search:focus-within {
     border-color: var(--color-gold);
     color: var(--color-text);
+  }
+  .site-mobile-nav-search input {
+    flex: 1 1 auto;
+    min-width: 0;
+    height: 44px;
+    border: none;
+    background: none;
+    outline: none;
+    color: var(--color-text);
+    font-family: var(--font-mono);
+    font-size: 14px;
+    letter-spacing: 0.04em;
+  }
+  .site-mobile-nav-search input::placeholder {
+    color: var(--color-text-muted);
+  }
+}
+
+/* ---- Council pass 2: remaining sub-44px controls + tiny-text stragglers --- */
+@media (max-width: 1023px) {
+  /* Language toggle (NL/FR/EN on legal pages) and partner-card links were
+     12–21px tall. Floor to 44px touch rows. */
+  .lang-toggle a,
+  .lang-toggle button,
+  .partner-links a {
+    min-height: 44px;
+    min-width: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+  /* rn-year-count is set by `.rn-year .rn-year-count` (higher specificity than
+     the floor list), so it stayed 11px — match the specificity here. */
+  .rn-year .rn-year-count {
+    font-size: 12px;
   }
 }
