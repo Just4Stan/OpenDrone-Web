@@ -1,18 +1,21 @@
 import {useEffect, useRef, useState} from 'react';
 import {animate, motion, useMotionValue, useReducedMotion} from 'motion/react';
+import {HERO_AIRFRAMES} from '~/lib/hero-airframes';
 
-const SIZES = ['5', '3'] as const;
-type Size = (typeof SIZES)[number];
-
-// Full names invite a swipe more than a bare 5″/3″. Add more entries here as
-// more airframes land — the control is a row of these.
-const LABELS: Record<Size, string> = {
-  '5': '5″ Freestyle',
-  '3': '3″ Freestyle',
-};
+// Sizes + labels come from the single hero registry (app/lib/hero-airframes.ts)
+// so adding an airframe is a config edit there, not a change here.
+type Size = string;
+const SIZES: Size[] = HERO_AIRFRAMES.map((a) => a.key);
+const LABELS: Record<Size, string> = Object.fromEntries(
+  HERO_AIRFRAMES.map((a) => [a.key, a.label]),
+);
 
 const PAD = 5; // px — must match .hero-size-slider padding in app.css
-const other = (s: Size): Size => (s === '5' ? '3' : '5');
+// The "other" side for the 2-position drag. NOTE: the drag-scrub gesture is
+// built for exactly two positions (the registry's first two). A 3rd+ size still
+// renders as a click-to-select button and swaps correctly; only the drag would
+// need a segmented rework.
+const other = (s: Size): Size => SIZES.find((k) => k !== s) ?? s;
 
 /**
  * Airframe size control for the hero. A gold thumb you drag between 5″ and 3″.
@@ -57,7 +60,7 @@ export function HeroSizeSlider({
     if (!el) return 0;
     return (el.clientWidth - PAD * 2) / 2;
   };
-  const slotX = (v: Size) => (v === '5' ? 0 : travel());
+  const slotX = (v: Size) => (v === SIZES[0] ? 0 : travel());
 
   // Park the thumb on the committed side when value changes from outside a
   // drag (click, keyboard, or a settled drag). Never while dragging.

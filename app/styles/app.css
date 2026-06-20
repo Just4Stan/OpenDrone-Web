@@ -874,6 +874,11 @@ html {
 .hero-buy-btn {
   pointer-events: auto;
 }
+/* Wraps the swappable stack so the exiting (absolute) stack anchors to the same
+   bottom baseline as the incoming one during the size cross-slide. */
+.hero-buy-swap {
+  position: relative;
+}
 .hero-buy-stack {
   display: flex;
   flex-direction: column-reverse;
@@ -881,6 +886,10 @@ html {
      and leave a phantom band above the button. Inter-card spacing is instead
      baked into each card's reveal (inline margin scaled by progress). */
   gap: 0;
+  /* Cross-slide zoom dip scales from the bottom (the bubble/Shop anchor) so the
+     stack's base stays put while it pulls back mid-swap. */
+  transform-origin: bottom center;
+  will-change: transform, opacity;
 }
 
 /* A single revealing product card. max-height / opacity / transform are driven
@@ -1416,6 +1425,38 @@ html.hero-incutec-hint .incutec-hint {
   animation: wordmark-sheen 6s ease-in-out infinite;
   animation-delay: calc(var(--gold-index, 0) * 0.18s);
 }
+
+/* When the window is unfocused / tab hidden, freeze the always-running ambient
+   animations (the only continuous GPU cost) so they don't keep the compositor
+   busy while nobody's watching. Scoped to those infinite decorations — NOT a
+   global `*`, which would also freeze one-time entrances (the board fly-in,
+   chapter reveals) mid-flight and strand them off-screen. */
+html.anim-paused .site-wordmark-sheen,
+html.anim-paused .placeholder-banner__dot,
+html.anim-paused .hero-drag-hint.is-visible,
+html.anim-paused .hero-scroll-hint.is-visible svg,
+html.anim-paused .latest-commit-dot,
+html.anim-paused .support-typing span {
+  animation-play-state: paused !important;
+}
+/* …and strip the GPU-heavy live blurs + board drop-shadows while idle/unfocused,
+   so nothing keeps re-compositing when no one's interacting. They transition back
+   in on focus/interaction. This is what keeps full fidelity when active but ~0
+   GPU otherwise (the user's "don't drain when I'm in the terminal"). */
+html.anim-paused .board-folder-rail,
+html.anim-paused .schematic-rail,
+html.anim-paused .buy-rail.is-pinned,
+html.anim-paused .product-stickybar {
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+  background: var(--pod-bg-strong);
+}
+html.anim-paused .board-sheet {
+  filter: brightness(0.55) saturate(0.7);
+}
+html.anim-paused .board-sheet.is-active {
+  filter: saturate(0.95) contrast(1.05);
+}
 @media (prefers-reduced-motion: reduce) {
   .site-wordmark-sheen {
     animation: none;
@@ -1724,8 +1765,8 @@ html.hero-incutec-hint .incutec-hint {
      overshoot bounce. Gated on `hero-header-in`, which the homepage sets ~2s
      after the splash settles (or on first scroll). */
   transition:
-    transform 0.72s cubic-bezier(0.16, 1, 0.3, 1),
-    opacity 0.4s ease-out 0.1s;
+    transform 0.3s cubic-bezier(0.16, 1, 0.3, 1),
+    opacity 0.3s ease-out 0.1s;
 }
 
 html.hero-header-in .homepage-layout .site-header {
@@ -1785,7 +1826,62 @@ html.hero-header-in .homepage-layout .site-header {
   flex-direction: column;
   align-items: flex-start;
   gap: 1.25rem;
-  padding-top: 1.5rem;
+  padding-top: 0.5rem;
+}
+
+/* Floating board "stage" — the flagship FC + ESC renders fanned like the
+   OpenStack bundle, on a gold-glow island. The desktop hero's rotatable 3D
+   trio, distilled to a still that paints instantly on a phone. */
+.home-mobile-stage {
+  position: relative;
+  align-self: stretch;
+  height: clamp(220px, 62vw, 320px);
+  margin-bottom: 0.25rem;
+  display: grid;
+  place-items: center;
+}
+.home-mobile-glow {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    circle at 50% 46%,
+    color-mix(in srgb, var(--color-gold) 30%, transparent) 0%,
+    color-mix(in srgb, var(--color-gold) 9%, transparent) 34%,
+    transparent 66%
+  );
+  filter: blur(2px);
+  pointer-events: none;
+}
+.home-mobile-board {
+  position: absolute;
+  width: clamp(150px, 46vw, 230px);
+  height: auto;
+  border-radius: var(--r-md);
+  filter: drop-shadow(0 18px 30px rgba(0, 0, 0, 0.45));
+  will-change: transform;
+}
+.home-mobile-board--rear {
+  transform: translate(22%, 16%) rotate(7deg) scale(0.86);
+  opacity: 0.78;
+  animation: home-board-float-rear 7s ease-in-out infinite;
+}
+.home-mobile-board--front {
+  transform: translate(-20%, -12%) rotate(-5deg);
+  animation: home-board-float-front 6s ease-in-out infinite;
+}
+@keyframes home-board-float-front {
+  0%, 100% { transform: translate(-20%, -12%) rotate(-5deg); }
+  50% { transform: translate(-20%, -16%) rotate(-5deg); }
+}
+@keyframes home-board-float-rear {
+  0%, 100% { transform: translate(22%, 16%) rotate(7deg) scale(0.86); }
+  50% { transform: translate(22%, 20%) rotate(7deg) scale(0.86); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .home-mobile-board--front,
+  .home-mobile-board--rear {
+    animation: none;
+  }
 }
 
 .home-mobile-wordmark {
@@ -1803,14 +1899,17 @@ html.hero-header-in .homepage-layout .site-header {
   font-size: 1rem;
   line-height: 1.55;
   color: var(--color-text-muted);
-  max-width: 34ch;
+  max-width: 38ch;
 }
 
-.home-mobile-cta {
+/* Dynamic-Island action pill: a floating pod that holds the gold Shop button
+   and the GitHub mark. (.pod / .pod--pill supply the surface; this sizes it.) */
+.home-mobile-cta.pod {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  margin-top: 0.25rem;
+  gap: 0.6rem;
+  margin-top: 0.35rem;
+  padding: 0.4rem;
 }
 
 .home-mobile-featured {
@@ -3737,8 +3836,6 @@ button.reset {
     gap: var(--sp-3);
     padding: 0.55rem max(0.8rem, env(safe-area-inset-left)) calc(0.55rem + env(safe-area-inset-bottom)) max(0.8rem, env(safe-area-inset-right));
     background: var(--pod-bg-strong);
-    backdrop-filter: blur(var(--pod-blur));
-    -webkit-backdrop-filter: blur(var(--pod-blur));
     border-top: 1px solid var(--pod-border);
     animation: buy-rail-rise 0.2s ease;
   }
@@ -3792,8 +3889,8 @@ button.reset {
     gap: var(--sp-3);
     padding: 0.4rem 0.4rem 0.4rem 0.9rem;
     background: var(--pod-bg);
-    backdrop-filter: blur(var(--pod-blur));
     -webkit-backdrop-filter: blur(var(--pod-blur));
+    backdrop-filter: blur(var(--pod-blur));
     border: 1px solid var(--pod-border);
     border-radius: var(--r-pill);
     box-shadow: var(--pod-shadow);
@@ -4245,6 +4342,26 @@ button.reset {
     position: sticky;
     top: calc(var(--header-height) + var(--sp-4));
   }
+  /* The teardown board fills its column to the top, where the pinned buy bar
+     (variant + price + Add to cart) floats — it was covering the top row of the
+     board (e.g. the JST connector). Drop the board's sticky media below the buy
+     bar so nothing up there is occluded. */
+  .chapter-media:has(.board-art) {
+    top: calc(var(--header-height) + var(--sp-4) + 3.75rem);
+  }
+  /* The teardown copy slides in from the left AFTER the board layers fly in
+     (the PDP drops data-text-pending once the fly completes). Scoped to the
+     board chapter via :has(.board-art) so other chapters are untouched. */
+  .chapter:has(.board-art) .chapter-index,
+  .chapter:has(.board-art) .chapter-body-col {
+    transition: opacity 0.55s ease,
+      translate 0.6s cubic-bezier(0.16, 0.84, 0.3, 1);
+  }
+  .chapter[data-text-pending] .chapter-index,
+  .chapter[data-text-pending] .chapter-body-col {
+    opacity: 0;
+    translate: -30px 0;
+  }
   /* Schematic chapter: text + cards sit on top, the schematic spans the full
    * content width below. Single column so the dense sheet uses every pixel. */
   .chapter[data-wide-media] {
@@ -4434,11 +4551,14 @@ button.reset {
   cursor: pointer;
   transform-origin: 50% 50%;
   /* Fan the stack back-and-down by physical layer index (--depth). */
-  transform: translateY(calc(var(--depth) * 7%)) translateX(calc(var(--depth) * 2.4%))
-    translateZ(calc(var(--depth) * -70px)) scale(calc(1 - var(--depth) * 0.035));
+  transform: translateY(calc(var(--depth) * 7%))
+    translateX(calc(var(--depth) * 2.4%)) translateZ(calc(var(--depth) * -70px))
+    scale(calc(1 - var(--depth) * 0.035));
   z-index: calc(30 - var(--depth));
   transition: transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1), filter 0.45s ease;
-  /* Dim + flatten the un-selected sheets so the active one reads clearly. */
+  /* Dim + drop-shadow the un-selected sheets so the stack reads with depth. The
+     shadows are GPU-heavy (blur filter per layer), so they're stripped under
+     html.anim-paused (idle / unfocused) — see that block below. */
   filter: brightness(0.55) saturate(0.7)
     drop-shadow(0 14px 22px rgba(0, 0, 0, 0.55));
 }
@@ -4446,12 +4566,113 @@ button.reset {
   filter: brightness(0.78) saturate(0.85)
     drop-shadow(0 14px 22px rgba(0, 0, 0, 0.55));
 }
+/* Gold GLOW only on the active (top, selected) layer; cast shadow for depth. */
 .board-sheet.is-active {
   transform: translateY(-11%) translateZ(120px) scale(1.05);
   z-index: 50;
   filter: saturate(0.95) contrast(1.05)
     drop-shadow(0 0 26px color-mix(in srgb, var(--color-gold) 38%, transparent))
     drop-shadow(0 26px 34px rgba(0, 0, 0, 0.55));
+}
+/* First-reveal entrance: each layer flies in from the left to its resting fan
+   position, staggered by --depth. The layers keep their FULL resting look
+   (filters/glow) throughout — only `translate` animates, ending at 0 — so the
+   end IS the resting state: no plop. `translate` is compositor-accelerated.
+   Held paused (off-screen) until the board reaches the viewport centre
+   (.is-flying); both classes drop when done so a SKU swap shows it instantly. */
+@keyframes board-sheet-fly {
+  from {
+    translate: -68vw 0;
+    opacity: 0;
+  }
+  55% {
+    opacity: 1;
+  }
+  to {
+    translate: 0 0;
+    opacity: 1;
+  }
+}
+.board-art.is-armed .board-sheet {
+  animation: board-sheet-fly 1.2s cubic-bezier(0.16, 0.84, 0.3, 1)
+    calc(var(--depth) * 0.11s) both;
+  animation-play-state: paused;
+}
+/* Non-active layers grey out one-by-one as each lands — in fly order, so the
+   first layer to fly in is the first to grey — instead of all snapping grey at
+   the end. A second, layered animation (sharing the same paused/running gate)
+   eases the filter from the bright fly state to the resting dim, staggered by
+   --depth and timed to begin ~as each layer arrives. Same total duration; the
+   greying just starts sooner (over the fly's tail). The active layer is excluded
+   — it stays bright and gains its glow at the end. */
+.board-art.is-armed .board-sheet:not(.is-active) {
+  animation: board-sheet-fly 1.2s cubic-bezier(0.16, 0.84, 0.3, 1)
+      calc(var(--depth) * 0.11s) both,
+    board-sheet-grey 0.5s ease calc(var(--depth) * 0.11s + 1s) forwards;
+  animation-play-state: paused;
+}
+/* The active layer's gold glow eases in with a long, gentle fade right after it
+   lands — instead of snapping on the instant the fly ends. Landing-driven timing,
+   same idea as the greys, so the whole stack settles as one smooth motion. */
+.board-art.is-armed .board-sheet.is-active {
+  animation: board-sheet-fly 1.2s cubic-bezier(0.16, 0.84, 0.3, 1) 0s both,
+    board-sheet-glow 0.9s ease 1.1s forwards;
+  animation-play-state: paused;
+}
+/* Unpause ALL sheets when flying. The :not(.is-active) / .is-active selectors
+   match the (0,4,0) specificity of the armed rules above so their `paused`
+   doesn't win (that bug left only the active layer flying in). */
+.board-art.is-flying .board-sheet,
+.board-art.is-flying .board-sheet:not(.is-active),
+.board-art.is-flying .board-sheet.is-active {
+  animation-play-state: running;
+}
+@keyframes board-sheet-grey {
+  to {
+    filter: brightness(0.55) saturate(0.7)
+      drop-shadow(0 14px 22px rgba(0, 0, 0, 0.55));
+  }
+}
+@keyframes board-sheet-glow {
+  from {
+    filter: none;
+  }
+  to {
+    filter: saturate(0.95) contrast(1.05)
+      drop-shadow(0 0 26px color-mix(in srgb, var(--color-gold) 38%, transparent))
+      drop-shadow(0 26px 34px rgba(0, 0, 0, 0.55));
+  }
+}
+/* During the fly, every layer starts at full brightness with no shadow — each
+   flies in clearly distinguishable (not greyed/masked) — then the non-active
+   ones grey via the staggered animation above; the active one stays bright.
+   (Animations override this, so it's the bright base before each grey begins.) */
+.board-art.is-flying .board-sheet,
+.board-art.is-flying .board-sheet.is-active {
+  filter: none;
+}
+/* Lock layer + part selection during the fly so interaction can't fight it. */
+.board-art.is-flying .board-sheet,
+.board-art.is-flying .board-folder-rail {
+  pointer-events: none;
+}
+/* The rail stays hidden through the entrance fly, then fades in once it's done —
+   at its final settled gutter position. It animates OPACITY ONLY: a translate /
+   transform here fights place() (which resets+measures the rail's box to position
+   it in the gutter), which made the rail jump around and overlap the board. By
+   appearing only after the fly, the during-fly→settled reposition never shows. */
+.board-art.is-armed .board-folder-rail {
+  opacity: 0;
+}
+@media (prefers-reduced-motion: reduce) {
+  .board-art.is-armed .board-sheet,
+  .board-art.is-armed .board-sheet:not(.is-active),
+  .board-art.is-armed .board-sheet.is-active {
+    animation: none;
+  }
+  .board-art.is-armed .board-folder-rail {
+    opacity: 1;
+  }
 }
 .board-sheet-svg {
   display: block;
@@ -4504,6 +4725,11 @@ button.reset {
    Size scales with the board across aspect ratios. */
 .board-folder-rail {
   width: clamp(150px, 13vw, 200px);
+  /* Fade in once the fly is done (the is-armed rule holds it at opacity 0 during
+     the entrance). NO transform transition here — place() measures this box to
+     position it, and a transitioned transform makes that read a mid-glide value
+     → the rail jumps/overlaps. Opacity is safe (doesn't affect the measurement). */
+  transition: opacity 0.6s ease;
 }
 /* Schematic sheets are full words (MCU / BLACKBOX / CONNECTORS), so size the
    rail to its longest label — capped — instead of clipping inside a fixed
@@ -4897,6 +5123,14 @@ button.reset {
   font-weight: 600;
 }
 
+/* A few chapter titles are one long sentence — let them use the full left
+ * column so they stay on a single line, wrapping only when the column genuinely
+ * runs out of room (narrow viewports). The 24ch cap above suits shorter heads. */
+.chapter:has(.teardown-sides) .chapter-title,
+.chapter:has(.firmware-split) .chapter-title {
+  max-width: none;
+}
+
 .chapter-body {
   font-family: var(--font-sans);
   font-size: var(--fs-base);
@@ -4920,94 +5154,276 @@ button.reset {
 /* A single narrow column so the callouts stack vertically instead of spreading
    a wide grid across the chapter — the freed horizontal space goes to the
    board + its (now richer) layer rail. */
+/* Subtle connector lines from each pin bubble to its layer-rail face box (drawn
+   on a fixed full-viewport SVG, positioned imperatively in the PDP). */
+.teardown-links {
+  /* position/size set imperatively to the lines' bounding box (gutter only) —
+     NOT full-viewport, so it isn't a screen-sized compositing layer. */
+  position: fixed;
+  left: 0;
+  top: 0;
+  display: none;
+  pointer-events: none;
+  z-index: 2;
+  overflow: visible;
+}
+.teardown-links path {
+  fill: none;
+  stroke: var(--color-gold);
+  stroke-width: 1.5;
+  opacity: 0.28;
+  stroke-linecap: round;
+  /* Hidden until the entrance is done: pathLength=100 (set in JSX) lets us hide
+     via a full dash offset, then draw the line in left→right by easing it to 0. */
+  stroke-dasharray: 100;
+  stroke-dashoffset: 100;
+}
+.teardown-links circle {
+  fill: var(--color-gold);
+  opacity: 0;
+}
+/* The lines are the last thing in: stroke-draw from the bubble (left) to the rail
+   (right), then light the end dots as the line reaches each side. */
+.teardown-links.is-drawn path {
+  stroke-dashoffset: 0;
+  transition: stroke-dashoffset 1.1s ease;
+}
+.teardown-links.is-drawn circle {
+  opacity: 0.5;
+  transition: opacity 0.35s ease;
+}
+/* bubble-end dots (left) appear as the draw starts; rail-end dots (right) as it
+   arrives. draw() writes them in pairs: odd = bubble, even = rail. */
+.teardown-links.is-drawn circle:nth-of-type(odd) {
+  transition-delay: 0.08s;
+}
+.teardown-links.is-drawn circle:nth-of-type(even) {
+  transition-delay: 0.95s;
+}
+@media (prefers-reduced-motion: reduce) {
+  .teardown-links path {
+    transition: none;
+  }
+  .teardown-links.is-drawn path {
+    stroke-dashoffset: 0;
+  }
+}
+@media (max-width: 879px) {
+  .teardown-links {
+    display: none;
+  }
+}
+
+/* Two side "bubbles" (Top / Bottom), each a mini-table of component rows. The
+   gradient + inset top-light give the card some depth instead of a flat slab. */
+.teardown-sides {
+  display: grid;
+  gap: 0.85rem;
+  max-width: 30rem;
+}
+/* Locked while the board fly-in animates — a hover mustn't fight the animation. */
+.teardown-sides.is-locked {
+  pointer-events: none;
+}
+.teardown-side {
+  /* zero the global `section { padding: 1rem 0 }` so rows fill the bubble edge
+     to edge (no dead space above the first row / below the last). */
+  padding: 0;
+  background: linear-gradient(
+    180deg,
+    var(--color-bg-elevated),
+    var(--color-bg-card)
+  );
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--color-text) 6%, transparent);
+}
+/* Rows inside a bubble form a table: each row gets ONE divider line, no per-row
+   card — so there's no boundary between components as you scroll/hover down. */
 .teardown-pins {
   list-style: none;
   padding: 0;
   margin: 0;
-  display: grid;
-  gap: 0.5rem;
-  grid-template-columns: 1fr;
-  max-width: 30rem;
 }
-
 .teardown-pins li {
-  display: grid;
-  grid-template-columns: 2rem 1fr auto;
-  align-items: baseline;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   gap: 0.75rem;
-  padding: 0.65rem 0.85rem;
-  background: var(--color-bg-card);
-  border: 1px solid var(--color-border);
-  border-radius: 8px;
+  /* extra left pad leaves room for the hover accent bar without shifting text */
+  padding: 0.55rem 0.7rem 0.55rem 0.95rem;
+  /* kill the global `li { margin-bottom: 0.5rem }` (reset.css) — that gap between
+     rows is a hover dead zone: the cursor crossing it hits no row, so the
+     spotlight drops out and flickers. Rows are contiguous, divided only by the
+     1px border. */
+  margin: 0;
+  border-bottom: 1px solid
+    color-mix(in srgb, var(--color-border) 60%, transparent);
+  position: relative;
 }
-
-.teardown-pin-ref {
-  color: var(--color-gold);
-  font-family: var(--font-display);
-  font-weight: 700;
-  font-size: 1.1rem;
-  line-height: 1;
+.teardown-pins li:last-child {
+  border-bottom: none;
 }
 
 .teardown-pin-part {
   color: var(--color-text);
   font-size: 0.9rem;
+  transition: color 0.12s;
 }
 
+/* count/qty badge (e.g. ×24) as a small mono pill */
 .teardown-pin-cost {
+  flex: none;
   font-family: var(--font-mono);
-  font-size: 11px;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  color: var(--color-text-muted);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  padding: 0.1rem 0.45rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--color-gold) 14%, transparent);
+  color: var(--color-gold);
 }
 
-/* A pin that maps to footprints on the board: signal it's interactive and, on
-   hover/focus, nudge it gold so the link to the highlighted part reads. */
+/* A pin that maps to footprints on the board: interactive. Hover fills the whole
+   row (instant — no fade that looks half-painted while the cursor moves) and a
+   gold accent bar wipes in on the left for a bit of life. */
 .teardown-pin-hoverable {
   cursor: pointer;
-  transition: border-color 0.2s, background 0.2s, transform 0.2s;
 }
-.teardown-pin-hoverable:hover,
-.teardown-pin-hoverable:focus-visible {
-  border-color: color-mix(in srgb, var(--color-gold) 55%, transparent);
-  background: color-mix(in srgb, var(--color-gold) 8%, var(--color-bg-card));
-  outline: none;
-}
-
-/* === Component highlight overlay === An svg sharing the board viewBox, sized by
-   BoardArt's measuring effect to cover the active sheet's rendered box. It draws
-   the hovered footprint(s) in gold; both it and the sheet use xMidYMid meet, so
-   matching the box aligns the shapes to the parts pixel-for-pixel. */
-.board-highlight-overlay {
+.teardown-pin-hoverable::before {
+  content: '';
   position: absolute;
   left: 0;
   top: 0;
-  pointer-events: none;
-  z-index: 60; /* above the active sheet (z 50) */
-  overflow: visible;
-  opacity: 0;
-  transition: opacity 0.28s ease;
-}
-.board-highlight-overlay.is-on {
-  opacity: 1;
-}
-.board-highlight-shape {
-  fill: color-mix(in srgb, var(--color-gold) 26%, transparent);
-  stroke: var(--color-gold);
-  stroke-width: 0.5;
-  vector-effect: non-scaling-stroke;
-  /* Soft glow + a subtle grow-in so highlights bloom rather than pop. */
-  filter: drop-shadow(
-    0 0 6px color-mix(in srgb, var(--color-gold) 70%, transparent)
-  );
-  transform-box: fill-box;
+  bottom: 0;
+  width: 2px;
+  background: var(--color-gold);
+  transform: scaleY(0);
   transform-origin: center;
-  transform: scale(1.04);
-  transition: transform 0.28s cubic-bezier(0.2, 0.8, 0.2, 1);
+  transition: transform 0.14s ease;
 }
-.board-highlight-overlay.is-on .board-highlight-shape {
-  transform: scale(1);
+.teardown-pin-hoverable:hover,
+.teardown-pin-hoverable:focus-visible {
+  background: color-mix(in srgb, var(--color-gold) 13%, transparent);
+  /* extend the tint 1px upward to fill where the divider above used to sit (the
+     :has rule below turns it transparent), so the whole row reads as one gold
+     block with no uncovered sliver at the top. */
+  box-shadow: 0 -1px 0 0 color-mix(in srgb, var(--color-gold) 13%, transparent);
+  outline: none;
+}
+/* Kill the divider directly ABOVE the hovered row — it belongs to the previous
+   row, so the hovered row's fill can't reach it; left visible it reads as a dark
+   sliver at the row's top (the "dead zone"). Gone, the box-shadow fills clean
+   bubble-bg with the same gold tint → seamless, and the spotlight slides
+   row-to-row with no flicker. */
+.teardown-pins li:has(+ .teardown-pin-hoverable:hover) {
+  border-bottom-color: transparent;
+}
+
+/* I/O chip row: one row holding a horizontal set of hoverable pad-group chips. */
+.teardown-pins li.teardown-io-row {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+.teardown-io-tag {
+  flex: none;
+  font-size: 0.7rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+.teardown-io-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+.teardown-io-chip {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  border: 1px solid var(--color-border);
+  background: color-mix(in srgb, var(--color-text) 4%, transparent);
+  color: var(--color-text);
+  cursor: pointer;
+  transition: background 0.12s, border-color 0.12s, color 0.12s;
+}
+.teardown-io-chip:hover,
+.teardown-io-chip:focus-visible {
+  background: color-mix(in srgb, var(--color-gold) 16%, transparent);
+  border-color: color-mix(in srgb, var(--color-gold) 55%, transparent);
+  color: var(--color-gold);
+  outline: none;
+}
+.teardown-pin-hoverable:hover .teardown-pin-part,
+.teardown-pin-hoverable:focus-visible .teardown-pin-part {
+  color: var(--color-gold);
+}
+.teardown-pin-hoverable:hover::before,
+.teardown-pin-hoverable:focus-visible::before {
+  transform: scaleY(1);
+}
+
+/* === Component highlights === Drawn ANCHORED inside the active sheet's <svg>
+   (BoardArt appends a `<g class="board-hilite">`), so they scroll with the board
+   and sit exactly on the part. Only present on the Front/Back faces — never on a
+   copper layer. The whole group fades in on hover. */
+.board-hilite {
+  pointer-events: none;
+}
+/* A face's spotlight is built once and kept; when nothing is highlighted (or
+   another face is showing) it's hidden, not destroyed — so re-lighting it is
+   instant and never re-decodes the board image (the flicker). */
+.board-hilite.is-hidden {
+  display: none;
+}
+/* Fade in ONLY on first appearance (cursor entering the list from nothing). When
+   moving row-to-row the group is rebuilt every hover; replaying the fade then made
+   the whole spotlight flash out/in. `is-fresh` (added by BoardArt only when there
+   was no prior highlight) keeps the dim constant and just moves the bright spot. */
+.board-hilite.is-fresh {
+  animation: board-hilite-in 0.25s ease both;
+}
+/* Dim veil over the board OUTSIDE the spotlight window (masked + clipped to the
+   board outline) so everything but the selected part(s) recedes. Over the board
+   face only (not the page), so it reads the same in both themes. */
+.board-hilite-dim {
+  fill: #05070a;
+  opacity: 0.62;
+  pointer-events: none;
+}
+/* The face re-shown at the highlighted box, on top of the dim — nudged brighter
+   so the selected region pops out of the dimmed board. */
+.board-hilite-face {
+  filter: brightness(1.12) saturate(1.08);
+  pointer-events: none;
+}
+/* (legacy) Brighten INSIDE a rect window — kept for the no-face fallback path. */
+.board-hilite-bright {
+  fill: #fff;
+  opacity: 0.16;
+  mix-blend-mode: screen;
+  pointer-events: none;
+}
+/* The crisp gold box is the primary "this is selected" marker, drawn on top of
+   the dim. Non-scaling stroke keeps it ~2px at any board zoom. */
+.board-highlight-shape {
+  fill: color-mix(in srgb, var(--color-gold) 10%, transparent);
+  stroke: var(--color-gold);
+  stroke-width: 2;
+  vector-effect: non-scaling-stroke;
+  pointer-events: none;
+}
+@keyframes board-hilite-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 /* Open source cards */
@@ -11016,5 +11432,275 @@ button.reset {
   .btn-spinner,
   .inline-spinner {
     animation-duration: 1.6s;
+  }
+}
+
+/* ============================================================
+   MOBILE OPTIMIZATION PASS  (feat/island-v2)
+   One consolidated, viewport-scoped layer for the touch
+   experience. Everything here is gated under the canonical
+   mobile cutoff (max-width: 1023px = MOBILE_MAX in
+   app/lib/use-media-query.ts) so desktop is untouched.
+   Ordered: A) safe-area env  B) overflow kills
+   C) tap-target floors  D) micro-label legibility floors.
+   ============================================================ */
+
+/* A) Safe-area inset custom props — resolve to 0 where unsupported.
+   viewport-fit=cover (root.tsx) is what makes env() non-zero on
+   notched phones. Fixed chrome reads these so nothing hides under
+   the notch / home indicator. */
+:root {
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left: env(safe-area-inset-left, 0px);
+  --safe-right: env(safe-area-inset-right, 0px);
+}
+
+@media (max-width: 1023px) {
+  /* ---- B) Horizontal-overflow kills ------------------------------------ */
+
+  /* The MobileHome CTA reuses the desktop hero button, which carries a
+     min-width:26rem (416px) anchor — far past a phone's width. Let it fill
+     the column and shrink instead, and allow the row to wrap so the GitHub
+     square never gets shoved off-screen. */
+  .home-mobile-cta {
+    flex-wrap: wrap;
+    gap: 0.6rem;
+  }
+  .home-mobile-cta .hero-action-primary {
+    min-width: 0;
+    flex: 1 1 auto;
+    min-height: 44px;
+    padding-inline: 1.5rem;
+  }
+
+  /* The catalog sort control (label + native select) wouldn't shrink, so the
+     toolbar overran the viewport by ~7px. Let it shrink and the toolbar wrap. */
+  .catalog-toolbar {
+    flex-wrap: wrap;
+  }
+  .collection-sort,
+  .collection-sort select {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  /* FirmwareSplit's amount row overran the PDP on a 320px screen. Let it
+     wrap and keep its numbers inside the viewport. */
+  .firmware-split-amounts {
+    flex-wrap: wrap;
+  }
+  .firmware-split-total {
+    min-width: 0;
+  }
+
+  /* Catalog content (catalog-main) was 315px inside a 298px grid track: the
+     single `1fr` column = minmax(auto, 1fr), whose `auto` floor is min-content,
+     so a wide child (toolbar/cards) stretched the track past the viewport.
+     minmax(0, 1fr) drops the floor to 0 and min-width:0 lets the grid item
+     shrink to the track — content reflows instead of forcing page scroll. */
+  .catalog-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .catalog-sidebar,
+  .catalog-filter-group,
+  .catalog-filter-list,
+  .catalog-main {
+    min-width: 0;
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+
+  /* Header inner row was 362px wide on a 320px phone — keep brand + icons
+     within the viewport. */
+  .site-header-main {
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+
+  /* ---- C) Tap-target floors (WCAG 2.5.5 — 44px) ------------------------ */
+  /* Block/inline-block interactive controls that rendered under 44px tall on
+     a phone. Inline-flex + min-height centres existing content without
+     reflowing it; a touch of inline padding widens the hit area. */
+  .catalog-filter,
+  .collection-sort select,
+  .collection-sort-control,
+  .trust-chip,
+  .home-mobile-browse,
+  .board-art-inspect,
+  .search-submit,
+  .product-gallery-arrow,
+  .hero-cta-primary,
+  .board-folder-tabs button,
+  .schematic-rail-tabs button {
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+  }
+  /* Mobile slide-out nav links — full-width 44px touch rows. */
+  .site-mobile-nav a {
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+  }
+  /* Arrows are square — give them width too. */
+  .product-gallery-arrow {
+    min-width: 44px;
+    justify-content: center;
+  }
+  /* The home "browse the full catalog" underline link — keep its underline
+     hugging the text, not the padded box. */
+  .home-mobile-browse {
+    align-self: flex-start;
+  }
+
+  /* ---- D) Micro-label legibility floors -------------------------------- */
+  /* A curated set of uppercase/mono micro-labels rendered at ~10.3px. On a
+     phone that's below the 12px comfortable-reading floor; nudge them to
+     11.5px (still clearly a label, just legible). Scoped to the exact
+     classes the audit flagged so body copy scale is untouched. */
+  .product-hero-eyebrow,
+  .product-buy-sku,
+  .product-buy-stock,
+  .variant-ladder-axis,
+  .variant-ladder-axis-hint,
+  .variant-tier-flag,
+  .variant-tier-cell-k,
+  .variant-tier-cell-v,
+  .variant-tier-tagline,
+  .chapter-number,
+  .chapter-label,
+  .product-card-meta,
+  .teardown-pin-cost,
+  .section-label,
+  .product-gallery-counter,
+  .page-eyebrow,
+  .incutec-hint,
+  .catalog-filter-head,
+  .collection-sort-label,
+  .open-source-card-label,
+  .open-source-card-sub,
+  .rn-year-count,
+  .rn-version,
+  .rn-tag,
+  .partner-label,
+  .board-art-inspect,
+  .board-art-skeleton-label,
+  .latest-commit-label,
+  .provenance-label,
+  .provenance-row-label,
+  .bundle-component-firmware,
+  .chapter-footnote,
+  .trust-chip {
+    font-size: 12px;
+  }
+  /* Corner badges (New/Sale/Coming soon) and the pre-launch tag read at
+     ~10px — floor them to the 12px mobile legibility minimum. */
+  .product-card-badge,
+  .placeholder-banner__tag {
+    font-size: 12px;
+  }
+
+  /* Systemic root: the base font is 15px, so Tailwind's rem-based `text-xs`
+     (0.75rem) and the --fs-xs token (11px) both land below the 12px mobile
+     floor wherever they're used. Floor them once here instead of chasing
+     every utility-styled label. Plain class selectors outrank the layered
+     Tailwind utility, so this wins on mobile only. */
+  :root {
+    --fs-xs: 12px; /* 11px token -> 12px mobile floor */
+  }
+  .text-xs {
+    font-size: 12px;
+  }
+}
+
+/* ============================================================
+   MOBILE EXPLORATION — board layers, schematic, frame (island-v2)
+   The desktop hid .chapter-media below 880px, so the PCB layer
+   explorer and exploded frame — the whole point of the product
+   story — were absent on phones (text-only chapters reading as
+   a void). Bring them back as a flat, touch-first single-column
+   view: active layer full-width, pill tabs switch layers, tap a
+   component to spotlight it. Standard, screen-efficient, no
+   desktop 3D fan / sticky / gutter math.
+   ============================================================ */
+@media (max-width: 1023px) {
+  /* Un-hide the board explorer; it sits in normal flow under the copy. */
+  .chapter-media:has(.board-art) {
+    display: block;
+    position: static;
+    top: auto;
+    margin-top: var(--sp-4);
+  }
+
+  /* Flatten the fanned 3D stack: only the active sheet renders, flat and
+     full-width. No perspective, no depth fan, no fly-in. The stack keeps its
+     square aspect so the board fills the column at a stable height. */
+  .board-folder-stack {
+    perspective: none;
+    transform-style: flat;
+    margin-top: 0;
+  }
+  .board-art .board-sheet {
+    transform: none !important;
+    animation: none !important;
+    transition: opacity 0.28s ease;
+    filter: none;
+    opacity: 0;
+    z-index: 1;
+    pointer-events: none;
+  }
+  .board-art .board-sheet.is-active {
+    opacity: 1;
+    z-index: 2;
+    pointer-events: auto;
+  }
+  /* The rail's first-reveal opacity-0 hold (is-armed) never clears without the
+     fly animation — force it visible on mobile. */
+  .board-art.is-armed .board-folder-rail,
+  .board-art.is-flying .board-folder-rail {
+    opacity: 1;
+  }
+
+  /* The board chapter's desktop sticky-media offset doesn't apply once flat. */
+  .chapter:has(.board-art) .chapter-media {
+    margin-top: var(--sp-4);
+  }
+}
+
+@media (max-width: 1023px) {
+  /* Frame viewer (exploded carbon frame) — desktop renders it as an absolute
+     full-bleed backdrop behind the chapter text; that's dropped on mobile,
+     leaving the frame product with no hero visual. Re-flow it inline as a
+     contained, full-width square that sits above the copy. Its scroll-driven
+     explode maps straight onto touch page-scroll: the frame blooms apart as
+     you scroll past it. */
+  .chapter[data-backdrop] {
+    display: flex;
+    flex-direction: column;
+    position: relative;
+  }
+  .chapter[data-backdrop] .chapter-backdrop {
+    display: block;
+    position: relative;
+    inset: auto;
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    order: -1;
+    margin: 0 0 var(--sp-4);
+  }
+  .chapter[data-backdrop] .frame-viewer {
+    position: absolute;
+    inset: 0;
+  }
+}
+
+@media (max-width: 640px) {
+  /* Catalog as a 2-up grid on phones — twice the products per screen than the
+     single 240px-min column, which is the efficient mobile-store default and
+     keeps the board renders large enough to read. */
+  .catalog-main .products-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.75rem;
   }
 }

@@ -309,7 +309,7 @@ export function HeaderMenu({
     <nav
       className={
         isMobile
-          ? 'flex flex-col gap-5 px-1'
+          ? 'site-mobile-nav flex flex-col gap-1 px-1'
           : 'hidden md:flex items-center gap-8 ml-10'
       }
       role="navigation"

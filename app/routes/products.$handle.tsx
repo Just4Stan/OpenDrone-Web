@@ -37,6 +37,7 @@ import {
   PRODUCT_CONTENT_FALLBACK,
 } from '~/lib/product-content';
 import type {
+  ChapterPin,
   DownloadAsset,
   DownloadKind,
   ProductContent,
@@ -380,11 +381,16 @@ function Chapter({
   wideMedia,
   bigMedia,
   noMedia,
+  textReveal,
 }: {
   number: string;
   label: string;
   title: React.ReactNode;
   children: React.ReactNode;
+  /** When defined, gate the body text's slide-in on this flag (false = held off
+   *  to the left, hidden). Used by the teardown so the copy slides in only after
+   *  the board layers have flown in. Undefined = no gating (normal reveal). */
+  textReveal?: boolean;
   /** Optional live media node — when omitted, the chapter renders the
    *  geometric placeholder glyph for this chapter number. */
   media?: React.ReactNode;
@@ -410,6 +416,7 @@ function Chapter({
       data-wide-media={wideMedia ? '' : undefined}
       data-big-media={bigMedia ? '' : undefined}
       data-no-media={noMedia ? '' : undefined}
+      data-text-pending={textReveal === false ? '' : undefined}
     >
       {backdrop ? <div className="chapter-backdrop">{backdrop}</div> : null}
       <div className="chapter-index">
@@ -608,6 +615,59 @@ export default function Product() {
   // win over the shared `teardown.pins` default. Keeps the hover-highlight
   // refdes matched to the board currently shown.
   const activePins = activeVariant?.pins ?? content.teardown?.pins ?? [];
+  // Group the teardown pins by board side — Top (front) first, then Bottom
+  // (back) — reading each refdes's side from the board's components.json. Done
+  // at runtime so it stays accurate per tier with no manual side tagging.
+  const componentsSrc = activeBoardArt?.src.replace(
+    /board\.svg$/,
+    'components.json',
+  );
+  const [pinSides, setPinSides] = useState<Map<string, 'F' | 'B'>>(new Map());
+  useEffect(() => {
+    if (!componentsSrc) return;
+    let alive = true;
+    fetch(componentsSrc)
+      .then((r) => r.json())
+      .then((d) => {
+        if (!alive) return;
+        const comps =
+          (d as {components?: Array<{ref?: string; layer?: string}>})
+            ?.components ?? [];
+        const m = new Map<string, 'F' | 'B'>();
+        for (const c of comps) {
+          if (c.ref && (c.layer === 'F' || c.layer === 'B')) m.set(c.ref, c.layer);
+        }
+        setPinSides(m);
+      })
+      .catch(() => {});
+    return () => {
+      alive = false;
+    };
+  }, [componentsSrc]);
+  // Partition pins by the dominant side of their refs. Until the map loads (or
+  // for pins with no resolvable side) pins fall into `other`, rendered flat.
+  const groupedPins = useMemo(() => {
+    const top: ChapterPin[] = [];
+    const bottom: ChapterPin[] = [];
+    const other: ChapterPin[] = [];
+    for (const pin of activePins) {
+      if (!pin.refs?.length || pinSides.size === 0) {
+        other.push(pin);
+        continue;
+      }
+      let f = 0;
+      let b = 0;
+      for (const r of pin.refs) {
+        const s = pinSides.get(r);
+        if (s === 'F') f++;
+        else if (s === 'B') b++;
+      }
+      if (f === 0 && b === 0) other.push(pin);
+      else if (f >= b) top.push(pin);
+      else bottom.push(pin);
+    }
+    return {top, bottom, other};
+  }, [activePins, pinSides]);
   // CAD products (the frame) carry an exploded 3D viewer instead of a
   // layered board SVG; when present it takes the teardown media slot. Like
   // boardArt, a tier's own model (3" vs 5") wins over the shared default.
@@ -664,6 +724,317 @@ export default function Product() {
   // on the board by BoardArt. Lives here (the common ancestor of the pin list
   // and the board) so a hover lights the matching footprint.
   const [hoveredRefs, setHoveredRefs] = useState<string[]>([]);
+  // Whether the hovered pin wants ONE union box (dense arrays) vs a box per part.
+  const [hoveredUnion, setHoveredUnion] = useState(false);
+  // Per-group boxes (e.g. ESC motor pads → one box per motor), if the pin sets them.
+  const [hoveredGroups, setHoveredGroups] = useState<string[][] | undefined>(
+    undefined,
+  );
+  // True while the board's first-reveal fly-in is animating — locks the parts
+  // list so a hover can't fight the animation.
+  const [boardFlying, setBoardFlying] = useState(false);
+  // The teardown text slides in from the left AFTER the board layers finish
+  // flying in: flip `textIn` when the fly completes (boardFlying true→false), with
+  // a fallback so it always reveals even if the board never flies (reduced motion
+  // / never centred).
+  const [textIn, setTextIn] = useState(false);
+  // Slide the teardown copy in from the left once the section is actually on
+  // screen — a beat after it centres (the board's layers are flying in), so it
+  // reads like a final layer. Driven by the section's OWN visibility (not a blind
+  // timer, which fired before the user scrolled down → the slide played offscreen
+  // and was never seen).
+  useEffect(() => {
+    // Re-arm on every product switch (the PDP stays mounted across nav, so this
+    // must reset or the new product's copy would already be "in").
+    setTextIn(false);
+    if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) {
+      setTextIn(true);
+      return;
+    }
+    const el = document.querySelector('.teardown-sides');
+    if (!el) {
+      setTextIn(true); // no teardown list to gate
+      return;
+    }
+    let timer = 0;
+    const io = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((e) => e.isIntersecting)) {
+          io.disconnect();
+          timer = window.setTimeout(() => setTextIn(true), 600);
+        }
+      },
+      {rootMargin: '-40% 0px -40% 0px'},
+    );
+    io.observe(el);
+    return () => {
+      io.disconnect();
+      if (timer) clearTimeout(timer);
+    };
+  }, [product.handle]);
+  // Co-trigger: the board's own fly starting is a sure sign the teardown is on
+  // screen, so slide the copy in a beat later too (belt-and-suspenders with the
+  // observer above — textIn latches, so whichever fires first wins).
+  useEffect(() => {
+    if (!boardFlying) return;
+    const t = setTimeout(() => setTextIn(true), 600);
+    return () => clearTimeout(t);
+  }, [boardFlying]);
+  // The connector lines are the LAST thing in: after the fly finishes (layers
+  // selectable), they stroke-draw from the bubbles to the rail. Trigger ~0.4s
+  // after the fly completes (boardFlying true→false).
+  const [linesReady, setLinesReady] = useState(false);
+  const flewRef = useRef(false);
+  useEffect(() => {
+    if (boardFlying) {
+      flewRef.current = true;
+      return;
+    }
+    if (flewRef.current && !linesReady) {
+      const t = setTimeout(() => setLinesReady(true), 400);
+      return () => clearTimeout(t);
+    }
+  }, [boardFlying, linesReady]);
+  // Re-arm the connector lines on every product switch (the PDP stays mounted
+  // across nav, only BoardArt remounts). Without this they'd keep their already-
+  // drawn state instead of redrawing for the new board. Reduced motion shows them
+  // immediately with no draw animation. (No blind timer — if the board never
+  // flies there's no rail for the lines to connect to, so they stay hidden.)
+  useEffect(() => {
+    setLinesReady(false);
+    flewRef.current = false;
+    setBoardFlying(false);
+    if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) {
+      setLinesReady(true);
+    }
+  }, [product.handle]);
+  // Clear all hover highlight state. Called only when the pointer leaves the
+  // whole list (not between rows) so the spotlight stays lit and just moves from
+  // row to row — no off/on flicker crossing the dividers/gaps.
+  const clearHover = () => {
+    setHoveredRefs([]);
+    setHoveredUnion(false);
+    setHoveredGroups(undefined);
+  };
+  // One teardown-pin <li>: the part label (+ optional count); hover/focus
+  // highlights its footprint(s) on the board (keyboard mirrors mouse for a11y).
+  const renderPin = (pin: ChapterPin) => {
+    const refs = pin.refs;
+    // Chip-row pin (e.g. FC I/O pads): one row, a horizontal set of chips, each
+    // highlighting its own pad group on hover/focus.
+    if (pin.chips?.length) {
+      return (
+        <li key={pin.ref} className="teardown-pin teardown-io-row">
+          <span className="teardown-io-tag">I/O</span>
+          <div className="teardown-io-chips">
+            {pin.chips.map((chip) => {
+              const on = () => {
+                setHoveredRefs(chip.refs);
+                setHoveredUnion(false);
+                setHoveredGroups(undefined);
+              };
+              return (
+                <button
+                  type="button"
+                  key={chip.label}
+                  className="teardown-io-chip"
+                  onMouseEnter={on}
+                  onFocus={on}
+                  onBlur={clearHover}
+                >
+                  {chip.label}
+                </button>
+              );
+            })}
+          </div>
+        </li>
+      );
+    }
+    const hoverable = !!refs?.length;
+    const enter = () => {
+      setHoveredRefs(refs ?? []);
+      setHoveredUnion(pin.box === 'union');
+      setHoveredGroups(pin.boxGroups);
+    };
+    // Is this row's footprint set the one currently lit? (used for tap-toggle)
+    const isActive =
+      hoverable &&
+      hoveredRefs.length === refs!.length &&
+      refs!.every((r) => hoveredRefs.includes(r));
+    // Touch has no hover: a tap toggles this row's spotlight on/off. On desktop
+    // the click toggle is harmless — hover already drives the highlight.
+    const tap = () => (isActive ? clearHover() : enter());
+    // No per-row onMouseLeave — clearing happens on the container leave so the
+    // spotlight stays lit while moving between rows (onBlur covers keyboard).
+    const handlers = hoverable
+      ? {
+          onMouseEnter: enter,
+          onClick: tap,
+          onFocus: enter,
+          onBlur: clearHover,
+          tabIndex: 0,
+        }
+      : {};
+    return (
+      <li
+        key={pin.ref}
+        className={hoverable ? 'teardown-pin teardown-pin-hoverable' : undefined}
+        {...handlers}
+      >
+        <span className="teardown-pin-part">{pin.part}</span>
+        <span className="teardown-pin-cost">{pin.cost ?? '×1'}</span>
+      </li>
+    );
+  };
+  // While a component is highlighted, dim the rest of the page a touch (light
+  // mode) so the eye is drawn to the board — a focus accent. Toggled via a class
+  // on <html> so the dim (an ::after overlay) + the board's lift are pure CSS.
+  useEffect(() => {
+    const on = hoveredRefs.length > 0;
+    document.documentElement.classList.toggle('board-focus', on);
+    return () => document.documentElement.classList.remove('board-focus');
+  }, [hoveredRefs]);
+  // Subtle connector lines tying each Top/Bottom pin bubble to its matching face
+  // box in the board's layer rail, so it reads "these parts live on that side".
+  // Drawn on a fixed, full-viewport SVG and recomputed on scroll/resize (the
+  // board is sticky while the list scrolls, so the endpoints drift). Imperative
+  // via rAF so scrolling doesn't trigger React re-renders.
+  const teardownLinksRef = useRef<SVGSVGElement>(null);
+  // The link SVG is portaled to <body> so its `position: fixed` is viewport-
+  // relative (a transformed ancestor — board column / page-transition wrapper —
+  // would otherwise contain `fixed`, throwing the coords off and making it
+  // scroll at the wrong rate). Mount client-side only to avoid SSR mismatch.
+  const [linksMounted, setLinksMounted] = useState(false);
+  useEffect(() => setLinksMounted(true), []);
+  useEffect(() => {
+    const svg = teardownLinksRef.current;
+    if (!svg) return;
+    const paths = svg.querySelectorAll('path');
+    const dots = svg.querySelectorAll('circle');
+    let raf = 0;
+    const draw = () => {
+      raf = 0;
+      const bubbles = document.querySelectorAll<HTMLElement>('.teardown-side');
+      const hideSvg = () => {
+        svg.style.display = 'none';
+      };
+      if (bubbles.length < 2) return hideSvg();
+      const ends = [
+        document.querySelector<HTMLElement>(
+          '.board-folder-tabs [data-slug="front"]',
+        ),
+        document.querySelector<HTMLElement>(
+          '.board-folder-tabs [data-slug="back"]',
+        ),
+      ];
+      const H = window.innerHeight;
+      // Collect the visible segments (bubble edge → rail-box edge).
+      const segs: Array<{i: number; bx: number; by: number; rx: number; ry: number}> =
+        [];
+      for (let i = 0; i < 2; i++) {
+        const b = bubbles[i];
+        const r = ends[i];
+        if (!b || !r) continue;
+        const bb = b.getBoundingClientRect();
+        const rr = r.getBoundingClientRect();
+        const bx = bb.right;
+        const by = bb.top + bb.height / 2;
+        const rx = rr.left;
+        const ry = rr.top + rr.height / 2;
+        if (rr.width > 0 && rx > bx && Math.max(by, ry) > 0 && Math.min(by, ry) < H)
+          segs.push({i, bx, by, rx, ry});
+      }
+      const present = new Set(segs.map((s) => s.i));
+      for (let i = 0; i < 2; i++) {
+        if (present.has(i)) continue;
+        paths[i]?.setAttribute('d', '');
+        dots[i * 2]?.setAttribute('r', '0');
+        dots[i * 2 + 1]?.setAttribute('r', '0');
+      }
+      if (!segs.length) return hideSvg();
+      // Size + position the SVG to JUST the lines' bounding box (in the empty
+      // gutter) — NOT the whole viewport. A full-screen fixed overlay forced the
+      // compositor to re-blend the entire page over every animating element each
+      // frame (idle GPU). A small box overlapping nothing is nearly free.
+      const PAD = 12;
+      let minX = Infinity;
+      let minY = Infinity;
+      let maxX = -Infinity;
+      let maxY = -Infinity;
+      for (const s of segs) {
+        minX = Math.min(minX, s.bx - 5, s.rx + 5);
+        maxX = Math.max(maxX, s.bx - 5, s.rx + 5);
+        minY = Math.min(minY, s.by, s.ry);
+        maxY = Math.max(maxY, s.by, s.ry);
+      }
+      const ox = minX - PAD;
+      const oy = minY - PAD;
+      const w = maxX - minX + 2 * PAD;
+      const h = maxY - minY + 2 * PAD;
+      svg.style.display = 'block';
+      svg.style.left = `${ox}px`;
+      svg.style.top = `${oy}px`;
+      svg.style.width = `${w}px`;
+      svg.style.height = `${h}px`;
+      svg.setAttribute('width', String(w));
+      svg.setAttribute('height', String(h));
+      for (const s of segs) {
+        const x0 = s.bx - 5;
+        const x1 = s.rx + 5;
+        const dx = Math.max(40, (x1 - x0) * 0.5);
+        const X = (v: number) => v - ox;
+        const Y = (v: number) => v - oy;
+        paths[s.i].setAttribute(
+          'd',
+          `M${X(x0)},${Y(s.by)} C${X(x0 + dx)},${Y(s.by)} ${X(x1 - dx)},${Y(
+            s.ry,
+          )} ${X(x1)},${Y(s.ry)}`,
+        );
+        const cb = dots[s.i * 2];
+        const cr = dots[s.i * 2 + 1];
+        cb.setAttribute('cx', String(X(s.bx)));
+        cb.setAttribute('cy', String(Y(s.by)));
+        cb.setAttribute('r', '3.5');
+        cr.setAttribute('cx', String(X(s.rx)));
+        cr.setAttribute('cy', String(Y(s.ry)));
+        cr.setAttribute('r', '3.5');
+      }
+    };
+    // Redraw on scroll/resize only (rAF-throttled) — NOT a continuous loop,
+    // which pinned the GPU at idle. The portal (viewport-fixed coords) is what
+    // keeps the links connected; a per-event redraw tracks scroll fine.
+    const onScroll = () => {
+      if (!raf)
+        raf = requestAnimationFrame(() => {
+          raf = 0;
+          draw();
+        });
+    };
+    draw();
+    // Board SVG + rail stream in async — nudge a few redraws after mount (these
+    // re-run whenever the deps change, so they also catch the post-entrance
+    // settle when boardFlying flips false).
+    const timers = [150, 500, 1200].map((t) => setTimeout(draw, t));
+    // While the entrance runs (board fly + text slide), the bubbles AND the rail
+    // move via CSS transforms that fire no scroll/resize — so redraw every frame
+    // so the connector lines track them live (and stay connected after, with no
+    // scroll needed). Bounded to the entrance via boardFlying, NOT perpetual.
+    let loopRaf = 0;
+    const loop = () => {
+      draw();
+      loopRaf = boardFlying ? requestAnimationFrame(loop) : 0;
+    };
+    if (boardFlying) loopRaf = requestAnimationFrame(loop);
+    window.addEventListener('scroll', onScroll, {passive: true, capture: true});
+    window.addEventListener('resize', onScroll);
+    return () => {
+      window.removeEventListener('scroll', onScroll, {capture: true});
+      window.removeEventListener('resize', onScroll);
+      timers.forEach(clearTimeout);
+      if (raf) cancelAnimationFrame(raf);
+      if (loopRaf) cancelAnimationFrame(loopRaf);
+    };
+  }, [activeBoardArt, groupedPins, linksMounted, boardFlying]);
   // <960px the pinned rail becomes a bottom bar (price + add-to-cart only):
   // phones previously had NO sticky buy control at all once the in-hero buy
   // module scrolled away.
@@ -816,7 +1187,7 @@ export default function Product() {
     <div className="product-page">
       <script
         type="application/ld+json"
-        // eslint-disable-next-line react/no-danger
+         
         dangerouslySetInnerHTML={{__html: JSON.stringify(productJsonLd)}}
       />
       {/* === HERO: gallery left, copy + sticky buy module right === */}
@@ -933,7 +1304,8 @@ export default function Product() {
         <Chapter
           number={chapterNums.teardown}
           label="Teardown"
-          title={content.teardown.title}
+          title="Some layers of copper with components on top"
+          textReveal={frameViewer ? undefined : textIn}
           backdrop={
             frameViewer ? (
               // No key on src: keep the canvas mounted across tier switches so
@@ -952,10 +1324,13 @@ export default function Product() {
           }
           media={
             !frameViewer && activeBoardArt ? (
-              // No key: keep the component mounted across tier switches so it
-              // swaps between warmed boards instantly (no remount, no refetch,
-              // no blank frame). `srcs` lets it prefetch every tier up front.
+              // Key by product HANDLE (not src): stays mounted across TIER swaps
+              // so it swaps between warmed boards instantly (no remount/refetch),
+              // but REMOUNTS on a product switch (FC↔ESC↔RX) so the one-shot
+              // fly-in re-arms and plays for the new board. `srcs` prefetches the
+              // tiers up front.
               <BoardArt
+                key={product.handle}
                 src={activeBoardArt.src}
                 srcs={boardArtSrcs}
                 inspectUrl={activeBoardArt.inspectUrl}
@@ -966,46 +1341,65 @@ export default function Product() {
                   'components.json',
                 )}
                 highlightRefs={hoveredRefs}
+                highlightUnion={hoveredUnion}
+                highlightGroups={hoveredGroups}
+                onFlying={setBoardFlying}
               />
             ) : undefined
           }
         >
-          {content.teardown.body ? (
-            <p className="chapter-body">{content.teardown.body}</p>
-          ) : null}
-          <ul className="teardown-pins">
-            {activePins.map((pin) => {
-              const refs = pin.refs;
-              const hoverable = !!refs?.length;
-              // Hover/focus a pin to highlight its footprint(s) on the board.
-              // Keyboard focus mirrors mouse hover for a11y. Pins without refs
-              // (other product lines) stay plain, non-interactive list items.
-              const handlers = hoverable
-                ? {
-                    onMouseEnter: () => setHoveredRefs(refs),
-                    onMouseLeave: () => setHoveredRefs([]),
-                    onFocus: () => setHoveredRefs(refs),
-                    onBlur: () => setHoveredRefs([]),
-                    tabIndex: 0,
-                  }
-                : {};
-              return (
-                <li
-                  key={pin.ref}
-                  className={
-                    hoverable ? 'teardown-pin teardown-pin-hoverable' : undefined
-                  }
-                  {...handlers}
+          {linksMounted
+            ? createPortal(
+                <svg
+                  ref={teardownLinksRef}
+                  className={`teardown-links${linesReady ? ' is-drawn' : ''}`}
+                  aria-hidden="true"
                 >
-                  <span className="teardown-pin-ref">{pin.ref}</span>
-                  <span className="teardown-pin-part">{pin.part}</span>
-                  {pin.cost ? (
-                    <span className="teardown-pin-cost">{pin.cost}</span>
-                  ) : null}
-                </li>
-              );
-            })}
-          </ul>
+                  {/* pathLength normalises each line to 100 so the dash draw-in
+                      (stroke-dashoffset 100→0) is length-independent even as the
+                      path is recomputed on scroll. */}
+                  <path d="" pathLength={100} />
+                  <path d="" pathLength={100} />
+                  <circle r="0" />
+                  <circle r="0" />
+                  <circle r="0" />
+                  <circle r="0" />
+                </svg>,
+                document.body,
+              )
+            : null}
+          {groupedPins.top.length > 0 && groupedPins.bottom.length > 0 ? (
+            <div
+              className={`teardown-sides${boardFlying ? ' is-locked' : ''}`}
+              onMouseLeave={clearHover}
+            >
+              <section className="teardown-side">
+                <ul className="teardown-pins">
+                  {groupedPins.top.map(renderPin)}
+                </ul>
+              </section>
+              <section className="teardown-side">
+                <ul className="teardown-pins">
+                  {[...groupedPins.bottom, ...groupedPins.other].map(renderPin)}
+                </ul>
+              </section>
+            </div>
+          ) : (
+            <div
+              className={`teardown-sides${boardFlying ? ' is-locked' : ''}`}
+              onMouseLeave={clearHover}
+            >
+              <section className="teardown-side">
+                <ul className="teardown-pins">
+                  {[
+                    ...groupedPins.top,
+                    ...groupedPins.bottom,
+                    ...groupedPins.other,
+                  ].map(renderPin)}
+                </ul>
+              </section>
+            </div>
+          )}
           {!frameViewer && activeBoardArt?.inspectUrl ? (
             <a
               className="board-art-inspect teardown-inspect"
@@ -1034,7 +1428,9 @@ export default function Product() {
             <SchematicViewer
               handle={schematicHandle}
               handles={schematicHandles}
-              inspectUrl={activeBoardArt?.inspectUrl}
+              inspectUrl={
+                activeBoardArt?.schematicUrl ?? activeBoardArt?.inspectUrl
+              }
             />
           ) : undefined
         }
@@ -1149,10 +1545,7 @@ export default function Product() {
                 <em>two maintainers paid.</em>
               </>
             ) : (
-              <>
-                Everything that ships,{' '}
-                <em>down to the grommet.</em>
-              </>
+              'What you get'
             )
           }
         >
@@ -1164,12 +1557,7 @@ export default function Product() {
               What you don&apos;t lose is the €1 split: each firmware
               project still gets paid from this order.
             </p>
-          ) : (
-            <p className="chapter-body">
-              Here is the actual parts list. Anything missing from a build,
-              say so and we&apos;ll ship it.
-            </p>
-          )}
+          ) : null}
           {mergedBox.length > 0 ? (
             <ul className="in-the-box">
               {mergedBox.map((it) => (
@@ -1229,8 +1617,7 @@ export default function Product() {
           label="The €1"
           title={
             <>
-              What <em>you</em> pay, what the{' '}
-              <em>people who wrote the firmware</em> get.
+              What <em>you</em> pay, what the <em>developers</em> get.
             </>
           }
           media={
@@ -1261,7 +1648,7 @@ export default function Product() {
         <Chapter
           number={chapterNums.specs}
           label="Datasheet"
-          title="Every spec, in one table."
+          title="Every spec, one table"
           noMedia
         >
           <dl className="spec-table">
