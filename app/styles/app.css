@@ -11609,3 +11609,30 @@ button.reset {
     margin-top: var(--sp-4);
   }
 }
+
+@media (max-width: 1023px) {
+  /* Frame viewer (exploded carbon frame) — desktop renders it as an absolute
+     full-bleed backdrop behind the chapter text; that's dropped on mobile,
+     leaving the frame product with no hero visual. Re-flow it inline as a
+     contained, full-width square that sits above the copy. Its scroll-driven
+     explode maps straight onto touch page-scroll: the frame blooms apart as
+     you scroll past it. */
+  .chapter[data-backdrop] {
+    display: flex;
+    flex-direction: column;
+    position: relative;
+  }
+  .chapter[data-backdrop] .chapter-backdrop {
+    display: block;
+    position: relative;
+    inset: auto;
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    order: -1;
+    margin: 0 0 var(--sp-4);
+  }
+  .chapter[data-backdrop] .frame-viewer {
+    position: absolute;
+    inset: 0;
+  }
+}
