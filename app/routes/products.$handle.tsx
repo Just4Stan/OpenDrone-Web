@@ -1425,8 +1425,8 @@ export default function Product() {
           {!frameViewer && activeBoardArt ? (
             <div className="teardown-guide">
               <p className="teardown-hint">
-                Slide down to explore · tap a layer to peel it · tap a part to
-                find it on the board
+                Flick the board ↑/↓ to peel layers · tap a part to find it on the
+                board
               </p>
               <button
                 type="button"
