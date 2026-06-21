@@ -11698,7 +11698,9 @@ button.reset {
   .chapter-media:has(.board-art) {
     display: block;
     position: sticky;
-    top: calc(var(--header-height) + 0.4rem);
+    /* Clear the floating header pill (taller than --header-height with its
+       margin) so the layer rail's "LAYER n/N" caption isn't tucked behind it. */
+    top: calc(var(--header-height) + 1.15rem);
     align-self: start;
     order: -1;
     z-index: 3;
