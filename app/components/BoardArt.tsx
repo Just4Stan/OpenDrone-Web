@@ -663,20 +663,28 @@ export function BoardArt({
     };
     const N = sheets.length;
     const ease = (t: number) => t * t * (3 - 2 * t); // smoothstep — deliberate
-    if (p < 0.45) {
-      const idx = Math.min(N - 1, Math.floor((p / 0.45) * N)); // TOP(0) → BOTTOM
+    // Scan one part from a sorted list by eased sub-progress.
+    const scan = (
+      list: string[],
+      face: 'front' | 'back',
+      sub: number,
+    ): {phase: 'scan'; active: number; refs: string[]; scanRef: string | null} => {
+      const i = list.length
+        ? Math.min(list.length - 1, Math.floor(ease(sub) * list.length))
+        : 0;
+      const ref = list[i] ?? null;
+      return {phase: 'scan', active: idxOf(face), refs: ref ? [ref] : [], scanRef: ref};
+    };
+    if (p < 0.34) {
+      // PHASE A — peel TOP(0) → BOTTOM through every sheet.
+      const idx = Math.min(N - 1, Math.floor((p / 0.34) * N));
       const s = sheets[idx];
       return {phase: 'layers', active: idx, refs: [], layerSlug: s?.slug, layerLabel: s?.label};
     }
-    if (p < 0.78) {
-      const list = choreoSorted.top;
-      const sub = ease((p - 0.45) / 0.33);
-      const i = list.length
-        ? Math.min(list.length - 1, Math.floor(sub * list.length))
-        : 0;
-      const ref = list[i] ?? null;
-      return {phase: 'scan', active: idxOf('front'), refs: ref ? [ref] : [], scanRef: ref};
-    }
+    // PHASE B — scan FRONT (component side) top→bottom, then flip and scan the
+    // REAR (solder side) top→bottom. Both sides get the deliberate spotlight pass.
+    if (p < 0.58) return scan(choreoSorted.top, 'front', (p - 0.34) / 0.24);
+    if (p < 0.82) return scan(choreoSorted.bottom, 'back', (p - 0.58) / 0.24);
     return null; // PHASE C — released; manual part tapping
   }, [choreoProgress, sheets, choreoSorted]);
 

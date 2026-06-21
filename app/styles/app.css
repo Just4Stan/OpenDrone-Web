@@ -3901,13 +3901,19 @@ button.reset {
     display: flex;
     flex-direction: row;
     align-items: center;
-    justify-content: flex-start;
-    gap: 0.7rem;
+    gap: 0.6rem;
     width: 100%;
     padding: 0;
   }
+  /* Split the row symmetrically: price (left half) + Add-to-cart (right half).
+     The price gets a touch of left padding so it isn't flush to the edge. */
+  .buy-rail.is-pinned.is-mobile .product-buy-price {
+    flex: 1 1 0;
+    min-width: 0;
+    padding-left: 0.55rem;
+  }
   .buy-rail.is-pinned.is-mobile .product-form {
-    flex: 1 1 auto;
+    flex: 1 1 0;
     min-width: 0;
   }
   .buy-rail.is-pinned.is-mobile .product-form button {
@@ -11796,17 +11802,22 @@ button.reset {
     transform-style: flat;
     margin-top: 0;
   }
+  /* Layer transitions glide instead of cutting: the incoming sheet slides up
+     from just below + fades in (over the outgoing, which fades back down), so the
+     peel reads as one layer replacing the next — no harsh swaps. Transform-only
+     motion stays on the compositor (cheap even for the multi-thousand-path SVG). */
   .board-art .board-sheet {
-    transform: none !important;
     animation: none !important;
-    transition: opacity 0.28s ease;
+    transition: opacity 0.4s ease, transform 0.45s cubic-bezier(0.22, 0.8, 0.3, 1);
     filter: none;
     opacity: 0;
+    transform: translateY(9%) !important;
     z-index: 1;
     pointer-events: none;
   }
   .board-art .board-sheet.is-active {
     opacity: 1;
+    transform: translateY(0) !important;
     z-index: 2;
     pointer-events: auto;
   }
@@ -11842,12 +11853,16 @@ button.reset {
     color: inherit;
   }
 
-  /* Scroll budget for the guided layer-browse + scan: the board + caption stay
-     pinned while this empty stretch scrolls past, sized so the part list arrives
-     right at the parts phase (~0.78 of the 2.4-screen progress range). */
+  /* Scroll budget for the one-time walkthrough (peel + front/rear scan): present
+     ONLY while the walkthrough plays, so the manual interface stays compact (no
+     dead scroll). Sized so the part list arrives at the parts phase (~0.82 of the
+     1.6-screen progress range). */
   .teardown-choreo-spacer {
+    display: none;
+  }
+  body.od-walkthrough .teardown-choreo-spacer {
     display: block;
-    height: 185vh;
+    height: 131vh;
   }
 
   /* Caption beneath the pinned board — the current layer (Phase A) or the part
