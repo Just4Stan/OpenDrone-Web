@@ -1835,47 +1835,49 @@ html.hero-header-in .homepage-layout .site-header {
 .home-mobile-stage {
   position: relative;
   align-self: stretch;
-  height: clamp(220px, 62vw, 320px);
+  height: clamp(210px, 56vw, 300px);
   margin-bottom: 0.25rem;
   display: grid;
   place-items: center;
 }
 .home-mobile-glow {
   position: absolute;
-  inset: 0;
+  inset: -8% -4%;
   background: radial-gradient(
-    circle at 50% 46%,
-    color-mix(in srgb, var(--color-gold) 30%, transparent) 0%,
-    color-mix(in srgb, var(--color-gold) 9%, transparent) 34%,
-    transparent 66%
+    circle at 50% 50%,
+    color-mix(in srgb, var(--color-gold) 34%, transparent) 0%,
+    color-mix(in srgb, var(--color-gold) 11%, transparent) 38%,
+    transparent 70%
   );
   filter: blur(2px);
   pointer-events: none;
 }
+/* Boards fill the stage: bigger renders with tight, balanced offsets so the
+   pair reads as one centred cluster (not two corners), with the glow under it. */
 .home-mobile-board {
   position: absolute;
-  width: clamp(150px, 46vw, 230px);
+  width: clamp(178px, 54vw, 264px);
   height: auto;
   border-radius: var(--r-md);
   filter: drop-shadow(0 18px 30px rgba(0, 0, 0, 0.45));
   will-change: transform;
 }
 .home-mobile-board--rear {
-  transform: translate(22%, 16%) rotate(7deg) scale(0.86);
-  opacity: 0.78;
+  transform: translate(15%, 9%) rotate(8deg) scale(0.85);
+  opacity: 0.8;
   animation: home-board-float-rear 7s ease-in-out infinite;
 }
 .home-mobile-board--front {
-  transform: translate(-20%, -12%) rotate(-5deg);
+  transform: translate(-13%, -4%) rotate(-6deg);
   animation: home-board-float-front 6s ease-in-out infinite;
 }
 @keyframes home-board-float-front {
-  0%, 100% { transform: translate(-20%, -12%) rotate(-5deg); }
-  50% { transform: translate(-20%, -16%) rotate(-5deg); }
+  0%, 100% { transform: translate(-13%, -4%) rotate(-6deg); }
+  50% { transform: translate(-13%, -7%) rotate(-6deg); }
 }
 @keyframes home-board-float-rear {
-  0%, 100% { transform: translate(22%, 16%) rotate(7deg) scale(0.86); }
-  50% { transform: translate(22%, 20%) rotate(7deg) scale(0.86); }
+  0%, 100% { transform: translate(15%, 9%) rotate(8deg) scale(0.85); }
+  50% { transform: translate(15%, 12%) rotate(8deg) scale(0.85); }
 }
 @media (prefers-reduced-motion: reduce) {
   .home-mobile-board--front,
@@ -1899,7 +1901,7 @@ html.hero-header-in .homepage-layout .site-header {
   font-size: 1rem;
   line-height: 1.55;
   color: var(--color-text-muted);
-  max-width: 38ch;
+  max-width: 44ch;
 }
 
 /* Dynamic-Island action pill: a floating pod that holds the gold Shop button
@@ -1910,6 +1912,21 @@ html.hero-header-in .homepage-layout .site-header {
   gap: 0.6rem;
   margin-top: 0.35rem;
   padding: 0.4rem;
+}
+/* In dark mode --pod-bg sits a hair off the near-black page, so the pill read
+   as two loose buttons rather than a capsule. Lift the surface + border so the
+   island is unmistakably a discrete floating pod (light mode already reads). */
+html:not(.light) .home-mobile-cta.pod {
+  background: var(--color-bg-elevated);
+  border-color: var(--color-border-strong);
+}
+/* The GitHub mark is the secondary action — keep it a clear 44px touch target
+   but visually quieter than the gold Shop CTA. */
+.home-mobile-cta .hero-action-secondary {
+  min-width: 44px;
+  min-height: 44px;
+  width: 48px;
+  height: 48px;
 }
 
 .home-mobile-featured {
@@ -6066,7 +6083,7 @@ button.reset {
   flex-direction: column;
   align-items: center;
   text-align: center;
-  padding: 2.5rem 1.25rem 2rem;
+  padding: 1.25rem 1.25rem 2rem;
   gap: 0.85rem;
 }
 
@@ -11703,4 +11720,263 @@ button.reset {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 0.75rem;
   }
+}
+
+/* ---- Council pass 1: kill remaining voids + make touch explorers legible --- */
+@media (max-width: 1023px) {
+  /* Schematic stage was a fixed 72vh box, so a wide/sparse sheet left ~⅔ of it
+     black. Size the stage to the active sheet's real aspect ratio (--sheet-ar
+     from the manifest) so it hugs the drawing — capped so a tall sheet can't run
+     off-screen. The wide OVERVIEW sheet now fills its box instead of stranding a
+     half-screen of void. */
+  .schematic-page {
+    /* Out of flex sizing so aspect-ratio derives height from a definite width
+       (the sheet img is position:absolute, so flex-auto height collapses to 0). */
+    flex: none;
+    width: 100%;
+    height: auto;
+    aspect-ratio: var(--sheet-ar, 5 / 2);
+    max-height: min(52vh, 440px);
+  }
+
+  /* Touch has no hover, so tappable component rows looked like a static spec
+     table. Give them a persistent resting cue (faint left bar), a full-gold
+     bar + tint when active (tapped), and a small locate glyph — so the rows
+     clearly read as "tap me to find this on the board". */
+  .teardown-pin-hoverable {
+    position: relative;
+  }
+  .teardown-pin-hoverable::before {
+    transform: scaleY(0.5);
+    opacity: 0.35;
+  }
+  .teardown-pin-hoverable.is-active::before {
+    transform: scaleY(1);
+    opacity: 1;
+  }
+  .teardown-pin-hoverable.is-active {
+    background: color-mix(in srgb, var(--color-gold) 14%, transparent);
+  }
+
+  /* Discoverability hint under the teardown title (mobile only — desktop has
+     hover to teach the interaction). */
+  .teardown-hint {
+    display: block;
+    margin: 0 0 0.85rem;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    letter-spacing: 0.06em;
+    line-height: 1.5;
+    color: var(--color-text-muted);
+  }
+  .teardown-hint::before {
+    content: '';
+    display: inline-block;
+    width: 7px;
+    height: 7px;
+    margin-right: 0.5em;
+    border-radius: 50%;
+    background: var(--color-gold);
+    vertical-align: middle;
+  }
+
+  /* The deep-dive links ("Inspect interactively", "Open schematic") were 10px
+     and --color-text-dim — nearly invisible on dark. Make them read as the CTA
+     they are: a bordered ghost chip. */
+  .board-art-inspect {
+    color: var(--color-text);
+    border: 1px solid var(--color-border-strong);
+    border-radius: var(--r-pill);
+    padding: 0.55rem 1rem;
+    letter-spacing: 0.14em;
+  }
+  .board-art-inspect:hover {
+    border-color: var(--color-gold);
+    color: var(--color-gold);
+  }
+}
+/* The hint is mobile-only; the desktop layout teaches via hover. (Scoped to the
+   desktop range so it can't override the mobile display:block above.) */
+@media (min-width: 1024px) {
+  .teardown-hint {
+    display: none;
+  }
+}
+
+/* ---- Council pass 1: mobile nav drawer (search + families + account) ------ */
+@media (max-width: 1023px) {
+  /* The drawer was --aside-width:400px → full-screen on a phone, and the
+     tap-outside-to-close strip collapsed to 0 (100% - 400px). Make it a panel
+     so a backdrop strip stays tappable. */
+  :root {
+    --aside-width: min(86vw, 360px);
+  }
+  /* The × was a ~10×23px hit target — the worst on the site. Floor it to 44px. */
+  .overlay aside header .close {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 44px;
+    min-height: 44px;
+    margin-right: -10px;
+    font-size: 1.7rem;
+    line-height: 1;
+  }
+  /* Drawer can scroll if the fuller menu runs long. */
+  .overlay aside main {
+    overflow-y: auto;
+  }
+  .site-mobile-nav {
+    gap: 0.15rem;
+  }
+  /* Section dividers in the drawer (Shop / More / Account). */
+  .site-mobile-nav-label {
+    margin: 0.85rem 0 0.1rem;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--color-text-dim);
+  }
+  .site-mobile-nav-label:first-child {
+    margin-top: 0;
+  }
+  /* Search affordance — a real search field at the top of the drawer (submits
+     to /search and closes the drawer). The form is the pill; the input fills it. */
+  .site-mobile-nav-search {
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+    min-height: 44px;
+    margin-bottom: 0.5rem;
+    padding: 0 0.9rem;
+    border-radius: var(--r-pill);
+    border: 1px solid var(--color-border-strong);
+    background: var(--color-bg-card);
+    color: var(--color-text-muted);
+  }
+  .site-mobile-nav-search:focus-within {
+    border-color: var(--color-gold);
+    color: var(--color-text);
+  }
+  .site-mobile-nav-search input {
+    flex: 1 1 auto;
+    min-width: 0;
+    height: 44px;
+    border: none;
+    background: none;
+    outline: none;
+    color: var(--color-text);
+    font-family: var(--font-mono);
+    font-size: 14px;
+    letter-spacing: 0.04em;
+  }
+  .site-mobile-nav-search input::placeholder {
+    color: var(--color-text-muted);
+  }
+}
+
+/* ---- Council pass 2: remaining sub-44px controls + tiny-text stragglers --- */
+@media (max-width: 1023px) {
+  /* Language toggle (NL/FR/EN on legal pages) and partner-card links were
+     12–21px tall. Floor to 44px touch rows. */
+  .lang-toggle a,
+  .lang-toggle button,
+  .partner-links a {
+    min-height: 44px;
+    min-width: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+  /* rn-year-count is set by `.rn-year .rn-year-count` (higher specificity than
+     the floor list), so it stayed 11px — match the specificity here. */
+  .rn-year .rn-year-count {
+    font-size: 12px;
+  }
+}
+
+/* ---- Council pass 3: empty-cart launchpad + schematic stays sized to sheet -- */
+/* Empty cart: family chips below the Shop-all CTA turn the dead screen into an
+   exploration launchpad. Visible in both the page and the drawer cart. */
+.cart-empty-explore {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-top: 1.1rem;
+  max-width: 24rem;
+}
+.cart-empty-chip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 40px;
+  padding: 0 0.9rem;
+  border-radius: var(--r-pill);
+  border: 1px solid var(--color-border-strong);
+  background: var(--color-bg-card);
+  color: var(--color-text);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  transition: border-color 0.18s ease, color 0.18s ease;
+}
+.cart-empty-chip:hover {
+  border-color: var(--color-gold);
+  color: var(--color-gold);
+}
+@media (max-width: 1023px) {
+  /* Consent / form checkboxes were ~13px hit targets — enlarge on touch. */
+  input[type='checkbox'] {
+    width: 20px;
+    height: 20px;
+  }
+  .cart-empty-chip {
+    min-height: 44px;
+  }
+}
+
+/* ---- Council pass 4: search results read as cards, not a thin lonely row --- */
+@media (max-width: 1023px) {
+  .search-results-item {
+    border-top: none;
+    padding-top: 0;
+  }
+  .search-product-link {
+    gap: 0.9rem;
+    padding: 0.7rem 0.85rem;
+    border: 1px solid var(--color-border);
+    border-radius: var(--r-md);
+    background: var(--color-bg-card);
+    min-height: 72px;
+    transition: border-color 0.18s ease;
+  }
+  .search-product-link:hover {
+    border-color: var(--color-gold);
+  }
+  /* Bigger thumbnail than the inline 50px the markup requests. */
+  .search-product-link img {
+    width: 56px !important;
+    height: 56px !important;
+    object-fit: contain;
+    border-radius: var(--r-sm);
+    flex: 0 0 auto;
+  }
+  .search-product-link > div {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+  .search-product-link p {
+    font-weight: 600;
+    margin: 0 0 0.15rem;
+  }
+}
+
+/* The fixed PRE-LAUNCH placeholder pill (z-index 80) floats over the cart/menu
+   drawer's lower rows when one is open. It's pointer-events:none so it never
+   blocks a tap, but hide it while any aside/overlay is expanded so the drawer
+   reads clean. (Temporary pre-launch artifact; removed at launch regardless.) */
+body:has(.overlay.expanded) .placeholder-banner {
+  display: none;
 }

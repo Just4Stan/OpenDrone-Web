@@ -7,6 +7,16 @@ import {CartLineItem, type CartLine} from '~/components/CartLineItem';
 import {CartSummary} from './CartSummary';
 import {DonationUpsell, type DonationProduct} from './DonationUpsell';
 
+/** Product families surfaced as chips on the empty-cart screen, so it reads as
+ *  an exploration launchpad rather than a dead end. */
+const CART_EMPTY_FAMILIES: Array<{label: string; to: string}> = [
+  {label: 'Flight Controllers', to: '/products/openfc-lite'},
+  {label: 'ESCs', to: '/products/openesc'},
+  {label: 'Stacks', to: '/products/openstack'},
+  {label: 'Receivers', to: '/products/openrx'},
+  {label: 'Frames', to: '/products/openframe'},
+];
+
 export type CartLayout = 'page' | 'aside';
 
 export type CartMainProps = {
@@ -183,6 +193,21 @@ function CartEmpty({
       >
         Shop all
       </Link>
+      {/* Turn the dead empty-cart screen into an exploration launchpad — jump
+          straight into a product family instead of a single CTA. */}
+      <div className="cart-empty-explore">
+        {CART_EMPTY_FAMILIES.map((f) => (
+          <Link
+            key={f.to}
+            to={f.to}
+            onClick={close}
+            prefetch="viewport"
+            className="cart-empty-chip"
+          >
+            {f.label}
+          </Link>
+        ))}
+      </div>
     </div>
   );
 }

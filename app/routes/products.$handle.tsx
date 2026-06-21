@@ -878,7 +878,11 @@ export default function Product() {
     return (
       <li
         key={pin.ref}
-        className={hoverable ? 'teardown-pin teardown-pin-hoverable' : undefined}
+        className={
+          hoverable
+            ? `teardown-pin teardown-pin-hoverable${isActive ? ' is-active' : ''}`
+            : undefined
+        }
         {...handlers}
       >
         <span className="teardown-pin-part">{pin.part}</span>
@@ -1348,6 +1352,11 @@ export default function Product() {
             ) : undefined
           }
         >
+          {!frameViewer && activeBoardArt ? (
+            <p className="teardown-hint" aria-hidden="true">
+              Tap a part to find it on the board · tap a layer to peel it back
+            </p>
+          ) : null}
           {linksMounted
             ? createPortal(
                 <svg
