@@ -60,6 +60,9 @@ export type BoardArtProps = {
    *  the parent's tap-toggle can re-assert a part hidden behind another layer
    *  instead of toggling it off invisibly. */
   onHighlightVisible?: (visible: boolean) => void;
+  /** A sideways flick on the board (mobile) — steps the part tour (+1 next / −1
+   *  prev). Mirrors the vertical layer flick. */
+  onSwipeHorizontal?: (dir: number) => void;
   /** Mobile guided-walkthrough progress (0..1, or null to disable). Drives the
    *  one-time auto-play: peel TOP→BOTTOM through the layers, then a deliberate
    *  top→bottom scan of the front then rear parts (each lit with its table-row
@@ -266,6 +269,7 @@ export function BoardArt({
   highlightGroups,
   onFlying,
   onHighlightVisible,
+  onSwipeHorizontal,
   choreoProgress,
   choreoTopSteps,
   choreoBottomSteps,
@@ -1087,10 +1091,12 @@ export function BoardArt({
     const t = e.changedTouches[0];
     const dy = t.clientY - s.y;
     const dx = t.clientX - s.x;
-    // The board surface doesn't scroll (touch-action: none), so any deliberate
-    // vertical drag peels — far enough to beat a tap, and clearly vertical.
+    // The board surface doesn't scroll (touch-action: none), so a deliberate
+    // drag is a gesture: VERTICAL peels a layer, HORIZONTAL steps the part tour.
     if (Math.abs(dy) > 44 && Math.abs(dy) > Math.abs(dx) * 1.3) {
       step(dy < 0 ? 1 : -1);
+    } else if (Math.abs(dx) > 44 && Math.abs(dx) > Math.abs(dy) * 1.3) {
+      onSwipeHorizontal?.(dx < 0 ? 1 : -1); // swipe left = next part
     }
   };
 
