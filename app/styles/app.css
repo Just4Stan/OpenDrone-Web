@@ -1961,15 +1961,6 @@ html.hero-header-in .homepage-layout .site-header {
   }
 }
 
-/* Short clarifier under the flagship label: the four core parts, and that the
-   OpenStack is just the FC + ESC bundled (not a separate flagship category). */
-.home-mobile-featured-note {
-  margin: -0.35rem 0 0.25rem;
-  font-family: var(--font-sans);
-  font-size: 0.85rem;
-  line-height: 1.5;
-  color: var(--color-text-muted);
-}
 
 .home-mobile-featured {
   display: flex;
