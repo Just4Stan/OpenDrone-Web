@@ -1952,6 +1952,15 @@ html.hero-header-in .homepage-layout .site-header {
   color: var(--color-gold);
 }
 
+/* The footer is rendered on the homepage only for the mobile layout (the
+   desktop home is the WebGL hero and owns its own ending). Hide it at/above the
+   desktop breakpoint so the desktop hero is untouched. */
+@media (min-width: 1024px) {
+  .home-mobile-footer {
+    display: none;
+  }
+}
+
 /* Short clarifier under the flagship label: the four core parts, and that the
    OpenStack is just the FC + ESC bundled (not a separate flagship category). */
 .home-mobile-featured-note {
@@ -2177,7 +2186,9 @@ html.hero-header-in .homepage-layout .site-header {
 .product-card-meta {
   font-family: var(--font-mono);
   font-size: var(--fs-xs);
-  color: var(--color-text-dim);
+  /* Muted, not dim — the category (Flight Controller / ESC / …) is useful
+     scanning info and `--color-text-dim` all but vanished on the dark cards. */
+  color: var(--color-text-muted);
   letter-spacing: 0.04em;
   margin: 0;
   line-height: 1.4;
@@ -11978,6 +11989,13 @@ button.reset {
 .cart-empty-chip:hover {
   border-color: var(--color-gold);
   color: var(--color-gold);
+}
+/* In dark the card bg sits a hair off the near-black page, so the chips read as
+   faint decoration, not buttons. Lift the surface + border so they're obviously
+   tappable (light mode already reads). */
+html:not(.light) .cart-empty-chip {
+  background: var(--color-bg-elevated);
+  border-color: var(--color-border-strong);
 }
 @media (max-width: 1023px) {
   /* Consent / form checkboxes were ~13px hit targets — enlarge on touch. */
