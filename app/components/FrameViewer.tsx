@@ -4,6 +4,15 @@ import * as THREE from 'three';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {MeshoptDecoder} from 'three/addons/libs/meshopt_decoder.module.js';
 import {useIsMobile} from '~/lib/use-media-query';
+import {getActiveTheme} from '~/lib/theme';
+
+// Wireframe stroke per theme. Gold-on-near-black reads fine in dark; on light's
+// cream page that same gold is nearly invisible, so light uses a dark bronze at
+// higher opacity. Applied at build and refreshed live on a theme toggle.
+const FRAME_LINE = {
+  dark: {color: 0xc8b27a, opacity: 0.55},
+  light: {color: 0x5c4611, opacity: 0.92},
+} as const;
 
 // Memoise fetched GLB bytes by URL so a model that's been loaded once (e.g. the
 // other tier, preloaded in the background) never hits the network again — the
@@ -163,10 +172,11 @@ function prepareModel(scene: THREE.Object3D): Part[] {
   // `visible` (which would also hide the child outline, leaving nothing on
   // screen). Hiding the object was the bug: the outline used to be a
   // sibling on the parent "occurrence" node, so it never moved.
+  const style = FRAME_LINE[getActiveTheme()];
   const lineMat = new THREE.LineBasicMaterial({
-    color: 0xc8b27a,
+    color: style.color,
     transparent: true,
-    opacity: 0.55,
+    opacity: style.opacity,
   });
   const meshes: THREE.Mesh[] = [];
   scene.traverse((o) => {
@@ -282,6 +292,37 @@ function FrameModel({
     for (const [s, m] of models.current) m.root.visible = s === src;
     invalidate();
   }, [src]);
+
+  // Recolour the wireframes live when the visitor toggles light/dark — the
+  // baked-at-build gold is invisible on the light cream page. Watches the
+  // <html> class (the single source of theme truth) and repaints every loaded
+  // model's edge materials.
+  useEffect(() => {
+    if (typeof MutationObserver === 'undefined') return;
+    const apply = () => {
+      const style = FRAME_LINE[getActiveTheme()];
+      for (const m of models.current.values()) {
+        m.root.traverse((o) => {
+          const ls = o as THREE.LineSegments;
+          if (!ls.isLineSegments) return;
+          const mats = Array.isArray(ls.material) ? ls.material : [ls.material];
+          for (const mat of mats) {
+            const lm = mat as THREE.LineBasicMaterial;
+            lm.color.setHex(style.color);
+            lm.opacity = style.opacity;
+            lm.needsUpdate = true;
+          }
+        });
+      }
+      invalidate();
+    };
+    const obs = new MutationObserver(apply);
+    obs.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ['class'],
+    });
+    return () => obs.disconnect();
+  }, []);
 
   // Dispose everything on unmount (the IntersectionObserver unmounts the whole
   // canvas when the backdrop scrolls out of view).
