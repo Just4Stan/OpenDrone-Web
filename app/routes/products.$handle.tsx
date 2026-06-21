@@ -32,6 +32,7 @@ import {CommitHistoryCard, LatestCommitCard} from '~/components/LatestCommit';
 import {redirectIfHandleIsLocalized} from '~/lib/redirect';
 import {buildSeoMeta, buildProductJsonLd} from '~/lib/seo';
 import {fetchLatestCommits} from '~/lib/github';
+import {useNoHover} from '~/lib/use-media-query';
 import {
   PRODUCT_CONTENT,
   PRODUCT_CONTENT_FALLBACK,
@@ -724,6 +725,10 @@ export default function Product() {
   // on the board by BoardArt. Lives here (the common ancestor of the pin list
   // and the board) so a hover lights the matching footprint.
   const [hoveredRefs, setHoveredRefs] = useState<string[]>([]);
+  // On touch there's no hover: a tap emits synthetic mouseenter→...→mouseleave/
+  // blur, so the hover handlers would light the part then instantly clear it.
+  // Switch to a tap-only model on touch (click toggles; no auto-clear).
+  const noHover = useNoHover();
   // Whether the hovered pin wants ONE union box (dense arrays) vs a box per part.
   const [hoveredUnion, setHoveredUnion] = useState(false);
   // Per-group boxes (e.g. ESC motor pads → one box per motor), if the pin sets them.
@@ -828,19 +833,24 @@ export default function Product() {
           <span className="teardown-io-tag">I/O</span>
           <div className="teardown-io-chips">
             {pin.chips.map((chip) => {
+              const chipActive =
+                hoveredRefs.length === chip.refs.length &&
+                chip.refs.every((r) => hoveredRefs.includes(r));
               const on = () => {
                 setHoveredRefs(chip.refs);
                 setHoveredUnion(false);
                 setHoveredGroups(undefined);
               };
+              // Touch: tap toggles this chip's spotlight, no hover-clear.
+              const chipHandlers = noHover
+                ? {onClick: () => (chipActive ? clearHover() : on())}
+                : {onMouseEnter: on, onFocus: on, onBlur: clearHover};
               return (
                 <button
                   type="button"
                   key={chip.label}
-                  className="teardown-io-chip"
-                  onMouseEnter={on}
-                  onFocus={on}
-                  onBlur={clearHover}
+                  className={`teardown-io-chip${chipActive ? ' is-active' : ''}`}
+                  {...chipHandlers}
                 >
                   {chip.label}
                 </button>
@@ -866,15 +876,20 @@ export default function Product() {
     const tap = () => (isActive ? clearHover() : enter());
     // No per-row onMouseLeave — clearing happens on the container leave so the
     // spotlight stays lit while moving between rows (onBlur covers keyboard).
-    const handlers = hoverable
-      ? {
-          onMouseEnter: enter,
-          onClick: tap,
-          onFocus: enter,
-          onBlur: clearHover,
-          tabIndex: 0,
-        }
-      : {};
+    // On touch, drop every hover/focus handler — a tap's synthetic mouse +
+    // blur events would clear the spotlight the click just set. Click alone
+    // toggles, and it persists (no container mouseleave on touch either).
+    const handlers = !hoverable
+      ? {}
+      : noHover
+        ? {onClick: tap, tabIndex: 0}
+        : {
+            onMouseEnter: enter,
+            onClick: tap,
+            onFocus: enter,
+            onBlur: clearHover,
+            tabIndex: 0,
+          };
     return (
       <li
         key={pin.ref}
@@ -1043,6 +1058,27 @@ export default function Product() {
   // phones previously had NO sticky buy control at all once the in-hero buy
   // module scrolled away.
   const [railMobile, setRailMobile] = useState(false);
+  // On a phone the teardown board is sticky and full-width; the pinned mobile
+  // buy rail (~98px) would otherwise sit on top of the part list, leaving no
+  // room to see board + controls together. Suppress the rail while the teardown
+  // board fills the screen — it re-pins the moment you scroll past the chapter.
+  const [teardownActive, setTeardownActive] = useState(false);
+  useEffect(() => {
+    if (!railMobile || !activeBoardArt) {
+      setTeardownActive(false);
+      return;
+    }
+    const el =
+      document.querySelector('.chapter-media:has(.board-art)') ??
+      document.querySelector('.board-art');
+    if (!el || typeof IntersectionObserver === 'undefined') return;
+    const io = new IntersectionObserver(
+      ([e]) => setTeardownActive(e.isIntersecting && e.intersectionRatio >= 0.35),
+      {threshold: [0, 0.35, 0.7]},
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, [railMobile, activeBoardArt, product.handle]);
   useEffect(() => {
     if (!hasLadder) return;
     const sentinel = railSentinelRef.current;
@@ -1176,7 +1212,9 @@ export default function Product() {
   // over it and swallows clicks. Suppressed (CSS-hidden, not unmounted — an
   // in-flight add-to-cart submit must survive opening the drawer) while an
   // aside is open so it doesn't sit on top of the cart.
-  const railSuppressed = railPinned && asideType !== 'closed';
+  const railSuppressed =
+    railPinned &&
+    (asideType !== 'closed' || (railMobile && teardownActive));
   const pinnedRail = (
     <div
       className={`buy-rail is-pinned${railMobile ? ' is-mobile' : ''}${railSuppressed ? ' is-suppressed' : ''}`}
@@ -1380,7 +1418,7 @@ export default function Product() {
           {groupedPins.top.length > 0 && groupedPins.bottom.length > 0 ? (
             <div
               className={`teardown-sides${boardFlying ? ' is-locked' : ''}`}
-              onMouseLeave={clearHover}
+              onMouseLeave={noHover ? undefined : clearHover}
             >
               <section className="teardown-side">
                 <ul className="teardown-pins">
@@ -1396,7 +1434,7 @@ export default function Product() {
           ) : (
             <div
               className={`teardown-sides${boardFlying ? ' is-locked' : ''}`}
-              onMouseLeave={clearHover}
+              onMouseLeave={noHover ? undefined : clearHover}
             >
               <section className="teardown-side">
                 <ul className="teardown-pins">

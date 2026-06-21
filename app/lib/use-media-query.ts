@@ -68,3 +68,14 @@ export function useBreakpointUp(bp: Breakpoint, serverFallback = false): boolean
 export function usePrefersReducedMotion(): boolean {
   return useMediaQuery('(prefers-reduced-motion: reduce)', true);
 }
+
+/**
+ * True on a touch device with no hover (phones, most tablets). Used to switch
+ * hover-driven affordances to a tap-only model — on touch, the synthetic
+ * `mouseenter`/`mouseleave`/`blur` a tap emits otherwise fight a click-toggle
+ * (the tap lights then instantly clears). Defaults false on SSR so the desktop
+ * hover path renders first, then corrects on the client.
+ */
+export function useNoHover(): boolean {
+  return useMediaQuery('(hover: none)');
+}
