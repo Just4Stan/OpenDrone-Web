@@ -3904,7 +3904,10 @@ button.reset {
     flex-direction: column;
     align-items: stretch;
     gap: 0.2rem;
-    padding: 0.25rem max(0.8rem, env(safe-area-inset-left)) calc(0.18rem + env(safe-area-inset-bottom)) max(0.8rem, env(safe-area-inset-right));
+    /* Only ~half the home-indicator inset as bottom padding (was the FULL inset
+       ~34pt) — the content hugs the rounded bottom edge instead of floating above
+       a tall empty band, while staying clear of the home indicator. */
+    padding: 0.3rem max(0.8rem, env(safe-area-inset-left)) max(0.3rem, calc(env(safe-area-inset-bottom) * 0.5)) max(0.8rem, env(safe-area-inset-right));
     background: var(--pod-bg-strong);
     border-top: 1px solid var(--pod-border);
     animation: buy-rail-rise 0.2s ease;
