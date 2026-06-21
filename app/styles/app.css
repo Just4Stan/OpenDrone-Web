@@ -11872,18 +11872,6 @@ button.reset {
     color: inherit;
   }
 
-  /* Scroll budget for the one-time walkthrough (peel + front/rear scan): present
-     ONLY while the walkthrough plays, so the manual interface stays compact (no
-     dead scroll). Sized so the part list arrives at the parts phase (~0.82 of the
-     1.6-screen progress range). */
-  .teardown-choreo-spacer {
-    display: none;
-  }
-  body.od-walkthrough .teardown-choreo-spacer {
-    display: block;
-    height: 342vh;
-  }
-
   /* Caption beneath the pinned board — the current layer (Phase A) or the part
      under the spotlight (Phase B). Keeps the area under the big board meaningful. */
   .teardown-caption {
