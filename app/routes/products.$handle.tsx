@@ -1546,7 +1546,7 @@ export default function Product() {
                   next?.scrollIntoView({behavior: 'smooth', block: 'start'});
                 }}
               >
-                Skip ↓
+                Skip teardown ↓
               </button>
             </div>
           ) : null}
