@@ -1231,6 +1231,19 @@ export default function Product() {
         onSelect={setActiveTier}
       />
     ) : null;
+  // Compact (name-pill) variant switcher for the pinned MOBILE buy bar — keeps
+  // variant selection reachable there without the full spec ladder's height.
+  const railLadderCompact =
+    hasLadder && content.optionAxis && content.variants ? (
+      <VariantLadder
+        compact
+        axis={content.optionAxis}
+        variants={content.variants}
+        productOptions={productOptions}
+        activeValue={activeTier}
+        onSelect={setActiveTier}
+      />
+    ) : null;
   const isBundle = Boolean(content.bundle);
   const buyPrice = isBundle ? bundlePrice : selectedVariant?.price;
   const buyAvailable = isBundle
@@ -1293,7 +1306,7 @@ export default function Product() {
       className={`buy-rail is-pinned${railMobile ? ' is-mobile' : ''}${railSuppressed ? ' is-suppressed' : ''}`}
       style={railBox && !railMobile ? {right: railBox.right} : undefined}
     >
-      {railMobile ? null : railLadder}
+      {railMobile ? railLadderCompact : railLadder}
       {railBuyModule}
     </div>
   );
@@ -1381,7 +1394,7 @@ export default function Product() {
                   prefetch="viewport"
                   className="trust-chip trust-chip-gold trust-chip-link"
                 >
-                  €1 → {content.firmware.project} maintainers
+                  €1 → {content.firmware.project} devs
                 </Link>
               </li>
             ) : null}
