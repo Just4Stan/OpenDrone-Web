@@ -259,8 +259,10 @@ export async function loader({request, context}: Route.LoaderArgs) {
       const keep = (p: CollectionItemFragment | null): p is CollectionItemFragment =>
         Boolean(p);
       return {
-        // Mobile flagship line.
-        featured: [d.frame, d.stack, d.rx].filter(keep),
+        // Mobile flagship line: the four core parts (FC, ESC, RX, frame). The
+        // OpenStack is intentionally NOT here — it's just the FC + ESC bundled,
+        // surfaced as a note on the showcase, not as a separate flagship slot.
+        featured: [d.fc, d.esc, d.rx, d.frame].filter(keep),
         // The three hero boards, resolved per airframe size. FC + ESC are
         // single products with a size variant axis ("Model"): each size links
         // them to its own variant (?Model=…) and shows that variant's price.
