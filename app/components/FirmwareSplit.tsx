@@ -83,7 +83,7 @@ export function FirmwareSplit({
           ) : (
             firmwareProject ?? 'firmware'
           )}{' '}
-          maintainers.
+          devs.
         </strong>
       </p>
     </section>
