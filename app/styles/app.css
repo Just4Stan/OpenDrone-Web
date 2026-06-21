@@ -11910,6 +11910,13 @@ button.reset {
     letter-spacing: 0.04em;
     color: var(--color-text-dim);
   }
+  /* Part tour sits under the layer progress, separated by a hairline. Same
+     tick + meta chrome as the layer deck — components work "the same". */
+  .board-part-tour {
+    margin-top: 0.75rem;
+    padding-top: 0.7rem;
+    border-top: 1px solid var(--color-border);
+  }
   /* The rail's first-reveal opacity-0 hold (is-armed) never clears without the
      fly animation — force it visible on mobile. */
   .board-art.is-armed .board-folder-rail,
