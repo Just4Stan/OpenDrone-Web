@@ -11811,7 +11811,7 @@ button.reset {
     transition: opacity 0.4s ease, transform 0.45s cubic-bezier(0.22, 0.8, 0.3, 1);
     filter: none;
     opacity: 0;
-    transform: translateY(9%) !important;
+    transform: translateY(15%) !important;
     z-index: 1;
     pointer-events: none;
   }
@@ -11884,6 +11884,13 @@ button.reset {
     color: var(--color-gold);
     margin-bottom: 0.25rem;
   }
+  .teardown-caption-sub {
+    display: block;
+    margin-top: 0.3rem;
+    font-size: 0.85rem;
+    color: var(--color-text-muted);
+    letter-spacing: 0.02em;
+  }
 
   .site-header {
     transition: opacity 0.4s ease;
@@ -11899,7 +11906,9 @@ button.reset {
     display: none;
   }
   body.od-explorer-layers .chapter-media:has(.board-art) {
-    top: max(0.4rem, calc(50svh - 45vw - 3.2rem));
+    /* Centre the board + (now 3-line) caption block so the breathing room is
+       balanced top/bottom rather than pooling as dead space under the board. */
+    top: max(0.5rem, calc(50svh - 46vw));
   }
 
   /* PHASE C — PARTS: the board locks tight to the top behind a faded header and
