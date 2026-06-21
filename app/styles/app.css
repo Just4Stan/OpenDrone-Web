@@ -3658,6 +3658,22 @@ button.reset {
   flex-wrap: wrap;
 }
 
+/* Price + "incl. VAT" sit together; the qualifier is a small muted note to the
+   right of the figure. */
+.product-buy-amount {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.45rem;
+}
+.product-buy-vat {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 400;
+  letter-spacing: 0.03em;
+  color: var(--color-text-muted);
+  white-space: nowrap;
+}
+
 .product-buy-price .product-price {
   font-family: var(--font-display);
   font-weight: 600;

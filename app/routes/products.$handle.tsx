@@ -1303,10 +1303,15 @@ export default function Product() {
   const railBuyModule = (
     <div className="product-buy" data-buy-module>
       <div className="product-buy-price">
-        <ProductPrice
-          price={buyPrice}
-          compareAtPrice={isBundle ? undefined : selectedVariant?.compareAtPrice}
-        />
+        {/* Price + the "incl. VAT" qualifier (Art. VI.45 WER pre-contractual
+            info) grouped together — also fills the dead space beside the price. */}
+        <span className="product-buy-amount">
+          <ProductPrice
+            price={buyPrice}
+            compareAtPrice={isBundle ? undefined : selectedVariant?.compareAtPrice}
+          />
+          <span className="product-buy-vat">incl.&nbsp;VAT</span>
+        </span>
         {isBundle ? (
           <span className="product-buy-sku">
             {/* Name the actual pair for the tier (20×20 ships the Mini). */}
@@ -1317,9 +1322,6 @@ export default function Product() {
         ) : selectedVariant?.sku ? (
           <span className="product-buy-sku">SKU {selectedVariant.sku}</span>
         ) : null}
-        {/* Art. VI.45 WER pre-contractual price info (prices incl. VAT, excl.
-            shipping) lives in the cart summary now — kept out of the buy bar so
-            it doesn't crowd the price/CTA. */}
       </div>
       <span className={`product-buy-stock${buyAvailable ? '' : ' is-out'}`}>
         {isBundle
