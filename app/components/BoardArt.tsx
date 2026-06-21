@@ -46,6 +46,17 @@ export type BoardArtProps = {
   /** Called with `true` while the first-reveal fly-in is animating and `false`
    *  when it finishes, so the parent can lock part-list interaction meanwhile. */
   onFlying?: (active: boolean) => void;
+  /** Mobile scroll-choreography (0..1, or null to disable). As the visitor
+   *  scrolls into the explorer this scrubs a guided teardown: light every
+   *  BOTTOM part → peel through each layer one by one → light every TOP part.
+   *  Above ~0.95 it releases back to manual tap interaction. Lets the layer
+   *  rail be hidden on phones (scroll is the control), reclaiming its space. */
+  choreoProgress?: number | null;
+  /** Every TOP-side (front-face) part refdes — lit together at the end of the
+   *  scroll choreography. */
+  choreoTopRefs?: string[];
+  /** Every BOTTOM-side (back-face) part refdes — lit at the start. */
+  choreoBottomRefs?: string[];
 };
 
 /** One component from `components.json` — coords already in the board viewBox. */
@@ -229,6 +240,9 @@ export function BoardArt({
   highlightUnion,
   highlightGroups,
   onFlying,
+  choreoProgress,
+  choreoTopRefs,
+  choreoBottomRefs,
 }: BoardArtProps) {
   const ref = useRef<HTMLDivElement | null>(null);
   const bodyRef = useRef<HTMLDivElement | null>(null);
@@ -602,13 +616,71 @@ export function BoardArt({
     };
   }, [sheets, revealed, flyDone]);
 
+  // Scroll-choreography state. When `choreoProgress` is a number (mobile, in the
+  // explorer) it scrubs a guided teardown that OVERRIDES the active layer +
+  // highlights: [0,.30) light every bottom part on the back face; [.30,.70) peel
+  // through every sheet back→front one at a time; [.70,.95) light every top part
+  // on the front face; ≥.95 release to manual tap interaction. Discrete by
+  // design — the active index is an integer and the highlight set is one of three
+  // values, so the heavy spotlight effect only re-runs at phase boundaries, not
+  // every scroll frame.
+  // Parts on each side, sorted into a spatial WATERFALL order (top→bottom, then
+  // left→right) so the scrubbed spotlight flows down the board part by part
+  // rather than hopping around. Falls back to the given order until the manifest
+  // (with footprint positions) has loaded.
+  const choreoSorted = useMemo(() => {
+    const sortByPos = (refs?: string[]) => {
+      const list = (refs ?? []).filter((r) => manifest?.map.get(r)?.bbox);
+      if (!manifest) return refs ?? [];
+      return list.sort((a, b) => {
+        const A = manifest.map.get(a)!.bbox!;
+        const B = manifest.map.get(b)!.bbox!;
+        return A.y - B.y || A.x - B.x;
+      });
+    };
+    return {top: sortByPos(choreoTopRefs), bottom: sortByPos(choreoBottomRefs)};
+  }, [choreoTopRefs, choreoBottomRefs, manifest]);
+
+  const choreo = useMemo(() => {
+    if (choreoProgress == null || !sheets.length) return null;
+    const p = Math.max(0, Math.min(1, choreoProgress));
+    const idxOf = (slug: string) => {
+      const i = sheets.findIndex((s) => s.slug === slug);
+      return i >= 0 ? i : 0;
+    };
+    const N = sheets.length;
+    // Pick ONE part from a sorted list by sub-progress — the waterfall reveals
+    // parts one at a time as you scroll, never all at once.
+    const oneOf = (list: string[], sub: number): string[] => {
+      if (!list.length) return [];
+      const i = Math.min(list.length - 1, Math.max(0, Math.floor(sub * list.length)));
+      return [list[i]];
+    };
+    if (p < 0.3) return {active: idxOf('back'), refs: oneOf(choreoSorted.bottom, p / 0.3)};
+    if (p < 0.7) {
+      const sub = (p - 0.3) / 0.4; // 0..1 across the peel
+      const idx = Math.round((N - 1) * (1 - sub)); // back(N-1) → front(0)
+      return {active: idx, refs: [] as string[]};
+    }
+    if (p < 0.95)
+      return {active: idxOf('front'), refs: oneOf(choreoSorted.top, (p - 0.7) / 0.25)};
+    return null; // released — manual interaction resumes
+  }, [choreoProgress, sheets, choreoSorted]);
+
+  // The index/refs actually rendered: the choreography wins while it's running,
+  // otherwise the user's manual layer + tap-driven highlight.
+  const shownIndex = choreo ? choreo.active : active;
+  const effectiveRefs = choreo ? choreo.refs : highlightRefs;
+  const effectiveUnion = choreo ? false : highlightUnion;
+  const effectiveGroups = choreo ? undefined : highlightGroups;
+
   // The realistic FACE currently shown: 'F' (Front face) / 'B' (Back face), or
   // null for any copper layer. Highlights only appear on the faces — a copper
   // layer isn't "a PCB-mounted component", so no box there.
   const visibleFace =
-    sheets[active]?.slug === 'front'
+    sheets[shownIndex]?.slug === 'front'
       ? 'F'
-      : sheets[active]?.slug === 'back'
+      : sheets[shownIndex]?.slug === 'back'
         ? 'B'
         : null;
 
@@ -619,6 +691,9 @@ export function BoardArt({
   const activeRef = useRef(active);
   activeRef.current = active;
   useEffect(() => {
+    // The scroll choreography owns the active layer while it runs — don't let the
+    // tap auto-flip fight it.
+    if (choreo) return;
     if (!manifest || !highlightRefs?.length) return;
     const comps = highlightRefs
       .map((r) => manifest.map.get(r))
@@ -628,16 +703,16 @@ export function BoardArt({
     const targetFace = fCount >= comps.length - fCount ? 'front' : 'back';
     const idx = sheets.findIndex((s) => s.slug === targetFace);
     if (idx >= 0 && idx !== activeRef.current) setActive(idx);
-  }, [manifest, highlightRefs, sheets]);
+  }, [manifest, highlightRefs, sheets, choreo]);
 
   // Footprint boxes for parts mounted on the visible FACE only. A padded bbox
   // rect (mm, in the board viewBox frame) — drawn anchored INSIDE the sheet svg
   // so it scrolls with the board and sits exactly on the part.
   const highlights = useMemo(() => {
-    if (!manifest || !highlightRefs?.length || !visibleFace) return [];
+    if (!manifest || !effectiveRefs?.length || !visibleFace) return [];
     const PAD = 0.4; // mm breathing room so the box comfortably encloses the part
     const out: Array<{ref: string; rect: number[]}> = [];
-    for (const r of highlightRefs) {
+    for (const r of effectiveRefs) {
       const c = manifest.map.get(r);
       if (!c || c.layer !== visibleFace || !c.bbox) continue;
       out.push({
@@ -646,7 +721,7 @@ export function BoardArt({
       });
     }
     return out;
-  }, [manifest, highlightRefs, visibleFace]);
+  }, [manifest, effectiveRefs, visibleFace]);
   // Draw the highlight ANCHORED inside the active sheet's own <svg>, so it
   // scrolls with the board and sits exactly on the part (it shares the viewBox +
   // every transform). Per hover we append a <g> with: a subtle dim veil over the
@@ -692,15 +767,15 @@ export function BoardArt({
       return [x0, y0, x1 - x0, y1 - y0];
     };
     let boxes: Array<{ref: string; rect: number[]}>;
-    if (highlightGroups?.length) {
-      boxes = highlightGroups
+    if (effectiveGroups?.length) {
+      boxes = effectiveGroups
         .map((group) => {
           const set = new Set(group);
           const rs = highlights.filter((h) => set.has(h.ref));
           return rs.length ? {ref: 'group', rect: unionRect(rs)} : null;
         })
         .filter((b): b is {ref: string; rect: number[]} => b !== null);
-    } else if (highlightUnion && highlights.length > 1) {
+    } else if (effectiveUnion && highlights.length > 1) {
       boxes = [{ref: 'union', rect: unionRect(highlights)}];
     } else {
       boxes = highlights;
@@ -876,13 +951,13 @@ export function BoardArt({
     cache.set(svg, {g, brightClip: null});
     hadHilite.current = true;
   }, [
-    active,
+    shownIndex,
     revealed,
     sheets,
     highlights,
     manifest,
-    highlightUnion,
-    highlightGroups,
+    effectiveUnion,
+    effectiveGroups,
     visibleFace,
     uid,
   ]);
@@ -900,15 +975,15 @@ export function BoardArt({
         <button
           type="button"
           key={s.slug}
-          className={`board-sheet${i === active ? ' is-active' : ''}`}
+          className={`board-sheet${i === shownIndex ? ' is-active' : ''}`}
           style={{['--depth' as string]: i}}
           aria-label={`Show ${s.label} layer`}
-          aria-pressed={i === active}
+          aria-pressed={i === shownIndex}
           onClick={() => setActive(i)}
           dangerouslySetInnerHTML={{__html: s.html}}
         />
       )),
-    [sheets, active],
+    [sheets, shownIndex],
   );
 
   // Step through the stack, clamped to its ends (used by chevrons / keys / wheel).
@@ -920,7 +995,9 @@ export function BoardArt({
       ref={ref}
       className={`board-art board-folder${revealed ? ' is-revealed' : ''}${
         revealed && !flyDone ? ' is-armed' : ''
-      }${flyIn && !flyDone ? ' is-flying' : ''}`}
+      }${flyIn && !flyDone ? ' is-flying' : ''}${
+        choreoProgress != null ? ' is-choreo' : ''
+      }`}
       data-board={handle}
     >
       {sheets.length ? (
@@ -949,7 +1026,7 @@ export function BoardArt({
             <span className="board-folder-rail-head">
               Layer
               <span className="board-folder-rail-count">
-                {active + 1}/{sheets.length}
+                {shownIndex + 1}/{sheets.length}
               </span>
             </span>
             <div className="board-folder-tabs">
@@ -958,8 +1035,8 @@ export function BoardArt({
                   type="button"
                   key={s.slug}
                   data-slug={s.slug}
-                  className={i === active ? 'is-active' : undefined}
-                  aria-pressed={i === active}
+                  className={i === shownIndex ? 'is-active' : undefined}
+                  aria-pressed={i === shownIndex}
                   onClick={() => setActive(i)}
                 >
                   <span className="board-folder-tab-name">{s.label}</span>

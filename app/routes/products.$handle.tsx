@@ -32,7 +32,7 @@ import {CommitHistoryCard, LatestCommitCard} from '~/components/LatestCommit';
 import {redirectIfHandleIsLocalized} from '~/lib/redirect';
 import {buildSeoMeta, buildProductJsonLd} from '~/lib/seo';
 import {fetchLatestCommits} from '~/lib/github';
-import {useNoHover} from '~/lib/use-media-query';
+import {useNoHover, useIsMobile} from '~/lib/use-media-query';
 import {
   PRODUCT_CONTENT,
   PRODUCT_CONTENT_FALLBACK,
@@ -669,6 +669,18 @@ export default function Product() {
     }
     return {top, bottom, other};
   }, [activePins, pinSides]);
+  // Every part refdes by board side — fed to the mobile scroll choreography so it
+  // can light "all bottom parts" then "all top parts" (see BoardArt.choreo*).
+  const isMobile = useIsMobile();
+  const {allTopRefs, allBottomRefs} = useMemo(() => {
+    const topR: string[] = [];
+    const botR: string[] = [];
+    for (const [ref, side] of pinSides) {
+      if (side === 'F') topR.push(ref);
+      else if (side === 'B') botR.push(ref);
+    }
+    return {allTopRefs: topR, allBottomRefs: botR};
+  }, [pinSides]);
   // CAD products (the frame) carry an exploded 3D viewer instead of a
   // layered board SVG; when present it takes the teardown media slot. Like
   // boardArt, a tier's own model (3" vs 5") wins over the shared default.
@@ -837,6 +849,7 @@ export default function Product() {
                 hoveredRefs.length === chip.refs.length &&
                 chip.refs.every((r) => hoveredRefs.includes(r));
               const on = () => {
+                setChoreoManual(true);
                 setHoveredRefs(chip.refs);
                 setHoveredUnion(false);
                 setHoveredGroups(undefined);
@@ -862,6 +875,7 @@ export default function Product() {
     }
     const hoverable = !!refs?.length;
     const enter = () => {
+      setChoreoManual(true);
       setHoveredRefs(refs ?? []);
       setHoveredUnion(pin.box === 'union');
       setHoveredGroups(pin.boxGroups);
@@ -1079,6 +1093,66 @@ export default function Product() {
     io.observe(el);
     return () => io.disconnect();
   }, [railMobile, activeBoardArt, product.handle]);
+
+  // Mobile scroll choreography for the PCB explorer. As the visitor scrolls into
+  // the teardown the board (sticky) plays a guided teardown — light all bottom
+  // parts → peel through every layer → light all top parts — scrubbed by how far
+  // they've scrolled into the chapter. `teardownProgress` (0..1) is just that
+  // scroll position; BoardArt maps it to layer + highlights. Board products only.
+  const choreoOn = isMobile && !!activeBoardArt && !frameViewer;
+  const [teardownProgress, setTeardownProgress] = useState(0);
+  // The moment the visitor taps a part they take manual control — the scroll
+  // choreography releases so their tap drives the board. Scrolling back to the
+  // top of the explorer re-arms it (handled in the scroll effect below).
+  const [choreoManual, setChoreoManual] = useState(false);
+  useEffect(() => {
+    if (!choreoOn) {
+      setTeardownProgress(0);
+      return;
+    }
+    let el = document.querySelector('.chapter:has(.board-art)');
+    let raf = 0;
+    const STICKY = 78; // header pill + sticky-board top offset, in px
+    const onScroll = () => {
+      if (raf) return;
+      raf = requestAnimationFrame(() => {
+        raf = 0;
+        if (!el || !el.isConnected) {
+          el = document.querySelector('.chapter:has(.board-art)');
+        }
+        if (!el) return;
+        const top = el.getBoundingClientRect().top;
+        // Full sequence plays over ~1.15 viewport heights of scroll into the
+        // chapter; past that it releases to manual part tapping.
+        const range = window.innerHeight * 1.15;
+        const p = (STICKY - top) / range;
+        const clamped = Math.max(0, Math.min(1, p));
+        setTeardownProgress(clamped);
+        // Re-arm the guided animation once scrolled back near the explorer's top.
+        if (clamped < 0.06) setChoreoManual(false);
+      });
+    };
+    onScroll();
+    window.addEventListener('scroll', onScroll, {passive: true});
+    window.addEventListener('resize', onScroll);
+    return () => {
+      window.removeEventListener('scroll', onScroll);
+      window.removeEventListener('resize', onScroll);
+      if (raf) cancelAnimationFrame(raf);
+    };
+  }, [choreoOn, product.handle]);
+
+  // Declutter the chrome ONLY once you're deep in the explorer — past the guided
+  // animation and into browsing the parts list. Then the floating header fades
+  // right back and the sticky board is allowed to ride UP behind it (CSS), so the
+  // board stays visible through the faded header while the part list gets the
+  // reclaimed room. Firing on mere in-view faded the header far too soon.
+  useEffect(() => {
+    const on = choreoOn && (teardownProgress > 0.8 || choreoManual);
+    document.body.classList.toggle('od-explorer', on);
+    return () => document.body.classList.remove('od-explorer');
+  }, [choreoOn, teardownProgress, choreoManual]);
+
   useEffect(() => {
     if (!hasLadder) return;
     const sentinel = railSentinelRef.current;
@@ -1403,6 +1477,9 @@ export default function Product() {
                 highlightUnion={hoveredUnion}
                 highlightGroups={hoveredGroups}
                 onFlying={setBoardFlying}
+                choreoProgress={choreoOn && !choreoManual ? teardownProgress : null}
+                choreoTopRefs={allTopRefs}
+                choreoBottomRefs={allBottomRefs}
               />
             ) : undefined
           }
