@@ -1140,6 +1140,7 @@ export default function Product() {
   const [choreoState, setChoreoState] = useState<{
     phase: 'layers' | 'scan';
     layerLabel: string | null;
+    layerFn: string | null;
     scanRef: string | null;
   } | null>(null);
   useEffect(() => {
@@ -1544,6 +1545,11 @@ export default function Product() {
                     <>
                       <span className="teardown-caption-kicker">Layer</span>
                       {choreoState.layerLabel ?? ''}
+                      {choreoState.layerFn ? (
+                        <span className="teardown-caption-sub">
+                          {choreoState.layerFn}
+                        </span>
+                      ) : null}
                     </>
                   ) : (
                     <>

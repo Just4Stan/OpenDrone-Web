@@ -61,7 +61,12 @@ export type BoardArtProps = {
    *  the space under the board (current layer in Phase A, scanned part in B).
    *  Called with null when the choreography isn't running. */
   onChoreoState?: (
-    s: {phase: 'layers' | 'scan'; layerLabel: string | null; scanRef: string | null} | null,
+    s: {
+      phase: 'layers' | 'scan';
+      layerLabel: string | null;
+      layerFn: string | null;
+      scanRef: string | null;
+    } | null,
   ) => void;
 };
 
@@ -653,6 +658,7 @@ export function BoardArt({
     refs: string[];
     layerSlug?: string;
     layerLabel?: string;
+    layerFn?: string;
     scanRef?: string | null;
   } | null>(() => {
     if (choreoProgress == null || !sheets.length) return null;
@@ -679,7 +685,14 @@ export function BoardArt({
       // PHASE A — peel TOP(0) → BOTTOM through every sheet.
       const idx = Math.min(N - 1, Math.floor((p / 0.34) * N));
       const s = sheets[idx];
-      return {phase: 'layers', active: idx, refs: [], layerSlug: s?.slug, layerLabel: s?.label};
+      return {
+        phase: 'layers',
+        active: idx,
+        refs: [],
+        layerSlug: s?.slug,
+        layerLabel: s?.label,
+        layerFn: s ? layerFunction(s.slug, idx, N, layerFns) : undefined,
+      };
     }
     // PHASE B — scan FRONT (component side) top→bottom, then flip and scan the
     // REAR (solder side) top→bottom. Both sides get the deliberate spotlight pass.
@@ -700,6 +713,7 @@ export function BoardArt({
     onChoreoState({
       phase: choreo.phase,
       layerLabel: choreo.layerLabel ?? null,
+      layerFn: choreo.layerFn ?? null,
       scanRef: choreo.scanRef ?? null,
     });
   }, [choreo, onChoreoState]);
