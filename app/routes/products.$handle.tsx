@@ -1142,15 +1142,16 @@ export default function Product() {
     };
   }, [choreoOn, product.handle]);
 
-  // While the explorer fills the phone, declutter the chrome: fade the floating
-  // header right back and hide the layer rail (the scroll IS the layer control
-  // now) so the board + part list get the vertical space. Driven off the same
-  // in-view flag as the buy-rail suppression.
+  // Declutter the chrome ONLY once you're deep in the explorer — past the guided
+  // animation and into browsing the parts list. Then the floating header fades
+  // right back and the sticky board is allowed to ride UP behind it (CSS), so the
+  // board stays visible through the faded header while the part list gets the
+  // reclaimed room. Firing on mere in-view faded the header far too soon.
   useEffect(() => {
-    const on = isMobile && teardownActive;
+    const on = choreoOn && (teardownProgress > 0.8 || choreoManual);
     document.body.classList.toggle('od-explorer', on);
     return () => document.body.classList.remove('od-explorer');
-  }, [isMobile, teardownActive]);
+  }, [choreoOn, teardownProgress, choreoManual]);
 
   useEffect(() => {
     if (!hasLadder) return;

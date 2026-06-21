@@ -3882,17 +3882,19 @@ button.reset {
     left: 0;
     right: 0;
     z-index: 60;
-    /* Column now: a compact variant-pill row on top, the price + add-to-cart row
-       beneath it. Everything sized down so the two rows stay a compact bubble. */
+    /* A thin strip hugging the bottom edge (the safe-area inset clears the home
+       indicator / screen curvature). A tight variant-pill row on top, the price
+       + add-to-cart on one short row beneath it. */
     flex-direction: column;
     align-items: stretch;
-    gap: 0.4rem;
-    padding: 0.45rem max(0.8rem, env(safe-area-inset-left)) calc(0.5rem + env(safe-area-inset-bottom)) max(0.8rem, env(safe-area-inset-right));
+    gap: 0.2rem;
+    padding: 0.25rem max(0.8rem, env(safe-area-inset-left)) calc(0.18rem + env(safe-area-inset-bottom)) max(0.8rem, env(safe-area-inset-right));
     background: var(--pod-bg-strong);
     border-top: 1px solid var(--pod-border);
     animation: buy-rail-rise 0.2s ease;
   }
-  /* Compact: hide the secondary lines, keep price + button on one row. */
+  /* Compact: hide the secondary lines, keep price + button on one row. The base
+     .product-buy carries 15px top/bottom padding — drop it so the strip is thin. */
   .buy-rail.is-pinned.is-mobile .product-buy {
     display: flex;
     flex-direction: row;
@@ -3900,20 +3902,24 @@ button.reset {
     justify-content: space-between;
     gap: var(--sp-3);
     width: 100%;
+    padding: 0;
   }
   .buy-rail.is-pinned.is-mobile .product-buy-stock,
   .buy-rail.is-pinned.is-mobile .product-buy-sku {
     display: none;
   }
-  /* Shrink the figures + CTA so the variant row fits without growing the bar. */
+  /* Price is just small inline text — no box, no its own row. */
   .buy-rail.is-pinned.is-mobile .product-buy-price {
-    font-size: 1.15rem;
+    flex-wrap: nowrap;
+  }
+  .buy-rail.is-pinned.is-mobile .product-buy-price .product-price {
+    font-size: 0.95rem;
   }
   .buy-rail.is-pinned.is-mobile .product-form button {
     white-space: nowrap;
-    padding: 0.5rem 1rem;
-    font-size: 0.8rem;
-    min-height: 40px;
+    padding: 0.32rem 0.85rem;
+    font-size: 0.75rem;
+    min-height: 32px;
   }
   /* Compact variant pills — a single horizontal scroll row of name-only chips. */
   .buy-rail.is-pinned.is-mobile .variant-ladder--compact .variant-ladder-track {
@@ -3922,7 +3928,6 @@ button.reset {
     gap: 0.35rem;
     overflow-x: auto;
     scrollbar-width: none;
-    padding-bottom: 1px;
   }
   .buy-rail.is-pinned.is-mobile
     .variant-ladder--compact
@@ -3934,8 +3939,8 @@ button.reset {
     display: inline-flex;
     align-items: center;
     gap: 0.3rem;
-    min-height: 32px;
-    padding: 0.28rem 0.7rem;
+    min-height: 28px;
+    padding: 0.18rem 0.6rem;
     border-radius: var(--r-pill);
     border: 1px solid var(--color-border-strong);
     background: var(--color-bg-card);
@@ -11754,9 +11759,12 @@ button.reset {
   .chapter-media:has(.board-art) {
     display: block;
     position: sticky;
-    /* Clear the floating header pill (taller than --header-height with its
-       margin) so the layer rail's "LAYER n/N" caption isn't tucked behind it. */
+    /* Normally clears the floating header pill (taller than --header-height with
+       its margin) so the layer rail's "LAYER n/N" caption isn't tucked behind it.
+       Deep in the explorer the board is allowed to ride up behind the (faded)
+       header — see body.od-explorer below. */
     top: calc(var(--header-height) + 1.15rem);
+    transition: top 0.35s ease;
     align-self: start;
     order: -1;
     z-index: 3;
@@ -11812,11 +11820,15 @@ button.reset {
   .board-art.is-choreo .board-folder-rail {
     display: none;
   }
-  /* Declutter the chrome while the explorer fills the phone: fade the floating
-     header right back so it stops competing with the board (still tappable). It
-     eases back to full once you scroll out of the explorer. */
+  /* Deep in the explorer (browsing the part list): fade the floating header
+     right back and let the sticky board ride UP behind it, so the board stays
+     visible through the faded header and the part list gets the reclaimed room.
+     Both ease in/out as you cross the threshold. */
   body.od-explorer .site-header {
-    opacity: 0.14;
+    opacity: 0.12;
+  }
+  body.od-explorer .chapter-media:has(.board-art) {
+    top: 0.3rem;
   }
   .site-header {
     transition: opacity 0.4s ease;
