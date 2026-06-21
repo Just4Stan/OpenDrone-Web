@@ -11878,7 +11878,7 @@ button.reset {
   }
   body.od-walkthrough .teardown-choreo-spacer {
     display: block;
-    height: 131vh;
+    height: 342vh;
   }
 
   /* Caption beneath the pinned board — the current layer (Phase A) or the part
@@ -11927,17 +11927,26 @@ button.reset {
     top: max(0.5rem, calc(50svh - 46vw));
   }
 
-  /* PHASE C — PARTS: the board locks tight to the top behind a faded header and
-     the part list fills beneath it — only board + list on screen. */
+  /* PARTS view — ONLY the PCB + the component list on screen, nothing else.
+     The board locks to the top; the header, the chapter label/title, the hint,
+     the layer rail, the inspect link — everything else — is hidden, for max
+     vertical room. Applies in the walkthrough's parts phase AND in manual mode
+     once you scroll down to the list. */
   body.od-explorer-parts .site-header {
-    opacity: 0.1;
+    opacity: 0;
+    pointer-events: none;
   }
   body.od-explorer-parts .chapter-media:has(.board-art) {
     top: 0.3rem;
   }
+  body.od-explorer-parts .chapter:has(.board-art) .chapter-index,
   body.od-explorer-parts .chapter:has(.board-art) .chapter-title,
-  body.od-explorer-parts .teardown-hint {
-    display: none;
+  body.od-explorer-parts .teardown-hint,
+  body.od-explorer-parts .teardown-caption,
+  body.od-explorer-parts .teardown-inspect,
+  body.od-explorer-parts .pair-cta,
+  body.od-explorer-parts .board-folder-rail {
+    display: none !important;
   }
 }
 
