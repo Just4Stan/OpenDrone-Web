@@ -24,12 +24,17 @@ export function VariantLadder({
   productOptions,
   activeValue,
   onSelect,
+  compact = false,
 }: {
   axis: string;
   variants: Record<string, VariantContent>;
   productOptions: MappedProductOptions[];
   activeValue: string;
   onSelect: (value: string) => void;
+  /** Compact mode: a single horizontal row of name-only pills (no axis label,
+   *  tagline or spec cells) — for the pinned mobile buy bar where space is tight
+   *  but variant switching still needs to be reachable. */
+  compact?: boolean;
 }) {
   const navigate = useNavigate();
 
@@ -44,11 +49,17 @@ export function VariantLadder({
   });
 
   return (
-    <div className="variant-ladder" role="radiogroup" aria-label={`${axis} options`}>
-      <p className="variant-ladder-axis">
-        {axis}
-        <span className="variant-ladder-axis-hint">· pick your build</span>
-      </p>
+    <div
+      className={`variant-ladder${compact ? ' variant-ladder--compact' : ''}`}
+      role="radiogroup"
+      aria-label={`${axis} options`}
+    >
+      {compact ? null : (
+        <p className="variant-ladder-axis">
+          {axis}
+          <span className="variant-ladder-axis-hint">· pick your build</span>
+        </p>
+      )}
       <div className="variant-ladder-track">
         {tiers.map(({value, content, optionValue}) => {
           const selected = norm(value) === norm(activeValue);
@@ -104,17 +115,19 @@ export function VariantLadder({
                   </span>
                 ) : null}
               </span>
-              {content.tagline ? (
+              {compact ? null : content.tagline ? (
                 <span className="variant-tier-tagline">{content.tagline}</span>
               ) : null}
-              <span className="variant-tier-cells">
-                {content.highlights.map(([k, v]) => (
-                  <span className="variant-tier-cell" key={k}>
-                    <span className="variant-tier-cell-k">{k}</span>
-                    <span className="variant-tier-cell-v">{v}</span>
-                  </span>
-                ))}
-              </span>
+              {compact ? null : (
+                <span className="variant-tier-cells">
+                  {content.highlights.map(([k, v]) => (
+                    <span className="variant-tier-cell" key={k}>
+                      <span className="variant-tier-cell-k">{k}</span>
+                      <span className="variant-tier-cell-v">{v}</span>
+                    </span>
+                  ))}
+                </span>
+              )}
             </button>
           );
         })}
