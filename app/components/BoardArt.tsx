@@ -56,6 +56,10 @@ export type BoardArtProps = {
   /** Called with `true` while the first-reveal fly-in is animating and `false`
    *  when it finishes, so the parent can lock part-list interaction meanwhile. */
   onFlying?: (active: boolean) => void;
+  /** Reports whether a part highlight is actually drawn on the visible layer, so
+   *  the parent's tap-toggle can re-assert a part hidden behind another layer
+   *  instead of toggling it off invisibly. */
+  onHighlightVisible?: (visible: boolean) => void;
   /** Mobile guided-walkthrough progress (0..1, or null to disable). Drives the
    *  one-time auto-play: peel TOP→BOTTOM through the layers, then a deliberate
    *  top→bottom scan of the front then rear parts (each lit with its table-row
@@ -261,6 +265,7 @@ export function BoardArt({
   highlightUnion,
   highlightGroups,
   onFlying,
+  onHighlightVisible,
   choreoProgress,
   choreoTopSteps,
   choreoBottomSteps,
@@ -792,6 +797,11 @@ export function BoardArt({
     }
     return out;
   }, [manifest, effectiveRefs, visibleFace]);
+  // Tell the parent whether the highlight is currently visible (boxes on the
+  // shown face) so its tap-toggle can re-assert a part hidden under another layer.
+  useEffect(() => {
+    onHighlightVisible?.(highlights.length > 0);
+  }, [highlights, onHighlightVisible]);
   // Draw the highlight ANCHORED inside the active sheet's own <svg>, so it
   // scrolls with the board and sits exactly on the part (it shares the viewBox +
   // every transform). Per hover we append a <g> with: a subtle dim veil over the
@@ -1077,11 +1087,9 @@ export function BoardArt({
     const t = e.changedTouches[0];
     const dy = t.clientY - s.y;
     const dx = t.clientX - s.x;
-    const dt = e.timeStamp - s.t;
-    const v = Math.abs(dy) / Math.max(dt, 1); // px/ms
-    // A deliberate vertical FLICK only: far enough, fast enough, and clearly
-    // vertical — so a casual scroll-drag over the board never peels a layer.
-    if (Math.abs(dy) > 60 && v > 0.5 && Math.abs(dy) > Math.abs(dx) * 1.6) {
+    // The board surface doesn't scroll (touch-action: none), so any deliberate
+    // vertical drag peels — far enough to beat a tap, and clearly vertical.
+    if (Math.abs(dy) > 44 && Math.abs(dy) > Math.abs(dx) * 1.3) {
       step(dy < 0 ? 1 : -1);
     }
   };
