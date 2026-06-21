@@ -11793,12 +11793,10 @@ button.reset {
   .chapter-media:has(.board-art) {
     display: block;
     position: sticky;
-    /* Normally clears the floating header pill (taller than --header-height with
-       its margin) so the layer rail's "LAYER n/N" caption isn't tucked behind it.
-       Deep in the explorer the board is allowed to ride up behind the (faded)
-       header — see body.od-explorer below. */
+    /* Sit just below the floating header pill — never under it, so the layer rail
+       never overlaps the header. A constant top (no scroll-driven ride-up) keeps
+       the board geometry stable, which is what stops the idle flicker. */
     top: calc(var(--header-height) + 1.15rem);
-    transition: top 0.35s ease;
     align-self: start;
     order: -1;
     z-index: 3;
@@ -11853,16 +11851,8 @@ button.reset {
     margin-top: 0;
   }
 
-  /* The scroll choreography drives the layers (peel → scan), so the horizontal
-     layer pill rail is redundant on mobile — hide it. */
-  .board-art.is-choreo .board-folder-rail {
-    display: none;
-  }
-
-  /* The media frame is a fixed 1:1 flex box (board fills it). On the board
-     explorer we also stack a caption under the board, so let the frame grow and
-     lay out as a column (board, then caption) instead of centring them side by
-     side in a square. The board carries its own opaque backing already. */
+  /* The board's media frame is a 1:1 card; let the board fill it cleanly (no
+     card border/bg around it on the explorer). */
   .chapter-media-frame--live:has(.board-art) {
     display: block;
     aspect-ratio: auto;
@@ -11870,74 +11860,6 @@ button.reset {
     border: none;
     overflow: visible;
     color: inherit;
-  }
-
-  /* Caption beneath the pinned board — the current layer (Phase A) or the part
-     under the spotlight (Phase B). Keeps the area under the big board meaningful. */
-  .teardown-caption {
-    margin: 0.7rem 0 0;
-    text-align: center;
-    font-family: var(--font-mono);
-    font-size: 1rem;
-    letter-spacing: 0.01em;
-    line-height: 1.3;
-    color: var(--color-text);
-  }
-  .teardown-caption-kicker {
-    display: block;
-    font-size: 11px;
-    letter-spacing: 0.22em;
-    text-transform: uppercase;
-    color: var(--color-gold);
-    margin-bottom: 0.25rem;
-  }
-  .teardown-caption-sub {
-    display: block;
-    margin-top: 0.3rem;
-    font-size: 0.85rem;
-    color: var(--color-text-muted);
-    letter-spacing: 0.02em;
-  }
-
-  .site-header {
-    transition: opacity 0.4s ease;
-  }
-
-  /* PHASE A/B — LAYERS: the board + caption own the screen, centred with balanced
-     breathing room; the title, hint and part list are tucked away; header normal.
-     This is the "plenty of vertical space" layer-browse / scan view. */
-  body.od-explorer-layers .chapter:has(.board-art) .chapter-title,
-  body.od-explorer-layers .teardown-hint,
-  body.od-explorer-layers .teardown-sides,
-  body.od-explorer-layers .teardown-inspect {
-    display: none;
-  }
-  body.od-explorer-layers .chapter-media:has(.board-art) {
-    /* Centre the board + (now 3-line) caption block so the breathing room is
-       balanced top/bottom rather than pooling as dead space under the board. */
-    top: max(0.5rem, calc(50svh - 46vw));
-  }
-
-  /* PARTS view — ONLY the PCB + the component list on screen, nothing else.
-     The board locks to the top; the header, the chapter label/title, the hint,
-     the layer rail, the inspect link — everything else — is hidden, for max
-     vertical room. Applies in the walkthrough's parts phase AND in manual mode
-     once you scroll down to the list. */
-  body.od-explorer-parts .site-header {
-    opacity: 0;
-    pointer-events: none;
-  }
-  body.od-explorer-parts .chapter-media:has(.board-art) {
-    top: 0.3rem;
-  }
-  body.od-explorer-parts .chapter:has(.board-art) .chapter-index,
-  body.od-explorer-parts .chapter:has(.board-art) .chapter-title,
-  body.od-explorer-parts .teardown-hint,
-  body.od-explorer-parts .teardown-caption,
-  body.od-explorer-parts .teardown-inspect,
-  body.od-explorer-parts .pair-cta,
-  body.od-explorer-parts .board-folder-rail {
-    display: none !important;
   }
 }
 
@@ -12016,9 +11938,19 @@ button.reset {
 
   /* Discoverability hint under the teardown title (mobile only — desktop has
      hover to teach the interaction). */
+  /* Manual-explorer guide: a "slide down" hint + a Skip button (jumps past the
+     teardown for visitors who don't want to explore). */
+  .teardown-guide {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    margin: 0 0 0.85rem;
+  }
   .teardown-hint {
     display: block;
-    margin: 0 0 0.85rem;
+    margin: 0;
+    flex: 1 1 auto;
     font-family: var(--font-mono);
     font-size: 12px;
     letter-spacing: 0.06em;
@@ -12034,6 +11966,28 @@ button.reset {
     border-radius: 50%;
     background: var(--color-gold);
     vertical-align: middle;
+  }
+  .teardown-skip {
+    flex: 0 0 auto;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    min-height: 36px;
+    padding: 0 0.9rem;
+    border-radius: var(--r-pill);
+    border: 1px solid var(--color-border-strong);
+    background: var(--color-bg-card);
+    color: var(--color-text-muted);
+    font-family: var(--font-mono);
+    font-size: 12px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    transition: border-color 0.18s ease, color 0.18s ease;
+  }
+  .teardown-skip:hover,
+  .teardown-skip:active {
+    border-color: var(--color-gold);
+    color: var(--color-gold);
   }
 
   /* The deep-dive links ("Inspect interactively", "Open schematic") were 10px
