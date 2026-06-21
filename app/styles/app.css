@@ -1904,29 +1904,62 @@ html.hero-header-in .homepage-layout .site-header {
   max-width: 44ch;
 }
 
-/* Dynamic-Island action pill: a floating pod that holds the gold Shop button
-   and the GitHub mark. (.pod / .pod--pill supply the surface; this sizes it.) */
-.home-mobile-cta.pod {
+/* Two full-width hero actions side by side — Shop (gold) + GitHub (ghost).
+   Each is its own pill spanning half the row, using the phone's full width. */
+.home-mobile-cta {
   display: flex;
-  align-items: center;
+  align-items: stretch;
   gap: 0.6rem;
-  margin-top: 0.35rem;
-  padding: 0.4rem;
+  margin-top: 0.5rem;
+  width: 100%;
 }
-/* In dark mode --pod-bg sits a hair off the near-black page, so the pill read
-   as two loose buttons rather than a capsule. Lift the surface + border so the
-   island is unmistakably a discrete floating pod (light mode already reads). */
-html:not(.light) .home-mobile-cta.pod {
-  background: var(--color-bg-elevated);
-  border-color: var(--color-border-strong);
+.home-mobile-cta-btn {
+  flex: 1 1 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-height: 52px;
+  padding: 0 1rem;
+  border-radius: var(--r-pill);
+  font-family: var(--font-mono);
+  font-size: 0.9rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease,
+    background 0.18s ease, color 0.18s ease;
 }
-/* The GitHub mark is the secondary action — keep it a clear 44px touch target
-   but visually quieter than the gold Shop CTA. */
-.home-mobile-cta .hero-action-secondary {
-  min-width: 44px;
-  min-height: 44px;
-  width: 48px;
-  height: 48px;
+.home-mobile-cta-btn:active {
+  transform: translateY(1px);
+}
+.home-mobile-cta-shop {
+  background: var(--color-gold);
+  color: var(--color-on-accent);
+  border: 1px solid var(--color-gold);
+  box-shadow: 0 8px 22px color-mix(in srgb, var(--color-gold) 28%, transparent);
+}
+.home-mobile-cta-shop:hover {
+  background: var(--color-gold-hover);
+}
+.home-mobile-cta-github {
+  background: var(--color-bg-card);
+  color: var(--color-text);
+  border: 1px solid var(--color-border-strong);
+}
+.home-mobile-cta-github:hover {
+  border-color: var(--color-gold);
+  color: var(--color-gold);
+}
+
+/* Short clarifier under the flagship label: the four core parts, and that the
+   OpenStack is just the FC + ESC bundled (not a separate flagship category). */
+.home-mobile-featured-note {
+  margin: -0.35rem 0 0.25rem;
+  font-family: var(--font-sans);
+  font-size: 0.85rem;
+  line-height: 1.5;
+  color: var(--color-text-muted);
 }
 
 .home-mobile-featured {
@@ -4914,17 +4947,35 @@ button.reset {
     justify-content: center;
     gap: 0.5em;
   }
+  /* One horizontal scroll row instead of wrapping into a tall stack — the
+     sheets/layers sit side by side and use the full width; swipe for the rest.
+     Far more screen-efficient than 3 stacked rows of half-empty pills. */
   .board-folder-tabs,
   .schematic-rail-tabs {
     flex-direction: row;
-    flex-wrap: wrap;
-    justify-content: center;
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    gap: 6px;
+    padding-bottom: 2px;
+  }
+  .board-folder-tabs::-webkit-scrollbar,
+  .schematic-rail-tabs::-webkit-scrollbar {
+    display: none;
   }
   .board-folder-tabs::before,
   .schematic-rail-tabs::before {
     display: none;
   }
-  /* The function blurbs would bloat the wrapped pill row — names only here. */
+  /* Pills don't shrink — they scroll. The function blurbs would bloat the row,
+     so names only here. */
+  .board-folder-tabs button,
+  .schematic-rail-tabs button {
+    flex: 0 0 auto;
+    white-space: nowrap;
+  }
   .board-folder-tabs button {
     flex-direction: row;
     align-items: center;
@@ -11476,21 +11527,6 @@ button.reset {
 @media (max-width: 1023px) {
   /* ---- B) Horizontal-overflow kills ------------------------------------ */
 
-  /* The MobileHome CTA reuses the desktop hero button, which carries a
-     min-width:26rem (416px) anchor — far past a phone's width. Let it fill
-     the column and shrink instead, and allow the row to wrap so the GitHub
-     square never gets shoved off-screen. */
-  .home-mobile-cta {
-    flex-wrap: wrap;
-    gap: 0.6rem;
-  }
-  .home-mobile-cta .hero-action-primary {
-    min-width: 0;
-    flex: 1 1 auto;
-    min-height: 44px;
-    padding-inline: 1.5rem;
-  }
-
   /* The catalog sort control (label + native select) wouldn't shrink, so the
      toolbar overran the viewport by ~7px. Let it shrink and the toolbar wrap. */
   .catalog-toolbar {
@@ -11642,12 +11678,28 @@ button.reset {
    desktop 3D fan / sticky / gutter math.
    ============================================================ */
 @media (max-width: 1023px) {
-  /* Un-hide the board explorer; it sits in normal flow under the copy. */
+  /* Un-hide the board explorer AND pin it. The part list is the control surface;
+     the board is what it controls — they must be on screen together. On a phone
+     the full part list is taller than the viewport, so the board is made sticky
+     and ordered to lead the chapter: it stays put at the top while you scroll
+     and tap parts beneath it, so every tap's highlight is always visible. Board
+     size is unchanged (full-width square) — only its position is pinned. */
   .chapter-media:has(.board-art) {
     display: block;
-    position: static;
-    top: auto;
-    margin-top: var(--sp-4);
+    position: sticky;
+    top: calc(var(--header-height) + 0.4rem);
+    align-self: start;
+    order: -1;
+    z-index: 3;
+    margin: 0 0 var(--sp-4);
+    /* The board sheets are transparent SVGs; without an opaque backing the
+       title + part list scrolling behind the pinned board bleed through it.
+       A solid page-coloured panel + a soft lower edge separates board (pinned)
+       from list (scrolling). */
+    background: var(--color-bg);
+    padding-bottom: 0.5rem;
+    box-shadow: 0 12px 18px -10px var(--color-bg),
+      0 1px 0 0 var(--color-border);
   }
 
   /* Flatten the fanned 3D stack: only the active sheet renders, flat and
@@ -11679,9 +11731,10 @@ button.reset {
     opacity: 1;
   }
 
-  /* The board chapter's desktop sticky-media offset doesn't apply once flat. */
+  /* The board leads the chapter now (order:-1), so no top offset — the bottom
+     margin set above separates it from the part list that scrolls beneath. */
   .chapter:has(.board-art) .chapter-media {
-    margin-top: var(--sp-4);
+    margin-top: 0;
   }
 }
 
