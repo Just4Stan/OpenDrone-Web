@@ -1126,7 +1126,7 @@ export default function Product() {
   // LAYERS top→bottom, Phase B a slow top→bottom SCAN of the parts, Phase C release
   // to the PARTS list. `teardownProgress` (0..1) is the scroll position into the
   // chapter; BoardArt maps it to layer/scan. Board products only.
-  const PHASE_PARTS = 0.82; // progress at which we hand off to the parts list
+  const PHASE_PARTS = 0.95; // progress at which we hand off to the parts list
   const [teardownProgress, setTeardownProgress] = useState(0);
   // The guided walkthrough plays ONCE. After the visitor has scrolled through it
   // (or tapped a part/layer), `walkthroughSeen` latches and the explorer drops to
@@ -1135,6 +1135,24 @@ export default function Product() {
   const [choreoManual, setChoreoManual] = useState(false);
   const [walkthroughSeen, setWalkthroughSeen] = useState(false);
   const walkthroughOn = choreoOn && !walkthroughSeen && !choreoManual;
+  // In manual mode, whether you've scrolled down so the part list dominates — then
+  // the explorer drops to the clean "only PCB + list" parts view (rail + header +
+  // everything else hidden). An IO on the list drives it.
+  const [partsInView, setPartsInView] = useState(false);
+  useEffect(() => {
+    if (!choreoOn) {
+      setPartsInView(false);
+      return;
+    }
+    const el = document.querySelector('.teardown-sides');
+    if (!el || typeof IntersectionObserver === 'undefined') return;
+    const io = new IntersectionObserver(
+      ([e]) => setPartsInView(e.isIntersecting && e.intersectionRatio >= 0.12),
+      {threshold: [0, 0.12, 0.4], rootMargin: '-42% 0px 0px 0px'},
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, [choreoOn, product.handle, walkthroughSeen]);
   // Live caption for the space under the big board: the current layer in Phase A,
   // the scanned part in Phase B (reported by BoardArt).
   const [choreoState, setChoreoState] = useState<{
@@ -1160,9 +1178,9 @@ export default function Product() {
         }
         if (!el) return;
         const top = el.getBoundingClientRect().top;
-        // The guided sequence (peel + front/rear scan) plays over ~1.6 viewport
-        // heights of scroll — deliberate but fast — before the parts list.
-        const range = window.innerHeight * 1.6;
+        // The guided sequence plays over ~3.6 viewport heights of scroll so every
+        // layer + every scanned part holds for a deliberate swipe — nothing blurs.
+        const range = window.innerHeight * 3.6;
         const p = (STICKY - top) / range;
         const clamped = Math.max(0, Math.min(1, p));
         setTeardownProgress(clamped);
@@ -1191,8 +1209,13 @@ export default function Product() {
     // Once seen (or on a tap) the explorer drops to the plain manual interface:
     // sticky board + visible layer rail + part list, no spacer, no caption.
     const wt = walkthroughOn && teardownActive;
-    const inParts = wt && teardownProgress >= PHASE_PARTS;
-    const inLayers = wt && !inParts && teardownProgress > 0.02;
+    // Parts view: the walkthrough's parts phase, OR (manual) once you've scrolled
+    // to the list. Layers view: only during the walkthrough's peel/scan.
+    const inParts =
+      choreoOn &&
+      teardownActive &&
+      ((wt && teardownProgress >= PHASE_PARTS) || (!walkthroughOn && partsInView));
+    const inLayers = wt && teardownProgress < PHASE_PARTS && teardownProgress > 0.02;
     document.body.classList.toggle('od-walkthrough', wt);
     document.body.classList.toggle('od-explorer-parts', inParts);
     document.body.classList.toggle('od-explorer-layers', inLayers);
@@ -1201,7 +1224,13 @@ export default function Product() {
       document.body.classList.remove('od-explorer-parts');
       document.body.classList.remove('od-explorer-layers');
     };
-  }, [walkthroughOn, teardownActive, teardownProgress]);
+  }, [
+    choreoOn,
+    walkthroughOn,
+    teardownActive,
+    teardownProgress,
+    partsInView,
+  ]);
 
   useEffect(() => {
     if (!hasLadder) return;
@@ -1579,7 +1608,7 @@ export default function Product() {
               Tap a part to find it on the board · tap a layer to peel it back
             </p>
           ) : null}
-          {linksMounted
+          {linksMounted && !isMobile
             ? createPortal(
                 <svg
                   ref={teardownLinksRef}
