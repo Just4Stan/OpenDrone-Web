@@ -668,22 +668,20 @@ export function BoardArt({
       return i >= 0 ? i : 0;
     };
     const N = sheets.length;
-    const ease = (t: number) => t * t * (3 - 2 * t); // smoothstep — deliberate
-    // Scan one part from a sorted list by eased sub-progress.
-    const scan = (
-      list: string[],
-      face: 'front' | 'back',
-      sub: number,
-    ): {phase: 'scan'; active: number; refs: string[]; scanRef: string | null} => {
-      const i = list.length
-        ? Math.min(list.length - 1, Math.floor(ease(sub) * list.length))
-        : 0;
-      const ref = list[i] ?? null;
-      return {phase: 'scan', active: idxOf(face), refs: ref ? [ref] : [], scanRef: ref};
-    };
-    if (p < 0.34) {
-      // PHASE A — peel TOP(0) → BOTTOM through every sheet.
-      const idx = Math.min(N - 1, Math.floor((p / 0.34) * N));
+    // Even, deliberate pacing: every step — each layer AND each scanned part —
+    // gets the SAME slice of scroll, so nothing blurs past. Bands are sized to the
+    // real counts; the last 5% releases to the parts list.
+    const nF = choreoSorted.top.length;
+    const nB = choreoSorted.bottom.length;
+    const total = Math.max(1, N + nF + nB);
+    const SPAN = 0.95;
+    const aEnd = (N / total) * SPAN;
+    const bEnd = ((N + nF) / total) * SPAN;
+    const stepIdx = (list: string[], sub: number) =>
+      list.length ? Math.min(list.length - 1, Math.floor(sub * list.length)) : 0;
+    if (p < aEnd) {
+      // PHASE A — peel TOP(0) → BOTTOM, one sheet per equal slice.
+      const idx = Math.min(N - 1, Math.floor((p / aEnd) * N));
       const s = sheets[idx];
       return {
         phase: 'layers',
@@ -694,10 +692,15 @@ export function BoardArt({
         layerFn: s ? layerFunction(s.slug, idx, N, layerFns) : undefined,
       };
     }
-    // PHASE B — scan FRONT (component side) top→bottom, then flip and scan the
-    // REAR (solder side) top→bottom. Both sides get the deliberate spotlight pass.
-    if (p < 0.58) return scan(choreoSorted.top, 'front', (p - 0.34) / 0.24);
-    if (p < 0.82) return scan(choreoSorted.bottom, 'back', (p - 0.58) / 0.24);
+    // PHASE B — scan FRONT (component side) top→bottom, then flip + scan the REAR.
+    if (p < bEnd && nF) {
+      const ref = choreoSorted.top[stepIdx(choreoSorted.top, (p - aEnd) / (bEnd - aEnd))];
+      return {phase: 'scan', active: idxOf('front'), refs: ref ? [ref] : [], scanRef: ref ?? null};
+    }
+    if (p < SPAN && nB) {
+      const ref = choreoSorted.bottom[stepIdx(choreoSorted.bottom, (p - bEnd) / (SPAN - bEnd))];
+      return {phase: 'scan', active: idxOf('back'), refs: ref ? [ref] : [], scanRef: ref ?? null};
+    }
     return null; // PHASE C — released; manual part tapping
   }, [choreoProgress, sheets, choreoSorted]);
 
