@@ -3894,15 +3894,24 @@ button.reset {
     animation: buy-rail-rise 0.2s ease;
   }
   /* Compact: hide the secondary lines, keep price + button on one row. The base
-     .product-buy carries 15px top/bottom padding — drop it so the strip is thin. */
+     .product-buy carries 15px top/bottom padding — drop it so the strip is thin.
+     Price keeps its natural width; the CTA grows to FILL the rest of the row so
+     there's no big empty band between them (was ~63% dead width). */
   .buy-rail.is-pinned.is-mobile .product-buy {
     display: flex;
     flex-direction: row;
     align-items: center;
-    justify-content: space-between;
-    gap: var(--sp-3);
+    justify-content: flex-start;
+    gap: 0.7rem;
     width: 100%;
     padding: 0;
+  }
+  .buy-rail.is-pinned.is-mobile .product-form {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+  .buy-rail.is-pinned.is-mobile .product-form button {
+    width: 100%;
   }
   .buy-rail.is-pinned.is-mobile .product-buy-stock,
   .buy-rail.is-pinned.is-mobile .product-buy-sku {
@@ -11814,24 +11823,81 @@ button.reset {
     margin-top: 0;
   }
 
-  /* The scroll choreography drives the layers now (light bottom → peel → light
-     top), so the horizontal layer rail is redundant — hide it and reclaim its
-     vertical space for the board + part list. */
+  /* The scroll choreography drives the layers (peel → scan), so the horizontal
+     layer pill rail is redundant on mobile — hide it. */
   .board-art.is-choreo .board-folder-rail {
     display: none;
   }
-  /* Deep in the explorer (browsing the part list): fade the floating header
-     right back and let the sticky board ride UP behind it, so the board stays
-     visible through the faded header and the part list gets the reclaimed room.
-     Both ease in/out as you cross the threshold. */
-  body.od-explorer .site-header {
-    opacity: 0.12;
+
+  /* The media frame is a fixed 1:1 flex box (board fills it). On the board
+     explorer we also stack a caption under the board, so let the frame grow and
+     lay out as a column (board, then caption) instead of centring them side by
+     side in a square. The board carries its own opaque backing already. */
+  .chapter-media-frame--live:has(.board-art) {
+    display: block;
+    aspect-ratio: auto;
+    background: none;
+    border: none;
+    overflow: visible;
+    color: inherit;
   }
-  body.od-explorer .chapter-media:has(.board-art) {
-    top: 0.3rem;
+
+  /* Scroll budget for the guided layer-browse + scan: the board + caption stay
+     pinned while this empty stretch scrolls past, sized so the part list arrives
+     right at the parts phase (~0.78 of the 2.4-screen progress range). */
+  .teardown-choreo-spacer {
+    display: block;
+    height: 185vh;
   }
+
+  /* Caption beneath the pinned board — the current layer (Phase A) or the part
+     under the spotlight (Phase B). Keeps the area under the big board meaningful. */
+  .teardown-caption {
+    margin: 0.7rem 0 0;
+    text-align: center;
+    font-family: var(--font-mono);
+    font-size: 1rem;
+    letter-spacing: 0.01em;
+    line-height: 1.3;
+    color: var(--color-text);
+  }
+  .teardown-caption-kicker {
+    display: block;
+    font-size: 11px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--color-gold);
+    margin-bottom: 0.25rem;
+  }
+
   .site-header {
     transition: opacity 0.4s ease;
+  }
+
+  /* PHASE A/B — LAYERS: the board + caption own the screen, centred with balanced
+     breathing room; the title, hint and part list are tucked away; header normal.
+     This is the "plenty of vertical space" layer-browse / scan view. */
+  body.od-explorer-layers .chapter:has(.board-art) .chapter-title,
+  body.od-explorer-layers .teardown-hint,
+  body.od-explorer-layers .teardown-sides,
+  body.od-explorer-layers .teardown-inspect {
+    display: none;
+  }
+  body.od-explorer-layers .chapter-media:has(.board-art) {
+    top: max(0.4rem, calc(50svh - 45vw - 3.2rem));
+  }
+
+  /* PHASE C — PARTS: the board locks tight to the top behind a faded header and
+     the part list fills beneath it — only board + list on screen. */
+  body.od-explorer-parts .site-header {
+    opacity: 0.1;
+  }
+  body.od-explorer-parts .chapter-media:has(.board-art) {
+    top: 0.3rem;
+  }
+  body.od-explorer-parts .chapter:has(.board-art) .chapter-title,
+  body.od-explorer-parts .teardown-hint {
+    display: none;
   }
 }
 
