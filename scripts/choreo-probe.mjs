@@ -16,7 +16,6 @@ for(const t of targets){
   }, t);
   await p.waitForTimeout(700);
   const info=await p.evaluate(()=>{
-    const active=document.querySelector('.board-art .board-folder-tabs button.is-active');
     const railHidden=getComputedStyle(document.querySelector('.board-folder-rail')).display==='none';
     const hdrOpacity=getComputedStyle(document.querySelector('.site-header')).opacity;
     const svg=document.querySelector('.board-art .board-sheet.is-active svg');
