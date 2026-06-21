@@ -11805,6 +11805,22 @@ button.reset {
   .chapter:has(.board-art) .chapter-media {
     margin-top: 0;
   }
+
+  /* The scroll choreography drives the layers now (light bottom → peel → light
+     top), so the horizontal layer rail is redundant — hide it and reclaim its
+     vertical space for the board + part list. */
+  .board-art.is-choreo .board-folder-rail {
+    display: none;
+  }
+  /* Declutter the chrome while the explorer fills the phone: fade the floating
+     header right back so it stops competing with the board (still tappable). It
+     eases back to full once you scroll out of the explorer. */
+  body.od-explorer .site-header {
+    opacity: 0.14;
+  }
+  .site-header {
+    transition: opacity 0.4s ease;
+  }
 }
 
 @media (max-width: 1023px) {
