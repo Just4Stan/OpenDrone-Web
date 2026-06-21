@@ -1346,7 +1346,11 @@ export default function Product() {
         <Chapter
           number={chapterNums.teardown}
           label="Teardown"
-          title="Some layers of copper with components on top"
+          title={
+            frameViewer
+              ? 'Every arm, plate and standoff — exploded'
+              : 'Some layers of copper with components on top'
+          }
           textReveal={frameViewer ? undefined : textIn}
           backdrop={
             frameViewer ? (
