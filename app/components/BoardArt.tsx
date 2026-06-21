@@ -57,6 +57,17 @@ export type BoardArtProps = {
   choreoTopRefs?: string[];
   /** Every BOTTOM-side (back-face) part refdes — lit at the start. */
   choreoBottomRefs?: string[];
+  /** Reports the live scroll-choreography phase + label so the parent can caption
+   *  the space under the board (current layer in Phase A, scanned part in B).
+   *  Called with null when the choreography isn't running. */
+  onChoreoState?: (
+    s: {
+      phase: 'layers' | 'scan';
+      layerLabel: string | null;
+      layerFn: string | null;
+      scanRef: string | null;
+    } | null,
+  ) => void;
 };
 
 /** One component from `components.json` — coords already in the board viewBox. */
@@ -243,6 +254,7 @@ export function BoardArt({
   choreoProgress,
   choreoTopRefs,
   choreoBottomRefs,
+  onChoreoState,
 }: BoardArtProps) {
   const ref = useRef<HTMLDivElement | null>(null);
   const bodyRef = useRef<HTMLDivElement | null>(null);
@@ -616,14 +628,6 @@ export function BoardArt({
     };
   }, [sheets, revealed, flyDone]);
 
-  // Scroll-choreography state. When `choreoProgress` is a number (mobile, in the
-  // explorer) it scrubs a guided teardown that OVERRIDES the active layer +
-  // highlights: [0,.30) light every bottom part on the back face; [.30,.70) peel
-  // through every sheet back→front one at a time; [.70,.95) light every top part
-  // on the front face; ≥.95 release to manual tap interaction. Discrete by
-  // design — the active index is an integer and the highlight set is one of three
-  // values, so the heavy spotlight effect only re-runs at phase boundaries, not
-  // every scroll frame.
   // Parts on each side, sorted into a spatial WATERFALL order (top→bottom, then
   // left→right) so the scrubbed spotlight flows down the board part by part
   // rather than hopping around. Falls back to the given order until the manifest
@@ -641,7 +645,22 @@ export function BoardArt({
     return {top: sortByPos(choreoTopRefs), bottom: sortByPos(choreoBottomRefs)};
   }, [choreoTopRefs, choreoBottomRefs, manifest]);
 
-  const choreo = useMemo(() => {
+  // The guided teardown has three phases, scrubbed by scroll:
+  //   A — LAYERS  [0 .. 0.45): peel TOP → BOTTOM, one sheet at a time. Browse the
+  //       stack. No part highlights. Caption = the current layer's name.
+  //   B — SCAN    [0.45 .. 0.78): a deliberate, eased, top→bottom single-spotlight
+  //       scan of the front (component) face — the clear bridge into the parts
+  //       interactor. Caption = the part currently under the spotlight.
+  //   C — PARTS   [0.78 .. 1]: release to manual; the part list takes over.
+  const choreo = useMemo<{
+    phase: 'layers' | 'scan';
+    active: number;
+    refs: string[];
+    layerSlug?: string;
+    layerLabel?: string;
+    layerFn?: string;
+    scanRef?: string | null;
+  } | null>(() => {
     if (choreoProgress == null || !sheets.length) return null;
     const p = Math.max(0, Math.min(1, choreoProgress));
     const idxOf = (slug: string) => {
@@ -649,23 +668,55 @@ export function BoardArt({
       return i >= 0 ? i : 0;
     };
     const N = sheets.length;
-    // Pick ONE part from a sorted list by sub-progress — the waterfall reveals
-    // parts one at a time as you scroll, never all at once.
-    const oneOf = (list: string[], sub: number): string[] => {
-      if (!list.length) return [];
-      const i = Math.min(list.length - 1, Math.max(0, Math.floor(sub * list.length)));
-      return [list[i]];
+    const ease = (t: number) => t * t * (3 - 2 * t); // smoothstep — deliberate
+    // Scan one part from a sorted list by eased sub-progress.
+    const scan = (
+      list: string[],
+      face: 'front' | 'back',
+      sub: number,
+    ): {phase: 'scan'; active: number; refs: string[]; scanRef: string | null} => {
+      const i = list.length
+        ? Math.min(list.length - 1, Math.floor(ease(sub) * list.length))
+        : 0;
+      const ref = list[i] ?? null;
+      return {phase: 'scan', active: idxOf(face), refs: ref ? [ref] : [], scanRef: ref};
     };
-    if (p < 0.3) return {active: idxOf('back'), refs: oneOf(choreoSorted.bottom, p / 0.3)};
-    if (p < 0.7) {
-      const sub = (p - 0.3) / 0.4; // 0..1 across the peel
-      const idx = Math.round((N - 1) * (1 - sub)); // back(N-1) → front(0)
-      return {active: idx, refs: [] as string[]};
+    if (p < 0.34) {
+      // PHASE A — peel TOP(0) → BOTTOM through every sheet.
+      const idx = Math.min(N - 1, Math.floor((p / 0.34) * N));
+      const s = sheets[idx];
+      return {
+        phase: 'layers',
+        active: idx,
+        refs: [],
+        layerSlug: s?.slug,
+        layerLabel: s?.label,
+        layerFn: s ? layerFunction(s.slug, idx, N, layerFns) : undefined,
+      };
     }
-    if (p < 0.95)
-      return {active: idxOf('front'), refs: oneOf(choreoSorted.top, (p - 0.7) / 0.25)};
-    return null; // released — manual interaction resumes
+    // PHASE B — scan FRONT (component side) top→bottom, then flip and scan the
+    // REAR (solder side) top→bottom. Both sides get the deliberate spotlight pass.
+    if (p < 0.58) return scan(choreoSorted.top, 'front', (p - 0.34) / 0.24);
+    if (p < 0.82) return scan(choreoSorted.bottom, 'back', (p - 0.58) / 0.24);
+    return null; // PHASE C — released; manual part tapping
   }, [choreoProgress, sheets, choreoSorted]);
+
+  // Report the live choreography state up so the PDP can caption the space below
+  // the board (the current layer in Phase A, the scanned part in Phase B) — that
+  // keeps the area under the big board meaningful instead of dead.
+  useEffect(() => {
+    if (!onChoreoState) return;
+    if (!choreo) {
+      onChoreoState(null);
+      return;
+    }
+    onChoreoState({
+      phase: choreo.phase,
+      layerLabel: choreo.layerLabel ?? null,
+      layerFn: choreo.layerFn ?? null,
+      scanRef: choreo.scanRef ?? null,
+    });
+  }, [choreo, onChoreoState]);
 
   // The index/refs actually rendered: the choreography wins while it's running,
   // otherwise the user's manual layer + tap-driven highlight.
