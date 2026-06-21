@@ -681,10 +681,34 @@ export default function Product() {
     }
     return {allTopRefs: topR, allBottomRefs: botR};
   }, [pinSides]);
+  // One representative refdes per NAMED part, per side, for the deliberate Phase B
+  // scan — the spotlight steps through the real teardown components (with names)
+  // top→bottom, front side then rear side, not every unnamed passive.
+  const choreoScanRefs = useMemo(
+    () => groupedPins.top.flatMap((pin) => (pin.refs?.[0] ? [pin.refs[0]] : [])),
+    [groupedPins],
+  );
+  const choreoScanRefsBack = useMemo(
+    () => groupedPins.bottom.flatMap((pin) => (pin.refs?.[0] ? [pin.refs[0]] : [])),
+    [groupedPins],
+  );
+  // refdes → human part name, for captioning the scanned part in Phase B.
+  const refToPartName = useMemo(() => {
+    const m = new Map<string, string>();
+    for (const pin of activePins) {
+      if (!pin.part) continue;
+      for (const r of pin.refs ?? []) m.set(r, pin.part);
+      for (const chip of pin.chips ?? [])
+        for (const r of chip.refs ?? []) m.set(r, chip.label ?? pin.part);
+    }
+    return m;
+  }, [activePins]);
   // CAD products (the frame) carry an exploded 3D viewer instead of a
   // layered board SVG; when present it takes the teardown media slot. Like
   // boardArt, a tier's own model (3" vs 5") wins over the shared default.
   const frameViewer = activeVariant?.frameViewer ?? content.teardown?.frameViewer;
+  // True for the mobile PCB explorer (any board product, not the frame viewer).
+  const choreoOn = isMobile && !!activeBoardArt && !frameViewer;
   // Every frame model across all tiers, so the viewer can preload them and
   // switch tiers instantly (toggle visibility) instead of re-fetching the
   // multi-MB GLB on each swap.
@@ -1078,7 +1102,10 @@ export default function Product() {
   // board fills the screen — it re-pins the moment you scroll past the chapter.
   const [teardownActive, setTeardownActive] = useState(false);
   useEffect(() => {
-    if (!railMobile || !activeBoardArt) {
+    // Gate on `choreoOn` (any mobile board product) not `railMobile`, so the
+    // explorer state + buy-rail suppression work even on boards without a tier
+    // ladder, and so it switches OFF the moment the board scrolls away (Phase D).
+    if (!choreoOn) {
       setTeardownActive(false);
       return;
     }
@@ -1087,24 +1114,35 @@ export default function Product() {
       document.querySelector('.board-art');
     if (!el || typeof IntersectionObserver === 'undefined') return;
     const io = new IntersectionObserver(
-      ([e]) => setTeardownActive(e.isIntersecting && e.intersectionRatio >= 0.35),
-      {threshold: [0, 0.35, 0.7]},
+      ([e]) => setTeardownActive(e.isIntersecting && e.intersectionRatio >= 0.3),
+      {threshold: [0, 0.3, 0.7]},
     );
     io.observe(el);
     return () => io.disconnect();
-  }, [railMobile, activeBoardArt, product.handle]);
+  }, [choreoOn, product.handle]);
 
   // Mobile scroll choreography for the PCB explorer. As the visitor scrolls into
-  // the teardown the board (sticky) plays a guided teardown — light all bottom
-  // parts → peel through every layer → light all top parts — scrubbed by how far
-  // they've scrolled into the chapter. `teardownProgress` (0..1) is just that
-  // scroll position; BoardArt maps it to layer + highlights. Board products only.
-  const choreoOn = isMobile && !!activeBoardArt && !frameViewer;
+  // the teardown the (sticky) board plays a guided sequence — Phase A browse the
+  // LAYERS top→bottom, Phase B a slow top→bottom SCAN of the parts, Phase C release
+  // to the PARTS list. `teardownProgress` (0..1) is the scroll position into the
+  // chapter; BoardArt maps it to layer/scan. Board products only.
+  const PHASE_PARTS = 0.82; // progress at which we hand off to the parts list
   const [teardownProgress, setTeardownProgress] = useState(0);
-  // The moment the visitor taps a part they take manual control — the scroll
-  // choreography releases so their tap drives the board. Scrolling back to the
-  // top of the explorer re-arms it (handled in the scroll effect below).
+  // The guided walkthrough plays ONCE. After the visitor has scrolled through it
+  // (or tapped a part/layer), `walkthroughSeen` latches and the explorer drops to
+  // the manual interface — tap the layer rail, tap a part — so scrolling back up
+  // never replays it. A tap mid-walkthrough also hands over immediately.
   const [choreoManual, setChoreoManual] = useState(false);
+  const [walkthroughSeen, setWalkthroughSeen] = useState(false);
+  const walkthroughOn = choreoOn && !walkthroughSeen && !choreoManual;
+  // Live caption for the space under the big board: the current layer in Phase A,
+  // the scanned part in Phase B (reported by BoardArt).
+  const [choreoState, setChoreoState] = useState<{
+    phase: 'layers' | 'scan';
+    layerLabel: string | null;
+    layerFn: string | null;
+    scanRef: string | null;
+  } | null>(null);
   useEffect(() => {
     if (!choreoOn) {
       setTeardownProgress(0);
@@ -1122,14 +1160,15 @@ export default function Product() {
         }
         if (!el) return;
         const top = el.getBoundingClientRect().top;
-        // Full sequence plays over ~1.15 viewport heights of scroll into the
-        // chapter; past that it releases to manual part tapping.
-        const range = window.innerHeight * 1.15;
+        // The guided sequence (peel + front/rear scan) plays over ~1.6 viewport
+        // heights of scroll — deliberate but fast — before the parts list.
+        const range = window.innerHeight * 1.6;
         const p = (STICKY - top) / range;
         const clamped = Math.max(0, Math.min(1, p));
         setTeardownProgress(clamped);
-        // Re-arm the guided animation once scrolled back near the explorer's top.
-        if (clamped < 0.06) setChoreoManual(false);
+        // Latch "seen" once the walkthrough has fully played — from then on it's
+        // the manual interface, no replay.
+        if (clamped > 0.98) setWalkthroughSeen(true);
       });
     };
     onScroll();
@@ -1142,16 +1181,27 @@ export default function Product() {
     };
   }, [choreoOn, product.handle]);
 
-  // Declutter the chrome ONLY once you're deep in the explorer — past the guided
-  // animation and into browsing the parts list. Then the floating header fades
-  // right back and the sticky board is allowed to ride UP behind it (CSS), so the
-  // board stays visible through the faded header while the part list gets the
-  // reclaimed room. Firing on mere in-view faded the header far too soon.
+  // Two explorer states drive the layout + chrome:
+  //   • LAYERS (Phase A+B): board large + centred, part list hidden, caption under
+  //     it, header NORMAL — "plenty of vertical space" to browse layers + scan.
+  //   • PARTS (Phase C / after a tap): board locks tight to the top, the part list
+  //     fills beneath it, and the header hides so ONLY board + list are on screen.
   useEffect(() => {
-    const on = choreoOn && (teardownProgress > 0.8 || choreoManual);
-    document.body.classList.toggle('od-explorer', on);
-    return () => document.body.classList.remove('od-explorer');
-  }, [choreoOn, teardownProgress, choreoManual]);
+    // These layout states apply ONLY while the one-time walkthrough is playing.
+    // Once seen (or on a tap) the explorer drops to the plain manual interface:
+    // sticky board + visible layer rail + part list, no spacer, no caption.
+    const wt = walkthroughOn && teardownActive;
+    const inParts = wt && teardownProgress >= PHASE_PARTS;
+    const inLayers = wt && !inParts && teardownProgress > 0.02;
+    document.body.classList.toggle('od-walkthrough', wt);
+    document.body.classList.toggle('od-explorer-parts', inParts);
+    document.body.classList.toggle('od-explorer-layers', inLayers);
+    return () => {
+      document.body.classList.remove('od-walkthrough');
+      document.body.classList.remove('od-explorer-parts');
+      document.body.classList.remove('od-explorer-layers');
+    };
+  }, [walkthroughOn, teardownActive, teardownProgress]);
 
   useEffect(() => {
     if (!hasLadder) return;
@@ -1253,10 +1303,15 @@ export default function Product() {
   const railBuyModule = (
     <div className="product-buy" data-buy-module>
       <div className="product-buy-price">
-        <ProductPrice
-          price={buyPrice}
-          compareAtPrice={isBundle ? undefined : selectedVariant?.compareAtPrice}
-        />
+        {/* Price + the "incl. VAT" qualifier (Art. VI.45 WER pre-contractual
+            info) grouped together — also fills the dead space beside the price. */}
+        <span className="product-buy-amount">
+          <ProductPrice
+            price={buyPrice}
+            compareAtPrice={isBundle ? undefined : selectedVariant?.compareAtPrice}
+          />
+          <span className="product-buy-vat">incl.&nbsp;VAT</span>
+        </span>
         {isBundle ? (
           <span className="product-buy-sku">
             {/* Name the actual pair for the tier (20×20 ships the Mini). */}
@@ -1267,9 +1322,6 @@ export default function Product() {
         ) : selectedVariant?.sku ? (
           <span className="product-buy-sku">SKU {selectedVariant.sku}</span>
         ) : null}
-        {/* Art. VI.45 WER pre-contractual price info (prices incl. VAT, excl.
-            shipping) lives in the cart summary now — kept out of the buy bar so
-            it doesn't crowd the price/CTA. */}
       </div>
       <span className={`product-buy-stock${buyAvailable ? '' : ' is-out'}`}>
         {isBundle
@@ -1462,6 +1514,7 @@ export default function Product() {
               // but REMOUNTS on a product switch (FC↔ESC↔RX) so the one-shot
               // fly-in re-arms and plays for the new board. `srcs` prefetches the
               // tiers up front.
+              <>
               <BoardArt
                 key={product.handle}
                 src={activeBoardArt.src}
@@ -1477,13 +1530,50 @@ export default function Product() {
                 highlightUnion={hoveredUnion}
                 highlightGroups={hoveredGroups}
                 onFlying={setBoardFlying}
-                choreoProgress={choreoOn && !choreoManual ? teardownProgress : null}
-                choreoTopRefs={allTopRefs}
-                choreoBottomRefs={allBottomRefs}
+                choreoProgress={walkthroughOn ? teardownProgress : null}
+                choreoTopRefs={choreoScanRefs.length ? choreoScanRefs : allTopRefs}
+                choreoBottomRefs={
+                  choreoScanRefsBack.length ? choreoScanRefsBack : allBottomRefs
+                }
+                onChoreoState={setChoreoState}
               />
+              {/* Caption rides INSIDE the sticky board slot so it stays pinned
+                  beneath the board through the guided phases — the current layer
+                  (A) or the scanned part (B). Keeps the space under the big board
+                  meaningful, never dead. Hidden in the parts phase (CSS). */}
+              {choreoState ? (
+                <p className="teardown-caption" aria-live="polite">
+                  {choreoState.phase === 'layers' ? (
+                    <>
+                      <span className="teardown-caption-kicker">Layer</span>
+                      {choreoState.layerLabel ?? ''}
+                      {choreoState.layerFn ? (
+                        <span className="teardown-caption-sub">
+                          {choreoState.layerFn}
+                        </span>
+                      ) : null}
+                    </>
+                  ) : (
+                    <>
+                      <span className="teardown-caption-kicker">Scanning</span>
+                      {(choreoState.scanRef &&
+                        refToPartName.get(choreoState.scanRef)) ||
+                        choreoState.scanRef ||
+                        'components'}
+                    </>
+                  )}
+                </p>
+              ) : null}
+            </>
             ) : undefined
           }
         >
+          {/* Scroll budget for the guided layer-browse + scan before the part
+              list (mobile only — display:none on desktop). The board + caption are
+              pinned while this scrolls past, then the part list takes over. */}
+          {!frameViewer && activeBoardArt ? (
+            <div className="teardown-choreo-spacer" aria-hidden="true" />
+          ) : null}
           {!frameViewer && activeBoardArt ? (
             <p className="teardown-hint" aria-hidden="true">
               Tap a part to find it on the board · tap a layer to peel it back
