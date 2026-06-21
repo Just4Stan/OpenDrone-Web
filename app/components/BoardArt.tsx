@@ -6,6 +6,7 @@ import {
   peekText,
 } from '~/lib/asset-prefetch';
 import {BOARD_ART_VERSION} from '~/data/board-art-version';
+import {useIsMobile} from '~/lib/use-media-query';
 
 // `?v=` busts Oxygen's 1-year immutable cache when board art is regenerated in
 // place — the token is the content hash of every board.svg + front/back PNG,
@@ -298,6 +299,7 @@ export function BoardArt({
   const [failed, setFailed] = useState(false);
   const [active, setActive] = useState(0);
   const [inView, setInView] = useState(false);
+  const isMobile = useIsMobile();
   // Which src the current `raw` text belongs to, and the last non-empty parsed
   // board — so a tier switch keeps the prior board on screen until the new one
   // is parsed, and never re-parses a board the cache already holds.
@@ -1039,24 +1041,67 @@ export function BoardArt({
   // imperatively-injected highlight overlay is reused (above) instead of rebuilt.
   const stackSheets = useMemo(
     () =>
-      sheets.map((s, i) => (
-        <button
-          type="button"
-          key={s.slug}
-          className={`board-sheet${i === shownIndex ? ' is-active' : ''}`}
-          style={{['--depth' as string]: i}}
-          aria-label={`Show ${s.label} layer`}
-          aria-pressed={i === shownIndex}
-          onClick={() => setActive(i)}
-          dangerouslySetInnerHTML={{__html: s.html}}
-        />
-      )),
-    [sheets, shownIndex],
+      sheets.map((s, i) => {
+        // Mobile: a peeking CARD DECK. The active layer is full + on top; the
+        // layers still to come fan out a little BELOW it (so you see how many are
+        // left); the ones you've passed have flown up and away. Desktop keeps its
+        // depth-based fan via `--depth`.
+        const rel = i - shownIndex; // <0 done, 0 active, >0 upcoming
+        const peek = Math.min(rel, 7);
+        const deckStyle: React.CSSProperties = !isMobile
+          ? ({['--depth' as string]: i} as React.CSSProperties)
+          : rel < 0
+            ? {transform: 'translateY(-118%) scale(0.96)', opacity: 0, zIndex: 1, pointerEvents: 'none'}
+            : rel === 0
+              ? {transform: 'translateY(0)', opacity: 1, zIndex: 40, pointerEvents: 'auto'}
+              : {
+                  // Upcoming layers slide straight DOWN behind the active so their
+                  // bottom edge peeks out below it — a deck you can see shrinking.
+                  transform: `translateY(${peek * 11}px) scale(${1 - peek * 0.012})`,
+                  transformOrigin: 'center bottom',
+                  opacity: rel > 7 ? 0 : Math.max(0.35, 1 - peek * 0.05),
+                  zIndex: 40 - rel,
+                  pointerEvents: 'none',
+                };
+        return (
+          <button
+            type="button"
+            key={s.slug}
+            className={`board-sheet${i === shownIndex ? ' is-active' : ''}${
+              isMobile ? ' board-sheet--deck' : ''
+            }`}
+            style={deckStyle}
+            aria-label={`Show ${s.label} layer`}
+            aria-pressed={i === shownIndex}
+            onClick={() => setActive(i)}
+            dangerouslySetInnerHTML={{__html: s.html}}
+          />
+        );
+      }),
+    [sheets, shownIndex, isMobile],
   );
 
   // Step through the stack, clamped to its ends (used by chevrons / keys / wheel).
   const step = (delta: number) =>
     setActive((i) => Math.min(sheets.length - 1, Math.max(0, i + delta)));
+
+  // Mobile: a vertical FLICK on the board peels a layer — up = next (deeper),
+  // down = previous. A quick flick (fast + far enough) advances; a slow drag is
+  // left to the page so normal scrolling still works (no scroll trap).
+  const touchRef = useRef<{y: number; t: number} | null>(null);
+  const onTouchStart = (e: React.TouchEvent) => {
+    const t = e.touches[0];
+    touchRef.current = {y: t.clientY, t: e.timeStamp};
+  };
+  const onTouchEnd = (e: React.TouchEvent) => {
+    const s = touchRef.current;
+    touchRef.current = null;
+    if (!s) return;
+    const t = e.changedTouches[0];
+    const dy = t.clientY - s.y;
+    const dt = e.timeStamp - s.t;
+    if (Math.abs(dy) > 36 && dt < 320) step(dy < 0 ? 1 : -1);
+  };
 
   return (
     <div
@@ -1116,12 +1161,31 @@ export function BoardArt({
             </div>
           </div>
           {/* eslint-enable jsx-a11y/no-noninteractive-element-interactions, jsx-a11y/no-noninteractive-tabindex */}
-          <div className="board-folder-stack">
+          {/* eslint-disable jsx-a11y/no-noninteractive-element-interactions */}
+          <div
+            className="board-folder-stack"
+            onTouchStart={isMobile ? onTouchStart : undefined}
+            onTouchEnd={isMobile ? onTouchEnd : undefined}
+          >
             {stackSheets}
             {/* Component highlights are injected into the active sheet's own
                 <svg> by the effect above (so they inherit its viewBox + every
                 transform); there is no separate overlay element here. */}
           </div>
+          {/* eslint-enable jsx-a11y/no-noninteractive-element-interactions */}
+          {isMobile && sheets.length ? (
+            <p className="board-deck-progress" aria-hidden="true">
+              <span className="board-deck-count">
+                {shownIndex + 1}/{sheets.length}
+              </span>
+              <span className="board-deck-name">{sheets[shownIndex]?.label}</span>
+              <span className="board-deck-hint">
+                {shownIndex < sheets.length - 1
+                  ? 'Flick up to peel ↑'
+                  : 'Flick down to go back ↓'}
+              </span>
+            </p>
+          ) : null}
         </div>
       ) : null}
       {!revealed && !failed ? (

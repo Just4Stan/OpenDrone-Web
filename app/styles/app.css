@@ -11814,29 +11814,66 @@ button.reset {
   /* Flatten the fanned 3D stack: only the active sheet renders, flat and
      full-width. No perspective, no depth fan, no fly-in. The stack keeps its
      square aspect so the board fills the column at a stable height. */
+  /* The swipe-deck (peek + flick + counter) IS the layer control now, so the
+     horizontal pill rail is redundant on mobile — hide it (also removes the
+     rail-vs-header overlap entirely). */
+  .board-art .board-folder-rail {
+    display: none;
+  }
   .board-folder-stack {
     perspective: none;
     transform-style: flat;
     margin-top: 0;
+    /* Room below the active card for the upcoming layers to peek out. */
+    padding-bottom: 5.5rem;
+    touch-action: pan-y; /* let vertical scroll through; we only flick-detect */
   }
-  /* Layer transitions glide instead of cutting: the incoming sheet slides up
-     from just below + fades in (over the outgoing, which fades back down), so the
-     peel reads as one layer replacing the next — no harsh swaps. Transform-only
-     motion stays on the compositor (cheap even for the multi-thousand-path SVG). */
+  /* Peeking CARD DECK: each layer's transform/opacity/z is driven inline by
+     BoardArt (active full + on top; upcoming fan out below; passed ones fly up).
+     Here we just give every card the SAME smooth, compositor-only transition so
+     a flick glides one card up and away — no harsh cut. */
   .board-art .board-sheet {
     animation: none !important;
-    transition: opacity 0.4s ease, transform 0.45s cubic-bezier(0.22, 0.8, 0.3, 1);
     filter: none;
-    opacity: 0;
-    transform: translateY(15%) !important;
-    z-index: 1;
-    pointer-events: none;
+    transition: opacity 0.32s cubic-bezier(0.22, 0.8, 0.3, 1),
+      transform 0.42s cubic-bezier(0.22, 0.8, 0.3, 1);
   }
-  .board-art .board-sheet.is-active {
-    opacity: 1;
-    transform: translateY(0) !important;
-    z-index: 2;
-    pointer-events: auto;
+  /* Each layer is an opaque card so stacked layers don't bleed through each
+     other (the board SVGs are transparent). */
+  .board-sheet--deck {
+    background: var(--color-bg);
+    border: 1px solid var(--color-border);
+    border-radius: var(--r-lg);
+    box-shadow: 0 8px 16px -10px #000;
+    will-change: transform, opacity;
+  }
+
+  /* Progress + flick hint under the deck — always-on feedback: which layer, how
+     many left, and what to do. */
+  .board-deck-progress {
+    display: flex;
+    align-items: baseline;
+    gap: 0.6rem;
+    margin: 0.6rem 0 0;
+    font-family: var(--font-mono);
+  }
+  .board-deck-count {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--color-gold);
+    letter-spacing: 0.04em;
+  }
+  .board-deck-name {
+    font-size: 0.85rem;
+    color: var(--color-text);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+  }
+  .board-deck-hint {
+    margin-left: auto;
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    color: var(--color-text-dim);
   }
   /* The rail's first-reveal opacity-0 hold (is-armed) never clears without the
      fly animation — force it visible on mobile. */
