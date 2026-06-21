@@ -39,7 +39,16 @@ const traceSvg = fs.readFileSync(tracePath, 'utf8');
 // the wrapper <g> applies the y-flip + scale).
 const vbMatch = traceSvg.match(/viewBox="([^"]+)"/);
 if (!vbMatch) throw new Error('No viewBox in trace.svg');
-const viewBox = vbMatch[1];
+// potrace traces the PNG edge-to-edge, so the glyphs sit flush against the
+// viewBox bounds — the outermost ones (the leading "O", the trailing "e") then
+// get shaved by the <svg>'s overflow clip / sub-pixel antialiasing, reading as
+// "slightly cropped". Pad the viewBox outward by a few % on each side so no
+// glyph touches the edge. Paths are untouched (they keep potrace coords); only
+// the visible window widens, so the wordmark just gains a hair of breathing room.
+const [vx, vy, vw, vh] = vbMatch[1].split(/\s+/).map(Number);
+const PAD_X = vw * 0.015;
+const PAD_Y = vh * 0.04;
+const viewBox = `${vx - PAD_X} ${vy - PAD_Y} ${vw + 2 * PAD_X} ${vh + 2 * PAD_Y}`;
 
 const trMatch = traceSvg.match(/<g\s+transform="([^"]+)"/);
 if (!trMatch) throw new Error('No group transform in trace.svg');
