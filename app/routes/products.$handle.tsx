@@ -669,6 +669,37 @@ export default function Product() {
     }
     return {top, bottom, other};
   }, [activePins, pinSides]);
+  // Flat tour order for the mobile "swipe the board sideways to step through the
+  // parts" gesture — front parts top→bottom, then back, then any unsided. Each
+  // carries its full highlight spec (the same one its table row uses). Chip rows
+  // (I/O pads) expand to one stop per chip.
+  const orderedParts = useMemo(() => {
+    const out: Array<{
+      refs: string[];
+      union: boolean;
+      groups?: string[][];
+      name: string;
+    }> = [];
+    for (const pin of [
+      ...groupedPins.top,
+      ...groupedPins.bottom,
+      ...groupedPins.other,
+    ]) {
+      if (pin.chips?.length) {
+        for (const chip of pin.chips)
+          if (chip.refs?.length)
+            out.push({refs: chip.refs, union: false, name: chip.label});
+      } else if (pin.refs?.length) {
+        out.push({
+          refs: pin.refs,
+          union: pin.box === 'union',
+          groups: pin.boxGroups,
+          name: pin.part,
+        });
+      }
+    }
+    return out;
+  }, [groupedPins]);
   const isMobile = useIsMobile();
   // CAD products (the frame) carry an exploded 3D viewer instead of a
   // layered board SVG; when present it takes the teardown media slot. Like
@@ -827,6 +858,28 @@ export default function Product() {
     setHoveredRefs([]);
     setHoveredUnion(false);
     setHoveredGroups(undefined);
+  };
+  // Which tour stop is currently lit (−1 = none) — for the part counter + so a
+  // sideways flick knows where to step from.
+  const focusedPartIdx = orderedParts.findIndex(
+    (p) =>
+      p.refs.length === hoveredRefs.length &&
+      p.refs.every((r) => hoveredRefs.includes(r)),
+  );
+  // Sideways flick on the board steps through the parts: highlight the next/prev
+  // one (BoardArt flips to its face). Mirrors the vertical layer flick.
+  const stepPart = (dir: number) => {
+    if (!orderedParts.length) return;
+    const next =
+      focusedPartIdx < 0
+        ? dir > 0
+          ? 0
+          : orderedParts.length - 1
+        : Math.min(orderedParts.length - 1, Math.max(0, focusedPartIdx + dir));
+    const part = orderedParts[next];
+    setHoveredRefs([...part.refs]);
+    setHoveredUnion(part.union);
+    setHoveredGroups(part.groups);
   };
   // One teardown-pin <li>: the part label (+ optional count); hover/focus
   // highlights its footprint(s) on the board (keyboard mirrors mouse for a11y).
@@ -1418,31 +1471,71 @@ export default function Product() {
               // but REMOUNTS on a product switch (FC↔ESC↔RX) so the one-shot
               // fly-in re-arms and plays for the new board. `srcs` prefetches the
               // tiers up front.
-              <BoardArt
-                key={product.handle}
-                src={activeBoardArt.src}
-                srcs={boardArtSrcs}
-                inspectUrl={activeBoardArt.inspectUrl}
-                layerFns={activeBoardArt.layers}
-                handle={product.handle}
-                componentsSrc={activeBoardArt.src.replace(
-                  /board\.svg$/,
-                  'components.json',
-                )}
-                highlightRefs={hoveredRefs}
-                highlightUnion={hoveredUnion}
-                highlightGroups={hoveredGroups}
-                onFlying={setBoardFlying}
-                onHighlightVisible={setHighlightVisible}
-              />
+              <>
+                <BoardArt
+                  key={product.handle}
+                  src={activeBoardArt.src}
+                  srcs={boardArtSrcs}
+                  inspectUrl={activeBoardArt.inspectUrl}
+                  layerFns={activeBoardArt.layers}
+                  handle={product.handle}
+                  componentsSrc={activeBoardArt.src.replace(
+                    /board\.svg$/,
+                    'components.json',
+                  )}
+                  highlightRefs={hoveredRefs}
+                  highlightUnion={hoveredUnion}
+                  highlightGroups={hoveredGroups}
+                  onFlying={setBoardFlying}
+                  onHighlightVisible={setHighlightVisible}
+                  onSwipeHorizontal={isMobile ? stepPart : undefined}
+                />
+                {/* Part tour: which component is lit + how far through the set.
+                    Swipe the board sideways (or tap a part) to step. Each tick is
+                    tappable to jump straight to that part. */}
+                {isMobile && orderedParts.length ? (
+                  <div className="board-part-tour">
+                    <div className="board-deck-dots" aria-label="Component">
+                      {orderedParts.map((p, i) => (
+                        <button
+                          type="button"
+                          key={p.name + i}
+                          className={`board-deck-dot${
+                            i === focusedPartIdx ? ' is-active' : ''
+                          }`}
+                          aria-label={`Highlight ${p.name}`}
+                          aria-current={i === focusedPartIdx ? 'true' : undefined}
+                          onClick={() => {
+                            setHoveredRefs([...p.refs]);
+                            setHoveredUnion(p.union);
+                            setHoveredGroups(p.groups);
+                          }}
+                        />
+                      ))}
+                    </div>
+                    <p className="board-deck-meta" aria-live="polite">
+                      <span className="board-deck-count">
+                        {focusedPartIdx < 0
+                          ? `0/${orderedParts.length}`
+                          : `${focusedPartIdx + 1}/${orderedParts.length}`}
+                      </span>
+                      <span className="board-deck-name">
+                        {focusedPartIdx < 0
+                          ? 'Components'
+                          : orderedParts[focusedPartIdx].name}
+                      </span>
+                      <span className="board-deck-hint">Swipe ←/→ · tap a part</span>
+                    </p>
+                  </div>
+                ) : null}
+              </>
             ) : undefined
           }
         >
           {!frameViewer && activeBoardArt ? (
             <div className="teardown-guide">
               <p className="teardown-hint">
-                Flick the board ↑/↓ to peel layers · tap a part to find it on the
-                board
+                Flick the board ↑/↓ for layers · ←/→ for parts · or tap any part
               </p>
               <button
                 type="button"
