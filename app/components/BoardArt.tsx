@@ -624,6 +624,23 @@ export function BoardArt({
   // design — the active index is an integer and the highlight set is one of three
   // values, so the heavy spotlight effect only re-runs at phase boundaries, not
   // every scroll frame.
+  // Parts on each side, sorted into a spatial WATERFALL order (top→bottom, then
+  // left→right) so the scrubbed spotlight flows down the board part by part
+  // rather than hopping around. Falls back to the given order until the manifest
+  // (with footprint positions) has loaded.
+  const choreoSorted = useMemo(() => {
+    const sortByPos = (refs?: string[]) => {
+      const list = (refs ?? []).filter((r) => manifest?.map.get(r)?.bbox);
+      if (!manifest) return refs ?? [];
+      return list.sort((a, b) => {
+        const A = manifest.map.get(a)!.bbox!;
+        const B = manifest.map.get(b)!.bbox!;
+        return A.y - B.y || A.x - B.x;
+      });
+    };
+    return {top: sortByPos(choreoTopRefs), bottom: sortByPos(choreoBottomRefs)};
+  }, [choreoTopRefs, choreoBottomRefs, manifest]);
+
   const choreo = useMemo(() => {
     if (choreoProgress == null || !sheets.length) return null;
     const p = Math.max(0, Math.min(1, choreoProgress));
@@ -632,15 +649,23 @@ export function BoardArt({
       return i >= 0 ? i : 0;
     };
     const N = sheets.length;
-    if (p < 0.3) return {active: idxOf('back'), refs: choreoBottomRefs ?? []};
+    // Pick ONE part from a sorted list by sub-progress — the waterfall reveals
+    // parts one at a time as you scroll, never all at once.
+    const oneOf = (list: string[], sub: number): string[] => {
+      if (!list.length) return [];
+      const i = Math.min(list.length - 1, Math.max(0, Math.floor(sub * list.length)));
+      return [list[i]];
+    };
+    if (p < 0.3) return {active: idxOf('back'), refs: oneOf(choreoSorted.bottom, p / 0.3)};
     if (p < 0.7) {
       const sub = (p - 0.3) / 0.4; // 0..1 across the peel
       const idx = Math.round((N - 1) * (1 - sub)); // back(N-1) → front(0)
       return {active: idx, refs: [] as string[]};
     }
-    if (p < 0.95) return {active: idxOf('front'), refs: choreoTopRefs ?? []};
+    if (p < 0.95)
+      return {active: idxOf('front'), refs: oneOf(choreoSorted.top, (p - 0.7) / 0.25)};
     return null; // released — manual interaction resumes
-  }, [choreoProgress, sheets, choreoTopRefs, choreoBottomRefs]);
+  }, [choreoProgress, sheets, choreoSorted]);
 
   // The index/refs actually rendered: the choreography wins while it's running,
   // otherwise the user's manual layer + tap-driven highlight.
