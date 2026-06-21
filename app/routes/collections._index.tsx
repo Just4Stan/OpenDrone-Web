@@ -1,4 +1,4 @@
-import {useLoaderData, Link} from 'react-router';
+import {useLoaderData, Link, redirect} from 'react-router';
 import type {Route} from './+types/collections._index';
 import {getPaginationVariables, Image} from '@shopify/hydrogen';
 import type {CollectionFragment} from 'storefrontapi.generated';
@@ -38,6 +38,13 @@ async function loadCriticalData({context, request}: Route.LoaderArgs) {
     }),
     // Add other queries here, so that they are loaded in parallel
   ]);
+
+  // The store is organised by product family, not Shopify collections, so this
+  // index is empty — a dead-end landing page. Send visitors to the real catalog
+  // (the family-chip grid) instead of an empty "Collections" shell.
+  if (!collections?.nodes?.length) {
+    throw redirect('/collections/all');
+  }
 
   return {collections};
 }
