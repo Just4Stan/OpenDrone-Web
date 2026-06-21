@@ -16,6 +16,15 @@ import {BOARD_ART_VERSION} from '~/data/board-art-version';
 const versioned = (url: string) =>
   BOARD_ART_VERSION ? `${url}?v=${BOARD_ART_VERSION}` : url;
 
+/** One guided-scan step — the SAME highlight spec a teardown table row carries,
+ *  so the walkthrough and the tap-to-highlight share one definition. */
+export type ChoreoStep = {
+  refs: string[];
+  union?: boolean;
+  groups?: string[][];
+  name: string;
+};
+
 export type BoardArtProps = {
   /** Public path to the layered SVG, e.g. /boards/openesc/board.svg */
   src: string;
@@ -46,17 +55,17 @@ export type BoardArtProps = {
   /** Called with `true` while the first-reveal fly-in is animating and `false`
    *  when it finishes, so the parent can lock part-list interaction meanwhile. */
   onFlying?: (active: boolean) => void;
-  /** Mobile scroll-choreography (0..1, or null to disable). As the visitor
-   *  scrolls into the explorer this scrubs a guided teardown: light every
-   *  BOTTOM part → peel through each layer one by one → light every TOP part.
-   *  Above ~0.95 it releases back to manual tap interaction. Lets the layer
-   *  rail be hidden on phones (scroll is the control), reclaiming its space. */
+  /** Mobile guided-walkthrough progress (0..1, or null to disable). Drives the
+   *  one-time auto-play: peel TOP→BOTTOM through the layers, then a deliberate
+   *  top→bottom scan of the front then rear parts (each lit with its table-row
+   *  box spec), then release (~0.95) to manual tap interaction. */
   choreoProgress?: number | null;
-  /** Every TOP-side (front-face) part refdes — lit together at the end of the
-   *  scroll choreography. */
-  choreoTopRefs?: string[];
-  /** Every BOTTOM-side (back-face) part refdes — lit at the start. */
-  choreoBottomRefs?: string[];
+  /** TOP-side (front-face) scan steps — ONE per teardown part, carrying the SAME
+   *  highlight spec as tapping its table row (refs + union/groups + name). The
+   *  scan reuses these so the boxes are defined once (in the pins). */
+  choreoTopSteps?: ChoreoStep[];
+  /** BOTTOM-side (back-face) scan steps. */
+  choreoBottomSteps?: ChoreoStep[];
   /** Reports the live scroll-choreography phase + label so the parent can caption
    *  the space under the board (current layer in Phase A, scanned part in B).
    *  Called with null when the choreography isn't running. */
@@ -65,7 +74,7 @@ export type BoardArtProps = {
       phase: 'layers' | 'scan';
       layerLabel: string | null;
       layerFn: string | null;
-      scanRef: string | null;
+      scanName: string | null;
     } | null,
   ) => void;
 };
@@ -252,8 +261,8 @@ export function BoardArt({
   highlightGroups,
   onFlying,
   choreoProgress,
-  choreoTopRefs,
-  choreoBottomRefs,
+  choreoTopSteps,
+  choreoBottomSteps,
   onChoreoState,
 }: BoardArtProps) {
   const ref = useRef<HTMLDivElement | null>(null);
@@ -628,38 +637,38 @@ export function BoardArt({
     };
   }, [sheets, revealed, flyDone]);
 
-  // Parts on each side, sorted into a spatial WATERFALL order (top→bottom, then
-  // left→right) so the scrubbed spotlight flows down the board part by part
-  // rather than hopping around. Falls back to the given order until the manifest
-  // (with footprint positions) has loaded.
+  // Scan steps per side, sorted top→bottom by each step's topmost footprint, so
+  // the spotlight flows down the board part by part. Each step keeps its FULL
+  // highlight spec (refs + union/groups + name) — the same one the table row uses.
   const choreoSorted = useMemo(() => {
-    const sortByPos = (refs?: string[]) => {
-      const list = (refs ?? []).filter((r) => manifest?.map.get(r)?.bbox);
-      if (!manifest) return refs ?? [];
-      return list.sort((a, b) => {
-        const A = manifest.map.get(a)!.bbox!;
-        const B = manifest.map.get(b)!.bbox!;
-        return A.y - B.y || A.x - B.x;
-      });
+    const minY = (s: ChoreoStep) => {
+      let y = Infinity;
+      for (const r of s.refs) {
+        const b = manifest?.map.get(r)?.bbox;
+        if (b) y = Math.min(y, b.y);
+      }
+      return y === Infinity ? 0 : y;
     };
-    return {top: sortByPos(choreoTopRefs), bottom: sortByPos(choreoBottomRefs)};
-  }, [choreoTopRefs, choreoBottomRefs, manifest]);
+    const sortSteps = (steps?: ChoreoStep[]) =>
+      manifest ? [...(steps ?? [])].sort((a, b) => minY(a) - minY(b)) : steps ?? [];
+    return {top: sortSteps(choreoTopSteps), bottom: sortSteps(choreoBottomSteps)};
+  }, [choreoTopSteps, choreoBottomSteps, manifest]);
 
-  // The guided teardown has three phases, scrubbed by scroll:
-  //   A — LAYERS  [0 .. 0.45): peel TOP → BOTTOM, one sheet at a time. Browse the
-  //       stack. No part highlights. Caption = the current layer's name.
-  //   B — SCAN    [0.45 .. 0.78): a deliberate, eased, top→bottom single-spotlight
-  //       scan of the front (component) face — the clear bridge into the parts
-  //       interactor. Caption = the part currently under the spotlight.
-  //   C — PARTS   [0.78 .. 1]: release to manual; the part list takes over.
+  // The guided teardown has three phases:
+  //   A — LAYERS: peel TOP → BOTTOM, one sheet at a time. Caption = the layer.
+  //   B — SCAN: a deliberate top→bottom pass of the front (component) face, then
+  //       the rear, lighting each part with the SAME box(es) as its table row.
+  //   C — PARTS: release to manual; the part list takes over.
   const choreo = useMemo<{
     phase: 'layers' | 'scan';
     active: number;
     refs: string[];
+    union?: boolean;
+    groups?: string[][];
     layerSlug?: string;
     layerLabel?: string;
     layerFn?: string;
-    scanRef?: string | null;
+    scanName?: string | null;
   } | null>(() => {
     if (choreoProgress == null || !sheets.length) return null;
     const p = Math.max(0, Math.min(1, choreoProgress));
@@ -669,16 +678,27 @@ export function BoardArt({
     };
     const N = sheets.length;
     // Even, deliberate pacing: every step — each layer AND each scanned part —
-    // gets the SAME slice of scroll, so nothing blurs past. Bands are sized to the
-    // real counts; the last 5% releases to the parts list.
+    // gets the SAME slice of progress. Bands are sized to the real counts; the
+    // last 5% releases to the parts list.
     const nF = choreoSorted.top.length;
     const nB = choreoSorted.bottom.length;
     const total = Math.max(1, N + nF + nB);
     const SPAN = 0.95;
     const aEnd = (N / total) * SPAN;
     const bEnd = ((N + nF) / total) * SPAN;
-    const stepIdx = (list: string[], sub: number) =>
-      list.length ? Math.min(list.length - 1, Math.floor(sub * list.length)) : 0;
+    const at = (steps: ChoreoStep[], sub: number) =>
+      steps[Math.min(steps.length - 1, Math.max(0, Math.floor(sub * steps.length)))];
+    const scan = (steps: ChoreoStep[], face: 'front' | 'back', sub: number) => {
+      const s = at(steps, sub);
+      return {
+        phase: 'scan' as const,
+        active: idxOf(face),
+        refs: s?.refs ?? [],
+        union: s?.union,
+        groups: s?.groups,
+        scanName: s?.name ?? null,
+      };
+    };
     if (p < aEnd) {
       // PHASE A — peel TOP(0) → BOTTOM, one sheet per equal slice.
       const idx = Math.min(N - 1, Math.floor((p / aEnd) * N));
@@ -693,20 +713,13 @@ export function BoardArt({
       };
     }
     // PHASE B — scan FRONT (component side) top→bottom, then flip + scan the REAR.
-    if (p < bEnd && nF) {
-      const ref = choreoSorted.top[stepIdx(choreoSorted.top, (p - aEnd) / (bEnd - aEnd))];
-      return {phase: 'scan', active: idxOf('front'), refs: ref ? [ref] : [], scanRef: ref ?? null};
-    }
-    if (p < SPAN && nB) {
-      const ref = choreoSorted.bottom[stepIdx(choreoSorted.bottom, (p - bEnd) / (SPAN - bEnd))];
-      return {phase: 'scan', active: idxOf('back'), refs: ref ? [ref] : [], scanRef: ref ?? null};
-    }
+    if (p < bEnd && nF) return scan(choreoSorted.top, 'front', (p - aEnd) / (bEnd - aEnd));
+    if (p < SPAN && nB) return scan(choreoSorted.bottom, 'back', (p - bEnd) / (SPAN - bEnd));
     return null; // PHASE C — released; manual part tapping
   }, [choreoProgress, sheets, choreoSorted]);
 
   // Report the live choreography state up so the PDP can caption the space below
-  // the board (the current layer in Phase A, the scanned part in Phase B) — that
-  // keeps the area under the big board meaningful instead of dead.
+  // the board (the current layer in Phase A, the scanned part NAME in Phase B).
   useEffect(() => {
     if (!onChoreoState) return;
     if (!choreo) {
@@ -717,16 +730,17 @@ export function BoardArt({
       phase: choreo.phase,
       layerLabel: choreo.layerLabel ?? null,
       layerFn: choreo.layerFn ?? null,
-      scanRef: choreo.scanRef ?? null,
+      scanName: choreo.scanName ?? null,
     });
   }, [choreo, onChoreoState]);
 
   // The index/refs actually rendered: the choreography wins while it's running,
-  // otherwise the user's manual layer + tap-driven highlight.
+  // otherwise the user's manual layer + tap-driven highlight. During a scan the
+  // step's own union/groups apply — identical boxes to tapping that table row.
   const shownIndex = choreo ? choreo.active : active;
   const effectiveRefs = choreo ? choreo.refs : highlightRefs;
-  const effectiveUnion = choreo ? false : highlightUnion;
-  const effectiveGroups = choreo ? undefined : highlightGroups;
+  const effectiveUnion = choreo ? choreo.union ?? false : highlightUnion;
+  const effectiveGroups = choreo ? choreo.groups : highlightGroups;
 
   // The realistic FACE currently shown: 'F' (Front face) / 'B' (Back face), or
   // null for any copper layer. Highlights only appear on the faces — a copper
