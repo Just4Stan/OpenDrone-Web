@@ -120,10 +120,6 @@ export function MobileHome({
             items.length > 0 ? (
               <section className="home-mobile-featured">
                 <p className="section-label">Flagship hardware</p>
-                <p className="home-mobile-featured-note">
-                  FC, ESC, RX and frame. The OpenStack is simply the FC + ESC
-                  bundled together.
-                </p>
                 <div className="home-mobile-grid">
                   {items.map((product, i) => (
                     <ProductItem
