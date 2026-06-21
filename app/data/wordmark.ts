@@ -5,7 +5,7 @@
 // applied to a wrapping <g> for them to render at the right place
 // and orientation.
 
-export const WORDMARK_VIEWBOX = '0 0 2400.000000 433.000000';
+export const WORDMARK_VIEWBOX = '-36 -17.32 2472 467.64';
 export const WORDMARK_GROUP_TRANSFORM = 'translate(0.000000,433.000000) scale(0.100000,-0.100000)';
 export const WORDMARK_FILL_OPEN = '#e5e5e5';
 export const WORDMARK_FILL_DRONE = '#b8922e';
