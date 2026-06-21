@@ -11824,7 +11824,11 @@ button.reset {
     perspective: none;
     transform-style: flat;
     margin-top: 0;
-    touch-action: pan-y; /* let vertical scroll through; we only flick-detect */
+    /* The board surface owns vertical gestures: a flick here peels a layer and
+       must NOT also scroll the page (that double-action felt broken). Scroll the
+       page by dragging on the list/below — the board is sticky so it stays in
+       view regardless. */
+    touch-action: none;
   }
   /* ONE layer on screen — no per-layer boxes. The incoming layer slides up from
      just below + fades in over the outgoing (compositor-only, smooth peel). */

@@ -728,6 +728,10 @@ export default function Product() {
   // on the board by BoardArt. Lives here (the common ancestor of the pin list
   // and the board) so a hover lights the matching footprint.
   const [hoveredRefs, setHoveredRefs] = useState<string[]>([]);
+  // Whether the current highlight is actually drawn on the visible layer (fed by
+  // BoardArt). A part can be "selected" but hidden if you've flicked to another
+  // layer — used so a re-tap re-asserts instead of toggling an invisible part off.
+  const [highlightVisible, setHighlightVisible] = useState(false);
   // On touch there's no hover: a tap emits synthetic mouseenter→...→mouseleave/
   // blur, so the hover handlers would light the part then instantly clear it.
   // Switch to a tap-only model on touch (click toggles; no auto-clear).
@@ -840,13 +844,20 @@ export default function Product() {
                 hoveredRefs.length === chip.refs.length &&
                 chip.refs.every((r) => hoveredRefs.includes(r));
               const on = () => {
-                setHoveredRefs(chip.refs);
+                // Fresh array each tap so BoardArt's auto-flip effect re-fires —
+                // re-tapping a part hidden under another layer flips back to it.
+                setHoveredRefs([...chip.refs]);
                 setHoveredUnion(false);
                 setHoveredGroups(undefined);
               };
-              // Touch: tap toggles this chip's spotlight, no hover-clear.
+              // Touch: tap toggles this chip's spotlight. Only toggle OFF when
+              // it's actually lit on the visible layer — otherwise (you've
+              // flicked to another layer) re-tap re-asserts + flips to its face.
               const chipHandlers = noHover
-                ? {onClick: () => (chipActive ? clearHover() : on())}
+                ? {
+                    onClick: () =>
+                      chipActive && highlightVisible ? clearHover() : on(),
+                  }
                 : {onMouseEnter: on, onFocus: on, onBlur: clearHover};
               return (
                 <button
@@ -865,7 +876,9 @@ export default function Product() {
     }
     const hoverable = !!refs?.length;
     const enter = () => {
-      setHoveredRefs(refs ?? []);
+      // Fresh array each tap so BoardArt's auto-flip effect re-fires even on the
+      // same part — re-tapping one hidden under another layer flips back to it.
+      setHoveredRefs(refs ? [...refs] : []);
       setHoveredUnion(pin.box === 'union');
       setHoveredGroups(pin.boxGroups);
     };
@@ -876,7 +889,9 @@ export default function Product() {
       refs!.every((r) => hoveredRefs.includes(r));
     // Touch has no hover: a tap toggles this row's spotlight on/off. On desktop
     // the click toggle is harmless — hover already drives the highlight.
-    const tap = () => (isActive ? clearHover() : enter());
+    // Toggle OFF only when actually lit on the visible layer; otherwise re-tap
+    // re-asserts (and BoardArt flips to the part's face) — no invisible dead tap.
+    const tap = () => (isActive && highlightVisible ? clearHover() : enter());
     // No per-row onMouseLeave — clearing happens on the container leave so the
     // spotlight stays lit while moving between rows (onBlur covers keyboard).
     // On touch, drop every hover/focus handler — a tap's synthetic mouse +
@@ -1418,6 +1433,7 @@ export default function Product() {
                 highlightUnion={hoveredUnion}
                 highlightGroups={hoveredGroups}
                 onFlying={setBoardFlying}
+                onHighlightVisible={setHighlightVisible}
               />
             ) : undefined
           }
