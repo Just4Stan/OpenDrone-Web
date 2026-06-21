@@ -669,40 +669,25 @@ export default function Product() {
     }
     return {top, bottom, other};
   }, [activePins, pinSides]);
-  // Every part refdes by board side — fed to the mobile scroll choreography so it
-  // can light "all bottom parts" then "all top parts" (see BoardArt.choreo*).
   const isMobile = useIsMobile();
-  const {allTopRefs, allBottomRefs} = useMemo(() => {
-    const topR: string[] = [];
-    const botR: string[] = [];
-    for (const [ref, side] of pinSides) {
-      if (side === 'F') topR.push(ref);
-      else if (side === 'B') botR.push(ref);
-    }
-    return {allTopRefs: topR, allBottomRefs: botR};
-  }, [pinSides]);
-  // One representative refdes per NAMED part, per side, for the deliberate Phase B
-  // scan — the spotlight steps through the real teardown components (with names)
-  // top→bottom, front side then rear side, not every unnamed passive.
-  const choreoScanRefs = useMemo(
-    () => groupedPins.top.flatMap((pin) => (pin.refs?.[0] ? [pin.refs[0]] : [])),
+  // Walkthrough scan steps, ONE per teardown table row, carrying that row's exact
+  // highlight spec (refs + union/groups + name). So the boxes are defined once —
+  // in the pins — and the scan and the tap-to-highlight share them. Works for any
+  // board with no extra wiring: define the teardown pins, get both for free.
+  const pinToStep = (pin: ChapterPin) => ({
+    refs: pin.refs ?? [],
+    union: pin.box === 'union',
+    groups: pin.boxGroups,
+    name: pin.part,
+  });
+  const choreoTopSteps = useMemo(
+    () => groupedPins.top.filter((pin) => pin.refs?.length).map(pinToStep),
     [groupedPins],
   );
-  const choreoScanRefsBack = useMemo(
-    () => groupedPins.bottom.flatMap((pin) => (pin.refs?.[0] ? [pin.refs[0]] : [])),
+  const choreoBottomSteps = useMemo(
+    () => groupedPins.bottom.filter((pin) => pin.refs?.length).map(pinToStep),
     [groupedPins],
   );
-  // refdes → human part name, for captioning the scanned part in Phase B.
-  const refToPartName = useMemo(() => {
-    const m = new Map<string, string>();
-    for (const pin of activePins) {
-      if (!pin.part) continue;
-      for (const r of pin.refs ?? []) m.set(r, pin.part);
-      for (const chip of pin.chips ?? [])
-        for (const r of chip.refs ?? []) m.set(r, chip.label ?? pin.part);
-    }
-    return m;
-  }, [activePins]);
   // CAD products (the frame) carry an exploded 3D viewer instead of a
   // layered board SVG; when present it takes the teardown media slot. Like
   // boardArt, a tier's own model (3" vs 5") wins over the shared default.
@@ -1160,7 +1145,7 @@ export default function Product() {
     phase: 'layers' | 'scan';
     layerLabel: string | null;
     layerFn: string | null;
-    scanRef: string | null;
+    scanName: string | null;
   } | null>(null);
   useEffect(() => {
     if (!choreoOn || walkthroughSeen) return;
@@ -1561,10 +1546,8 @@ export default function Product() {
                 highlightGroups={hoveredGroups}
                 onFlying={setBoardFlying}
                 choreoProgress={walkthroughOn ? walkthroughProgress : null}
-                choreoTopRefs={choreoScanRefs.length ? choreoScanRefs : allTopRefs}
-                choreoBottomRefs={
-                  choreoScanRefsBack.length ? choreoScanRefsBack : allBottomRefs
-                }
+                choreoTopSteps={choreoTopSteps}
+                choreoBottomSteps={choreoBottomSteps}
                 onChoreoState={setChoreoState}
               />
               {/* Caption rides INSIDE the sticky board slot so it stays pinned
@@ -1586,10 +1569,7 @@ export default function Product() {
                   ) : (
                     <>
                       <span className="teardown-caption-kicker">Scanning</span>
-                      {(choreoState.scanRef &&
-                        refToPartName.get(choreoState.scanRef)) ||
-                        choreoState.scanRef ||
-                        'components'}
+                      {choreoState.scanName || 'components'}
                     </>
                   )}
                 </p>
