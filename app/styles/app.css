@@ -12053,3 +12053,13 @@ html:not(.light) .cart-empty-chip {
 body:has(.overlay.expanded) .placeholder-banner {
   display: none;
 }
+
+/* On a phone the pinned buy rail is a fixed bottom bar, and the bottom-right
+   pill lands right on top of its "Add to cart" button. The pill is decorative
+   (pointer-events:none) so it never blocks the tap, but it must not obscure the
+   single most important control — hide it whenever the mobile buy rail is
+   pinned. (Both float over body; the rail is portaled to <body>, the pill lives
+   in the app shell, so this :has check on <body> sees both.) */
+body:has(.buy-rail.is-pinned.is-mobile) .placeholder-banner {
+  display: none;
+}
