@@ -3882,16 +3882,17 @@ button.reset {
     left: 0;
     right: 0;
     z-index: 60;
-    flex-direction: row;
-    align-items: center;
-    justify-content: space-between;
-    gap: var(--sp-3);
-    padding: 0.55rem max(0.8rem, env(safe-area-inset-left)) calc(0.55rem + env(safe-area-inset-bottom)) max(0.8rem, env(safe-area-inset-right));
+    /* Column now: a compact variant-pill row on top, the price + add-to-cart row
+       beneath it. Everything sized down so the two rows stay a compact bubble. */
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.4rem;
+    padding: 0.45rem max(0.8rem, env(safe-area-inset-left)) calc(0.5rem + env(safe-area-inset-bottom)) max(0.8rem, env(safe-area-inset-right));
     background: var(--pod-bg-strong);
     border-top: 1px solid var(--pod-border);
     animation: buy-rail-rise 0.2s ease;
   }
-  /* Compact: hide the secondary lines, keep price + VAT note + button. */
+  /* Compact: hide the secondary lines, keep price + button on one row. */
   .buy-rail.is-pinned.is-mobile .product-buy {
     display: flex;
     flex-direction: row;
@@ -3904,8 +3905,69 @@ button.reset {
   .buy-rail.is-pinned.is-mobile .product-buy-sku {
     display: none;
   }
+  /* Shrink the figures + CTA so the variant row fits without growing the bar. */
+  .buy-rail.is-pinned.is-mobile .product-buy-price {
+    font-size: 1.15rem;
+  }
   .buy-rail.is-pinned.is-mobile .product-form button {
     white-space: nowrap;
+    padding: 0.5rem 1rem;
+    font-size: 0.8rem;
+    min-height: 40px;
+  }
+  /* Compact variant pills — a single horizontal scroll row of name-only chips. */
+  .buy-rail.is-pinned.is-mobile .variant-ladder--compact .variant-ladder-track {
+    display: flex;
+    flex-direction: row;
+    gap: 0.35rem;
+    overflow-x: auto;
+    scrollbar-width: none;
+    padding-bottom: 1px;
+  }
+  .buy-rail.is-pinned.is-mobile
+    .variant-ladder--compact
+    .variant-ladder-track::-webkit-scrollbar {
+    display: none;
+  }
+  .buy-rail.is-pinned.is-mobile .variant-ladder--compact .variant-tier {
+    flex: 0 0 auto;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    min-height: 32px;
+    padding: 0.28rem 0.7rem;
+    border-radius: var(--r-pill);
+    border: 1px solid var(--color-border-strong);
+    background: var(--color-bg-card);
+    color: var(--color-text-muted);
+    font-family: var(--font-mono);
+    font-size: 12px;
+    letter-spacing: 0.04em;
+    white-space: nowrap;
+  }
+  .buy-rail.is-pinned.is-mobile .variant-ladder--compact .variant-tier-glow {
+    display: none;
+  }
+  .buy-rail.is-pinned.is-mobile
+    .variant-ladder--compact
+    .variant-tier.is-selected {
+    border-color: var(--color-gold);
+    background: var(--color-gold-soft);
+    color: var(--color-text);
+  }
+  .buy-rail.is-pinned.is-mobile
+    .variant-ladder--compact
+    .variant-tier[disabled] {
+    opacity: 0.5;
+  }
+  .buy-rail.is-pinned.is-mobile .variant-ladder--compact .variant-tier-head {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+  }
+  .buy-rail.is-pinned.is-mobile .variant-ladder--compact .variant-tier-flag {
+    font-size: 11px;
+    color: var(--color-gold);
   }
   .buy-rail.is-pinned.is-mobile.is-suppressed {
     display: none;
@@ -11540,10 +11602,13 @@ button.reset {
     max-width: 100%;
   }
 
-  /* FirmwareSplit's amount row overran the PDP on a 320px screen. Let it
-     wrap and keep its numbers inside the viewport. */
+  /* FirmwareSplit's amount row (€44 + €1 = €45) must stay on ONE line — scale
+     the figure down to fit the phone instead of wrapping. */
   .firmware-split-amounts {
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
+    gap: 0.4rem;
+    font-size: clamp(1.2rem, 6.4vw, 2rem);
+    white-space: nowrap;
   }
   .firmware-split-total {
     min-width: 0;
