@@ -390,6 +390,7 @@ function Chapter({
   bigMedia,
   noMedia,
   textReveal,
+  indexAsTitle,
 }: {
   number: string;
   label: string;
@@ -415,6 +416,10 @@ function Chapter({
   /** Drop the media column entirely so the body spans full width — used by
    *  chapters whose content (e.g. the spec table) needs no image. */
   noMedia?: boolean;
+  /** Promote the numbered index ("03 In the box") to the chapter's heading at
+   *  title scale (desktop) and drop the separate `title`. For sections whose
+   *  own visual leads and a sentence subtitle just adds noise. */
+  indexAsTitle?: boolean;
 }) {
   return (
     <section
@@ -427,12 +432,19 @@ function Chapter({
       data-text-pending={textReveal === false ? '' : undefined}
     >
       {backdrop ? <div className="chapter-backdrop">{backdrop}</div> : null}
-      <div className="chapter-index">
-        <span className="chapter-number">{number}</span>
-        <span className="chapter-label">{label}</span>
-      </div>
+      {indexAsTitle ? (
+        <h2 className="chapter-index chapter-index--title">
+          <span className="chapter-number">{number}</span>
+          <span className="chapter-label">{label}</span>
+        </h2>
+      ) : (
+        <div className="chapter-index">
+          <span className="chapter-number">{number}</span>
+          <span className="chapter-label">{label}</span>
+        </div>
+      )}
       <div className="chapter-body-col">
-        <h2 className="chapter-title">{title}</h2>
+        {indexAsTitle ? null : <h2 className="chapter-title">{title}</h2>}
         {children}
       </div>
       {backdrop || noMedia ? null : (
@@ -1452,11 +1464,8 @@ export default function Product() {
         <Chapter
           number={chapterNums.teardown}
           label="Teardown"
-          title={
-            frameViewer
-              ? 'Every arm, plate and standoff — exploded'
-              : 'Some layers of copper with components on top'
-          }
+          indexAsTitle={!frameViewer}
+          title={frameViewer ? 'Every arm, plate and standoff — exploded' : undefined}
           textReveal={frameViewer ? undefined : textIn}
           backdrop={
             frameViewer ? (
@@ -1546,6 +1555,7 @@ export default function Product() {
             <div className="teardown-guide">
               <p className="teardown-hint">
                 Flick the board ↑/↓ for layers · ←/→ for parts · or tap any part
+                in the list to light it up
               </p>
               <button
                 type="button"
@@ -1758,15 +1768,14 @@ export default function Product() {
           number={chapterNums.inTheBox}
           label="In the box"
           bigMedia
+          indexAsTitle={!content.bundle}
           title={
             content.bundle ? (
               <>
                 Two boards, two firmwares,{' '}
                 <em>two maintainers paid.</em>
               </>
-            ) : (
-              'What you get'
-            )
+            ) : undefined
           }
         >
           {content.bundle ? (

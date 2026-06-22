@@ -183,7 +183,8 @@ html.light .scene-dim {
 }
 /* header pill + frame slider now use --pod-bg, which has its own light twin —
    no per-surface light override needed. */
-html.light .product-gallery-controls {
+html.light .product-gallery-controls,
+html.light .product-gallery-swipe-hint {
   background: rgba(255, 255, 255, 0.7);
 }
 /* Schematic sheets are black-on-white KiCad exports. Dark mode inverts them
@@ -3094,6 +3095,32 @@ button.reset {
   padding: 0 0.25rem;
 }
 
+/* Swipe affordance — only shown on touch (no hover), where the flick gesture
+   exists. Mirrors the board explorer's dim mono hint. Tucked top-centre so it
+   doesn't collide with the arrow/counter pill at the bottom. */
+.product-gallery-swipe-hint {
+  display: none;
+}
+@media (hover: none) {
+  .product-gallery-swipe-hint {
+    display: block;
+    position: absolute;
+    top: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 0.25rem 0.6rem;
+    background: rgba(13, 13, 16, 0.6);
+    border-radius: 999px;
+    backdrop-filter: blur(6px);
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--color-text-dim);
+    pointer-events: none;
+  }
+}
+
 .product-gallery-thumbs {
   display: flex;
   gap: 0.5rem;
@@ -5130,6 +5157,31 @@ button.reset {
 .schematic-sheet.is-loaded {
   opacity: 1;
 }
+/* Swipe affordance — touch only (no hover), where the flick gesture lives.
+   Same dim mono pill as the product gallery. */
+.schematic-swipe-hint {
+  display: none;
+}
+@media (hover: none) {
+  .schematic-swipe-hint {
+    display: block;
+    position: absolute;
+    top: 8px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 1;
+    padding: 0.25rem 0.6rem;
+    background: var(--pod-bg);
+    border-radius: 999px;
+    backdrop-filter: blur(6px);
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--color-text-dim);
+    pointer-events: none;
+  }
+}
 .schematic-foot {
   display: flex;
   align-items: center;
@@ -5292,6 +5344,26 @@ button.reset {
   font-style: normal;
   color: var(--color-gold);
   font-weight: 600;
+}
+
+/* Index-as-heading chapters (Teardown, In the box): the numbered index doubles
+ * as the chapter title at title scale, with no separate sentence subtitle. Desktop
+ * only — on mobile the section's own visual (board deck, parts list) leads, so the
+ * index stays at its compact size. */
+@media (min-width: 880px) {
+  .chapter-index--title {
+    gap: 0.5em;
+    margin-bottom: var(--sp-4);
+  }
+  .chapter-index--title .chapter-number,
+  .chapter-index--title .chapter-label {
+    font-size: var(--fs-2xl);
+    line-height: 1.1;
+    letter-spacing: 0.04em;
+  }
+  .chapter-index--title .chapter-label {
+    color: var(--color-text);
+  }
 }
 
 /* A few chapter titles are one long sentence — let them use the full left
@@ -5952,16 +6024,19 @@ button.reset {
 /* In the box — actual parts list. Engineering-terse, mono font, no
    stock photo of an open box. Fixed-width qty column so all rows align
    even when qty is "1–2×" or "kit". */
+/* A single bubble around the whole parts list — a "table card" that sets the
+   contents apart from the surrounding copy. Rows are hairline-divided inside. */
 .in-the-box {
   list-style: none;
-  padding: 0;
+  padding: 0.35rem 1.1rem;
   margin: 0 0 1.5rem;
   display: grid;
   gap: 0;
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--r-lg);
 }
 
-/* De-boxed (Img 6) — a plain parts list, hairline-divided rows instead of a
-   bubble around every line. */
 .in-the-box li {
   display: grid;
   grid-template-columns: 3rem 1fr;
@@ -12003,9 +12078,13 @@ button.reset {
   .teardown-pin-hoverable {
     position: relative;
   }
+  /* Touch has no hover to teach that a row is interactive, so the gold edge
+     marker rests visible (not the near-invisible 0.35 the desktop hover model
+     uses) — every tappable component reads as a control before it's tapped,
+     then fills solid + tints when active. */
   .teardown-pin-hoverable::before {
-    transform: scaleY(0.5);
-    opacity: 0.35;
+    transform: scaleY(0.7);
+    opacity: 0.6;
   }
   .teardown-pin-hoverable.is-active::before {
     transform: scaleY(1);
@@ -12088,6 +12167,11 @@ button.reset {
    desktop range so it can't override the mobile display:block above.) */
 @media (min-width: 1024px) {
   .teardown-hint {
+    display: none;
+  }
+  /* The Skip button is a touch affordance — on desktop the board teaches via
+     hover and the page scrolls fine, so it just clutters the heading row. */
+  .teardown-skip {
     display: none;
   }
 }
