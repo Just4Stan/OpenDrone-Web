@@ -680,18 +680,20 @@ export default function Product() {
       setDisplayedPins(activePins);
       return;
     }
-    // The new board flies in with the load cadence (TOP layer first + biggest,
-    // sweeping across the copy column early). Switch the list content behind a
-    // short opacity dip while it's covered, then settle.
+    // The new board sweeps in fast (0.55s/layer). Switch the list content behind
+    // a short opacity dip mid-sweep, then settle. These timers MUST track the
+    // board swap durations (app.css 1024px swap block) + the ghost hold (BoardArt,
+    // ~1.25s for the last layer) so the list and wires land with the board, not
+    // a beat after — a lag the old 600/1200/1800 numbers introduced.
     setPinsSwapping(true);
     // Retract the connector wires the instant the swap starts — they'd otherwise
     // hang frozen across the gutter, still pinned to the OLD bubbles, while the
     // board and list fly behind them. They redraw to the NEW bubbles only once
-    // everything has landed (fly-in ends ~1.73s + the new pins are in).
+    // everything has landed.
     setLinesReady(false);
-    const swapT = setTimeout(() => setDisplayedPins(activePins), 600);
-    const doneT = setTimeout(() => setPinsSwapping(false), 1200);
-    const lineT = setTimeout(() => setLinesReady(true), 1800);
+    const swapT = setTimeout(() => setDisplayedPins(activePins), 400);
+    const doneT = setTimeout(() => setPinsSwapping(false), 1000);
+    const lineT = setTimeout(() => setLinesReady(true), 1400);
     return () => {
       clearTimeout(swapT);
       clearTimeout(doneT);
