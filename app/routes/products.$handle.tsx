@@ -1501,42 +1501,37 @@ export default function Product() {
                     tappable to jump straight to that part. */}
                 {isMobile && orderedParts.length ? (
                   <div className="board-part-tour">
-                    <div className="board-deck-dots" aria-label="Component">
+                    <p className="board-part-tour-head" aria-live="polite">
+                      <span className="board-deck-name">Components</span>
+                      <span className="board-deck-hint">
+                        Tap one to find it on the board
+                      </span>
+                    </p>
+                    {/* Real, labelled, thumb-sized chips in a scrollable row —
+                        not a strip of tiny dots. Tap one to spotlight that part
+                        on the board; the row scrolls for the rest. */}
+                    <div className="board-part-chips" aria-label="Components">
                       {orderedParts.map((p, i) => (
                         <button
                           type="button"
                           key={p.name + i}
-                          className={`board-deck-dot${
+                          className={`board-part-chip${
                             i === focusedPartIdx ? ' is-active' : ''
                           }`}
-                          aria-label={`Highlight ${p.name}`}
-                          aria-current={i === focusedPartIdx ? 'true' : undefined}
+                          aria-pressed={i === focusedPartIdx}
                           onClick={() => {
                             setHoveredRefs([...p.refs]);
                             setHoveredUnion(p.union);
                             setHoveredGroups(p.groups);
                           }}
-                        />
+                        >
+                          {p.name}
+                          {p.cost && p.cost !== '×1' ? (
+                            <span className="board-part-chip-qty">{p.cost}</span>
+                          ) : null}
+                        </button>
                       ))}
                     </div>
-                    <p className="board-deck-meta" aria-live="polite">
-                      <span className="board-deck-count">
-                        {focusedPartIdx < 0
-                          ? `0/${orderedParts.length}`
-                          : `${focusedPartIdx + 1}/${orderedParts.length}`}
-                      </span>
-                      <span className="board-deck-name">
-                        {focusedPartIdx < 0
-                          ? 'Components'
-                          : orderedParts[focusedPartIdx].name}
-                      </span>
-                      {focusedPartIdx >= 0 && orderedParts[focusedPartIdx].cost ? (
-                        <span className="board-deck-cost">
-                          {orderedParts[focusedPartIdx].cost}
-                        </span>
-                      ) : null}
-                      <span className="board-deck-hint">Tap a part</span>
-                    </p>
                   </div>
                 ) : null}
               </>
