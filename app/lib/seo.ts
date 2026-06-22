@@ -152,7 +152,10 @@ export function buildOrgJsonLd(company: CompanyIdentity, siteUrl?: string) {
       contactType: 'customer support',
       url: `${url}/support`,
     },
-    telephone: company.tel,
+    // Omit telephone until a real number is set — never leak the placeholder.
+    ...(company.tel && company.tel !== '[pending]'
+      ? {telephone: company.tel}
+      : {}),
     address: {
       '@type': 'PostalAddress',
       streetAddress: company.address,

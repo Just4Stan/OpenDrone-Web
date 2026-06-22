@@ -18,8 +18,8 @@ export type CompanyIdentity = {
 const DEFAULTS: CompanyIdentity = {
   name: 'Incutec BV',
   address: 'Stapelhuisstraat 15, 3000 Leuven, Belgium',
-  kbo: '[pending]',
-  vat: 'BE[pending]',
+  kbo: '1038.934.039',
+  vat: 'BE 1038.934.039',
   email: 'contact@opendrone.be',
   tel: '[pending]',
 };
