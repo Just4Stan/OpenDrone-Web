@@ -5200,6 +5200,56 @@ button.reset {
 .schematic-sheet.is-loaded {
   opacity: 1;
 }
+/* Variant swap — a diagonal line flies across, wiping the new sheet in over the
+   old. The leaving sheet sits underneath; the entering sheet is revealed along a
+   slanted clip edge the line rides. */
+.schematic-sheet--leaving {
+  z-index: 1;
+  opacity: 1;
+}
+.schematic-sheet--entering {
+  z-index: 2;
+  opacity: 1; /* sibling tiers are pre-warmed → reveal by clip, not by fade */
+  transition: none;
+  animation: schematic-diagonal-in 0.6s cubic-bezier(0.7, 0, 0.3, 1) both;
+}
+@keyframes schematic-diagonal-in {
+  from {
+    clip-path: polygon(0 0, -35% 0, -75% 100%, 0 100%);
+  }
+  to {
+    clip-path: polygon(0 0, 140% 0, 100% 100%, 0 100%);
+  }
+}
+.schematic-swap-line {
+  position: absolute;
+  top: -8%;
+  left: 0;
+  width: 5px;
+  height: 116%;
+  z-index: 3;
+  background: var(--color-gold);
+  box-shadow: 0 0 18px 5px color-mix(in srgb, var(--color-gold) 65%, transparent);
+  transform: skewX(-21deg);
+  pointer-events: none;
+  animation: schematic-swap-line 0.6s cubic-bezier(0.7, 0, 0.3, 1) both;
+}
+@keyframes schematic-swap-line {
+  from {
+    left: -30%;
+    opacity: 0;
+  }
+  18% {
+    opacity: 1;
+  }
+  82% {
+    opacity: 1;
+  }
+  to {
+    left: 125%;
+    opacity: 0;
+  }
+}
 /* Mobile sheet deck — the swipe-first replacement for the sheet-tab rail (which
    is a mouse-era button strip). Hidden on desktop, where the rail is shown;
    shown below the page on mobile. Reuses the board explorer's tick + meta
@@ -12137,27 +12187,35 @@ button.reset {
     perspective: none;
     transform-style: flat;
     margin-top: 0;
-    /* Horizontal flicks peel a layer; vertical drags must scroll the page like
-       anywhere else (capturing them trapped the scroll and caused accidental
-       peels). pan-y hands vertical panning back to the browser while leaving
-       horizontal for the peel gesture. */
-    touch-action: pan-y;
+    position: relative;
+    /* Clip the off-screen layers so the page-turn slides cleanly in/out. */
+    overflow: hidden;
+    /* The board fully owns the gesture: a horizontal flick peels a layer, and
+       vertical is locked too (touch-action: none) so a drag on the graphic never
+       scrolls the page out from under the swipe. Scroll the page from the area
+       around/below the board (it's pinned, so it stays in view regardless). */
+    touch-action: none;
   }
-  /* ONE layer on screen — no per-layer boxes. The incoming layer slides up from
-     just below + fades in over the outgoing (compositor-only, smooth peel). */
+  /* Layers turn like book pages: each sheet sits at its position relative to the
+     active one — earlier layers wait off-screen left, later layers off-screen
+     right, the active one centred. Stepping slides the old layer out one edge and
+     the new one in from the other (the side you swiped from). */
   .board-art .board-sheet {
     animation: none !important;
     filter: none;
-    transition: opacity 0.32s cubic-bezier(0.22, 0.8, 0.3, 1),
-      transform 0.42s cubic-bezier(0.22, 0.8, 0.3, 1);
+    transition: transform 0.4s cubic-bezier(0.22, 0.8, 0.3, 1),
+      opacity 0.3s ease;
+    transform: translateX(100%);
     opacity: 0;
-    transform: translateY(14%);
     z-index: 1;
     pointer-events: none;
   }
+  .board-art .board-sheet.is-before {
+    transform: translateX(-100%);
+  }
   .board-art .board-sheet.is-active {
+    transform: translateX(0);
     opacity: 1;
-    transform: translateY(0);
     z-index: 2;
     pointer-events: auto;
   }
@@ -12245,6 +12303,54 @@ button.reset {
     margin-top: 0.75rem;
     padding-top: 0.7rem;
     border-top: 1px solid var(--color-border);
+  }
+  .board-part-tour-head {
+    display: flex;
+    align-items: baseline;
+    gap: 0.55rem;
+    margin: 0 0 0.5rem;
+    font-family: var(--font-mono);
+  }
+  /* Scrollable row of real, labelled, thumb-sized component chips — replaces the
+     old strip of tiny untappable dots. */
+  .board-part-chips {
+    display: flex;
+    gap: 6px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    padding-bottom: 2px;
+    /* horizontal scroll of the chip row only — never hijack vertical page scroll */
+    touch-action: pan-x;
+  }
+  .board-part-chips::-webkit-scrollbar {
+    display: none;
+  }
+  .board-part-chip {
+    flex: 0 0 auto;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4em;
+    min-height: 40px;
+    padding: 0.45em 0.9em;
+    white-space: nowrap;
+    border-radius: var(--r-pill);
+    border: 1px solid var(--color-border-strong);
+    background: var(--color-bg-card);
+    color: var(--color-text-muted);
+    font-family: var(--font-mono);
+    font-size: 13px;
+    letter-spacing: 0.02em;
+    transition: border-color 0.18s ease, color 0.18s ease, background 0.18s ease;
+  }
+  .board-part-chip.is-active {
+    border-color: var(--color-gold);
+    background: color-mix(in srgb, var(--color-gold) 16%, transparent);
+    color: var(--color-text);
+  }
+  .board-part-chip-qty {
+    font-size: 0.78em;
+    color: var(--color-text-dim);
   }
   /* The rail's first-reveal opacity-0 hold (is-armed) never clears without the
      fly animation — force it visible on mobile. */
