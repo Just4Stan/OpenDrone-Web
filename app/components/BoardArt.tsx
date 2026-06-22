@@ -1,4 +1,4 @@
-import {useEffect, useId, useMemo, useRef, useState} from 'react';
+import {useEffect, useId, useLayoutEffect, useMemo, useRef, useState} from 'react';
 import {
   fetchJsonCached,
   fetchTextCached,
@@ -927,7 +927,9 @@ export function BoardArt({
         <button
           type="button"
           key={s.slug}
-          className={`board-sheet${i === shownIndex ? ' is-active' : ''}`}
+          className={`board-sheet${i === shownIndex ? ' is-active' : ''}${
+            i < shownIndex ? ' is-before' : ''
+          }`}
           style={{['--depth' as string]: i}}
           aria-label={`Show ${s.label} layer`}
           aria-pressed={i === shownIndex}
