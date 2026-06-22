@@ -73,6 +73,10 @@ export function WatchCard({
       </button>
 
       {open ? (
+        // Backdrop click-to-dismiss. Keyboard users dismiss via Esc (document
+        // listener in the effect above) or the explicit close button below, so
+        // the dialog is fully keyboard-operable without a handler on the scrim.
+        // eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions, jsx-a11y/click-events-have-key-events
         <div
           className="watch-lightbox"
           role="dialog"
@@ -88,6 +92,9 @@ export function WatchCard({
           >
             ✕
           </button>
+          {/* Stops a click on the player from bubbling to the backdrop-close;
+              not an interactive control itself. */}
+          {/* eslint-disable-next-line jsx-a11y/no-static-element-interactions, jsx-a11y/click-events-have-key-events */}
           <div
             className="watch-lightbox-frame"
             onClick={(e) => e.stopPropagation()}
