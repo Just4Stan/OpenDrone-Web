@@ -4882,6 +4882,12 @@ button.reset {
 .board-art.is-armed .board-folder-rail {
   opacity: 0;
 }
+/* …but reveal the rail 0.5s BEFORE the fly fully settles (is-rail-in is set on a
+   timer in BoardArt) so the layer table reads a beat sooner. Same specificity as
+   the is-armed rule above, so this MUST stay after it to win the opacity. */
+.board-art.is-rail-in .board-folder-rail {
+  opacity: 1;
+}
 @media (prefers-reduced-motion: reduce) {
   .board-art.is-armed .board-sheet,
   .board-art.is-armed .board-sheet:not(.is-active),
@@ -5330,6 +5336,20 @@ button.reset {
    opaque. Desktop pages by crossfading active↔active. */
 .schematic-sheet.is-active.is-loaded {
   opacity: 1;
+}
+/* Scroll-back reveal: when a SKU was switched while the schematic was off-screen
+   (the wipe was skipped), fade the new active sheet in once it comes into view —
+   the schematic's "entrance again", cheap (opacity only). */
+.schematic-page.is-revealing .schematic-sheet.is-active.is-loaded {
+  animation: schematic-reveal 0.5s ease both;
+}
+@keyframes schematic-reveal {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 /* Variant swap — the gold scan line IS the reveal boundary: the new sheet is
    clipped in exactly behind the line as it sweeps L→R. Both the entering sheet

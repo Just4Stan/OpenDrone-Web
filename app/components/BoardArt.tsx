@@ -507,7 +507,11 @@ export function BoardArt({
   // viewport (not the moment the chapter scrolls in) so it reads as a deliberate
   // reveal. One-shot; the sheets sit off-screen (paused) until it fires.
   const [flyIn, setFlyIn] = useState(false);
+  // Re-armable: deps on flyIn so that when a swap-while-off-screen resets flyIn to
+  // false (see the swap driver), the centre-band observer re-attaches and the
+  // entrance replays the next time the board scrolls back into the centre.
   useEffect(() => {
+    if (flyIn) return;
     const el = ref.current;
     if (!el || typeof IntersectionObserver === 'undefined') {
       setFlyIn(true);
@@ -524,6 +528,27 @@ export function BoardArt({
     );
     io.observe(el);
     return () => io.disconnect();
+  }, [flyIn]);
+
+  // Live "is the board roughly on screen" flag (NOT one-shot). A SKU swap that
+  // happens while this is false is not worth animating (the user is looking
+  // elsewhere on the page) — the driver hard-cuts it and re-arms the entrance so
+  // the reveal plays fresh when they scroll back. Cheap: a ref, no re-render.
+  const visibleRef = useRef(false);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el || typeof IntersectionObserver === 'undefined') {
+      visibleRef.current = true;
+      return;
+    }
+    const io = new IntersectionObserver(
+      ([e]) => {
+        visibleRef.current = e.isIntersecting;
+      },
+      {rootMargin: '-15% 0px -15% 0px', threshold: 0},
+    );
+    io.observe(el);
+    return () => io.disconnect();
   }, []);
 
   // `flyDone` ends the entrance: it strips the animation so a SKU swap (the
@@ -531,6 +556,9 @@ export function BoardArt({
   // instantly at full scale instead of re-flying. While the fly runs we tell the
   // parent (to lock part selection) and the CSS drops the heavy filters.
   const [flyDone, setFlyDone] = useState(false);
+  // The layer rail fades in DURING the entrance — 0.5s before the fly fully
+  // settles — instead of waiting for flyDone, so it reads a beat sooner.
+  const [railIn, setRailIn] = useState(false);
   useEffect(() => {
     if (!flyIn || flyDone) return;
     // Honour reduced-motion: no animation, no lock — settle immediately.
@@ -539,15 +567,21 @@ export function BoardArt({
       window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
     ) {
       setFlyDone(true);
+      setRailIn(true);
       return;
     }
     onFlying?.(true);
     // animation 1.2s + last layer's stagger (7 × 0.11s) + a small buffer
+    const FLY_MS = 1200 + 7 * 110 + 250;
+    const railT = setTimeout(() => setRailIn(true), Math.max(0, FLY_MS - 500));
     const t = setTimeout(() => {
       setFlyDone(true);
       onFlying?.(false);
-    }, 1200 + 7 * 110 + 250);
-    return () => clearTimeout(t);
+    }, FLY_MS);
+    return () => {
+      clearTimeout(railT);
+      clearTimeout(t);
+    };
   }, [flyIn, flyDone, onFlying]);
 
   // Pre-parse sibling tiers ONLY after the entrance finishes — parsing every
@@ -1110,6 +1144,20 @@ export function BoardArt({
     // parse cache (always warmed for an on-screen tier), frozen at the index the
     // visitor was on. NEVER read live `sheets`/`active` (already the NEW board).
     const outSheets = parsedCache.get(swap.committedSrc) ?? lastSheetsRef.current;
+    // Off-screen swap: the user changed the SKU while looking elsewhere on the
+    // page (the board isn't in view), so animating the layer fly-out/in is wasted
+    // work and reads as lag. Hard-cut to the new board AND re-arm the entrance, so
+    // it plays the full reveal fresh when they scroll back to the teardown.
+    if (flyDone && !reduce && !visibleRef.current) {
+      const g = swap.gen + 1;
+      dispatchSwap({type: 'HARDCUT', src});
+      onSwapStartRef.current?.(g);
+      onSwapSettleRef.current?.(g);
+      setFlyDone(false);
+      setFlyIn(false);
+      setRailIn(false);
+      return;
+    }
     // No entrance yet / reduced-motion / nothing to peel → hard-cut (no animation),
     // but still signal the parent (start+settle) so its list swaps cleanly.
     if (!flyDone || reduce || !outSheets || !outSheets.length) {
@@ -1231,7 +1279,7 @@ export function BoardArt({
         revealed && !flyDone ? ' is-armed' : ''
       }${flyIn && !flyDone ? ' is-flying' : ''}${
         flyDone ? ' is-swap-ready' : ''
-      }`}
+      }${railIn ? ' is-rail-in' : ''}`}
       // The swap durations live in ONE place (SWAP_TIMING) and are pushed to CSS
       // here so the @keyframes block and the JS settle backstop read identical
       // numbers — change a duration in board-swap-timing.ts and both follow.

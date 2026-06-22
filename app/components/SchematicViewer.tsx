@@ -151,6 +151,14 @@ export function SchematicViewer({handle, handles, inspectUrl}: SchematicViewerPr
   const lastImgRef = useRef<string | null>(null);
   const prevDhRef = useRef(dh);
   const [outgoing, setOutgoing] = useState<string | null>(null);
+  // Live "is the schematic roughly on screen" flag + a "reveal owed" flag: a SKU
+  // swap while the schematic is off-screen (the user is up in the teardown, or
+  // anywhere else) skips the wipe — animating it is wasted work that competes with
+  // whatever IS on screen — and instead owes a quick fade-in reveal, played when
+  // the schematic next scrolls into view.
+  const visibleRef = useRef(false);
+  const revealPendingRef = useRef(false);
+  const [revealing, setRevealing] = useState(false);
   useEffect(() => {
     if (prevDhRef.current === dh) return;
     prevDhRef.current = dh;
@@ -158,10 +166,37 @@ export function SchematicViewer({handle, handles, inspectUrl}: SchematicViewerPr
       typeof window !== 'undefined' &&
       window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
     if (reduce || !lastImgRef.current) return;
+    if (!visibleRef.current) {
+      // Off-screen: don't wipe; owe a reveal for when it scrolls back into view.
+      revealPendingRef.current = true;
+      return;
+    }
     setOutgoing(lastImgRef.current);
     const t = setTimeout(() => setOutgoing(null), 640);
     return () => clearTimeout(t);
   }, [dh]);
+  // Track on-screen state; when the schematic comes back into view owing a reveal
+  // (an off-screen SKU swap happened), play the entrance fade-in once.
+  useEffect(() => {
+    const el = ref.current;
+    if (!el || typeof IntersectionObserver === 'undefined') {
+      visibleRef.current = true;
+      return;
+    }
+    const io = new IntersectionObserver(
+      ([e]) => {
+        visibleRef.current = e.isIntersecting;
+        if (e.isIntersecting && revealPendingRef.current) {
+          revealPendingRef.current = false;
+          setRevealing(true);
+          window.setTimeout(() => setRevealing(false), 600);
+        }
+      },
+      {rootMargin: '-15% 0px -15% 0px', threshold: 0},
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
   // Remember the sheet on screen so the next swap can hold it underneath. Runs
   // after the dh-swap effect above, so that effect reads the *previous* image.
   useEffect(() => {
@@ -249,7 +284,7 @@ export function SchematicViewer({handle, handles, inspectUrl}: SchematicViewerPr
               ref={pageRef}
               className={`schematic-page${dragging ? ' is-dragging' : ''}${
                 outgoing ? ' is-wiping' : ''
-              }`}
+              }${revealing ? ' is-revealing' : ''}`}
               style={{
                 ...(pageAr
                   ? {['--sheet-ar' as string]: `${pageAr}`}
