@@ -987,18 +987,18 @@ export function BoardArt({
     swapActiveRef.current = true;
     setGhost({html: lastStackHtmlRef.current, id});
     // The ghost's presence is what applies .is-swapping (the new board's fly-in)
-    // on the live stack, AND it carries the old board's layers peeling out. Both
-    // run at 0.55s + --depth stagger (0.1s × 7) ≈ 1.25s for the last (BOTTOM)
-    // layer — keep the ghost mounted until then, clearing a beat after so nothing
-    // snaps mid-flight. MUST track the CSS durations in app.css (board-sheet-fly /
-    // board-swap-sheet-out under the 1024px swap block).
+    // on the live stack, AND it carries the old board's layers flinging out. The
+    // exit (board-swap-sheet-out, 0.65s) + --depth stagger (0.1s × 7) ≈ 1.35s for
+    // the last (BOTTOM) layer — keep the ghost mounted until then, clearing a beat
+    // after so nothing snaps mid-flight. MUST track the CSS durations in app.css
+    // (board-sheet-fly / board-swap-sheet-out under the 1024px swap block).
     const t = setTimeout(() => {
       swapActiveRef.current = false;
       setGhost((g) => (g && g.id === id ? null : g));
       // Re-place the rail now the board has settled (it was held during the swap
       // so the layer textbox didn't jump against the mid-animation board).
       setPlaceNonce((n) => n + 1);
-    }, 1300);
+    }, 1400);
     return () => clearTimeout(t);
   }, [src, flyDone]);
   // Remember the stack on screen so the next swap can peel it. Runs after the

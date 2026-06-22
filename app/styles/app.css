@@ -4560,10 +4560,29 @@ button.reset {
   display: block;
 }
 
-/* On mobile the three cards stack in one column; at the desktop breakpoint
- * they become a 3-across row beside the title (below). */
+/* On mobile the cards sit two-across (a top row and a bottom row) so the set is
+ * compact instead of one tall stack; at the desktop breakpoint they become a
+ * 3-across row beside the title (below). */
 .chapter[data-wide-media] .open-source-cards {
-  grid-template-columns: minmax(0, 1fr);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+/* On mobile the 16:9 bubbles left a lot of dead vertical space (the copy is
+ * short, centred in a tall box). Size the cards to their content with tight
+ * padding instead — a row still equalises height via align-items: stretch. */
+@media (max-width: 879px) {
+  .chapter[data-wide-media] .open-source-card,
+  .chapter[data-wide-media] .latest-commit-card {
+    aspect-ratio: auto;
+    padding: 0.7rem 0.8rem;
+  }
+  .chapter[data-wide-media] .open-source-card-title {
+    font-size: 1rem;
+    margin-bottom: 0.3rem;
+  }
+  .chapter[data-wide-media] .open-source-cards {
+    gap: 0.6rem;
+  }
 }
 
 /* Header for the schematic chapter: a slim band — title on the left, the three
@@ -4947,13 +4966,20 @@ button.reset {
       calc(var(--depth) * 0.1s) both;
   }
   .board-swap-ghost .board-sheet {
-    animation: board-swap-sheet-out 0.55s cubic-bezier(0.16, 0.84, 0.3, 1)
+    /* The exit ACCELERATES (ease-IN): each old layer eases off the mark then
+       flings away to the right, like it's being shoved — not the old fast-start
+       curve that made it dart off instantly ("way too fast, no acceleration").
+       A slow start is fine now the ghost rides BEHIND the incoming board (z 1);
+       back when it was on top a slow start looked frozen. 0.65s (a touch longer
+       than the 0.55s entrance) so the build-up reads as a fling, not a teleport.
+       Last layer (depth 7) ends ≈ 0.7s + 0.65s ≈ 1.35s — ghost hold tracks it. */
+    animation: board-swap-sheet-out 0.65s cubic-bezier(0.5, 0, 0.85, 0.25)
       calc(var(--depth) * 0.1s) both;
   }
 }
-/* Exit mirrors the entrance velocity (same curve as board-sheet-fly). It starts
-   FAST so each old layer darts off to the right the instant its replacement
-   begins sweeping in over the top of it — the "push out" beat. */
+/* The new board decelerates into place (board-sheet-fly, ease-out) while the old
+   one accelerates away beneath it (board-swap-sheet-out, ease-in) — the two
+   curves together give the "shoved off" beat. */
 @keyframes board-swap-sheet-out {
   from {
     translate: 0 0;

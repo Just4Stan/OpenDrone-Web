@@ -693,7 +693,7 @@ export default function Product() {
     setLinesReady(false);
     const swapT = setTimeout(() => setDisplayedPins(activePins), 400);
     const doneT = setTimeout(() => setPinsSwapping(false), 1000);
-    const lineT = setTimeout(() => setLinesReady(true), 1300);
+    const lineT = setTimeout(() => setLinesReady(true), 1400);
     return () => {
       clearTimeout(swapT);
       clearTimeout(doneT);
