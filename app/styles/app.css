@@ -5897,6 +5897,51 @@ button.reset {
   margin: 0;
 }
 
+/* Brand-logo watermark — a big, faint full-card mark behind the text on the
+   GitHub (Study) and CERN (License) cards. Rendered via CSS mask so it follows
+   the theme (painted with the text colour at low opacity) rather than baking a
+   fixed fill into the SVG. */
+.open-source-card--github,
+.open-source-card--cern {
+  position: relative;
+  overflow: hidden;
+}
+
+.open-source-card--github > p,
+.open-source-card--cern > p {
+  position: relative;
+  z-index: 1;
+}
+
+.open-source-card--github::after,
+.open-source-card--cern::after {
+  content: '';
+  position: absolute;
+  right: -8%;
+  bottom: -14%;
+  width: 68%;
+  height: 78%;
+  background-color: var(--color-text);
+  opacity: 0.06;
+  pointer-events: none;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-position: right bottom;
+  mask-position: right bottom;
+  -webkit-mask-size: contain;
+  mask-size: contain;
+}
+
+.open-source-card--github::after {
+  -webkit-mask-image: url(/logos/github.svg);
+  mask-image: url(/logos/github.svg);
+}
+
+.open-source-card--cern::after {
+  -webkit-mask-image: url(/logos/cern.svg);
+  mask-image: url(/logos/cern.svg);
+}
+
 /* "Watch" bubble — the video card that replaces the issues card on products
    with a build film. Sized to match the sibling resource cards: the real
    YouTube thumbnail is cropped into the card, a gold YouTube glyph sits on top
