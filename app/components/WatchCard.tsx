@@ -71,7 +71,6 @@ export function WatchCard({
             />
             <path className="watch-card-yt-tri" d="M11.2 14.3 18.5 10 11.2 5.7Z" />
           </svg>
-          <span className="open-source-card-label">Watch · {channel} ↗</span>
         </span>
       </button>
 
