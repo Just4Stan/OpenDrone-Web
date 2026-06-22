@@ -3155,6 +3155,25 @@ button.reset {
   box-shadow: 0 0 0 1px color-mix(in srgb, var(--color-gold) 35%, transparent);
 }
 
+/* Mobile swipe bar — desktop keeps the arrow pill + thumbnail strip; on touch
+   those are dropped in favour of a swipe-first tick deck (the board/schematic
+   deck chrome). Shown only ≤1023px, where the board-deck-* styles live. */
+.product-gallery-deck {
+  display: none;
+}
+@media (max-width: 1023px) {
+  .product-gallery-deck {
+    display: block;
+    margin-top: 0.2rem;
+  }
+  /* Drop the tap-to-navigate controls on touch — swipe + the deck replace them. */
+  .product-gallery-controls,
+  .product-gallery-thumbs,
+  .product-gallery-swipe-hint {
+    display: none;
+  }
+}
+
 /* Breadcrumb */
 .breadcrumb {
   margin-bottom: 0.5rem;
