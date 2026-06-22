@@ -382,7 +382,6 @@ function ChapterMediaPlaceholder({kind}: {kind: string}) {
 
 function Chapter({
   number,
-  label,
   title,
   children,
   media,
@@ -391,7 +390,6 @@ function Chapter({
   bigMedia,
   noMedia,
   textReveal,
-  indexAsTitle,
 }: {
   number: string;
   label: string;
@@ -417,10 +415,6 @@ function Chapter({
   /** Drop the media column entirely so the body spans full width — used by
    *  chapters whose content (e.g. the spec table) needs no image. */
   noMedia?: boolean;
-  /** Promote the numbered index ("03 In the box") to the chapter's heading at
-   *  title scale (desktop) and drop the separate `title`. For sections whose
-   *  own visual leads and a sentence subtitle just adds noise. */
-  indexAsTitle?: boolean;
 }) {
   return (
     <section
@@ -433,19 +427,8 @@ function Chapter({
       data-text-pending={textReveal === false ? '' : undefined}
     >
       {backdrop ? <div className="chapter-backdrop">{backdrop}</div> : null}
-      {indexAsTitle ? (
-        <h2 className="chapter-index chapter-index--title">
-          <span className="chapter-number">{number}</span>
-          <span className="chapter-label">{label}</span>
-        </h2>
-      ) : (
-        <div className="chapter-index">
-          <span className="chapter-number">{number}</span>
-          <span className="chapter-label">{label}</span>
-        </div>
-      )}
       <div className="chapter-body-col">
-        {indexAsTitle ? null : <h2 className="chapter-title">{title}</h2>}
+        {title ? <h2 className="chapter-title">{title}</h2> : null}
         {children}
       </div>
       {backdrop || noMedia ? null : (
@@ -1452,8 +1435,7 @@ export default function Product() {
         <Chapter
           number={chapterNums.teardown}
           label="Teardown"
-          indexAsTitle={!frameViewer}
-          title={frameViewer ? 'Every arm, plate and standoff — exploded' : undefined}
+          title={frameViewer ? 'Every arm, plate and standoff — exploded' : 'Teardown'}
           textReveal={frameViewer ? undefined : textIn}
           backdrop={
             frameViewer ? (
@@ -1770,14 +1752,15 @@ export default function Product() {
           number={chapterNums.inTheBox}
           label="In the box"
           bigMedia
-          indexAsTitle={!content.bundle}
           title={
             content.bundle ? (
               <>
                 Two boards, two firmwares,{' '}
                 <em>two maintainers paid.</em>
               </>
-            ) : undefined
+            ) : (
+              'In the box'
+            )
           }
         >
           {content.bundle ? (

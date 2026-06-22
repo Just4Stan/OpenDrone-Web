@@ -4528,12 +4528,6 @@ button.reset {
      bar so nothing up there is occluded. */
   .chapter-media:has(.board-art) {
     top: calc(var(--header-height) + var(--sp-4) + 3.75rem);
-    /* Lift the board into the index row so its top edge lines up with the
-       "01 Teardown" heading instead of starting a row below it. Offset = the
-       index heading's line height (fs-2xl * 1.1) + its margin-bottom (sp-4) +
-       the chapter's row gap (sp-5). Tracks the responsive fs-2xl, so the
-       alignment holds across widths. Size/sticky-clearance unchanged. */
-    margin-top: calc(-1 * (var(--fs-2xl) * 1.1 + var(--sp-4) + var(--sp-5)));
   }
   /* The teardown copy slides in from the left AFTER the board layers fly in
      (the PDP drops data-text-pending once the fly completes). Scoped to the
@@ -5342,29 +5336,6 @@ button.reset {
   font-style: normal;
   color: var(--color-gold);
   font-weight: 600;
-}
-
-/* Index-as-heading chapters (Teardown, In the box): the numbered index doubles
- * as the chapter title at title scale, with no separate sentence subtitle. Desktop
- * only — on mobile the section's own visual (board deck, parts list) leads, so the
- * index stays at its compact size. */
-@media (min-width: 880px) {
-  .chapter-index--title {
-    gap: 0.6rem;
-    margin-bottom: var(--sp-4);
-    align-items: baseline;
-  }
-  /* The number stays the compact index size (like "02" on other chapters); the
-     label grows to title scale so it reads as the chapter's own heading. */
-  .chapter-index--title .chapter-label {
-    font-family: var(--font-display);
-    font-weight: 600;
-    font-size: var(--fs-2xl);
-    line-height: 1.1;
-    letter-spacing: -0.025em;
-    text-transform: none;
-    color: var(--color-text);
-  }
 }
 
 /* A few chapter titles are one long sentence — let them use the full left
