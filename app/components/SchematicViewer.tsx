@@ -138,6 +138,27 @@ export function SchematicViewer({handle, handles, inspectUrl}: SchematicViewerPr
       Math.min((sheets?.length ?? 1) - 1, Math.max(0, i + delta)),
     );
 
+  // Touch: flick the sheet ←/→ to page through schematics — wheel + hover are
+  // mouse-only, so without this a phone can only tap the rail pills. Same
+  // 44px / 1.3× direction gate as BoardArt; never preventDefault, so a vertical
+  // drag still scrolls the page and only a sideways flick steps the sheet.
+  const touch = useRef<{x: number; y: number} | null>(null);
+  const onTouchStart = (e: React.TouchEvent) => {
+    const t = e.touches[0];
+    touch.current = {x: t.clientX, y: t.clientY};
+  };
+  const onTouchEnd = (e: React.TouchEvent) => {
+    const s = touch.current;
+    touch.current = null;
+    if (!s || (sheets?.length ?? 0) < 2) return;
+    const t = e.changedTouches[0];
+    const dx = t.clientX - s.x;
+    const dy = t.clientY - s.y;
+    if (Math.abs(dx) > 44 && Math.abs(dx) > Math.abs(dy) * 1.3) {
+      step(dx < 0 ? 1 : -1);
+    }
+  };
+
   return (
     <div className="schematic-viewer" ref={ref} data-board={dh}>
       {inView && sheets === null ? (
@@ -196,12 +217,19 @@ export function SchematicViewer({handle, handles, inspectUrl}: SchematicViewerPr
             {/* eslint-enable jsx-a11y/no-noninteractive-element-interactions, jsx-a11y/no-noninteractive-tabindex */}
             <div
               className="schematic-page"
+              onTouchStart={onTouchStart}
+              onTouchEnd={onTouchEnd}
               style={
                 current?.w && current?.h
                   ? ({['--sheet-ar' as string]: `${current.w} / ${current.h}`} as React.CSSProperties)
                   : undefined
               }
             >
+              {sheets.length > 1 ? (
+                <span className="schematic-swipe-hint" aria-hidden="true">
+                  Swipe ←/→
+                </span>
+              ) : null}
               {current ? (
                 <img
                   key={`${dh}:${current.slug}`}
