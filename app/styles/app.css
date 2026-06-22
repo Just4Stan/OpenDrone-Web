@@ -5689,11 +5689,8 @@ button.reset {
   }
 }
 
-/* The resource cards get room to breathe — they share the WatchCard's height. */
-.open-source-cards > .open-source-card,
-.open-source-cards > .latest-commit-card {
-  min-height: 120px;
-}
+/* No fixed height — the WatchCard's full 16:9 thumbnail sets the row height and
+   the text cards stretch to match it (align-items: stretch above). */
 
 /* Subtle bubble — same quiet card as the latest-commit cards beside it so the
    row reads as one consistent set (a bare top-hairline left the text floating).
@@ -5791,8 +5788,6 @@ button.reset {
   position: relative;
   display: block;
   width: 100%;
-  /* Sets the height for the whole row; the text cards stretch to match. */
-  min-height: 120px;
   padding: 0;
   overflow: hidden;
   background-color: var(--color-bg-elevated);
@@ -5801,12 +5796,13 @@ button.reset {
   font: inherit;
 }
 
-/* The thumbnail fills the card, cropped (object-fit cover) to the short box. */
+/* The thumbnail shows whole, in its full 16:9 — this is what sets the card
+   (and therefore the row) height. object-fit cover on a 16:9 box of a 16:9
+   image means no crop. */
 .watch-card-thumb {
-  position: absolute;
-  inset: 0;
+  display: block;
   width: 100%;
-  height: 100%;
+  aspect-ratio: 16 / 9;
   object-fit: cover;
   transition: transform 0.3s ease;
 }
@@ -5829,16 +5825,14 @@ button.reset {
   );
 }
 
-/* Content layer: the YouTube play mark, centred. */
+/* Content layer: the YouTube play mark, centred over the thumbnail. */
 .watch-card-overlay {
-  position: relative;
-  z-index: 1;
+  position: absolute;
+  inset: 0;
+  z-index: 2;
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 120px;
-  padding: 0.9rem 1.05rem;
-  box-sizing: border-box;
 }
 
 .watch-card-yt {
