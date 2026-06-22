@@ -1507,7 +1507,10 @@ export default function Product() {
                             setHoveredGroups(p.groups);
                           }}
                         >
-                          {p.name}
+                          {/* Just the model/short name on the chip (e.g.
+                              "RP2354A"), not the whole descriptive sentence —
+                              split off anything after a dash/middot separator. */}
+                          {p.name.split(/\s+[—–·-]\s+/)[0]}
                           {p.cost && p.cost !== '×1' ? (
                             <span className="board-part-chip-qty">{p.cost}</span>
                           ) : null}
