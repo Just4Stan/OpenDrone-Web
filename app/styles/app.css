@@ -12089,7 +12089,8 @@ button.reset {
   .board-deck-meta {
     display: flex;
     align-items: baseline;
-    gap: 0.55rem;
+    flex-wrap: wrap;
+    gap: 0.2rem 0.55rem;
     margin: 0.5rem 0 0;
     font-family: var(--font-mono);
   }
@@ -12116,7 +12117,9 @@ button.reset {
     margin-left: auto;
     font-size: 11px;
     letter-spacing: 0.04em;
-    color: var(--color-text-dim);
+    /* muted (not dim) so the gesture cue stays legible on bright light-mode
+       displays; it's the primary "how to explore" affordance now. */
+    color: var(--color-text-muted);
   }
   /* Part tour sits under the layer progress, separated by a hairline. Same
      tick + meta chrome as the layer deck — components work "the same". */

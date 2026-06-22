@@ -1551,7 +1551,7 @@ export default function Product() {
                           {orderedParts[focusedPartIdx].cost}
                         </span>
                       ) : null}
-                      <span className="board-deck-hint">Swipe ←/→ · tap a dot</span>
+                      <span className="board-deck-hint">Swipe ←/→</span>
                     </p>
                   </div>
                 ) : null}

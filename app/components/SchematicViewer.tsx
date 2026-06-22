@@ -264,7 +264,7 @@ export function SchematicViewer({handle, handles, inspectUrl}: SchematicViewerPr
                 {active + 1}/{sheets.length}
               </span>
               <span className="board-deck-name">{current?.label}</span>
-              <span className="board-deck-hint">Swipe ←/→ · tap a dot</span>
+              <span className="board-deck-hint">Swipe ←/→</span>
             </p>
           </div>
           {inspectUrl ? (
