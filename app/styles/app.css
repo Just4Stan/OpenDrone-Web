@@ -183,7 +183,8 @@ html.light .scene-dim {
 }
 /* header pill + frame slider now use --pod-bg, which has its own light twin —
    no per-surface light override needed. */
-html.light .product-gallery-controls {
+html.light .product-gallery-controls,
+html.light .product-gallery-swipe-hint {
   background: rgba(255, 255, 255, 0.7);
 }
 /* Schematic sheets are black-on-white KiCad exports. Dark mode inverts them
@@ -3094,6 +3095,32 @@ button.reset {
   padding: 0 0.25rem;
 }
 
+/* Swipe affordance — only shown on touch (no hover), where the flick gesture
+   exists. Mirrors the board explorer's dim mono hint. Tucked top-centre so it
+   doesn't collide with the arrow/counter pill at the bottom. */
+.product-gallery-swipe-hint {
+  display: none;
+}
+@media (hover: none) {
+  .product-gallery-swipe-hint {
+    display: block;
+    position: absolute;
+    top: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 0.25rem 0.6rem;
+    background: rgba(13, 13, 16, 0.6);
+    border-radius: 999px;
+    backdrop-filter: blur(6px);
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--color-text-dim);
+    pointer-events: none;
+  }
+}
+
 .product-gallery-thumbs {
   display: flex;
   gap: 0.5rem;
@@ -4501,6 +4528,12 @@ button.reset {
      bar so nothing up there is occluded. */
   .chapter-media:has(.board-art) {
     top: calc(var(--header-height) + var(--sp-4) + 3.75rem);
+    /* Lift the board into the index row so its top edge lines up with the
+       "01 Teardown" heading instead of starting a row below it. Offset = the
+       index heading's line height (fs-2xl * 1.1) + its margin-bottom (sp-4) +
+       the chapter's row gap (sp-5). Tracks the responsive fs-2xl, so the
+       alignment holds across widths. Size/sticky-clearance unchanged. */
+    margin-top: calc(-1 * (var(--fs-2xl) * 1.1 + var(--sp-4) + var(--sp-5)));
   }
   /* The teardown copy slides in from the left AFTER the board layers fly in
      (the PDP drops data-text-pending once the fly completes). Scoped to the
@@ -5130,6 +5163,23 @@ button.reset {
 .schematic-sheet.is-loaded {
   opacity: 1;
 }
+/* Mobile sheet deck — the swipe-first replacement for the sheet-tab rail (which
+   is a mouse-era button strip). Hidden on desktop, where the rail is shown;
+   shown below the page on mobile. Reuses the board explorer's tick + meta
+   chrome (.board-deck-*) so schematic and board page "the same way". */
+.schematic-deck {
+  display: none;
+}
+@media (max-width: 1023px) {
+  .schematic-deck {
+    display: block;
+    margin-top: 0.6rem;
+  }
+  /* Drop the sheet-tab rail on touch — swipe + the deck above replace it. */
+  .schematic-rail {
+    display: none;
+  }
+}
 .schematic-foot {
   display: flex;
   align-items: center;
@@ -5292,6 +5342,29 @@ button.reset {
   font-style: normal;
   color: var(--color-gold);
   font-weight: 600;
+}
+
+/* Index-as-heading chapters (Teardown, In the box): the numbered index doubles
+ * as the chapter title at title scale, with no separate sentence subtitle. Desktop
+ * only — on mobile the section's own visual (board deck, parts list) leads, so the
+ * index stays at its compact size. */
+@media (min-width: 880px) {
+  .chapter-index--title {
+    gap: 0.6rem;
+    margin-bottom: var(--sp-4);
+    align-items: baseline;
+  }
+  /* The number stays the compact index size (like "02" on other chapters); the
+     label grows to title scale so it reads as the chapter's own heading. */
+  .chapter-index--title .chapter-label {
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: var(--fs-2xl);
+    line-height: 1.1;
+    letter-spacing: -0.025em;
+    text-transform: none;
+    color: var(--color-text);
+  }
 }
 
 /* A few chapter titles are one long sentence — let them use the full left
@@ -5602,6 +5675,9 @@ button.reset {
   display: grid;
   gap: 0.75rem;
   grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  /* Let each card keep its own height — the taller WatchCard (thumbnail +
+     caption) must not stretch the compact text cards beside it. */
+  align-items: start;
 }
 
 /* Subtle bubble — same quiet card as the latest-commit cards beside it so the
@@ -5644,6 +5720,146 @@ button.reset {
   letter-spacing: 0.04em;
   color: var(--color-text-muted);
   margin: 0;
+}
+
+/* "Watch" bubble — the video card that replaces the issues card on products
+   with a build film. Sized to match the sibling resource cards: the real
+   YouTube thumbnail is cropped into the card, a gold YouTube glyph sits on top
+   and the caption overlays the bottom (no title). Clicking opens the lightbox
+   player. */
+.watch-card {
+  position: relative;
+  display: block;
+  width: 100%;
+  /* Same footprint as the text cards beside it — the thumbnail is cropped to
+     this short box rather than shown full-height. */
+  min-height: 116px;
+  padding: 0;
+  overflow: hidden;
+  background-color: var(--color-bg-elevated);
+  text-align: left;
+  cursor: pointer;
+  font: inherit;
+}
+
+/* The thumbnail fills the card, cropped (object-fit cover) to the short box. */
+.watch-card-thumb {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.3s ease;
+}
+
+.watch-card:hover .watch-card-thumb {
+  transform: scale(1.04);
+}
+
+/* Scrim so the gold glyph + caption stay legible over any frame. */
+.watch-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to top,
+    rgba(0, 0, 0, 0.82) 0%,
+    rgba(0, 0, 0, 0.35) 45%,
+    rgba(0, 0, 0, 0.25) 100%
+  );
+}
+
+/* Content layer: YouTube glyph pinned top, caption pinned bottom. */
+.watch-card-overlay {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: 116px;
+  padding: 0.9rem 1.05rem;
+  box-sizing: border-box;
+}
+
+.watch-card-yt {
+  width: 30px;
+  height: auto;
+  color: var(--color-gold);
+}
+
+/* The play triangle reads against the gold mark via the dark accent ink. */
+.watch-card-yt-tri {
+  fill: var(--color-on-accent);
+}
+
+.watch-card .open-source-card-label {
+  display: block;
+  color: var(--color-gold);
+}
+
+.watch-card:hover {
+  border-color: color-mix(in srgb, var(--color-gold) 50%, var(--color-border));
+}
+
+/* Lightbox — fixed overlay with the lazy-mounted player. Dark in both themes
+   (it's a backdrop over the whole page, like the load overlay). */
+.watch-lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: grid;
+  place-items: center;
+  padding: 1.5rem;
+  background: rgba(0, 0, 0, 0.82);
+  -webkit-backdrop-filter: blur(4px);
+  backdrop-filter: blur(4px);
+  animation: watch-lightbox-in 0.18s ease;
+}
+
+@keyframes watch-lightbox-in {
+  from {
+    opacity: 0;
+  }
+}
+
+.watch-lightbox-frame {
+  position: relative;
+  width: min(960px, 100%);
+  aspect-ratio: 16 / 9;
+  background: #000;
+  border-radius: var(--r-md);
+  overflow: hidden;
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.6);
+}
+
+.watch-lightbox-frame iframe {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+}
+
+.watch-lightbox-close {
+  position: absolute;
+  top: 1rem;
+  right: 1.15rem;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: rgba(0, 0, 0, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  color: #fff;
+  font-size: 15px;
+  cursor: pointer;
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.watch-lightbox-close:hover {
+  background: rgba(0, 0, 0, 0.75);
+  border-color: rgba(255, 255, 255, 0.5);
 }
 
 /* Sub-heading inside a chapter — divider between card groups. */
@@ -5952,12 +6168,17 @@ button.reset {
 /* In the box — actual parts list. Engineering-terse, mono font, no
    stock photo of an open box. Fixed-width qty column so all rows align
    even when qty is "1–2×" or "kit". */
+/* A single bubble around the whole parts list — a "table card" that sets the
+   contents apart from the surrounding copy. Rows are hairline-divided inside. */
 .in-the-box {
   list-style: none;
-  padding: 0;
+  padding: 0.35rem 1.1rem;
   margin: 0 0 1.5rem;
   display: grid;
   gap: 0;
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--r-lg);
 }
 
 /* De-boxed (Img 6) — a plain parts list, hairline-divided rows instead of a
@@ -11849,6 +12070,12 @@ button.reset {
     pointer-events: auto;
   }
 
+  /* Swipe-first: the layer-pill rail is a mouse-era affordance. On touch you peel
+     layers by flicking the board ↑/↓ and the tick deck below shows where you are,
+     so the pill strip is dropped. */
+  .board-folder-rail {
+    display: none;
+  }
   /* Lightweight progress under the board: a tick per layer (how far through the
      stack) + the layer name + a hint. Each tick is tappable to jump there. */
   .board-deck-progress {
@@ -11888,7 +12115,8 @@ button.reset {
   .board-deck-meta {
     display: flex;
     align-items: baseline;
-    gap: 0.55rem;
+    flex-wrap: wrap;
+    gap: 0.2rem 0.55rem;
     margin: 0.5rem 0 0;
     font-family: var(--font-mono);
   }
@@ -11904,11 +12132,20 @@ button.reset {
     text-transform: uppercase;
     letter-spacing: 0.1em;
   }
+  /* Qty / I/O chip beside the toured part's name — carries the detail the old
+     row list used to show (×1, I/O) now the list is gone on mobile. */
+  .board-deck-cost {
+    font-size: 0.72rem;
+    color: var(--color-text-muted);
+    letter-spacing: 0.06em;
+  }
   .board-deck-hint {
     margin-left: auto;
     font-size: 11px;
     letter-spacing: 0.04em;
-    color: var(--color-text-dim);
+    /* muted (not dim) so the gesture cue stays legible on bright light-mode
+       displays; it's the primary "how to explore" affordance now. */
+    color: var(--color-text-muted);
   }
   /* Part tour sits under the layer progress, separated by a hairline. Same
      tick + meta chrome as the layer deck — components work "the same". */
@@ -11996,23 +12233,11 @@ button.reset {
     max-height: min(52vh, 440px);
   }
 
-  /* Touch has no hover, so tappable component rows looked like a static spec
-     table. Give them a persistent resting cue (faint left bar), a full-gold
-     bar + tint when active (tapped), and a small locate glyph — so the rows
-     clearly read as "tap me to find this on the board". */
-  .teardown-pin-hoverable {
-    position: relative;
-  }
-  .teardown-pin-hoverable::before {
-    transform: scaleY(0.5);
-    opacity: 0.35;
-  }
-  .teardown-pin-hoverable.is-active::before {
-    transform: scaleY(1);
-    opacity: 1;
-  }
-  .teardown-pin-hoverable.is-active {
-    background: color-mix(in srgb, var(--color-gold) 14%, transparent);
+  /* Mobile is swipe-first: the tappable component list is a mouse-era affordance.
+     On touch you tour the parts by flicking the board ←/→ (the part deck below it
+     shows which component is lit), so the whole row list is dropped here. */
+  .teardown-sides {
+    display: none;
   }
 
   /* Discoverability hint under the teardown title (mobile only — desktop has
@@ -12088,6 +12313,11 @@ button.reset {
    desktop range so it can't override the mobile display:block above.) */
 @media (min-width: 1024px) {
   .teardown-hint {
+    display: none;
+  }
+  /* The Skip button is a touch affordance — on desktop the board teaches via
+     hover and the page scrolls fine, so it just clutters the heading row. */
+  .teardown-skip {
     display: none;
   }
 }

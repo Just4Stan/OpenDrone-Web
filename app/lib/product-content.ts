@@ -107,6 +107,13 @@ export type VariantContent = {
    *  what Shopify matches against); set this when the shown name should differ
    *  from the matched key (e.g. key "20×20" shown as "20×20 (mini)"). */
   label?: string;
+  /** Per-tier GitHub repo, when a line splits its mounts across separate repos
+   *  (OpenFC-Lite vs OpenFC-Lite-Mini, OpenESC_20X20 vs OpenESC-30x30). The PDP
+   *  points the repo card, issues link and latest-commit card at this when the
+   *  tier is selected; tiers without their own repo fall back to the product's
+   *  `repoUrl`. Lines whose tiers share one repo (OpenRX subfolders) leave it
+   *  unset. */
+  repoUrl?: string;
   /** One-line role under the tier name in the ladder card. */
   tagline?: string;
   /** The 3–4 cells that differ between tiers, shown in the card body. */
@@ -173,6 +180,12 @@ export type ProductContent = {
     logoDark?: boolean;
   };
   repoUrl: string;
+  /** A "build video" for the product — the JustFPV teardown films. When set, the
+   *  "Open for learning" chapter swaps its second card from the GitHub-issues
+   *  bubble to a Watch card (real YouTube thumbnail + in-page lightbox player).
+   *  Only products that actually have a film carry this; the rest fall back to
+   *  the issues card. `title`/`channel` come from the video's oEmbed metadata. */
+  video?: {id: string; title: string; channel?: string};
   teardown?: {
     title: string;
     body: string;
@@ -240,6 +253,7 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
       logoDark: true,
     },
     repoUrl: 'https://github.com/incutec-hw/OpenESC_20X20',
+    video: {id: 'TwAmmPxOpTM', title: 'How Drone ESCs Work (so I built my own)'},
     teardown: {
       title: "Isn't it beautiful?",
       body:
@@ -359,6 +373,8 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
         ],
       },
       '30×30': {
+        // The 30×30 ESC is a separate repo from the 20×20 (the product default).
+        repoUrl: 'https://github.com/incutec-hw/OpenESC-30x30',
         highlights: [
           ['Mount', '30×30'],
           ['MOSFET', 'SP40N01GHNK'],
@@ -467,6 +483,10 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
       logo: '/logos/betaflight.svg',
     },
     repoUrl: 'https://github.com/incutec-hw/OpenFC',
+    video: {
+      id: 'XDYZoMRJFeQ',
+      title: 'How Flight Controllers Work (so I built my own)',
+    },
     teardown: {
       title: 'An MCU, an IMU, a radio, and enough UARTs for the rest.',
       body:
@@ -594,6 +614,10 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
       logo: '/logos/betaflight.svg',
     },
     repoUrl: 'https://github.com/incutec-hw/OpenFC-Lite',
+    video: {
+      id: 'XDYZoMRJFeQ',
+      title: 'How Flight Controllers Work (so I built my own)',
+    },
     teardown: {
       title: 'Two PIO blocks doing the work of a fistful of chips.',
       body:
@@ -671,6 +695,8 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
     optionAxis: 'Model',
     variants: {
       '20×20': {
+        // The 20×20 (Mini) is its own repo; the 30×30 uses the product default.
+        repoUrl: 'https://github.com/incutec-hw/OpenFC-Lite-Mini',
         tagline: 'The 20×20 mount: RP2354A, QFN-60. The compact stack size.',
         highlights: [
           ['Mount', '20×20'],

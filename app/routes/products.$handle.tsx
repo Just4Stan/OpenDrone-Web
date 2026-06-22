@@ -29,6 +29,7 @@ import {SceneErrorBoundary} from '~/components/SceneErrorBoundary';
 import {ProvenanceCard} from '~/components/ProvenanceCard';
 import {BrandName} from '~/components/BrandName';
 import {CommitHistoryCard, LatestCommitCard} from '~/components/LatestCommit';
+import {WatchCard} from '~/components/WatchCard';
 import {redirectIfHandleIsLocalized} from '~/lib/redirect';
 import {buildSeoMeta, buildProductJsonLd} from '~/lib/seo';
 import {fetchLatestCommits} from '~/lib/github';
@@ -154,6 +155,13 @@ function loadDeferredData({context, params}: Route.LoaderArgs) {
       }
     } else if (content.repoUrl) {
       repoUrls.push(content.repoUrl);
+      // Tiers can live in their own repos (OpenFC-Lite-Mini, OpenESC-30x30);
+      // fetch each so the client can show the selected tier's latest commit.
+      if (content.variants) {
+        for (const v of Object.values(content.variants)) {
+          if (v.repoUrl) repoUrls.push(v.repoUrl);
+        }
+      }
     }
   }
   const latestCommits = fetchLatestCommits(repoUrls).catch(() => []);
@@ -383,6 +391,7 @@ function Chapter({
   bigMedia,
   noMedia,
   textReveal,
+  indexAsTitle,
 }: {
   number: string;
   label: string;
@@ -408,6 +417,10 @@ function Chapter({
   /** Drop the media column entirely so the body spans full width — used by
    *  chapters whose content (e.g. the spec table) needs no image. */
   noMedia?: boolean;
+  /** Promote the numbered index ("03 In the box") to the chapter's heading at
+   *  title scale (desktop) and drop the separate `title`. For sections whose
+   *  own visual leads and a sentence subtitle just adds noise. */
+  indexAsTitle?: boolean;
 }) {
   return (
     <section
@@ -420,12 +433,19 @@ function Chapter({
       data-text-pending={textReveal === false ? '' : undefined}
     >
       {backdrop ? <div className="chapter-backdrop">{backdrop}</div> : null}
-      <div className="chapter-index">
-        <span className="chapter-number">{number}</span>
-        <span className="chapter-label">{label}</span>
-      </div>
+      {indexAsTitle ? (
+        <h2 className="chapter-index chapter-index--title">
+          <span className="chapter-number">{number}</span>
+          <span className="chapter-label">{label}</span>
+        </h2>
+      ) : (
+        <div className="chapter-index">
+          <span className="chapter-number">{number}</span>
+          <span className="chapter-label">{label}</span>
+        </div>
+      )}
       <div className="chapter-body-col">
-        <h2 className="chapter-title">{title}</h2>
+        {indexAsTitle ? null : <h2 className="chapter-title">{title}</h2>}
         {children}
       </div>
       {backdrop || noMedia ? null : (
@@ -533,15 +553,6 @@ export default function Product() {
   const hasHeroCopy = Boolean(content.hero.line1);
   const chapterNums = computeChapterNumbers(content, isEditorial);
 
-  // Repo whose commit history backs the "Open for learning" row's 4th card —
-  // the bundle's first component repo, else this product's own. Used as the
-  // fallback link when the live latest-commit fetch is rate-limited.
-  const commitHistoryRepoUrl = content.bundle
-    ? content.bundle.components
-        .map((c) => PRODUCT_CONTENT[c.handle]?.repoUrl)
-        .find((url): url is string => Boolean(url))
-    : content.repoUrl;
-
   // Comparison-ladder state for product lines (OpenRX/OpenESC). The
   // editorial `variants` map is the tier source of truth; the active tier
   // drives the spec/in-the-box preview and, once Shopify carries the
@@ -572,6 +583,18 @@ export default function Product() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [shopifyAxisValue]);
   const activeVariant = content.variants?.[activeTier];
+  // GitHub links (repo card / issues / latest commit) follow the selected tier:
+  // split-repo lines (OpenFC-Lite ↔ OpenFC-Lite-Mini, OpenESC_20X20 ↔
+  // OpenESC-30x30) point at the tier's repo, others at the product default.
+  const activeRepoUrl = activeVariant?.repoUrl ?? content.repoUrl;
+  // Repo whose commit history backs the "Open for learning" row's 4th card —
+  // the bundle's first component repo, else the selected tier's repo. Used as
+  // the fallback link when the live latest-commit fetch is rate-limited.
+  const commitHistoryRepoUrl = content.bundle
+    ? content.bundle.components
+        .map((c) => PRODUCT_CONTENT[c.handle]?.repoUrl)
+        .find((url): url is string => Boolean(url))
+    : activeRepoUrl;
   const mergedSpecs = mergeSpecs(content.specs, activeVariant?.specs);
   const mergedBox = [...content.inTheBox, ...(activeVariant?.inTheBox ?? [])];
 
@@ -679,6 +702,7 @@ export default function Product() {
       union: boolean;
       groups?: string[][];
       name: string;
+      cost?: string;
     }> = [];
     for (const pin of [
       ...groupedPins.top,
@@ -688,13 +712,14 @@ export default function Product() {
       if (pin.chips?.length) {
         for (const chip of pin.chips)
           if (chip.refs?.length)
-            out.push({refs: chip.refs, union: false, name: chip.label});
+            out.push({refs: chip.refs, union: false, name: chip.label, cost: 'I/O'});
       } else if (pin.refs?.length) {
         out.push({
           refs: pin.refs,
           union: pin.box === 'union',
           groups: pin.boxGroups,
           name: pin.part,
+          cost: pin.cost ?? '×1',
         });
       }
     }
@@ -1442,11 +1467,8 @@ export default function Product() {
         <Chapter
           number={chapterNums.teardown}
           label="Teardown"
-          title={
-            frameViewer
-              ? 'Every arm, plate and standoff — exploded'
-              : 'Some layers of copper with components on top'
-          }
+          indexAsTitle={!frameViewer}
+          title={frameViewer ? 'Every arm, plate and standoff — exploded' : undefined}
           textReveal={frameViewer ? undefined : textIn}
           backdrop={
             frameViewer ? (
@@ -1524,7 +1546,12 @@ export default function Product() {
                           ? 'Components'
                           : orderedParts[focusedPartIdx].name}
                       </span>
-                      <span className="board-deck-hint">Swipe ←/→ · tap a part</span>
+                      {focusedPartIdx >= 0 && orderedParts[focusedPartIdx].cost ? (
+                        <span className="board-deck-cost">
+                          {orderedParts[focusedPartIdx].cost}
+                        </span>
+                      ) : null}
+                      <span className="board-deck-hint">Swipe ←/→</span>
                     </p>
                   </div>
                 ) : null}
@@ -1535,7 +1562,7 @@ export default function Product() {
           {!frameViewer && activeBoardArt ? (
             <div className="teardown-guide">
               <p className="teardown-hint">
-                Flick the board ↑/↓ for layers · ←/→ for parts · or tap any part
+                Flick the board ↑/↓ to peel the layers · ←/→ to tour each part
               </p>
               <button
                 type="button"
@@ -1660,8 +1687,17 @@ export default function Product() {
             })
           ) : (
             <>
+              {/* Build-video bubble leads the row on products that have a film
+                  (FC, ESC); other products fall back to the issues card. */}
+              {content.video ? (
+                <WatchCard
+                  videoId={content.video.id}
+                  title={content.video.title}
+                  channel={content.video.channel}
+                />
+              ) : null}
               <a
-                href={content.repoUrl}
+                href={activeRepoUrl}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="open-source-card"
@@ -1675,18 +1711,20 @@ export default function Product() {
                     : 'Schematic · PCB · BOM · 3D STEP · design notes'}
                 </p>
               </a>
-              <a
-                href={`${content.repoUrl}/issues`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="open-source-card"
-              >
-                <p className="open-source-card-label">Iterate</p>
-                <p className="open-source-card-title">Open issues ↗</p>
-                <p className="open-source-card-sub">
-                  Rev candidates · bugs · community discussion
-                </p>
-              </a>
+              {content.video ? null : (
+                <a
+                  href={`${activeRepoUrl}/issues`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="open-source-card"
+                >
+                  <p className="open-source-card-label">Iterate</p>
+                  <p className="open-source-card-title">Open issues ↗</p>
+                  <p className="open-source-card-sub">
+                    Rev candidates · bugs · community discussion
+                  </p>
+                </a>
+              )}
             </>
           )}
           <a
@@ -1717,15 +1755,23 @@ export default function Product() {
                   <CommitHistoryCard repoUrl={commitHistoryRepoUrl} />
                 }
               >
-                {(commits) =>
-                  commits && commits.length ? (
-                    commits.map((c) => (
+                {(commits) => {
+                  // Bundles show one commit card per component repo; a single
+                  // product (incl. split-repo lines) shows just the selected
+                  // tier's repo, so the card tracks the ladder.
+                  const shown = content.bundle
+                    ? (commits ?? [])
+                    : (commits ?? []).filter(
+                        (c) => c.repoUrl === activeRepoUrl,
+                      );
+                  return shown.length ? (
+                    shown.map((c) => (
                       <LatestCommitCard key={c.sha + c.repoUrl} commit={c} />
                     ))
                   ) : (
                     <CommitHistoryCard repoUrl={commitHistoryRepoUrl} />
-                  )
-                }
+                  );
+                }}
               </Await>
             </Suspense>
           ) : null}
@@ -1740,15 +1786,14 @@ export default function Product() {
           number={chapterNums.inTheBox}
           label="In the box"
           bigMedia
+          indexAsTitle={!content.bundle}
           title={
             content.bundle ? (
               <>
                 Two boards, two firmwares,{' '}
                 <em>two maintainers paid.</em>
               </>
-            ) : (
-              'What you get'
-            )
+            ) : undefined
           }
         >
           {content.bundle ? (

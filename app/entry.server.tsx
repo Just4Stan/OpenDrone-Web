@@ -63,6 +63,8 @@ export default async function handleRequest(
       // Official Discord server widget iframe used on /contact.
       // Server admin must enable widget in Server Settings → Widget.
       'https://discord.com',
+      // YouTube build-video lightbox (WatchCard) — privacy-enhanced host.
+      'https://www.youtube-nocookie.com',
     ],
     connectSrc: [
       "'self'",
@@ -83,6 +85,8 @@ export default async function handleRequest(
       'https://cdn.shopify.com',
       'https://cdn.discordapp.com',
       'https://media.discordapp.net',
+      // YouTube thumbnail shown in the WatchCard build-video bubble.
+      'https://i.ytimg.com',
     ],
     mediaSrc: [
       "'self'",
@@ -131,7 +135,7 @@ export default async function handleRequest(
   responseHeaders.set('Referrer-Policy', 'strict-origin-when-cross-origin');
   responseHeaders.set(
     'Permissions-Policy',
-    'accelerometer=(), autoplay=(), browsing-topics=(), camera=(), display-capture=(), fullscreen=(self), geolocation=(), gyroscope=(), hid=(), interest-cohort=(), magnetometer=(), microphone=(), midi=(), payment=(self), picture-in-picture=(), screen-wake-lock=(), serial=(), usb=(), xr-spatial-tracking=()',
+    'accelerometer=(), autoplay=(self "https://www.youtube-nocookie.com"), browsing-topics=(), camera=(), display-capture=(), fullscreen=(self "https://www.youtube-nocookie.com"), geolocation=(), gyroscope=(), hid=(), interest-cohort=(), magnetometer=(), microphone=(), midi=(), payment=(self), picture-in-picture=("https://www.youtube-nocookie.com"), screen-wake-lock=(), serial=(), usb=(), xr-spatial-tracking=()',
   );
   responseHeaders.set('Cross-Origin-Resource-Policy', 'same-site');
   if (new URL(request.url).protocol === 'https:') {

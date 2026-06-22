@@ -3,7 +3,7 @@ import {useEffect, useReducer, useRef, useState} from 'react';
 import * as THREE from 'three';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {MeshoptDecoder} from 'three/addons/libs/meshopt_decoder.module.js';
-import {useIsMobile} from '~/lib/use-media-query';
+import {useIsMobile, usePrefersReducedMotion} from '~/lib/use-media-query';
 import {getActiveTheme} from '~/lib/theme';
 
 // Wireframe stroke per theme. Gold-on-near-black reads fine in dark; on light's
@@ -225,6 +225,10 @@ function FrameModel({
   // dropped and the model scaled up to fill it (otherwise it floats in a corner
   // of a black void — the desktop right-bias has nothing to fan into).
   const isMobile = useIsMobile();
+  // Respect reduced-motion: the explode is a scroll-coupled animation, so for
+  // visitors who opt out we hold the frame assembled (e = 0) — they get the
+  // wireframe backdrop without parts flying as they scroll.
+  const reducedMotion = usePrefersReducedMotion();
   const rot = {x: 0.42, y: -0.5};
   const offsetX = isMobile ? 0 : 1.0;
   const rigScale = isMobile ? 1.35 : 1;
@@ -365,7 +369,7 @@ function FrameModel({
     if (!active || !active.parts.length) return;
     let e = 0;
     const el = containerRef.current;
-    if (el) {
+    if (el && !reducedMotion) {
       const section = (el.closest('.chapter') as HTMLElement | null) ?? el;
       let next = nextChapter.current;
       if (!next || !next.isConnected) {

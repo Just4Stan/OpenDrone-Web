@@ -1053,7 +1053,7 @@ export function BoardArt({
                   {shownIndex + 1}/{sheets.length}
                 </span>
                 <span className="board-deck-name">{sheets[shownIndex]?.label}</span>
-                <span className="board-deck-hint">Flick ↑/↓ · tap a tick</span>
+                <span className="board-deck-hint">Flick ↑/↓</span>
               </p>
             </div>
           ) : null}
