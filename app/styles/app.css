@@ -1464,43 +1464,6 @@ html.anim-paused .board-sheet.is-active {
   }
 }
 
-/* Low performance tier (weak GPU / low battery / reduced-data / sustained jank,
-   resolved in app/lib/perf-tier.ts and written to <html data-perf-tier>). Kill
-   ALL ambient infinite animations outright and drop the live blurs/board shadows
-   for good — the machine can't afford them. The WebGL surfaces gate themselves
-   off in JS (shouldLoadHero / FrameViewer). Transient one-shot entrances are left
-   alone; they're cheap and finish quickly. */
-html[data-perf-tier='minimal'] .site-wordmark-sheen,
-html[data-perf-tier='minimal'] .placeholder-banner__dot,
-html[data-perf-tier='minimal'] .hero-drag-hint.is-visible,
-html[data-perf-tier='minimal'] .hero-scroll-hint.is-visible svg,
-html[data-perf-tier='minimal'] .latest-commit-dot,
-html[data-perf-tier='minimal'] .support-typing span,
-html[data-perf-tier='minimal'] .home-mobile-board--front,
-html[data-perf-tier='minimal'] .home-mobile-board--rear,
-html[data-perf-tier='static'] .site-wordmark-sheen,
-html[data-perf-tier='static'] .placeholder-banner__dot,
-html[data-perf-tier='static'] .hero-drag-hint.is-visible,
-html[data-perf-tier='static'] .hero-scroll-hint.is-visible svg,
-html[data-perf-tier='static'] .latest-commit-dot,
-html[data-perf-tier='static'] .support-typing span,
-html[data-perf-tier='static'] .home-mobile-board--front,
-html[data-perf-tier='static'] .home-mobile-board--rear {
-  animation: none !important;
-}
-html[data-perf-tier='minimal'] .board-folder-rail,
-html[data-perf-tier='minimal'] .schematic-rail,
-html[data-perf-tier='minimal'] .buy-rail.is-pinned,
-html[data-perf-tier='minimal'] .product-stickybar,
-html[data-perf-tier='static'] .board-folder-rail,
-html[data-perf-tier='static'] .schematic-rail,
-html[data-perf-tier='static'] .buy-rail.is-pinned,
-html[data-perf-tier='static'] .product-stickybar {
-  -webkit-backdrop-filter: none !important;
-  backdrop-filter: none !important;
-  background: var(--pod-bg-strong);
-}
-
 /* Theme toggle — same muted-icon treatment as the search/cart actions. */
 .theme-toggle {
   display: inline-flex;
