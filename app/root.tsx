@@ -23,7 +23,6 @@ import {localeFromPathname, seoLocaleTag} from '~/lib/i18n';
 import {buildOrgJsonLd} from '~/lib/seo';
 import {THEME_COLORS, THEME_INIT_SCRIPT} from '~/lib/theme';
 import {installViewTransitionGuard} from '~/lib/view-transition';
-import {PERF_INIT_SCRIPT} from '~/lib/perf-tier';
 
 export type RootLoader = typeof loader;
 
@@ -257,17 +256,6 @@ export function Layout({children}: {children?: React.ReactNode}) {
             __html:
               "(function(){var r=document.documentElement,t,idle=false;function paused(){return document.hidden||!document.hasFocus()||idle;}function u(){r.classList.toggle('anim-paused',paused());}function active(){idle=false;u();clearTimeout(t);t=setTimeout(function(){idle=true;u();},4000);}addEventListener('focus',active);addEventListener('blur',u);document.addEventListener('visibilitychange',u);['pointermove','pointerdown','keydown','wheel','scroll'].forEach(function(e){addEventListener(e,active,{passive:true});});active();})();",
           }}
-        />
-        {/* Resolve the device performance tier (GPU/CPU class, reduced-motion,
-            reduced-data, network) before first paint and write it to
-            <html data-perf-tier>. Heavy surfaces (WebGL hero, frame viewer,
-            ambient CSS motion) gate on it; battery + a runtime FPS probe refine
-            it after mount in PerfTierProvider. Pre-paint so shouldLoadHero()
-            reads it at module eval with no flash. */}
-        <script
-          nonce={nonce}
-          suppressHydrationWarning
-          dangerouslySetInnerHTML={{__html: PERF_INIT_SCRIPT}}
         />
         <link rel="stylesheet" href={resetStyles}></link>
         <link rel="stylesheet" href={appStyles}></link>
