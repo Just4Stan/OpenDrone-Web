@@ -296,7 +296,12 @@ function PerfTierDebug() {
 
   return (
     <div
+      role="button"
+      tabIndex={0}
       onClick={() => setOpen((o) => !o)}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') setOpen((o) => !o);
+      }}
       style={{
         position: 'fixed',
         left: 8,
