@@ -1,4 +1,16 @@
-import {useEffect, useId, useLayoutEffect, useMemo, useRef, useState} from 'react';
+import {
+  useEffect,
+  useId,
+  useLayoutEffect,
+  useMemo,
+  useReducer,
+  useRef,
+  useState,
+} from 'react';
+import type {
+  AnimationEvent as ReactAnimationEvent,
+  CSSProperties,
+} from 'react';
 
 // useLayoutEffect on the server logs a warning; fall back to useEffect there.
 // The board swap it drives is a client-only interaction, so this never matters
@@ -14,6 +26,11 @@ import {
 import {BOARD_ART_VERSION} from '~/data/board-art-version';
 import {useIsMobile} from '~/lib/use-media-query';
 import {useLayerSwipe} from '~/lib/use-layer-swipe';
+import {
+  SWAP_TIMING,
+  swapInDelayS,
+  swapSettleBackstopMs,
+} from '~/lib/board-swap-timing';
 
 // `?v=` busts Oxygen's 1-year immutable cache when board art is regenerated in
 // place — the token is the content hash of every board.svg + front/back PNG,
@@ -58,6 +75,15 @@ export type BoardArtProps = {
    *  the parent's tap-toggle can re-assert a part hidden behind another layer
    *  instead of toggling it off invisibly. */
   onHighlightVisible?: (visible: boolean) => void;
+  /** Fired once when a variant swap's fly-out/fly-in begins (gen = swap id), so
+   *  the parent can dip the parts list + retract the connector wires in lockstep
+   *  with the board — no independent timers. Also fired for the reduced-motion /
+   *  non-desktop hard-cut, immediately followed by {@link onSwapSettle}. */
+  onSwapStart?: (gen: number) => void;
+  /** Fired once when the swap has fully settled (all fly-out animations ended, or
+   *  the hard-cut), so the parent can finalise the list + redraw the wires to the
+   *  new board's bubbles. */
+  onSwapSettle?: (gen: number) => void;
 };
 
 /** One component from `components.json` — coords already in the board viewBox. */
@@ -230,6 +256,91 @@ async function warmParsed(src: string): Promise<Sheet[]> {
  *
  * Fetched lazily (only as the section nears the viewport).
  */
+/** A frozen capture of the board being flown OUT — its own sheets + the layer
+ *  index that was showing — so the outgoing stack renders from pure props and can
+ *  never be perturbed by live state (the active-index clamp, a hover, etc.). */
+type SwapSnapshot = {sheets: Sheet[]; shownIndex: number};
+/** The variant-swap finite state machine. Generation-counted: every run gets a
+ *  unique `gen`; animationend events and the backstop are tagged with it, so a
+ *  superseded run's stragglers are dropped. Replaces the old ghost/innerHTML/
+ *  ref-guard/wall-clock-timer machinery wholesale. */
+type SwapState = {
+  phase: 'idle' | 'run';
+  gen: number;
+  /** The src the FSM currently treats as live (settled or being flown in). */
+  committedSrc: string;
+  outgoing: SwapSnapshot | null;
+  /** board-swap-IN animationend events expected this run = the NEW board's layer
+   *  count (1 for the mobile whole-board slide). The swap settles when the
+   *  incoming has fully landed (it's the LAST phase), not when the outgoing left.
+   *  Captured at START so a near-breakpoint resize can't desync count from CSS. */
+  expected: number;
+  /** Outgoing layer count — drives the incoming's --swap-in-delay (so the new
+   *  board waits for the old to leave) and the settle backstop. */
+  outCount: number;
+  remaining: number;
+};
+type SwapAction =
+  | {
+      type: 'START';
+      src: string;
+      outgoing: SwapSnapshot;
+      expected: number;
+      outCount: number;
+    }
+  | {type: 'RETARGET'; src: string}
+  | {type: 'HARDCUT'; src: string}
+  | {type: 'EVENT'; gen: number}
+  | {type: 'SETTLE'; gen: number};
+
+function swapReducer(state: SwapState, action: SwapAction): SwapState {
+  switch (action.type) {
+    case 'START':
+      // Idempotent: a duplicate dispatch for an already-committed src (React
+      // StrictMode double-invoke) is a no-op — the prior action in the queue has
+      // already moved committedSrc forward.
+      if (action.src === state.committedSrc) return state;
+      return {
+        phase: 'run',
+        gen: state.gen + 1,
+        committedSrc: action.src,
+        outgoing: action.outgoing,
+        expected: action.expected,
+        outCount: action.outCount,
+        remaining: action.expected,
+      };
+    case 'RETARGET':
+      // src changed mid-run; the live stack already follows src, so just record
+      // the new target and let the running fly-out finish (no 2nd outgoing).
+      if (action.src === state.committedSrc) return state;
+      return {...state, committedSrc: action.src};
+    case 'HARDCUT':
+      if (action.src === state.committedSrc) return state;
+      return {
+        ...state,
+        phase: 'idle',
+        gen: state.gen + 1,
+        committedSrc: action.src,
+        outgoing: null,
+        expected: 0,
+        outCount: 0,
+        remaining: 0,
+      };
+    case 'EVENT': {
+      if (action.gen !== state.gen || state.phase !== 'run') return state;
+      const remaining = state.remaining - 1;
+      if (remaining > 0) return {...state, remaining};
+      return {...state, phase: 'idle', outgoing: null, remaining: 0};
+    }
+    case 'SETTLE':
+      // Backstop force-settle (a dropped animationend, e.g. a backgrounded tab).
+      if (action.gen !== state.gen || state.phase !== 'run') return state;
+      return {...state, phase: 'idle', outgoing: null, remaining: 0};
+    default:
+      return state;
+  }
+}
+
 export function BoardArt({
   src,
   srcs,
@@ -242,6 +353,8 @@ export function BoardArt({
   highlightGroups,
   onFlying,
   onHighlightVisible,
+  onSwapStart,
+  onSwapSettle,
 }: BoardArtProps) {
   const ref = useRef<HTMLDivElement | null>(null);
   const bodyRef = useRef<HTMLDivElement | null>(null);
@@ -394,7 +507,11 @@ export function BoardArt({
   // viewport (not the moment the chapter scrolls in) so it reads as a deliberate
   // reveal. One-shot; the sheets sit off-screen (paused) until it fires.
   const [flyIn, setFlyIn] = useState(false);
+  // Re-armable: deps on flyIn so that when a swap-while-off-screen resets flyIn to
+  // false (see the swap driver), the centre-band observer re-attaches and the
+  // entrance replays the next time the board scrolls back into the centre.
   useEffect(() => {
+    if (flyIn) return;
     const el = ref.current;
     if (!el || typeof IntersectionObserver === 'undefined') {
       setFlyIn(true);
@@ -411,6 +528,27 @@ export function BoardArt({
     );
     io.observe(el);
     return () => io.disconnect();
+  }, [flyIn]);
+
+  // Live "is the board roughly on screen" flag (NOT one-shot). A SKU swap that
+  // happens while this is false is not worth animating (the user is looking
+  // elsewhere on the page) — the driver hard-cuts it and re-arms the entrance so
+  // the reveal plays fresh when they scroll back. Cheap: a ref, no re-render.
+  const visibleRef = useRef(false);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el || typeof IntersectionObserver === 'undefined') {
+      visibleRef.current = true;
+      return;
+    }
+    const io = new IntersectionObserver(
+      ([e]) => {
+        visibleRef.current = e.isIntersecting;
+      },
+      {rootMargin: '-15% 0px -15% 0px', threshold: 0},
+    );
+    io.observe(el);
+    return () => io.disconnect();
   }, []);
 
   // `flyDone` ends the entrance: it strips the animation so a SKU swap (the
@@ -418,6 +556,9 @@ export function BoardArt({
   // instantly at full scale instead of re-flying. While the fly runs we tell the
   // parent (to lock part selection) and the CSS drops the heavy filters.
   const [flyDone, setFlyDone] = useState(false);
+  // The layer rail fades in DURING the entrance — 0.5s before the fly fully
+  // settles — instead of waiting for flyDone, so it reads a beat sooner.
+  const [railIn, setRailIn] = useState(false);
   useEffect(() => {
     if (!flyIn || flyDone) return;
     // Honour reduced-motion: no animation, no lock — settle immediately.
@@ -426,15 +567,21 @@ export function BoardArt({
       window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
     ) {
       setFlyDone(true);
+      setRailIn(true);
       return;
     }
     onFlying?.(true);
     // animation 1.2s + last layer's stagger (7 × 0.11s) + a small buffer
+    const FLY_MS = 1200 + 7 * 110 + 250;
+    const railT = setTimeout(() => setRailIn(true), Math.max(0, FLY_MS - 500));
     const t = setTimeout(() => {
       setFlyDone(true);
       onFlying?.(false);
-    }, 1200 + 7 * 110 + 250);
-    return () => clearTimeout(t);
+    }, FLY_MS);
+    return () => {
+      clearTimeout(railT);
+      clearTimeout(t);
+    };
   }, [flyIn, flyDone, onFlying]);
 
   // Pre-parse sibling tiers ONLY after the entrance finishes — parsing every
@@ -559,7 +706,9 @@ export function BoardArt({
       rail.classList.remove('is-compact');
       rail.style.transform = '';
       setBoardW(DEFAULT_W); // keep the board at full size; compact the rail if tight
-      const stack = body.querySelector('.board-folder-stack');
+      // Scope to the LIVE stack — never the outgoing (.board-swap-out) one, whose
+      // box is mid-flight and would mis-place the rail during a swap.
+      const stack = body.querySelector('[data-role="live"]');
       if (!stack) return;
       const sr = stack.getBoundingClientRect();
       // Board's VISIBLE left edge. The active sheet is scaled up (~1.05) and is
@@ -692,7 +841,8 @@ export function BoardArt({
   // on copper layers), so there's never a box on an inner layer. No screen-space
   // overlay, no scroll tracking — fully anchored + deterministic.
   useEffect(() => {
-    const stack = bodyRef.current?.querySelector('.board-folder-stack');
+    // Inject highlights into the LIVE stack only — never the outgoing one.
+    const stack = bodyRef.current?.querySelector('[data-role="live"]');
     if (!stack) return;
     const NS = 'http://www.w3.org/2000/svg';
     const cache = spotCache.current;
@@ -955,58 +1105,155 @@ export function BoardArt({
     [sheets, shownIndex, isMobile],
   );
 
-  // Variant swap: when the board `src` changes (a tier toggle — the component
-  // stays mounted), fly the OLD board out to the side and the new one in. We
-  // freeze the previous stack's DOM into a "ghost" overlay that flies out while
-  // the live (new) stack flies in. No remount, so the pin-links, highlights and
-  // entrance state are all preserved.
   const stackElRef = useRef<HTMLDivElement | null>(null);
-  const lastStackHtmlRef = useRef('');
-  const prevSwapSrcRef = useRef(src);
-  const ghostIdRef = useRef(0);
-  const [ghost, setGhost] = useState<{html: string; id: number} | null>(null);
+  // ── Variant swap FSM (see swapReducer above) ─────────────────────────────────
+  // On a tier toggle the component stays mounted and `src` changes; the live stack
+  // re-renders to the NEW board (the sheets memo) while a FROZEN snapshot of the
+  // OLD board is mounted as a real React subtree (.board-swap-out) that flies out.
+  // No innerHTML clone, no captured ref, no wall-clock timer — the swap ENDS by
+  // counting board-swap-out animationend events. This replaces the whole ghost
+  // machine that was the source of the "behind / restarts / hangs / laggy" bugs.
+  const [swap, dispatchSwap] = useReducer(swapReducer, undefined, () => ({
+    phase: 'idle' as const,
+    gen: 0,
+    committedSrc: src,
+    outgoing: null,
+    expected: 0,
+    outCount: 0,
+    remaining: 0,
+  }));
+  // Keep parent callbacks in refs so the lifecycle effect can depend ONLY on
+  // (phase, gen) — an inline callback's changing identity must not re-fire
+  // onSwapStart or re-arm the backstop mid-run.
+  const onSwapStartRef = useRef(onSwapStart);
+  onSwapStartRef.current = onSwapStart;
+  const onSwapSettleRef = useRef(onSwapSettle);
+  onSwapSettleRef.current = onSwapSettle;
+
+  // Driver: turn an (src ≠ committedSrc) delta into the right action. Layout effect
+  // so the decision lands on the same commit that flipped `sheets` to the new board.
   useIsoLayoutEffect(() => {
-    if (prevSwapSrcRef.current === src) return;
-    // A swap is already in flight: don't fire a second ghost over the first —
-    // that overlap is what made impatient toggling "restart / jump around". The
-    // live stack has already re-rendered to the newest board, so just record the
-    // src and let the running swap finish; it settles on the correct board.
-    if (swapActiveRef.current) {
-      prevSwapSrcRef.current = src;
-      return;
-    }
-    prevSwapSrcRef.current = src;
+    if (src === swap.committedSrc) return;
+    const wide =
+      typeof window !== 'undefined' &&
+      window.matchMedia?.('(min-width: 1024px)').matches;
     const reduce =
       typeof window !== 'undefined' &&
       window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
-    // Only swap once the board has finished its entrance and we have a frame to
-    // peel away — otherwise let the normal reveal play.
-    if (reduce || !flyDone || !lastStackHtmlRef.current) return;
-    ghostIdRef.current += 1;
-    const id = ghostIdRef.current;
-    swapActiveRef.current = true;
-    setGhost({html: lastStackHtmlRef.current, id});
-    // The ghost's presence is what applies .is-swapping (the new board's fly-in)
-    // on the live stack, AND it carries the old board's layers flinging out. The
-    // exit (board-swap-sheet-out, 0.65s) + --depth stagger (0.1s × 7) ≈ 1.35s for
-    // the last (BOTTOM) layer — keep the ghost mounted until then, clearing a beat
-    // after so nothing snaps mid-flight. MUST track the CSS durations in app.css
-    // (board-sheet-fly / board-swap-sheet-out under the 1024px swap block).
-    const t = setTimeout(() => {
-      swapActiveRef.current = false;
-      setGhost((g) => (g && g.id === id ? null : g));
-      // Re-place the rail now the board has settled (it was held during the swap
-      // so the layer textbox didn't jump against the mid-animation board).
-      setPlaceNonce((n) => n + 1);
-    }, 1400);
-    return () => clearTimeout(t);
-  }, [src, flyDone]);
-  // Remember the stack on screen so the next swap can peel it. Runs after the
-  // swap effect (a passive effect, after paint), so that effect reads the
-  // previous frame's HTML.
+    // The board to fly OUT is the one committedSrc was showing — read it from the
+    // parse cache (always warmed for an on-screen tier), frozen at the index the
+    // visitor was on. NEVER read live `sheets`/`active` (already the NEW board).
+    const outSheets = parsedCache.get(swap.committedSrc) ?? lastSheetsRef.current;
+    // Off-screen swap: the user changed the SKU while looking elsewhere on the
+    // page (the board isn't in view), so animating the layer fly-out/in is wasted
+    // work and reads as lag. Hard-cut to the new board AND re-arm the entrance, so
+    // it plays the full reveal fresh when they scroll back to the teardown.
+    if (flyDone && !reduce && !visibleRef.current) {
+      const g = swap.gen + 1;
+      dispatchSwap({type: 'HARDCUT', src});
+      onSwapStartRef.current?.(g);
+      onSwapSettleRef.current?.(g);
+      setFlyDone(false);
+      setFlyIn(false);
+      setRailIn(false);
+      return;
+    }
+    // No entrance yet / reduced-motion / nothing to peel → hard-cut (no animation),
+    // but still signal the parent (start+settle) so its list swaps cleanly.
+    if (!flyDone || reduce || !outSheets || !outSheets.length) {
+      const g = swap.gen + 1;
+      dispatchSwap({type: 'HARDCUT', src});
+      onSwapStartRef.current?.(g);
+      onSwapSettleRef.current?.(g);
+      return;
+    }
+    if (swap.phase === 'run') {
+      // Already mid-flight: the live stack follows the newest src on its own; just
+      // record the target and let the running fly-out finish (no 2nd outgoing).
+      dispatchSwap({type: 'RETARGET', src});
+      return;
+    }
+    dispatchSwap({
+      type: 'START',
+      src,
+      outgoing: {
+        sheets: outSheets,
+        shownIndex: Math.min(activeRef.current, outSheets.length - 1),
+      },
+      // Settle counts the INCOMING (new board) layers — it lands last. Delay is
+      // driven by the OUTGOING count. Mobile is a single whole-board slide → 1.
+      expected: wide ? sheets.length : 1,
+      outCount: wide ? outSheets.length : 1,
+    });
+  }, [src, sheets, flyDone, swap.committedSrc, swap.phase, swap.gen]);
+
+  // Lifecycle + settle backstop, keyed on (phase, gen) ONLY. Fires the parent
+  // start/settle once per run, gates rail placement (swapActiveRef), re-places the
+  // rail on settle, and arms a backstop that force-settles a dropped animationend.
   useEffect(() => {
-    if (stackElRef.current) lastStackHtmlRef.current = stackElRef.current.innerHTML;
-  });
+    if (swap.phase === 'run') {
+      swapActiveRef.current = true;
+      onSwapStartRef.current?.(swap.gen);
+      const gen = swap.gen;
+      const t = setTimeout(
+        () => dispatchSwap({type: 'SETTLE', gen}),
+        swapSettleBackstopMs(swap.outCount || 1, swap.expected || 1),
+      );
+      return () => clearTimeout(t);
+    }
+    if (swapActiveRef.current) {
+      swapActiveRef.current = false;
+      onSwapSettleRef.current?.(swap.gen);
+      // Re-place the rail now the board has settled (it was held during the swap so
+      // the layer textbox didn't jump against the mid-animation board).
+      setPlaceNonce((n) => n + 1);
+    }
+  }, [swap.phase, swap.gen, swap.expected, swap.outCount]);
+
+  // The swap settles when the INCOMING board has fully landed (the IN phase runs
+  // AFTER the OUT phase, so it finishes last). Count board-swap-in animationend on
+  // the LIVE stack for THIS generation; superseded generations' stragglers are
+  // dropped by the reducer's gen check, and a dropped event is caught by the
+  // backstop. board-swap-out (outgoing) and the board-sheet-fly entrance are
+  // filtered out by name.
+  const onLiveAnimEnd = (e: ReactAnimationEvent) => {
+    if (e.animationName !== 'board-swap-in') return;
+    dispatchSwap({type: 'EVENT', gen: swap.gen});
+  };
+
+  // The layer rail (the "Layer X/8" + tab list) crossfades when the layer SET
+  // actually changes between boards, so it doesn't hard-snap during a swap. Guarded
+  // by a label signature: variants that share the same layers (e.g. both 8-layer
+  // boards) never animate, so identical content never pulses. `railSheets` lags the
+  // live sheets so the OLD tabs fade out, the set switches while hidden, the NEW
+  // fade in — the same crossfade the component table uses.
+  const railSig = useMemo(() => sheets.map((s) => s.label).join('|'), [sheets]);
+  const [railSheets, setRailSheets] = useState<Sheet[]>(sheets);
+  const [railSwapping, setRailSwapping] = useState(false);
+  const prevRailSigRef = useRef(railSig);
+  useEffect(() => {
+    if (prevRailSigRef.current === railSig) {
+      setRailSheets(sheets);
+      return;
+    }
+    prevRailSigRef.current = railSig;
+    const reduce =
+      typeof window !== 'undefined' &&
+      window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+    if (reduce) {
+      setRailSheets(sheets);
+      return;
+    }
+    setRailSwapping(true);
+    const t1 = setTimeout(() => setRailSheets(sheets), 235);
+    const t2 = setTimeout(() => setRailSwapping(false), 520);
+    return () => {
+      clearTimeout(t1);
+      clearTimeout(t2);
+    };
+  }, [railSig, sheets]);
+  const railCount = railSheets.length;
+  const railIndex = Math.min(shownIndex, Math.max(0, railCount - 1));
 
   // Step through the stack, clamped to its ends (used by chevrons / keys / wheel).
   const step = (delta: number) =>
@@ -1030,7 +1277,23 @@ export function BoardArt({
       ref={ref}
       className={`board-art board-folder${revealed ? ' is-revealed' : ''}${
         revealed && !flyDone ? ' is-armed' : ''
-      }${flyIn && !flyDone ? ' is-flying' : ''}`}
+      }${flyIn && !flyDone ? ' is-flying' : ''}${
+        flyDone ? ' is-swap-ready' : ''
+      }${railIn ? ' is-rail-in' : ''}`}
+      // The swap durations live in ONE place (SWAP_TIMING) and are pushed to CSS
+      // here so the @keyframes block and the JS settle backstop read identical
+      // numbers — change a duration in board-swap-timing.ts and both follow.
+      style={
+        {
+          ['--swap-dur' as string]: `${SWAP_TIMING.durS}s`,
+          ['--swap-stagger' as string]: `${SWAP_TIMING.staggerS}s`,
+          ['--swap-exit' as string]: `${SWAP_TIMING.exitS}s`,
+          // The IN phase waits for the OUT phase to finish (old fully leaves before
+          // the new arrives — no overlap). Computed live from the outgoing count.
+          ['--swap-in-delay' as string]:
+            swap.phase === 'run' ? `${swapInDelayS(swap.outCount || 1)}s` : '0s',
+        } as CSSProperties
+      }
       data-board={handle}
     >
       {sheets.length ? (
@@ -1041,7 +1304,7 @@ export function BoardArt({
               — scrolling over the panel scrolls the page like anywhere else. */}
           {/* eslint-disable jsx-a11y/no-noninteractive-element-interactions, jsx-a11y/no-noninteractive-tabindex */}
           <div
-            className="board-folder-rail"
+            className={`board-folder-rail${railSwapping ? ' is-swapping' : ''}`}
             ref={railRef}
             role="group"
             aria-label="Copper layer"
@@ -1059,22 +1322,22 @@ export function BoardArt({
             <span className="board-folder-rail-head">
               Layer
               <span className="board-folder-rail-count">
-                {shownIndex + 1}/{sheets.length}
+                {railIndex + 1}/{railCount}
               </span>
             </span>
             <div className="board-folder-tabs">
-              {sheets.map((s, i) => (
+              {railSheets.map((s, i) => (
                 <button
                   type="button"
                   key={s.slug}
                   data-slug={s.slug}
-                  className={i === shownIndex ? 'is-active' : undefined}
-                  aria-pressed={i === shownIndex}
+                  className={i === railIndex ? 'is-active' : undefined}
+                  aria-pressed={i === railIndex}
                   onClick={() => setActive(i)}
                 >
                   <span className="board-folder-tab-name">{s.label}</span>
                   <span className="board-folder-tab-fn">
-                    {layerFunction(s.slug, i, sheets.length, layerFns)}
+                    {layerFunction(s.slug, i, railCount, layerFns)}
                   </span>
                 </button>
               ))}
@@ -1082,26 +1345,51 @@ export function BoardArt({
           </div>
           {/* eslint-enable jsx-a11y/no-noninteractive-element-interactions, jsx-a11y/no-noninteractive-tabindex */}
           <div className="board-stack-wrap">
+            {/* The LIVE (incoming/new) stack. data-role="live" scopes the rail
+                placement, highlight injection and swipe to THIS stack so they can
+                never resolve to the outgoing one during a swap. */}
             <div
               ref={stackElRef}
-              className={`board-folder-stack${ghost ? ' is-swapping' : ''}${
-                dragging ? ' is-dragging' : ''
-              }`}
+              data-role="live"
+              className={`board-folder-stack${
+                swap.phase === 'run' ? ' is-swapping' : ''
+              }${dragging ? ' is-dragging' : ''}`}
               style={{['--drag' as string]: drag}}
+              onAnimationEnd={onLiveAnimEnd}
             >
               {stackSheets}
               {/* Component highlights are injected into the active sheet's own
                   <svg> by the effect above (so they inherit its viewBox + every
                   transform); there is no separate overlay element here. */}
             </div>
-            {/* Freeze-frame of the previous board, flying out on a tier swap. */}
-            {ghost ? (
+            {/* The OUTGOING (old) stack — a real React subtree built from a FROZEN
+                snapshot (its own sheets + the index that was showing), flying out
+                beneath the live one. Counting its board-swap-out animationend
+                events is what settles the swap. */}
+            {swap.outgoing ? (
               <div
-                key={ghost.id}
-                className="board-folder-stack board-swap-ghost"
+                key={swap.gen}
+                data-role="out"
+                className="board-folder-stack board-swap-out"
                 aria-hidden="true"
-                dangerouslySetInnerHTML={{__html: ghost.html}}
-              />
+              >
+                {swap.outgoing.sheets.map((s, i) => (
+                  <button
+                    type="button"
+                    key={s.slug}
+                    tabIndex={-1}
+                    className={`board-sheet${
+                      i === swap.outgoing!.shownIndex ? ' is-active' : ''
+                    }${i < swap.outgoing!.shownIndex ? ' is-before' : ''}`}
+                    style={{
+                      ['--depth' as string]: i,
+                      ['--rel' as string]: i - swap.outgoing!.shownIndex,
+                    }}
+                    aria-hidden="true"
+                    dangerouslySetInnerHTML={{__html: s.html}}
+                  />
+                ))}
+              </div>
             ) : null}
           </div>
           {isMobile && sheets.length ? (

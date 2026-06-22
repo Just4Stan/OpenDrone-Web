@@ -4882,6 +4882,12 @@ button.reset {
 .board-art.is-armed .board-folder-rail {
   opacity: 0;
 }
+/* …but reveal the rail 0.5s BEFORE the fly fully settles (is-rail-in is set on a
+   timer in BoardArt) so the layer table reads a beat sooner. Same specificity as
+   the is-armed rule above, so this MUST stay after it to win the opacity. */
+.board-art.is-rail-in .board-folder-rail {
+  opacity: 1;
+}
 @media (prefers-reduced-motion: reduce) {
   .board-art.is-armed .board-sheet,
   .board-art.is-armed .board-sheet:not(.is-active),
@@ -4933,112 +4939,123 @@ button.reset {
    eats a click while it flies away. The motion itself is split by breakpoint:
    per-layer on desktop (below), whole-board cross-slide on mobile (the mobile
    block flattens the fan and disables per-sheet animation). */
-/* The incoming (live) board rides ABOVE the ghost so a swap reads as the NEW
-   board sweeping in from the left and SHOVING the old one off to the right —
-   not the old board peeling away to reveal a new one already sitting behind it.
-   Both stacks share one grid cell and are position:relative, so an explicit
-   z-index on each settles the paint order regardless of DOM source order. */
+/* Variant swap (rewritten). The OUTGOING board is a real React subtree
+   (.board-swap-out), NOT an innerHTML clone — see BoardArt.tsx. The incoming
+   (live) board rides ABOVE it (z 5 > 1) so a swap reads as the NEW board sweeping
+   in from the left and SHOVING the old one off to the right. Both stacks share
+   one grid cell (.board-stack-wrap grid 1/1) and are position:relative, so the
+   z-index settles paint order regardless of DOM source order. Durations come
+   from --swap-dur / --swap-stagger / --swap-exit, set on .board-art from the JS
+   SWAP_TIMING contract (app/lib/board-swap-timing.ts) so CSS + the JS settle
+   backstop read identical numbers. The swap end is detected by COUNTING
+   board-swap-out animationend events (N per-sheet on desktop, 1 whole-board on
+   mobile), never a wall-clock timer. */
 .board-folder-stack.is-swapping {
   z-index: 5;
 }
-.board-swap-ghost {
+.board-swap-out {
   z-index: 1;
   pointer-events: none;
 }
-/* PERF — the single most important rule for swap smoothness. Each sheet carries a
-   drop-shadow() (a per-pixel gaussian blur); a swap animates up to 8 incoming +
-   8 ghost = 16 full-size blurred layers at once, which saturates fill-rate on a
-   retina display and makes the compositor drop frames (the swap "jumps"). So the
-   shadow is stripped for the duration of the flight on BOTH stacks — only the
-   cheap brightness/saturate is kept so there's no brightness pop. The resting
-   shadows return the moment .is-swapping / the ghost drop. */
+/* will-change is applied (via .is-swap-ready on .board-art, set at flyDone) BEFORE
+   the first swap so the GPU layer already exists at frame 0 — promoting at swap
+   start drops the first frames. */
+.board-art.is-swap-ready .board-sheet {
+  will-change: translate;
+}
+/* PERF — strip the per-layer drop-shadow (a gaussian blur) for the flight on BOTH
+   stacks; animating ~16 blurred layers at once saturates fill-rate and drops
+   frames. Only the cheap brightness/saturate is kept (no brightness pop). The
+   resting shadows return the instant .is-swapping / the outgoing stack drop. */
 .board-folder-stack.is-swapping .board-sheet,
-.board-swap-ghost .board-sheet {
+.board-swap-out .board-sheet {
   filter: brightness(0.6) saturate(0.72) !important;
-  /* CRITICAL: kill the base `transition: filter 0.45s` here. Without this the
-     shadow doesn't just disappear — the browser ANIMATES the drop-shadow's blur
-     radius to zero over 0.45s, recomputing a gaussian blur per frame on all ~16
-     layers at once. That blur animation, not the translate, is what made the
-     swap lag. Strip the shadow instantly instead. */
+  /* CRITICAL: kill the base `transition: filter 0.45s` — else the browser ANIMATES
+     the drop-shadow blur radius to zero over 0.45s, re-blurring every layer per
+     frame. That, not the translate, is what made the swap lag. Drop it instantly. */
   transition: none !important;
 }
-.board-folder-stack.is-swapping .board-sheet.is-active {
+.board-folder-stack.is-swapping .board-sheet.is-active,
+.board-swap-out .board-sheet.is-active {
   filter: saturate(0.95) contrast(1.05) !important;
   transition: none !important;
 }
-/* Desktop: a tier toggle reads exactly like the first-load entrance. The NEW
-   board flies in layer-by-layer with the SAME keyframes, easing and --depth
-   stagger as the load (board-sheet-fly), entering from the LEFT. The OLD board
-   leaves layer-by-layer on the SAME cadence (matching 1.1s duration + --depth
-   stagger), each ghost sheet accelerating off to the RIGHT as its replacement
-   arrives — so the stack peels and refills one layer at a time, not in a block.
-   The drop-shadow strip above keeps all those layers cheap to composite. */
+/* Desktop: per-layer cascade. The NEW board flies in layer-by-layer (board-swap-in,
+   ease-OUT, decelerate into slot) while the OLD board's matching layer is shoved
+   out to the right (board-swap-out, ease-IN, accelerate away). Short duration +
+   large --depth stagger reads as a one-by-one push, not a block slide. */
 @media (min-width: 1024px) {
-  /* Per-layer duration is short (0.55s) and the --depth stagger (0.1s) is a
-     LARGE fraction of it, so each layer visibly clears before the next goes —
-     a readable one-by-one cascade rather than the whole fan sliding as a block
-     (which is what a long 1.1s duration with a tiny 0.09s stagger looked like).
-     Last layer (depth 7) finishes ≈ 0.7s + 0.55s ≈ 1.25s — keep the JS ghost
-     hold (BoardArt) and the parts-list swap timers in lockstep with that. */
   .board-folder-stack.is-swapping .board-sheet {
-    animation: board-sheet-fly 0.55s cubic-bezier(0.16, 0.84, 0.3, 1)
-      calc(var(--depth) * 0.1s) both;
+    animation: board-swap-in var(--swap-dur, 0.55s)
+      cubic-bezier(0.16, 0.84, 0.3, 1)
+      calc(
+        var(--swap-in-delay, 0s) + var(--depth) * var(--swap-stagger, 0.1s)
+      )
+      both;
   }
-  .board-swap-ghost .board-sheet {
-    /* The exit ACCELERATES (ease-IN): each old layer eases off the mark then
-       flings away to the right, like it's being shoved — not the old fast-start
-       curve that made it dart off instantly ("way too fast, no acceleration").
-       A slow start is fine now the ghost rides BEHIND the incoming board (z 1);
-       back when it was on top a slow start looked frozen. 0.65s (a touch longer
-       than the 0.55s entrance) so the build-up reads as a fling, not a teleport.
-       Last layer (depth 7) ends ≈ 0.7s + 0.65s ≈ 1.35s — ghost hold tracks it. */
-    animation: board-swap-sheet-out 0.65s cubic-bezier(0.5, 0, 0.85, 0.25)
-      calc(var(--depth) * 0.1s) both;
+  .board-swap-out .board-sheet {
+    animation: board-swap-out var(--swap-exit, 0.65s)
+      cubic-bezier(0.5, 0, 0.85, 0.2) calc(var(--depth) * var(--swap-stagger, 0.1s))
+      both;
   }
 }
-/* The new board decelerates into place (board-sheet-fly, ease-out) while the old
-   one accelerates away beneath it (board-swap-sheet-out, ease-in) — the two
-   curves together give the "shoved off" beat. */
-@keyframes board-swap-sheet-out {
+/* Mobile: the fan is flattened, so the swap is a whole-board cross-slide on the
+   CONTAINER (per-sheet animation off → exactly ONE board-swap-out event fires,
+   the count JS captures for mobile). */
+@media (max-width: 1023px) {
+  .board-stack-wrap > .board-folder-stack.is-swapping {
+    animation: board-swap-in var(--swap-dur, 0.55s)
+      cubic-bezier(0.2, 0.8, 0.2, 1) var(--swap-in-delay, 0s) both;
+  }
+  .board-swap-out {
+    animation: board-swap-out var(--swap-exit, 0.65s)
+      cubic-bezier(0.5, 0, 0.85, 0.2) both;
+  }
+  .board-swap-out .board-sheet {
+    animation: none !important;
+  }
+}
+/* The new board decelerates into place (board-swap-in) while the old one
+   accelerates away beneath it (board-swap-out) — the "shoved off" beat. Travel in
+   % (of board width) so it reads identically at every breakpoint. */
+@keyframes board-swap-in {
   from {
-    translate: 0 0;
+    /* Farther out left so each layer sweeps in across more of the screen (closer
+       to the dramatic first-load entrance) before settling. */
+    translate: -130% 0;
+    opacity: 0;
+  }
+  55% {
     opacity: 1;
   }
   to {
-    translate: 68vw 0;
-    opacity: 0;
-  }
-}
-/* Mobile keeps the simple whole-board cross-slide: the fan is flattened to a
-   single flat sheet there (per-sheet animation is `none !important`), so the
-   board slides as one block. */
-@media (max-width: 1023px) {
-  .board-stack-wrap > .board-folder-stack.is-swapping {
-    animation: board-swap-in 0.55s cubic-bezier(0.2, 0.8, 0.2, 1) both;
-  }
-  .board-swap-ghost {
-    animation: board-swap-out 0.55s cubic-bezier(0.5, 0, 0.5, 1) both;
-  }
-}
-@keyframes board-swap-in {
-  from {
-    transform: translateX(48%);
-    opacity: 0;
-  }
-  to {
-    transform: translateX(0);
+    translate: 0 0;
     opacity: 1;
   }
 }
 @keyframes board-swap-out {
   from {
-    transform: translateX(0);
+    translate: 0 0;
     opacity: 1;
   }
   to {
-    transform: translateX(-52%);
+    translate: 88% 0;
     opacity: 0;
   }
+}
+/* Reduced motion never mounts the outgoing stack (JS hard-cuts the swap); this is
+   belt-and-braces so no exit can ever play. */
+@media (prefers-reduced-motion: reduce) {
+  .board-swap-out {
+    display: none;
+  }
+}
+/* Layer rail crossfade — only added (BoardArt, guarded by layer-label signature)
+   when the layer SET actually changes between boards, so identical layers never
+   pulse. Reuses the parts-list dip: old tabs fade out, the set switches while
+   hidden (235ms), new fade in. */
+.board-folder-rail.is-swapping {
+  animation: teardown-pins-swap 0.52s ease both;
 }
 /* Layer / sheet rail — a self-contained vertical selector beside the board or
    schematic. The schematic viewer reuses this exact selector style. */
@@ -5320,55 +5337,94 @@ button.reset {
 .schematic-sheet.is-active.is-loaded {
   opacity: 1;
 }
-/* Variant swap — a diagonal line flies across, wiping the new sheet in over the
-   old. The leaving sheet sits underneath; the entering sheet is revealed along a
-   slanted clip edge the line rides. */
+/* Scroll-back reveal: when a SKU was switched while the schematic was off-screen
+   (the wipe was skipped), fade the new active sheet in once it comes into view —
+   the schematic's "entrance again", cheap (opacity only). */
+.schematic-page.is-revealing .schematic-sheet.is-active.is-loaded {
+  animation: schematic-reveal 0.5s ease both;
+}
+@keyframes schematic-reveal {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+/* Variant swap — the gold scan line IS the reveal boundary: the new sheet is
+   clipped in exactly behind the line as it sweeps L→R. Both the entering sheet
+   and the line are full-box (inset:0) overlays clipped with clip-path in the
+   SAME element coordinate space, both driven by ONE shared, animated --wipe
+   (0→1) on the page — so they cannot desync, at any aspect ratio. (The old
+   version animated the line's `left`/skewX and the sheet's clip on SEPARATE
+   timelines + geometry, so the line never sat on the wipe edge — it read as
+   "just update + scan", two unrelated things.) */
+@property --wipe {
+  syntax: "<number>";
+  inherits: true;
+  initial-value: 1;
+}
+.schematic-page.is-wiping {
+  animation: schematic-wipe 0.62s cubic-bezier(0.7, 0, 0.3, 1) both;
+}
+@keyframes schematic-wipe {
+  from {
+    --wipe: 0;
+  }
+  to {
+    --wipe: 1;
+  }
+}
+/* The OLD sheet is clipped to the COMPLEMENT — everything RIGHT of the line — so
+   the new (left) and old (right) each own one side of the wipe edge and never
+   overlap. (Leaving it unclipped let the old image show through the new one's
+   anti-aliased edge / where the two near-identical schematics differed → the
+   "double vision". Now there is exactly one schematic in any given pixel.) As
+   --wipe→1 this region shrinks to nothing and the old sheet is fully wiped away. */
 .schematic-sheet--leaving {
   z-index: 1;
   opacity: 1;
+  clip-path: polygon(
+    calc(var(--wipe) * 128%) 0,
+    100% 0,
+    100% 100%,
+    calc(var(--wipe) * 128% - 28%) 100%
+  );
 }
+/* Revealed region = everything LEFT of the diagonal edge. The edge runs from
+   (--wipe*128%, 0) at the top to (--wipe*128% - 28%, 100%) at the bottom — a
+   constant 28%-of-width lean that sweeps from fully-hidden (--wipe 0) to
+   fully-shown (--wipe 1). No own animation; it reads the inherited --wipe. */
 .schematic-sheet--entering {
   z-index: 2;
   opacity: 1; /* sibling tiers are pre-warmed → reveal by clip, not by fade */
   transition: none;
-  animation: schematic-diagonal-in 0.6s cubic-bezier(0.7, 0, 0.3, 1) both;
+  animation: none;
+  clip-path: polygon(
+    0 0,
+    calc(var(--wipe) * 128%) 0,
+    calc(var(--wipe) * 128% - 28%) 100%,
+    0 100%
+  );
 }
-@keyframes schematic-diagonal-in {
-  from {
-    clip-path: polygon(0 0, -35% 0, -75% 100%, 0 100%);
-  }
-  to {
-    clip-path: polygon(0 0, 140% 0, 100% 100%, 0 100%);
-  }
-}
+/* The line is that SAME diagonal edge, drawn as a thin band hugging it (±0.4%),
+   in the SAME box → pixel-locked to the entering sheet's reveal edge. The
+   drop-shadow runs AFTER the clip, so the glow haloes the band. */
 .schematic-swap-line {
   position: absolute;
-  top: -8%;
-  left: 0;
-  width: 5px;
-  height: 116%;
+  inset: 0;
   z-index: 3;
   background: var(--color-gold);
-  box-shadow: 0 0 18px 5px color-mix(in srgb, var(--color-gold) 65%, transparent);
-  transform: skewX(-21deg);
+  filter: drop-shadow(
+    0 0 10px color-mix(in srgb, var(--color-gold) 75%, transparent)
+  );
   pointer-events: none;
-  animation: schematic-swap-line 0.6s cubic-bezier(0.7, 0, 0.3, 1) both;
-}
-@keyframes schematic-swap-line {
-  from {
-    left: -30%;
-    opacity: 0;
-  }
-  18% {
-    opacity: 1;
-  }
-  82% {
-    opacity: 1;
-  }
-  to {
-    left: 125%;
-    opacity: 0;
-  }
+  clip-path: polygon(
+    calc(var(--wipe) * 128% - 0.4%) 0,
+    calc(var(--wipe) * 128% + 0.4%) 0,
+    calc(var(--wipe) * 128% - 28% + 0.4%) 100%,
+    calc(var(--wipe) * 128% - 28% - 0.4%) 100%
+  );
 }
 /* Mobile sheet deck — the swipe-first replacement for the sheet-tab rail (which
    is a mouse-era button strip). Hidden on desktop, where the rail is shown;
@@ -5660,27 +5716,27 @@ button.reset {
 .teardown-sides.is-locked {
   pointer-events: none;
 }
-/* A tier swap switches the part list behind the flying boards (the parent holds
-   the old pins, then swaps mid-flight). A short opacity dip masks the content
-   change so it never reads as a hard snap even where the boards don't fully
-   cover it. Pointer-events off so a hover can't catch the list mid-change. */
+/* A tier swap switches the part list to the new pins AT swap start (handleSwapStart
+   in products.$handle.tsx sets displayedPins in the same commit that adds this
+   class), so the dip just hides the old content instantly and fades the new in —
+   no mid-animation content switch to time. The class is removed by the board's
+   onSwapSettle (~1.3s later), long after this 0.45s fade has finished, so it can
+   never snap back mid-fade. Pointer-events off so a hover can't catch it mid-change. */
 .teardown-sides.is-swapping {
   pointer-events: none;
-  /* 1s = the doneT timer that removes this class (products.$handle.tsx); they
-     must match or the opacity snaps back when the class drops mid-fade. The
-     content switch (swapT, 400ms) lands inside the 35–65% dip (350–650ms). */
-  animation: teardown-pins-swap 1s ease both;
+  /* Self-contained crossfade (0.52s): fade the OLD rows out, hold hidden through
+     the 44–56% trough while products.$handle.tsx swaps displayedPins at 235ms,
+     then fade the NEW rows in — so the content change is never visible. */
+  animation: teardown-pins-swap 0.52s ease both;
 }
-/* A short opacity dip masks the content switch (~0.6s) while the incoming layers
-   sweep over the list, then fades back in. */
 @keyframes teardown-pins-swap {
   0% {
     opacity: 1;
   }
-  35% {
+  44% {
     opacity: 0;
   }
-  65% {
+  56% {
     opacity: 0;
   }
   100% {
