@@ -1543,17 +1543,6 @@ export default function Product() {
               <p className="teardown-hint">
                 Swipe the board ←/→ to peel the layers · tap a part to find it
               </p>
-              <button
-                type="button"
-                className="teardown-skip"
-                onClick={() => {
-                  const ch = document.querySelector('.chapter:has(.board-art)');
-                  const next = ch?.nextElementSibling ?? ch;
-                  next?.scrollIntoView({behavior: 'smooth', block: 'start'});
-                }}
-              >
-                Skip teardown ↓
-              </button>
             </div>
           ) : null}
           {linksMounted && !isMobile
