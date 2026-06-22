@@ -891,21 +891,6 @@ export default function Product() {
       p.refs.length === hoveredRefs.length &&
       p.refs.every((r) => hoveredRefs.includes(r)),
   );
-  // Sideways flick on the board steps through the parts: highlight the next/prev
-  // one (BoardArt flips to its face). Mirrors the vertical layer flick.
-  const stepPart = (dir: number) => {
-    if (!orderedParts.length) return;
-    const next =
-      focusedPartIdx < 0
-        ? dir > 0
-          ? 0
-          : orderedParts.length - 1
-        : Math.min(orderedParts.length - 1, Math.max(0, focusedPartIdx + dir));
-    const part = orderedParts[next];
-    setHoveredRefs([...part.refs]);
-    setHoveredUnion(part.union);
-    setHoveredGroups(part.groups);
-  };
   // One teardown-pin <li>: the part label (+ optional count); hover/focus
   // highlights its footprint(s) on the board (keyboard mirrors mouse for a11y).
   const renderPin = (pin: ChapterPin) => {
@@ -1510,7 +1495,6 @@ export default function Product() {
                   highlightGroups={hoveredGroups}
                   onFlying={setBoardFlying}
                   onHighlightVisible={setHighlightVisible}
-                  onSwipeHorizontal={isMobile ? stepPart : undefined}
                 />
                 {/* Part tour: which component is lit + how far through the set.
                     Swipe the board sideways (or tap a part) to step. Each tick is
@@ -1551,7 +1535,7 @@ export default function Product() {
                           {orderedParts[focusedPartIdx].cost}
                         </span>
                       ) : null}
-                      <span className="board-deck-hint">Swipe ←/→</span>
+                      <span className="board-deck-hint">Tap a part</span>
                     </p>
                   </div>
                 ) : null}
@@ -1562,7 +1546,7 @@ export default function Product() {
           {!frameViewer && activeBoardArt ? (
             <div className="teardown-guide">
               <p className="teardown-hint">
-                Flick the board ↑/↓ to peel the layers · ←/→ to tour each part
+                Swipe the board ←/→ to peel the layers · tap a part to find it
               </p>
               <button
                 type="button"

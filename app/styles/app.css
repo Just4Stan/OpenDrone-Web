@@ -12045,11 +12045,11 @@ button.reset {
     perspective: none;
     transform-style: flat;
     margin-top: 0;
-    /* The board surface owns vertical gestures: a flick here peels a layer and
-       must NOT also scroll the page (that double-action felt broken). Scroll the
-       page by dragging on the list/below — the board is sticky so it stays in
-       view regardless. */
-    touch-action: none;
+    /* Horizontal flicks peel a layer; vertical drags must scroll the page like
+       anywhere else (capturing them trapped the scroll and caused accidental
+       peels). pan-y hands vertical panning back to the browser while leaving
+       horizontal for the peel gesture. */
+    touch-action: pan-y;
   }
   /* ONE layer on screen — no per-layer boxes. The incoming layer slides up from
      just below + fades in over the outgoing (compositor-only, smooth peel). */
