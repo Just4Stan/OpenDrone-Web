@@ -4876,9 +4876,48 @@ button.reset {
   align-items: center;
   gap: clamp(8px, 1vw, 18px);
 }
+.board-stack-wrap {
+  flex: 1 1 auto;
+  min-width: 0;
+  /* Overlap the live stack and its flying-out ghost in one cell so the swap
+     lines up pixel-for-pixel. */
+  display: grid;
+}
+.board-stack-wrap > .board-folder-stack {
+  grid-area: 1 / 1;
+}
 .board-folder-stack {
   flex: 1 1 auto;
   min-width: 0;
+}
+/* Variant swap: old board peels out to the left, new flies in from the right. */
+.board-stack-wrap > .board-folder-stack.is-swapping {
+  animation: board-swap-in 0.55s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+.board-swap-ghost {
+  z-index: 70;
+  pointer-events: none;
+  animation: board-swap-out 0.55s cubic-bezier(0.5, 0, 0.5, 1) both;
+}
+@keyframes board-swap-in {
+  from {
+    transform: translateX(48%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+@keyframes board-swap-out {
+  from {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateX(-52%);
+    opacity: 0;
+  }
 }
 /* Layer / sheet rail — a self-contained vertical selector beside the board or
    schematic. The schematic viewer reuses this exact selector style. */

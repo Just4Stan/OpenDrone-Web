@@ -1,4 +1,10 @@
 import {useEffect, useId, useLayoutEffect, useMemo, useRef, useState} from 'react';
+
+// useLayoutEffect on the server logs a warning; fall back to useEffect there.
+// The board swap it drives is a client-only interaction, so this never matters
+// functionally — it just silences the SSR noise.
+const useIsoLayoutEffect =
+  typeof document !== 'undefined' ? useLayoutEffect : useEffect;
 import {
   fetchJsonCached,
   fetchTextCached,
@@ -934,6 +940,41 @@ export function BoardArt({
     [sheets, shownIndex, isMobile],
   );
 
+  // Variant swap: when the board `src` changes (a tier toggle — the component
+  // stays mounted), fly the OLD board out to the side and the new one in. We
+  // freeze the previous stack's DOM into a "ghost" overlay that flies out while
+  // the live (new) stack flies in. No remount, so the pin-links, highlights and
+  // entrance state are all preserved.
+  const stackElRef = useRef<HTMLDivElement | null>(null);
+  const lastStackHtmlRef = useRef('');
+  const prevSwapSrcRef = useRef(src);
+  const ghostIdRef = useRef(0);
+  const [ghost, setGhost] = useState<{html: string; id: number} | null>(null);
+  useIsoLayoutEffect(() => {
+    if (prevSwapSrcRef.current === src) return;
+    prevSwapSrcRef.current = src;
+    const reduce =
+      typeof window !== 'undefined' &&
+      window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+    // Only swap once the board has finished its entrance and we have a frame to
+    // peel away — otherwise let the normal reveal play.
+    if (reduce || !flyDone || !lastStackHtmlRef.current) return;
+    ghostIdRef.current += 1;
+    const id = ghostIdRef.current;
+    setGhost({html: lastStackHtmlRef.current, id});
+    const t = setTimeout(
+      () => setGhost((g) => (g && g.id === id ? null : g)),
+      560,
+    );
+    return () => clearTimeout(t);
+  }, [src, flyDone]);
+  // Remember the stack on screen so the next swap can peel it. Runs after the
+  // swap effect (a passive effect, after paint), so that effect reads the
+  // previous frame's HTML.
+  useEffect(() => {
+    if (stackElRef.current) lastStackHtmlRef.current = stackElRef.current.innerHTML;
+  });
+
   // Step through the stack, clamped to its ends (used by chevrons / keys / wheel).
   const step = (delta: number) =>
     setActive((i) => Math.min(sheets.length - 1, Math.max(0, i + delta)));
@@ -1018,15 +1059,27 @@ export function BoardArt({
             </div>
           </div>
           {/* eslint-enable jsx-a11y/no-noninteractive-element-interactions, jsx-a11y/no-noninteractive-tabindex */}
-          <div
-            className="board-folder-stack"
-            onTouchStart={isMobile ? onTouchStart : undefined}
-            onTouchEnd={isMobile ? onTouchEnd : undefined}
-          >
-            {stackSheets}
-            {/* Component highlights are injected into the active sheet's own
-                <svg> by the effect above (so they inherit its viewBox + every
-                transform); there is no separate overlay element here. */}
+          <div className="board-stack-wrap">
+            <div
+              ref={stackElRef}
+              className={`board-folder-stack${ghost ? ' is-swapping' : ''}`}
+              onTouchStart={isMobile ? onTouchStart : undefined}
+              onTouchEnd={isMobile ? onTouchEnd : undefined}
+            >
+              {stackSheets}
+              {/* Component highlights are injected into the active sheet's own
+                  <svg> by the effect above (so they inherit its viewBox + every
+                  transform); there is no separate overlay element here. */}
+            </div>
+            {/* Freeze-frame of the previous board, flying out on a tier swap. */}
+            {ghost ? (
+              <div
+                key={ghost.id}
+                className="board-folder-stack board-swap-ghost"
+                aria-hidden="true"
+                dangerouslySetInnerHTML={{__html: ghost.html}}
+              />
+            ) : null}
           </div>
           {isMobile && sheets.length ? (
             <div className="board-deck-progress">

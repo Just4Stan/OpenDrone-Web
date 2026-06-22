@@ -131,6 +131,29 @@ export function SchematicViewer({handle, handles, inspectUrl}: SchematicViewerPr
 
   const current = sheets?.[active];
 
+  // Variant swap: when the displayed board (handle) changes, sweep a diagonal
+  // line across the page that wipes the new sheet in over the old. Detected on
+  // `dh` only, so paging sheets within one board still uses the plain fade.
+  const lastImgRef = useRef<string | null>(null);
+  const prevDhRef = useRef(dh);
+  const [outgoing, setOutgoing] = useState<string | null>(null);
+  useEffect(() => {
+    if (prevDhRef.current === dh) return;
+    prevDhRef.current = dh;
+    const reduce =
+      typeof window !== 'undefined' &&
+      window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+    if (reduce || !lastImgRef.current) return;
+    setOutgoing(lastImgRef.current);
+    const t = setTimeout(() => setOutgoing(null), 640);
+    return () => clearTimeout(t);
+  }, [dh]);
+  // Remember the sheet on screen so the next swap can hold it underneath. Runs
+  // after the dh-swap effect above, so that effect reads the *previous* image.
+  useEffect(() => {
+    if (current) lastImgRef.current = sheetUrl(dh, current.file);
+  });
+
   // Step through the sheets, clamped to the ends (used by arrow keys / wheel
   // over the rail) — mirrors the board folder's layer stepping.
   const step = (delta: number) =>
@@ -225,10 +248,19 @@ export function SchematicViewer({handle, handles, inspectUrl}: SchematicViewerPr
                   : undefined
               }
             >
+              {/* Outgoing board held underneath while the new sheet wipes in. */}
+              {outgoing ? (
+                <img
+                  className="schematic-sheet is-loaded schematic-sheet--leaving"
+                  src={outgoing}
+                  alt=""
+                  aria-hidden="true"
+                />
+              ) : null}
               {current ? (
                 <img
                   key={`${dh}:${current.slug}`}
-                  className={`schematic-sheet${loaded[`${dh}:${current.slug}`] ? ' is-loaded' : ''}`}
+                  className={`schematic-sheet${loaded[`${dh}:${current.slug}`] ? ' is-loaded' : ''}${outgoing ? ' schematic-sheet--entering' : ''}`}
                   src={sheetUrl(dh, current.file)}
                   alt={`${current.label} schematic sheet`}
                   loading="lazy"
@@ -237,6 +269,10 @@ export function SchematicViewer({handle, handles, inspectUrl}: SchematicViewerPr
                     setLoaded((l) => ({...l, [`${dh}:${current.slug}`]: true}))
                   }
                 />
+              ) : null}
+              {/* The diagonal line that flies across to swap the boards. */}
+              {outgoing ? (
+                <span className="schematic-swap-line" aria-hidden="true" />
               ) : null}
             </div>
           </div>
