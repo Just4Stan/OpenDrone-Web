@@ -5675,15 +5675,24 @@ button.reset {
   display: grid;
   gap: 0.75rem;
   grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-  /* Tall, equal-height cards — the WatchCard sets the height and the text
-     cards stretch to match, so the row reads as one generous band. */
+  /* Flat, equal-height cards — the WatchCard sets the height and the text
+     cards stretch to match. */
   align-items: stretch;
+}
+
+/* Desktop only: pull the row up so it sits higher against the chapter heading.
+   Skipped on mobile, where the cards stack under the heading and a negative
+   margin would collide with it. */
+@media (min-width: 769px) {
+  .open-source-cards {
+    margin-top: -2.5rem;
+  }
 }
 
 /* The resource cards get room to breathe — they share the WatchCard's height. */
 .open-source-cards > .open-source-card,
 .open-source-cards > .latest-commit-card {
-  min-height: 240px;
+  min-height: 120px;
 }
 
 /* Subtle bubble — same quiet card as the latest-commit cards beside it so the
@@ -5783,7 +5792,7 @@ button.reset {
   display: block;
   width: 100%;
   /* Sets the height for the whole row; the text cards stretch to match. */
-  min-height: 240px;
+  min-height: 120px;
   padding: 0;
   overflow: hidden;
   background-color: var(--color-bg-elevated);
@@ -5827,7 +5836,7 @@ button.reset {
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 240px;
+  min-height: 120px;
   padding: 0.9rem 1.05rem;
   box-sizing: border-box;
 }

@@ -1741,13 +1741,20 @@ export default function Product() {
               >
                 {(commits) => {
                   // Bundles show one commit card per component repo; a single
-                  // product (incl. split-repo lines) shows just the selected
-                  // tier's repo, so the card tracks the ladder.
+                  // product (incl. split-repo lines) prefers the selected
+                  // tier's repo so the card tracks the ladder — but if that
+                  // repo's fetch came back empty (rate-limited) we still show
+                  // any live commit we did get, only dropping to the static
+                  // card when nothing fetched at all.
+                  const all = commits ?? [];
+                  const forTier = all.filter(
+                    (c) => c.repoUrl === activeRepoUrl,
+                  );
                   const shown = content.bundle
-                    ? (commits ?? [])
-                    : (commits ?? []).filter(
-                        (c) => c.repoUrl === activeRepoUrl,
-                      );
+                    ? all
+                    : forTier.length
+                      ? forTier
+                      : all.slice(0, 1);
                   return shown.length ? (
                     shown.map((c) => (
                       <LatestCommitCard key={c.sha + c.repoUrl} commit={c} />
