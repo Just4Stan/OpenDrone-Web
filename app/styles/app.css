@@ -12422,6 +12422,7 @@ button.reset {
      old strip of tiny untappable dots. */
   .board-part-chips {
     display: flex;
+    align-items: center;
     gap: 6px;
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
@@ -12429,6 +12430,27 @@ button.reset {
     padding-bottom: 2px;
     /* horizontal scroll of the chip row only — never hijack vertical page scroll */
     touch-action: pan-x;
+  }
+  /* Second row (bottom-side chips) sits just under the top-side row. */
+  .board-part-chips + .board-part-chips {
+    margin-top: 6px;
+  }
+  /* Sticky side tag at the start of each chip row — labels which board face the
+     row's parts live on, stays put while the chips scroll past it. */
+  .board-part-chips-side {
+    position: sticky;
+    left: 0;
+    flex: 0 0 auto;
+    align-self: stretch;
+    display: inline-flex;
+    align-items: center;
+    padding-right: 8px;
+    background: var(--color-bg);
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--color-text-dim);
   }
   .board-part-chips::-webkit-scrollbar {
     display: none;
