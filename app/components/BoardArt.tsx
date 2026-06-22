@@ -13,6 +13,7 @@ import {
 } from '~/lib/asset-prefetch';
 import {BOARD_ART_VERSION} from '~/data/board-art-version';
 import {useIsMobile} from '~/lib/use-media-query';
+import {useLayerSwipe} from '~/lib/use-layer-swipe';
 
 // `?v=` busts Oxygen's 1-year immutable cache when board art is regenerated in
 // place — the token is the content hash of every board.svg + front/back PNG,
@@ -941,7 +942,10 @@ export function BoardArt({
           className={`board-sheet${i === shownIndex ? ' is-active' : ''}${
             i < shownIndex ? ' is-before' : ''
           }`}
-          style={{['--depth' as string]: i}}
+          // --rel = position relative to the active layer (0 = on screen, ±n =
+          // n cards off either edge); the mobile peel slides each sheet to
+          // (--rel + --drag) * 100%. Desktop ignores it (uses the --depth fan).
+          style={{['--depth' as string]: i, ['--rel' as string]: i - shownIndex}}
           aria-label={`Show ${s.label} layer`}
           aria-pressed={i === shownIndex}
           onClick={() => setActive(i)}
@@ -974,17 +978,18 @@ export function BoardArt({
     const id = ghostIdRef.current;
     swapActiveRef.current = true;
     setGhost({html: lastStackHtmlRef.current, id});
-    // Hold the ghost for the whole per-layer choreography: the new stack flies in
-    // from the left and the ghost peels off to the right, both staggered by layer
-    // (see the .is-swapping / .board-swap-ghost rules). Outlive the last layer's
-    // animation end (~1.2s) so nothing snaps mid-flight.
+    // The ghost's presence is what applies .is-swapping (the new board's fly-in)
+    // on the live stack, AND it carries the old board's layers peeling out. Both
+    // run on the load cadence — 1.1s + --depth stagger (0.09s × 7) ≈ 1.73s for the
+    // last (BOTTOM) layer — so keep the ghost mounted until then, clearing a beat
+    // after so nothing snaps mid-flight.
     const t = setTimeout(() => {
       swapActiveRef.current = false;
       setGhost((g) => (g && g.id === id ? null : g));
       // Re-place the rail now the board has settled (it was held during the swap
       // so the layer textbox didn't jump against the mid-animation board).
       setPlaceNonce((n) => n + 1);
-    }, 1250);
+    }, 1850);
     return () => clearTimeout(t);
   }, [src, flyDone]);
   // Remember the stack on screen so the next swap can peel it. Runs after the
@@ -998,29 +1003,18 @@ export function BoardArt({
   const step = (delta: number) =>
     setActive((i) => Math.min(sheets.length - 1, Math.max(0, i + delta)));
 
-  // Mobile: a vertical FLICK on the board peels a layer — up = next (deeper),
-  // down = previous. A quick flick (fast + far enough) advances; a slow drag is
-  // left to the page so normal scrolling still works (no scroll trap).
-  const touchRef = useRef<{x: number; y: number; t: number} | null>(null);
-  const onTouchStart = (e: React.TouchEvent) => {
-    const t = e.touches[0];
-    touchRef.current = {x: t.clientX, y: t.clientY, t: e.timeStamp};
-  };
-  const onTouchEnd = (e: React.TouchEvent) => {
-    const s = touchRef.current;
-    touchRef.current = null;
-    if (!s) return;
-    const t = e.changedTouches[0];
-    const dy = t.clientY - s.y;
-    const dx = t.clientX - s.x;
-    // HORIZONTAL flick peels a layer. Vertical is deliberately NOT captured —
-    // the board allows vertical pan (touch-action: pan-y), so an up/down drag
-    // just scrolls the page like anywhere else (no scroll-trap / accidental
-    // peel). Components are toured by tapping their ticks in the deck below.
-    if (Math.abs(dx) > 44 && Math.abs(dx) > Math.abs(dy) * 1.3) {
-      step(dx < 0 ? 1 : -1); // swipe left = next (deeper) layer
-    }
-  };
+  // Mobile: drag the board ←/→ to peel a layer. The active sheet really slides
+  // out under the finger while the next/prev sheet chases in behind it (the
+  // peel is driven by --drag in CSS); a flick or a far-enough drag commits,
+  // else it snaps back. Vertical is left to the page (touch-action: pan-y), so
+  // a swipe that reads as vertical just scrolls — only horizontal is captured.
+  const {drag, dragging} = useLayerSwipe({
+    ref: stackElRef,
+    count: sheets.length,
+    index: shownIndex,
+    setIndex: setActive,
+    enabled: isMobile,
+  });
 
   return (
     <div
@@ -1081,9 +1075,10 @@ export function BoardArt({
           <div className="board-stack-wrap">
             <div
               ref={stackElRef}
-              className={`board-folder-stack${ghost ? ' is-swapping' : ''}`}
-              onTouchStart={isMobile ? onTouchStart : undefined}
-              onTouchEnd={isMobile ? onTouchEnd : undefined}
+              className={`board-folder-stack${ghost ? ' is-swapping' : ''}${
+                dragging ? ' is-dragging' : ''
+              }`}
+              style={{['--drag' as string]: drag}}
             >
               {stackSheets}
               {/* Component highlights are injected into the active sheet's own

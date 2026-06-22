@@ -680,13 +680,22 @@ export default function Product() {
       setDisplayedPins(activePins);
       return;
     }
-    // Swap once the incoming layers have swept over the list, then settle.
+    // The new board flies in with the load cadence (TOP layer first + biggest,
+    // sweeping across the copy column early). Switch the list content behind a
+    // short opacity dip while it's covered, then settle.
     setPinsSwapping(true);
-    const swapT = setTimeout(() => setDisplayedPins(activePins), 320);
-    const doneT = setTimeout(() => setPinsSwapping(false), 760);
+    // Retract the connector wires the instant the swap starts — they'd otherwise
+    // hang frozen across the gutter, still pinned to the OLD bubbles, while the
+    // board and list fly behind them. They redraw to the NEW bubbles only once
+    // everything has landed (fly-in ends ~1.73s + the new pins are in).
+    setLinesReady(false);
+    const swapT = setTimeout(() => setDisplayedPins(activePins), 600);
+    const doneT = setTimeout(() => setPinsSwapping(false), 1200);
+    const lineT = setTimeout(() => setLinesReady(true), 1800);
     return () => {
       clearTimeout(swapT);
       clearTimeout(doneT);
+      clearTimeout(lineT);
     };
   }, [activeBoardArt?.src, activePins]);
   // Partition pins by the dominant side of their refs. Until the map loads (or
@@ -1566,17 +1575,6 @@ export default function Product() {
               <p className="teardown-hint">
                 Swipe the board ←/→ to peel the layers · tap a part to find it
               </p>
-              <button
-                type="button"
-                className="teardown-skip"
-                onClick={() => {
-                  const ch = document.querySelector('.chapter:has(.board-art)');
-                  const next = ch?.nextElementSibling ?? ch;
-                  next?.scrollIntoView({behavior: 'smooth', block: 'start'});
-                }}
-              >
-                Skip teardown ↓
-              </button>
             </div>
           ) : null}
           {linksMounted && !isMobile
