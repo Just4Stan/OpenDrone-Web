@@ -138,6 +138,27 @@ export function SchematicViewer({handle, handles, inspectUrl}: SchematicViewerPr
       Math.min((sheets?.length ?? 1) - 1, Math.max(0, i + delta)),
     );
 
+  // Touch: flick the sheet ←/→ to page through schematics — wheel + hover are
+  // mouse-only, so without this a phone can only tap the rail pills. Same
+  // 44px / 1.3× direction gate as BoardArt; never preventDefault, so a vertical
+  // drag still scrolls the page and only a sideways flick steps the sheet.
+  const touch = useRef<{x: number; y: number} | null>(null);
+  const onTouchStart = (e: React.TouchEvent) => {
+    const t = e.touches[0];
+    touch.current = {x: t.clientX, y: t.clientY};
+  };
+  const onTouchEnd = (e: React.TouchEvent) => {
+    const s = touch.current;
+    touch.current = null;
+    if (!s || (sheets?.length ?? 0) < 2) return;
+    const t = e.changedTouches[0];
+    const dx = t.clientX - s.x;
+    const dy = t.clientY - s.y;
+    if (Math.abs(dx) > 44 && Math.abs(dx) > Math.abs(dy) * 1.3) {
+      step(dx < 0 ? 1 : -1);
+    }
+  };
+
   return (
     <div className="schematic-viewer" ref={ref} data-board={dh}>
       {inView && sheets === null ? (
@@ -196,6 +217,8 @@ export function SchematicViewer({handle, handles, inspectUrl}: SchematicViewerPr
             {/* eslint-enable jsx-a11y/no-noninteractive-element-interactions, jsx-a11y/no-noninteractive-tabindex */}
             <div
               className="schematic-page"
+              onTouchStart={onTouchStart}
+              onTouchEnd={onTouchEnd}
               style={
                 current?.w && current?.h
                   ? ({['--sheet-ar' as string]: `${current.w} / ${current.h}`} as React.CSSProperties)
@@ -216,6 +239,33 @@ export function SchematicViewer({handle, handles, inspectUrl}: SchematicViewerPr
                 />
               ) : null}
             </div>
+          </div>
+          {/* Mobile: the sheet-tab rail is dropped (a mouse-era button strip);
+              you page sheets by flicking the page ←/→. This slim deck mirrors the
+              board explorer — a tick per sheet (tap to jump) + which sheet is up
+              + a swipe hint. Hidden on desktop, where the rail is shown. */}
+          <div className="schematic-deck">
+            <div className="board-deck-dots" aria-label="Schematic sheet">
+              {sheets.map((s, i) => (
+                <button
+                  type="button"
+                  key={s.slug}
+                  className={`board-deck-dot${i === active ? ' is-active' : ''}${
+                    i < active ? ' is-done' : ''
+                  }`}
+                  aria-label={`Show ${s.label} sheet`}
+                  aria-current={i === active ? 'true' : undefined}
+                  onClick={() => setActive(i)}
+                />
+              ))}
+            </div>
+            <p className="board-deck-meta" aria-live="polite">
+              <span className="board-deck-count">
+                {active + 1}/{sheets.length}
+              </span>
+              <span className="board-deck-name">{current?.label}</span>
+              <span className="board-deck-hint">Swipe ←/→</span>
+            </p>
           </div>
           {inspectUrl ? (
             <div className="schematic-foot">
