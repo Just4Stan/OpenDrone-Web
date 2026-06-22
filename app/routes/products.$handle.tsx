@@ -154,6 +154,13 @@ function loadDeferredData({context, params}: Route.LoaderArgs) {
       }
     } else if (content.repoUrl) {
       repoUrls.push(content.repoUrl);
+      // Tiers can live in their own repos (OpenFC-Lite-Mini, OpenESC-30x30);
+      // fetch each so the client can show the selected tier's latest commit.
+      if (content.variants) {
+        for (const v of Object.values(content.variants)) {
+          if (v.repoUrl) repoUrls.push(v.repoUrl);
+        }
+      }
     }
   }
   const latestCommits = fetchLatestCommits(repoUrls).catch(() => []);
@@ -533,15 +540,6 @@ export default function Product() {
   const hasHeroCopy = Boolean(content.hero.line1);
   const chapterNums = computeChapterNumbers(content, isEditorial);
 
-  // Repo whose commit history backs the "Open for learning" row's 4th card —
-  // the bundle's first component repo, else this product's own. Used as the
-  // fallback link when the live latest-commit fetch is rate-limited.
-  const commitHistoryRepoUrl = content.bundle
-    ? content.bundle.components
-        .map((c) => PRODUCT_CONTENT[c.handle]?.repoUrl)
-        .find((url): url is string => Boolean(url))
-    : content.repoUrl;
-
   // Comparison-ladder state for product lines (OpenRX/OpenESC). The
   // editorial `variants` map is the tier source of truth; the active tier
   // drives the spec/in-the-box preview and, once Shopify carries the
@@ -572,6 +570,18 @@ export default function Product() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [shopifyAxisValue]);
   const activeVariant = content.variants?.[activeTier];
+  // GitHub links (repo card / issues / latest commit) follow the selected tier:
+  // split-repo lines (OpenFC-Lite ↔ OpenFC-Lite-Mini, OpenESC_20X20 ↔
+  // OpenESC-30x30) point at the tier's repo, others at the product default.
+  const activeRepoUrl = activeVariant?.repoUrl ?? content.repoUrl;
+  // Repo whose commit history backs the "Open for learning" row's 4th card —
+  // the bundle's first component repo, else the selected tier's repo. Used as
+  // the fallback link when the live latest-commit fetch is rate-limited.
+  const commitHistoryRepoUrl = content.bundle
+    ? content.bundle.components
+        .map((c) => PRODUCT_CONTENT[c.handle]?.repoUrl)
+        .find((url): url is string => Boolean(url))
+    : activeRepoUrl;
   const mergedSpecs = mergeSpecs(content.specs, activeVariant?.specs);
   const mergedBox = [...content.inTheBox, ...(activeVariant?.inTheBox ?? [])];
 
@@ -1661,7 +1671,7 @@ export default function Product() {
           ) : (
             <>
               <a
-                href={content.repoUrl}
+                href={activeRepoUrl}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="open-source-card"
@@ -1676,7 +1686,7 @@ export default function Product() {
                 </p>
               </a>
               <a
-                href={`${content.repoUrl}/issues`}
+                href={`${activeRepoUrl}/issues`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="open-source-card"
@@ -1717,15 +1727,23 @@ export default function Product() {
                   <CommitHistoryCard repoUrl={commitHistoryRepoUrl} />
                 }
               >
-                {(commits) =>
-                  commits && commits.length ? (
-                    commits.map((c) => (
+                {(commits) => {
+                  // Bundles show one commit card per component repo; a single
+                  // product (incl. split-repo lines) shows just the selected
+                  // tier's repo, so the card tracks the ladder.
+                  const shown = content.bundle
+                    ? (commits ?? [])
+                    : (commits ?? []).filter(
+                        (c) => c.repoUrl === activeRepoUrl,
+                      );
+                  return shown.length ? (
+                    shown.map((c) => (
                       <LatestCommitCard key={c.sha + c.repoUrl} commit={c} />
                     ))
                   ) : (
                     <CommitHistoryCard repoUrl={commitHistoryRepoUrl} />
-                  )
-                }
+                  );
+                }}
               </Await>
             </Suspense>
           ) : null}
