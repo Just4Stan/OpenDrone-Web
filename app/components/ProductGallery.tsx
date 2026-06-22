@@ -134,6 +134,33 @@ export function ProductGallery({
           </span>
         )}
       </div>
+      {/* Mobile swipe bar — the touch-first replacement for the arrow pill +
+          thumbnail strip (both hidden on mobile via CSS). A tick per image (tap
+          to jump) + counter + swipe hint, matching the board/schematic decks. */}
+      {images.length > 1 && (
+        <div className="product-gallery-deck">
+          <div className="board-deck-dots" aria-label="Product image">
+            {images.map((img, i) => (
+              <button
+                type="button"
+                key={img.id ?? img.url}
+                className={`board-deck-dot${i === index ? ' is-active' : ''}${
+                  i < index ? ' is-done' : ''
+                }`}
+                aria-label={`Show image ${i + 1}`}
+                aria-current={i === index ? 'true' : undefined}
+                onClick={() => setIndex(i)}
+              />
+            ))}
+          </div>
+          <p className="board-deck-meta" aria-live="polite">
+            <span className="board-deck-count">
+              {index + 1}/{images.length}
+            </span>
+            <span className="board-deck-hint">Swipe ←/→</span>
+          </p>
+        </div>
+      )}
       {images.length > 1 && (
         <ul className="product-gallery-thumbs" role="tablist" aria-label="Product image thumbnails">
           {images.map((img, i) => (

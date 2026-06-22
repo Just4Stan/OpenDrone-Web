@@ -1403,7 +1403,7 @@ export default function Product() {
                   prefetch="viewport"
                   className="trust-chip trust-chip-green trust-chip-link"
                 >
-                  Open source · CERN-OHL-S-2.0
+                  Open source
                 </Link>
               </li>
             ) : null}
