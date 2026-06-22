@@ -6061,6 +6061,20 @@ button.reset {
   mask-image: url(/logos/cern.svg);
 }
 
+/* OSHWA-certified card — the license card upgraded when a product carries an
+   OSHWA UID. Gold-accented so the certification reads as the headline credential
+   (the CERN-OHL-S name moves to the sub-line). All tokens, so it themes for free;
+   if /logos/oshwa.svg is later added, give it a ::after watermark like --cern. */
+.open-source-card--oshwa {
+  position: relative;
+  overflow: hidden;
+  border-color: var(--color-gold-soft);
+}
+
+.open-source-card--oshwa .open-source-card-label {
+  color: var(--color-gold);
+}
+
 /* "Watch" bubble — the video card that replaces the issues card on products
    with a build film. A 16:9 bubble (aspect-ratio inherited from
    .open-source-card) showing just the YouTube thumbnail with a centred gold

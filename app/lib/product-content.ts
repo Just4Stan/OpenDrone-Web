@@ -114,6 +114,11 @@ export type VariantContent = {
    *  `repoUrl`. Lines whose tiers share one repo (OpenRX subfolders) leave it
    *  unset. */
   repoUrl?: string;
+  /** Per-tier OSHWA certification UID, when a split-repo line certifies each
+   *  board (mount) separately — overrides the product's `oshwaUid` for the
+   *  selected tier, the same way `repoUrl` does. Unset → falls back to the
+   *  product-level `oshwaUid`. See {@link ProductContent.oshwaUid}. */
+  oshwaUid?: string;
   /** One-line role under the tier name in the ladder card. */
   tagline?: string;
   /** The 3–4 cells that differ between tiers, shown in the card body. */
@@ -180,6 +185,15 @@ export type ProductContent = {
     logoDark?: boolean;
   };
   repoUrl: string;
+  /** OSHWA Open Source Hardware certification UID (e.g. `BE000001`), issued by
+   *  <https://certification.oshwa.org> after self-certifying. When set, the
+   *  "Open for learning" chapter upgrades the license card to an OSHWA-certified
+   *  badge that deep-links to `certification.oshwa.org/<uid>.html`, keeping the
+   *  CERN-OHL-S license name as the sub-line. Split-repo lines can override this
+   *  per tier on {@link VariantContent}; unset products show the plain license
+   *  card. Leave unset until OSHWA actually issues the UID — it must resolve to a
+   *  real public cert page. */
+  oshwaUid?: string;
   /** A "build video" for the product — the JustFPV teardown films. When set, the
    *  "Open for learning" chapter swaps its second card from the GitHub-issues
    *  bubble to a Watch card (real YouTube thumbnail + in-page lightbox player).

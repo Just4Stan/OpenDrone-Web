@@ -567,6 +567,10 @@ export default function Product() {
   // split-repo lines (OpenFC-Lite ↔ OpenFC-Lite-Mini, OpenESC_20X20 ↔
   // OpenESC-30x30) point at the tier's repo, others at the product default.
   const activeRepoUrl = activeVariant?.repoUrl ?? content.repoUrl;
+  // OSHWA certification UID for the selected tier (per-tier override → product
+  // default). When present the license card upgrades to an OSHWA-certified badge
+  // linking the public cert page; unset keeps the plain CERN-OHL-S card.
+  const activeOshwaUid = activeVariant?.oshwaUid ?? content.oshwaUid;
   // Repo whose commit history backs the "Open for learning" row's 4th card —
   // the bundle's first component repo, else the selected tier's repo. Used as
   // the fallback link when the live latest-commit fetch is rate-limited.
@@ -1719,18 +1723,37 @@ export default function Product() {
               )}
             </>
           )}
-          <a
-            href="https://ohwr.org/cern_ohl_s_v2.txt"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="open-source-card open-source-card--cern"
-          >
-            <p className="open-source-card-label">License</p>
-            <p className="open-source-card-title">CERN-OHL-S v2 ↗</p>
-            <p className="open-source-card-sub">
-              Strong reciprocal: share your changes
-            </p>
-          </a>
+          {activeOshwaUid ? (
+            // OSHWA-certified: lead with the open-hardware certification (links
+            // the public cert page for this UID) and keep the CERN-OHL-S license
+            // name on the sub-line — the certification attests the license, it
+            // doesn't replace it.
+            <a
+              href={`https://certification.oshwa.org/${activeOshwaUid.toLowerCase()}.html`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="open-source-card open-source-card--oshwa"
+            >
+              <p className="open-source-card-label">Certified</p>
+              <p className="open-source-card-title">OSHWA {activeOshwaUid} ↗</p>
+              <p className="open-source-card-sub">
+                Open source hardware · CERN-OHL-S v2
+              </p>
+            </a>
+          ) : (
+            <a
+              href="https://ohwr.org/cern_ohl_s_v2.txt"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="open-source-card open-source-card--cern"
+            >
+              <p className="open-source-card-label">License</p>
+              <p className="open-source-card-title">CERN-OHL-S v2 ↗</p>
+              <p className="open-source-card-sub">
+                Strong reciprocal: share your changes
+              </p>
+            </a>
+          )}
           {/* The latest commit rides in the same row as the resource cards —
               streams in as a 4th card once the deferred GitHub fetch lands.
               GitHub's unauthenticated API rate-limits the edge under load, so
