@@ -247,7 +247,9 @@ export function SchematicViewer({handle, handles, inspectUrl}: SchematicViewerPr
             {/* eslint-enable jsx-a11y/no-noninteractive-element-interactions, jsx-a11y/no-noninteractive-tabindex */}
             <div
               ref={pageRef}
-              className={`schematic-page${dragging ? ' is-dragging' : ''}`}
+              className={`schematic-page${dragging ? ' is-dragging' : ''}${
+                outgoing ? ' is-wiping' : ''
+              }`}
               style={{
                 ...(pageAr
                   ? {['--sheet-ar' as string]: `${pageAr}`}
