@@ -75,6 +75,12 @@ export function WatchCard({
         </span>
       </button>
 
+      {/* Backdrop-dismiss lightbox: a click on the backdrop closes, a click on
+          the frame is swallowed. Keyboard access is the document-level Escape
+          handler above (the backdrop isn't focusable), so the a11y rules that
+          want a per-element key handler are false positives here — same pattern
+          the schematic viewer disables. */}
+      {/* eslint-disable jsx-a11y/click-events-have-key-events, jsx-a11y/no-noninteractive-element-interactions, jsx-a11y/no-static-element-interactions */}
       {open ? (
         <div
           className="watch-lightbox"
@@ -104,6 +110,7 @@ export function WatchCard({
           </div>
         </div>
       ) : null}
+      {/* eslint-enable jsx-a11y/click-events-have-key-events, jsx-a11y/no-noninteractive-element-interactions, jsx-a11y/no-static-element-interactions */}
     </>
   );
 }
