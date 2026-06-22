@@ -1,6 +1,8 @@
 import {useEffect, useRef, useState} from 'react';
 import {fetchJsonCached, peekJson, prefetchImage} from '~/lib/asset-prefetch';
 import {SCHEMATICS_VERSION} from '~/data/schematics-version';
+import {useIsMobile} from '~/lib/use-media-query';
+import {useLayerSwipe} from '~/lib/use-layer-swipe';
 
 export type SchematicViewerProps = {
   /** Board handle whose schematic lives at /schematics/<handle>/manifest.json */
@@ -138,26 +140,19 @@ export function SchematicViewer({handle, handles, inspectUrl}: SchematicViewerPr
       Math.min((sheets?.length ?? 1) - 1, Math.max(0, i + delta)),
     );
 
-  // Touch: flick the sheet ←/→ to page through schematics — wheel + hover are
-  // mouse-only, so without this a phone can only tap the rail pills. Same
-  // 44px / 1.3× direction gate as BoardArt; never preventDefault, so a vertical
-  // drag still scrolls the page and only a sideways flick steps the sheet.
-  const touch = useRef<{x: number; y: number} | null>(null);
-  const onTouchStart = (e: React.TouchEvent) => {
-    const t = e.touches[0];
-    touch.current = {x: t.clientX, y: t.clientY};
-  };
-  const onTouchEnd = (e: React.TouchEvent) => {
-    const s = touch.current;
-    touch.current = null;
-    if (!s || (sheets?.length ?? 0) < 2) return;
-    const t = e.changedTouches[0];
-    const dx = t.clientX - s.x;
-    const dy = t.clientY - s.y;
-    if (Math.abs(dx) > 44 && Math.abs(dx) > Math.abs(dy) * 1.3) {
-      step(dx < 0 ? 1 : -1);
-    }
-  };
+  // Touch: drag the sheet ←/→ to page through the schematic — the same peel as
+  // the board explorer (active sheet slides out under the finger, the next/prev
+  // chases in behind it). Vertical is left to the page; only horizontal is
+  // captured. Wheel + hover stay mouse-only.
+  const isMobile = useIsMobile();
+  const pageRef = useRef<HTMLDivElement | null>(null);
+  const {drag, dragging} = useLayerSwipe({
+    ref: pageRef,
+    count: sheets?.length ?? 0,
+    index: active,
+    setIndex: setActive,
+    enabled: isMobile,
+  });
 
   return (
     <div className="schematic-viewer" ref={ref} data-board={dh}>
@@ -216,28 +211,35 @@ export function SchematicViewer({handle, handles, inspectUrl}: SchematicViewerPr
             </div>
             {/* eslint-enable jsx-a11y/no-noninteractive-element-interactions, jsx-a11y/no-noninteractive-tabindex */}
             <div
-              className="schematic-page"
-              onTouchStart={onTouchStart}
-              onTouchEnd={onTouchEnd}
-              style={
-                current?.w && current?.h
-                  ? ({['--sheet-ar' as string]: `${current.w} / ${current.h}`} as React.CSSProperties)
-                  : undefined
-              }
+              ref={pageRef}
+              className={`schematic-page${dragging ? ' is-dragging' : ''}`}
+              style={{
+                ...(current?.w && current?.h
+                  ? {['--sheet-ar' as string]: `${current.w} / ${current.h}`}
+                  : {}),
+                ['--drag' as string]: drag,
+              } as React.CSSProperties}
             >
-              {current ? (
-                <img
-                  key={`${dh}:${current.slug}`}
-                  className={`schematic-sheet${loaded[`${dh}:${current.slug}`] ? ' is-loaded' : ''}`}
-                  src={sheetUrl(dh, current.file)}
-                  alt={`${current.label} schematic sheet`}
-                  loading="lazy"
-                  decoding="async"
-                  onLoad={() =>
-                    setLoaded((l) => ({...l, [`${dh}:${current.slug}`]: true}))
-                  }
-                />
-              ) : null}
+              {/* Every sheet is rendered and parked at its offset from the active
+                  one (--rel); the mobile peel slides each to (--rel + --drag).
+                  Desktop shows only the active sheet (others held at opacity 0)
+                  and pages by fade. */}
+              {sheets.map((s, i) => {
+                const k = `${dh}:${s.slug}`;
+                return (
+                  <img
+                    key={k}
+                    className={`schematic-sheet${loaded[k] ? ' is-loaded' : ''}${i === active ? ' is-active' : ''}`}
+                    style={{['--rel' as string]: i - active} as React.CSSProperties}
+                    src={sheetUrl(dh, s.file)}
+                    alt={`${s.label} schematic sheet`}
+                    loading="lazy"
+                    decoding="async"
+                    aria-hidden={i === active ? undefined : true}
+                    onLoad={() => setLoaded((l) => ({...l, [k]: true}))}
+                  />
+                );
+              })}
             </div>
           </div>
           {/* Mobile: the sheet-tab rail is dropped (a mouse-era button strip);
