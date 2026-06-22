@@ -4975,7 +4975,7 @@ button.reset {
   font-size: 9px;
   letter-spacing: 0.18em;
   text-transform: uppercase;
-  color: var(--color-text-dim);
+  color: var(--color-text-muted);
 }
 .board-folder-rail-count,
 .schematic-rail-count {
@@ -5015,7 +5015,7 @@ button.reset {
   letter-spacing: 0.14em;
   text-transform: uppercase;
   text-align: center;
-  color: var(--color-text-dim);
+  color: var(--color-text-muted);
   padding: 0.48em 0.4em;
   /* Standardised viewer-pill radius (schematic sheets + PCB layers share it). */
   border-radius: var(--r-lg);
@@ -5059,7 +5059,7 @@ button.reset {
   letter-spacing: 0.06em;
   text-transform: none;
   line-height: 1.2;
-  color: var(--color-text-dim);
+  color: var(--color-text-muted);
 }
 .board-folder-tabs button:hover .board-folder-tab-fn {
   color: var(--color-text-muted);
@@ -6100,7 +6100,7 @@ button.reset {
   font-size: 11px;
   letter-spacing: 0.18em;
   text-transform: uppercase;
-  color: var(--color-text-muted);
+  color: var(--color-text);
 }
 
 .provenance-row-value {
@@ -6110,7 +6110,7 @@ button.reset {
 }
 
 .provenance-row-note {
-  color: var(--color-text-muted);
+  color: color-mix(in srgb, var(--color-text) 62%, var(--color-text-muted));
   font-family: var(--font-mono);
   font-size: 12px;
 }

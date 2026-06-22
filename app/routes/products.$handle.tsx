@@ -154,14 +154,11 @@ function loadDeferredData({context, params}: Route.LoaderArgs) {
         if (sub?.repoUrl) repoUrls.push(sub.repoUrl);
       }
     } else if (content.repoUrl) {
+      // Only the primary repo — fetching every tier's repo too tripled the
+      // unauthenticated GitHub API calls per page and blew the 60/hr rate
+      // limit, so the live commit fell back to the static card. The card's
+      // resilient fallback still shows this commit for every tier.
       repoUrls.push(content.repoUrl);
-      // Tiers can live in their own repos (OpenFC-Lite-Mini, OpenESC-30x30);
-      // fetch each so the client can show the selected tier's latest commit.
-      if (content.variants) {
-        for (const v of Object.values(content.variants)) {
-          if (v.repoUrl) repoUrls.push(v.repoUrl);
-        }
-      }
     }
   }
   const latestCommits = fetchLatestCommits(repoUrls).catch(() => []);
