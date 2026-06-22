@@ -51,9 +51,6 @@ export type BoardArtProps = {
    *  the parent's tap-toggle can re-assert a part hidden behind another layer
    *  instead of toggling it off invisibly. */
   onHighlightVisible?: (visible: boolean) => void;
-  /** A sideways flick on the board (mobile) — steps the part tour (+1 next / −1
-   *  prev). Mirrors the vertical layer flick. */
-  onSwipeHorizontal?: (dir: number) => void;
 };
 
 /** One component from `components.json` — coords already in the board viewBox. */
@@ -238,7 +235,6 @@ export function BoardArt({
   highlightGroups,
   onFlying,
   onHighlightVisible,
-  onSwipeHorizontal,
 }: BoardArtProps) {
   const ref = useRef<HTMLDivElement | null>(null);
   const bodyRef = useRef<HTMLDivElement | null>(null);
@@ -955,12 +951,12 @@ export function BoardArt({
     const t = e.changedTouches[0];
     const dy = t.clientY - s.y;
     const dx = t.clientX - s.x;
-    // The board surface doesn't scroll (touch-action: none), so a deliberate
-    // drag is a gesture: VERTICAL peels a layer, HORIZONTAL steps the part tour.
-    if (Math.abs(dy) > 44 && Math.abs(dy) > Math.abs(dx) * 1.3) {
-      step(dy < 0 ? 1 : -1);
-    } else if (Math.abs(dx) > 44 && Math.abs(dx) > Math.abs(dy) * 1.3) {
-      onSwipeHorizontal?.(dx < 0 ? 1 : -1); // swipe left = next part
+    // HORIZONTAL flick peels a layer. Vertical is deliberately NOT captured —
+    // the board allows vertical pan (touch-action: pan-y), so an up/down drag
+    // just scrolls the page like anywhere else (no scroll-trap / accidental
+    // peel). Components are toured by tapping their ticks in the deck below.
+    if (Math.abs(dx) > 44 && Math.abs(dx) > Math.abs(dy) * 1.3) {
+      step(dx < 0 ? 1 : -1); // swipe left = next (deeper) layer
     }
   };
 
@@ -1053,7 +1049,7 @@ export function BoardArt({
                   {shownIndex + 1}/{sheets.length}
                 </span>
                 <span className="board-deck-name">{sheets[shownIndex]?.label}</span>
-                <span className="board-deck-hint">Flick ↑/↓</span>
+                <span className="board-deck-hint">Swipe ←/→</span>
               </p>
             </div>
           ) : null}
