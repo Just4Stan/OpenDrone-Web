@@ -5044,6 +5044,13 @@ button.reset {
     display: none;
   }
 }
+/* Layer rail crossfade — only added (BoardArt, guarded by layer-label signature)
+   when the layer SET actually changes between boards, so identical layers never
+   pulse. Reuses the parts-list dip: old tabs fade out, the set switches while
+   hidden (235ms), new fade in. */
+.board-folder-rail.is-swapping {
+  animation: teardown-pins-swap 0.52s ease both;
+}
 /* Layer / sheet rail — a self-contained vertical selector beside the board or
    schematic. The schematic viewer reuses this exact selector style. */
 .board-folder-rail,
@@ -5697,13 +5704,22 @@ button.reset {
    never snap back mid-fade. Pointer-events off so a hover can't catch it mid-change. */
 .teardown-sides.is-swapping {
   pointer-events: none;
-  animation: teardown-pins-swap 0.45s ease both;
+  /* Self-contained crossfade (0.52s): fade the OLD rows out, hold hidden through
+     the 44–56% trough while products.$handle.tsx swaps displayedPins at 235ms,
+     then fade the NEW rows in — so the content change is never visible. */
+  animation: teardown-pins-swap 0.52s ease both;
 }
 @keyframes teardown-pins-swap {
-  from {
+  0% {
+    opacity: 1;
+  }
+  44% {
     opacity: 0;
   }
-  to {
+  56% {
+    opacity: 0;
+  }
+  100% {
     opacity: 1;
   }
 }

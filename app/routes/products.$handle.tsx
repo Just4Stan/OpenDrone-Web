@@ -662,39 +662,40 @@ export default function Product() {
   // quick block slide with no cover) swaps immediately.
   const [displayedPins, setDisplayedPins] = useState(activePins);
   const [pinsSwapping, setPinsSwapping] = useState(false);
-  // Latest pins, read inside BoardArt's swap callbacks (which may close over a
-  // stale render) so the list always settles on the CURRENT board's pins.
-  const activePinsRef = useRef(activePins);
-  activePinsRef.current = activePins;
-  const prevPinSrcRef = useRef<string | undefined>(activeBoardArt?.src);
-  // The list choreography is now SLAVED to the board swap via onSwapStart/
-  // onSwapSettle (below) instead of its own wall-clock timers — they land in
-  // lockstep with the board by construction. This effect only handles the case
-  // where the pins change but the board src does NOT (so no board swap fires):
-  // update the list directly.
+  // The component table crossfades on its OWN clock when the pins change — NOT
+  // slaved to the board swap. (Tying it to onSwapSettle made the content switch
+  // land ~1.1s in, after the dip had already faded back to opacity 1, so the new
+  // rows snapped in visibly.) Now: fade out → switch the rows while fully hidden
+  // (mid-dip) → fade in. activePins is a memo that only changes identity on a real
+  // tier change, so the ref compare fires exactly once per switch.
+  const prevPinsRef = useRef(activePins);
   useEffect(() => {
-    const src = activeBoardArt?.src;
-    if (prevPinSrcRef.current === src) {
+    if (prevPinsRef.current === activePins) return;
+    prevPinsRef.current = activePins;
+    const reduce =
+      typeof window !== 'undefined' &&
+      window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+    if (reduce) {
       setDisplayedPins(activePins);
       return;
     }
-    // Board src changed → BoardArt drives the list via its swap callbacks.
-    prevPinSrcRef.current = src;
-  }, [activeBoardArt?.src, activePins]);
-  // Board swap began: hide the list behind a quick opacity dip (content swaps to
-  // the new pins under it) and retract the connector wires (they'd otherwise hang
-  // frozen across the gutter, still pinned to the OLD bubbles).
+    setPinsSwapping(true);
+    // Switch the rows at the dip's hidden trough (44–56% of 0.52s = 229–291ms),
+    // then let the dip fade the new rows back in — no visible row snap.
+    const tSwap = setTimeout(() => setDisplayedPins(activePins), 235);
+    const tDone = setTimeout(() => setPinsSwapping(false), 520);
+    return () => {
+      clearTimeout(tSwap);
+      clearTimeout(tDone);
+    };
+  }, [activePins]);
+  // The board swap drives only the connector wires: retract on start (they'd hang
+  // frozen across the gutter, still pinned to the OLD bubbles), redraw on settle
+  // once the board + the (already-crossfaded) list have landed.
   const handleSwapStart = () => {
     setLinesReady(false);
-    setDisplayedPins(activePinsRef.current);
-    setPinsSwapping(true);
   };
-  // Board swap settled: re-assert the final pins (in case rapid toggles coalesced)
-  // and redraw the wires to the NEW bubbles. The dip's own animation has long
-  // since faded the list back in.
   const handleSwapSettle = () => {
-    setDisplayedPins(activePinsRef.current);
-    setPinsSwapping(false);
     setLinesReady(true);
   };
   // Partition pins by the dominant side of their refs. Until the map loads (or

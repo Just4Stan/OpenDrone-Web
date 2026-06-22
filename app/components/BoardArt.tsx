@@ -1173,6 +1173,40 @@ export function BoardArt({
     dispatchSwap({type: 'EVENT', gen: swap.gen});
   };
 
+  // The layer rail (the "Layer X/8" + tab list) crossfades when the layer SET
+  // actually changes between boards, so it doesn't hard-snap during a swap. Guarded
+  // by a label signature: variants that share the same layers (e.g. both 8-layer
+  // boards) never animate, so identical content never pulses. `railSheets` lags the
+  // live sheets so the OLD tabs fade out, the set switches while hidden, the NEW
+  // fade in — the same crossfade the component table uses.
+  const railSig = useMemo(() => sheets.map((s) => s.label).join('|'), [sheets]);
+  const [railSheets, setRailSheets] = useState<Sheet[]>(sheets);
+  const [railSwapping, setRailSwapping] = useState(false);
+  const prevRailSigRef = useRef(railSig);
+  useEffect(() => {
+    if (prevRailSigRef.current === railSig) {
+      setRailSheets(sheets);
+      return;
+    }
+    prevRailSigRef.current = railSig;
+    const reduce =
+      typeof window !== 'undefined' &&
+      window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+    if (reduce) {
+      setRailSheets(sheets);
+      return;
+    }
+    setRailSwapping(true);
+    const t1 = setTimeout(() => setRailSheets(sheets), 235);
+    const t2 = setTimeout(() => setRailSwapping(false), 520);
+    return () => {
+      clearTimeout(t1);
+      clearTimeout(t2);
+    };
+  }, [railSig, sheets]);
+  const railCount = railSheets.length;
+  const railIndex = Math.min(shownIndex, Math.max(0, railCount - 1));
+
   // Step through the stack, clamped to its ends (used by chevrons / keys / wheel).
   const step = (delta: number) =>
     setActive((i) => Math.min(sheets.length - 1, Math.max(0, i + delta)));
@@ -1222,7 +1256,7 @@ export function BoardArt({
               — scrolling over the panel scrolls the page like anywhere else. */}
           {/* eslint-disable jsx-a11y/no-noninteractive-element-interactions, jsx-a11y/no-noninteractive-tabindex */}
           <div
-            className="board-folder-rail"
+            className={`board-folder-rail${railSwapping ? ' is-swapping' : ''}`}
             ref={railRef}
             role="group"
             aria-label="Copper layer"
@@ -1240,22 +1274,22 @@ export function BoardArt({
             <span className="board-folder-rail-head">
               Layer
               <span className="board-folder-rail-count">
-                {shownIndex + 1}/{sheets.length}
+                {railIndex + 1}/{railCount}
               </span>
             </span>
             <div className="board-folder-tabs">
-              {sheets.map((s, i) => (
+              {railSheets.map((s, i) => (
                 <button
                   type="button"
                   key={s.slug}
                   data-slug={s.slug}
-                  className={i === shownIndex ? 'is-active' : undefined}
-                  aria-pressed={i === shownIndex}
+                  className={i === railIndex ? 'is-active' : undefined}
+                  aria-pressed={i === railIndex}
                   onClick={() => setActive(i)}
                 >
                   <span className="board-folder-tab-name">{s.label}</span>
                   <span className="board-folder-tab-fn">
-                    {layerFunction(s.slug, i, sheets.length, layerFns)}
+                    {layerFunction(s.slug, i, railCount, layerFns)}
                   </span>
                 </button>
               ))}
