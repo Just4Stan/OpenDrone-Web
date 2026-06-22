@@ -1659,7 +1659,7 @@ export default function Product() {
                   href={repo}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="open-source-card"
+                  className="open-source-card open-source-card--github"
                 >
                   <p className="open-source-card-label">{c.title}</p>
                   <p className="open-source-card-title">GitHub repo ↗</p>
@@ -1684,7 +1684,7 @@ export default function Product() {
                 href={activeRepoUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="open-source-card"
+                className="open-source-card open-source-card--github"
               >
                 <p className="open-source-card-label">Study</p>
                 <p className="open-source-card-title">GitHub repo ↗</p>
@@ -1715,7 +1715,7 @@ export default function Product() {
             href="https://ohwr.org/cern_ohl_s_v2.txt"
             target="_blank"
             rel="noopener noreferrer"
-            className="open-source-card"
+            className="open-source-card open-source-card--cern"
           >
             <p className="open-source-card-label">License</p>
             <p className="open-source-card-title">CERN-OHL-S v2 ↗</p>

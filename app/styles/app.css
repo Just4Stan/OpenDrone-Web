@@ -5675,9 +5675,15 @@ button.reset {
   display: grid;
   gap: 0.75rem;
   grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-  /* Let each card keep its own height — the taller WatchCard (thumbnail +
-     caption) must not stretch the compact text cards beside it. */
-  align-items: start;
+  /* Tall, equal-height cards — the WatchCard sets the height and the text
+     cards stretch to match, so the row reads as one generous band. */
+  align-items: stretch;
+}
+
+/* The resource cards get room to breathe — they share the WatchCard's height. */
+.open-source-cards > .open-source-card,
+.open-source-cards > .latest-commit-card {
+  min-height: 240px;
 }
 
 /* Subtle bubble — same quiet card as the latest-commit cards beside it so the
@@ -5722,6 +5728,51 @@ button.reset {
   margin: 0;
 }
 
+/* Brand-logo watermark — a big, faint full-card mark behind the text on the
+   GitHub (Study) and CERN (License) cards. Rendered via CSS mask so it follows
+   the theme (painted with the text colour at low opacity) rather than baking a
+   fixed fill into the SVG. */
+.open-source-card--github,
+.open-source-card--cern {
+  position: relative;
+  overflow: hidden;
+}
+
+.open-source-card--github > p,
+.open-source-card--cern > p {
+  position: relative;
+  z-index: 1;
+}
+
+.open-source-card--github::after,
+.open-source-card--cern::after {
+  content: '';
+  position: absolute;
+  right: -8%;
+  bottom: -14%;
+  width: 68%;
+  height: 78%;
+  background-color: var(--color-text);
+  opacity: 0.06;
+  pointer-events: none;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-position: right bottom;
+  mask-position: right bottom;
+  -webkit-mask-size: contain;
+  mask-size: contain;
+}
+
+.open-source-card--github::after {
+  -webkit-mask-image: url(/logos/github.svg);
+  mask-image: url(/logos/github.svg);
+}
+
+.open-source-card--cern::after {
+  -webkit-mask-image: url(/logos/cern.svg);
+  mask-image: url(/logos/cern.svg);
+}
+
 /* "Watch" bubble — the video card that replaces the issues card on products
    with a build film. Sized to match the sibling resource cards: the real
    YouTube thumbnail is cropped into the card, a gold YouTube glyph sits on top
@@ -5731,9 +5782,8 @@ button.reset {
   position: relative;
   display: block;
   width: 100%;
-  /* Same footprint as the text cards beside it — the thumbnail is cropped to
-     this short box rather than shown full-height. */
-  min-height: 116px;
+  /* Sets the height for the whole row; the text cards stretch to match. */
+  min-height: 240px;
   padding: 0;
   overflow: hidden;
   background-color: var(--color-bg-elevated);
@@ -5756,45 +5806,47 @@ button.reset {
   transform: scale(1.04);
 }
 
-/* Scrim so the gold glyph + caption stay legible over any frame. */
+/* Light scrim + a soft darkened centre so the gold play mark pops without
+   hiding the thumbnail. */
 .watch-card::before {
   content: '';
   position: absolute;
   inset: 0;
-  background: linear-gradient(
-    to top,
-    rgba(0, 0, 0, 0.82) 0%,
-    rgba(0, 0, 0, 0.35) 45%,
-    rgba(0, 0, 0, 0.25) 100%
+  background: radial-gradient(
+    ellipse at center,
+    rgba(0, 0, 0, 0.42) 0%,
+    rgba(0, 0, 0, 0.18) 55%,
+    rgba(0, 0, 0, 0.28) 100%
   );
 }
 
-/* Content layer: YouTube glyph pinned top, caption pinned bottom. */
+/* Content layer: the YouTube play mark, centred. */
 .watch-card-overlay {
   position: relative;
   z-index: 1;
   display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  min-height: 116px;
+  align-items: center;
+  justify-content: center;
+  min-height: 240px;
   padding: 0.9rem 1.05rem;
   box-sizing: border-box;
 }
 
 .watch-card-yt {
-  width: 30px;
+  width: 60px;
   height: auto;
   color: var(--color-gold);
+  filter: drop-shadow(0 4px 14px rgba(0, 0, 0, 0.45));
+  transition: transform 0.2s ease;
+}
+
+.watch-card:hover .watch-card-yt {
+  transform: scale(1.08);
 }
 
 /* The play triangle reads against the gold mark via the dark accent ink. */
 .watch-card-yt-tri {
   fill: var(--color-on-accent);
-}
-
-.watch-card .open-source-card-label {
-  display: block;
-  color: var(--color-gold);
 }
 
 .watch-card:hover {
