@@ -4528,12 +4528,6 @@ button.reset {
      bar so nothing up there is occluded. */
   .chapter-media:has(.board-art) {
     top: calc(var(--header-height) + var(--sp-4) + 3.75rem);
-    /* Lift the board into the index row so its top edge lines up with the
-       "01 Teardown" heading instead of starting a row below it. Offset = the
-       index heading's line height (fs-2xl * 1.1) + its margin-bottom (sp-4) +
-       the chapter's row gap (sp-5). Tracks the responsive fs-2xl, so the
-       alignment holds across widths. Size/sticky-clearance unchanged. */
-    margin-top: calc(-1 * (var(--fs-2xl) * 1.1 + var(--sp-4) + var(--sp-5)));
   }
   /* The teardown copy slides in from the left AFTER the board layers fly in
      (the PDP drops data-text-pending once the fly completes). Scoped to the
@@ -5163,6 +5157,56 @@ button.reset {
 .schematic-sheet.is-loaded {
   opacity: 1;
 }
+/* Variant swap — a diagonal line flies across, wiping the new sheet in over the
+   old. The leaving sheet sits underneath; the entering sheet is revealed along a
+   slanted clip edge the line rides. */
+.schematic-sheet--leaving {
+  z-index: 1;
+  opacity: 1;
+}
+.schematic-sheet--entering {
+  z-index: 2;
+  opacity: 1; /* sibling tiers are pre-warmed → reveal by clip, not by fade */
+  transition: none;
+  animation: schematic-diagonal-in 0.6s cubic-bezier(0.7, 0, 0.3, 1) both;
+}
+@keyframes schematic-diagonal-in {
+  from {
+    clip-path: polygon(0 0, -35% 0, -75% 100%, 0 100%);
+  }
+  to {
+    clip-path: polygon(0 0, 140% 0, 100% 100%, 0 100%);
+  }
+}
+.schematic-swap-line {
+  position: absolute;
+  top: -8%;
+  left: 0;
+  width: 5px;
+  height: 116%;
+  z-index: 3;
+  background: var(--color-gold);
+  box-shadow: 0 0 18px 5px color-mix(in srgb, var(--color-gold) 65%, transparent);
+  transform: skewX(-21deg);
+  pointer-events: none;
+  animation: schematic-swap-line 0.6s cubic-bezier(0.7, 0, 0.3, 1) both;
+}
+@keyframes schematic-swap-line {
+  from {
+    left: -30%;
+    opacity: 0;
+  }
+  18% {
+    opacity: 1;
+  }
+  82% {
+    opacity: 1;
+  }
+  to {
+    left: 125%;
+    opacity: 0;
+  }
+}
 /* Mobile sheet deck — the swipe-first replacement for the sheet-tab rail (which
    is a mouse-era button strip). Hidden on desktop, where the rail is shown;
    shown below the page on mobile. Reuses the board explorer's tick + meta
@@ -5342,29 +5386,6 @@ button.reset {
   font-style: normal;
   color: var(--color-gold);
   font-weight: 600;
-}
-
-/* Index-as-heading chapters (Teardown, In the box): the numbered index doubles
- * as the chapter title at title scale, with no separate sentence subtitle. Desktop
- * only — on mobile the section's own visual (board deck, parts list) leads, so the
- * index stays at its compact size. */
-@media (min-width: 880px) {
-  .chapter-index--title {
-    gap: 0.6rem;
-    margin-bottom: var(--sp-4);
-    align-items: baseline;
-  }
-  /* The number stays the compact index size (like "02" on other chapters); the
-     label grows to title scale so it reads as the chapter's own heading. */
-  .chapter-index--title .chapter-label {
-    font-family: var(--font-display);
-    font-weight: 600;
-    font-size: var(--fs-2xl);
-    line-height: 1.1;
-    letter-spacing: -0.025em;
-    text-transform: none;
-    color: var(--color-text);
-  }
 }
 
 /* A few chapter titles are one long sentence — let them use the full left
@@ -5675,24 +5696,9 @@ button.reset {
   display: grid;
   gap: 0.75rem;
   grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-  /* Flat, equal-height cards — the WatchCard sets the height and the text
-     cards stretch to match. */
-  align-items: stretch;
-}
-
-/* Desktop only: pull the row up so it sits higher against the chapter heading.
-   Skipped on mobile, where the cards stack under the heading and a negative
-   margin would collide with it. */
-@media (min-width: 769px) {
-  .open-source-cards {
-    margin-top: -2.5rem;
-  }
-}
-
-/* The resource cards get room to breathe — they share the WatchCard's height. */
-.open-source-cards > .open-source-card,
-.open-source-cards > .latest-commit-card {
-  min-height: 120px;
+  /* Let each card keep its own height — the taller WatchCard (thumbnail +
+     caption) must not stretch the compact text cards beside it. */
+  align-items: start;
 }
 
 /* Subtle bubble — same quiet card as the latest-commit cards beside it so the
@@ -5737,51 +5743,6 @@ button.reset {
   margin: 0;
 }
 
-/* Brand-logo watermark — a big, faint full-card mark behind the text on the
-   GitHub (Study) and CERN (License) cards. Rendered via CSS mask so it follows
-   the theme (painted with the text colour at low opacity) rather than baking a
-   fixed fill into the SVG. */
-.open-source-card--github,
-.open-source-card--cern {
-  position: relative;
-  overflow: hidden;
-}
-
-.open-source-card--github > p,
-.open-source-card--cern > p {
-  position: relative;
-  z-index: 1;
-}
-
-.open-source-card--github::after,
-.open-source-card--cern::after {
-  content: '';
-  position: absolute;
-  right: -8%;
-  bottom: -14%;
-  width: 68%;
-  height: 78%;
-  background-color: var(--color-text);
-  opacity: 0.06;
-  pointer-events: none;
-  -webkit-mask-repeat: no-repeat;
-  mask-repeat: no-repeat;
-  -webkit-mask-position: right bottom;
-  mask-position: right bottom;
-  -webkit-mask-size: contain;
-  mask-size: contain;
-}
-
-.open-source-card--github::after {
-  -webkit-mask-image: url(/logos/github.svg);
-  mask-image: url(/logos/github.svg);
-}
-
-.open-source-card--cern::after {
-  -webkit-mask-image: url(/logos/cern.svg);
-  mask-image: url(/logos/cern.svg);
-}
-
 /* "Watch" bubble — the video card that replaces the issues card on products
    with a build film. Sized to match the sibling resource cards: the real
    YouTube thumbnail is cropped into the card, a gold YouTube glyph sits on top
@@ -5791,8 +5752,9 @@ button.reset {
   position: relative;
   display: block;
   width: 100%;
-  /* Sets the height for the whole row; the text cards stretch to match. */
-  min-height: 120px;
+  /* Same footprint as the text cards beside it — the thumbnail is cropped to
+     this short box rather than shown full-height. */
+  min-height: 116px;
   padding: 0;
   overflow: hidden;
   background-color: var(--color-bg-elevated);
@@ -5815,47 +5777,45 @@ button.reset {
   transform: scale(1.04);
 }
 
-/* Light scrim + a soft darkened centre so the gold play mark pops without
-   hiding the thumbnail. */
+/* Scrim so the gold glyph + caption stay legible over any frame. */
 .watch-card::before {
   content: '';
   position: absolute;
   inset: 0;
-  background: radial-gradient(
-    ellipse at center,
-    rgba(0, 0, 0, 0.42) 0%,
-    rgba(0, 0, 0, 0.18) 55%,
-    rgba(0, 0, 0, 0.28) 100%
+  background: linear-gradient(
+    to top,
+    rgba(0, 0, 0, 0.82) 0%,
+    rgba(0, 0, 0, 0.35) 45%,
+    rgba(0, 0, 0, 0.25) 100%
   );
 }
 
-/* Content layer: the YouTube play mark, centred. */
+/* Content layer: YouTube glyph pinned top, caption pinned bottom. */
 .watch-card-overlay {
   position: relative;
   z-index: 1;
   display: flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 120px;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: 116px;
   padding: 0.9rem 1.05rem;
   box-sizing: border-box;
 }
 
 .watch-card-yt {
-  width: 60px;
+  width: 30px;
   height: auto;
   color: var(--color-gold);
-  filter: drop-shadow(0 4px 14px rgba(0, 0, 0, 0.45));
-  transition: transform 0.2s ease;
-}
-
-.watch-card:hover .watch-card-yt {
-  transform: scale(1.08);
 }
 
 /* The play triangle reads against the gold mark via the dark accent ink. */
 .watch-card-yt-tri {
   fill: var(--color-on-accent);
+}
+
+.watch-card .open-source-card-label {
+  display: block;
+  color: var(--color-gold);
 }
 
 .watch-card:hover {
@@ -12106,27 +12066,35 @@ button.reset {
     perspective: none;
     transform-style: flat;
     margin-top: 0;
-    /* Horizontal flicks peel a layer; vertical drags must scroll the page like
-       anywhere else (capturing them trapped the scroll and caused accidental
-       peels). pan-y hands vertical panning back to the browser while leaving
-       horizontal for the peel gesture. */
-    touch-action: pan-y;
+    position: relative;
+    /* Clip the off-screen layers so the page-turn slides cleanly in/out. */
+    overflow: hidden;
+    /* The board fully owns the gesture: a horizontal flick peels a layer, and
+       vertical is locked too (touch-action: none) so a drag on the graphic never
+       scrolls the page out from under the swipe. Scroll the page from the area
+       around/below the board (it's pinned, so it stays in view regardless). */
+    touch-action: none;
   }
-  /* ONE layer on screen — no per-layer boxes. The incoming layer slides up from
-     just below + fades in over the outgoing (compositor-only, smooth peel). */
+  /* Layers turn like book pages: each sheet sits at its position relative to the
+     active one — earlier layers wait off-screen left, later layers off-screen
+     right, the active one centred. Stepping slides the old layer out one edge and
+     the new one in from the other (the side you swiped from). */
   .board-art .board-sheet {
     animation: none !important;
     filter: none;
-    transition: opacity 0.32s cubic-bezier(0.22, 0.8, 0.3, 1),
-      transform 0.42s cubic-bezier(0.22, 0.8, 0.3, 1);
+    transition: transform 0.4s cubic-bezier(0.22, 0.8, 0.3, 1),
+      opacity 0.3s ease;
+    transform: translateX(100%);
     opacity: 0;
-    transform: translateY(14%);
     z-index: 1;
     pointer-events: none;
   }
+  .board-art .board-sheet.is-before {
+    transform: translateX(-100%);
+  }
   .board-art .board-sheet.is-active {
+    transform: translateX(0);
     opacity: 1;
-    transform: translateY(0);
     z-index: 2;
     pointer-events: auto;
   }
@@ -12214,6 +12182,54 @@ button.reset {
     margin-top: 0.75rem;
     padding-top: 0.7rem;
     border-top: 1px solid var(--color-border);
+  }
+  .board-part-tour-head {
+    display: flex;
+    align-items: baseline;
+    gap: 0.55rem;
+    margin: 0 0 0.5rem;
+    font-family: var(--font-mono);
+  }
+  /* Scrollable row of real, labelled, thumb-sized component chips — replaces the
+     old strip of tiny untappable dots. */
+  .board-part-chips {
+    display: flex;
+    gap: 6px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    padding-bottom: 2px;
+    /* horizontal scroll of the chip row only — never hijack vertical page scroll */
+    touch-action: pan-x;
+  }
+  .board-part-chips::-webkit-scrollbar {
+    display: none;
+  }
+  .board-part-chip {
+    flex: 0 0 auto;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4em;
+    min-height: 40px;
+    padding: 0.45em 0.9em;
+    white-space: nowrap;
+    border-radius: var(--r-pill);
+    border: 1px solid var(--color-border-strong);
+    background: var(--color-bg-card);
+    color: var(--color-text-muted);
+    font-family: var(--font-mono);
+    font-size: 13px;
+    letter-spacing: 0.02em;
+    transition: border-color 0.18s ease, color 0.18s ease, background 0.18s ease;
+  }
+  .board-part-chip.is-active {
+    border-color: var(--color-gold);
+    background: color-mix(in srgb, var(--color-gold) 16%, transparent);
+    color: var(--color-text);
+  }
+  .board-part-chip-qty {
+    font-size: 0.78em;
+    color: var(--color-text-dim);
   }
   /* The rail's first-reveal opacity-0 hold (is-armed) never clears without the
      fly animation — force it visible on mobile. */

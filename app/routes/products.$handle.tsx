@@ -382,7 +382,6 @@ function ChapterMediaPlaceholder({kind}: {kind: string}) {
 
 function Chapter({
   number,
-  label,
   title,
   children,
   media,
@@ -391,7 +390,6 @@ function Chapter({
   bigMedia,
   noMedia,
   textReveal,
-  indexAsTitle,
 }: {
   number: string;
   label: string;
@@ -433,19 +431,8 @@ function Chapter({
       data-text-pending={textReveal === false ? '' : undefined}
     >
       {backdrop ? <div className="chapter-backdrop">{backdrop}</div> : null}
-      {indexAsTitle ? (
-        <h2 className="chapter-index chapter-index--title">
-          <span className="chapter-number">{number}</span>
-          <span className="chapter-label">{label}</span>
-        </h2>
-      ) : (
-        <div className="chapter-index">
-          <span className="chapter-number">{number}</span>
-          <span className="chapter-label">{label}</span>
-        </div>
-      )}
       <div className="chapter-body-col">
-        {indexAsTitle ? null : <h2 className="chapter-title">{title}</h2>}
+        {title ? <h2 className="chapter-title">{title}</h2> : null}
         {children}
       </div>
       {backdrop || noMedia ? null : (
@@ -1452,8 +1439,7 @@ export default function Product() {
         <Chapter
           number={chapterNums.teardown}
           label="Teardown"
-          indexAsTitle={!frameViewer}
-          title={frameViewer ? 'Every arm, plate and standoff — exploded' : undefined}
+          title={frameViewer ? 'Every arm, plate and standoff — exploded' : 'Teardown'}
           textReveal={frameViewer ? undefined : textIn}
           backdrop={
             frameViewer ? (
@@ -1501,42 +1487,40 @@ export default function Product() {
                     tappable to jump straight to that part. */}
                 {isMobile && orderedParts.length ? (
                   <div className="board-part-tour">
-                    <div className="board-deck-dots" aria-label="Component">
+                    <p className="board-part-tour-head" aria-live="polite">
+                      <span className="board-deck-name">Components</span>
+                      <span className="board-deck-hint">
+                        Tap one to find it on the board
+                      </span>
+                    </p>
+                    {/* Real, labelled, thumb-sized chips in a scrollable row —
+                        not a strip of tiny dots. Tap one to spotlight that part
+                        on the board; the row scrolls for the rest. */}
+                    <div className="board-part-chips" aria-label="Components">
                       {orderedParts.map((p, i) => (
                         <button
                           type="button"
                           key={p.name + i}
-                          className={`board-deck-dot${
+                          className={`board-part-chip${
                             i === focusedPartIdx ? ' is-active' : ''
                           }`}
-                          aria-label={`Highlight ${p.name}`}
-                          aria-current={i === focusedPartIdx ? 'true' : undefined}
+                          aria-pressed={i === focusedPartIdx}
                           onClick={() => {
                             setHoveredRefs([...p.refs]);
                             setHoveredUnion(p.union);
                             setHoveredGroups(p.groups);
                           }}
-                        />
+                        >
+                          {/* Just the model/short name on the chip (e.g.
+                              "RP2354A"), not the whole descriptive sentence —
+                              split off anything after a dash/middot separator. */}
+                          {p.name.split(/\s+[—–·-]\s+/)[0]}
+                          {p.cost && p.cost !== '×1' ? (
+                            <span className="board-part-chip-qty">{p.cost}</span>
+                          ) : null}
+                        </button>
                       ))}
                     </div>
-                    <p className="board-deck-meta" aria-live="polite">
-                      <span className="board-deck-count">
-                        {focusedPartIdx < 0
-                          ? `0/${orderedParts.length}`
-                          : `${focusedPartIdx + 1}/${orderedParts.length}`}
-                      </span>
-                      <span className="board-deck-name">
-                        {focusedPartIdx < 0
-                          ? 'Components'
-                          : orderedParts[focusedPartIdx].name}
-                      </span>
-                      {focusedPartIdx >= 0 && orderedParts[focusedPartIdx].cost ? (
-                        <span className="board-deck-cost">
-                          {orderedParts[focusedPartIdx].cost}
-                        </span>
-                      ) : null}
-                      <span className="board-deck-hint">Tap a part</span>
-                    </p>
                   </div>
                 ) : null}
               </>
@@ -1741,20 +1725,13 @@ export default function Product() {
               >
                 {(commits) => {
                   // Bundles show one commit card per component repo; a single
-                  // product (incl. split-repo lines) prefers the selected
-                  // tier's repo so the card tracks the ladder — but if that
-                  // repo's fetch came back empty (rate-limited) we still show
-                  // any live commit we did get, only dropping to the static
-                  // card when nothing fetched at all.
-                  const all = commits ?? [];
-                  const forTier = all.filter(
-                    (c) => c.repoUrl === activeRepoUrl,
-                  );
+                  // product (incl. split-repo lines) shows just the selected
+                  // tier's repo, so the card tracks the ladder.
                   const shown = content.bundle
-                    ? all
-                    : forTier.length
-                      ? forTier
-                      : all.slice(0, 1);
+                    ? (commits ?? [])
+                    : (commits ?? []).filter(
+                        (c) => c.repoUrl === activeRepoUrl,
+                      );
                   return shown.length ? (
                     shown.map((c) => (
                       <LatestCommitCard key={c.sha + c.repoUrl} commit={c} />
@@ -1784,7 +1761,9 @@ export default function Product() {
                 Two boards, two firmwares,{' '}
                 <em>two maintainers paid.</em>
               </>
-            ) : undefined
+            ) : (
+              'In the box'
+            )
           }
         >
           {content.bundle ? (
