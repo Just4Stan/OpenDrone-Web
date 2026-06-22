@@ -180,6 +180,12 @@ export type ProductContent = {
     logoDark?: boolean;
   };
   repoUrl: string;
+  /** A "build video" for the product — the JustFPV teardown films. When set, the
+   *  "Open for learning" chapter swaps its second card from the GitHub-issues
+   *  bubble to a Watch card (real YouTube thumbnail + in-page lightbox player).
+   *  Only products that actually have a film carry this; the rest fall back to
+   *  the issues card. `title`/`channel` come from the video's oEmbed metadata. */
+  video?: {id: string; title: string; channel?: string};
   teardown?: {
     title: string;
     body: string;
@@ -247,6 +253,7 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
       logoDark: true,
     },
     repoUrl: 'https://github.com/incutec-hw/OpenESC_20X20',
+    video: {id: 'TwAmmPxOpTM', title: 'How Drone ESCs Work (so I built my own)'},
     teardown: {
       title: "Isn't it beautiful?",
       body:
@@ -476,6 +483,10 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
       logo: '/logos/betaflight.svg',
     },
     repoUrl: 'https://github.com/incutec-hw/OpenFC',
+    video: {
+      id: 'XDYZoMRJFeQ',
+      title: 'How Flight Controllers Work (so I built my own)',
+    },
     teardown: {
       title: 'An MCU, an IMU, a radio, and enough UARTs for the rest.',
       body:
@@ -603,6 +614,10 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
       logo: '/logos/betaflight.svg',
     },
     repoUrl: 'https://github.com/incutec-hw/OpenFC-Lite',
+    video: {
+      id: 'XDYZoMRJFeQ',
+      title: 'How Flight Controllers Work (so I built my own)',
+    },
     teardown: {
       title: 'Two PIO blocks doing the work of a fistful of chips.',
       body:
