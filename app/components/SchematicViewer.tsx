@@ -1,4 +1,4 @@
-import {useEffect, useRef, useState} from 'react';
+import {useEffect, useMemo, useRef, useState} from 'react';
 import {fetchJsonCached, peekJson, prefetchImage} from '~/lib/asset-prefetch';
 import {SCHEMATICS_VERSION} from '~/data/schematics-version';
 import {useIsMobile} from '~/lib/use-media-query';
@@ -133,6 +133,18 @@ export function SchematicViewer({handle, handles, inspectUrl}: SchematicViewerPr
 
   const current = sheets?.[active];
 
+  // Lock the page to ONE height across all sheets (mobile) instead of letting it
+  // jump per sheet. For a fixed full width, height = width / aspect-ratio, so the
+  // tallest sheet is the one with the SMALLEST aspect ratio — use that as a
+  // constant `--sheet-ar`. Every sheet then sits in the same box and the shorter
+  // ones letterbox (object-fit: contain), no more height jump on paging.
+  const pageAr = useMemo(() => {
+    const ars = (sheets ?? [])
+      .filter((s) => s.w && s.h)
+      .map((s) => (s.w as number) / (s.h as number));
+    return ars.length ? Math.min(...ars) : null;
+  }, [sheets]);
+
   // Variant swap: when the displayed board (handle) changes, sweep a diagonal
   // line across the page that wipes the new sheet in over the old. Detected on
   // `dh` only, so paging sheets within one board still uses the plain fade.
@@ -237,8 +249,8 @@ export function SchematicViewer({handle, handles, inspectUrl}: SchematicViewerPr
               ref={pageRef}
               className={`schematic-page${dragging ? ' is-dragging' : ''}`}
               style={{
-                ...(current?.w && current?.h
-                  ? {['--sheet-ar' as string]: `${current.w} / ${current.h}`}
+                ...(pageAr
+                  ? {['--sheet-ar' as string]: `${pageAr}`}
                   : {}),
                 ['--drag' as string]: drag,
               } as React.CSSProperties}

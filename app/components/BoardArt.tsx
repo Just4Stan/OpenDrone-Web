@@ -967,6 +967,14 @@ export function BoardArt({
   const [ghost, setGhost] = useState<{html: string; id: number} | null>(null);
   useIsoLayoutEffect(() => {
     if (prevSwapSrcRef.current === src) return;
+    // A swap is already in flight: don't fire a second ghost over the first —
+    // that overlap is what made impatient toggling "restart / jump around". The
+    // live stack has already re-rendered to the newest board, so just record the
+    // src and let the running swap finish; it settles on the correct board.
+    if (swapActiveRef.current) {
+      prevSwapSrcRef.current = src;
+      return;
+    }
     prevSwapSrcRef.current = src;
     const reduce =
       typeof window !== 'undefined' &&
@@ -979,17 +987,18 @@ export function BoardArt({
     swapActiveRef.current = true;
     setGhost({html: lastStackHtmlRef.current, id});
     // The ghost's presence is what applies .is-swapping (the new board's fly-in)
-    // on the live stack, AND it carries the old board's layers peeling out. Both
-    // run on the load cadence — 1.1s + --depth stagger (0.09s × 7) ≈ 1.73s for the
-    // last (BOTTOM) layer — so keep the ghost mounted until then, clearing a beat
-    // after so nothing snaps mid-flight.
+    // on the live stack, AND it carries the old board's layers flinging out. The
+    // exit (board-swap-sheet-out, 0.65s) + --depth stagger (0.1s × 7) ≈ 1.35s for
+    // the last (BOTTOM) layer — keep the ghost mounted until then, clearing a beat
+    // after so nothing snaps mid-flight. MUST track the CSS durations in app.css
+    // (board-sheet-fly / board-swap-sheet-out under the 1024px swap block).
     const t = setTimeout(() => {
       swapActiveRef.current = false;
       setGhost((g) => (g && g.id === id ? null : g));
       // Re-place the rail now the board has settled (it was held during the swap
       // so the layer textbox didn't jump against the mid-animation board).
       setPlaceNonce((n) => n + 1);
-    }, 1850);
+    }, 1400);
     return () => clearTimeout(t);
   }, [src, flyDone]);
   // Remember the stack on screen so the next swap can peel it. Runs after the
