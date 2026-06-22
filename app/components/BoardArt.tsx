@@ -1,4 +1,10 @@
 import {useEffect, useId, useLayoutEffect, useMemo, useRef, useState} from 'react';
+
+// useLayoutEffect on the server logs a warning; fall back to useEffect there.
+// The board swap it drives is a client-only interaction, so this never matters
+// functionally — it just silences the SSR noise.
+const useIsoLayoutEffect =
+  typeof document !== 'undefined' ? useLayoutEffect : useEffect;
 import {
   fetchJsonCached,
   fetchTextCached,
@@ -271,6 +277,13 @@ export function BoardArt({
   const [active, setActive] = useState(0);
   const [inView, setInView] = useState(false);
   const isMobile = useIsMobile();
+  // True while a variant swap is mid-flight. The rail-placement effect reads the
+  // active sheet's box to position the layer textbox; measuring it WHILE the new
+  // board is flying in (translated off to the side) placed the rail wrong and
+  // made it jump. So we hold the rail where it is during the swap and re-place it
+  // once — via `placeNonce` — when the swap has settled.
+  const swapActiveRef = useRef(false);
+  const [placeNonce, setPlaceNonce] = useState(0);
   // Which src the current `raw` text belongs to, and the last non-empty parsed
   // board — so a tier switch keeps the prior board on screen until the new one
   // is parsed, and never re-parses a board the cache already holds.
@@ -407,10 +420,7 @@ export function BoardArt({
   const [flyDone, setFlyDone] = useState(false);
   useEffect(() => {
     if (!flyIn || flyDone) return;
-    // Honour reduced-motion: no fly-in animation, no lock — settle the layered
-    // board immediately at full scale. All layers, labels and the part table
-    // stay; only the heavy staggered entrance + its compositor filters are
-    // skipped.
+    // Honour reduced-motion: no animation, no lock — settle immediately.
     if (
       typeof window !== 'undefined' &&
       window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
@@ -542,6 +552,10 @@ export function BoardArt({
         root.style.removeProperty('--board-w');
         return;
       }
+      // Mid variant-swap: leave the rail exactly where it is. The board is flying
+      // in (translated), so any measurement now would mis-place it; placeNonce
+      // re-runs this once the swap settles and the board's box is stable again.
+      if (swapActiveRef.current) return;
       rail.classList.remove('is-compact');
       rail.style.transform = '';
       setBoardW(DEFAULT_W); // keep the board at full size; compact the rail if tight
@@ -611,7 +625,7 @@ export function BoardArt({
       if (scheduled) cancelAnimationFrame(scheduled);
       window.removeEventListener('resize', schedule);
     };
-  }, [sheets, revealed, flyDone]);
+  }, [sheets, revealed, flyDone, placeNonce]);
 
   // The index/refs actually rendered — the manual layer + tap/swipe-driven
   // highlight.
@@ -941,6 +955,50 @@ export function BoardArt({
     [sheets, shownIndex, isMobile],
   );
 
+  // Variant swap: when the board `src` changes (a tier toggle — the component
+  // stays mounted), fly the OLD board out to the side and the new one in. We
+  // freeze the previous stack's DOM into a "ghost" overlay that flies out while
+  // the live (new) stack flies in. No remount, so the pin-links, highlights and
+  // entrance state are all preserved.
+  const stackElRef = useRef<HTMLDivElement | null>(null);
+  const lastStackHtmlRef = useRef('');
+  const prevSwapSrcRef = useRef(src);
+  const ghostIdRef = useRef(0);
+  const [ghost, setGhost] = useState<{html: string; id: number} | null>(null);
+  useIsoLayoutEffect(() => {
+    if (prevSwapSrcRef.current === src) return;
+    prevSwapSrcRef.current = src;
+    const reduce =
+      typeof window !== 'undefined' &&
+      window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+    // Only swap once the board has finished its entrance and we have a frame to
+    // peel away — otherwise let the normal reveal play.
+    if (reduce || !flyDone || !lastStackHtmlRef.current) return;
+    ghostIdRef.current += 1;
+    const id = ghostIdRef.current;
+    swapActiveRef.current = true;
+    setGhost({html: lastStackHtmlRef.current, id});
+    // The ghost's presence is what applies .is-swapping (the new board's fly-in)
+    // on the live stack, AND it carries the old board's layers peeling out. Both
+    // run on the load cadence — 1.1s + --depth stagger (0.09s × 7) ≈ 1.73s for the
+    // last (BOTTOM) layer — so keep the ghost mounted until then, clearing a beat
+    // after so nothing snaps mid-flight.
+    const t = setTimeout(() => {
+      swapActiveRef.current = false;
+      setGhost((g) => (g && g.id === id ? null : g));
+      // Re-place the rail now the board has settled (it was held during the swap
+      // so the layer textbox didn't jump against the mid-animation board).
+      setPlaceNonce((n) => n + 1);
+    }, 1850);
+    return () => clearTimeout(t);
+  }, [src, flyDone]);
+  // Remember the stack on screen so the next swap can peel it. Runs after the
+  // swap effect (a passive effect, after paint), so that effect reads the
+  // previous frame's HTML.
+  useEffect(() => {
+    if (stackElRef.current) lastStackHtmlRef.current = stackElRef.current.innerHTML;
+  });
+
   // Step through the stack, clamped to its ends (used by chevrons / keys / wheel).
   const step = (delta: number) =>
     setActive((i) => Math.min(sheets.length - 1, Math.max(0, i + delta)));
@@ -950,7 +1008,6 @@ export function BoardArt({
   // peel is driven by --drag in CSS); a flick or a far-enough drag commits,
   // else it snaps back. Vertical is left to the page (touch-action: pan-y), so
   // a swipe that reads as vertical just scrolls — only horizontal is captured.
-  const stackElRef = useRef<HTMLDivElement | null>(null);
   const {drag, dragging} = useLayerSwipe({
     ref: stackElRef,
     count: sheets.length,
@@ -1015,15 +1072,28 @@ export function BoardArt({
             </div>
           </div>
           {/* eslint-enable jsx-a11y/no-noninteractive-element-interactions, jsx-a11y/no-noninteractive-tabindex */}
-          <div
-            ref={stackElRef}
-            className={`board-folder-stack${dragging ? ' is-dragging' : ''}`}
-            style={{['--drag' as string]: drag}}
-          >
-            {stackSheets}
-            {/* Component highlights are injected into the active sheet's own
-                <svg> by the effect above (so they inherit its viewBox + every
-                transform); there is no separate overlay element here. */}
+          <div className="board-stack-wrap">
+            <div
+              ref={stackElRef}
+              className={`board-folder-stack${ghost ? ' is-swapping' : ''}${
+                dragging ? ' is-dragging' : ''
+              }`}
+              style={{['--drag' as string]: drag}}
+            >
+              {stackSheets}
+              {/* Component highlights are injected into the active sheet's own
+                  <svg> by the effect above (so they inherit its viewBox + every
+                  transform); there is no separate overlay element here. */}
+            </div>
+            {/* Freeze-frame of the previous board, flying out on a tier swap. */}
+            {ghost ? (
+              <div
+                key={ghost.id}
+                className="board-folder-stack board-swap-ghost"
+                aria-hidden="true"
+                dangerouslySetInnerHTML={{__html: ghost.html}}
+              />
+            ) : null}
           </div>
           {isMobile && sheets.length ? (
             <div className="board-deck-progress">

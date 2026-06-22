@@ -4528,12 +4528,6 @@ button.reset {
      bar so nothing up there is occluded. */
   .chapter-media:has(.board-art) {
     top: calc(var(--header-height) + var(--sp-4) + 3.75rem);
-    /* Lift the board into the index row so its top edge lines up with the
-       "01 Teardown" heading instead of starting a row below it. Offset = the
-       index heading's line height (fs-2xl * 1.1) + its margin-bottom (sp-4) +
-       the chapter's row gap (sp-5). Tracks the responsive fs-2xl, so the
-       alignment holds across widths. Size/sticky-clearance unchanged. */
-    margin-top: calc(-1 * (var(--fs-2xl) * 1.1 + var(--sp-4) + var(--sp-5)));
   }
   /* The teardown copy slides in from the left AFTER the board layers fly in
      (the PDP drops data-text-pending once the fly completes). Scoped to the
@@ -4882,9 +4876,111 @@ button.reset {
   align-items: center;
   gap: clamp(8px, 1vw, 18px);
 }
+.board-stack-wrap {
+  flex: 1 1 auto;
+  min-width: 0;
+  /* Overlap the live stack and its flying-out ghost in one cell so the swap
+     lines up pixel-for-pixel. */
+  display: grid;
+}
+.board-stack-wrap > .board-folder-stack {
+  grid-area: 1 / 1;
+}
 .board-folder-stack {
   flex: 1 1 auto;
   min-width: 0;
+}
+/* Variant swap. The ghost (freeze-frame of the old board) sits on top of the
+   incoming live stack in the same grid cell; pointer-events off so it never
+   eats a click while it flies away. The motion itself is split by breakpoint:
+   per-layer on desktop (below), whole-board cross-slide on mobile (the mobile
+   block flattens the fan and disables per-sheet animation). */
+.board-swap-ghost {
+  z-index: 70;
+  pointer-events: none;
+}
+/* PERF — the single most important rule for swap smoothness. Each sheet carries a
+   drop-shadow() (a per-pixel gaussian blur); a swap animates up to 8 incoming +
+   8 ghost = 16 full-size blurred layers at once, which saturates fill-rate on a
+   retina display and makes the compositor drop frames (the swap "jumps"). So the
+   shadow is stripped for the duration of the flight on BOTH stacks — only the
+   cheap brightness/saturate is kept so there's no brightness pop. The resting
+   shadows return the moment .is-swapping / the ghost drop. */
+.board-folder-stack.is-swapping .board-sheet,
+.board-swap-ghost .board-sheet {
+  filter: brightness(0.6) saturate(0.72) !important;
+  /* CRITICAL: kill the base `transition: filter 0.45s` here. Without this the
+     shadow doesn't just disappear — the browser ANIMATES the drop-shadow's blur
+     radius to zero over 0.45s, recomputing a gaussian blur per frame on all ~16
+     layers at once. That blur animation, not the translate, is what made the
+     swap lag. Strip the shadow instantly instead. */
+  transition: none !important;
+}
+.board-folder-stack.is-swapping .board-sheet.is-active {
+  filter: saturate(0.95) contrast(1.05) !important;
+  transition: none !important;
+}
+/* Desktop: a tier toggle reads exactly like the first-load entrance. The NEW
+   board flies in layer-by-layer with the SAME keyframes, easing and --depth
+   stagger as the load (board-sheet-fly), entering from the LEFT. The OLD board
+   leaves layer-by-layer on the SAME cadence (matching 1.1s duration + --depth
+   stagger), each ghost sheet accelerating off to the RIGHT as its replacement
+   arrives — so the stack peels and refills one layer at a time, not in a block.
+   The drop-shadow strip above keeps all those layers cheap to composite. */
+@media (min-width: 1024px) {
+  .board-folder-stack.is-swapping .board-sheet {
+    animation: board-sheet-fly 1.1s cubic-bezier(0.16, 0.84, 0.3, 1)
+      calc(var(--depth) * 0.09s) both;
+  }
+  .board-swap-ghost .board-sheet {
+    animation: board-swap-sheet-out 1.1s cubic-bezier(0.16, 0.84, 0.3, 1)
+      calc(var(--depth) * 0.09s) both;
+  }
+}
+/* Exit mirrors the entrance velocity (same curve as board-sheet-fly). It must
+   start FAST: the ghost sits on top (z 70), so a slow-start curve would keep the
+   old layer parked over the incoming one — looking frozen — until it finally
+   darts away. Fast start clears the centre before the new layer arrives there. */
+@keyframes board-swap-sheet-out {
+  from {
+    translate: 0 0;
+    opacity: 1;
+  }
+  to {
+    translate: 68vw 0;
+    opacity: 0;
+  }
+}
+/* Mobile keeps the simple whole-board cross-slide: the fan is flattened to a
+   single flat sheet there (per-sheet animation is `none !important`), so the
+   board slides as one block. */
+@media (max-width: 1023px) {
+  .board-stack-wrap > .board-folder-stack.is-swapping {
+    animation: board-swap-in 0.55s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  }
+  .board-swap-ghost {
+    animation: board-swap-out 0.55s cubic-bezier(0.5, 0, 0.5, 1) both;
+  }
+}
+@keyframes board-swap-in {
+  from {
+    transform: translateX(48%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+@keyframes board-swap-out {
+  from {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateX(-52%);
+    opacity: 0;
+  }
 }
 /* Layer / sheet rail — a self-contained vertical selector beside the board or
    schematic. The schematic viewer reuses this exact selector style. */
@@ -5397,29 +5493,6 @@ button.reset {
   font-weight: 600;
 }
 
-/* Index-as-heading chapters (Teardown, In the box): the numbered index doubles
- * as the chapter title at title scale, with no separate sentence subtitle. Desktop
- * only — on mobile the section's own visual (board deck, parts list) leads, so the
- * index stays at its compact size. */
-@media (min-width: 880px) {
-  .chapter-index--title {
-    gap: 0.6rem;
-    margin-bottom: var(--sp-4);
-    align-items: baseline;
-  }
-  /* The number stays the compact index size (like "02" on other chapters); the
-     label grows to title scale so it reads as the chapter's own heading. */
-  .chapter-index--title .chapter-label {
-    font-family: var(--font-display);
-    font-weight: 600;
-    font-size: var(--fs-2xl);
-    line-height: 1.1;
-    letter-spacing: -0.025em;
-    text-transform: none;
-    color: var(--color-text);
-  }
-}
-
 /* A few chapter titles are one long sentence — let them use the full left
  * column so they stay on a single line, wrapping only when the column genuinely
  * runs out of room (narrow viewports). The 24ch cap above suits shorter heads. */
@@ -5474,10 +5547,17 @@ button.reset {
      via a full dash offset, then draw the line in left→right by easing it to 0. */
   stroke-dasharray: 100;
   stroke-dashoffset: 100;
+  /* Default (un-drawn) transition so REMOVING .is-drawn retracts the wire instead
+     of snapping it away — used on a tier swap, where the lines pull back, the
+     board + part list fly, then the lines redraw to the new bubbles. The draw-IN
+     overrides this with its own slower ease below. */
+  transition: stroke-dashoffset 0.45s ease;
 }
 .teardown-links circle {
   fill: var(--color-gold);
   opacity: 0;
+  /* Fade dots out with the retracting wire (the draw-in re-times these below). */
+  transition: opacity 0.3s ease;
 }
 /* The lines are the last thing in: stroke-draw from the bubble (left) to the rail
    (right), then light the end dots as the line reaches each side. */
@@ -5521,6 +5601,35 @@ button.reset {
 /* Locked while the board fly-in animates — a hover mustn't fight the animation. */
 .teardown-sides.is-locked {
   pointer-events: none;
+}
+/* A tier swap switches the part list behind the flying boards (the parent holds
+   the old pins, then swaps mid-flight). A short opacity dip masks the content
+   change so it never reads as a hard snap even where the boards don't fully
+   cover it. Pointer-events off so a hover can't catch the list mid-change. */
+.teardown-sides.is-swapping {
+  pointer-events: none;
+  animation: teardown-pins-swap 1.2s ease both;
+}
+/* A short opacity dip masks the content switch (~0.6s) while the incoming layers
+   sweep over the list, then fades back in. */
+@keyframes teardown-pins-swap {
+  0% {
+    opacity: 1;
+  }
+  35% {
+    opacity: 0;
+  }
+  65% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .teardown-sides.is-swapping {
+    animation: none;
+  }
 }
 .teardown-side {
   /* zero the global `section { padding: 1rem 0 }` so rows fill the bubble edge
@@ -5728,28 +5837,31 @@ button.reset {
   display: grid;
   gap: 0.75rem;
   grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-  /* Flat, equal-height cards — the WatchCard sets the height and the text
-     cards stretch to match. */
+  /* Every card is a 16:9 bubble (set on .open-source-card / .latest-commit-card),
+     so equal-width columns give a uniform-height row. */
   align-items: stretch;
 }
 
-/* Desktop only: pull the row up so it sits higher against the chapter heading.
-   Skipped on mobile, where the cards stack under the heading and a negative
-   margin would collide with it. */
+/* Desktop only: pull the row up so the bubbles sit higher against the chapter
+   heading. Skipped on mobile, where the cards stack under the heading and a
+   negative margin would collide with it. */
 @media (min-width: 769px) {
   .open-source-cards {
-    margin-top: -2.5rem;
+    margin-top: -3rem;
   }
 }
 
-/* No fixed height — the WatchCard's full 16:9 thumbnail sets the row height and
-   the text cards stretch to match it (align-items: stretch above). */
 
 /* Subtle bubble — same quiet card as the latest-commit cards beside it so the
    row reads as one consistent set (a bare top-hairline left the text floating).
    Kept light: card bg + hairline border, gold on hover. */
 .open-source-card {
-  display: block;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  /* 16:9 bubble — uniform across the resource row. */
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
   padding: 0.9rem 1.05rem;
   background: var(--color-bg-card);
   border: 1px solid var(--color-border);
@@ -5833,10 +5945,9 @@ button.reset {
 }
 
 /* "Watch" bubble — the video card that replaces the issues card on products
-   with a build film. Sized to match the sibling resource cards: the real
-   YouTube thumbnail is cropped into the card, a gold YouTube glyph sits on top
-   and the caption overlays the bottom (no title). Clicking opens the lightbox
-   player. */
+   with a build film. A 16:9 bubble (aspect-ratio inherited from
+   .open-source-card) showing just the YouTube thumbnail with a centred gold
+   play glyph — no caption. Clicking opens the lightbox player. */
 .watch-card {
   position: relative;
   display: block;
@@ -5844,18 +5955,17 @@ button.reset {
   padding: 0;
   overflow: hidden;
   background-color: var(--color-bg-elevated);
-  text-align: left;
   cursor: pointer;
   font: inherit;
 }
 
-/* The thumbnail shows whole, in its full 16:9 — this is what sets the card
-   (and therefore the row) height. object-fit cover on a 16:9 box of a 16:9
-   image means no crop. */
+/* The thumbnail fills the 16:9 card (object-fit cover — a 16:9 frame, so no
+   real crop on a maxres poster). */
 .watch-card-thumb {
-  display: block;
+  position: absolute;
+  inset: 0;
   width: 100%;
-  aspect-ratio: 16 / 9;
+  height: 100%;
   object-fit: cover;
   transition: transform 0.3s ease;
 }
@@ -5864,8 +5974,7 @@ button.reset {
   transform: scale(1.04);
 }
 
-/* Light scrim + a soft darkened centre so the gold play mark pops without
-   hiding the thumbnail. */
+/* Soft centred scrim so the gold play glyph pops without hiding the thumbnail. */
 .watch-card::before {
   content: '';
   position: absolute;
@@ -5873,26 +5982,25 @@ button.reset {
   background: radial-gradient(
     ellipse at center,
     rgba(0, 0, 0, 0.42) 0%,
-    rgba(0, 0, 0, 0.18) 55%,
-    rgba(0, 0, 0, 0.28) 100%
+    rgba(0, 0, 0, 0.16) 55%,
+    rgba(0, 0, 0, 0.26) 100%
   );
 }
 
-/* Content layer: the YouTube play mark, centred over the thumbnail. */
+/* Content layer: the YouTube play glyph, centred over the thumbnail. */
 .watch-card-overlay {
   position: absolute;
   inset: 0;
-  z-index: 2;
+  z-index: 1;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
 .watch-card-yt {
-  width: 60px;
+  width: 48px;
   height: auto;
   color: var(--color-gold);
-  filter: drop-shadow(0 4px 14px rgba(0, 0, 0, 0.45));
   transition: transform 0.2s ease;
 }
 
@@ -5904,6 +6012,7 @@ button.reset {
 .watch-card-yt-tri {
   fill: var(--color-on-accent);
 }
+
 
 .watch-card:hover {
   border-color: color-mix(in srgb, var(--color-gold) 50%, var(--color-border));
@@ -5991,10 +6100,15 @@ button.reset {
 .latest-commit-card {
   display: grid;
   gap: 0.35rem;
+  /* Match the 16:9 resource bubbles beside it; content centres vertically and
+     the message line-clamps (below) so it never overflows the short box. */
+  align-content: center;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
   padding: 0.9rem 1.05rem;
   background: var(--color-bg-card);
   border: 1px solid var(--color-border);
-  border-radius: 10px;
+  border-radius: var(--r-md);
   color: var(--color-text);
   text-decoration: none;
   transition: border-color 0.2s ease, background 0.2s ease;
@@ -12154,7 +12268,7 @@ button.reset {
     transform-style: flat;
     margin-top: 0;
     position: relative;
-    /* Clip the parked neighbours so the peel slides cleanly in/out. */
+    /* Clip the off-screen layers so the peel slides cleanly in/out. */
     overflow: hidden;
     /* pan-y: vertical drags scroll the page like anywhere else. The swipe hook
        only claims a gesture once it reads as horizontal (and it's biased toward

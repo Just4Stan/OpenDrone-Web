@@ -379,7 +379,6 @@ function ChapterMediaPlaceholder({kind}: {kind: string}) {
 
 function Chapter({
   number,
-  label,
   title,
   children,
   media,
@@ -388,7 +387,6 @@ function Chapter({
   bigMedia,
   noMedia,
   textReveal,
-  indexAsTitle,
 }: {
   number: string;
   label: string;
@@ -414,10 +412,6 @@ function Chapter({
   /** Drop the media column entirely so the body spans full width — used by
    *  chapters whose content (e.g. the spec table) needs no image. */
   noMedia?: boolean;
-  /** Promote the numbered index ("03 In the box") to the chapter's heading at
-   *  title scale (desktop) and drop the separate `title`. For sections whose
-   *  own visual leads and a sentence subtitle just adds noise. */
-  indexAsTitle?: boolean;
 }) {
   return (
     <section
@@ -430,19 +424,8 @@ function Chapter({
       data-text-pending={textReveal === false ? '' : undefined}
     >
       {backdrop ? <div className="chapter-backdrop">{backdrop}</div> : null}
-      {indexAsTitle ? (
-        <h2 className="chapter-index chapter-index--title">
-          <span className="chapter-number">{number}</span>
-          <span className="chapter-label">{label}</span>
-        </h2>
-      ) : (
-        <div className="chapter-index">
-          <span className="chapter-number">{number}</span>
-          <span className="chapter-label">{label}</span>
-        </div>
-      )}
       <div className="chapter-body-col">
-        {indexAsTitle ? null : <h2 className="chapter-title">{title}</h2>}
+        {title ? <h2 className="chapter-title">{title}</h2> : null}
         {children}
       </div>
       {backdrop || noMedia ? null : (
@@ -635,7 +618,13 @@ export default function Product() {
   // each board in a line has its own refdes layout, so a tier's own `pins`
   // win over the shared `teardown.pins` default. Keeps the hover-highlight
   // refdes matched to the board currently shown.
-  const activePins = activeVariant?.pins ?? content.teardown?.pins ?? [];
+  // Memoised so its reference is stable per tier — the deferred-swap effect below
+  // keys on it and calls setState, so a fresh `?? []` array every render would
+  // loop it.
+  const activePins = useMemo(
+    () => activeVariant?.pins ?? content.teardown?.pins ?? [],
+    [activeVariant, content.teardown],
+  );
   // Group the teardown pins by board side — Top (front) first, then Bottom
   // (back) — reading each refdes's side from the board's components.json. Done
   // at runtime so it stays accurate per tier with no manual side tagging.
@@ -665,13 +654,57 @@ export default function Product() {
       alive = false;
     };
   }, [componentsSrc]);
+  // The teardown list lags a tier swap on purpose. When the board animates a
+  // variant change its layers fly across the copy column (the intro cadence),
+  // briefly covering the part list — so we hold the OLD pins and switch to the
+  // new ones mid-flight, behind the flying boards, instead of snapping the list
+  // the instant the tier changes. Reduced-motion (or mobile, where the swap is a
+  // quick block slide with no cover) swaps immediately.
+  const [displayedPins, setDisplayedPins] = useState(activePins);
+  const [pinsSwapping, setPinsSwapping] = useState(false);
+  const prevPinSrcRef = useRef<string | undefined>(activeBoardArt?.src);
+  useEffect(() => {
+    const src = activeBoardArt?.src;
+    if (prevPinSrcRef.current === src) {
+      setDisplayedPins(activePins);
+      return;
+    }
+    prevPinSrcRef.current = src;
+    const reduce =
+      typeof window !== 'undefined' &&
+      window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+    const wide =
+      typeof window !== 'undefined' &&
+      window.matchMedia?.('(min-width: 1024px)').matches;
+    if (reduce || !wide) {
+      setDisplayedPins(activePins);
+      return;
+    }
+    // The new board flies in with the load cadence (TOP layer first + biggest,
+    // sweeping across the copy column early). Switch the list content behind a
+    // short opacity dip while it's covered, then settle.
+    setPinsSwapping(true);
+    // Retract the connector wires the instant the swap starts — they'd otherwise
+    // hang frozen across the gutter, still pinned to the OLD bubbles, while the
+    // board and list fly behind them. They redraw to the NEW bubbles only once
+    // everything has landed (fly-in ends ~1.73s + the new pins are in).
+    setLinesReady(false);
+    const swapT = setTimeout(() => setDisplayedPins(activePins), 600);
+    const doneT = setTimeout(() => setPinsSwapping(false), 1200);
+    const lineT = setTimeout(() => setLinesReady(true), 1800);
+    return () => {
+      clearTimeout(swapT);
+      clearTimeout(doneT);
+      clearTimeout(lineT);
+    };
+  }, [activeBoardArt?.src, activePins]);
   // Partition pins by the dominant side of their refs. Until the map loads (or
   // for pins with no resolvable side) pins fall into `other`, rendered flat.
   const groupedPins = useMemo(() => {
     const top: ChapterPin[] = [];
     const bottom: ChapterPin[] = [];
     const other: ChapterPin[] = [];
-    for (const pin of activePins) {
+    for (const pin of displayedPins) {
       if (!pin.refs?.length || pinSides.size === 0) {
         other.push(pin);
         continue;
@@ -688,7 +721,7 @@ export default function Product() {
       else bottom.push(pin);
     }
     return {top, bottom, other};
-  }, [activePins, pinSides]);
+  }, [displayedPins, pinSides]);
   // Flat tour order for the mobile "swipe the board sideways to step through the
   // parts" gesture — front parts top→bottom, then back, then any unsided. Each
   // carries its full highlight spec (the same one its table row uses). Chip rows
@@ -1449,8 +1482,7 @@ export default function Product() {
         <Chapter
           number={chapterNums.teardown}
           label="Teardown"
-          indexAsTitle={!frameViewer}
-          title={frameViewer ? 'Every arm, plate and standoff — exploded' : undefined}
+          title={frameViewer ? 'Every arm, plate and standoff — exploded' : 'Teardown'}
           textReveal={frameViewer ? undefined : textIn}
           backdrop={
             frameViewer ? (
@@ -1567,7 +1599,9 @@ export default function Product() {
             : null}
           {groupedPins.top.length > 0 && groupedPins.bottom.length > 0 ? (
             <div
-              className={`teardown-sides${boardFlying ? ' is-locked' : ''}`}
+              className={`teardown-sides${boardFlying ? ' is-locked' : ''}${
+                pinsSwapping ? ' is-swapping' : ''
+              }`}
               onMouseLeave={noHover ? undefined : clearHover}
             >
               <section className="teardown-side">
@@ -1583,7 +1617,9 @@ export default function Product() {
             </div>
           ) : (
             <div
-              className={`teardown-sides${boardFlying ? ' is-locked' : ''}`}
+              className={`teardown-sides${boardFlying ? ' is-locked' : ''}${
+                pinsSwapping ? ' is-swapping' : ''
+              }`}
               onMouseLeave={noHover ? undefined : clearHover}
             >
               <section className="teardown-side">
@@ -1725,20 +1761,13 @@ export default function Product() {
               >
                 {(commits) => {
                   // Bundles show one commit card per component repo; a single
-                  // product (incl. split-repo lines) prefers the selected
-                  // tier's repo so the card tracks the ladder — but if that
-                  // repo's fetch came back empty (rate-limited) we still show
-                  // any live commit we did get, only dropping to the static
-                  // card when nothing fetched at all.
-                  const all = commits ?? [];
-                  const forTier = all.filter(
-                    (c) => c.repoUrl === activeRepoUrl,
-                  );
+                  // product (incl. split-repo lines) shows just the selected
+                  // tier's repo, so the card tracks the ladder.
                   const shown = content.bundle
-                    ? all
-                    : forTier.length
-                      ? forTier
-                      : all.slice(0, 1);
+                    ? (commits ?? [])
+                    : (commits ?? []).filter(
+                        (c) => c.repoUrl === activeRepoUrl,
+                      );
                   return shown.length ? (
                     shown.map((c) => (
                       <LatestCommitCard key={c.sha + c.repoUrl} commit={c} />
@@ -1761,14 +1790,15 @@ export default function Product() {
           number={chapterNums.inTheBox}
           label="In the box"
           bigMedia
-          indexAsTitle={!content.bundle}
           title={
             content.bundle ? (
               <>
                 Two boards, two firmwares,{' '}
                 <em>two maintainers paid.</em>
               </>
-            ) : undefined
+            ) : (
+              'In the box'
+            )
           }
         >
           {content.bundle ? (

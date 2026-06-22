@@ -133,6 +133,29 @@ export function SchematicViewer({handle, handles, inspectUrl}: SchematicViewerPr
 
   const current = sheets?.[active];
 
+  // Variant swap: when the displayed board (handle) changes, sweep a diagonal
+  // line across the page that wipes the new sheet in over the old. Detected on
+  // `dh` only, so paging sheets within one board still uses the plain fade.
+  const lastImgRef = useRef<string | null>(null);
+  const prevDhRef = useRef(dh);
+  const [outgoing, setOutgoing] = useState<string | null>(null);
+  useEffect(() => {
+    if (prevDhRef.current === dh) return;
+    prevDhRef.current = dh;
+    const reduce =
+      typeof window !== 'undefined' &&
+      window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+    if (reduce || !lastImgRef.current) return;
+    setOutgoing(lastImgRef.current);
+    const t = setTimeout(() => setOutgoing(null), 640);
+    return () => clearTimeout(t);
+  }, [dh]);
+  // Remember the sheet on screen so the next swap can hold it underneath. Runs
+  // after the dh-swap effect above, so that effect reads the *previous* image.
+  useEffect(() => {
+    if (current) lastImgRef.current = sheetUrl(dh, current.file);
+  });
+
   // Step through the sheets, clamped to the ends (used by arrow keys / wheel
   // over the rail) — mirrors the board folder's layer stepping.
   const step = (delta: number) =>
@@ -220,6 +243,15 @@ export function SchematicViewer({handle, handles, inspectUrl}: SchematicViewerPr
                 ['--drag' as string]: drag,
               } as React.CSSProperties}
             >
+              {/* Outgoing board held underneath while the new sheet wipes in. */}
+              {outgoing ? (
+                <img
+                  className="schematic-sheet is-loaded schematic-sheet--leaving"
+                  src={outgoing}
+                  alt=""
+                  aria-hidden="true"
+                />
+              ) : null}
               {/* Every sheet is rendered and parked at its offset from the active
                   one (--rel); the mobile peel slides each to (--rel + --drag).
                   Desktop shows only the active sheet (others held at opacity 0)
@@ -229,7 +261,7 @@ export function SchematicViewer({handle, handles, inspectUrl}: SchematicViewerPr
                 return (
                   <img
                     key={k}
-                    className={`schematic-sheet${loaded[k] ? ' is-loaded' : ''}${i === active ? ' is-active' : ''}`}
+                    className={`schematic-sheet${loaded[k] ? ' is-loaded' : ''}${i === active ? ' is-active' : ''}${outgoing && i === active ? ' schematic-sheet--entering' : ''}`}
                     style={{['--rel' as string]: i - active} as React.CSSProperties}
                     src={sheetUrl(dh, s.file)}
                     alt={`${s.label} schematic sheet`}
@@ -240,6 +272,10 @@ export function SchematicViewer({handle, handles, inspectUrl}: SchematicViewerPr
                   />
                 );
               })}
+              {/* The diagonal line that flies across to swap the boards. */}
+              {outgoing ? (
+                <span className="schematic-swap-line" aria-hidden="true" />
+              ) : null}
             </div>
           </div>
           {/* Mobile: the sheet-tab rail is dropped (a mouse-era button strip);
