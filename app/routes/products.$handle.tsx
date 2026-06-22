@@ -728,42 +728,49 @@ export default function Product() {
   // parts" gesture — front parts top→bottom, then back, then any unsided. Each
   // carries its full highlight spec (the same one its table row uses). Chip rows
   // (I/O pads) expand to one stop per chip.
-  const orderedParts = useMemo(() => {
-    const out: Array<{
-      refs: string[];
-      union: boolean;
-      groups?: string[][];
-      name: string;
-      cost?: string;
-    }> = [];
-    for (const pin of [
-      ...groupedPins.top,
-      ...groupedPins.bottom,
-      ...groupedPins.other,
-    ]) {
-      if (pin.chips?.length) {
-        for (const chip of pin.chips)
-          if (chip.refs?.length)
-            out.push({refs: chip.refs, union: false, name: chip.label, cost: 'I/O'});
-      } else if (pin.refs?.length) {
-        out.push({
-          refs: pin.refs,
-          union: pin.box === 'union',
-          groups: pin.boxGroups,
-          name: pin.part,
-          cost: pin.cost ?? '×1',
-        });
+  type TourPart = {
+    refs: string[];
+    union: boolean;
+    groups?: string[][];
+    name: string;
+    cost?: string;
+  };
+  // Split the tour into a top-side row and a bottom-side row (mobile shows them
+  // as two chip rows). Unsided pins ride along with the bottom row.
+  const partRows = useMemo(() => {
+    const toParts = (pins: ChapterPin[]) => {
+      const out: TourPart[] = [];
+      for (const pin of pins) {
+        if (pin.chips?.length) {
+          for (const chip of pin.chips)
+            if (chip.refs?.length)
+              out.push({refs: chip.refs, union: false, name: chip.label, cost: 'I/O'});
+        } else if (pin.refs?.length) {
+          out.push({
+            refs: pin.refs,
+            union: pin.box === 'union',
+            groups: pin.boxGroups,
+            name: pin.part,
+            cost: pin.cost ?? '×1',
+          });
+        }
       }
-    }
-    return out;
+      return out;
+    };
+    return {
+      top: toParts(groupedPins.top),
+      bottom: toParts([...groupedPins.bottom, ...groupedPins.other]),
+    };
   }, [groupedPins]);
+  const orderedParts = useMemo(
+    () => [...partRows.top, ...partRows.bottom],
+    [partRows],
+  );
   const isMobile = useIsMobile();
   // CAD products (the frame) carry an exploded 3D viewer instead of a
   // layered board SVG; when present it takes the teardown media slot. Like
   // boardArt, a tier's own model (3" vs 5") wins over the shared default.
   const frameViewer = activeVariant?.frameViewer ?? content.teardown?.frameViewer;
-  // True for the mobile PCB explorer (any board product, not the frame viewer).
-  const choreoOn = isMobile && !!activeBoardArt && !frameViewer;
   // Every frame model across all tiers, so the viewer can preload them and
   // switch tiers instantly (toggle visibility) instead of re-fetching the
   // multi-MB GLB on each swap.
@@ -916,13 +923,10 @@ export default function Product() {
     setHoveredUnion(false);
     setHoveredGroups(undefined);
   };
-  // Which tour stop is currently lit (−1 = none) — for the part counter + so a
-  // sideways flick knows where to step from.
-  const focusedPartIdx = orderedParts.findIndex(
-    (p) =>
-      p.refs.length === hoveredRefs.length &&
-      p.refs.every((r) => hoveredRefs.includes(r)),
-  );
+  // Is this part the one currently lit on the board (its chip shows as active)?
+  const partLit = (p: TourPart) =>
+    p.refs.length === hoveredRefs.length &&
+    p.refs.every((r) => hoveredRefs.includes(r));
   // One teardown-pin <li>: the part label (+ optional count); hover/focus
   // highlights its footprint(s) on the board (keyboard mirrors mouse for a11y).
   const renderPin = (pin: ChapterPin) => {
@@ -1171,31 +1175,6 @@ export default function Product() {
   // phones previously had NO sticky buy control at all once the in-hero buy
   // module scrolled away.
   const [railMobile, setRailMobile] = useState(false);
-  // On a phone the teardown board is sticky and full-width; the pinned mobile
-  // buy rail (~98px) would otherwise sit on top of the part list, leaving no
-  // room to see board + controls together. Suppress the rail while the teardown
-  // board fills the screen — it re-pins the moment you scroll past the chapter.
-  const [teardownActive, setTeardownActive] = useState(false);
-  useEffect(() => {
-    // Gate on `choreoOn` (any mobile board product) not `railMobile`, so the
-    // explorer state + buy-rail suppression work even on boards without a tier
-    // ladder, and so it switches OFF the moment the board scrolls away (Phase D).
-    if (!choreoOn) {
-      setTeardownActive(false);
-      return;
-    }
-    // Observe the CHAPTER (whose top edge is stable w.r.t. scroll) via a centred
-    // band, NOT the board/list — those shift when the explorer classes hide the
-    // rail or ride the board up, which fed back into the observer and flickered.
-    const el = document.querySelector('.chapter:has(.board-art)');
-    if (!el || typeof IntersectionObserver === 'undefined') return;
-    const io = new IntersectionObserver(
-      ([e]) => setTeardownActive(e.isIntersecting),
-      {threshold: 0, rootMargin: '-30% 0px -30% 0px'},
-    );
-    io.observe(el);
-    return () => io.disconnect();
-  }, [choreoOn, product.handle]);
 
   // The mobile PCB explorer is now FULLY MANUAL — no auto-play, no scroll-driven
   // body-class toggles (those fed an IntersectionObserver→layout→observer loop
@@ -1349,10 +1328,10 @@ export default function Product() {
   // otherwise the chapter media (sticky to the same top-right spot) paints
   // over it and swallows clicks. Suppressed (CSS-hidden, not unmounted — an
   // in-flight add-to-cart submit must survive opening the drawer) while an
-  // aside is open so it doesn't sit on top of the cart.
-  const railSuppressed =
-    railPinned &&
-    (asideType !== 'closed' || (railMobile && teardownActive));
+  // aside is open so it doesn't sit on top of the cart. It stays live through the
+  // teardown chapter (the board no longer pins full-screen there) so variant/SKU
+  // switching is reachable everywhere on the page, not just above the fold.
+  const railSuppressed = railPinned && asideType !== 'closed';
   const pinnedRail = (
     <div
       className={`buy-rail is-pinned${railMobile ? ' is-mobile' : ''}${railSuppressed ? ' is-suppressed' : ''}`}
@@ -1538,47 +1517,54 @@ export default function Product() {
                         Tap one to find it on the board
                       </span>
                     </p>
-                    {/* Real, labelled, thumb-sized chips in a scrollable row —
-                        not a strip of tiny dots. Tap one to spotlight that part
-                        on the board; the row scrolls for the rest. */}
-                    <div className="board-part-chips" aria-label="Components">
-                      {orderedParts.map((p, i) => (
-                        <button
-                          type="button"
-                          key={p.name + i}
-                          className={`board-part-chip${
-                            i === focusedPartIdx ? ' is-active' : ''
-                          }`}
-                          aria-pressed={i === focusedPartIdx}
-                          onClick={() => {
-                            setHoveredRefs([...p.refs]);
-                            setHoveredUnion(p.union);
-                            setHoveredGroups(p.groups);
-                          }}
+                    {/* Real, labelled, thumb-sized chips split into a top-side and
+                        a bottom-side row — not one long scroller. Tap one to
+                        spotlight that part on the board; each row scrolls for the
+                        rest. */}
+                    {[
+                      {label: 'Top', parts: partRows.top},
+                      {label: 'Bottom', parts: partRows.bottom},
+                    ]
+                      .filter((row) => row.parts.length)
+                      .map((row) => (
+                        <div
+                          key={row.label}
+                          className="board-part-chips"
+                          aria-label={`${row.label}-side components`}
                         >
-                          {/* Just the model/short name on the chip (e.g.
-                              "RP2354A"), not the whole descriptive sentence —
-                              split off anything after a dash/middot separator. */}
-                          {p.name.split(/\s+[—–·-]\s+/)[0]}
-                          {p.cost && p.cost !== '×1' ? (
-                            <span className="board-part-chip-qty">{p.cost}</span>
-                          ) : null}
-                        </button>
+                          <span className="board-part-chips-side">{row.label}</span>
+                          {row.parts.map((p, i) => {
+                            const lit = partLit(p);
+                            return (
+                              <button
+                                type="button"
+                                key={p.name + i}
+                                className={`board-part-chip${lit ? ' is-active' : ''}`}
+                                aria-pressed={lit}
+                                onClick={() => {
+                                  setHoveredRefs([...p.refs]);
+                                  setHoveredUnion(p.union);
+                                  setHoveredGroups(p.groups);
+                                }}
+                              >
+                                {/* Just the model/short name on the chip (e.g.
+                                    "RP2354A"), not the whole descriptive sentence
+                                    — split off anything after a dash/middot. */}
+                                {p.name.split(/\s+[—–·-]\s+/)[0]}
+                                {p.cost && p.cost !== '×1' ? (
+                                  <span className="board-part-chip-qty">{p.cost}</span>
+                                ) : null}
+                              </button>
+                            );
+                          })}
+                        </div>
                       ))}
-                    </div>
                   </div>
                 ) : null}
               </>
             ) : undefined
           }
         >
-          {!frameViewer && activeBoardArt ? (
-            <div className="teardown-guide">
-              <p className="teardown-hint">
-                Swipe the board ←/→ to peel the layers · tap a part to find it
-              </p>
-            </div>
-          ) : null}
           {linksMounted && !isMobile
             ? createPortal(
                 <svg
