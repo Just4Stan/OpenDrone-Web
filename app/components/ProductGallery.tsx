@@ -1,6 +1,6 @@
 import {Image} from '@shopify/hydrogen';
 import {useSearchParams} from 'react-router';
-import {useEffect} from 'react';
+import {useEffect, useRef} from 'react';
 
 type GalleryImage = {
   id?: string | null;
@@ -20,6 +20,8 @@ export function ProductGallery({
   activeImageId?: string | null;
 }) {
   const [searchParams, setSearchParams] = useSearchParams();
+  // Swipe tracker (declared before any early return so the hook order is stable).
+  const touch = useRef<{x: number; y: number} | null>(null);
   const parsed = parseInt(searchParams.get(IMAGE_PARAM) ?? '', 10);
   const fallbackIndex = activeImageId
     ? Math.max(
@@ -59,12 +61,35 @@ export function ProductGallery({
   const next = () => setIndex(index === images.length - 1 ? 0 : index + 1);
   const current = images[index];
 
+  // Touch swipe: flick the main image ←/→ to step photos. Same threshold +
+  // direction-ratio gate as the board explorer (BoardArt). Horizontal-only —
+  // we never preventDefault, so a vertical drag still scrolls the page; only a
+  // deliberate sideways flick (>44px and >1.3× the vertical travel) navigates.
+  const onTouchStart = (e: React.TouchEvent) => {
+    const t = e.touches[0];
+    touch.current = {x: t.clientX, y: t.clientY};
+  };
+  const onTouchEnd = (e: React.TouchEvent) => {
+    const s = touch.current;
+    touch.current = null;
+    if (!s || images.length < 2) return;
+    const t = e.changedTouches[0];
+    const dx = t.clientX - s.x;
+    const dy = t.clientY - s.y;
+    if (Math.abs(dx) > 44 && Math.abs(dx) > Math.abs(dy) * 1.3) {
+      if (dx < 0) next();
+      else prev();
+    }
+  };
+
   return (
     <div className="product-gallery">
       <div
         className="product-gallery-main"
         role="group"
         aria-label="Product images"
+        onTouchStart={onTouchStart}
+        onTouchEnd={onTouchEnd}
       >
         <Image
           data={current}
@@ -102,6 +127,11 @@ export function ProductGallery({
               </svg>
             </button>
           </div>
+        )}
+        {images.length > 1 && (
+          <span className="product-gallery-swipe-hint" aria-hidden="true">
+            Swipe ←/→
+          </span>
         )}
       </div>
       {images.length > 1 && (
