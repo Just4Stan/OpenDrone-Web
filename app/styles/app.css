@@ -5357,9 +5357,12 @@ button.reset {
   }
   .chapter-index--title .chapter-number,
   .chapter-index--title .chapter-label {
+    font-family: var(--font-display);
+    font-weight: 600;
     font-size: var(--fs-2xl);
     line-height: 1.1;
-    letter-spacing: 0.04em;
+    letter-spacing: -0.025em;
+    text-transform: none;
   }
   .chapter-index--title .chapter-label {
     color: var(--color-text);
