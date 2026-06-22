@@ -4895,8 +4895,16 @@ button.reset {
    eats a click while it flies away. The motion itself is split by breakpoint:
    per-layer on desktop (below), whole-board cross-slide on mobile (the mobile
    block flattens the fan and disables per-sheet animation). */
+/* The incoming (live) board rides ABOVE the ghost so a swap reads as the NEW
+   board sweeping in from the left and SHOVING the old one off to the right —
+   not the old board peeling away to reveal a new one already sitting behind it.
+   Both stacks share one grid cell and are position:relative, so an explicit
+   z-index on each settles the paint order regardless of DOM source order. */
+.board-folder-stack.is-swapping {
+  z-index: 5;
+}
 .board-swap-ghost {
-  z-index: 70;
+  z-index: 1;
   pointer-events: none;
 }
 /* PERF — the single most important rule for swap smoothness. Each sheet carries a
@@ -4928,19 +4936,24 @@ button.reset {
    arrives — so the stack peels and refills one layer at a time, not in a block.
    The drop-shadow strip above keeps all those layers cheap to composite. */
 @media (min-width: 1024px) {
+  /* Per-layer duration is short (0.55s) and the --depth stagger (0.1s) is a
+     LARGE fraction of it, so each layer visibly clears before the next goes —
+     a readable one-by-one cascade rather than the whole fan sliding as a block
+     (which is what a long 1.1s duration with a tiny 0.09s stagger looked like).
+     Last layer (depth 7) finishes ≈ 0.7s + 0.55s ≈ 1.25s — keep the JS ghost
+     hold (BoardArt) and the parts-list swap timers in lockstep with that. */
   .board-folder-stack.is-swapping .board-sheet {
-    animation: board-sheet-fly 1.1s cubic-bezier(0.16, 0.84, 0.3, 1)
-      calc(var(--depth) * 0.09s) both;
+    animation: board-sheet-fly 0.55s cubic-bezier(0.16, 0.84, 0.3, 1)
+      calc(var(--depth) * 0.1s) both;
   }
   .board-swap-ghost .board-sheet {
-    animation: board-swap-sheet-out 1.1s cubic-bezier(0.16, 0.84, 0.3, 1)
-      calc(var(--depth) * 0.09s) both;
+    animation: board-swap-sheet-out 0.55s cubic-bezier(0.16, 0.84, 0.3, 1)
+      calc(var(--depth) * 0.1s) both;
   }
 }
-/* Exit mirrors the entrance velocity (same curve as board-sheet-fly). It must
-   start FAST: the ghost sits on top (z 70), so a slow-start curve would keep the
-   old layer parked over the incoming one — looking frozen — until it finally
-   darts away. Fast start clears the centre before the new layer arrives there. */
+/* Exit mirrors the entrance velocity (same curve as board-sheet-fly). It starts
+   FAST so each old layer darts off to the right the instant its replacement
+   begins sweeping in over the top of it — the "push out" beat. */
 @keyframes board-swap-sheet-out {
   from {
     translate: 0 0;
@@ -5608,7 +5621,10 @@ button.reset {
    cover it. Pointer-events off so a hover can't catch the list mid-change. */
 .teardown-sides.is-swapping {
   pointer-events: none;
-  animation: teardown-pins-swap 1.2s ease both;
+  /* 1s = the doneT timer that removes this class (products.$handle.tsx); they
+     must match or the opacity snaps back when the class drops mid-fade. The
+     content switch (swapT, 400ms) lands inside the 35–65% dip (350–650ms). */
+  animation: teardown-pins-swap 1s ease both;
 }
 /* A short opacity dip masks the content switch (~0.6s) while the incoming layers
    sweep over the list, then fades back in. */
@@ -12227,31 +12243,14 @@ button.reset {
    desktop 3D fan / sticky / gutter math.
    ============================================================ */
 @media (max-width: 1023px) {
-  /* Un-hide the board explorer AND pin it. The part list is the control surface;
-     the board is what it controls — they must be on screen together. On a phone
-     the full part list is taller than the viewport, so the board is made sticky
-     and ordered to lead the chapter: it stays put at the top while you scroll
-     and tap parts beneath it, so every tap's highlight is always visible. Board
-     size is unchanged (full-width square) — only its position is pinned. */
+  /* Un-hide the board explorer and let it flow inline. The chapter reads as one
+     continuous scroll: the title + teardown copy come first (natural DOM order),
+     then the board viewer + component chips below. No sticky pin (the board no
+     longer hangs at the top) and no order flip — the explanation leads, the GUI
+     viewer follows. Board size is unchanged (full-width square). */
   .chapter-media:has(.board-art) {
     display: block;
-    position: sticky;
-    /* Sit just below the floating header pill — never under it, so the layer rail
-       never overlaps the header. A constant top (no scroll-driven ride-up) keeps
-       the board geometry stable, which is what stops the idle flicker. */
-    top: calc(var(--header-height) + 1.15rem);
-    align-self: start;
-    order: -1;
-    z-index: 3;
     margin: 0 0 var(--sp-4);
-    /* The board sheets are transparent SVGs; without an opaque backing the
-       title + part list scrolling behind the pinned board bleed through it.
-       A solid page-coloured panel + a soft lower edge separates board (pinned)
-       from list (scrolling). */
-    background: var(--color-bg);
-    padding-bottom: 0.5rem;
-    box-shadow: 0 12px 18px -10px var(--color-bg),
-      0 1px 0 0 var(--color-border);
   }
 
   /* Flatten the fanned 3D stack: only the active sheet renders, flat and
@@ -12441,8 +12440,8 @@ button.reset {
     opacity: 1;
   }
 
-  /* The board leads the chapter now (order:-1), so no top offset — the bottom
-     margin set above separates it from the part list that scrolls beneath. */
+  /* The board flows below the copy now — the bottom margin set above is the only
+     spacing it needs; clear any inherited top offset. */
   .chapter:has(.board-art) .chapter-media {
     margin-top: 0;
   }
