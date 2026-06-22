@@ -5350,10 +5350,12 @@ button.reset {
  * index stays at its compact size. */
 @media (min-width: 880px) {
   .chapter-index--title {
-    gap: 0.5em;
+    gap: 0.6rem;
     margin-bottom: var(--sp-4);
+    align-items: baseline;
   }
-  .chapter-index--title .chapter-number,
+  /* The number stays the compact index size (like "02" on other chapters); the
+     label grows to title scale so it reads as the chapter's own heading. */
   .chapter-index--title .chapter-label {
     font-family: var(--font-display);
     font-weight: 600;
@@ -5361,8 +5363,6 @@ button.reset {
     line-height: 1.1;
     letter-spacing: -0.025em;
     text-transform: none;
-  }
-  .chapter-index--title .chapter-label {
     color: var(--color-text);
   }
 }
@@ -5675,6 +5675,9 @@ button.reset {
   display: grid;
   gap: 0.75rem;
   grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  /* Let each card keep its own height — the taller WatchCard (thumbnail +
+     caption) must not stretch the compact text cards beside it. */
+  align-items: start;
 }
 
 /* Subtle bubble — same quiet card as the latest-commit cards beside it so the
@@ -5742,7 +5745,9 @@ button.reset {
   width: 100%;
   aspect-ratio: 16 / 9;
   object-fit: cover;
-  background: #000;
+  /* Placeholder while the lazy thumbnail decodes — the card surface, not a
+     harsh black, so there's no flash as the chapter reveals. */
+  background-color: var(--color-bg-elevated);
   transition: transform 0.3s ease;
 }
 
