@@ -1,6 +1,7 @@
 import {Await, useLocation} from 'react-router';
 import {Suspense} from 'react';
 import {MotionConfig} from 'motion/react';
+import {PerfTierProvider} from '~/lib/perf-tier-context';
 import type {
   CartApiQueryFragment,
   HeaderQuery,
@@ -46,6 +47,7 @@ export function PageLayout({
   const isHomepage = pathname === '/';
 
   return (
+    <PerfTierProvider>
     <MotionConfig reducedMotion="user">
       <Aside.Provider>
         <CartAside cart={cart} />
@@ -95,6 +97,7 @@ export function PageLayout({
         </div>
       </Aside.Provider>
     </MotionConfig>
+    </PerfTierProvider>
   );
 }
 
