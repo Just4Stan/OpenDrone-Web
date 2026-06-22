@@ -7,6 +7,7 @@ import {
 } from '~/lib/asset-prefetch';
 import {BOARD_ART_VERSION} from '~/data/board-art-version';
 import {useIsMobile} from '~/lib/use-media-query';
+import {usePerfTier} from '~/lib/perf-tier-context';
 
 // `?v=` busts Oxygen's 1-year immutable cache when board art is regenerated in
 // place — the token is the content hash of every board.svg + front/back PNG,
@@ -408,12 +409,17 @@ export function BoardArt({
   // instantly at full scale instead of re-flying. While the fly runs we tell the
   // parent (to lock part selection) and the CSS drops the heavy filters.
   const [flyDone, setFlyDone] = useState(false);
+  const {tier} = usePerfTier();
   useEffect(() => {
     if (!flyIn || flyDone) return;
-    // Honour reduced-motion: no animation, no lock — settle immediately.
+    // Honour reduced-motion OR a degraded performance tier (minimal/static):
+    // no fly-in animation, no lock — settle the layered board immediately at
+    // full scale. All layers, labels and the part table stay; only the heavy
+    // staggered entrance + its compositor filters are skipped.
     if (
-      typeof window !== 'undefined' &&
-      window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
+      tier !== 'full' ||
+      (typeof window !== 'undefined' &&
+        window.matchMedia?.('(prefers-reduced-motion: reduce)').matches)
     ) {
       setFlyDone(true);
       return;
@@ -425,7 +431,7 @@ export function BoardArt({
       onFlying?.(false);
     }, 1200 + 7 * 110 + 250);
     return () => clearTimeout(t);
-  }, [flyIn, flyDone, onFlying]);
+  }, [flyIn, flyDone, onFlying, tier]);
 
   // Pre-parse sibling tiers ONLY after the entrance finishes — parsing every
   // other board's multi-thousand-path SVG is heavy main-thread work that, if it

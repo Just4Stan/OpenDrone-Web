@@ -1,7 +1,7 @@
 import {Await, useLocation} from 'react-router';
 import {Suspense} from 'react';
 import {MotionConfig} from 'motion/react';
-import {PerfTierProvider} from '~/lib/perf-tier-context';
+import {PerfTierProvider, usePerfTier} from '~/lib/perf-tier-context';
 import type {
   CartApiQueryFragment,
   HeaderQuery,
@@ -48,7 +48,7 @@ export function PageLayout({
 
   return (
     <PerfTierProvider>
-    <MotionConfig reducedMotion="user">
+    <TierMotionConfig>
       <Aside.Provider>
         <CartAside cart={cart} />
         <MobileMenuAside header={header} publicStoreDomain={publicStoreDomain} />
@@ -96,8 +96,26 @@ export function PageLayout({
           )}
         </div>
       </Aside.Provider>
-    </MotionConfig>
+    </TierMotionConfig>
     </PerfTierProvider>
+  );
+}
+
+/**
+ * MotionConfig whose reduced-motion policy follows the performance tier, not
+ * just the OS setting. On full we honour the user's OS preference ('user'); on
+ * minimal/static every Framer animation is forced off ('always') — the same as
+ * if the visitor had asked for reduced motion. This is what stops decorative
+ * entrance/reveal animations (chapter reveals, pod pop-opens, staggered grids)
+ * from playing on a machine that's already struggling. Must sit inside
+ * PerfTierProvider so it can read the tier.
+ */
+function TierMotionConfig({children}: {children: React.ReactNode}) {
+  const {tier} = usePerfTier();
+  return (
+    <MotionConfig reducedMotion={tier === 'full' ? 'user' : 'always'}>
+      {children}
+    </MotionConfig>
   );
 }
 
