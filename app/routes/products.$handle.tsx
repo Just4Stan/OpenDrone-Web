@@ -621,7 +621,13 @@ export default function Product() {
   // each board in a line has its own refdes layout, so a tier's own `pins`
   // win over the shared `teardown.pins` default. Keeps the hover-highlight
   // refdes matched to the board currently shown.
-  const activePins = activeVariant?.pins ?? content.teardown?.pins ?? [];
+  // Memoised so its reference is stable per tier — the deferred-swap effect below
+  // keys on it and calls setState, so a fresh `?? []` array every render would
+  // loop it.
+  const activePins = useMemo(
+    () => activeVariant?.pins ?? content.teardown?.pins ?? [],
+    [activeVariant, content.teardown],
+  );
   // Group the teardown pins by board side — Top (front) first, then Bottom
   // (back) — reading each refdes's side from the board's components.json. Done
   // at runtime so it stays accurate per tier with no manual side tagging.
@@ -651,13 +657,48 @@ export default function Product() {
       alive = false;
     };
   }, [componentsSrc]);
+  // The teardown list lags a tier swap on purpose. When the board animates a
+  // variant change its layers fly across the copy column (the intro cadence),
+  // briefly covering the part list — so we hold the OLD pins and switch to the
+  // new ones mid-flight, behind the flying boards, instead of snapping the list
+  // the instant the tier changes. Reduced-motion (or mobile, where the swap is a
+  // quick block slide with no cover) swaps immediately.
+  const [displayedPins, setDisplayedPins] = useState(activePins);
+  const [pinsSwapping, setPinsSwapping] = useState(false);
+  const prevPinSrcRef = useRef<string | undefined>(activeBoardArt?.src);
+  useEffect(() => {
+    const src = activeBoardArt?.src;
+    if (prevPinSrcRef.current === src) {
+      setDisplayedPins(activePins);
+      return;
+    }
+    prevPinSrcRef.current = src;
+    const reduce =
+      typeof window !== 'undefined' &&
+      window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+    const wide =
+      typeof window !== 'undefined' &&
+      window.matchMedia?.('(min-width: 1024px)').matches;
+    if (reduce || !wide) {
+      setDisplayedPins(activePins);
+      return;
+    }
+    // Swap once the incoming layers have swept over the list, then settle.
+    setPinsSwapping(true);
+    const swapT = setTimeout(() => setDisplayedPins(activePins), 320);
+    const doneT = setTimeout(() => setPinsSwapping(false), 760);
+    return () => {
+      clearTimeout(swapT);
+      clearTimeout(doneT);
+    };
+  }, [activeBoardArt?.src, activePins]);
   // Partition pins by the dominant side of their refs. Until the map loads (or
   // for pins with no resolvable side) pins fall into `other`, rendered flat.
   const groupedPins = useMemo(() => {
     const top: ChapterPin[] = [];
     const bottom: ChapterPin[] = [];
     const other: ChapterPin[] = [];
-    for (const pin of activePins) {
+    for (const pin of displayedPins) {
       if (!pin.refs?.length || pinSides.size === 0) {
         other.push(pin);
         continue;
@@ -674,7 +715,7 @@ export default function Product() {
       else bottom.push(pin);
     }
     return {top, bottom, other};
-  }, [activePins, pinSides]);
+  }, [displayedPins, pinSides]);
   // Flat tour order for the mobile "swipe the board sideways to step through the
   // parts" gesture — front parts top→bottom, then back, then any unsided. Each
   // carries its full highlight spec (the same one its table row uses). Chip rows
@@ -1563,7 +1604,9 @@ export default function Product() {
             : null}
           {groupedPins.top.length > 0 && groupedPins.bottom.length > 0 ? (
             <div
-              className={`teardown-sides${boardFlying ? ' is-locked' : ''}`}
+              className={`teardown-sides${boardFlying ? ' is-locked' : ''}${
+                pinsSwapping ? ' is-swapping' : ''
+              }`}
               onMouseLeave={noHover ? undefined : clearHover}
             >
               <section className="teardown-side">
@@ -1579,7 +1622,9 @@ export default function Product() {
             </div>
           ) : (
             <div
-              className={`teardown-sides${boardFlying ? ' is-locked' : ''}`}
+              className={`teardown-sides${boardFlying ? ' is-locked' : ''}${
+                pinsSwapping ? ' is-swapping' : ''
+              }`}
               onMouseLeave={noHover ? undefined : clearHover}
             >
               <section className="teardown-side">

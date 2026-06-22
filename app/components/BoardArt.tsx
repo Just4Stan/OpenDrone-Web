@@ -276,6 +276,13 @@ export function BoardArt({
   const [active, setActive] = useState(0);
   const [inView, setInView] = useState(false);
   const isMobile = useIsMobile();
+  // True while a variant swap is mid-flight. The rail-placement effect reads the
+  // active sheet's box to position the layer textbox; measuring it WHILE the new
+  // board is flying in (translated off to the side) placed the rail wrong and
+  // made it jump. So we hold the rail where it is during the swap and re-place it
+  // once — via `placeNonce` — when the swap has settled.
+  const swapActiveRef = useRef(false);
+  const [placeNonce, setPlaceNonce] = useState(0);
   // Which src the current `raw` text belongs to, and the last non-empty parsed
   // board — so a tier switch keeps the prior board on screen until the new one
   // is parsed, and never re-parses a board the cache already holds.
@@ -544,6 +551,10 @@ export function BoardArt({
         root.style.removeProperty('--board-w');
         return;
       }
+      // Mid variant-swap: leave the rail exactly where it is. The board is flying
+      // in (translated), so any measurement now would mis-place it; placeNonce
+      // re-runs this once the swap settles and the board's box is stable again.
+      if (swapActiveRef.current) return;
       rail.classList.remove('is-compact');
       rail.style.transform = '';
       setBoardW(DEFAULT_W); // keep the board at full size; compact the rail if tight
@@ -613,7 +624,7 @@ export function BoardArt({
       if (scheduled) cancelAnimationFrame(scheduled);
       window.removeEventListener('resize', schedule);
     };
-  }, [sheets, revealed, flyDone]);
+  }, [sheets, revealed, flyDone, placeNonce]);
 
   // The index/refs actually rendered — the manual layer + tap/swipe-driven
   // highlight.
@@ -961,11 +972,19 @@ export function BoardArt({
     if (reduce || !flyDone || !lastStackHtmlRef.current) return;
     ghostIdRef.current += 1;
     const id = ghostIdRef.current;
+    swapActiveRef.current = true;
     setGhost({html: lastStackHtmlRef.current, id});
-    const t = setTimeout(
-      () => setGhost((g) => (g && g.id === id ? null : g)),
-      560,
-    );
+    // Hold the ghost for the whole per-layer choreography: the new stack flies in
+    // from the left and the ghost peels off to the right, both staggered by layer
+    // (see the .is-swapping / .board-swap-ghost rules). Outlive the last layer's
+    // animation end (~1.2s) so nothing snaps mid-flight.
+    const t = setTimeout(() => {
+      swapActiveRef.current = false;
+      setGhost((g) => (g && g.id === id ? null : g));
+      // Re-place the rail now the board has settled (it was held during the swap
+      // so the layer textbox didn't jump against the mid-animation board).
+      setPlaceNonce((n) => n + 1);
+    }, 1250);
     return () => clearTimeout(t);
   }, [src, flyDone]);
   // Remember the stack on screen so the next swap can peel it. Runs after the

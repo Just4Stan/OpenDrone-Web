@@ -4890,14 +4890,64 @@ button.reset {
   flex: 1 1 auto;
   min-width: 0;
 }
-/* Variant swap: old board peels out to the left, new flies in from the right. */
-.board-stack-wrap > .board-folder-stack.is-swapping {
-  animation: board-swap-in 0.55s cubic-bezier(0.2, 0.8, 0.2, 1) both;
-}
+/* Variant swap. The ghost (freeze-frame of the old board) sits on top of the
+   incoming live stack in the same grid cell; pointer-events off so it never
+   eats a click while it flies away. The motion itself is split by breakpoint:
+   per-layer on desktop (below), whole-board cross-slide on mobile (the mobile
+   block flattens the fan and disables per-sheet animation). */
 .board-swap-ghost {
   z-index: 70;
   pointer-events: none;
-  animation: board-swap-out 0.55s cubic-bezier(0.5, 0, 0.5, 1) both;
+}
+/* Desktop: a tier toggle replays the intro cadence — the OLD board's layers
+   peel off to the RIGHT one by one, while the NEW board's layers fly in from the
+   LEFT one by one. Both stagger by physical layer index (--depth), so the stack
+   wipes across as a coordinated relay rather than a single block slide. Only
+   `translate` animates (compositor-cheap) so each sheet keeps its resting fan
+   transform + filter and lands exactly in place — no plop, no re-measure. */
+@media (min-width: 1024px) {
+  .board-folder-stack.is-swapping .board-sheet {
+    animation: board-swap-sheet-in 0.62s cubic-bezier(0.16, 0.84, 0.3, 1)
+      calc(var(--depth) * 0.07s + 0.08s) both;
+  }
+  .board-swap-ghost .board-sheet {
+    animation: board-swap-sheet-out 0.5s cubic-bezier(0.5, 0, 0.55, 1)
+      calc(var(--depth) * 0.07s) both;
+  }
+}
+@keyframes board-swap-sheet-in {
+  from {
+    translate: -72vw 0;
+    opacity: 0;
+  }
+  60% {
+    opacity: 1;
+  }
+  to {
+    translate: 0 0;
+    opacity: 1;
+  }
+}
+@keyframes board-swap-sheet-out {
+  from {
+    translate: 0 0;
+    opacity: 1;
+  }
+  to {
+    translate: 64vw 0;
+    opacity: 0;
+  }
+}
+/* Mobile keeps the simple whole-board cross-slide: the fan is flattened to a
+   single flat sheet there (per-sheet animation is `none !important`), so the
+   board slides as one block. */
+@media (max-width: 1023px) {
+  .board-stack-wrap > .board-folder-stack.is-swapping {
+    animation: board-swap-in 0.55s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  }
+  .board-swap-ghost {
+    animation: board-swap-out 0.55s cubic-bezier(0.5, 0, 0.5, 1) both;
+  }
 }
 @keyframes board-swap-in {
   from {
@@ -5528,6 +5578,33 @@ button.reset {
 /* Locked while the board fly-in animates — a hover mustn't fight the animation. */
 .teardown-sides.is-locked {
   pointer-events: none;
+}
+/* A tier swap switches the part list behind the flying boards (the parent holds
+   the old pins, then swaps mid-flight). A short opacity dip masks the content
+   change so it never reads as a hard snap even where the boards don't fully
+   cover it. Pointer-events off so a hover can't catch the list mid-change. */
+.teardown-sides.is-swapping {
+  pointer-events: none;
+  animation: teardown-pins-swap 0.76s ease both;
+}
+@keyframes teardown-pins-swap {
+  0% {
+    opacity: 1;
+  }
+  38% {
+    opacity: 0;
+  }
+  62% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .teardown-sides.is-swapping {
+    animation: none;
+  }
 }
 .teardown-side {
   /* zero the global `section { padding: 1rem 0 }` so rows fill the bubble edge
