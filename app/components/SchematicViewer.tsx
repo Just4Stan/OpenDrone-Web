@@ -225,11 +225,6 @@ export function SchematicViewer({handle, handles, inspectUrl}: SchematicViewerPr
                   : undefined
               }
             >
-              {sheets.length > 1 ? (
-                <span className="schematic-swipe-hint" aria-hidden="true">
-                  Swipe ←/→
-                </span>
-              ) : null}
               {current ? (
                 <img
                   key={`${dh}:${current.slug}`}
@@ -244,6 +239,33 @@ export function SchematicViewer({handle, handles, inspectUrl}: SchematicViewerPr
                 />
               ) : null}
             </div>
+          </div>
+          {/* Mobile: the sheet-tab rail is dropped (a mouse-era button strip);
+              you page sheets by flicking the page ←/→. This slim deck mirrors the
+              board explorer — a tick per sheet (tap to jump) + which sheet is up
+              + a swipe hint. Hidden on desktop, where the rail is shown. */}
+          <div className="schematic-deck">
+            <div className="board-deck-dots" aria-label="Schematic sheet">
+              {sheets.map((s, i) => (
+                <button
+                  type="button"
+                  key={s.slug}
+                  className={`board-deck-dot${i === active ? ' is-active' : ''}${
+                    i < active ? ' is-done' : ''
+                  }`}
+                  aria-label={`Show ${s.label} sheet`}
+                  aria-current={i === active ? 'true' : undefined}
+                  onClick={() => setActive(i)}
+                />
+              ))}
+            </div>
+            <p className="board-deck-meta" aria-live="polite">
+              <span className="board-deck-count">
+                {active + 1}/{sheets.length}
+              </span>
+              <span className="board-deck-name">{current?.label}</span>
+              <span className="board-deck-hint">Swipe ←/→ · tap a dot</span>
+            </p>
           </div>
           {inspectUrl ? (
             <div className="schematic-foot">

@@ -29,6 +29,7 @@ import {SceneErrorBoundary} from '~/components/SceneErrorBoundary';
 import {ProvenanceCard} from '~/components/ProvenanceCard';
 import {BrandName} from '~/components/BrandName';
 import {CommitHistoryCard, LatestCommitCard} from '~/components/LatestCommit';
+import {WatchCard} from '~/components/WatchCard';
 import {redirectIfHandleIsLocalized} from '~/lib/redirect';
 import {buildSeoMeta, buildProductJsonLd} from '~/lib/seo';
 import {fetchLatestCommits} from '~/lib/github';
@@ -701,6 +702,7 @@ export default function Product() {
       union: boolean;
       groups?: string[][];
       name: string;
+      cost?: string;
     }> = [];
     for (const pin of [
       ...groupedPins.top,
@@ -710,13 +712,14 @@ export default function Product() {
       if (pin.chips?.length) {
         for (const chip of pin.chips)
           if (chip.refs?.length)
-            out.push({refs: chip.refs, union: false, name: chip.label});
+            out.push({refs: chip.refs, union: false, name: chip.label, cost: 'I/O'});
       } else if (pin.refs?.length) {
         out.push({
           refs: pin.refs,
           union: pin.box === 'union',
           groups: pin.boxGroups,
           name: pin.part,
+          cost: pin.cost ?? '×1',
         });
       }
     }
@@ -1543,7 +1546,12 @@ export default function Product() {
                           ? 'Components'
                           : orderedParts[focusedPartIdx].name}
                       </span>
-                      <span className="board-deck-hint">Swipe ←/→ · tap a part</span>
+                      {focusedPartIdx >= 0 && orderedParts[focusedPartIdx].cost ? (
+                        <span className="board-deck-cost">
+                          {orderedParts[focusedPartIdx].cost}
+                        </span>
+                      ) : null}
+                      <span className="board-deck-hint">Swipe ←/→ · tap a dot</span>
                     </p>
                   </div>
                 ) : null}
@@ -1554,8 +1562,7 @@ export default function Product() {
           {!frameViewer && activeBoardArt ? (
             <div className="teardown-guide">
               <p className="teardown-hint">
-                Flick the board ↑/↓ for layers · ←/→ for parts · or tap any part
-                in the list to light it up
+                Flick the board ↑/↓ to peel the layers · ←/→ to tour each part
               </p>
               <button
                 type="button"
@@ -1680,6 +1687,15 @@ export default function Product() {
             })
           ) : (
             <>
+              {/* Build-video bubble leads the row on products that have a film
+                  (FC, ESC); other products fall back to the issues card. */}
+              {content.video ? (
+                <WatchCard
+                  videoId={content.video.id}
+                  title={content.video.title}
+                  channel={content.video.channel}
+                />
+              ) : null}
               <a
                 href={activeRepoUrl}
                 target="_blank"
@@ -1695,18 +1711,20 @@ export default function Product() {
                     : 'Schematic · PCB · BOM · 3D STEP · design notes'}
                 </p>
               </a>
-              <a
-                href={`${activeRepoUrl}/issues`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="open-source-card"
-              >
-                <p className="open-source-card-label">Iterate</p>
-                <p className="open-source-card-title">Open issues ↗</p>
-                <p className="open-source-card-sub">
-                  Rev candidates · bugs · community discussion
-                </p>
-              </a>
+              {content.video ? null : (
+                <a
+                  href={`${activeRepoUrl}/issues`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="open-source-card"
+                >
+                  <p className="open-source-card-label">Iterate</p>
+                  <p className="open-source-card-title">Open issues ↗</p>
+                  <p className="open-source-card-sub">
+                    Rev candidates · bugs · community discussion
+                  </p>
+                </a>
+              )}
             </>
           )}
           <a
