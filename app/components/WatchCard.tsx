@@ -1,12 +1,10 @@
 import {useEffect, useState} from 'react';
 
 /**
- * The "Watch" bubble in the Open-for-learning chapter. Sized to match the
- * sibling resource cards: the real YouTube thumbnail is cropped into the card,
- * a gold YouTube glyph sits on top, and the caption overlays the bottom (no
- * video title — the thumbnail carries it). Clicking opens an in-page lightbox
- * that lazy-mounts the privacy-enhanced (youtube-nocookie) player and
- * autoplays.
+ * The "Watch" bubble in the Open-for-learning chapter. A 16:9 card showing just
+ * the real YouTube thumbnail with a centred gold play glyph over it — no caption
+ * text (the thumbnail carries the title). Clicking opens an in-page lightbox
+ * that lazy-mounts the privacy-enhanced (youtube-nocookie) player and autoplays.
  *
  * The iframe only mounts while the lightbox is open, so the PDP carries no
  * YouTube weight until a visitor actually asks to watch (the lite-embed
@@ -15,10 +13,10 @@ import {useEffect, useState} from 'react';
 export function WatchCard({
   videoId,
   title,
-  channel = 'JustFPV',
 }: {
   videoId: string;
   title: string;
+  // Accepted for call-site compatibility; not rendered (no caption).
   channel?: string;
 }) {
   const [open, setOpen] = useState(false);
@@ -71,7 +69,6 @@ export function WatchCard({
             />
             <path className="watch-card-yt-tri" d="M11.2 14.3 18.5 10 11.2 5.7Z" />
           </svg>
-          <span className="open-source-card-label">Watch · {channel} ↗</span>
         </span>
       </button>
 
