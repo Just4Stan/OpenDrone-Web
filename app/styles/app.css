@@ -5723,31 +5723,32 @@ button.reset {
 }
 
 /* "Watch" bubble — the video card that replaces the issues card on products
-   with a build film. The real YouTube thumbnail sits at the top in a 16:9
-   frame with the caption below on the card surface. Clicking opens the
-   lightbox player. */
+   with a build film. Sized to match the sibling resource cards: the real
+   YouTube thumbnail is cropped into the card, a gold YouTube glyph sits on top
+   and the caption overlays the bottom (no title). Clicking opens the lightbox
+   player. */
 .watch-card {
-  display: flex;
-  flex-direction: column;
+  position: relative;
+  display: block;
   width: 100%;
+  /* Same footprint as the text cards beside it — the thumbnail is cropped to
+     this short box rather than shown full-height. */
+  min-height: 116px;
   padding: 0;
   overflow: hidden;
-  background-color: var(--color-bg-card);
+  background-color: var(--color-bg-elevated);
   text-align: left;
   cursor: pointer;
   font: inherit;
 }
 
-/* The thumbnail sits in flow at the top of the card; the caption follows
-   below on the card surface. A 16:9 frame matches YouTube's poster. */
+/* The thumbnail fills the card, cropped (object-fit cover) to the short box. */
 .watch-card-thumb {
-  display: block;
+  position: absolute;
+  inset: 0;
   width: 100%;
-  aspect-ratio: 16 / 9;
+  height: 100%;
   object-fit: cover;
-  /* Placeholder while the lazy thumbnail decodes — the card surface, not a
-     harsh black, so there's no flash as the chapter reveals. */
-  background-color: var(--color-bg-elevated);
   transition: transform 0.3s ease;
 }
 
@@ -5755,22 +5756,45 @@ button.reset {
   transform: scale(1.04);
 }
 
-.watch-card-body {
+/* Scrim so the gold glyph + caption stay legible over any frame. */
+.watch-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to top,
+    rgba(0, 0, 0, 0.82) 0%,
+    rgba(0, 0, 0, 0.35) 45%,
+    rgba(0, 0, 0, 0.25) 100%
+  );
+}
+
+/* Content layer: YouTube glyph pinned top, caption pinned bottom. */
+.watch-card-overlay {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: 116px;
   padding: 0.9rem 1.05rem;
+  box-sizing: border-box;
+}
+
+.watch-card-yt {
+  width: 30px;
+  height: auto;
+  color: var(--color-gold);
+}
+
+/* The play triangle reads against the gold mark via the dark accent ink. */
+.watch-card-yt-tri {
+  fill: var(--color-on-accent);
 }
 
 .watch-card .open-source-card-label {
   display: block;
   color: var(--color-gold);
-}
-
-.watch-card .open-source-card-title {
-  display: block;
-  margin-bottom: 0.4rem;
-}
-
-.watch-card .open-source-card-sub {
-  display: block;
 }
 
 .watch-card:hover {
