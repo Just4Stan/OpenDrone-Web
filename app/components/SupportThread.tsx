@@ -48,7 +48,7 @@ type LocalMessage = ThreadMessage & {
   pending?: boolean;
 };
 
-type PollStats = {deltaVisible: number; deltaPending: number};
+type PollStats = {deltaVisible: number; pending: number};
 
 type PollResponse =
   | {
@@ -120,9 +120,10 @@ export function SupportThread({
   const [dropActive, setDropActive] = useState(false);
   const [closed, setClosed] = useState(ticket.status === 'resolved');
   const [error, setError] = useState<string | null>(null);
-  // Pending replies = staff messages held by the moderation gate or
-  // dropped by the scrubber. They never appear in `messages` (that's
-  // post-projection) so we have to track them via the poll's stats.
+  // Pending replies = staff messages currently held by the moderation
+  // gate. They never appear in `messages` (that's post-projection), so we
+  // track them via the poll's `pending` snapshot — assigned each poll, not
+  // accumulated, so it falls to zero when a moderator approves the reply.
   // Visible reply count is derived from messages directly via useMemo.
   const [pendingReplies, setPendingReplies] = useState<number>(0);
 
@@ -186,8 +187,12 @@ export function SupportThread({
         if (json.ok && json.messages.length) {
           setMessages((prev) => mergeMessages(prev, json.messages));
         }
-        if (json.ok && json.stats?.deltaPending) {
-          setPendingReplies((n) => n + json.stats!.deltaPending);
+        if (json.ok && json.stats) {
+          // `pending` is a snapshot of replies currently held by the
+          // moderation gate — assign it, don't accumulate. It rises when
+          // a staff reply is awaiting ✅ and drops back to zero once the
+          // moderator approves.
+          setPendingReplies(json.stats.pending);
         }
         if (json.ok && json.closed && !closed) {
           setClosed(true);

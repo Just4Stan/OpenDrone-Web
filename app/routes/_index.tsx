@@ -26,6 +26,7 @@ import {
 } from '~/lib/hero-airframes';
 import {MobileHome} from '~/components/MobileHome';
 import {SceneErrorBoundary} from '~/components/SceneErrorBoundary';
+import {currentBaseTier} from '~/lib/perf-tier';
 
 // Kick off the HeroScene chunk download at module eval so it races with
 // hydration instead of waiting for useEffect — only on desktop and only
@@ -41,6 +42,11 @@ function shouldLoadHero(): boolean {
   if (typeof window === 'undefined') return false;
   if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return false;
   if (window.matchMedia('(max-width: 768px)').matches) return false;
+  // Only the full performance tier gets the live WebGL scene. minimal/static
+  // (weak GPU, low battery, reduced-data, sustained jank) fall back to the
+  // static poster. Read pre-paint from <html data-perf-tier>, so this is decided
+  // before the heavy chunk is even requested at module eval.
+  if (currentBaseTier() !== 'full') return false;
   return true;
 }
 

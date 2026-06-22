@@ -5,6 +5,7 @@ import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {MeshoptDecoder} from 'three/addons/libs/meshopt_decoder.module.js';
 import {useIsMobile, usePrefersReducedMotion} from '~/lib/use-media-query';
 import {getActiveTheme} from '~/lib/theme';
+import {usePerfTier} from '~/lib/perf-tier-context';
 
 // Wireframe stroke per theme. Gold-on-near-black reads fine in dark; on light's
 // cream page that same gold is nearly invisible, so light uses a dark bronze at
@@ -413,6 +414,12 @@ export function FrameViewer({src, srcs}: FrameViewerProps) {
   const [onScreen, setOnScreen] = useState(false);
   const allSrcs = srcs && srcs.length ? srcs : [src];
 
+  // Decorative WebGL backdrop — only the full tier pays for it. On minimal/static
+  // (weak GPU, low battery, reduced-data, sustained jank) the Canvas never mounts
+  // and the section simply renders without the wireframe flourish.
+  const {tier} = usePerfTier();
+  const allowWebGL = tier === 'full';
+
   useEffect(() => setMounted(true), []);
 
   // Mount the canvas while the over-bleeding backdrop is near the viewport.
@@ -439,7 +446,7 @@ export function FrameViewer({src, srcs}: FrameViewerProps) {
 
   return (
     <div ref={wrapRef} className="frame-viewer" data-loaded={mounted} aria-hidden="true">
-      {mounted && onScreen ? (
+      {mounted && onScreen && allowWebGL ? (
         <Canvas
           camera={{position: [0, 0.3, 4.4], fov: 38}}
           style={{background: 'transparent'}}

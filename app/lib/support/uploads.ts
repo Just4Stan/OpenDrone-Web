@@ -46,8 +46,11 @@ const ALLOWED_MIME_PREFIXES = ['image/', 'audio/'];
 // an extension allowlist. Doubles as a sanity check when the browser
 // sends `application/octet-stream` for files it doesn't recognise.
 const ALLOWED_EXTENSIONS = new Set([
-  // images
-  'jpg', 'jpeg', 'png', 'gif', 'webp', 'heic', 'heif', 'bmp', 'svg',
+  // images — note: no 'svg'. SVG can carry inline <script>; drone support
+  // never needs it, so we don't lean on the CSP being the only thing that
+  // stops a stored-XSS-by-attachment. image/svg+xml passes the `image/`
+  // MIME prefix but is rejected here at the extension gate.
+  'jpg', 'jpeg', 'png', 'gif', 'webp', 'heic', 'heif', 'bmp',
   // docs / text
   'pdf', 'txt', 'log', 'md', 'csv', 'tsv', 'json',
   // audio / video
