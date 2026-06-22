@@ -662,44 +662,42 @@ export default function Product() {
   // quick block slide with no cover) swaps immediately.
   const [displayedPins, setDisplayedPins] = useState(activePins);
   const [pinsSwapping, setPinsSwapping] = useState(false);
-  const prevPinSrcRef = useRef<string | undefined>(activeBoardArt?.src);
+  // The component table crossfades on its OWN clock when the pins change — NOT
+  // slaved to the board swap. (Tying it to onSwapSettle made the content switch
+  // land ~1.1s in, after the dip had already faded back to opacity 1, so the new
+  // rows snapped in visibly.) Now: fade out → switch the rows while fully hidden
+  // (mid-dip) → fade in. activePins is a memo that only changes identity on a real
+  // tier change, so the ref compare fires exactly once per switch.
+  const prevPinsRef = useRef(activePins);
   useEffect(() => {
-    const src = activeBoardArt?.src;
-    if (prevPinSrcRef.current === src) {
-      setDisplayedPins(activePins);
-      return;
-    }
-    prevPinSrcRef.current = src;
+    if (prevPinsRef.current === activePins) return;
+    prevPinsRef.current = activePins;
     const reduce =
       typeof window !== 'undefined' &&
       window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
-    const wide =
-      typeof window !== 'undefined' &&
-      window.matchMedia?.('(min-width: 1024px)').matches;
-    if (reduce || !wide) {
+    if (reduce) {
       setDisplayedPins(activePins);
       return;
     }
-    // The new board sweeps in fast (0.55s/layer). Switch the list content behind
-    // a short opacity dip mid-sweep, then settle. These timers MUST track the
-    // board swap durations (app.css 1024px swap block) + the ghost hold (BoardArt,
-    // ~1.25s for the last layer) so the list and wires land with the board, not
-    // a beat after — a lag the old 600/1200/1800 numbers introduced.
     setPinsSwapping(true);
-    // Retract the connector wires the instant the swap starts — they'd otherwise
-    // hang frozen across the gutter, still pinned to the OLD bubbles, while the
-    // board and list fly behind them. They redraw to the NEW bubbles only once
-    // everything has landed.
-    setLinesReady(false);
-    const swapT = setTimeout(() => setDisplayedPins(activePins), 400);
-    const doneT = setTimeout(() => setPinsSwapping(false), 1000);
-    const lineT = setTimeout(() => setLinesReady(true), 1400);
+    // Switch the rows at the dip's hidden trough (44–56% of 0.52s = 229–291ms),
+    // then let the dip fade the new rows back in — no visible row snap.
+    const tSwap = setTimeout(() => setDisplayedPins(activePins), 235);
+    const tDone = setTimeout(() => setPinsSwapping(false), 520);
     return () => {
-      clearTimeout(swapT);
-      clearTimeout(doneT);
-      clearTimeout(lineT);
+      clearTimeout(tSwap);
+      clearTimeout(tDone);
     };
-  }, [activeBoardArt?.src, activePins]);
+  }, [activePins]);
+  // The board swap drives only the connector wires: retract on start (they'd hang
+  // frozen across the gutter, still pinned to the OLD bubbles), redraw on settle
+  // once the board + the (already-crossfaded) list have landed.
+  const handleSwapStart = () => {
+    setLinesReady(false);
+  };
+  const handleSwapSettle = () => {
+    setLinesReady(true);
+  };
   // Partition pins by the dominant side of their refs. Until the map loads (or
   // for pins with no resolvable side) pins fall into `other`, rendered flat.
   const groupedPins = useMemo(() => {
@@ -1505,6 +1503,8 @@ export default function Product() {
                   highlightGroups={hoveredGroups}
                   onFlying={setBoardFlying}
                   onHighlightVisible={setHighlightVisible}
+                  onSwapStart={handleSwapStart}
+                  onSwapSettle={handleSwapSettle}
                 />
                 {/* Part tour: which component is lit + how far through the set.
                     Swipe the board sideways (or tap a part) to step. Each tick is
