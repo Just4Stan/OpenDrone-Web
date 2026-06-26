@@ -33,6 +33,7 @@ import {WatchCard} from '~/components/WatchCard';
 import {redirectIfHandleIsLocalized} from '~/lib/redirect';
 import {buildSeoMeta, buildProductJsonLd} from '~/lib/seo';
 import {fetchLatestCommits} from '~/lib/github';
+import {OshwaMark} from '~/components/OshwaMark';
 import {useNoHover, useIsMobile} from '~/lib/use-media-query';
 import {
   PRODUCT_CONTENT,
@@ -1752,8 +1753,12 @@ export default function Product() {
               rel="noopener noreferrer"
               className="open-source-card open-source-card--oshwa"
             >
-              <p className="open-source-card-label">Certified</p>
-              <p className="open-source-card-title">OSHWA {activeOshwaUid} ↗</p>
+              <p className="open-source-card-label">Certified ↗</p>
+              <OshwaMark
+                uid={activeOshwaUid}
+                title={`OSHWA-certified open source hardware · ${activeOshwaUid}`}
+                className="open-source-card-oshwa-mark"
+              />
               <p className="open-source-card-sub">
                 Open source hardware · CERN-OHL-S v2
               </p>

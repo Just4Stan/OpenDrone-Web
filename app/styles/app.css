@@ -6090,6 +6090,20 @@ button.reset {
   color: var(--color-gold);
 }
 
+/* The OSHWA certification mark itself (stacked OSHW box + project UID). Sits
+   where the title text used to — the credential rendered as the actual mark, not
+   the raw number. `color` drives the SVG's currentColor (box + UID); the "W"
+   keeps its own red. Height-bounded so the near-square mark fits the 16:9 card
+   between the label and the CERN-OHL-S sub-line. */
+.open-source-card-oshwa-mark {
+  display: block;
+  width: auto;
+  height: 4.25rem;
+  max-width: 100%;
+  margin: 0.15rem 0 0.5rem;
+  color: var(--color-text);
+}
+
 /* "Watch" bubble — the video card that replaces the issues card on products
    with a build film. A 16:9 bubble (aspect-ratio inherited from
    .open-source-card) showing just the YouTube thumbnail with a centred gold
