@@ -1759,9 +1759,7 @@ export default function Product() {
                 title={`OSHWA-certified open source hardware · ${activeOshwaUid}`}
                 className="open-source-card-oshwa-mark"
               />
-              <p className="open-source-card-sub">
-                Open source hardware · CERN-OHL-S v2
-              </p>
+              <p className="open-source-card-sub">CERN-OHL-S v2</p>
             </a>
           ) : (
             <a
