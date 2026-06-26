@@ -18,6 +18,7 @@ import {CUSTOMER_NEWSLETTER_STATE_QUERY} from '~/graphql/customer-account/Newsle
 import resetStyles from '~/styles/reset.css?url';
 import appStyles from '~/styles/app.css?url';
 import {PageLayout} from './components/PageLayout';
+import {SignalLost} from './components/SignalLost';
 import {getCompanyIdentity} from '~/lib/company';
 import {localeFromPathname, seoLocaleTag} from '~/lib/i18n';
 import {buildOrgJsonLd} from '~/lib/seo';
@@ -324,10 +325,15 @@ export function ErrorBoundary() {
   }
 
   const isNotFound = errorStatus === 404;
-  const title = isNotFound ? 'Page not found' : 'Something went wrong';
-  const description = isNotFound
-    ? 'The page you were looking for has moved or never existed. Try the catalog or head home.'
-    : 'An unexpected error occurred. Try again, or head back to the catalog.';
+
+  // 404 gets the easter egg: an FPV "lost signal / failsafe" screen.
+  if (isNotFound) {
+    return <SignalLost />;
+  }
+
+  const title = 'Something went wrong';
+  const description =
+    'An unexpected error occurred. Try again, or head back to the catalog.';
 
   return (
     <div className="route-error page-shell">
