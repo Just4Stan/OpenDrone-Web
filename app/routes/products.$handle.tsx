@@ -567,6 +567,9 @@ export default function Product() {
   // split-repo lines (OpenFC-Lite ↔ OpenFC-Lite-Mini, OpenESC_20X20 ↔
   // OpenESC-30x30) point at the tier's repo, others at the product default.
   const activeRepoUrl = activeVariant?.repoUrl ?? content.repoUrl;
+  // OSHWA certification follows the selected tier — each certified board has its
+  // own UID, so the chip links to the directory page for the active variant.
+  const activeOshwaUid = activeVariant?.oshwaUid ?? content.oshwaUid;
   // Repo whose commit history backs the "Open for learning" row's 4th card —
   // the bundle's first component repo, else the selected tier's repo. Used as
   // the fallback link when the live latest-commit fetch is rate-limited.
@@ -1405,6 +1408,25 @@ export default function Product() {
                 </Link>
               </li>
             ) : null}
+            {activeOshwaUid ? (
+              <li>
+                <a
+                  href={`https://certification.oshwa.org/${activeOshwaUid.toLowerCase()}.html`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="trust-chip trust-chip-oshwa trust-chip-link"
+                  title={`OSHWA-certified open source hardware · ${activeOshwaUid}`}
+                >
+                  <img
+                    src="/logos/oshwa.svg"
+                    alt=""
+                    aria-hidden="true"
+                    className="trust-chip-oshwa-mark"
+                  />
+                  OSHWA certified · {activeOshwaUid}
+                </a>
+              </li>
+            ) : null}
             {content.bundle ? (
               <li>
                 <Link
@@ -1719,18 +1741,37 @@ export default function Product() {
               )}
             </>
           )}
-          <a
-            href="https://ohwr.org/cern_ohl_s_v2.txt"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="open-source-card open-source-card--cern"
-          >
-            <p className="open-source-card-label">License</p>
-            <p className="open-source-card-title">CERN-OHL-S v2 ↗</p>
-            <p className="open-source-card-sub">
-              Strong reciprocal: share your changes
-            </p>
-          </a>
+          {activeOshwaUid ? (
+            // OSHWA-certified: lead with the open-hardware certification (links
+            // the public cert page for this UID) and keep the CERN-OHL-S license
+            // name on the sub-line — the certification attests the license, it
+            // doesn't replace it.
+            <a
+              href={`https://certification.oshwa.org/${activeOshwaUid.toLowerCase()}.html`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="open-source-card open-source-card--oshwa"
+            >
+              <p className="open-source-card-label">Certified</p>
+              <p className="open-source-card-title">OSHWA {activeOshwaUid} ↗</p>
+              <p className="open-source-card-sub">
+                Open source hardware · CERN-OHL-S v2
+              </p>
+            </a>
+          ) : (
+            <a
+              href="https://ohwr.org/cern_ohl_s_v2.txt"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="open-source-card open-source-card--cern"
+            >
+              <p className="open-source-card-label">License</p>
+              <p className="open-source-card-title">CERN-OHL-S v2 ↗</p>
+              <p className="open-source-card-sub">
+                Strong reciprocal: share your changes
+              </p>
+            </a>
+          )}
           {/* The latest commit rides in the same row as the resource cards —
               streams in as a 4th card once the deferred GitHub fetch lands.
               GitHub's unauthenticated API rate-limits the edge under load, so
@@ -1749,13 +1790,21 @@ export default function Product() {
               >
                 {(commits) => {
                   // Bundles show one commit card per component repo; a single
-                  // product (incl. split-repo lines) shows just the selected
-                  // tier's repo, so the card tracks the ladder.
+                  // product (incl. split-repo lines) prefers the selected tier's
+                  // repo so the card tracks the ladder. But the loader only
+                  // fetches the product-default repo (per-tier fetches blew the
+                  // 60/hr unauth rate limit), so on split-repo tiers no commit
+                  // matches activeRepoUrl — fall back to the fetched commit
+                  // rather than degrading to the static changelog card.
+                  const all = commits ?? [];
+                  const matched = all.filter(
+                    (c) => c.repoUrl === activeRepoUrl,
+                  );
                   const shown = content.bundle
-                    ? (commits ?? [])
-                    : (commits ?? []).filter(
-                        (c) => c.repoUrl === activeRepoUrl,
-                      );
+                    ? all
+                    : matched.length
+                      ? matched
+                      : all;
                   return shown.length ? (
                     shown.map((c) => (
                       <LatestCommitCard key={c.sha + c.repoUrl} commit={c} />
