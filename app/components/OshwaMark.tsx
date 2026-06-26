@@ -22,7 +22,7 @@ export function OshwaMark({
 }) {
   return (
     <svg
-      viewBox="0 0 549 442"
+      viewBox="40 50 470 355"
       className={className}
       role="img"
       aria-label={title ?? `OSHWA certified · ${uid}`}

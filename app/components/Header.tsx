@@ -206,6 +206,30 @@ function FamilyNav({
     closeTimer.current = setTimeout(() => setOpen(null), 140);
   }
 
+  // Backstop for the hover dropdown: onMouseLeave/onBlur are not reliable — a
+  // fast pointer move, a scroll, or the pod re-rendering under the cursor can
+  // swallow the leave event, leaving the menu stuck open (no longer hovered).
+  // While something is open, watch the pointer and scroll globally: any pointer
+  // that isn't over a `.header-cat` (the chip OR its pod, which lives inside it)
+  // schedules the close; scrolling closes immediately.
+  useEffect(() => {
+    if (!open) return;
+    const onPointer = (e: PointerEvent) => {
+      const t = e.target as Element | null;
+      if (!t?.closest?.('.header-cat')) scheduleClose();
+    };
+    const onScroll = () => {
+      clearTimeout(closeTimer.current);
+      setOpen(null);
+    };
+    document.addEventListener('pointermove', onPointer);
+    window.addEventListener('scroll', onScroll, {passive: true});
+    return () => {
+      document.removeEventListener('pointermove', onPointer);
+      window.removeEventListener('scroll', onScroll);
+    };
+  }, [open]);
+
   function itemsFor(type: string): ProductPodItem[] {
     return (products ?? [])
       .filter((p) => (p.productType || '') === type)

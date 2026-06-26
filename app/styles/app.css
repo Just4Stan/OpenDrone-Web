@@ -6084,28 +6084,41 @@ button.reset {
   position: relative;
   overflow: hidden;
   border-color: var(--color-gold-soft);
+  /* The mark IS the card — it fills the whole bubble (positioned absolute below),
+     so drop the card's own padding and centring. */
+  padding: 0;
 }
 
-.open-source-card--oshwa .open-source-card-label {
-  color: var(--color-gold);
-}
-
-/* The OSHWA certification mark itself (stacked OSHW box + project UID). Sits
-   where the title text used to — the credential rendered as the actual mark, not
-   the raw number. `color` drives the SVG's currentColor (box + UID); the "W"
-   keeps its own red. Height-bounded so the near-square mark fits the 16:9 card
-   between the label and the CERN-OHL-S sub-line. */
+/* The OSHWA certification mark fills the entire card — the credential as the
+   hero, not a small inset graphic. Absolutely positioned so it ignores the card
+   padding and spans edge to edge (a little breathing room top/sides, more at the
+   bottom for the caption). The tightened viewBox means little dead space, so the
+   OSHW box + UID render large. `color` drives the SVG currentColor (box + UID);
+   the "W" keeps its own red. */
 .open-source-card-oshwa-mark {
   display: block;
-  /* Fill the bubble: grow into all vertical space the label + sub-line leave,
-     full width. The SVG's default preserveAspectRatio keeps the near-square
-     mark centred and contained, so it spans as large as the card allows. */
+  /* Flex-fill the card height (the mark contains within, so it never clips the
+     UID — unlike width-filling, which pushed the UID off the bottom edge). The
+     top margin clears the absolute caption; the tightened viewBox means this
+     height renders a large OSHW box + UID. */
   flex: 1 1 0;
   min-height: 0;
   width: 100%;
   height: 100%;
-  margin: 0.4rem 0;
+  margin: 1.15rem 0 0.2rem;
   color: var(--color-text);
+}
+
+/* CERN-OHL-S caption along the TOP — the mark's UID owns the bottom, so the
+   caption can't ride on top of it. */
+.open-source-card-sub--oshwa {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0.5rem;
+  margin: 0;
+  text-align: center;
+  color: var(--color-gold);
 }
 
 /* "Watch" bubble — the video card that replaces the issues card on products
