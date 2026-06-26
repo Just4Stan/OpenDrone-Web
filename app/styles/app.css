@@ -3682,6 +3682,22 @@ button.reset {
   border-color: color-mix(in srgb, var(--color-gold) 35%, var(--color-border));
 }
 
+/* OSHWA open-source-hardware certification chip. The mark carries the brand
+   red on its "W"; the wordmark + frame inherit the chip text colour (the SVG
+   uses currentColor) so it reads in both themes. */
+.trust-chip-oshwa {
+  color: var(--color-text-muted);
+}
+
+.trust-chip-oshwa-mark {
+  height: 0.85em;
+  width: auto;
+  flex: none;
+  /* currentColor drives the wordmark/frame; nudge it to full text colour so the
+     mark stays legible while the chip label sits at muted weight. */
+  color: var(--color-text);
+}
+
 /* Buy module — the page's center of mass. Vertical stack:
    price (large) → SKU/stock row → primary CTA (full-width gold) →
    trust microcopy → civilian-use disclosure. */
@@ -6061,6 +6077,33 @@ button.reset {
   mask-image: url(/logos/cern.svg);
 }
 
+/* OSHWA-certified card — the license card upgraded when a product carries an
+   OSHWA UID. Gold-accented so the certification reads as the headline credential
+   (the CERN-OHL-S name moves to the sub-line). All tokens, so it themes for free. */
+.open-source-card--oshwa {
+  position: relative;
+  overflow: hidden;
+  border-color: var(--color-gold-soft);
+}
+
+.open-source-card--oshwa .open-source-card-label {
+  color: var(--color-gold);
+}
+
+/* The OSHWA certification mark itself (stacked OSHW box + project UID). Sits
+   where the title text used to — the credential rendered as the actual mark, not
+   the raw number. `color` drives the SVG's currentColor (box + UID); the "W"
+   keeps its own red. Height-bounded so the near-square mark fits the 16:9 card
+   between the label and the CERN-OHL-S sub-line. */
+.open-source-card-oshwa-mark {
+  display: block;
+  width: auto;
+  height: 4.25rem;
+  max-width: 100%;
+  margin: 0.15rem 0 0.5rem;
+  color: var(--color-text);
+}
+
 /* "Watch" bubble — the video card that replaces the issues card on products
    with a build film. A 16:9 bubble (aspect-ratio inherited from
    .open-source-card) showing just the YouTube thumbnail with a centred gold
@@ -8280,6 +8323,10 @@ button.reset {
 
 .trust-chip-link.trust-chip-gold:hover {
   color: var(--color-gold-hover);
+}
+
+.trust-chip-link.trust-chip-oshwa:hover {
+  color: var(--color-text);
 }
 
 /* --------------------------------------------------------------------- */

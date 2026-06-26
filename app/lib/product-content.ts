@@ -156,6 +156,11 @@ export type VariantContent = {
    *  card — a designed model that is not yet a purchasable Shopify variant.
    *  It shows on the ladder for line completeness but can't be added to cart. */
   comingSoon?: boolean;
+  /** OSHWA open-source-hardware certification UID for this specific tier (each
+   *  certified board has its own UID, e.g. "BE000026"). The PDP renders a
+   *  certification chip linking to `certification.oshwa.org/<uid>.html` for the
+   *  selected tier; falls back to the product-level `oshwaUid` when unset. */
+  oshwaUid?: string;
 };
 
 export type ProductContent = {
@@ -228,6 +233,9 @@ export type ProductContent = {
    *  {@link VariantContent}. */
   optionAxis?: string;
   variants?: Record<string, VariantContent>;
+  /** OSHWA certification UID for a single-board product (no per-tier split).
+   *  Lines whose tiers each carry their own UID set it on the variant instead. */
+  oshwaUid?: string;
   pairCta?: PairCta;            // playful cross-sell under the buy strip
   bundle?: {                    // when set, the PDP renders as a bundle
     components: BundleComponent[];
@@ -359,6 +367,7 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
     optionAxis: 'Model',
     variants: {
       '20×20': {
+        oshwaUid: 'BE000028',
         highlights: [
           ['Mount', '20×20'],
           ['MOSFET', 'DOY180N03T'],
@@ -373,6 +382,7 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
         ],
       },
       '30×30': {
+        oshwaUid: 'BE000029',
         // The 30×30 ESC is a separate repo from the 20×20 (the product default).
         repoUrl: 'https://github.com/incutec-hw/OpenESC-30x30',
         highlights: [
@@ -695,6 +705,7 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
     optionAxis: 'Model',
     variants: {
       '20×20': {
+        oshwaUid: 'BE000027',
         // The 20×20 (Mini) is its own repo; the 30×30 uses the product default.
         repoUrl: 'https://github.com/incutec-hw/OpenFC-Lite-Mini',
         tagline: 'The 20×20 mount: RP2354A, QFN-60. The compact stack size.',
@@ -761,6 +772,7 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
         },
       },
       '30×30': {
+        oshwaUid: 'BE000026',
         tagline: 'The 30×30 mount: bigger pads and more I/O.',
         highlights: [
           ['Mount', '30×30'],
@@ -841,6 +853,7 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
     optionAxis: 'Model',
     variants: {
       Lite: {
+        oshwaUid: 'BE000030',
         tagline: 'SX1281 on 2.4 GHz with an on-board ceramic antenna: the low-cost default.',
         highlights: [
           ['Radio', 'Semtech SX1281'],
@@ -873,6 +886,7 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
         },
       },
       'Lite-UFL': {
+        oshwaUid: 'BE000031',
         tagline: 'Same SX1281 radio, swapped to a U.FL pigtail for an external antenna.',
         highlights: [
           ['Radio', 'Semtech SX1281'],
@@ -906,6 +920,7 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
         },
       },
       Mono: {
+        oshwaUid: 'BE000032',
         tagline: 'Single LR1121 for multi-band links, with the RF front-end.',
         highlights: [
           ['Radio', 'Semtech LR1121'],
@@ -940,6 +955,7 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
         },
       },
       Gemini: {
+        oshwaUid: 'BE000033',
         tagline: 'Dual LR1121 in ExpressLRS Xrossband mode for frequency-diverse links.',
         highlights: [
           ['Radio', 'Semtech LR1121 × 2'],
