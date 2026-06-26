@@ -1753,13 +1753,14 @@ export default function Product() {
               rel="noopener noreferrer"
               className="open-source-card open-source-card--oshwa"
             >
-              <p className="open-source-card-label">Certified ↗</p>
               <OshwaMark
                 uid={activeOshwaUid}
                 title={`OSHWA-certified open source hardware · ${activeOshwaUid}`}
                 className="open-source-card-oshwa-mark"
               />
-              <p className="open-source-card-sub">CERN-OHL-S v2</p>
+              <p className="open-source-card-sub open-source-card-sub--oshwa">
+                CERN-OHL-S v2 ↗
+              </p>
             </a>
           ) : (
             <a
