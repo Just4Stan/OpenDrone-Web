@@ -17,9 +17,18 @@ export function WatchCard({
 }) {
   // maxres is the sharp 16:9 frame but only exists for HD uploads; fall back to
   // hqdefault (always present) if it 404s.
-  const [poster, setPoster] = useState(
-    `https://i.ytimg.com/vi/${videoId}/maxresdefault.jpg`,
-  );
+  const maxres = `https://i.ytimg.com/vi/${videoId}/maxresdefault.jpg`;
+  const [poster, setPoster] = useState(maxres);
+
+  // The PDP reuses one WatchCard instance across product navigation (same route,
+  // same tree position), so `videoId` can change without a remount. useState's
+  // initial value won't re-run, so reset the poster here or it stays the
+  // previous product's thumbnail (correct href, wrong image).
+  const [prevId, setPrevId] = useState(videoId);
+  if (videoId !== prevId) {
+    setPrevId(videoId);
+    setPoster(maxres);
+  }
 
   return (
     <a
