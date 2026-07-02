@@ -4483,6 +4483,88 @@ button.reset {
 /* Pair CTA — playful cross-sell that sits under the buy strip. Vertical
    stack so the product name gets display-size weight; the arrow pins to
    the bottom-right corner of the card. */
+/* "Complete the stack" cross-sell inside the buy module. A quiet row that
+   arms with a checkbox; gold only once armed so it doesn't fight the CTA. */
+.stack-builder {
+  border: 1px solid var(--color-border);
+  border-radius: var(--r-md);
+  padding: 0.65rem 0.8rem;
+  margin-bottom: 0.85rem;
+  transition: border-color 0.15s ease;
+}
+.stack-builder.is-on {
+  border-color: color-mix(in srgb, var(--color-gold) 45%, var(--color-border));
+  background: color-mix(in srgb, var(--color-gold) 5%, transparent);
+}
+.stack-builder-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  cursor: pointer;
+}
+.stack-builder-toggle input {
+  accent-color: var(--color-gold);
+  width: 15px;
+  height: 15px;
+  flex: none;
+}
+.stack-builder-toggle-text {
+  font-size: 0.85rem;
+  color: var(--color-text);
+}
+.stack-builder-badge {
+  margin-left: auto;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--color-gold);
+  border: 1px solid color-mix(in srgb, var(--color-gold) 45%, transparent);
+  border-radius: var(--r-pill);
+  padding: 0.05rem 0.45rem;
+}
+.stack-builder-body {
+  margin-top: 0.6rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+.stack-builder-options {
+  display: flex;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+.stack-builder-option {
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  padding: 0.25rem 0.7rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--r-pill);
+  background: none;
+  color: var(--color-text-muted);
+  cursor: pointer;
+}
+.stack-builder-option.is-active {
+  border-color: var(--color-gold);
+  color: var(--color-text);
+}
+.stack-builder-line {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem;
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+}
+.stack-builder-price {
+  display: inline-flex;
+  gap: 0.1rem;
+  color: var(--color-text);
+}
+.stack-builder-note {
+  margin: 0;
+  font-size: 0.78rem;
+  color: var(--color-text-dim);
+}
+
 .pair-cta {
   position: relative;
   display: flex;

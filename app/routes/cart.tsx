@@ -4,6 +4,7 @@ import type {CartQueryDataReturn} from '@shopify/hydrogen';
 import {CartForm} from '@shopify/hydrogen';
 import {CartMain} from '~/components/CartMain';
 import {buildSeoMeta} from '~/lib/seo';
+import {DONATION_PRODUCT_QUERY} from '~/lib/fragments';
 
 export const meta: Route.MetaFunction = () =>
   buildSeoMeta({
@@ -145,32 +146,3 @@ export default function Cart() {
     </div>
   );
 }
-
-// Minimal query for the optional `firmware-donation` product. Uses the
-// Storefront API's product-by-handle lookup so a missing product resolves
-// to null instead of erroring. Variants become the tier buttons.
-const DONATION_PRODUCT_QUERY = `#graphql
-  query DonationProduct(
-    $country: CountryCode
-    $language: LanguageCode
-    $handle: String!
-  ) @inContext(country: $country, language: $language) {
-    product(handle: $handle) {
-      id
-      title
-      handle
-      description
-      variants(first: 10) {
-        nodes {
-          id
-          title
-          availableForSale
-          price {
-            amount
-            currencyCode
-          }
-        }
-      }
-    }
-  }
-` as const;

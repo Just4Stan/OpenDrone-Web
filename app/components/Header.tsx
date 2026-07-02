@@ -70,7 +70,6 @@ type Viewport = 'desktop' | 'mobile';
 const CATEGORY_LINKS: Array<{label: string; to: string; type: string}> = [
   {label: 'FC', to: '/products/openfc-lite', type: 'Flight Controller'},
   {label: 'ESC', to: '/products/openesc', type: 'ESC'},
-  {label: 'Stack', to: '/products/openstack', type: 'Bundle'},
   {label: 'RX', to: '/products/openrx', type: 'Receiver'},
   {label: 'Frame', to: '/products/openframe', type: 'Frame'},
 ];
