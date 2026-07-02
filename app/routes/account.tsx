@@ -47,18 +47,8 @@ export async function loader({context}: Route.LoaderArgs) {
 export default function AccountLayout() {
   const {customer} = useLoaderData<typeof loader>();
 
-  const heading = customer
-    ? customer.firstName
-      ? `Welcome, ${customer.firstName}`
-      : `Welcome to your account.`
-    : 'Account Details';
-
   return (
     <div className="account page-shell">
-      <header className="page-header">
-        <p className="page-eyebrow">Customer account</p>
-        <h1 className="page-title">{heading}</h1>
-      </header>
       <AccountMenu />
       <section className="account-panel">
         <Outlet context={{customer}} />
