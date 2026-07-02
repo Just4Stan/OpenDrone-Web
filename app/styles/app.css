@@ -1640,13 +1640,20 @@ html.anim-paused .board-sheet.is-active {
    bridges the hover gap between the row and the strip. */
 .product-pod-actions {
   position: absolute;
-  left: 100%;
+  left: calc(100% + 0.4rem);
   top: 50%;
   display: flex;
   align-items: center;
   gap: 0.4rem;
-  padding-left: 0.5rem;
+  padding: 0.45rem 0.55rem;
   white-space: nowrap;
+  /* Solid Pod material: these pills float over arbitrary page content
+     (hero scene, gold CTAs) — without an opaque panel the ghost pill is
+     unreadable. */
+  background: var(--pod-bg-strong);
+  border: 1px solid var(--pod-border);
+  border-radius: var(--r-pill);
+  box-shadow: var(--pod-shadow);
   opacity: 0;
   transform: translateY(-50%) translateX(-6px);
   pointer-events: none;
@@ -1654,6 +1661,15 @@ html.anim-paused .board-sheet.is-active {
   text-transform: none;
   letter-spacing: normal;
   z-index: 25;
+}
+/* Invisible hover bridge over the row→strip gap. */
+.product-pod-actions::before {
+  content: '';
+  position: absolute;
+  left: -0.5rem;
+  top: 0;
+  bottom: 0;
+  width: 0.5rem;
 }
 .product-pod-wrap:hover .product-pod-actions,
 .product-pod-wrap:focus-within .product-pod-actions,
@@ -1682,12 +1698,12 @@ html.anim-paused .board-sheet.is-active {
 }
 .product-pod-cascade-toggle {
   font-family: var(--font-mono);
-  font-size: 0.72rem;
-  padding: 0.28rem 0.7rem;
-  background: none;
-  border: 1px solid color-mix(in srgb, var(--color-gold) 45%, var(--color-border));
+  font-size: 0.75rem;
+  padding: 0.28rem 0.75rem;
+  background: var(--color-bg-elevated);
+  border: 1px solid color-mix(in srgb, var(--color-gold) 55%, var(--color-border));
   border-radius: var(--r-pill);
-  color: var(--color-text-muted);
+  color: var(--color-text);
   cursor: pointer;
   white-space: nowrap;
 }
@@ -1748,15 +1764,26 @@ html.anim-paused .board-sheet.is-active {
 .product-pod-companion .btn-label {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.6rem;
   font-family: var(--font-mono);
-  font-size: 0.75rem;
+  font-size: 0.82rem;
+}
+.product-pod-companions-head {
+  margin: 0;
+  padding: 0.1rem 0.5rem 0.3rem;
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-gold);
+  border-bottom: 1px solid var(--color-border);
 }
 .product-pod-companion img {
-  width: 34px;
-  height: 34px;
+  width: 52px;
+  height: 52px;
   object-fit: contain;
   flex: none;
+  border-radius: var(--r-sm);
 }
 .product-pod-companion-title {
   flex: 1;
@@ -1783,6 +1810,12 @@ html.anim-paused .board-sheet.is-active {
   padding: var(--sp-2);
   text-transform: none;
   letter-spacing: normal;
+}
+/* Bigger, clearer product imagery in the header dropdowns (50% up from the
+   3rem shared default; the hero showcase keeps its own sizing). */
+.site-header-categories .header-cat-pod .product-pod-media {
+  width: 4.5rem;
+  height: 4.5rem;
 }
 .site-header-categories .header-cat-pod .product-pod-title {
   color: var(--color-gold);

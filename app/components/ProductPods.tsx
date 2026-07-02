@@ -157,6 +157,12 @@ export function ProductPods({
               ) : null}
               {cascadeOpen && companions ? (
                 <div className="product-pod-companions" role="menu">
+                  <p className="product-pod-companions-head">
+                    Stack it · one order
+                    {companions.options[0]?.pct
+                      ? ` · −${companions.options[0].pct}% at checkout`
+                      : ''}
+                  </p>
                   {companions.options.map((o) => (
                     <AddToCartButton
                       key={o.key}
@@ -173,8 +179,8 @@ export function ProductPods({
                         <img
                           src={o.imageUrl}
                           alt=""
-                          width={34}
-                          height={34}
+                          width={52}
+                          height={52}
                           loading="lazy"
                           decoding="async"
                         />
