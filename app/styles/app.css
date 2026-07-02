@@ -1856,19 +1856,26 @@ html.hero-header-in .homepage-layout .site-header {
 /* Boards fill the stage: bigger renders with tight, balanced offsets so the
    pair reads as one centred cluster (not two corners), with the glow under it. */
 .home-mobile-board {
-  position: absolute;
+  display: block;
   width: clamp(178px, 54vw, 264px);
   height: auto;
   border-radius: var(--r-md);
   filter: drop-shadow(0 18px 30px rgba(0, 0, 0, 0.45));
+}
+/* The infinite float runs on this wrapper, NOT on the filtered img: the
+   drop-shadow raster gets cached once and the compositor just moves the
+   layer. Filter + transform-animation on the same element re-filters every
+   frame on weak GPUs. */
+.home-mobile-board-float {
+  position: absolute;
   will-change: transform;
 }
-.home-mobile-board--rear {
+.home-mobile-board-float--rear {
   transform: translate(15%, 9%) rotate(8deg) scale(0.85);
   opacity: 0.8;
   animation: home-board-float-rear 7s ease-in-out infinite;
 }
-.home-mobile-board--front {
+.home-mobile-board-float--front {
   transform: translate(-13%, -4%) rotate(-6deg);
   animation: home-board-float-front 6s ease-in-out infinite;
 }
@@ -1881,8 +1888,8 @@ html.hero-header-in .homepage-layout .site-header {
   50% { transform: translate(15%, 12%) rotate(8deg) scale(0.85); }
 }
 @media (prefers-reduced-motion: reduce) {
-  .home-mobile-board--front,
-  .home-mobile-board--rear {
+  .home-mobile-board-float--front,
+  .home-mobile-board-float--rear {
     animation: none;
   }
 }
