@@ -1626,72 +1626,129 @@ html.anim-paused .board-sheet.is-active {
   max-width: 24rem;
   padding: var(--sp-2);
 }
-/* Stack chip pod: one row per size-matched FC+ESC pair, addable in place.
-   Same reset as the product pods below — the chip rules bleed gold/uppercase
-   onto everything inside .site-header-categories. */
-.header-stack-rows {
+/* Pod-row buy actions: hovering a family-dropdown row reveals "Add to
+   cart?" and, on FC/ESC rows, an "also add an X ▸" cascade that opens a
+   nested companion panel. The chip rules bleed gold/uppercase into
+   .site-header-categories, so reset text styling explicitly. */
+.product-pod-wrap {
+  position: relative;
   display: flex;
   flex-direction: column;
-  gap: 0.25rem;
 }
-.header-stack-row {
+.product-pod-actions {
   display: flex;
   align-items: center;
-  gap: 0.65rem;
-  padding: 0.4rem 0.5rem;
-  border-radius: var(--r-lg);
+  gap: 0.4rem;
+  padding: 0.25rem 0.5rem 0.4rem;
+  max-height: 0;
+  opacity: 0;
+  overflow: hidden;
+  transition: max-height 0.18s ease, opacity 0.15s ease;
   text-transform: none;
   letter-spacing: normal;
+}
+.product-pod-wrap:hover .product-pod-actions,
+.product-pod-wrap:focus-within .product-pod-actions,
+.product-pod-wrap.is-cascade-open .product-pod-actions {
+  max-height: 3rem;
   opacity: 1;
+  overflow: visible;
 }
-.header-stack-row.is-out {
-  opacity: 0.45;
-}
-.header-stack-row img {
-  width: 44px;
-  height: 44px;
-  object-fit: contain;
-  flex: none;
-}
-.header-stack-info {
-  display: flex;
-  flex-direction: column;
-  gap: 0.1rem;
-  min-width: 9rem;
-}
-.header-stack-title {
+.product-pod-add {
   font-family: var(--font-mono);
-  font-size: 0.85rem;
-  color: var(--color-gold);
-}
-.header-stack-sub {
-  font-size: 0.72rem;
-  color: var(--color-text-dim);
-  white-space: nowrap;
-}
-.header-stack-price {
-  font-family: var(--font-mono);
-  font-size: 0.82rem;
-  color: var(--color-text);
-  margin-left: auto;
-}
-.header-stack-add {
-  flex: none;
-  font-family: var(--font-mono);
-  font-size: 0.78rem;
-  padding: 0.3rem 0.85rem;
+  font-size: 0.75rem;
+  padding: 0.28rem 0.8rem;
   background: var(--color-gold);
   color: var(--color-on-accent);
   border: none;
   border-radius: var(--r-pill);
   cursor: pointer;
+  white-space: nowrap;
 }
-.header-stack-add:hover {
+.product-pod-add:hover {
   background: var(--color-gold-hover);
 }
-.header-stack-add[disabled] {
+.product-pod-add[disabled] {
   opacity: 0.5;
   cursor: not-allowed;
+}
+.product-pod-cascade-toggle {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  padding: 0.28rem 0.7rem;
+  background: none;
+  border: 1px solid color-mix(in srgb, var(--color-gold) 45%, var(--color-border));
+  border-radius: var(--r-pill);
+  color: var(--color-text-muted);
+  cursor: pointer;
+  white-space: nowrap;
+}
+.product-pod-cascade-toggle:hover,
+.product-pod-wrap.is-cascade-open .product-pod-cascade-toggle {
+  border-color: var(--color-gold);
+  color: var(--color-text);
+}
+/* The cascade: a nested Pod-material panel that opens under the row. */
+.product-pod-companions {
+  position: absolute;
+  top: 100%;
+  left: 0.4rem;
+  right: 0.4rem;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 0.4rem;
+  background: var(--pod-bg-strong);
+  border: 1px solid var(--pod-border);
+  border-radius: var(--r-lg);
+  box-shadow: var(--pod-shadow);
+  text-transform: none;
+  letter-spacing: normal;
+}
+.product-pod-companion {
+  width: 100%;
+  padding: 0.35rem 0.5rem;
+  background: none;
+  border: 1px solid transparent;
+  border-radius: var(--r-md);
+  color: var(--color-text);
+  cursor: pointer;
+}
+.product-pod-companion:hover {
+  border-color: color-mix(in srgb, var(--color-gold) 45%, var(--color-border));
+  background: color-mix(in srgb, var(--color-gold) 6%, transparent);
+}
+.product-pod-companion[disabled] {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.product-pod-companion .btn-label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+}
+.product-pod-companion img {
+  width: 34px;
+  height: 34px;
+  object-fit: contain;
+  flex: none;
+}
+.product-pod-companion-title {
+  flex: 1;
+  text-align: left;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.product-pod-companion-price {
+  color: var(--color-text-muted);
+  display: inline-flex;
+}
+.product-pod-companion-pct {
+  color: var(--color-gold);
 }
 /* The chip rules (.site-header-categories a / .site-header-cat-group a) also
    match the pod's product links — they bled gold colour, UPPERCASE tracking and
