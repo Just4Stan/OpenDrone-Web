@@ -321,7 +321,7 @@ function IntakeView({
                   defaultValue=""
                   disabled={busy}
                 >
-                  <option value="">— Pick one —</option>
+                  <option value="">Pick one</option>
                   <option value="OpenESC">OpenESC (Electronic Speed Controller)</option>
                   <option value="OpenFC">OpenFC (Flight Controller)</option>
                   <option value="OpenRX">OpenRX (Receiver)</option>

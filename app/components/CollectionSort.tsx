@@ -12,8 +12,8 @@ export type SortOption = {
 
 export const SORT_OPTIONS: SortOption[] = [
   {value: 'featured', label: 'Featured', sortKey: 'MANUAL'},
-  {value: 'price-asc', label: 'Price — low to high', sortKey: 'PRICE'},
-  {value: 'price-desc', label: 'Price — high to low', sortKey: 'PRICE', reverse: true},
+  {value: 'price-asc', label: 'Price: low to high', sortKey: 'PRICE'},
+  {value: 'price-desc', label: 'Price: high to low', sortKey: 'PRICE', reverse: true},
   {value: 'newest', label: 'Newest', sortKey: 'CREATED', reverse: true},
   {value: 'bestselling', label: 'Best selling', sortKey: 'BEST_SELLING'},
   {value: 'title', label: 'Alphabetical', sortKey: 'TITLE'},

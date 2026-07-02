@@ -114,7 +114,7 @@ export function Header({
               prefetch="intent"
               to="/incutec"
               className="site-header-logo site-header-logo--incutec"
-              aria-label="Incutec — the company behind OpenDrone"
+              aria-label="Incutec, the company behind OpenDrone"
               style={{viewTransitionName: 'site-logo'}}
               onClick={dismissIncutecHint}
             >
