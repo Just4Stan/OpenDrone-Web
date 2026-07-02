@@ -863,10 +863,10 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
     family: 'Carbon Frame',
     hero: {
       line1: 'The body',
-      line2Italic: 'the rest',
-      line3: 'bolts into.',
+      line2Italic: 'everything else',
+      line3: 'mounts to.',
       lead:
-        'CNC carbon-fibre freestyle frame on a 30.5×30.5 stack pattern. Designed in-house, OEM-machined. OpenFC and OpenESC drop in without spacers.',
+        'Fast, strong and optimized. CNC carbon-fibre freestyle frame on a 30.5×30.5 stack pattern. Designed in-house, OEM-machined. OpenFC Lite and OpenESC drop in without spacers.',
     },
     firmware: {
       project: '—',

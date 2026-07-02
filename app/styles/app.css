@@ -904,9 +904,11 @@ html {
   gap: 1rem;
   padding: 0.85rem 1rem;
   overflow: hidden;
+  /* No backdrop-filter: this card's max-height/opacity are scrubbed inline
+     every scroll frame, and a live blur would re-composite on each of those
+     frames. --pod-bg-strong already provides the legibility (same trade as
+     the header pill, see the GPU note above .site-header-main). */
   background: var(--pod-bg-strong);
-  backdrop-filter: blur(var(--pod-blur));
-  -webkit-backdrop-filter: blur(var(--pod-blur));
   border: 1px solid var(--pod-border);
   border-radius: var(--r-md);
   box-shadow: var(--pod-shadow);
@@ -1437,17 +1439,29 @@ html.anim-paused .placeholder-banner__dot,
 html.anim-paused .hero-drag-hint.is-visible,
 html.anim-paused .hero-scroll-hint.is-visible svg,
 html.anim-paused .latest-commit-dot,
-html.anim-paused .support-typing span {
+html.anim-paused .support-typing span,
+html.anim-paused .home-mobile-board-float--front,
+html.anim-paused .home-mobile-board-float--rear,
+html.perf-lite .site-wordmark-sheen,
+html.perf-lite .placeholder-banner__dot,
+html.perf-lite .hero-drag-hint.is-visible,
+html.perf-lite .hero-scroll-hint.is-visible svg,
+html.perf-lite .latest-commit-dot,
+html.perf-lite .support-typing span,
+html.perf-lite .home-mobile-board-float--front,
+html.perf-lite .home-mobile-board-float--rear {
   animation-play-state: paused !important;
 }
 /* …and strip the GPU-heavy live blurs + board drop-shadows while idle/unfocused,
    so nothing keeps re-compositing when no one's interacting. They transition back
    in on focus/interaction. This is what keeps full fidelity when active but ~0
-   GPU otherwise (the user's "don't drain when I'm in the terminal"). */
+   GPU otherwise (the user's "don't drain when I'm in the terminal").
+   `html.perf-lite` is the runtime jank governor (root.tsx): same strips, applied
+   while sustained main-thread jank is detected, released when frames recover. */
 html.anim-paused .board-folder-rail,
 html.anim-paused .schematic-rail,
-html.anim-paused .buy-rail.is-pinned,
-html.anim-paused .product-stickybar {
+html.perf-lite .board-folder-rail,
+html.perf-lite .schematic-rail {
   -webkit-backdrop-filter: none !important;
   backdrop-filter: none !important;
   background: var(--pod-bg-strong);
@@ -4110,9 +4124,11 @@ button.reset {
     align-items: center;
     gap: var(--sp-3);
     padding: 0.4rem 0.4rem 0.4rem 0.9rem;
-    background: var(--pod-bg);
-    -webkit-backdrop-filter: blur(var(--pod-blur));
-    backdrop-filter: blur(var(--pod-blur));
+    /* Opaque token, no live blur: this rail stays pinned through the whole
+       PDP scroll, and a persistent backdrop-filter re-blurs on every scrolled
+       frame (same trade as the header pill — see the GPU note above
+       .site-header-main). */
+    background: var(--pod-bg-strong);
     border: 1px solid var(--pod-border);
     border-radius: var(--r-pill);
     box-shadow: var(--pod-shadow);
@@ -4391,9 +4407,11 @@ button.reset {
   align-items: center;
   gap: var(--sp-3);
   padding: 0.6rem var(--sp-5);
-  background: color-mix(in srgb, var(--color-bg) 92%, transparent);
-  backdrop-filter: saturate(140%) blur(10px);
-  -webkit-backdrop-filter: saturate(140%) blur(10px);
+  /* Near-opaque, no live blur: the bar is pinned for the entire scroll past
+     the buy module, and saturate+blur was the single priciest persistent
+     backdrop-filter on the site (same trade as the header pill — see the GPU
+     note above .site-header-main). */
+  background: color-mix(in srgb, var(--color-bg) 97%, transparent);
   border-top: 1px solid var(--color-border);
   transform: translateY(100%);
   transition: transform 0.25s ease;
@@ -4528,6 +4546,12 @@ button.reset {
   border-top: 1px solid var(--color-border);
   opacity: 1;
   transform: translateY(0);
+  /* Skip layout+paint for chapters that are far offscreen — the PDP is a very
+     long page and browsers otherwise render every chapter on load. The
+     intrinsic-size placeholder keeps the scrollbar stable; the scroll-reveal
+     IO fires as normal once a chapter approaches the viewport. */
+  content-visibility: auto;
+  contain-intrinsic-size: auto 640px;
 }
 
 @media (min-width: 880px) {
