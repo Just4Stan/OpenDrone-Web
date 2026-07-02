@@ -52,3 +52,9 @@ scripts/.post-uploads.json
 
 # Throwaway hero-asset forensics (machine-specific absolute paths)
 scripts/hero-assets/_forensic_*.mjs
+
+# Python bytecode from the brand/logo generation scripts
+__pycache__/
+
+# Generated brand bundle — rebuild with scripts/gen-logo-package.py
+brand.zip
