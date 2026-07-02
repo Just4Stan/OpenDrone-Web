@@ -254,7 +254,7 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
     firmware: {
       project: 'AM32',
       projectUrl:
-        'https://github.com/AlkaMotors/AM32-MultiRotor-ESC-firmware',
+        'https://github.com/am32-firmware/AM32',
       logo: '/logos/am32.svg',
       logoDark: true,
     },
@@ -1029,7 +1029,7 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
           handle: 'openesc',
           firmware: 'AM32',
           firmwareUrl:
-            'https://github.com/AlkaMotors/AM32-MultiRotor-ESC-firmware',
+            'https://github.com/am32-firmware/AM32',
           blurb:
             'Four AT32F421 channels, NSG2065Q gate drivers, INA186A3 + 0.2 mΩ current sensing. Same 20×20 / 30×30 mount options as OpenFC-Lite, so the pair stacks.',
         },

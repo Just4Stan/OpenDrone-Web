@@ -34,7 +34,7 @@ export default function OpenSourceRoute() {
         <h2 className="editorial-section-title">01 · What you buy</h2>
         <p>
           A finished, tested, packaged board. Built in the EU where we can,
-          assembled at JLCPCB where we can&apos;t, inspected, flashed, and shipped
+          produced in Asia where we can&apos;t, inspected, flashed, and shipped
           from Belgium. The price covers the PCB, the components, the assembly,
           the QC time, the packaging, the courier, VAT, support, and the
           engineering for the next revision. Nothing hidden in it.
@@ -53,17 +53,17 @@ export default function OpenSourceRoute() {
             fab. Not a &ldquo;reference&rdquo;, the actual production files.
           </li>
           <li>
-            <strong>BOM</strong>: real distributor part numbers (LCSC, Mouser,
-            Digi-Key where relevant), not generic MPNs you still have to chase
-            down.
+            <strong>BOM</strong>: the same CSV the assembler gets, with real
+            orderable LCSC part numbers, not generic MPNs you still have to
+            chase down.
           </li>
           <li>
             <strong>3D STEP</strong>: check clearance against your frame before
             you buy.
           </li>
           <li>
-            <strong>Fab notes</strong>: stackup, impedance targets, assembly
-            quirks, and whatever hack made the last revision work.
+            <strong>Fab notes</strong>: the fab-ready export settings and the
+            revision notes that explain what changed and why, spin after spin.
           </li>
         </ul>
       </section>
@@ -79,8 +79,8 @@ export default function OpenSourceRoute() {
           the next maker.
         </p>
         <p>
-          Firmware stays under whatever its upstream uses, usually GPL or MIT
-          (Betaflight, AM32, ExpressLRS). We don&apos;t relicense anyone&apos;s
+          Firmware stays under whatever its upstream uses. Betaflight, AM32 and
+          ExpressLRS are all GPL-3.0. We don&apos;t relicense anyone&apos;s
           work.
         </p>
       </section>
