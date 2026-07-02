@@ -44,7 +44,7 @@
     "react-dom": "^19.2.7",
     "react-router": "7.16.0",
     "tailwindcss": "^4.3.1",
-    "three": "^0.184.0"
+    "three": "^0.185.1"
   },
   "devDependencies": {
     "@eslint/compat": "^1.2.5",
