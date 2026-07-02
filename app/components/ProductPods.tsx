@@ -131,6 +131,9 @@ export function ProductPods({
             onBlur={() => onHover?.(null)}
           >
             {link}
+            {/* Actions fly out HORIZONTALLY to the right of the row (submenu
+                style) so sibling rows never get pushed apart; the companion
+                panel chains further right off the actions strip. */}
             <div className="product-pod-actions">
               <AddToCartButton
                 className="product-pod-add"
@@ -152,48 +155,48 @@ export function ProductPods({
                   {companions.label} <span aria-hidden="true">▸</span>
                 </button>
               ) : null}
+              {cascadeOpen && companions ? (
+                <div className="product-pod-companions" role="menu">
+                  {companions.options.map((o) => (
+                    <AddToCartButton
+                      key={o.key}
+                      className="product-pod-companion"
+                      lines={o.lines}
+                      disabled={!o.available}
+                      flyImage={o.imageUrl ?? it.buy?.flyImage}
+                      onClick={() => {
+                        setCompanionFor(null);
+                        onAdd?.();
+                      }}
+                    >
+                      {o.imageUrl ? (
+                        <img
+                          src={o.imageUrl}
+                          alt=""
+                          width={34}
+                          height={34}
+                          loading="lazy"
+                          decoding="async"
+                        />
+                      ) : null}
+                      <span className="product-pod-companion-title">
+                        {o.title}
+                      </span>
+                      {o.price ? (
+                        <span className="product-pod-companion-price">
+                          +<Money data={o.price as MoneyData} />
+                        </span>
+                      ) : null}
+                      {o.pct ? (
+                        <span className="product-pod-companion-pct">
+                          −{o.pct}%
+                        </span>
+                      ) : null}
+                    </AddToCartButton>
+                  ))}
+                </div>
+              ) : null}
             </div>
-            {cascadeOpen && companions ? (
-              <div className="product-pod-companions" role="menu">
-                {companions.options.map((o) => (
-                  <AddToCartButton
-                    key={o.key}
-                    className="product-pod-companion"
-                    lines={o.lines}
-                    disabled={!o.available}
-                    flyImage={o.imageUrl ?? it.buy?.flyImage}
-                    onClick={() => {
-                      setCompanionFor(null);
-                      onAdd?.();
-                    }}
-                  >
-                    {o.imageUrl ? (
-                      <img
-                        src={o.imageUrl}
-                        alt=""
-                        width={34}
-                        height={34}
-                        loading="lazy"
-                        decoding="async"
-                      />
-                    ) : null}
-                    <span className="product-pod-companion-title">
-                      {o.title}
-                    </span>
-                    {o.price ? (
-                      <span className="product-pod-companion-price">
-                        +<Money data={o.price as MoneyData} />
-                      </span>
-                    ) : null}
-                    {o.pct ? (
-                      <span className="product-pod-companion-pct">
-                        −{o.pct}%
-                      </span>
-                    ) : null}
-                  </AddToCartButton>
-                ))}
-              </div>
-            ) : null}
           </div>
         );
       })}

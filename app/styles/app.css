@@ -1635,24 +1635,32 @@ html.anim-paused .board-sheet.is-active {
   display: flex;
   flex-direction: column;
 }
+/* Actions fly out to the RIGHT of the hovered row (submenu style): zero
+   vertical layout shift, sibling rows stay put. Left padding (not margin)
+   bridges the hover gap between the row and the strip. */
 .product-pod-actions {
+  position: absolute;
+  left: 100%;
+  top: 50%;
   display: flex;
   align-items: center;
   gap: 0.4rem;
-  padding: 0.25rem 0.5rem 0.4rem;
-  max-height: 0;
+  padding-left: 0.5rem;
+  white-space: nowrap;
   opacity: 0;
-  overflow: hidden;
-  transition: max-height 0.18s ease, opacity 0.15s ease;
+  transform: translateY(-50%) translateX(-6px);
+  pointer-events: none;
+  transition: opacity 0.15s ease, transform 0.15s ease;
   text-transform: none;
   letter-spacing: normal;
+  z-index: 25;
 }
 .product-pod-wrap:hover .product-pod-actions,
 .product-pod-wrap:focus-within .product-pod-actions,
 .product-pod-wrap.is-cascade-open .product-pod-actions {
-  max-height: 3rem;
   opacity: 1;
-  overflow: visible;
+  transform: translateY(-50%);
+  pointer-events: auto;
 }
 .product-pod-add {
   font-family: var(--font-mono);
@@ -1688,12 +1696,16 @@ html.anim-paused .board-sheet.is-active {
   border-color: var(--color-gold);
   color: var(--color-text);
 }
-/* The cascade: a nested Pod-material panel that opens under the row. */
+/* The cascade: a nested Pod-material panel chaining further RIGHT off the
+   actions strip (it lives inside .product-pod-actions, which is positioned).
+   Padding-left bridges the hover gap. */
 .product-pod-companions {
   position: absolute;
-  top: 100%;
-  left: 0.4rem;
-  right: 0.4rem;
+  left: 100%;
+  top: 50%;
+  transform: translateY(-50%);
+  margin-left: 0.4rem;
+  min-width: 15rem;
   z-index: 20;
   display: flex;
   flex-direction: column;
@@ -1705,6 +1717,16 @@ html.anim-paused .board-sheet.is-active {
   box-shadow: var(--pod-shadow);
   text-transform: none;
   letter-spacing: normal;
+}
+/* Invisible hover bridge over the gap between the toggle and the panel, so
+   the pointer never leaves the hover chain mid-transit. */
+.product-pod-companions::before {
+  content: '';
+  position: absolute;
+  left: -0.5rem;
+  top: 0;
+  bottom: 0;
+  width: 0.5rem;
 }
 .product-pod-companion {
   width: 100%;
