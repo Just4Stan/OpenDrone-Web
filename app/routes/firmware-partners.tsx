@@ -75,9 +75,9 @@ export default function FirmwarePartnersRoute() {
           maintainers have set up.
         </p>
         <p>
-          On the OpenStack bundle (OpenFC-Lite + OpenESC) the split doubles: €1
-          to Betaflight, €1 to AM32. The bundle is the same two boards at the
-          same prices, and both maintainers keep their cut.
+          Buy a stack (an OpenFC-Lite and an OpenESC in one order) and the
+          split doubles: €1 to Betaflight, €1 to AM32. Every board carries its
+          own contribution, so both maintainers keep their cut.
         </p>
       </section>
 
@@ -115,14 +115,14 @@ export default function FirmwarePartnersRoute() {
       <section className="editorial-section">
         <h2 className="editorial-section-title">03 · The optional donation</h2>
         <p>
-          At checkout you&apos;ll see an optional donation step: €1, €3, €5, €10
-          or skip. 100% of that line is forwarded on top of the baked-in €1. We
+          In the cart you&apos;ll see an optional donation: €1, €3, €5, €10 or
+          skip. 100% of that line is forwarded on top of the baked-in €1. We
           don&apos;t keep a cut.
         </p>
         <p>
           If you&apos;d rather give directly, every project above links to its
           own donation page. Direct giving skips the payment-processor fee
-          entirely; the checkout option is there if it&apos;s more convenient.
+          entirely; the cart option is there if it&apos;s more convenient.
         </p>
       </section>
 

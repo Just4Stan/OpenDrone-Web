@@ -283,3 +283,33 @@ export const FOOTER_QUERY = `#graphql
   }
   ${MENU_FRAGMENT}
 ` as const;
+
+// Minimal query for the optional `firmware-donation` product. Uses the
+// Storefront API's product-by-handle lookup so a missing product resolves
+// to null instead of erroring. Variants become the donation tier buttons
+// in the cart (page + aside).
+export const DONATION_PRODUCT_QUERY = `#graphql
+  query DonationProduct(
+    $country: CountryCode
+    $language: LanguageCode
+    $handle: String!
+  ) @inContext(country: $country, language: $language) {
+    product(handle: $handle) {
+      id
+      title
+      handle
+      description
+      variants(first: 10) {
+        nodes {
+          id
+          title
+          availableForSale
+          price {
+            amount
+            currencyCode
+          }
+        }
+      }
+    }
+  }
+` as const;

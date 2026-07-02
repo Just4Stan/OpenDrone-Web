@@ -13,7 +13,7 @@ import {
 } from 'react-router';
 import type {Route} from './+types/root';
 import favicon from '~/assets/favicon.svg';
-import {HEADER_QUERY, HEADER_PRODUCTS_QUERY} from '~/lib/fragments';
+import {HEADER_QUERY, HEADER_PRODUCTS_QUERY, DONATION_PRODUCT_QUERY} from '~/lib/fragments';
 import {CUSTOMER_NEWSLETTER_STATE_QUERY} from '~/graphql/customer-account/NewsletterStateQuery';
 import resetStyles from '~/styles/reset.css?url';
 import appStyles from '~/styles/app.css?url';
@@ -208,6 +208,16 @@ function loadDeferredData({context}: Route.LoaderArgs) {
       .query(HEADER_PRODUCTS_QUERY, {cache: storefront.CacheLong()})
       .then((d) => d?.products?.nodes ?? [])
       .catch(() => []),
+    // Optional `firmware-donation` product feeding the cart-aside donation
+    // upsell (the /cart page fetches its own copy). Best-effort: no product
+    // in Shopify → null → the upsell simply hides.
+    donationProduct: storefront
+      .query(DONATION_PRODUCT_QUERY, {
+        variables: {handle: 'firmware-donation'},
+        cache: storefront.CacheShort(),
+      })
+      .then((d) => d?.product ?? null)
+      .catch(() => null),
   };
 }
 

@@ -3,6 +3,7 @@ import {createPortal} from 'react-dom';
 import {
   Await,
   Link,
+  redirect,
   useLoaderData,
   useSearchParams,
   type ShouldRevalidateFunctionArgs,
@@ -14,6 +15,7 @@ import {
   getProductOptions,
   getAdjacentAndFirstAvailableVariants,
   useSelectedOptionInUrlParam,
+  Money,
 } from '@shopify/hydrogen';
 import {useAside} from '~/components/Aside';
 import {ProductPrice} from '~/components/ProductPrice';
@@ -93,17 +95,25 @@ async function loadCriticalData({context, params, request}: Route.LoaderArgs) {
     throw new Error('Expected product handle to be defined');
   }
 
-  // Bundle products (OpenStack) render from their own product but add the
-  // *component* variants to cart. Fetch those components' variants in parallel
-  // so the buy module can resolve the FC + ESC variant for the chosen size.
+  // OpenStack is no longer a product: the stack is bought from the FC/ESC
+  // pages via the stack builder. Old links land on the FC.
+  if (handle === 'openstack') {
+    throw redirect('/products/openfc-lite', 301);
+  }
+
+  // Bundle products render from their own product but add the *component*
+  // variants to cart; the stack builder needs its partner products' variants
+  // the same way. Fetch both sets in parallel with the product itself.
   const bundleHandles =
     PRODUCT_CONTENT[handle]?.bundle?.components.map((c) => c.handle) ?? [];
+  const stackHandles =
+    PRODUCT_CONTENT[handle]?.stack?.partners.map((p) => p.handle) ?? [];
 
-  const [{product}, ...bundleResults] = await Promise.all([
+  const [{product}, ...partnerResults] = await Promise.all([
     storefront.query(PRODUCT_QUERY, {
       variables: {handle, selectedOptions: getSelectedProductOptions(request)},
     }),
-    ...bundleHandles.map((h) =>
+    ...[...bundleHandles, ...stackHandles].map((h) =>
       storefront
         .query(BUNDLE_COMPONENT_QUERY, {variables: {handle: h}})
         .catch(() => null),
@@ -117,13 +127,20 @@ async function loadCriticalData({context, params, request}: Route.LoaderArgs) {
   // The API handle might be localized, so redirect to the localized handle
   redirectIfHandleIsLocalized(request, {handle, data: product});
 
-  const bundleProducts = bundleResults
+  const partnerProducts = partnerResults
     .map((r) => r?.product)
     .filter((p): p is NonNullable<typeof p> => Boolean(p));
+  const bundleProducts = partnerProducts.filter((p) =>
+    bundleHandles.includes(p.handle),
+  );
+  const stackProducts = partnerProducts.filter((p) =>
+    stackHandles.includes(p.handle),
+  );
 
   return {
     product,
     bundleProducts,
+    stackProducts,
   };
 }
 
@@ -478,7 +495,7 @@ function useChapterReveal(key: string) {
 }
 
 export default function Product() {
-  const {product, bundleProducts, recommendations, latestCommits} =
+  const {product, bundleProducts, stackProducts, recommendations, latestCommits} =
     useLoaderData<typeof loader>();
   useChapterReveal(product.handle);
 
@@ -614,6 +631,53 @@ export default function Product() {
         currencyCode: bundleVariants[0]!.price.currencyCode,
       }
     : undefined;
+
+  // "Complete the stack": resolve the partner board's variant that matches
+  // the selected mount size, so the FC page can drop the pairing ESC (and
+  // vice versa) into the same add-to-cart submit. `partners` is a list on
+  // purpose: with one entry the row is fixed; a second option later (an
+  // OpenFC Pro next to the Lite) renders as a picker with no structural
+  // change. The 10% itself is the Shopify automatic BXGY at checkout.
+  const stackCfg = content.stack;
+  const [stackOn, setStackOn] = useState(false);
+  const [stackPartnerIdx, setStackPartnerIdx] = useState(0);
+  const stackPartnerCfg =
+    stackCfg?.partners[stackPartnerIdx] ?? stackCfg?.partners[0];
+  const stackPartnerProduct = stackPartnerCfg
+    ? stackProducts?.find((p) => p.handle === stackPartnerCfg.handle)
+    : undefined;
+  const stackAxis = (stackCfg?.matchOption ?? 'Model').trim().toLowerCase();
+  const stackMatchValue =
+    selectedVariant?.selectedOptions?.find(
+      (o: {name: string; value: string}) =>
+        o.name.trim().toLowerCase() === stackAxis,
+    )?.value ?? activeTier;
+  const stackNodes = stackPartnerProduct?.variants?.nodes ?? [];
+  const stackVariant =
+    stackNodes.find((n) =>
+      n.selectedOptions?.some(
+        (o) =>
+          o.name.trim().toLowerCase() === stackAxis &&
+          o.value.trim().toLowerCase() ===
+            stackMatchValue.trim().toLowerCase(),
+      ),
+    ) ??
+    stackNodes.find((n) => n.availableForSale) ??
+    stackNodes[0] ??
+    null;
+  const stackReady = Boolean(stackCfg && stackVariant && selectedVariant);
+  const stackAvailable =
+    stackReady &&
+    Boolean(stackVariant?.availableForSale) &&
+    Boolean(selectedVariant?.availableForSale);
+  const stackActive = stackOn && stackReady;
+  const stackLines = stackActive
+    ? [
+        {merchandiseId: selectedVariant!.id, quantity: 1},
+        {merchandiseId: stackVariant!.id, quantity: 1},
+      ]
+    : [];
+
   // The teardown board art follows the selected tier: a variant's own
   // `boardArt` wins, otherwise the shared `teardown.boardArt` (the default
   // board) is shown. Lines without per-tier art just keep the default.
@@ -1312,13 +1376,86 @@ export default function Product() {
             ? 'In stock · ships from Belgium'
             : 'Sold out'}
       </span>
+      {stackCfg && stackReady ? (
+        <div className={`stack-builder${stackOn ? ' is-on' : ''}`}>
+          <label className="stack-builder-toggle">
+            <input
+              type="checkbox"
+              checked={stackOn}
+              onChange={(e) => setStackOn(e.currentTarget.checked)}
+            />
+            <span className="stack-builder-toggle-text">
+              Make it a stack · add the matching {stackCfg.adds}
+            </span>
+            {stackCfg.discountPct ? (
+              <span className="stack-builder-badge">
+                −{stackCfg.discountPct}%
+              </span>
+            ) : null}
+          </label>
+          {stackOn ? (
+            <div className="stack-builder-body">
+              {stackCfg.partners.length > 1 ? (
+                <div
+                  className="stack-builder-options"
+                  role="radiogroup"
+                  aria-label={`Pick the ${stackCfg.adds}`}
+                >
+                  {stackCfg.partners.map((p, i) => (
+                    <button
+                      key={p.handle}
+                      type="button"
+                      role="radio"
+                      aria-checked={i === stackPartnerIdx}
+                      className={`stack-builder-option${
+                        i === stackPartnerIdx ? ' is-active' : ''
+                      }`}
+                      onClick={() => setStackPartnerIdx(i)}
+                    >
+                      {p.label ?? p.handle}
+                    </button>
+                  ))}
+                </div>
+              ) : null}
+              <div className="stack-builder-line">
+                <span className="stack-builder-part">
+                  {stackPartnerCfg?.label ?? stackPartnerProduct?.title} ·{' '}
+                  {stackMatchValue}
+                </span>
+                {stackVariant ? (
+                  <span className="stack-builder-price">
+                    +<Money data={stackVariant.price} />
+                  </span>
+                ) : null}
+              </div>
+              <p className="stack-builder-note">
+                {stackAvailable
+                  ? `Both boards in one order. The ${
+                      stackCfg.discountPct ?? 10
+                    }% stack discount is applied at checkout.`
+                  : 'The matching board is out of stock right now.'}
+              </p>
+            </div>
+          ) : null}
+        </div>
+      ) : null}
       <ProductForm
         productOptions={productOptions}
         selectedVariant={selectedVariant}
         hideOptionNames={content.optionAxis ? [content.optionAxis] : undefined}
-        bundleLines={isBundle ? bundleLines : undefined}
-        bundleDisabled={isBundle ? !bundleAvailable : undefined}
-        bundleCtaLabel={isBundle ? 'Add the stack: both boards' : undefined}
+        bundleLines={
+          isBundle ? bundleLines : stackActive ? stackLines : undefined
+        }
+        bundleDisabled={
+          isBundle ? !bundleAvailable : stackActive ? !stackAvailable : undefined
+        }
+        bundleCtaLabel={
+          isBundle
+            ? 'Add the stack: both boards'
+            : stackActive
+              ? 'Add the stack to cart'
+              : undefined
+        }
       />
     </div>
   );
