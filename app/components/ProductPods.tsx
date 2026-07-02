@@ -1,6 +1,6 @@
 import {useState} from 'react';
 import {Link} from 'react-router';
-import {Money} from '@shopify/hydrogen';
+import {Money, type OptimisticCartLineInput} from '@shopify/hydrogen';
 import {AddToCartButton} from './AddToCartButton';
 
 /** A companion offer cascaded from a pod row ("also add an ESC?"): one
@@ -10,7 +10,7 @@ export type PodCompanionOption = {
   title: string;
   price?: {amount: string; currencyCode: string} | null;
   pct?: number;
-  lines: Array<{merchandiseId: string; quantity: number}>;
+  lines: OptimisticCartLineInput[];
   available: boolean;
   imageUrl?: string | null;
 };
@@ -29,7 +29,7 @@ export type ProductPodItem = {
    *  companions, an "also add an X ▸" cascade) instead of being link-only.
    *  Hosts without it (the hero showcase) render exactly as before. */
   buy?: {
-    lines: Array<{merchandiseId: string; quantity: number}>;
+    lines: OptimisticCartLineInput[];
     available: boolean;
     flyImage?: string | null;
     companions?: {
@@ -155,8 +155,12 @@ export function ProductPods({
                   {companions.label} <span aria-hidden="true">▾</span>
                 </button>
               ) : null}
-              {cascadeOpen && companions ? (
-                <div className="product-pod-companions" role="menu">
+              {companions ? (
+                <div
+                  className={`product-pod-companions${cascadeOpen ? ' is-open' : ''}`}
+                  role="menu"
+                  aria-hidden={!cascadeOpen}
+                >
                   {companions.options.map((o) => (
                     <AddToCartButton
                       key={o.key}

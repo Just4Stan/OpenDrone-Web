@@ -13,7 +13,7 @@ import {useAside} from './Aside';
 /** Hover quick-add for catalog cards: the card's own variant prewired as a
  *  cart line, so ordering never requires opening the PDP. */
 export type ProductQuickAdd = {
-  lines: Array<{merchandiseId: string; quantity: number}>;
+  lines: import('@shopify/hydrogen').OptimisticCartLineInput[];
   available: boolean;
   flyImage?: string | null;
 };

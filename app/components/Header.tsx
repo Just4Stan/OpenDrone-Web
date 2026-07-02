@@ -94,6 +94,26 @@ const STACK_COMPANIONS: Record<string, {label: string; handles: string[]}> = {
 };
 const STACK_DISCOUNT_PCT = 10;
 
+/** Minimal ProductVariant-ish shape so useOptimisticCart can render the
+ *  pending line immediately instead of console-erroring and waiting for the
+ *  server cart. Cast at the use site — the header only has the thin query. */
+function optimisticVariant(
+  v: HeaderFamilyVariant,
+  product: {title: string; handle: string},
+) {
+  return {
+    id: v.id,
+    title: v.title,
+    availableForSale: v.availableForSale ?? true,
+    price: v.price,
+    image: v.image ?? null,
+    product,
+    selectedOptions: v.selectedOptions ?? [],
+  } as unknown as NonNullable<
+    import('@shopify/hydrogen').OptimisticCartLineInput['selectedVariant']
+  >;
+}
+
 export function Header({
   header,
   isLoggedIn,
@@ -246,6 +266,7 @@ function FamilyNav({
   function companionsFor(
     type: string,
     v: HeaderFamilyVariant,
+    rowProduct: {title: string; handle: string},
   ): NonNullable<ProductPodItem['buy']>['companions'] {
     const cfg = STACK_COMPANIONS[type];
     if (!cfg) return undefined;
@@ -272,8 +293,19 @@ function FamilyNav({
           available: Boolean(pv.availableForSale && v.availableForSale),
           imageUrl: pv.image?.url ?? partner.featuredImage?.url ?? null,
           lines: [
-            {merchandiseId: v.id, quantity: 1},
-            {merchandiseId: pv.id, quantity: 1},
+            {
+              merchandiseId: v.id,
+              quantity: 1,
+              selectedVariant: optimisticVariant(v, rowProduct),
+            },
+            {
+              merchandiseId: pv.id,
+              quantity: 1,
+              selectedVariant: optimisticVariant(pv, {
+                title: partner.title,
+                handle: partner.handle,
+              }),
+            },
           ],
         },
       ];
@@ -303,7 +335,16 @@ function FamilyNav({
               price: p.priceRange?.minVariantPrice ?? null,
               buy: only
                 ? {
-                    lines: [{merchandiseId: only.id, quantity: 1}],
+                    lines: [
+                      {
+                        merchandiseId: only.id,
+                        quantity: 1,
+                        selectedVariant: optimisticVariant(only, {
+                          title: p.title,
+                          handle: p.handle,
+                        }),
+                      },
+                    ],
                     available: Boolean(only.availableForSale),
                     flyImage:
                       only.image?.url ?? p.featuredImage?.url ?? null,
@@ -328,10 +369,22 @@ function FamilyNav({
             imageAlt: v.image?.altText ?? p.featuredImage?.altText ?? null,
             price: v.price ?? p.priceRange?.minVariantPrice ?? null,
             buy: {
-              lines: [{merchandiseId: v.id, quantity: 1}],
+              lines: [
+                {
+                  merchandiseId: v.id,
+                  quantity: 1,
+                  selectedVariant: optimisticVariant(v, {
+                    title: p.title,
+                    handle: p.handle,
+                  }),
+                },
+              ],
               available: Boolean(v.availableForSale),
               flyImage: v.image?.url ?? p.featuredImage?.url ?? null,
-              companions: companionsFor(type, v),
+              companions: companionsFor(type, v, {
+                title: p.title,
+                handle: p.handle,
+              }),
             },
           };
         });
@@ -341,7 +394,7 @@ function FamilyNav({
   function chip(cat: (typeof CATEGORY_LINKS)[number]) {
     const items = itemsFor(cat.type);
     return (
-      <span
+      <div
         className="header-cat"
         key={cat.label}
         onMouseEnter={() => openFamily(cat.label)}
@@ -352,7 +405,7 @@ function FamilyNav({
         <NavLink prefetch="viewport" to={cat.to}>
           {cat.label}
         </NavLink>
-        <span className="header-cat-pod-wrap">
+        <div className="header-cat-pod-wrap">
           <AnimatePresence>
             {open === cat.label && items.length > 0 ? (
               <Pod
@@ -373,8 +426,8 @@ function FamilyNav({
               </Pod>
             ) : null}
           </AnimatePresence>
-        </span>
-      </span>
+        </div>
+      </div>
     );
   }
 

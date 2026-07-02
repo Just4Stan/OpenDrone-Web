@@ -195,7 +195,7 @@ html.light .schematic-sheet {
 }
 
 /* Default price treatment. Display sans, tabular figures. Specialised
-   per-context by .product-buy-price and .product-stickybar overrides. */
+   per-context by .product-buy-price overrides. */
 .product-price {
   display: inline-flex;
   align-items: baseline;
@@ -1330,6 +1330,11 @@ html.hero-incutec-hint .incutec-hint {
   padding: clamp(0.5rem, 1.6vh, 0.85rem) var(--rail-gutter) 0;
   pointer-events: none;
 }
+/* While a family dropdown is open, lift the whole header above the pinned
+   buy rail (z 60) — otherwise the pod and its buy strip slide underneath. */
+.site-header:has(.header-cat-pod) {
+  z-index: 70;
+}
 
 /* The header bar is a pill Pod — shares the .pod surface tokens so it's the
    same material as the dropdowns / hero showcase / PDP scroll-bubble. */
@@ -1739,6 +1744,9 @@ html.anim-paused .board-sheet.is-active {
 }
 /* Invisible hover bridge over the vertical gap between the strip and the
    panel, so the pointer never leaves the hover chain mid-transit. */
+.product-pod-companions.is-open {
+  display: flex;
+}
 .product-pod-companions::before {
   content: '';
   position: absolute;
@@ -1803,6 +1811,9 @@ html.anim-paused .board-sheet.is-active {
   padding: var(--sp-2);
   text-transform: none;
   letter-spacing: normal;
+}
+html.light .header-cat-pod {
+  background: var(--pod-bg-strong);
 }
 /* Bigger, clearer product imagery in the header dropdowns (50% up from the
    3rem shared default; the hero showcase keeps its own sizing). */
@@ -4566,78 +4577,7 @@ button.reset {
   font-variant-numeric: tabular-nums;
 }
 
-/* Sticky compact buy bar — pins to the bottom of the viewport on
-   mobile and to the top under the header on desktop once the user
-   scrolls past the in-page buy module. Always one tap from the CTA. */
-.product-stickybar {
-  position: fixed;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  z-index: 40;
-  display: flex;
-  align-items: center;
-  gap: var(--sp-3);
-  padding: 0.6rem var(--sp-5);
-  /* Near-opaque, no live blur: the bar is pinned for the entire scroll past
-     the buy module, and saturate+blur was the single priciest persistent
-     backdrop-filter on the site (same trade as the header pill — see the GPU
-     note above .site-header-main). */
-  background: color-mix(in srgb, var(--color-bg) 97%, transparent);
-  border-top: 1px solid var(--color-border);
-  transform: translateY(100%);
-  transition: transform 0.25s ease;
-}
 
-.product-stickybar.is-visible {
-  transform: translateY(0);
-}
-
-.product-stickybar-title {
-  display: none;
-  font-family: var(--font-display);
-  font-weight: 600;
-  font-size: var(--fs-sm);
-  color: var(--color-text);
-  margin: 0;
-  line-height: 1.1;
-  flex: 1 1 auto;
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.product-stickybar-price {
-  font-family: var(--font-display);
-  font-weight: 600;
-  font-size: var(--fs-md);
-  color: var(--color-text);
-  font-variant-numeric: tabular-nums;
-  white-space: nowrap;
-}
-
-.product-stickybar .btn-primary {
-  width: auto;
-  flex: 0 0 auto;
-  padding: 0.55rem 1.1rem;
-  font-size: var(--fs-sm);
-}
-
-@media (min-width: 768px) {
-  .product-stickybar {
-    bottom: auto;
-    top: var(--header-height);
-    border-top: none;
-    border-bottom: 1px solid var(--color-border);
-    transform: translateY(-100%);
-  }
-  .product-stickybar.is-visible {
-    transform: translateY(0);
-  }
-  .product-stickybar-title {
-    display: inline-block;
-  }
 }
 
 .product-buy-civilian a {
@@ -4745,10 +4685,17 @@ button.reset {
     padding-top: 0.4rem;
   }
 }
-/* Pinned mobile bottom bar stays minimal: the in-flow buy box (a short
-   scroll up) still offers the stack. */
+/* Pinned rails stay minimal: the in-flow buy box still offers the stack.
+   The mobile bottom bar always hides it; on touch (hover:none, incl. iPad
+   at desktop widths) the desktop pinned rail hides it too — the static
+   in-flow row would otherwise stretch the shrink-wrapped pill. */
 .buy-rail.is-pinned.is-mobile .cta-stack-flyout {
   display: none;
+}
+@media (hover: none) {
+  .buy-rail.is-pinned .cta-stack-flyout {
+    display: none;
+  }
 }
 
 /* Catalog card quick-add: a pill pinned to the bottom-right of the media
