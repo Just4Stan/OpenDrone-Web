@@ -256,6 +256,14 @@ async function regularSearch({
     throw new Error('No search data returned from Shopify API');
   }
 
+  // The firmware-donation tip product is cart-only chrome; keep it out of
+  // search results (search() has no product_type filter argument).
+  if (items.products?.nodes) {
+    items.products.nodes = items.products.nodes.filter(
+      (p) => p.handle !== 'firmware-donation',
+    );
+  }
+
   const total = Object.values(items).reduce(
     (acc: number, {nodes}: {nodes: Array<unknown>}) => acc + nodes.length,
     0,
@@ -439,6 +447,13 @@ async function predictiveSearch({
 
   if (!items) {
     throw new Error('No predictive search data returned from Shopify API');
+  }
+
+  // Same cart-only exclusion as the regular search above.
+  if (items.products) {
+    items.products = items.products.filter(
+      (p) => p.handle !== 'firmware-donation',
+    );
   }
 
   const total = Object.values(items).reduce(
