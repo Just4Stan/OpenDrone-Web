@@ -410,7 +410,13 @@ const CATALOG_QUERY = `#graphql
     $language: LanguageCode
     $first: Int
   ) @inContext(country: $country, language: $language) {
-    products(first: $first, sortKey: CREATED_AT, reverse: true) {
+    products(
+      first: $first
+      sortKey: CREATED_AT
+      reverse: true
+      # The firmware-donation tip product is cart-only chrome, not catalog.
+      query: "-product_type:Donation"
+    ) {
       nodes {
         ...CollectionItem
       }
