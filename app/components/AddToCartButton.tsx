@@ -9,6 +9,7 @@ export function AddToCartButton({
   lines,
   onClick,
   flyImage,
+  className = 'btn-primary',
 }: {
   analytics?: unknown;
   children: React.ReactNode;
@@ -17,6 +18,9 @@ export function AddToCartButton({
   onClick?: () => void;
   /** Product/variant image that flies into the cart icon on add. */
   flyImage?: string | null;
+  /** Button class — defaults to the primary CTA; stack/quick-add surfaces
+   *  pass their own compact pill styles. */
+  className?: string;
 }) {
   return (
     <CartForm route="/cart" inputs={{lines}} action={CartForm.ACTIONS.LinesAdd}>
@@ -43,7 +47,7 @@ export function AddToCartButton({
               disabled={disabled ?? pending}
               aria-busy={pending || undefined}
               data-pending={pending || undefined}
-              className="btn-primary"
+              className={className}
             >
               <span className="btn-label">{pending ? 'Adding…' : children}</span>
               {pending ? <span className="btn-spinner" aria-hidden="true" /> : null}
