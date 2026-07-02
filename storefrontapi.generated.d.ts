@@ -410,6 +410,27 @@ export type FooterQuery = {
   >;
 };
 
+export type DonationProductQueryVariables = StorefrontAPI.Exact<{
+  country?: StorefrontAPI.InputMaybe<StorefrontAPI.CountryCode>;
+  language?: StorefrontAPI.InputMaybe<StorefrontAPI.LanguageCode>;
+  handle: StorefrontAPI.Scalars['String']['input'];
+}>;
+
+export type DonationProductQuery = {
+  product?: StorefrontAPI.Maybe<
+    Pick<StorefrontAPI.Product, 'id' | 'title' | 'handle' | 'description'> & {
+      variants: {
+        nodes: Array<
+          Pick<
+            StorefrontAPI.ProductVariant,
+            'id' | 'title' | 'availableForSale'
+          > & {price: Pick<StorefrontAPI.MoneyV2, 'amount' | 'currencyCode'>}
+        >;
+      };
+    }
+  >;
+};
+
 export type NewsletterFeedQueryVariables = StorefrontAPI.Exact<{
   blogHandle: StorefrontAPI.Scalars['String']['input'];
   first: StorefrontAPI.Scalars['Int']['input'];
@@ -482,17 +503,6 @@ export type HomeFeaturedQuery = {
       };
     }
   >;
-  stack?: StorefrontAPI.Maybe<
-    Pick<StorefrontAPI.Product, 'id' | 'handle' | 'title' | 'productType'> & {
-      featuredImage?: StorefrontAPI.Maybe<
-        Pick<StorefrontAPI.Image, 'id' | 'altText' | 'url' | 'width' | 'height'>
-      >;
-      priceRange: {
-        minVariantPrice: Pick<StorefrontAPI.MoneyV2, 'amount' | 'currencyCode'>;
-        maxVariantPrice: Pick<StorefrontAPI.MoneyV2, 'amount' | 'currencyCode'>;
-      };
-    }
-  >;
   rx?: StorefrontAPI.Maybe<
     Pick<StorefrontAPI.Product, 'id' | 'handle' | 'title' | 'productType'> & {
       featuredImage?: StorefrontAPI.Maybe<
@@ -554,27 +564,6 @@ export type HomeFeaturedQuery = {
               Pick<StorefrontAPI.SelectedOption, 'name' | 'value'>
             >;
           }
-        >;
-      };
-    }
-  >;
-};
-
-export type DonationProductQueryVariables = StorefrontAPI.Exact<{
-  country?: StorefrontAPI.InputMaybe<StorefrontAPI.CountryCode>;
-  language?: StorefrontAPI.InputMaybe<StorefrontAPI.LanguageCode>;
-  handle: StorefrontAPI.Scalars['String']['input'];
-}>;
-
-export type DonationProductQuery = {
-  product?: StorefrontAPI.Maybe<
-    Pick<StorefrontAPI.Product, 'id' | 'title' | 'handle' | 'description'> & {
-      variants: {
-        nodes: Array<
-          Pick<
-            StorefrontAPI.ProductVariant,
-            'id' | 'title' | 'availableForSale'
-          > & {price: Pick<StorefrontAPI.MoneyV2, 'amount' | 'currencyCode'>}
         >;
       };
     }
@@ -1469,17 +1458,17 @@ interface GeneratedQueryTypes {
     return: FooterQuery;
     variables: FooterQueryVariables;
   };
+  '#graphql\n  query DonationProduct(\n    $country: CountryCode\n    $language: LanguageCode\n    $handle: String!\n  ) @inContext(country: $country, language: $language) {\n    product(handle: $handle) {\n      id\n      title\n      handle\n      description\n      variants(first: 10) {\n        nodes {\n          id\n          title\n          availableForSale\n          price {\n            amount\n            currencyCode\n          }\n        }\n      }\n    }\n  }\n': {
+    return: DonationProductQuery;
+    variables: DonationProductQueryVariables;
+  };
   '#graphql\n  query NewsletterFeed($blogHandle: String!, $first: Int!) {\n    blog(handle: $blogHandle) {\n      articles(first: $first, sortKey: PUBLISHED_AT, reverse: true) {\n        nodes {\n          handle\n          title\n          publishedAt\n          excerpt\n          contentHtml\n        }\n      }\n    }\n  }\n': {
     return: NewsletterFeedQuery;
     variables: NewsletterFeedQueryVariables;
   };
-  '#graphql\n  fragment HomeMoney on MoneyV2 {\n    amount\n    currencyCode\n  }\n  fragment HomeProductCard on Product {\n    id\n    handle\n    title\n    productType\n    featuredImage {\n      id\n      altText\n      url\n      width\n      height\n    }\n    priceRange {\n      minVariantPrice {\n        ...HomeMoney\n      }\n      maxVariantPrice {\n        ...HomeMoney\n      }\n    }\n  }\n  fragment HomeProductVariants on Product {\n    variants(first: 30) {\n      nodes {\n        id\n        availableForSale\n        price {\n          ...HomeMoney\n        }\n        image {\n          id\n          altText\n          url\n          width\n          height\n        }\n        selectedOptions {\n          name\n          value\n        }\n      }\n    }\n  }\n  query HomeFeatured($country: CountryCode, $language: LanguageCode)\n  @inContext(country: $country, language: $language) {\n    frame: product(handle: "openframe") {\n      ...HomeProductCard\n    }\n    stack: product(handle: "openstack") {\n      ...HomeProductCard\n    }\n    rx: product(handle: "openrx") {\n      ...HomeProductCard\n    }\n    fc: product(handle: "openfc-lite") {\n      ...HomeProductCard\n      ...HomeProductVariants\n    }\n    esc: product(handle: "openesc") {\n      ...HomeProductCard\n      ...HomeProductVariants\n    }\n  }\n': {
+  '#graphql\n  fragment HomeMoney on MoneyV2 {\n    amount\n    currencyCode\n  }\n  fragment HomeProductCard on Product {\n    id\n    handle\n    title\n    productType\n    featuredImage {\n      id\n      altText\n      url\n      width\n      height\n    }\n    priceRange {\n      minVariantPrice {\n        ...HomeMoney\n      }\n      maxVariantPrice {\n        ...HomeMoney\n      }\n    }\n  }\n  fragment HomeProductVariants on Product {\n    variants(first: 30) {\n      nodes {\n        id\n        availableForSale\n        price {\n          ...HomeMoney\n        }\n        image {\n          id\n          altText\n          url\n          width\n          height\n        }\n        selectedOptions {\n          name\n          value\n        }\n      }\n    }\n  }\n  query HomeFeatured($country: CountryCode, $language: LanguageCode)\n  @inContext(country: $country, language: $language) {\n    frame: product(handle: "openframe") {\n      ...HomeProductCard\n    }\n    rx: product(handle: "openrx") {\n      ...HomeProductCard\n    }\n    fc: product(handle: "openfc-lite") {\n      ...HomeProductCard\n      ...HomeProductVariants\n    }\n    esc: product(handle: "openesc") {\n      ...HomeProductCard\n      ...HomeProductVariants\n    }\n  }\n': {
     return: HomeFeaturedQuery;
     variables: HomeFeaturedQueryVariables;
-  };
-  '#graphql\n  query DonationProduct(\n    $country: CountryCode\n    $language: LanguageCode\n    $handle: String!\n  ) @inContext(country: $country, language: $language) {\n    product(handle: $handle) {\n      id\n      title\n      handle\n      description\n      variants(first: 10) {\n        nodes {\n          id\n          title\n          availableForSale\n          price {\n            amount\n            currencyCode\n          }\n        }\n      }\n    }\n  }\n': {
-    return: DonationProductQuery;
-    variables: DonationProductQueryVariables;
   };
   '#graphql\n  #graphql\n  fragment MoneyProductItem on MoneyV2 {\n    amount\n    currencyCode\n  }\n  fragment ProductItem on Product {\n    id\n    handle\n    title\n    featuredImage {\n      id\n      altText\n      url\n      width\n      height\n    }\n    priceRange {\n      minVariantPrice {\n        ...MoneyProductItem\n      }\n      maxVariantPrice {\n        ...MoneyProductItem\n      }\n    }\n  }\n\n  query Collection(\n    $handle: String!\n    $country: CountryCode\n    $language: LanguageCode\n    $first: Int\n    $last: Int\n    $startCursor: String\n    $endCursor: String\n    $sortKey: ProductCollectionSortKeys\n    $reverse: Boolean\n  ) @inContext(country: $country, language: $language) {\n    collection(handle: $handle) {\n      id\n      handle\n      title\n      description\n      products(\n        first: $first,\n        last: $last,\n        before: $startCursor,\n        after: $endCursor,\n        sortKey: $sortKey,\n        reverse: $reverse\n      ) {\n        nodes {\n          ...ProductItem\n        }\n        pageInfo {\n          hasPreviousPage\n          hasNextPage\n          endCursor\n          startCursor\n        }\n      }\n    }\n  }\n': {
     return: CollectionQuery;
