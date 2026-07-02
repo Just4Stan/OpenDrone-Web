@@ -34,9 +34,9 @@ const PARTNERS: Partner[] = [
     project: 'AM32',
     runsOn: 'OpenESC',
     blurb:
-      'AM32 is a multi-MCU ESC firmware alternative to BLHeli, MIT-licensed. OpenESC runs AM32 on AT32F421 channels: the same firmware as other AM32 ESCs, no custom fork, no vendor lock-in.',
+      'AM32 is a multi-MCU ESC firmware alternative to BLHeli, GPL-3.0 licensed. OpenESC runs AM32 on AT32F421 channels: the same firmware as other AM32 ESCs, no custom fork, no vendor lock-in.',
     repoUrl:
-      'https://github.com/AlkaMotors/AM32-MultiRotor-ESC-firmware',
+      'https://github.com/am32-firmware/AM32',
   },
   {
     project: 'ExpressLRS',
