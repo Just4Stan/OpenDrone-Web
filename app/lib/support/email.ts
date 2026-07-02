@@ -77,28 +77,28 @@ export async function sendResumeLink(
   const text = [
     `Hi ${opts.name || 'there'},`,
     '',
-    `Thanks for opening a support ticket with us. Save this email — the link below restores your chat from any device, even if you clear cookies or switch browsers.`,
+    `Thanks for opening a support ticket with us. Save this email: the link below restores your chat from any device, even if you clear cookies or switch browsers.`,
     '',
     `Your ticket: ${opts.subject}`,
     `Resume: ${opts.resumeUrl}`,
     '',
-    `If you didn't open this ticket, just ignore this message — the link only works if you actually started the chat.`,
+    `If you didn't open this ticket, just ignore this message. The link only works if you actually started the chat.`,
     '',
-    `— OpenDrone`,
+    `OpenDrone`,
   ].join('\n');
 
   const html = renderEmail({
     heading: 'Your support ticket',
     body: `
       <p>Hi ${escapeHtml(opts.name || 'there')},</p>
-      <p>Thanks for opening a support ticket with us. Save this email — the link below restores your chat from any device, even if you clear cookies or switch browsers.</p>
+      <p>Thanks for opening a support ticket with us. Save this email: the link below restores your chat from any device, even if you clear cookies or switch browsers.</p>
       <p style="margin-top:24px">
         <strong>${escapeHtml(opts.subject)}</strong>
       </p>
       <p style="margin:16px 0 32px">
         <a href="${escapeAttr(opts.resumeUrl)}" style="display:inline-block;background:#b8922e;color:#0a0a0a;text-decoration:none;font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:0.14em;text-transform:uppercase;font-weight:700;padding:12px 18px;border-radius:2px">Resume chat →</a>
       </p>
-      <p style="color:#737373;font-size:13px;line-height:1.6">If you didn't open this ticket, just ignore this message — the link only works if you actually started the chat.</p>
+      <p style="color:#737373;font-size:13px;line-height:1.6">If you didn't open this ticket, just ignore this message. The link only works if you actually started the chat.</p>
     `,
   });
 
@@ -132,7 +132,7 @@ export async function sendReplyNotification(
     '',
     `Continue here: ${opts.resumeUrl}`,
     '',
-    `— OpenDrone support`,
+    `OpenDrone support`,
   ]
     .filter((line) => line !== null)
     .join('\n');
@@ -181,9 +181,9 @@ export async function sendTicketIndex(
     '',
     ...lines,
     '',
-    `Each link is one-way — only the chat it points to gets restored.`,
+    `Each link is one-way: only the chat it points to gets restored.`,
     '',
-    `— OpenDrone`,
+    `OpenDrone`,
   ].join('\n');
 
   const htmlList = opts.tickets
@@ -201,7 +201,7 @@ export async function sendTicketIndex(
     body: `
       <p>Here are the support tickets you've opened with us. Click any link to resume the chat from this device.</p>
       <ul style="list-style:none;padding:0;margin:24px 0">${htmlList}</ul>
-      <p style="color:#737373;font-size:13px;line-height:1.6">Each link is one-way — only the chat it points to gets restored.</p>
+      <p style="color:#737373;font-size:13px;line-height:1.6">Each link is one-way: only the chat it points to gets restored.</p>
     `,
   });
   return send(env, {

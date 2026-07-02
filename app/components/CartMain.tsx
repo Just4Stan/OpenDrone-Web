@@ -183,7 +183,7 @@ function CartEmpty({
       </div>
       <h2 className="cart-empty-title">Your cart is empty</h2>
       <p className="cart-empty-body">
-        Start with the full catalog — open-source hardware ready to fly.
+        Start with the full catalog: open-source hardware ready to fly.
       </p>
       <Link
         to="/collections/all"

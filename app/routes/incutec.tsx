@@ -6,7 +6,7 @@ export const meta: Route.MetaFunction = () =>
   buildSeoMeta({
     title: 'Incutec · The company behind OpenDrone',
     description:
-      'Incutec is the Belgian hardware company behind OpenDrone — open-source flight controllers, ESCs, receivers and frames. A short note on who we are and how we work.',
+      'Incutec is a Belgian hardware company. We design open electronics in Leuven, publish the source, and sell the boards. OpenDrone is our first line.',
   });
 
 export async function loader(_args: Route.LoaderArgs) {
@@ -23,37 +23,36 @@ export default function IncutecRoute() {
           <em>OpenDrone is our first line.</em>
         </h1>
         <p className="editorial-lead">
-          Incutec is a hardware company in Belgium. We design open electronics,
-          publish the source, and sell the boards that come out of it. OpenDrone
-          is our first line. More will follow under the same model.
+          We design hardware, publish it for you to see and produce it for you
+          to use. OpenDrone is our first line. More will follow under the same
+          model.
         </p>
       </header>
 
       <section className="editorial-section">
         <p>
-          Most consumer tech is a black box: sealed, glued, impossible to
-          understand by design, so you stay dependent on whoever made it. We
-          build the opposite — hardware that works as a real product and opens
-          itself up, so you can repair it, re-flash it, fork it, or manufacture
-          it yourself.
+          Most consumer tech is a sealed box. You are not supposed to know what
+          is inside, and that keeps you dependent on whoever made it. We build
+          the opposite: hardware that works as a real product and is published
+          down to the last resistor, so you can repair it, re-flash it, fork
+          it, or build it yourself.
         </p>
       </section>
 
       <section className="editorial-section">
         <h2 className="editorial-section-title">01 · What we do</h2>
         <p>
-          We make electronics people can actually own. Every product ships with
-          its schematics, board files and firmware targets, not locked in a
-          vendor silo. The aim is hardware you understand, sold by a company that
+          We make electronics you actually own. Every product ships with its
+          schematics, board files and firmware targets. Nothing sits in a
+          vendor silo. You get hardware you can understand, from a company that
           stands behind it.
         </p>
         <p>
-          OpenDrone is where it starts: flight controllers, ESCs, receivers and
-          frames, plus the firmware partnerships that make them fly. FPV is full
-          of builders who can solder but were never shown how their own gear
-          works. OpenDrone changes that. The catalogue is small on purpose while
-          we get the fundamentals right, and each new product is meant to reach
-          one step closer to the everyday user.
+          OpenDrone is where we start: flight controllers, ESCs, receivers and
+          frames, plus the firmware partnerships that make them fly. FPV is
+          full of people who can solder but were never shown how their gear
+          actually works. We want to change that. The catalogue is small on
+          purpose while we get the fundamentals right.
         </p>
       </section>
 
@@ -61,23 +60,22 @@ export default function IncutecRoute() {
         <h2 className="editorial-section-title">02 · How we work</h2>
         <p>
           Think of it as a record label for hardware. A maker brings a working
-          design with real demand; we handle certification, manufacturing, sales
-          and support, publish everything, and share the revenue. The pipeline is
-          built once and reused for every release, so good hardware that would
-          otherwise die between the prototype and the shop actually ships.
+          design with real demand. We handle certification, manufacturing,
+          sales and support, publish everything, and share the revenue. The
+          pipeline is built once and reused for every release, so good hardware
+          that would otherwise die between prototype and shop actually ships.
         </p>
         <p>
           Hardware is released under CERN-OHL-S, firmware under MIT or GPL,
-          designed in KiCad and built with partners we name. We forward a share
-          of every order to the open firmware projects we depend on, and we keep
-          our legal and security pages honest rather than aspirational.
+          designed in KiCad, built with partners we name. Part of every order
+          goes to the open firmware projects we depend on. Our legal and
+          security pages say what we do, not what we hope to do.
         </p>
         <p>
-          We are a young European company built for where hardware is heading:
-          tighter EU rules, shifting trade, and a rising appetite for tech made
-          by someone you can name and that you are allowed to understand. This
-          page is short on purpose. It grows as we do. For now, the work speaks
-          through the boards and the repos.
+          We are a young company from Leuven, Belgium, built for where European
+          hardware is heading: CE marking done properly, EU consumer rules
+          taken seriously, and products made by people you can name and email.
+          This page is short on purpose. It grows as we do.
         </p>
       </section>
 
