@@ -77,17 +77,17 @@ export const LEGAL_LABELS: Record<
     en: {
       title: 'Privacy Policy',
       eyebrow: 'Legal · GDPR',
-      description: 'How Incutec BV processes personal data for the OpenDrone webshop — GDPR compliant.',
+      description: 'How Incutec BV processes personal data for the OpenDrone webshop, GDPR compliant.',
     },
     nl: {
       title: 'Privacybeleid',
       eyebrow: 'Juridisch · AVG',
-      description: 'Hoe Incutec BV persoonsgegevens verwerkt voor de OpenDrone-webshop — AVG-conform.',
+      description: 'Hoe Incutec BV persoonsgegevens verwerkt voor de OpenDrone-webshop, AVG-conform.',
     },
     fr: {
       title: 'Politique de Confidentialité',
       eyebrow: 'Juridique · RGPD',
-      description: 'Comment Incutec BV traite les données personnelles pour la boutique OpenDrone — conforme au RGPD.',
+      description: 'Comment Incutec BV traite les données personnelles pour la boutique OpenDrone, conforme au RGPD.',
     },
   },
   cookies: {
@@ -160,17 +160,17 @@ export const LEGAL_LABELS: Record<
   },
   security: {
     en: {
-      title: 'Security — Vulnerability Disclosure',
+      title: 'Security · Vulnerability Disclosure',
       eyebrow: 'Security',
       description: 'How to report a vulnerability in OpenDrone hardware, firmware, or the webshop.',
     },
     nl: {
-      title: 'Beveiliging — Kwetsbaarheidsmelding',
+      title: 'Beveiliging · Kwetsbaarheidsmelding',
       eyebrow: 'Beveiliging',
       description: 'Hoe u een kwetsbaarheid kunt melden in OpenDrone-hardware, firmware of de webshop.',
     },
     fr: {
-      title: 'Sécurité — Divulgation de Vulnérabilités',
+      title: 'Sécurité · Divulgation de Vulnérabilités',
       eyebrow: 'Sécurité',
       description: 'Comment signaler une vulnérabilité dans le matériel, le firmware ou la boutique OpenDrone.',
     },

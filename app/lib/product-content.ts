@@ -501,8 +501,8 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
       // `refs` keyed to the live components.json so hovering a pin highlights
       // the real footprint(s) on the board (case-sensitive refdes).
       pins: [
-        {ref: '①', part: 'RP2354B — dual M33 @ 150 MHz', refs: ['U2']},
-        {ref: '②', part: 'LSM6DSV16X — 6-axis IMU', refs: ['U9']},
+        {ref: '①', part: 'RP2354B · dual M33 @ 150 MHz', refs: ['U2']},
+        {ref: '②', part: 'LSM6DSV16X · 6-axis IMU', refs: ['U9']},
         {ref: '③', part: 'microSD blackbox (SPI)', refs: ['Card1']},
         {
           ref: '④',
@@ -588,8 +588,8 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
         // The mini has its own refdes layout (RP2354A QFN-60, no op-amp in the
         // OSD front end). refs keyed to /boards/openfc-lite-mini/components.json.
         pins: [
-          {ref: '①', part: 'RP2354A — dual M33 @ 150 MHz', refs: ['U10']},
-          {ref: '②', part: 'LSM6DSV16X — 6-axis IMU', refs: ['U9']},
+          {ref: '①', part: 'RP2354A · dual M33 @ 150 MHz', refs: ['U10']},
+          {ref: '②', part: 'LSM6DSV16X · 6-axis IMU', refs: ['U9']},
           {ref: '③', part: 'microSD blackbox (SPI)', refs: ['Card1']},
           {
             ref: '④',
@@ -685,14 +685,14 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
       // and the ELRS link antenna are SEPARATE (council net-trace: AE1 is on the
       // /WIFI net to the ESP32-C3; the link path is AE2 / U.FL).
       pins: [
-        {ref: '①', part: 'SX1281 — 2.4 GHz LoRa radio', refs: ['U3']},
-        {ref: '②', part: 'ESP32-C3 — Wi-Fi MCU', refs: ['U1']},
+        {ref: '①', part: 'SX1281 · 2.4 GHz LoRa radio', refs: ['U3']},
+        {ref: '②', part: 'ESP32-C3 · Wi-Fi MCU', refs: ['U1']},
         {ref: '③', part: '2.4 GHz SAW band-pass filter', refs: ['FL1']},
         {ref: '④', part: 'ELRS link antenna (Molex 47948)', refs: ['AE2']},
         {ref: '⑤', part: 'Wi-Fi antenna (ESP32-C3)', refs: ['AE1']},
         {ref: '⑥', part: '52 MHz radio TCXO', refs: ['OSC1']},
-        {ref: '⑦', part: 'TLV75533 — 3.3 V LDO', refs: ['U2']},
-        {ref: '⑧', part: 'Solder pad I/O — CRSF UART', refs: ['TP1', 'TP2', 'TP3', 'TP4', 'TP5']},
+        {ref: '⑦', part: 'TLV75533 · 3.3 V LDO', refs: ['U2']},
+        {ref: '⑧', part: 'Solder pad I/O · CRSF UART', refs: ['TP1', 'TP2', 'TP3', 'TP4', 'TP5']},
       ],
     },
     inTheBox: [
@@ -731,14 +731,14 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
           ['Size', '10.05 × 10.55 mm, 6-layer'],
         ],
         pins: [
-          {ref: '①', part: 'SX1281 — 2.4 GHz LoRa radio', refs: ['U3']},
-          {ref: '②', part: 'ESP32-C3 — Wi-Fi MCU', refs: ['U1']},
+          {ref: '①', part: 'SX1281 · 2.4 GHz LoRa radio', refs: ['U3']},
+          {ref: '②', part: 'ESP32-C3 · Wi-Fi MCU', refs: ['U1']},
           {ref: '③', part: '2.4 GHz SAW band-pass filter', refs: ['FL1']},
           {ref: '④', part: 'ELRS link antenna (Molex 47948)', refs: ['AE2']},
           {ref: '⑤', part: 'Wi-Fi antenna (ESP32-C3)', refs: ['AE1']},
           {ref: '⑥', part: '52 MHz radio TCXO', refs: ['OSC1']},
-          {ref: '⑦', part: 'TLV75533 — 3.3 V LDO', refs: ['U2']},
-          {ref: '⑧', part: 'Solder pad I/O — CRSF UART', refs: ['TP1', 'TP2', 'TP3', 'TP4', 'TP5']},
+          {ref: '⑦', part: 'TLV75533 · 3.3 V LDO', refs: ['U2']},
+          {ref: '⑧', part: 'Solder pad I/O · CRSF UART', refs: ['TP1', 'TP2', 'TP3', 'TP4', 'TP5']},
         ],
         boardArt: {
           src: '/boards/openrx-lite/board.svg',
@@ -765,14 +765,14 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
         ],
         inTheBox: [{qty: '1×', item: 'U.FL dipole antenna'}],
         pins: [
-          {ref: '①', part: 'SX1281 — 2.4 GHz LoRa radio', refs: ['U3']},
-          {ref: '②', part: 'ESP32-C3 — Wi-Fi MCU', refs: ['U1']},
+          {ref: '①', part: 'SX1281 · 2.4 GHz LoRa radio', refs: ['U3']},
+          {ref: '②', part: 'ESP32-C3 · Wi-Fi MCU', refs: ['U1']},
           {ref: '③', part: '2.4 GHz SAW band-pass filter', refs: ['FL1']},
-          {ref: '④', part: 'ELRS link antenna — U.FL connector', refs: ['J1']},
+          {ref: '④', part: 'ELRS link antenna · U.FL connector', refs: ['J1']},
           {ref: '⑤', part: 'Wi-Fi antenna (on-board ceramic)', refs: ['AE1']},
           {ref: '⑥', part: '52 MHz radio TCXO', refs: ['OSC1']},
-          {ref: '⑦', part: 'TLV75533 — 3.3 V LDO', refs: ['U2']},
-          {ref: '⑧', part: 'Solder pad I/O — CRSF UART', refs: ['TP1', 'TP2', 'TP3', 'TP4', 'TP5']},
+          {ref: '⑦', part: 'TLV75533 · 3.3 V LDO', refs: ['U2']},
+          {ref: '⑧', part: 'Solder pad I/O · CRSF UART', refs: ['TP1', 'TP2', 'TP3', 'TP4', 'TP5']},
         ],
         boardArt: {
           src: '/boards/openrx-lite-ufl/board.svg',
@@ -800,14 +800,14 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
         ],
         inTheBox: [{qty: '1×', item: 'U.FL dipole antenna'}],
         pins: [
-          {ref: '①', part: 'LR1121 — dual-band LoRa radio', refs: ['U3']},
-          {ref: '②', part: 'ESP32-C3 — Wi-Fi MCU', refs: ['U1']},
-          {ref: '③', part: 'RFX2401C — PA / LNA front-end', refs: ['U4']},
-          {ref: '④', part: 'SKY13373 — RF switch', refs: ['U5']},
-          {ref: '⑤', part: 'ELRS link antenna — U.FL connector', refs: ['J1']},
+          {ref: '①', part: 'LR1121 · dual-band LoRa radio', refs: ['U3']},
+          {ref: '②', part: 'ESP32-C3 · Wi-Fi MCU', refs: ['U1']},
+          {ref: '③', part: 'RFX2401C · PA / LNA front-end', refs: ['U4']},
+          {ref: '④', part: 'SKY13373 · RF switch', refs: ['U5']},
+          {ref: '⑤', part: 'ELRS link antenna · U.FL connector', refs: ['J1']},
           {ref: '⑥', part: 'Wi-Fi antenna (on-board ceramic)', refs: ['AE1']},
           {ref: '⑦', part: '32 MHz radio TCXO', refs: ['OSC1']},
-          {ref: '⑧', part: 'Solder pad I/O — CRSF UART (BOOT pad on back)', refs: ['TP1', 'TP2', 'TP3', 'TP4', 'TP5']},
+          {ref: '⑧', part: 'Solder pad I/O · CRSF UART (BOOT pad on back)', refs: ['TP1', 'TP2', 'TP3', 'TP4', 'TP5']},
         ],
         boardArt: {
           src: '/boards/openrx-mono/board.svg',
@@ -838,14 +838,14 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
           {qty: '2×', item: 'U.FL dipole antenna', note: 'diversity pair'},
         ],
         pins: [
-          {ref: '①', part: 'LR1121 — dual-band LoRa radio', cost: '×2', refs: ['U3', 'U6']},
-          {ref: '②', part: 'ESP32-C3 — Wi-Fi MCU', refs: ['U1']},
-          {ref: '③', part: 'RFX2401C — PA / LNA front-end', cost: '×2', refs: ['U4', 'U7']},
-          {ref: '④', part: 'SKY13373 — RF switch', cost: '×2', refs: ['U5', 'U8']},
-          {ref: '⑤', part: 'ELRS link antennas — U.FL', cost: '×2', refs: ['J1', 'J2']},
+          {ref: '①', part: 'LR1121 · dual-band LoRa radio', cost: '×2', refs: ['U3', 'U6']},
+          {ref: '②', part: 'ESP32-C3 · Wi-Fi MCU', refs: ['U1']},
+          {ref: '③', part: 'RFX2401C · PA / LNA front-end', cost: '×2', refs: ['U4', 'U7']},
+          {ref: '④', part: 'SKY13373 · RF switch', cost: '×2', refs: ['U5', 'U8']},
+          {ref: '⑤', part: 'ELRS link antennas · U.FL', cost: '×2', refs: ['J1', 'J2']},
           {ref: '⑥', part: 'Wi-Fi antenna (on-board ceramic)', refs: ['AE1']},
           {ref: '⑦', part: '32 MHz radio TCXO', refs: ['OSC1']},
-          {ref: '⑧', part: 'Solder pad I/O — CRSF UART', refs: ['TP1', 'TP2', 'TP3', 'TP4']},
+          {ref: '⑧', part: 'Solder pad I/O · CRSF UART', refs: ['TP1', 'TP2', 'TP3', 'TP4']},
         ],
         boardArt: {
           src: '/boards/openrx-gemini/board.svg',

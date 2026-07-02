@@ -56,7 +56,7 @@ export function ReleaseRow({article}: {article: ReleaseRowArticle}) {
       >
         <span className="rn-date">{date}</span>
         <VersionChip version={version} />
-        {!version ? <span className="rn-version is-empty">—</span> : null}
+        {!version ? <span className="rn-version is-empty">·</span> : null}
         <div className="rn-body">
           <h3 className="rn-headline">{article.title}</h3>
           {article.excerpt ? (

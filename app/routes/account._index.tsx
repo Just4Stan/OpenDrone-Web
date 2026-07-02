@@ -233,7 +233,7 @@ function NewsletterCard({subscribed}: {subscribed: boolean}) {
       <h3 className="account-dashboard-card-title">Build notes</h3>
       <p className="account-dashboard-card-lede">
         {isSubscribed
-          ? 'Subscribed — new posts land in your inbox.'
+          ? 'Subscribed. New posts land in your inbox.'
           : 'Get product releases and build notes by email.'}
       </p>
       <fetcher.Form method="post">

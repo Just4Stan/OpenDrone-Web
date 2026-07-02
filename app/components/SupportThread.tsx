@@ -540,7 +540,7 @@ function SupportThreadSidebar({
         <dl className="support-sidebar-rows">
           <div className="support-sidebar-row">
             <dt>Ticket</dt>
-            <dd className="support-sidebar-mono">#{ticket.pid || '—'}</dd>
+            <dd className="support-sidebar-mono">#{ticket.pid || '·'}</dd>
           </div>
           {opened ? (
             <div className="support-sidebar-row">
@@ -644,7 +644,7 @@ function DaySeparator({iso}: {iso: string}) {
   if (!label) return null;
   return (
     <div className="support-thread-day" aria-hidden="true">
-      — {label} —
+      {label}
     </div>
   );
 }

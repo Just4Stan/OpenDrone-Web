@@ -65,7 +65,7 @@ export function SignalLost() {
           </p>
           <p className="signal-lost-title">SIGNAL LOST</p>
           <p className="signal-lost-sub">
-            no link to <code>{path}</code> — failsafe engaged
+            no link to <code>{path}</code>. Failsafe engaged
           </p>
         </div>
 
