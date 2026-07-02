@@ -6,6 +6,17 @@ import type {
   CollectionItemFragment,
 } from 'storefrontapi.generated';
 import {useVariantUrl} from '~/lib/variants';
+import {AddToCartButton} from './AddToCartButton';
+import {StackQuickAdd, type StackOffer} from './StackQuickAdd';
+import {useAside} from './Aside';
+
+/** Hover quick-add for catalog cards: the card's own variant prewired as a
+ *  cart line, so ordering never requires opening the PDP. */
+export type ProductQuickAdd = {
+  lines: Array<{merchandiseId: string; quantity: number}>;
+  available: boolean;
+  flyImage?: string | null;
+};
 
 /**
  * One model/tier of a product line, surfaced as a chip under the card on
@@ -33,6 +44,8 @@ export function ProductItem({
   priceOverride,
   imageOverride,
   comingSoon,
+  quickAdd,
+  stackOffers,
 }: {
   product: CollectionItemFragment | ProductItemFragment;
   loading?: 'eager' | 'lazy';
@@ -62,13 +75,43 @@ export function ProductItem({
   /** Unreleased product — renders greyed and non-clickable with a "Coming
    *  soon" badge instead of a link (nothing to buy or open yet). */
   comingSoon?: boolean;
+  /** Hover quick-add: adds this card's variant without opening the PDP. */
+  quickAdd?: ProductQuickAdd;
+  /** Stack offers layered on the quick-add (FC/ESC cards): hovering the add
+   *  button also offers the size-matched pair in one click. */
+  stackOffers?: StackOffer[];
 }) {
   const variantUrl = useVariantUrl(product.handle);
+  const {open: openAside} = useAside();
   const url = to ?? variantUrl;
   const displayTitle = title ?? product.title;
   const price = priceOverride ?? product.priceRange.minVariantPrice;
   const image = imageOverride ?? product.featuredImage;
   const hasModels = Boolean(models && models.length > 0);
+
+  // Quick-add overlay: revealed on card hover (always visible on touch).
+  // Rendered as a SIBLING of the card link, never inside it — a form inside
+  // an anchor is invalid HTML and hijacks the navigation click.
+  const quickAddNode =
+    quickAdd && !comingSoon && !feature ? (
+      <div className="product-card-quickadd">
+        <StackQuickAdd
+          offers={stackOffers ?? []}
+          flyImage={quickAdd.flyImage}
+          onAdd={() => openAside('cart')}
+        >
+          <AddToCartButton
+            className="product-card-quickadd-btn"
+            lines={quickAdd.lines}
+            disabled={!quickAdd.available}
+            flyImage={quickAdd.flyImage}
+            onClick={() => openAside('cart')}
+          >
+            Add to cart
+          </AddToCartButton>
+        </StackQuickAdd>
+      </div>
+    ) : null;
 
   const badge = comingSoon ? (
     <span className="product-card-badge is-soon">Coming soon</span>
@@ -188,8 +231,24 @@ export function ProductItem({
     );
   }
 
-  // Plain card — a single link wrapping the whole tile.
+  // Plain card — a single link wrapping the whole tile. With a quick-add the
+  // wrapper becomes a div (the add button can't nest inside the anchor).
   if (!hasModels) {
+    if (quickAddNode) {
+      return (
+        <div className="product-card has-quickadd">
+          <Link
+            className="product-card-link"
+            prefetch="viewport"
+            viewTransition
+            to={url}
+          >
+            {inner}
+          </Link>
+          {quickAddNode}
+        </div>
+      );
+    }
     return (
       <Link className="product-card" prefetch="viewport" viewTransition to={url}>
         {inner}
@@ -202,7 +261,7 @@ export function ProductItem({
   // links and nesting anchors is invalid HTML. So the tile body is one link
   // and each model is a sibling link below it.
   return (
-    <div className="product-card has-models">
+    <div className={`product-card has-models${quickAddNode ? ' has-quickadd' : ''}`}>
       <Link
         className="product-card-link"
         prefetch="viewport"
@@ -211,6 +270,7 @@ export function ProductItem({
       >
         {inner}
       </Link>
+      {quickAddNode}
       {modelStrip}
     </div>
   );

@@ -1626,6 +1626,73 @@ html.anim-paused .board-sheet.is-active {
   max-width: 24rem;
   padding: var(--sp-2);
 }
+/* Stack chip pod: one row per size-matched FC+ESC pair, addable in place.
+   Same reset as the product pods below — the chip rules bleed gold/uppercase
+   onto everything inside .site-header-categories. */
+.header-stack-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+.header-stack-row {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.4rem 0.5rem;
+  border-radius: var(--r-lg);
+  text-transform: none;
+  letter-spacing: normal;
+  opacity: 1;
+}
+.header-stack-row.is-out {
+  opacity: 0.45;
+}
+.header-stack-row img {
+  width: 44px;
+  height: 44px;
+  object-fit: contain;
+  flex: none;
+}
+.header-stack-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  min-width: 9rem;
+}
+.header-stack-title {
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  color: var(--color-gold);
+}
+.header-stack-sub {
+  font-size: 0.72rem;
+  color: var(--color-text-dim);
+  white-space: nowrap;
+}
+.header-stack-price {
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+  color: var(--color-text);
+  margin-left: auto;
+}
+.header-stack-add {
+  flex: none;
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  padding: 0.3rem 0.85rem;
+  background: var(--color-gold);
+  color: var(--color-on-accent);
+  border: none;
+  border-radius: var(--r-pill);
+  cursor: pointer;
+}
+.header-stack-add:hover {
+  background: var(--color-gold-hover);
+}
+.header-stack-add[disabled] {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
 /* The chip rules (.site-header-categories a / .site-header-cat-group a) also
    match the pod's product links — they bled gold colour, UPPERCASE tracking and
    a 0.7 opacity onto the whole dropdown row, which washed the text out (worst in
@@ -4483,86 +4550,173 @@ button.reset {
 /* Pair CTA — playful cross-sell that sits under the buy strip. Vertical
    stack so the product name gets display-size weight; the arrow pins to
    the bottom-right corner of the card. */
-/* "Complete the stack" cross-sell inside the buy module. A quiet row that
-   arms with a checkbox; gold only once armed so it doesn't fight the CTA. */
-.stack-builder {
-  border: 1px solid var(--color-border);
-  border-radius: var(--r-md);
-  padding: 0.65rem 0.8rem;
-  margin-bottom: 0.85rem;
-  transition: border-color 0.15s ease;
+/* "Buy it as a stack" hover flyout on add-to-cart CTAs. Desktop: hovering or
+   focusing the CTA group reveals compact gold offer pills floating above the
+   button (Pod material) — one click adds this board + the size-matched
+   partner. Touch (no hover): the offers render as a slim always-visible row
+   under the CTA instead. */
+.cta-stack-group {
+  position: relative;
 }
-.stack-builder.is-on {
-  border-color: color-mix(in srgb, var(--color-gold) 45%, var(--color-border));
-  background: color-mix(in srgb, var(--color-gold) 5%, transparent);
-}
-.stack-builder-toggle {
-  display: flex;
-  align-items: center;
-  gap: 0.55rem;
-  cursor: pointer;
-}
-.stack-builder-toggle input {
-  accent-color: var(--color-gold);
-  width: 15px;
-  height: 15px;
-  flex: none;
-}
-.stack-builder-toggle-text {
-  font-size: 0.85rem;
-  color: var(--color-text);
-}
-.stack-builder-badge {
-  margin-left: auto;
-  font-family: var(--font-mono);
-  font-size: 0.75rem;
-  color: var(--color-gold);
-  border: 1px solid color-mix(in srgb, var(--color-gold) 45%, transparent);
-  border-radius: var(--r-pill);
-  padding: 0.05rem 0.45rem;
-}
-.stack-builder-body {
-  margin-top: 0.6rem;
+.cta-stack-flyout {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 100%;
+  /* Padding (not margin) bridges the hover gap between CTA and flyout. */
+  padding-bottom: 0.4rem;
   display: flex;
   flex-direction: column;
-  gap: 0.4rem;
+  gap: 0.3rem;
+  opacity: 0;
+  transform: translateY(5px);
+  pointer-events: none;
+  transition: opacity 0.16s ease, transform 0.16s ease;
+  z-index: 40;
 }
-.stack-builder-options {
-  display: flex;
-  gap: 0.4rem;
-  flex-wrap: wrap;
+.cta-stack-group:hover .cta-stack-flyout,
+.cta-stack-group:focus-within .cta-stack-flyout {
+  opacity: 1;
+  transform: none;
+  pointer-events: auto;
 }
-.stack-builder-option {
-  font-family: var(--font-mono);
-  font-size: 0.78rem;
-  padding: 0.25rem 0.7rem;
-  border: 1px solid var(--color-border);
+/* Pinned top rail: the flyout drops BELOW the bar instead of above it. */
+.buy-rail.is-pinned:not(.is-mobile) .cta-stack-flyout {
+  bottom: auto;
+  top: 100%;
+  padding-bottom: 0;
+  padding-top: 0.4rem;
+}
+.cta-stack-group:hover .cta-stack-flyout,
+.cta-stack-group:focus-within .cta-stack-flyout {
+  transform: none;
+}
+.cta-stack-offer {
+  width: 100%;
+  padding: 0.45rem 0.85rem;
+  background: var(--pod-bg-strong);
+  border: 1px solid color-mix(in srgb, var(--color-gold) 40%, var(--color-border));
   border-radius: var(--r-pill);
-  background: none;
-  color: var(--color-text-muted);
-  cursor: pointer;
-}
-.stack-builder-option.is-active {
-  border-color: var(--color-gold);
+  box-shadow: var(--pod-shadow);
   color: var(--color-text);
+  cursor: pointer;
+  transition: border-color 0.15s ease;
 }
-.stack-builder-line {
+.cta-stack-offer:hover {
+  border-color: var(--color-gold);
+}
+.cta-stack-offer .btn-label {
   display: flex;
   align-items: baseline;
-  justify-content: space-between;
-  gap: 0.75rem;
+  gap: 0.5rem;
   font-family: var(--font-mono);
-  font-size: 0.82rem;
-}
-.stack-builder-price {
-  display: inline-flex;
-  gap: 0.1rem;
-  color: var(--color-text);
-}
-.stack-builder-note {
-  margin: 0;
   font-size: 0.78rem;
-  color: var(--color-text-dim);
+}
+.cta-stack-offer-plus {
+  color: var(--color-gold);
+  font-weight: 700;
+}
+.cta-stack-offer-label {
+  flex: 1;
+  text-align: left;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.cta-stack-offer-price {
+  color: var(--color-text-muted);
+}
+.cta-stack-offer-pct {
+  color: var(--color-gold);
+}
+/* Touch devices: no hover — show the offers as a slim row under the CTA. */
+@media (hover: none) {
+  .cta-stack-flyout {
+    position: static;
+    opacity: 1;
+    transform: none;
+    pointer-events: auto;
+    padding-bottom: 0;
+    padding-top: 0.4rem;
+  }
+}
+/* Pinned mobile bottom bar stays minimal: the in-flow buy box (a short
+   scroll up) still offers the stack. */
+.buy-rail.is-pinned.is-mobile .cta-stack-flyout {
+  display: none;
+}
+
+/* Catalog card quick-add: a pill pinned to the bottom-right of the media
+   square (the wrapper mirrors the 1:1 media box so it anchors to the image,
+   not the text body), revealed on card hover. Touch: always visible. */
+.product-card.has-quickadd {
+  position: relative;
+}
+.product-card-quickadd {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  aspect-ratio: 1 / 1;
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-end;
+  padding: 0.6rem;
+  pointer-events: none;
+  z-index: 4;
+}
+.product-card-quickadd .cta-stack-group,
+.product-card-quickadd > * {
+  pointer-events: auto;
+}
+.product-card-quickadd .product-card-quickadd-btn,
+.product-card-quickadd .cta-stack-offer {
+  opacity: 0;
+  transform: translateY(4px);
+  transition: opacity 0.15s ease, transform 0.15s ease;
+}
+.product-card.has-quickadd:hover .product-card-quickadd-btn,
+.product-card.has-quickadd:focus-within .product-card-quickadd-btn,
+.product-card.has-quickadd:hover .cta-stack-group:hover .cta-stack-offer,
+.product-card.has-quickadd .cta-stack-group:focus-within .cta-stack-offer {
+  opacity: 1;
+  transform: none;
+}
+.product-card-quickadd-btn {
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  padding: 0.35rem 0.9rem;
+  background: var(--color-gold);
+  color: var(--color-on-accent);
+  border: none;
+  border-radius: var(--r-pill);
+  box-shadow: var(--pod-shadow);
+  cursor: pointer;
+}
+.product-card-quickadd-btn:hover {
+  background: var(--color-gold-hover);
+}
+.product-card-quickadd-btn[disabled] {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+/* The stack flyout inside a card opens upward over the image; keep it as
+   wide as the media box allows. */
+.product-card-quickadd .cta-stack-flyout {
+  min-width: 14rem;
+  left: auto;
+  right: 0;
+}
+@media (hover: none) {
+  .product-card-quickadd .product-card-quickadd-btn {
+    opacity: 1;
+    transform: none;
+  }
+  /* Touch cards keep the single Add pill only — the stack offer lives on
+     the PDP's buy box there, where there's room to read it. */
+  .product-card-quickadd .cta-stack-flyout {
+    display: none;
+  }
 }
 
 .pair-cta {

@@ -16,6 +16,9 @@ import {IncutecWordmark} from '~/components/IncutecWordmark';
 import {Pod} from '~/components/Pod';
 import {SearchForm} from '~/components/SearchForm';
 import {ProductPods, type ProductPodItem} from '~/components/ProductPods';
+import {AddToCartButton} from '~/components/AddToCartButton';
+import {Money} from '@shopify/hydrogen';
+import type {MoneyV2} from '@shopify/hydrogen/storefront-api-types';
 import {INCUTEC_HINT_SEEN_KEY} from '~/lib/incutec-hint';
 
 /** Retire the hero "Who's incutec?" hint: persist the dismissal and pull the
@@ -79,10 +82,17 @@ const CATEGORY_LINKS: Array<{label: string; to: string; type: string}> = [
 const MOBILE_FAMILY_LABEL: Record<string, string> = {
   'Flight Controller': 'Flight Controllers',
   ESC: 'ESCs',
-  Bundle: 'Stacks',
   Receiver: 'Receivers',
   Frame: 'Frames',
 };
+
+/** The stack pair sold from the header's Stack chip, and the advertised
+ *  percent of the Shopify automatic BXGY discount (display only — checkout
+ *  applies the real thing). Mirrors `stack` in product-content.ts without
+ *  pulling that whole module into the header. */
+const STACK_FC_HANDLE = 'openfc-lite';
+const STACK_ESC_HANDLE = 'openesc';
+const STACK_DISCOUNT_PCT = 10;
 
 export function Header({
   header,
@@ -182,6 +192,9 @@ function FamilyNav({
   const [open, setOpen] = useState<string | null>(null);
   const closeTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const location = useLocation();
+  // Cart drawer opener for the Stack chip's add buttons (named to avoid the
+  // `open` dropdown-state collision above).
+  const {open: openCartAside} = useAside();
 
   // Close the hover dropdown on any navigation — otherwise clicking a SKU drops
   // you on the page with the menu still stuck open (mouseleave never fires when
@@ -271,6 +284,127 @@ function FamilyNav({
       });
   }
 
+  // Size-matched FC+ESC pairs for the Stack chip: one row per shared Model
+  // value, both cart lines prebuilt so "Add" orders the pair in one click.
+  function stackRows() {
+    const fc = (products ?? []).find((p) => p.handle === STACK_FC_HANDLE);
+    const esc = (products ?? []).find((p) => p.handle === STACK_ESC_HANDLE);
+    if (!fc || !esc) return [];
+    const sizeOf = (v: HeaderFamilyVariant) =>
+      v.selectedOptions?.find((o) => o.name.trim().toLowerCase() === 'model')
+        ?.value;
+    const rows: Array<{
+      size: string;
+      total: MoneyV2;
+      available: boolean;
+      imageUrl: string | null;
+      lines: Array<{merchandiseId: string; quantity: number}>;
+    }> = [];
+    for (const fv of fc.variants?.nodes ?? []) {
+      const size = sizeOf(fv);
+      if (!size) continue;
+      const ev = (esc.variants?.nodes ?? []).find(
+        (v) => sizeOf(v)?.trim().toLowerCase() === size.trim().toLowerCase(),
+      );
+      if (!ev) continue;
+      rows.push({
+        size,
+        total: {
+          amount: (
+            parseFloat(fv.price?.amount ?? '0') +
+            parseFloat(ev.price?.amount ?? '0')
+          ).toFixed(2),
+          currencyCode: (fv.price?.currencyCode ?? 'EUR') as MoneyV2['currencyCode'],
+        },
+        available: Boolean(fv.availableForSale && ev.availableForSale),
+        imageUrl: fv.image?.url ?? fc.featuredImage?.url ?? null,
+        lines: [
+          {merchandiseId: fv.id, quantity: 1},
+          {merchandiseId: ev.id, quantity: 1},
+        ],
+      });
+    }
+    return rows;
+  }
+
+  // The Stack chip: not a product page — a pod of size-matched FC+ESC pairs,
+  // each addable to the cart right from the top bar. The chip itself links
+  // to the FC page (where the stack offer also lives on the CTA).
+  function stackChip() {
+    const rows = stackRows();
+    return (
+      <span
+        className="header-cat"
+        key="Stack"
+        onMouseEnter={() => openFamily('Stack')}
+        onMouseLeave={scheduleClose}
+        onFocus={() => openFamily('Stack')}
+        onBlur={scheduleClose}
+      >
+        <NavLink prefetch="viewport" to={`/products/${STACK_FC_HANDLE}`}>
+          Stack
+        </NavLink>
+        <span className="header-cat-pod-wrap">
+          <AnimatePresence>
+            {open === 'Stack' && rows.length > 0 ? (
+              <Pod
+                animate
+                origin="top center"
+                className="header-cat-pod header-stack-pod"
+                role="menu"
+                ariaLabel="Stacks"
+              >
+                <div className="header-stack-rows">
+                  {rows.map((r) => (
+                    <div
+                      key={r.size}
+                      className={`header-stack-row${r.available ? '' : ' is-out'}`}
+                    >
+                      {r.imageUrl ? (
+                        <img
+                          src={r.imageUrl}
+                          alt=""
+                          width={44}
+                          height={44}
+                          loading="lazy"
+                          decoding="async"
+                        />
+                      ) : null}
+                      <span className="header-stack-info">
+                        <span className="header-stack-title">
+                          {r.size} stack
+                        </span>
+                        <span className="header-stack-sub">
+                          OpenFC Lite + OpenESC · −{STACK_DISCOUNT_PCT}% at
+                          checkout
+                        </span>
+                      </span>
+                      <span className="header-stack-price">
+                        <Money data={r.total} />
+                      </span>
+                      <AddToCartButton
+                        className="header-stack-add"
+                        lines={r.lines}
+                        disabled={!r.available}
+                        flyImage={r.imageUrl}
+                        onClick={() => {
+                          setOpen(null);
+                          openCartAside('cart');
+                        }}
+                      >
+                        Add
+                      </AddToCartButton>
+                    </div>
+                  ))}
+                </div>
+              </Pod>
+            ) : null}
+          </AnimatePresence>
+        </span>
+      </span>
+    );
+  }
+
   function chip(cat: (typeof CATEGORY_LINKS)[number]) {
     const items = itemsFor(cat.type);
     return (
@@ -306,10 +440,13 @@ function FamilyNav({
 
   return (
     <nav className="site-header-categories" aria-label="Product categories">
+      {/* FC / ESC / Stack share one bubble (a stack IS an FC + ESC); RX and
+          Frame are standalone families with their own bubbles. */}
       <span className="site-header-cat-group">
-        {CATEGORY_LINKS.slice(0, 3).map(chip)}
+        {CATEGORY_LINKS.slice(0, 2).map(chip)}
+        {stackChip()}
       </span>
-      {CATEGORY_LINKS.slice(3).map((cat) => (
+      {CATEGORY_LINKS.slice(2).map((cat) => (
         <span className="site-header-cat-group" key={cat.label}>
           {chip(cat)}
         </span>

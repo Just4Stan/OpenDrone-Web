@@ -15,7 +15,6 @@ import {
   getProductOptions,
   getAdjacentAndFirstAvailableVariants,
   useSelectedOptionInUrlParam,
-  Money,
 } from '@shopify/hydrogen';
 import {useAside} from '~/components/Aside';
 import {ProductPrice} from '~/components/ProductPrice';
@@ -632,51 +631,54 @@ export default function Product() {
       }
     : undefined;
 
-  // "Complete the stack": resolve the partner board's variant that matches
-  // the selected mount size, so the FC page can drop the pairing ESC (and
-  // vice versa) into the same add-to-cart submit. `partners` is a list on
-  // purpose: with one entry the row is fixed; a second option later (an
-  // OpenFC Pro next to the Lite) renders as a picker with no structural
-  // change. The 10% itself is the Shopify automatic BXGY at checkout.
+  // "Buy it as a stack": for each configured partner (FC↔ESC), resolve the
+  // variant matching the selected mount size and prebuild BOTH cart lines.
+  // The offers surface as a hover flyout on the add-to-cart CTA, so ordering
+  // the pair is one extra click; more partners later (an OpenFC Pro) just
+  // become more rows. The 10% itself is the Shopify automatic BXGY at
+  // checkout.
   const stackCfg = content.stack;
-  const [stackOn, setStackOn] = useState(false);
-  const [stackPartnerIdx, setStackPartnerIdx] = useState(0);
-  const stackPartnerCfg =
-    stackCfg?.partners[stackPartnerIdx] ?? stackCfg?.partners[0];
-  const stackPartnerProduct = stackPartnerCfg
-    ? stackProducts?.find((p) => p.handle === stackPartnerCfg.handle)
-    : undefined;
   const stackAxis = (stackCfg?.matchOption ?? 'Model').trim().toLowerCase();
   const stackMatchValue =
     selectedVariant?.selectedOptions?.find(
       (o: {name: string; value: string}) =>
         o.name.trim().toLowerCase() === stackAxis,
     )?.value ?? activeTier;
-  const stackNodes = stackPartnerProduct?.variants?.nodes ?? [];
-  const stackVariant =
-    stackNodes.find((n) =>
-      n.selectedOptions?.some(
-        (o) =>
-          o.name.trim().toLowerCase() === stackAxis &&
-          o.value.trim().toLowerCase() ===
-            stackMatchValue.trim().toLowerCase(),
-      ),
-    ) ??
-    stackNodes.find((n) => n.availableForSale) ??
-    stackNodes[0] ??
-    null;
-  const stackReady = Boolean(stackCfg && stackVariant && selectedVariant);
-  const stackAvailable =
-    stackReady &&
-    Boolean(stackVariant?.availableForSale) &&
-    Boolean(selectedVariant?.availableForSale);
-  const stackActive = stackOn && stackReady;
-  const stackLines = stackActive
-    ? [
-        {merchandiseId: selectedVariant!.id, quantity: 1},
-        {merchandiseId: stackVariant!.id, quantity: 1},
-      ]
-    : [];
+  const stackOffers = useMemo(() => {
+    if (!stackCfg || !selectedVariant) return [];
+    return stackCfg.partners.flatMap((pc) => {
+      const pp = stackProducts?.find((p) => p.handle === pc.handle);
+      const nodes = pp?.variants?.nodes ?? [];
+      const match =
+        nodes.find((n) =>
+          n.selectedOptions?.some(
+            (o) =>
+              o.name.trim().toLowerCase() === stackAxis &&
+              o.value.trim().toLowerCase() ===
+                stackMatchValue.trim().toLowerCase(),
+          ),
+        ) ??
+        nodes.find((n) => n.availableForSale) ??
+        nodes[0];
+      if (!match) return [];
+      return [
+        {
+          key: pc.handle,
+          label: pc.label ?? pp?.title ?? pc.handle,
+          size: stackMatchValue,
+          price: match.price,
+          pct: stackCfg.discountPct,
+          available:
+            match.availableForSale &&
+            Boolean(selectedVariant.availableForSale),
+          lines: [
+            {merchandiseId: selectedVariant.id, quantity: 1},
+            {merchandiseId: match.id, quantity: 1},
+          ],
+        },
+      ];
+    });
+  }, [stackCfg, stackProducts, selectedVariant, stackAxis, stackMatchValue]);
 
   // The teardown board art follows the selected tier: a variant's own
   // `boardArt` wins, otherwise the shared `teardown.boardArt` (the default
@@ -1376,86 +1378,14 @@ export default function Product() {
             ? 'In stock · ships from Belgium'
             : 'Sold out'}
       </span>
-      {stackCfg && stackReady ? (
-        <div className={`stack-builder${stackOn ? ' is-on' : ''}`}>
-          <label className="stack-builder-toggle">
-            <input
-              type="checkbox"
-              checked={stackOn}
-              onChange={(e) => setStackOn(e.currentTarget.checked)}
-            />
-            <span className="stack-builder-toggle-text">
-              Make it a stack · add the matching {stackCfg.adds}
-            </span>
-            {stackCfg.discountPct ? (
-              <span className="stack-builder-badge">
-                −{stackCfg.discountPct}%
-              </span>
-            ) : null}
-          </label>
-          {stackOn ? (
-            <div className="stack-builder-body">
-              {stackCfg.partners.length > 1 ? (
-                <div
-                  className="stack-builder-options"
-                  role="radiogroup"
-                  aria-label={`Pick the ${stackCfg.adds}`}
-                >
-                  {stackCfg.partners.map((p, i) => (
-                    <button
-                      key={p.handle}
-                      type="button"
-                      role="radio"
-                      aria-checked={i === stackPartnerIdx}
-                      className={`stack-builder-option${
-                        i === stackPartnerIdx ? ' is-active' : ''
-                      }`}
-                      onClick={() => setStackPartnerIdx(i)}
-                    >
-                      {p.label ?? p.handle}
-                    </button>
-                  ))}
-                </div>
-              ) : null}
-              <div className="stack-builder-line">
-                <span className="stack-builder-part">
-                  {stackPartnerCfg?.label ?? stackPartnerProduct?.title} ·{' '}
-                  {stackMatchValue}
-                </span>
-                {stackVariant ? (
-                  <span className="stack-builder-price">
-                    +<Money data={stackVariant.price} />
-                  </span>
-                ) : null}
-              </div>
-              <p className="stack-builder-note">
-                {stackAvailable
-                  ? `Both boards in one order. The ${
-                      stackCfg.discountPct ?? 10
-                    }% stack discount is applied at checkout.`
-                  : 'The matching board is out of stock right now.'}
-              </p>
-            </div>
-          ) : null}
-        </div>
-      ) : null}
       <ProductForm
         productOptions={productOptions}
         selectedVariant={selectedVariant}
         hideOptionNames={content.optionAxis ? [content.optionAxis] : undefined}
-        bundleLines={
-          isBundle ? bundleLines : stackActive ? stackLines : undefined
-        }
-        bundleDisabled={
-          isBundle ? !bundleAvailable : stackActive ? !stackAvailable : undefined
-        }
-        bundleCtaLabel={
-          isBundle
-            ? 'Add the stack: both boards'
-            : stackActive
-              ? 'Add the stack to cart'
-              : undefined
-        }
+        bundleLines={isBundle ? bundleLines : undefined}
+        bundleDisabled={isBundle ? !bundleAvailable : undefined}
+        bundleCtaLabel={isBundle ? 'Add the stack: both boards' : undefined}
+        stackOffers={stackOffers}
       />
     </div>
   );
