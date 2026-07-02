@@ -45,24 +45,31 @@ export function MobileHome({
             hero's rotatable 3D trio, distilled to a still that loads instantly. */}
         <motion.div className="home-mobile-stage" {...rise(0)} aria-hidden="true">
           <span className="home-mobile-glow" />
-          <img
-            className="home-mobile-board home-mobile-board--rear"
-            src="/boards/openesc/front.png"
-            alt=""
-            width={520}
-            height={520}
-            loading="eager"
-            decoding="async"
-          />
-          <img
-            className="home-mobile-board home-mobile-board--front"
-            src="/boards/openfc-lite/front.png"
-            alt=""
-            width={520}
-            height={520}
-            loading="eager"
-            decoding="async"
-          />
+          {/* Float animation lives on the wrapper, drop-shadow on the img:
+              animating transform on the filtered element itself forces weak
+              GPUs to re-rasterize the shadow every frame of the infinite loop. */}
+          <span className="home-mobile-board-float home-mobile-board-float--rear">
+            <img
+              className="home-mobile-board"
+              src="/boards/openesc/front.png"
+              alt=""
+              width={520}
+              height={520}
+              loading="eager"
+              decoding="async"
+            />
+          </span>
+          <span className="home-mobile-board-float home-mobile-board-float--front">
+            <img
+              className="home-mobile-board"
+              src="/boards/openfc-lite/front.png"
+              alt=""
+              width={520}
+              height={520}
+              loading="eager"
+              decoding="async"
+            />
+          </span>
         </motion.div>
 
         <motion.h1

@@ -14,6 +14,7 @@ import {
 import type {CollectionItemFragment} from 'storefrontapi.generated';
 import type {MoneyV2} from '@shopify/hydrogen/storefront-api-types';
 import {INCUTEC_HINT_SEEN_KEY} from '~/lib/incutec-hint';
+import {buildSeoMeta} from '~/lib/seo';
 import {HeroWordmark} from '~/components/HeroWordmark';
 import {HeroSizeSlider} from '~/components/HeroSizeSlider';
 import {
@@ -116,12 +117,12 @@ const ClientHeroScene = memo(function ClientHeroScene({
   );
 });
 
-export const meta: Route.MetaFunction = () => {
-  return [
-    {title: 'OpenDrone · Open Source Drone Parts'},
-    {name: 'description', content: 'Open source flight controllers and ESCs. Designed in Belgium.'},
-  ];
-};
+export const meta: Route.MetaFunction = () =>
+  buildSeoMeta({
+    title: 'OpenDrone · Open Source Drone Parts',
+    description:
+      'Open source flight controllers and ESCs. Designed in Belgium.',
+  });
 
 type HomeMoney = Pick<MoneyV2, 'amount' | 'currencyCode'>;
 type HomeVariant = {

@@ -440,11 +440,13 @@ export function FrameViewer({src, srcs}: FrameViewerProps) {
   return (
     <div ref={wrapRef} className="frame-viewer" data-loaded={mounted} aria-hidden="true">
       {mounted && onScreen ? (
+        // DPR capped at 1.5 to match the hero — 1.75 rasterized ~40% more
+        // fragments for a decorative wireframe backdrop.
         <Canvas
           camera={{position: [0, 0.3, 4.4], fov: 38}}
           style={{background: 'transparent'}}
           frameloop="demand"
-          dpr={[1, 1.75]}
+          dpr={[1, 1.5]}
           gl={{antialias: true, alpha: true, powerPreference: 'default'}}
         >
           {/* Edge-outline parts are unlit — no lights or shadows needed. */}
