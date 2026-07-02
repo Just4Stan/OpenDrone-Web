@@ -2,7 +2,8 @@ import type {Route} from './+types/collections.all';
 import {useMemo} from 'react';
 import {useLoaderData, useSearchParams} from 'react-router';
 import type {MoneyV2} from '@shopify/hydrogen/storefront-api-types';
-import {ProductItem} from '~/components/ProductItem';
+import {ProductItem, type ProductQuickAdd} from '~/components/ProductItem';
+import type {StackOffer} from '~/components/StackQuickAdd';
 import type {CollectionItemFragment} from 'storefrontapi.generated';
 import {buildSeoMeta} from '~/lib/seo';
 import {EmptyState} from '~/components/EmptyState';
@@ -78,6 +79,10 @@ type Card = {
   /** A product line whose every tier is still coming soon — shown as a
    *  greyed, non-clickable teaser rather than a buyable card. */
   comingSoon?: boolean;
+  /** Hover quick-add: this card's variant prewired as a cart line. */
+  quickAdd?: ProductQuickAdd;
+  /** Stack offers layered on the quick-add (FC/ESC cards only). */
+  stackOffers?: StackOffer[];
 };
 
 const num = (m?: MoneyV2 | null) => (m ? parseFloat(m.amount) || 0 : 0);
@@ -139,6 +144,36 @@ export default function Collection() {
         for (const [value] of liveTiers) {
           const sv = variantFor(p, axis, value);
           const price = sv?.price ?? p.priceRange.minVariantPrice;
+          // "Buy it as a stack" offers for FC/ESC tier cards: the partner
+          // board at the same mount size, both lines prewired.
+          const stackOffers: StackOffer[] = (
+            content?.stack?.partners ?? []
+          ).flatMap((pc) => {
+            const partner = products.find((pp) => pp.handle === pc.handle);
+            if (!partner || !sv) return [];
+            const pv = variantFor(
+              partner,
+              content?.stack?.matchOption ?? 'Model',
+              value,
+            );
+            if (!pv) return [];
+            return [
+              {
+                key: pc.handle,
+                label: pc.label ?? partner.title,
+                size: value,
+                price: pv.price,
+                pct: content?.stack?.discountPct,
+                available: Boolean(
+                  pv.availableForSale && sv.availableForSale,
+                ),
+                lines: [
+                  {merchandiseId: sv.id, quantity: 1},
+                  {merchandiseId: pv.id, quantity: 1},
+                ],
+              },
+            ];
+          });
           out.push({
             key: `${p.id}:${value}`,
             product: p,
@@ -150,12 +185,21 @@ export default function Collection() {
               ? num(sv.compareAtPrice) > num(price)
               : productOnSale(p),
             createdAt: p.createdAt,
+            quickAdd: sv
+              ? {
+                  lines: [{merchandiseId: sv.id, quantity: 1}],
+                  available: Boolean(sv.availableForSale),
+                  flyImage: sv.image?.url ?? p.featuredImage?.url ?? null,
+                }
+              : undefined,
+            stackOffers,
           });
         }
       } else {
         // A line whose every tier is still coming soon (e.g. OpenFC) is an
         // unreleased teaser — show it greyed and non-clickable, not buyable.
         const comingSoon = allTiers.length > 0;
+        const firstVariant = p.variants?.nodes?.[0];
         out.push({
           key: p.id,
           product: p,
@@ -165,6 +209,15 @@ export default function Collection() {
           onSale: comingSoon ? false : productOnSale(p),
           createdAt: p.createdAt,
           comingSoon,
+          quickAdd:
+            !comingSoon && firstVariant
+              ? {
+                  lines: [{merchandiseId: firstVariant.id, quantity: 1}],
+                  available: Boolean(firstVariant.availableForSale),
+                  flyImage:
+                    firstVariant.image?.url ?? p.featuredImage?.url ?? null,
+                }
+              : undefined,
         });
       }
     }
@@ -314,6 +367,8 @@ export default function Collection() {
                     isNew={isNew(card.createdAt)}
                     onSale={card.onSale}
                     comingSoon={card.comingSoon}
+                    quickAdd={card.quickAdd}
+                    stackOffers={card.stackOffers}
                   />
                 ))}
               </div>

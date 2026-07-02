@@ -5,6 +5,7 @@ import type {
   ProductOptionValueSwatch,
 } from '@shopify/hydrogen/storefront-api-types';
 import {AddToCartButton} from './AddToCartButton';
+import {StackQuickAdd, type StackOffer} from './StackQuickAdd';
 import {useAside} from './Aside';
 import type {ProductFragment} from 'storefrontapi.generated';
 
@@ -15,6 +16,7 @@ export function ProductForm({
   bundleLines,
   bundleDisabled,
   bundleCtaLabel,
+  stackOffers,
 }: {
   productOptions: MappedProductOptions[];
   selectedVariant: ProductFragment['selectedOrFirstAvailableVariant'];
@@ -22,14 +24,16 @@ export function ProductForm({
    *  owns the line's primary axis), so the pill grid skips them and
    *  renders only the Add-to-cart button for that axis. */
   hideOptionNames?: string[];
-  /** Bundle products (OpenStack) are a display shell: the page renders from
-   *  the bundle product, but add-to-cart drops the *component* variants
-   *  (the real FC + ESC at the selected size) as separate lines instead of a
-   *  phantom bundle SKU. When set, these lines replace the single-variant
-   *  add. `undefined` → normal single-product behaviour. */
+  /** Bundle products are a display shell: the page renders from the bundle
+   *  product, but add-to-cart drops the *component* variants as separate
+   *  lines instead of a phantom bundle SKU. When set, these lines replace
+   *  the single-variant add. `undefined` → normal single-product behaviour. */
   bundleLines?: Array<{merchandiseId: string; quantity: number}>;
   bundleDisabled?: boolean;
   bundleCtaLabel?: string;
+  /** "Buy it as a stack" offers revealed on hover of the CTA — one click
+   *  adds this board plus the size-matched partner (FC↔ESC). */
+  stackOffers?: StackOffer[];
 }) {
   const navigate = useNavigate();
   const {open} = useAside();
@@ -123,36 +127,42 @@ export function ProductForm({
           </div>
         );
       })}
-      <AddToCartButton
-        disabled={
-          isBundle
-            ? (bundleDisabled ?? bundleLines!.length === 0)
-            : !selectedVariant || !selectedVariant.availableForSale
-        }
-        onClick={() => {
-          open('cart');
-        }}
+      <StackQuickAdd
+        offers={stackOffers ?? []}
         flyImage={selectedVariant?.image?.url}
-        lines={
-          isBundle
-            ? bundleLines!
-            : selectedVariant
-              ? [
-                  {
-                    merchandiseId: selectedVariant.id,
-                    quantity: 1,
-                    selectedVariant,
-                  },
-                ]
-              : []
-        }
+        onAdd={() => open('cart')}
       >
-        {isBundle
-          ? (bundleCtaLabel ?? ctaLabelAvailable)
-          : selectedVariant?.availableForSale
-            ? ctaLabelAvailable
-            : ctaLabelSoldOut}
-      </AddToCartButton>
+        <AddToCartButton
+          disabled={
+            isBundle
+              ? (bundleDisabled ?? bundleLines!.length === 0)
+              : !selectedVariant || !selectedVariant.availableForSale
+          }
+          onClick={() => {
+            open('cart');
+          }}
+          flyImage={selectedVariant?.image?.url}
+          lines={
+            isBundle
+              ? bundleLines!
+              : selectedVariant
+                ? [
+                    {
+                      merchandiseId: selectedVariant.id,
+                      quantity: 1,
+                      selectedVariant,
+                    },
+                  ]
+                : []
+          }
+        >
+          {isBundle
+            ? (bundleCtaLabel ?? ctaLabelAvailable)
+            : selectedVariant?.availableForSale
+              ? ctaLabelAvailable
+              : ctaLabelSoldOut}
+        </AddToCartButton>
+      </StackQuickAdd>
     </div>
   );
 }
