@@ -1627,7 +1627,8 @@ html.anim-paused .board-sheet.is-active {
 }
 .header-cat-pod {
   width: max-content;
-  min-width: 15rem;
+  width: max-content;
+  max-width: 26rem;
   max-width: 24rem;
   padding: var(--sp-2);
 }
@@ -1652,9 +1653,9 @@ html.anim-paused .board-sheet.is-active {
   top: 0;
   bottom: 0;
   display: flex;
-  align-items: center;
-  gap: 0.4rem;
-  padding: 0 0.55rem;
+  align-items: stretch;
+  gap: 0.35rem;
+  padding: 0.35rem;
   white-space: nowrap;
   /* Solid Pod material: these pills float over arbitrary page content
      (hero scene, gold CTAs) — without an opaque panel the ghost pill is
@@ -1688,13 +1689,15 @@ html.anim-paused .board-sheet.is-active {
   pointer-events: auto;
 }
 .product-pod-add {
+  display: flex;
+  align-items: center;
   font-family: var(--font-mono);
-  font-size: 0.75rem;
-  padding: 0.28rem 0.8rem;
+  font-size: 0.8rem;
+  padding: 0 1rem;
   background: var(--color-gold);
   color: var(--color-on-accent);
   border: none;
-  border-radius: var(--r-pill);
+  border-radius: var(--r-md);
   cursor: pointer;
   white-space: nowrap;
 }
@@ -1706,12 +1709,14 @@ html.anim-paused .board-sheet.is-active {
   cursor: not-allowed;
 }
 .product-pod-cascade-toggle {
+  display: flex;
+  align-items: center;
   font-family: var(--font-mono);
-  font-size: 0.75rem;
-  padding: 0.28rem 0.75rem;
+  font-size: 0.8rem;
+  padding: 0 0.9rem;
   background: var(--color-bg-elevated);
   border: 1px solid color-mix(in srgb, var(--color-gold) 55%, var(--color-border));
-  border-radius: var(--r-pill);
+  border-radius: var(--r-md);
   color: var(--color-text);
   cursor: pointer;
   white-space: nowrap;
@@ -1729,7 +1734,8 @@ html.anim-paused .board-sheet.is-active {
   position: absolute;
   left: 0;
   top: calc(100% + 0.3rem);
-  min-width: 15rem;
+  width: max-content;
+  max-width: 26rem;
   z-index: 20;
   display: flex;
   flex-direction: column;
@@ -1757,7 +1763,7 @@ html.anim-paused .board-sheet.is-active {
 }
 .product-pod-companion {
   width: 100%;
-  padding: 0.35rem 0.5rem;
+  padding: 0.25rem 0.4rem;
   background: none;
   border: 1px solid transparent;
   border-radius: var(--r-md);
@@ -1775,9 +1781,22 @@ html.anim-paused .board-sheet.is-active {
 .product-pod-companion .btn-label {
   display: flex;
   align-items: center;
-  gap: 0.6rem;
+  gap: 0.5rem;
   font-family: var(--font-mono);
   font-size: 0.82rem;
+}
+/* Explicit affordance: the whole row submits, but this chip SAYS so. */
+.product-pod-companion-go {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  padding: 0.3rem 0.75rem;
+  background: var(--color-gold);
+  color: var(--color-on-accent);
+  border-radius: var(--r-pill);
+  white-space: nowrap;
+}
+.product-pod-companion:hover .product-pod-companion-go {
+  background: var(--color-gold-hover);
 }
 .product-pod-companion img {
   width: 52px;

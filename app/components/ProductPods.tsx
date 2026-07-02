@@ -196,6 +196,9 @@ export function ProductPods({
                           −{o.pct}%
                         </span>
                       ) : null}
+                      <span className="product-pod-companion-go">
+                        Add both
+                      </span>
                     </AddToCartButton>
                   ))}
                 </div>
