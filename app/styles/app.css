@@ -1635,27 +1635,31 @@ html.anim-paused .board-sheet.is-active {
   display: flex;
   flex-direction: column;
 }
-/* Actions fly out to the RIGHT of the hovered row (submenu style): zero
-   vertical layout shift, sibling rows stay put. Left padding (not margin)
-   bridges the hover gap between the row and the strip. */
+/* Actions fly out to the RIGHT of the hovered row as a seamless horizontal
+   extension: the strip's border-box matches the row's exactly (top: 0;
+   bottom: 0 → same height as .product-pod-wrap, whose only in-flow child is
+   the row), so its top/bottom edges align with the row's. Square left corners
+   butt against the row; right corners round. Zero vertical layout shift,
+   sibling rows stay put. */
 .product-pod-actions {
   position: absolute;
-  left: calc(100% + 0.4rem);
-  top: 50%;
+  left: calc(100% + 0.25rem);
+  top: 0;
+  bottom: 0;
   display: flex;
   align-items: center;
   gap: 0.4rem;
-  padding: 0.45rem 0.55rem;
+  padding: 0 0.55rem;
   white-space: nowrap;
   /* Solid Pod material: these pills float over arbitrary page content
      (hero scene, gold CTAs) — without an opaque panel the ghost pill is
      unreadable. */
   background: var(--pod-bg-strong);
   border: 1px solid var(--pod-border);
-  border-radius: var(--r-pill);
+  border-radius: 0 var(--r-md) var(--r-md) 0;
   box-shadow: var(--pod-shadow);
   opacity: 0;
-  transform: translateY(-50%) translateX(-6px);
+  transform: translateX(-6px);
   pointer-events: none;
   transition: opacity 0.15s ease, transform 0.15s ease;
   text-transform: none;
@@ -1675,7 +1679,7 @@ html.anim-paused .board-sheet.is-active {
 .product-pod-wrap:focus-within .product-pod-actions,
 .product-pod-wrap.is-cascade-open .product-pod-actions {
   opacity: 1;
-  transform: translateY(-50%);
+  transform: none;
   pointer-events: auto;
 }
 .product-pod-add {
@@ -1712,15 +1716,14 @@ html.anim-paused .board-sheet.is-active {
   border-color: var(--color-gold);
   color: var(--color-text);
 }
-/* The cascade: a nested Pod-material panel chaining further RIGHT off the
-   actions strip (it lives inside .product-pod-actions, which is positioned).
-   Padding-left bridges the hover gap. */
+/* The cascade: a nested Pod-material panel dropping DOWN from the actions
+   strip (it lives inside .product-pod-actions, which is positioned) — a
+   vertical list of size-matched partner boards, its left edge aligned under
+   the strip. Top padding/bridge covers the hover gap. */
 .product-pod-companions {
   position: absolute;
-  left: 100%;
-  top: 50%;
-  transform: translateY(-50%);
-  margin-left: 0.4rem;
+  left: 0;
+  top: calc(100% + 0.3rem);
   min-width: 15rem;
   z-index: 20;
   display: flex;
@@ -1734,15 +1737,15 @@ html.anim-paused .board-sheet.is-active {
   text-transform: none;
   letter-spacing: normal;
 }
-/* Invisible hover bridge over the gap between the toggle and the panel, so
-   the pointer never leaves the hover chain mid-transit. */
+/* Invisible hover bridge over the vertical gap between the strip and the
+   panel, so the pointer never leaves the hover chain mid-transit. */
 .product-pod-companions::before {
   content: '';
   position: absolute;
-  left: -0.5rem;
-  top: 0;
-  bottom: 0;
-  width: 0.5rem;
+  top: -0.5rem;
+  left: 0;
+  right: 0;
+  height: 0.5rem;
 }
 .product-pod-companion {
   width: 100%;
@@ -1767,16 +1770,6 @@ html.anim-paused .board-sheet.is-active {
   gap: 0.6rem;
   font-family: var(--font-mono);
   font-size: 0.82rem;
-}
-.product-pod-companions-head {
-  margin: 0;
-  padding: 0.1rem 0.5rem 0.3rem;
-  font-family: var(--font-mono);
-  font-size: 0.7rem;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--color-gold);
-  border-bottom: 1px solid var(--color-border);
 }
 .product-pod-companion img {
   width: 52px;

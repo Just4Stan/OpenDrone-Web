@@ -152,17 +152,11 @@ export function ProductPods({
                   onMouseEnter={() => setCompanionFor(it.key)}
                   onClick={() => setCompanionFor(cascadeOpen ? null : it.key)}
                 >
-                  {companions.label} <span aria-hidden="true">▸</span>
+                  {companions.label} <span aria-hidden="true">▾</span>
                 </button>
               ) : null}
               {cascadeOpen && companions ? (
                 <div className="product-pod-companions" role="menu">
-                  <p className="product-pod-companions-head">
-                    Stack it · one order
-                    {companions.options[0]?.pct
-                      ? ` · −${companions.options[0].pct}% at checkout`
-                      : ''}
-                  </p>
                   {companions.options.map((o) => (
                     <AddToCartButton
                       key={o.key}
