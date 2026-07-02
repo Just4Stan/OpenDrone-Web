@@ -41,7 +41,7 @@ export function MobileHome({
     <div className="home-mobile">
       <section className="home-mobile-hero">
         {/* Floating board "stack" — the two flagship boards (FC over ESC),
-            offset like the OpenStack bundle, on a gold-glow island. The desktop
+            offset like a mounted stack, on a gold-glow island. The desktop
             hero's rotatable 3D trio, distilled to a still that loads instantly. */}
         <motion.div className="home-mobile-stage" {...rise(0)} aria-hidden="true">
           <span className="home-mobile-glow" />

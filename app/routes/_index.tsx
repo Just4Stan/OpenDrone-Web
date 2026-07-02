@@ -136,7 +136,6 @@ type HomeVariant = {
 type HomeProduct = CollectionItemFragment & {variants?: {nodes: HomeVariant[]}};
 type HomeFeaturedResult = {
   frame: CollectionItemFragment | null;
-  stack: CollectionItemFragment | null;
   rx: CollectionItemFragment | null;
   fc: HomeProduct | null;
   esc: HomeProduct | null;
@@ -1252,9 +1251,6 @@ const HOME_FEATURED_QUERY = `#graphql
   query HomeFeatured($country: CountryCode, $language: LanguageCode)
   @inContext(country: $country, language: $language) {
     frame: product(handle: "openframe") {
-      ...HomeProductCard
-    }
-    stack: product(handle: "openstack") {
       ...HomeProductCard
     }
     rx: product(handle: "openrx") {

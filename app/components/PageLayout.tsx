@@ -11,6 +11,7 @@ import {Footer} from '~/components/Footer';
 import {Header, HeaderMenu, type HeaderFamilyProduct} from '~/components/Header';
 import {LangToggle} from '~/components/LangToggle';
 import {CartMain} from '~/components/CartMain';
+import type {DonationProduct} from '~/components/DonationUpsell';
 import {PlaceholderBanner} from '~/components/PlaceholderBanner';
 import {RouteProgress} from '~/components/RouteProgress';
 
@@ -27,6 +28,7 @@ interface PageLayoutProps {
   prelaunch?: boolean;
   familyProducts?: Promise<HeaderFamilyProduct[]>;
   newsletterAccount?: Promise<NewsletterAccount>;
+  donationProduct?: Promise<DonationProduct | null>;
   children?: React.ReactNode;
 }
 
@@ -41,6 +43,7 @@ export function PageLayout({
   prelaunch = true,
   familyProducts,
   newsletterAccount,
+  donationProduct,
 }: PageLayoutProps) {
   const {pathname} = useLocation();
   const isHomepage = pathname === '/';
@@ -48,7 +51,7 @@ export function PageLayout({
   return (
     <MotionConfig reducedMotion="user">
       <Aside.Provider>
-        <CartAside cart={cart} />
+        <CartAside cart={cart} donationProduct={donationProduct} />
         <MobileMenuAside header={header} publicStoreDomain={publicStoreDomain} />
         <div className={isHomepage ? 'homepage-layout' : ''}>
           <a className="skip-link" href="#main-content">
@@ -98,14 +101,30 @@ export function PageLayout({
   );
 }
 
-function CartAside({cart}: {cart: PageLayoutProps['cart']}) {
+function CartAside({
+  cart,
+  donationProduct,
+}: {
+  cart: PageLayoutProps['cart'];
+  donationProduct?: PageLayoutProps['donationProduct'];
+}) {
   return (
     <Aside type="cart" heading="CART">
       <Suspense fallback={<p>Loading cart ...</p>}>
         <Await resolve={cart}>
-          {(cart) => {
-            return <CartMain cart={cart} layout="aside" />;
-          }}
+          {(cart) => (
+            <Suspense fallback={<CartMain cart={cart} layout="aside" />}>
+              <Await resolve={donationProduct ?? null}>
+                {(donation) => (
+                  <CartMain
+                    cart={cart}
+                    layout="aside"
+                    donationProduct={donation}
+                  />
+                )}
+              </Await>
+            </Suspense>
+          )}
         </Await>
       </Suspense>
     </Aside>

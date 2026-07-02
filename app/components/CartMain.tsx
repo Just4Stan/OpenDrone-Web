@@ -12,7 +12,6 @@ import {DonationUpsell, type DonationProduct} from './DonationUpsell';
 const CART_EMPTY_FAMILIES: Array<{label: string; to: string}> = [
   {label: 'Flight Controllers', to: '/products/openfc-lite'},
   {label: 'ESCs', to: '/products/openesc'},
-  {label: 'Stacks', to: '/products/openstack'},
   {label: 'Receivers', to: '/products/openrx'},
   {label: 'Frames', to: '/products/openframe'},
 ];

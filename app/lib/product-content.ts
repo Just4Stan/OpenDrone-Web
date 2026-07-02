@@ -66,6 +66,27 @@ export type DownloadAsset = {
 };
 
 /**
+ * "Complete the stack" cross-sell rendered inside the buy module. The buyer
+ * toggles it on and the partner board is added to the cart in the same
+ * add-to-cart submit; the stack discount itself is a Shopify automatic
+ * Buy-X-Get-Y and applies at checkout. `partners` is a list on purpose:
+ * one entry today renders as a fixed line, several (e.g. a future
+ * OpenFC Pro next to OpenFC Lite) render as a picker.
+ */
+export type StackConfig = {
+  /** What the partner adds, for copy: 'flight controller', 'ESC'. */
+  adds: string;
+  /** Candidate partner products, by Shopify handle. */
+  partners: Array<{handle: string; label?: string}>;
+  /** Option name matched between the two products' variants so the sizes
+   *  pair up (20×20 FC with 20×20 ESC). Defaults to 'Model'. */
+  matchOption?: string;
+  /** Advertised discount percent. Display only: the real discount is the
+   *  automatic BXGY configured in Shopify. */
+  discountPct?: number;
+};
+
+/**
  * Playful cross-sell card rendered under the buy strip. Use it to point
  * one product at another — e.g. OpenFC ↔ OpenESC both pointing at
  * OpenStack. Keep line copy short: it's a wink, not a paragraph.
@@ -235,6 +256,7 @@ export type ProductContent = {
    *  Lines whose tiers each carry their own UID set it on the variant instead. */
   oshwaUid?: string;
   pairCta?: PairCta;            // playful cross-sell under the buy strip
+  stack?: StackConfig;          // "complete the stack" cross-sell in the buy box
   bundle?: {                    // when set, the PDP renders as a bundle
     components: BundleComponent[];
   };
@@ -465,10 +487,11 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
         },
       },
     },
-    pairCta: {
-      eyebrow: 'Better together',
-      title: 'OpenStack: board on board, zero solder, one checkout.',
-      to: '/products/openstack',
+    stack: {
+      adds: 'flight controller',
+      partners: [{handle: 'openfc-lite', label: 'OpenFC Lite'}],
+      matchOption: 'Model',
+      discountPct: 10,
     },
   },
 
@@ -657,10 +680,11 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
         },
       },
     },
-    pairCta: {
-      eyebrow: 'Better together',
-      title: 'OpenStack: FC + ESC as one stack, one checkout.',
-      to: '/products/openstack',
+    stack: {
+      adds: 'ESC',
+      partners: [{handle: 'openesc', label: 'OpenESC'}],
+      matchOption: 'Model',
+      discountPct: 10,
     },
   },
 
@@ -934,108 +958,6 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
     },
   },
 
-  openstack: {
-    fileNumber: '05',
-    family: 'FC + ESC',
-    hero: {
-      line1: 'Not a product.',
-      line2Italic: 'Just',
-      line3: 'an FC and an ESC.',
-      lead:
-        'The stack is OpenFC-Lite and OpenESC bought together. Order each board on its own page and you get the exact same two boards: same hardware, same box, same firmware. Bundling changes one thing: one checkout instead of two, and the second courier saved. Betaflight and AM32 each still get their €1.',
-    },
-    // Firmware set to empty so the single-project €N+€1 chapter is
-    // suppressed. The bundle chapter replaces it with a per-component
-    // breakdown and shows the double contribution explicitly.
-    firmware: {
-      project: '',
-    },
-    repoUrl: 'https://github.com/incutec-hw',
-    // No bundle-only items: the stack ships exactly what the two boards ship
-    // in their own boxes — anything else would be a fiction, since buying
-    // them separately gives the identical hardware. Each line points back to
-    // the board whose box it comes from.
-    inTheBox: [
-      {qty: '1×', item: 'OpenFC-Lite board', note: 'ships in its own box with ESC harness, grommets, build card'},
-      {qty: '1×', item: 'OpenESC board', note: 'ships in its own box with JST cables, XT pigtail, low-ESR cap, grommets'},
-    ],
-    // No combined "OpenStack" repo exists — there is no stack hardware. The
-    // schematics, STEP and flashing docs live in each board's own repo; the
-    // bundle cards below link straight to those PDPs.
-    downloads: [],
-    specs: [
-      ['Includes', 'OpenFC-Lite + OpenESC'],
-      ['Mount', '20×20 or 30×30, matched pair'],
-      ['FC firmware', 'Betaflight (RP2354)'],
-      ['ESC firmware', 'AM32 (AT32F421 × 4)'],
-      ['Continuous', '30 A (20×20) / 50 A (30×30) per channel (preliminary)'],
-      ['Input', '3–6S LiPo'],
-      ['Harness', '8-pin JST SH, plug-and-play FC↔ESC, no signal soldering'],
-      ['Contribution', '€1 → Betaflight, €1 → AM32'],
-      ['License', 'CERN-OHL-S-2.0'],
-    ],
-    footnote:
-      'Same two boards as their own pages, OpenFC-Lite + OpenESC, at the same prices. One checkout, one parcel, one courier fee instead of two. Firmware splits stay intact: Betaflight and AM32 each get their €1.',
-    // Two stack sizes, picked on the same "Model" axis the FC and ESC use.
-    // Each tier is just the matching pair at that mount size — the bundle
-    // component handles don't change, only which size variant of each board
-    // ships. Spec deltas describe the pair per size.
-    optionAxis: 'Model',
-    variants: {
-      '20×20': {
-        label: '20×20 (mini)',
-        tagline: 'OpenFC-Lite-Mini + OpenESC 20×20: sub-3", cinewhoop, micro.',
-        highlights: [
-          ['Pair', 'FC-Lite-Mini + ESC 20×20'],
-          ['Mount', '20×20'],
-          ['Continuous', '30 A / channel'],
-        ],
-        specs: [
-          ['Includes', 'OpenFC-Lite-Mini + OpenESC (20×20)'],
-          ['Mount', '20×20'],
-          ['FC', 'OpenFC-Lite-Mini, RP2354A QFN-60'],
-          ['ESC', 'OpenESC 20×20, DOY180N03T 30 V / 1.0 mΩ'],
-          ['Continuous', '30 A / channel (preliminary)'],
-        ],
-      },
-      '30×30': {
-        tagline: 'OpenFC-Lite + OpenESC 30×30: 5", freestyle.',
-        highlights: [
-          ['Pair', 'FC-Lite + ESC 30×30'],
-          ['Mount', '30.5×30.5'],
-          ['Continuous', '50 A / channel'],
-        ],
-        specs: [
-          ['Includes', 'OpenFC-Lite + OpenESC (30×30)'],
-          ['Mount', '30.5×30.5'],
-          ['FC', 'OpenFC-Lite, RP2354, 30.5×30.5'],
-          ['ESC', 'OpenESC 30×30, SP40N01GHNK 40 V / 1.2 mΩ'],
-          ['Continuous', '50 A / channel (preliminary)'],
-        ],
-      },
-    },
-    bundle: {
-      components: [
-        {
-          title: 'OpenFC-Lite',
-          handle: 'openfc-lite',
-          firmware: 'Betaflight',
-          firmwareUrl: 'https://github.com/betaflight/betaflight',
-          blurb:
-            'RP2354 dual-core M33 running Betaflight: 6-axis IMU, microSD blackbox, PIO-driven analog OSD (in development) and a switchable 10 V VTX rail. No onboard radio. Bring your own RX over UART.',
-        },
-        {
-          title: 'OpenESC',
-          handle: 'openesc',
-          firmware: 'AM32',
-          firmwareUrl:
-            'https://github.com/am32-firmware/AM32',
-          blurb:
-            'Four AT32F421 channels, NSG2065Q gate drivers, INA186A3 + 0.2 mΩ current sensing. Same 20×20 / 30×30 mount options as OpenFC-Lite, so the pair stacks.',
-        },
-      ],
-    },
-  },
 };
 
 /** Fallback when a handle has no editorial content yet. */
