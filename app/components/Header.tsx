@@ -15,7 +15,11 @@ import {SiteWordmark} from '~/components/SiteWordmark';
 import {IncutecWordmark} from '~/components/IncutecWordmark';
 import {Pod} from '~/components/Pod';
 import {SearchForm} from '~/components/SearchForm';
-import {ProductPods, type ProductPodItem} from '~/components/ProductPods';
+import {
+  ProductPods,
+  type ProductPodItem,
+  type PodCompanionOption,
+} from '~/components/ProductPods';
 import {INCUTEC_HINT_SEEN_KEY} from '~/lib/incutec-hint';
 
 /** Retire the hero "Who's incutec?" hint: persist the dismissal and pull the
@@ -83,16 +87,26 @@ const MOBILE_FAMILY_LABEL: Record<string, string> = {
   Frame: 'Frames',
 };
 
-/** Stack companions per family: hovering a family-pod row offers "also add
- *  an X" with these partner products, size-matched by the Model option. A
- *  future OpenFC Pro is one more handle in the ESC list. Mirrors `stack` in
- *  product-content.ts without pulling that whole module into the header;
- *  the percent is the Shopify automatic BXGY (display only). */
-const STACK_COMPANIONS: Record<string, {label: string; handles: string[]}> = {
-  'Flight Controller': {label: 'also add an ESC', handles: ['openesc']},
-  ESC: {label: 'also add an FC', handles: ['openfc-lite']},
+/** Stack companions per family: each pod row offers "+X" buttons for these
+ *  partner products, size-matched by the Model option. N-to-N ready: every
+ *  entry in a family's list becomes its own button in the buy cell (they
+ *  stack vertically), so a second compatible ESC — or an OpenFC Pro on the
+ *  ESC side — is one more `{handle, short}` here. Keep `short` unique per
+ *  list ("ESC 30×30", "FC PRO") once a family has two partners, since it's
+ *  the visible label. Mirrors `stack` in product-content.ts without pulling
+ *  that whole module into the header; the percent is the Shopify automatic
+ *  BXGY (display only). */
+const STACK_COMPANIONS: Record<string, Array<{handle: string; short: string}>> = {
+  'Flight Controller': [{handle: 'openesc', short: 'ESC'}],
+  ESC: [{handle: 'openfc-lite', short: 'FC'}],
 };
 const STACK_DISCOUNT_PCT = 10;
+
+/** Short family label ("FC", "ESC") for a productType — names the buy
+ *  buttons so "FC only" vs "FC + ESC stack" is unambiguous. */
+function selfShortFor(type: string): string {
+  return CATEGORY_LINKS.find((c) => c.type === type)?.label ?? 'board';
+}
 
 /** Minimal ProductVariant-ish shape so useOptimisticCart can render the
  *  pending line immediately instead of console-erroring and waiting for the
@@ -269,14 +283,14 @@ function FamilyNav({
     type: string,
     v: HeaderFamilyVariant,
     rowProduct: {title: string; handle: string},
-  ): NonNullable<ProductPodItem['buy']>['companions'] {
+  ): PodCompanionOption[] | undefined {
     const cfg = STACK_COMPANIONS[type];
     if (!cfg) return undefined;
     const size = v.selectedOptions?.find(
       (o) => o.name.trim().toLowerCase() === 'model',
     )?.value;
     if (!size) return undefined;
-    const options = cfg.handles.flatMap((h) => {
+    const options = cfg.flatMap(({handle: h, short}) => {
       const partner = (products ?? []).find((p) => p.handle === h);
       const pv = partner?.variants?.nodes?.find((pvv) =>
         pvv.selectedOptions?.some(
@@ -290,6 +304,7 @@ function FamilyNav({
         {
           key: h,
           title: `${partner.title} · ${size}`,
+          short,
           price: pv.price ?? null,
           pct: STACK_DISCOUNT_PCT,
           available: Boolean(pv.availableForSale && v.availableForSale),
@@ -312,7 +327,7 @@ function FamilyNav({
         },
       ];
     });
-    return options.length ? {label: cfg.label, options} : undefined;
+    return options.length ? options : undefined;
   }
 
   function itemsFor(type: string): ProductPodItem[] {
@@ -350,6 +365,7 @@ function FamilyNav({
                     available: Boolean(only.availableForSale),
                     flyImage:
                       only.image?.url ?? p.featuredImage?.url ?? null,
+                    selfShort: selfShortFor(type),
                   }
                 : undefined,
             },
@@ -383,6 +399,7 @@ function FamilyNav({
               ],
               available: Boolean(v.availableForSale),
               flyImage: v.image?.url ?? p.featuredImage?.url ?? null,
+              selfShort: selfShortFor(type),
               companions: companionsFor(type, v, {
                 title: p.title,
                 handle: p.handle,

@@ -1,13 +1,16 @@
-import {useState} from 'react';
 import {Link} from 'react-router';
 import {Money, type OptimisticCartLineInput} from '@shopify/hydrogen';
+import {ShoppingCart} from 'lucide-react';
 import {AddToCartButton} from './AddToCartButton';
 
-/** A companion offer cascaded from a pod row ("also add an ESC?"): one
- *  candidate partner board, size-matched, with BOTH cart lines prebuilt. */
+/** A stack companion for a pod row: one candidate partner board, size-matched,
+ *  with BOTH cart lines prebuilt so a single click orders the pair. */
 export type PodCompanionOption = {
   key: string;
+  /** Full name for tooltips/aria, e.g. "OpenESC · 20×20". */
   title: string;
+  /** Chip label, e.g. "ESC" (renders as "+ESC"). */
+  short: string;
   price?: {amount: string; currencyCode: string} | null;
   pct?: number;
   lines: OptimisticCartLineInput[];
@@ -25,22 +28,30 @@ export type ProductPodItem = {
   imageUrl?: string | null;
   imageAlt?: string | null;
   price?: {amount: string; currencyCode: string} | null;
-  /** When set, hovering the row reveals an "Add to cart?" action (and, with
-   *  companions, an "also add an X ▸" cascade) instead of being link-only.
-   *  Hosts without it (the hero showcase) render exactly as before. */
+  /** When set, the row grows a hover/focus-revealed action bar spanning the
+   *  row width: one "<self> only" button and one "<self> + <partner> stack"
+   *  button per companion (both lines, one click). Hosts without it (the
+   *  hero showcase) render exactly as before. */
   buy?: {
     lines: OptimisticCartLineInput[];
     available: boolean;
     flyImage?: string | null;
-    companions?: {
-      /** Cascade trigger text, e.g. "also add an ESC". */
-      label: string;
-      options: PodCompanionOption[];
-    };
+    /** Short family name of the row's own product ("FC", "ESC") — names the
+     *  buttons so it's unambiguous what each one adds. */
+    selfShort?: string;
+    companions?: PodCompanionOption[];
   };
 };
 
 type MoneyData = React.ComponentProps<typeof Money>['data'];
+
+const fmt = (p?: {amount: string; currencyCode: string} | null) =>
+  p
+    ? new Intl.NumberFormat(undefined, {
+        style: 'currency',
+        currency: p.currencyCode,
+      }).format(Number(p.amount))
+    : '';
 
 /**
  * A row/grid of product thumbnails — the SHARED content behind both the hero
@@ -49,9 +60,10 @@ type MoneyData = React.ComponentProps<typeof Money>['data'];
  * hero) can spotlight the matching 3D model. Hover cue is brightness/opacity —
  * no underlines.
  *
- * Rows with `buy` grow a hover action strip: "Add to cart?" plus an optional
- * companion cascade that opens a nested panel to pick the paired board (both
- * lines added in one click; the stack discount applies at checkout).
+ * Buyable rows (header dropdowns) render a fixed-width buy cell that exists
+ * BEFORE any pointer event: an ADD chip and a stack chip with an overlapped
+ * two-board glyph. Nothing appears, moves, or resizes on hover — the only
+ * hover effect is color. Deal detail lives in an attr-driven tooltip.
  */
 export function ProductPods({
   items,
@@ -67,11 +79,6 @@ export function ProductPods({
   onAdd?: () => void;
   layout?: 'row' | 'grid';
 }) {
-  // Which row's companion cascade is open. Hover-driven with a click
-  // fallback; leaving the row closes it (the panel lives inside the row
-  // wrapper, so moving the pointer into the panel keeps it open).
-  const [companionFor, setCompanionFor] = useState<string | null>(null);
-
   return (
     <div className={`product-pods product-pods--${layout}`}>
       {items.map((it) => {
@@ -116,93 +123,83 @@ export function ProductPods({
 
         if (!it.buy) return link;
 
-        const companions = it.buy.companions;
-        const cascadeOpen = companionFor === it.key;
+        const self = it.buy.selfShort ?? 'board';
         return (
           <div
             key={it.key}
-            className={`product-pod-wrap${cascadeOpen ? ' is-cascade-open' : ''}`}
+            className="product-pod-wrap"
             onMouseEnter={() => onHover?.(it.key)}
-            onMouseLeave={() => {
-              onHover?.(null);
-              setCompanionFor(null);
-            }}
+            onMouseLeave={() => onHover?.(null)}
             onFocus={() => onHover?.(it.key)}
             onBlur={() => onHover?.(null)}
           >
             {link}
-            {/* Actions fly out HORIZONTALLY to the right of the row (submenu
-                style) so sibling rows never get pushed apart; the companion
-                panel chains further right off the actions strip. */}
-            <div className="product-pod-actions">
+            {/* Hover/focus-revealed action bar across the full row width.
+                Every button says exactly what it adds: "<FC> only" vs
+                "<FC> + <ESC> stack". Keyboard: focusing a button opens the
+                bar via :focus-within. */}
+            <div
+              className="product-pod-actionbar"
+              role="group"
+              aria-label={`Buy ${it.title}`}
+            >
               <AddToCartButton
-                className="product-pod-add"
+                className="pod-buy-add"
                 lines={it.buy.lines}
                 disabled={!it.buy.available}
                 flyImage={it.buy.flyImage}
                 onClick={onAdd}
+                ariaLabel={`Add ${it.title} to cart`}
               >
-                Add to cart?
+                <ShoppingCart size={15} strokeWidth={2.25} aria-hidden="true" />
+                {self} only
+                {it.price ? (
+                  <span className="pod-buy-price">{fmt(it.price)}</span>
+                ) : null}
               </AddToCartButton>
-              {companions && companions.options.length > 0 ? (
-                <button
-                  type="button"
-                  className="product-pod-cascade-toggle"
-                  aria-expanded={cascadeOpen}
-                  onMouseEnter={() => setCompanionFor(it.key)}
-                  onClick={() => setCompanionFor(cascadeOpen ? null : it.key)}
+              {(it.buy.companions ?? []).map((o) => (
+                <AddToCartButton
+                  key={o.key}
+                  className="pod-buy-stack"
+                  lines={o.lines}
+                  disabled={!o.available}
+                  flyImage={o.imageUrl ?? it.buy?.flyImage}
+                  onClick={onAdd}
+                  ariaLabel={`Add ${it.title} and ${o.title} as a stack, ${
+                    o.pct ?? 10
+                  }% off at checkout`}
+                  dataTip={
+                    o.available
+                      ? `${o.title} · +${fmt(o.price)} · −${o.pct ?? 10}% at checkout`
+                      : 'Out of stock'
+                  }
                 >
-                  {companions.label} <span aria-hidden="true">▾</span>
-                </button>
-              ) : null}
-              {companions ? (
-                <div
-                  className={`product-pod-companions${cascadeOpen ? ' is-open' : ''}`}
-                  role="group"
-                  aria-hidden={!cascadeOpen}
-                >
-                  {companions.options.map((o) => (
-                    <AddToCartButton
-                      key={o.key}
-                      className="product-pod-companion"
-                      lines={o.lines}
-                      disabled={!o.available}
-                      flyImage={o.imageUrl ?? it.buy?.flyImage}
-                      onClick={() => {
-                        setCompanionFor(null);
-                        onAdd?.();
-                      }}
-                    >
-                      {o.imageUrl ? (
-                        <img
-                          src={o.imageUrl}
-                          alt=""
-                          width={52}
-                          height={52}
-                          loading="lazy"
-                          decoding="async"
-                        />
-                      ) : null}
-                      <span className="product-pod-companion-title">
-                        {o.title}
-                      </span>
-                      {o.price ? (
-                        <span className="product-pod-companion-price">
-                          +<Money data={o.price as MoneyData} />
-                        </span>
-                      ) : null}
-                      {o.pct ? (
-                        <span className="product-pod-companion-pct">
-                          −{o.pct}%
-                        </span>
-                      ) : null}
-                      <span className="product-pod-companion-go">
-                        Add both
-                      </span>
-                    </AddToCartButton>
-                  ))}
-                </div>
-              ) : null}
+                  {it.imageUrl && o.imageUrl ? (
+                    <span className="pod-stack-glyph" aria-hidden="true">
+                      <img
+                        src={it.imageUrl}
+                        alt=""
+                        width={18}
+                        height={18}
+                        loading="lazy"
+                      />
+                      <img
+                        src={o.imageUrl}
+                        alt=""
+                        width={18}
+                        height={18}
+                        loading="lazy"
+                      />
+                    </span>
+                  ) : null}
+                  <span className="pod-buy-stack-label">
+                    {self} + {o.short} stack
+                  </span>
+                  {o.pct ? (
+                    <span className="pod-buy-stack-pct">−{o.pct}%</span>
+                  ) : null}
+                </AddToCartButton>
+              ))}
             </div>
           </div>
         );
