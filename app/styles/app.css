@@ -110,6 +110,8 @@
   --sp-8: 4.5rem;
 
   /* Radii */
+  --r-2xs: 2px; /* hairline elements: meters, underline bars */
+  --r-xs: 4px; /* chips, badges, small controls */
   --r-sm: 6px;
   --r-md: 10px;
   --r-lg: 14px;
@@ -366,7 +368,7 @@ html {
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 999px;
+  border-radius: var(--r-pill);
   background: linear-gradient(
     180deg,
     color-mix(in srgb, var(--color-gold) 88%, white) 0%,
@@ -400,7 +402,7 @@ html {
   flex: 1 1 0;
   padding: 0.6rem 1.2rem;
   border: none;
-  border-radius: 999px;
+  border-radius: var(--r-pill);
   background: transparent;
   color: var(--color-text-muted);
   font-family: var(--font-sans);
@@ -620,7 +622,7 @@ html {
   padding: 0.45rem 0.95rem;
   border: 1px solid color-mix(in srgb, var(--color-text-muted) 35%, transparent);
   color: var(--color-text);
-  border-radius: 4px;
+  border-radius: var(--r-xs);
   font-size: 0.7rem;
   letter-spacing: 0.18em;
   text-transform: uppercase;
@@ -703,15 +705,17 @@ html {
 .hero-github {
   position: absolute;
   top: 50%;
-  margin-top: -44px; /* half of height — vertical centre on the left edge */
+  margin-top: -32px; /* half of height — vertical centre on the left edge */
   left: var(--rail-gutter);
   z-index: 25;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 88px;
-  height: 88px;
-  color: var(--color-text);
+  /* 64px muted, not 88px solid — a quiet side-door, not a second focal
+     point competing with the 3D scene. Full presence returns on hover. */
+  width: 64px;
+  height: 64px;
+  color: var(--color-text-muted);
   /* Hidden resting state — parked off the left edge. The is-visible class
      glides it in from there. */
   transform: translateX(-160%);
@@ -779,7 +783,7 @@ html {
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.14em;
-  border-radius: 4px;
+  border-radius: var(--r-xs);
   transition: background-color 0.2s ease;
 }
 
@@ -796,7 +800,7 @@ html {
   height: 54px;
   border: 1px solid color-mix(in srgb, var(--color-text-muted) 30%, transparent);
   color: var(--color-text);
-  border-radius: 4px;
+  border-radius: var(--r-xs);
   transition: border-color 0.2s ease, color 0.2s ease;
 }
 
@@ -855,7 +859,10 @@ html {
    revealed card re-enable their own pointer events. */
 .hero-buy {
   position: absolute;
-  bottom: 2.5rem;
+  /* 4rem, not 2.5rem: keeps the Shop button's corner clear of the fixed
+     PRE-LAUNCH pill (bottom/right 16px). Can drop back to 2.5rem at launch
+     when the pill goes away. */
+  bottom: 4rem;
   right: 2.5rem;
   z-index: 20;
   display: flex;
@@ -1132,7 +1139,7 @@ body {
 }
 ::-webkit-scrollbar-thumb {
   background: var(--color-border);
-  border-radius: 3px;
+  border-radius: var(--r-xs);
 }
 ::-webkit-scrollbar-thumb:hover {
   background: var(--color-text-muted);
@@ -1909,13 +1916,13 @@ html.light .header-cat-pod {
   align-items: center;
   gap: 0.2rem;
   padding: 0.25rem;
-  border-radius: 999px;
+  border-radius: var(--r-pill);
   background: var(--color-bg-elevated);
   border: 1px solid var(--color-border);
 }
 .site-header-categories .site-header-cat-group a {
   padding: 0.36em 0.82em;
-  border-radius: 999px;
+  border-radius: var(--r-pill);
   opacity: 0.72;
 }
 .site-header-categories .site-header-cat-group a:hover {
@@ -1943,7 +1950,7 @@ html.light .header-cat-pod {
    (gold-on-tint) rather than a solid gold fill that would wash the text out. */
 .site-header-categories .site-header-cat-all {
   padding: 0.42em 0.95em;
-  border-radius: 999px;
+  border-radius: var(--r-pill);
   background: var(--color-gold-soft);
   border: 1px solid color-mix(in srgb, var(--color-gold) 50%, transparent);
   color: var(--color-gold);
@@ -2248,7 +2255,7 @@ html.hero-header-in .homepage-layout .site-header {
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.1em;
-  border-radius: 3px;
+  border-radius: var(--r-xs);
   transition: background-color 150ms ease;
 }
 
@@ -2268,7 +2275,7 @@ html.hero-header-in .homepage-layout .site-header {
   font-size: 12px;
   text-transform: uppercase;
   letter-spacing: 0.1em;
-  border-radius: 3px;
+  border-radius: var(--r-xs);
   transition: border-color 150ms ease, color 150ms ease;
 }
 
@@ -2287,7 +2294,7 @@ html.hero-header-in .homepage-layout .site-header {
   padding: 1.25rem;
   background: var(--color-bg-card);
   border: 1px solid var(--color-border);
-  border-radius: 6px;
+  border-radius: var(--r-sm);
   transition: border-color 200ms ease;
 }
 
@@ -2298,7 +2305,7 @@ html.hero-header-in .homepage-layout .site-header {
 .spec-tag {
   padding: 0.25rem 0.5rem;
   background: var(--color-bg);
-  border-radius: 3px;
+  border-radius: var(--r-xs);
   font-family: var(--font-mono);
   font-size: 11px;
   color: var(--color-text-muted);
@@ -2314,7 +2321,7 @@ html.hero-header-in .homepage-layout .site-header {
   padding: 1rem;
   background: var(--color-bg-card);
   border: 1px solid var(--color-border);
-  border-radius: 6px;
+  border-radius: var(--r-sm);
   transition: border-color 200ms ease;
 }
 
@@ -2357,6 +2364,65 @@ html.hero-header-in .homepage-layout .site-header {
 
 .product-card:hover .product-card-media img {
   transform: scale(1.04);
+}
+
+/* Streaming-image cover — SmoothImage.tsx. Appears only after hydration
+   while the file is still in flight, lifts on load. Cached images never
+   see it. */
+.smooth-media {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+.smooth-media::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--color-bg-elevated);
+  opacity: 0;
+  transition: opacity 0.45s ease;
+  pointer-events: none;
+}
+
+.smooth-media.is-loading::after {
+  opacity: 1;
+  animation: media-pulse 1.8s ease-in-out infinite;
+}
+
+@keyframes media-pulse {
+  0%,
+  100% {
+    filter: brightness(1);
+  }
+  50% {
+    filter: brightness(1.3);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .smooth-media.is-loading::after {
+    animation: none;
+  }
+}
+
+/* No-render-yet tile — keeps the media square so the grid rhythm holds and
+   an imageless product doesn't read as broken. Typographic, no asset. */
+.product-card-media.is-empty {
+  display: grid;
+  place-items: center;
+}
+
+.product-card-media-ghost {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--color-text-dim);
+  opacity: 0.6;
+  border: 1px dashed var(--color-border);
+  border-radius: var(--r-xs);
+  padding: 6px 12px;
 }
 
 .product-card-body {
@@ -2480,6 +2546,13 @@ a.product-card-model:hover {
   position: relative;
   overflow: hidden;
   background: var(--color-bg-elevated);
+}
+
+.product-feature-media .product-card-media-ghost {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
 }
 
 .product-feature-media img {
@@ -2694,7 +2767,7 @@ button.reset {
   height: 72px;
   object-fit: cover;
   display: block;
-  border-radius: 6px;
+  border-radius: var(--r-sm);
   border: 1px solid var(--color-border);
   background: var(--color-bg-elevated);
 }
@@ -2717,7 +2790,7 @@ button.reset {
   background: var(--color-accent);
   color: var(--color-text);
   border: 1px solid color-mix(in srgb, var(--color-accent-light) 80%, transparent);
-  border-radius: 8px;
+  border-radius: var(--r-md);
   font-family: var(--font-mono);
   font-weight: 700;
   font-size: 0.9rem;
@@ -2759,7 +2832,7 @@ button.reset {
   padding: 0.25rem 0.75rem;
   background-color: var(--color-bg-card);
   border: 1px solid var(--color-border);
-  border-radius: 4px;
+  border-radius: var(--r-xs);
   color: var(--color-text);
   font-size: 0.875rem;
   font-family: var(--font-mono);
@@ -2786,7 +2859,7 @@ button.reset {
 .predictive-search input {
   background: var(--color-bg-card);
   border: 1px solid var(--color-border);
-  border-radius: 4px;
+  border-radius: var(--r-xs);
   color: var(--color-text);
   padding: 0.5rem 1rem;
   width: 100%;
@@ -2983,7 +3056,7 @@ button.reset {
 }
 
 .rich-content img {
-  border-radius: 10px;
+  border-radius: var(--r-md);
   border: 1px solid var(--color-border);
 }
 
@@ -3064,7 +3137,7 @@ button.reset {
   display: block;
   background: var(--color-bg-card);
   border: 1px solid var(--color-border);
-  border-radius: 10px;
+  border-radius: var(--r-md);
   overflow: hidden;
   transition: border-color 200ms ease, transform 200ms ease;
 }
@@ -3160,7 +3233,7 @@ button.reset {
     var(--color-bg-card)
   );
   border: 1px solid var(--color-border);
-  border-radius: 12px;
+  border-radius: var(--r-lg);
   overflow: hidden;
 }
 
@@ -3230,7 +3303,7 @@ button.reset {
 .product-option-label-swatch {
   width: 1.5rem;
   height: 1.5rem;
-  border-radius: 999px;
+  border-radius: var(--r-pill);
   border: 1px solid color-mix(in srgb, var(--color-text-muted) 30%, transparent);
   overflow: hidden;
 }
@@ -3264,7 +3337,7 @@ button.reset {
   position: relative;
   aspect-ratio: 1 / 1;
   overflow: hidden;
-  border-radius: 8px;
+  border-radius: var(--r-md);
 }
 
 .product-gallery-main:focus-visible {
@@ -3289,7 +3362,7 @@ button.reset {
   padding: 0.35rem 0.5rem;
   background: rgba(13, 13, 16, 0.7);
   border: 1px solid var(--color-border);
-  border-radius: 999px;
+  border-radius: var(--r-pill);
   backdrop-filter: blur(6px);
 }
 
@@ -3300,7 +3373,7 @@ button.reset {
   align-items: center;
   justify-content: center;
   color: var(--color-text-muted);
-  border-radius: 999px;
+  border-radius: var(--r-pill);
   transition: color 0.2s ease, background 0.2s ease;
 }
 
@@ -3333,7 +3406,7 @@ button.reset {
     transform: translateX(-50%);
     padding: 0.25rem 0.6rem;
     background: rgba(13, 13, 16, 0.6);
-    border-radius: 999px;
+    border-radius: var(--r-pill);
     backdrop-filter: blur(6px);
     font-family: var(--font-mono);
     font-size: 10px;
@@ -3357,7 +3430,7 @@ button.reset {
   width: 64px;
   height: 64px;
   overflow: hidden;
-  border-radius: 6px;
+  border-radius: var(--r-sm);
   border: 1px solid var(--color-border);
   background: var(--color-bg-elevated);
   transition: border-color 0.2s ease, transform 0.2s ease;
@@ -3469,7 +3542,9 @@ button.reset {
   row-gap: 0.25rem;
   align-items: end;
   max-width: none;
-  margin-bottom: 1.25rem;
+  /* A full step of air between the page title row and the product grid —
+     the grid shouldn't crowd the headline. */
+  margin-bottom: var(--sp-6);
 }
 
 .collection-header .page-eyebrow {
@@ -3524,7 +3599,7 @@ button.reset {
   font-size: 12px;
   letter-spacing: 0.08em;
   padding: 0.55rem 2rem 0.55rem 0.75rem;
-  border-radius: 6px;
+  border-radius: var(--r-sm);
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%23737373' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
   background-position: right 0.75rem center;
@@ -3642,7 +3717,7 @@ button.reset {
     width: auto;
     padding: 0.4rem 0.8rem;
     border: 1px solid var(--color-border);
-    border-radius: 999px;
+    border-radius: var(--r-pill);
     font-size: 0.85rem;
   }
   .catalog-filter.is-active {
@@ -3664,7 +3739,7 @@ button.reset {
   letter-spacing: 0.12em;
   text-transform: uppercase;
   padding: 0.25rem 0.5rem;
-  border-radius: 4px;
+  border-radius: var(--r-xs);
   color: var(--color-on-accent);
   background: var(--color-gold);
 }
@@ -4796,7 +4871,7 @@ button.reset {
   margin-top: 0.25rem;
   background: color-mix(in srgb, var(--color-gold) 6%, var(--color-bg-card));
   border: 1px solid color-mix(in srgb, var(--color-gold) 35%, var(--color-border));
-  border-radius: 12px;
+  border-radius: var(--r-lg);
   color: var(--color-text);
   transition: border-color 0.2s ease, background 0.2s ease, transform 0.2s ease;
 }
@@ -5565,7 +5640,7 @@ button.reset {
 .board-folder-rail.is-compact .board-folder-tabs button {
   flex-direction: row;
   align-items: center;
-  border-radius: 999px;
+  border-radius: var(--r-pill);
   padding: 0.5em 0.8em;
 }
 /* The rail sizes to its longest label, so normal sheet names stay on one line.
@@ -5637,7 +5712,7 @@ button.reset {
   .board-folder-tabs button {
     flex-direction: row;
     align-items: center;
-    border-radius: 999px;
+    border-radius: var(--r-pill);
     padding: 0.48em 0.7em;
   }
   .board-folder-tab-fn {
@@ -6109,7 +6184,7 @@ button.reset {
     var(--color-bg-card)
   );
   border: 1px solid var(--color-border);
-  border-radius: 12px;
+  border-radius: var(--r-lg);
   overflow: hidden;
   box-shadow: inset 0 1px 0 color-mix(in srgb, var(--color-text) 6%, transparent);
 }
@@ -6153,7 +6228,7 @@ button.reset {
   font-size: 10px;
   letter-spacing: 0.1em;
   padding: 0.1rem 0.45rem;
-  border-radius: 999px;
+  border-radius: var(--r-pill);
   background: color-mix(in srgb, var(--color-gold) 14%, transparent);
   color: var(--color-gold);
 }
@@ -6218,7 +6293,7 @@ button.reset {
   font-size: 11px;
   letter-spacing: 0.06em;
   padding: 0.2rem 0.55rem;
-  border-radius: 999px;
+  border-radius: var(--r-pill);
   border: 1px solid var(--color-border);
   background: color-mix(in srgb, var(--color-text) 4%, transparent);
   color: var(--color-text);
@@ -6611,7 +6686,7 @@ button.reset {
 
 .latest-commit-skeleton-line {
   background: var(--color-bg-elevated);
-  border-radius: 4px;
+  border-radius: var(--r-xs);
   animation: latest-commit-pulse 1.4s ease-in-out infinite;
 }
 
@@ -6945,7 +7020,7 @@ button.reset {
 .firmware-split {
   position: relative;
   border: 1px solid var(--color-border);
-  border-radius: 10px;
+  border-radius: var(--r-md);
   padding: 1.25rem 1.4rem;
   background:
     linear-gradient(
@@ -7047,7 +7122,7 @@ button.reset {
   padding: 0.45rem 0.85rem;
   background: var(--color-bg-card);
   border: 1px solid var(--color-border);
-  border-radius: 999px;
+  border-radius: var(--r-pill);
   color: var(--color-text-muted);
   font-family: var(--font-mono);
   font-size: 11px;
@@ -7098,7 +7173,7 @@ button.reset {
   width: 56px;
   height: 56px;
   margin: 0 auto 1rem;
-  border-radius: 999px;
+  border-radius: var(--r-pill);
   background: color-mix(in srgb, var(--color-gold) 12%, transparent);
   color: var(--color-gold);
 }
@@ -7141,7 +7216,7 @@ button.reset {
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 999px;
+  border-radius: var(--r-pill);
   background: color-mix(in srgb, var(--color-gold) 12%, transparent);
   color: var(--color-gold);
 }
@@ -7197,7 +7272,7 @@ button.reset {
 .route-error-details {
   background: var(--color-bg-card);
   border: 1px solid var(--color-border);
-  border-radius: 8px;
+  border-radius: var(--r-md);
   padding: 0.75rem 1rem;
   font-family: var(--font-mono);
   font-size: 12px;
@@ -7240,7 +7315,7 @@ button.reset {
   width: min(640px, 92vw);
   aspect-ratio: 4 / 3;
   border: 1px solid var(--color-border-strong);
-  border-radius: 10px;
+  border-radius: var(--r-md);
   background:
     radial-gradient(
       120% 90% at 50% 40%,
@@ -7439,7 +7514,7 @@ button.reset {
 }
 .signal-lost-sub code {
   padding: 0.05em 0.4em;
-  border-radius: 4px;
+  border-radius: var(--r-xs);
   background: var(--color-gold-soft);
   color: var(--color-gold);
   word-break: break-all;
@@ -7455,7 +7530,7 @@ button.reset {
   display: inline-block;
   margin-left: 0.5em;
   padding: 0.05em 0.4em;
-  border-radius: 4px;
+  border-radius: var(--r-xs);
   font-family: var(--font-mono);
   font-size: 0.7em;
   letter-spacing: 0.1em;
@@ -7482,14 +7557,15 @@ button.reset {
   flex: 1;
   min-height: 0;
   gap: 1.25rem;
+  /* The drawer scrolls as ONE context (lines + donation upsell) with the
+     summary pinned below. The old split (lines scroll, donation+summary in
+     fixed flow) collapsed the line list to 0px whenever donation + summary
+     filled the drawer — the cart showed everything except its items. */
+  overflow-y: auto;
 }
 
-/* The line-items UL wrapper scrolls; everything else (donation, summary)
-   sticks below in normal flow so it never covers cart lines. */
 .cart-lines-scroll {
-  flex: 1;
-  min-height: 0;
-  overflow-y: auto;
+  flex: none;
 }
 
 .cart-lines-scroll ul {
@@ -7507,6 +7583,11 @@ button.reset {
 
 .cart-summary-aside {
   flex-shrink: 0;
+  /* Pin the subtotal/checkout to the drawer bottom while lines + donation
+     scroll behind it. Solid background so lines don't ghost through. */
+  position: sticky;
+  bottom: 0;
+  z-index: 1;
 }
 
 .cart-subtotal {
@@ -7565,7 +7646,7 @@ button.reset {
   background: transparent;
   color: var(--color-text-muted);
   border: 1px solid var(--color-border);
-  border-radius: 6px;
+  border-radius: var(--r-sm);
   padding: 0;
   width: 26px;
   height: 26px;
@@ -7615,7 +7696,7 @@ button.reset {
   border: 1px solid var(--color-border);
   background: var(--color-gold);
   color: var(--color-on-accent);
-  border-radius: 6px;
+  border-radius: var(--r-sm);
   padding: 0.75rem 1rem;
   font-family: var(--font-mono);
   font-size: 12px;
@@ -7660,7 +7741,7 @@ button.reset {
   width: 100%;
   background: var(--color-bg-elevated);
   border: 1px solid var(--color-border);
-  border-radius: 8px;
+  border-radius: var(--r-md);
   color: var(--color-text);
   padding: 0.8rem 0.95rem;
   font-family: var(--font-sans);
@@ -7768,7 +7849,7 @@ button.reset {
 
 .predictive-search-result-item a {
   padding: 0.5rem;
-  border-radius: 8px;
+  border-radius: var(--r-md);
 }
 
 .predictive-search-result-item a:hover {
@@ -7899,7 +7980,7 @@ button.reset {
 .account-order-sidebar {
   background: var(--color-bg-card);
   border: 1px solid var(--color-border);
-  border-radius: 10px;
+  border-radius: var(--r-md);
   padding: 1rem;
   display: grid;
   gap: 1rem;
@@ -7965,7 +8046,7 @@ button.reset {
   background-color: color-mix(in srgb, #dc2626 15%, var(--color-bg));
   color: #fca5a5;
   padding: 0.25rem 0.5rem;
-  border-radius: 0.25rem;
+  border-radius: var(--r-xs);
   font-family: var(--font-mono);
   font-size: 0.8125rem;
 }
@@ -8045,7 +8126,7 @@ button.reset {
   padding: 1.25rem 1.35rem;
   background: var(--color-bg-card);
   border: 1px solid var(--color-border);
-  border-radius: 8px;
+  border-radius: var(--r-md);
   transition: border-color 200ms ease, transform 200ms ease;
 }
 
@@ -8168,7 +8249,7 @@ button.reset {
 
 .account-dashboard-order {
   border: 1px solid var(--color-border);
-  border-radius: 6px;
+  border-radius: var(--r-sm);
   transition: border-color 150ms ease, background 150ms ease;
 }
 
@@ -8236,7 +8317,7 @@ button.reset {
   padding: 1rem 1.25rem;
   background: color-mix(in srgb, var(--color-gold) 8%, var(--color-bg-card));
   border: 1px solid color-mix(in srgb, var(--color-gold) 30%, var(--color-border));
-  border-radius: 8px;
+  border-radius: var(--r-md);
 }
 
 .account-dashboard-nudge p {
@@ -8323,7 +8404,7 @@ button.reset {
   padding: 1.25rem;
   background: color-mix(in srgb, var(--color-gold) 7%, var(--color-bg-card));
   border: 1px solid color-mix(in srgb, var(--color-gold) 25%, var(--color-border));
-  border-radius: 8px;
+  border-radius: var(--r-md);
 }
 
 .account-welcome-aside-lede {
@@ -8380,7 +8461,7 @@ button.reset {
 .lang-toggle {
   display: inline-flex;
   border: 1px solid var(--color-border);
-  border-radius: 6px;
+  border-radius: var(--r-sm);
   overflow: hidden;
 }
 
@@ -8471,7 +8552,7 @@ button.reset {
   font-size: 0.85em;
   background: var(--color-bg-card);
   padding: 0.1rem 0.35rem;
-  border-radius: 3px;
+  border-radius: var(--r-xs);
 }
 
 .legal-last-updated {
@@ -8539,7 +8620,7 @@ button.reset {
 .route-error fieldset {
   background-color: var(--color-bg-card);
   border: 1px solid var(--color-border);
-  border-radius: 0.5rem;
+  border-radius: var(--r-md);
   padding: 1.5rem;
   max-width: 600px;
   width: 100%;
@@ -8551,7 +8632,7 @@ button.reset {
   font-family: var(--font-mono);
   font-size: 0.8125rem;
   padding: 1rem;
-  border-radius: 0.375rem;
+  border-radius: var(--r-sm);
   overflow-x: auto;
   text-align: left;
   white-space: pre-wrap;
@@ -8713,7 +8794,7 @@ button.reset {
   font-weight: 700;
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  border-radius: 4px;
+  border-radius: var(--r-xs);
   transition: background-color 0.2s ease;
 }
 
@@ -8732,7 +8813,7 @@ button.reset {
   font-size: 12px;
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  border-radius: 4px;
+  border-radius: var(--r-xs);
   transition: border-color 0.2s ease, color 0.2s ease;
 }
 
@@ -8753,7 +8834,7 @@ button.reset {
   padding: 1.25rem 1.5rem;
   background: var(--color-bg-card);
   border: 1px solid var(--color-border);
-  border-radius: 10px;
+  border-radius: var(--r-md);
 }
 
 .partner-label {
@@ -8853,7 +8934,7 @@ button.reset {
   padding: 0.9rem 0.75rem;
   background: var(--color-bg-card);
   border: 1px solid var(--color-border);
-  border-radius: 8px;
+  border-radius: var(--r-md);
   color: var(--color-text);
   cursor: pointer;
   transition: border-color 0.2s ease, background 0.2s ease, color 0.2s ease;
@@ -8986,7 +9067,7 @@ button.reset {
 .contact-tier {
   border: 1px solid var(--color-border);
   background: var(--color-bg-card);
-  border-radius: 3px;
+  border-radius: var(--r-xs);
   padding: 1.75rem;
   display: grid;
   gap: 1.5rem;
@@ -9042,7 +9123,7 @@ button.reset {
   text-transform: uppercase;
   font-weight: 700;
   padding: 0.85rem 1.4rem;
-  border-radius: 2px;
+  border-radius: var(--r-2xs);
   text-decoration: none;
   border: 1px solid transparent;
   transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
@@ -9075,7 +9156,7 @@ button.reset {
   inset: 0 auto 0 0;
   width: 3px;
   background: var(--color-gold);
-  border-radius: 2px 0 0 2px;
+  border-radius: var(--r-2xs) 0 0 var(--r-2xs);
 }
 
 .contact-tier-discord .contact-tier-eyebrow {
@@ -9105,7 +9186,7 @@ button.reset {
   border: 1px dashed var(--color-border);
   background: var(--color-bg);
   padding: 1.25rem;
-  border-radius: 2px;
+  border-radius: var(--r-2xs);
   color: var(--color-text-muted);
   font-size: 0.85rem;
   line-height: 1.55;
@@ -9129,7 +9210,7 @@ button.reset {
 .contact-tier-card {
   border: 1px solid var(--color-border);
   background: var(--color-bg-card);
-  border-radius: 3px;
+  border-radius: var(--r-xs);
   padding: 1.5rem;
   display: flex;
   flex-direction: column;
@@ -9194,7 +9275,7 @@ button.reset {
   text-decoration: none;
   border: 1px solid var(--color-border);
   padding: 0.6rem 1rem;
-  border-radius: 2px;
+  border-radius: var(--r-2xs);
   transition: border-color 0.15s ease, color 0.15s ease;
 }
 
@@ -9275,7 +9356,7 @@ button.reset {
 .support-widget {
   border: 1px solid var(--color-border);
   background: var(--color-bg-card);
-  border-radius: 2px;
+  border-radius: var(--r-2xs);
   display: flex;
   flex-direction: column;
   min-height: 26rem;
@@ -9349,7 +9430,7 @@ button.reset {
   font-family: var(--font-mono);
   font-size: 0.8rem;
   padding: 0.65rem 0.75rem;
-  border-radius: 2px;
+  border-radius: var(--r-2xs);
   resize: vertical;
   min-height: 2.4rem;
   width: 100%;
@@ -9392,7 +9473,7 @@ button.reset {
   color: var(--color-on-accent);
   border: none;
   padding: 0.65rem 1.1rem;
-  border-radius: 2px;
+  border-radius: var(--r-2xs);
   cursor: pointer;
   text-decoration: none;
   display: inline-flex;
@@ -9477,7 +9558,7 @@ button.reset {
   background: transparent;
   border: 1px solid var(--color-border);
   padding: 0.4rem 0.75rem;
-  border-radius: 2px;
+  border-radius: var(--r-2xs);
   cursor: pointer;
   transition: color 0.15s ease, border-color 0.15s ease;
 }
@@ -9500,7 +9581,7 @@ button.reset {
 
 .support-msg {
   border: 1px solid var(--color-border);
-  border-radius: 2px;
+  border-radius: var(--r-2xs);
   padding: 0.65rem 0.85rem;
   background: var(--color-bg);
   max-width: 85%;
@@ -9653,7 +9734,7 @@ button.reset {
   color: var(--color-text-muted);
   border: 1px solid var(--color-border);
   padding: 0.45rem 0.75rem;
-  border-radius: 2px;
+  border-radius: var(--r-2xs);
   cursor: pointer;
   transition: color 0.15s ease, border-color 0.15s ease;
   white-space: nowrap;
@@ -9698,7 +9779,7 @@ button.reset {
   border: 1px solid var(--color-border);
   background: var(--color-bg);
   padding: 0.3rem 0.5rem;
-  border-radius: 2px;
+  border-radius: var(--r-2xs);
   font-family: var(--font-mono);
   font-size: 12px;
   color: var(--color-text);
@@ -9767,7 +9848,7 @@ button.reset {
   padding: 0.75rem 0.85rem;
   border: 1px solid color-mix(in srgb, var(--color-gold) 50%, var(--color-border));
   background: color-mix(in srgb, var(--color-gold) 8%, var(--color-bg));
-  border-radius: 2px;
+  border-radius: var(--r-2xs);
   font-family: var(--font-mono);
   font-size: 12px;
   line-height: 1.55;
@@ -9840,7 +9921,7 @@ button.reset {
   font-family: var(--font-mono);
   font-size: 0.8rem;
   padding: 0.55rem 0.75rem;
-  border-radius: 2px;
+  border-radius: var(--r-2xs);
 }
 
 .support-resume-row input[type="email"]:focus {
@@ -9862,7 +9943,7 @@ button.reset {
   color: var(--color-text-muted);
   background: color-mix(in srgb, var(--color-gold) 6%, var(--color-bg));
   border: 1px solid color-mix(in srgb, var(--color-gold) 35%, var(--color-border));
-  border-radius: 2px;
+  border-radius: var(--r-2xs);
   padding: 0.55rem 0.75rem;
   margin: 0;
   line-height: 1.55;
@@ -9891,7 +9972,7 @@ button.reset {
   text-transform: uppercase;
   font-weight: 700;
   text-decoration: none;
-  border-radius: 2px;
+  border-radius: var(--r-2xs);
 }
 
 .skip-link:focus {
@@ -9911,7 +9992,7 @@ button.reset {
   gap: 0.4rem;
   margin-bottom: 1rem;
   padding: 0.75rem 0.85rem;
-  border-radius: 2px;
+  border-radius: var(--r-2xs);
   font-family: var(--font-mono);
   font-size: 12px;
   line-height: 1.5;
@@ -9998,7 +10079,7 @@ button.reset {
 .od-tile {
   background: var(--od-bg-2);
   border: 1.5px solid var(--od-line-strong);
-  border-radius: 4px;
+  border-radius: var(--r-xs);
   padding: 24px;
 }
 .od-tile-gold {
@@ -10040,7 +10121,7 @@ button.reset {
   align-items: center;
   gap: 10px;
   padding: 12px 18px;
-  border-radius: 4px;
+  border-radius: var(--r-xs);
   font-family: var(--font-mono);
   font-size: 12px;
   letter-spacing: 0.18em;
@@ -10090,7 +10171,7 @@ button.reset {
   padding: 0;
   background: transparent;
   border: 1.5px solid var(--od-line-strong);
-  border-radius: 4px;
+  border-radius: var(--r-xs);
   color: var(--od-ink-dim);
   cursor: pointer;
   font-size: 14px;
@@ -10103,7 +10184,7 @@ button.reset {
   align-items: center;
   gap: 6px;
   padding: 4px 10px;
-  border-radius: 3px;
+  border-radius: var(--r-xs);
   font-family: var(--font-mono);
   font-size: 11px;
   letter-spacing: 0.16em;
@@ -10168,7 +10249,7 @@ button.reset {
   background: var(--od-bg);
   color: var(--od-ink);
   border: 1.5px solid var(--od-line-strong);
-  border-radius: 4px;
+  border-radius: var(--r-xs);
   padding: 10px 12px;
   font-family: var(--font-mono);
   font-size: 13px;
@@ -10197,7 +10278,7 @@ button.reset {
 .contact-discord-icon {
   width: 64px;
   height: 64px;
-  border-radius: 4px;
+  border-radius: var(--r-xs);
   background: linear-gradient(135deg, #5865f2 0%, #404eed 100%);
   flex-shrink: 0;
   display: flex;
@@ -10211,7 +10292,7 @@ button.reset {
 .contact-discord-icon img {
   width: 100%;
   height: 100%;
-  border-radius: 4px;
+  border-radius: var(--r-xs);
   object-fit: cover;
 }
 .contact-discord-meta {flex: 1; min-width: 0;}
@@ -10305,7 +10386,7 @@ button.reset {
   margin-bottom: 22px;
   background: rgba(184, 146, 46, 0.06);
   border: 1.5px solid var(--od-pcb-gold);
-  border-radius: 4px;
+  border-radius: var(--r-xs);
 }
 .contact-banner-active .od-banner-meta {
   display: flex;
@@ -10411,7 +10492,7 @@ button.reset {
   width: 14px;
   height: 14px;
   border: 1.5px solid var(--od-line-strong);
-  border-radius: 2px;
+  border-radius: var(--r-2xs);
   display: inline-block;
 }
 .support-error {
@@ -10436,7 +10517,7 @@ button.reset {
   padding: 6px 10px;
   background: var(--od-bg);
   border: 1.5px solid var(--od-line-strong);
-  border-radius: 3px;
+  border-radius: var(--r-xs);
   font-family: var(--font-mono);
   font-size: 12px;
   color: var(--od-ink);
@@ -10454,7 +10535,7 @@ button.reset {
 .support-attach-chip .od-thumb {
   width: 22px;
   height: 22px;
-  border-radius: 2px;
+  border-radius: var(--r-2xs);
   background: var(--od-line-strong);
   flex-shrink: 0;
   object-fit: cover;
@@ -10468,7 +10549,7 @@ button.reset {
   max-height: 880px;
   background: var(--od-bg-2);
   border: 1.5px solid var(--od-line-strong);
-  border-radius: 4px;
+  border-radius: var(--r-xs);
   overflow: hidden;
 }
 .support-thread-head {
@@ -10532,7 +10613,7 @@ button.reset {
 .support-thread-log::-webkit-scrollbar {width: 8px;}
 .support-thread-log::-webkit-scrollbar-thumb {
   background: var(--od-line-strong);
-  border-radius: 4px;
+  border-radius: var(--r-xs);
 }
 .support-thread-log[data-dropzone-active="true"] {
   background: rgba(184, 146, 46, 0.04);
@@ -10568,7 +10649,7 @@ button.reset {
 .support-thread .support-msg-avatar {
   width: 28px;
   height: 28px;
-  border-radius: 4px;
+  border-radius: var(--r-xs);
   flex-shrink: 0;
   display: flex;
   align-items: center;
@@ -10607,7 +10688,7 @@ button.reset {
 .support-thread .support-msg-meta .od-role {color: var(--od-pcb-green-glow);}
 .support-thread .support-msg-bubble {
   padding: 10px 14px;
-  border-radius: 4px;
+  border-radius: var(--r-xs);
   font-size: 13px;
   line-height: 1.6;
   background: var(--od-bg);
@@ -10638,7 +10719,7 @@ button.reset {
   max-height: 240px;
   width: auto;
   border: 1.5px solid var(--od-line-strong);
-  border-radius: 3px;
+  border-radius: var(--r-xs);
   cursor: zoom-in;
   transition: border-color 0.12s;
   background: #000;
@@ -10648,7 +10729,7 @@ button.reset {
   display: block;
   max-width: 100%;
   max-height: 240px;
-  border-radius: 3px;
+  border-radius: var(--r-xs);
 }
 .support-msg-file {
   display: inline-flex;
@@ -10657,7 +10738,7 @@ button.reset {
   padding: 6px 10px;
   background: var(--od-bg);
   border: 1.5px solid var(--od-line-strong);
-  border-radius: 3px;
+  border-radius: var(--r-xs);
   font-family: var(--font-mono);
   font-size: 12px;
   color: var(--od-ink);
@@ -10692,7 +10773,7 @@ button.reset {
   width: 100%;
   max-height: 280px;
   border: 1.5px solid var(--od-line-strong);
-  border-radius: 3px;
+  border-radius: var(--r-xs);
   background: #000;
 }
 .support-msg-video-name {
@@ -10725,7 +10806,7 @@ button.reset {
   text-align: center;
   padding: 32px 24px;
   border: 1.5px dashed var(--od-line-strong);
-  border-radius: 4px;
+  border-radius: var(--r-xs);
 }
 .support-thread-empty .od-icon-big {
   font-size: 32px;
@@ -10754,7 +10835,7 @@ button.reset {
   padding: 8px 12px;
   background: rgba(31, 77, 44, 0.08);
   border: 1.5px solid var(--od-pcb-green-2);
-  border-radius: 4px;
+  border-radius: var(--r-xs);
   font-family: var(--font-mono);
   font-size: 12px;
   color: var(--od-ink-dim);
@@ -10790,7 +10871,7 @@ button.reset {
   background: var(--od-bg);
   color: var(--od-ink);
   border: 1.5px solid var(--od-line-strong);
-  border-radius: 4px;
+  border-radius: var(--r-xs);
   padding: 10px 12px;
   font-family: var(--font-mono);
   font-size: 13px;
@@ -10814,7 +10895,7 @@ button.reset {
   padding: 1px 5px;
   background: var(--od-bg);
   border: 1px solid var(--od-line-strong);
-  border-radius: 2px;
+  border-radius: var(--r-2xs);
   color: var(--od-ink-dim);
 }
 
@@ -10853,7 +10934,7 @@ button.reset {
   max-width: 560px;
   background: var(--od-bg-2);
   border: 1.5px solid var(--od-pcb-gold);
-  border-radius: 4px;
+  border-radius: var(--r-xs);
   padding: 32px;
 }
 .feedback-head {margin-bottom: 24px;}
@@ -10907,7 +10988,7 @@ button.reset {
   height: 36px;
   background: transparent;
   border: 1.5px solid var(--od-line-strong);
-  border-radius: 3px;
+  border-radius: var(--r-xs);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -10942,7 +11023,7 @@ button.reset {
   height: calc(100vh - var(--header-height) - 16px);
   max-height: 880px;
   border: 1.5px solid var(--od-line-strong);
-  border-radius: 4px;
+  border-radius: var(--r-xs);
   overflow: hidden;
   background: var(--od-bg-2);
 }
@@ -11074,7 +11155,7 @@ button.reset {
   padding: 12px 16px;
   margin: 0 0 12px;
   border: 1.5px solid var(--od-pcb-gold);
-  border-radius: 4px;
+  border-radius: var(--r-xs);
   background: color-mix(in srgb, var(--od-pcb-gold) 8%, transparent);
   font-family: var(--font-mono);
   font-size: 12px;
@@ -11183,7 +11264,7 @@ button.reset {
   margin: 0 auto 28px;
   background: var(--od-bg-2);
   border: 1px solid var(--od-line-strong);
-  border-radius: 12px;
+  border-radius: var(--r-lg);
   overflow: hidden;
   position: relative;
 }
@@ -11202,7 +11283,7 @@ button.reset {
 .discord-invite-icon {
   width: 64px;
   height: 64px;
-  border-radius: 14px;
+  border-radius: var(--r-lg);
   background: var(--od-bg);
   border: 4px solid var(--od-bg-2);
   margin-top: -32px;
@@ -11295,7 +11376,7 @@ button.reset {
   background: #23a55a;
   color: #fff;
   padding: 12px 16px;
-  border-radius: 8px;
+  border-radius: var(--r-md);
   font-family: var(--font-display);
   font-weight: 600;
   font-size: 14px;
@@ -11364,7 +11445,7 @@ button.reset {
 
 .contact-discord-widget {
   width: 100%;
-  border-radius: 12px;
+  border-radius: var(--r-lg);
   overflow: hidden;
   background: #2b2d31;
   border: 1px solid var(--od-line-strong);
@@ -11540,7 +11621,7 @@ button.reset {
 .rn-sub-cta {
   border: 1.5px solid var(--od-pcb-gold);
   background: var(--rn-gold-tint);
-  border-radius: 4px;
+  border-radius: var(--r-xs);
   padding: 16px 18px;
   display: flex;
   flex-direction: column;
@@ -11571,7 +11652,7 @@ button.reset {
   letter-spacing: 0.18em;
   text-transform: uppercase;
   text-decoration: none;
-  border-radius: 3px;
+  border-radius: var(--r-xs);
   text-align: center;
 }
 .rn-sub-cta-link:hover {
@@ -11601,7 +11682,7 @@ button.reset {
   gap: 6px;
   padding: 5px 11px;
   border: 1.5px solid var(--od-line-strong);
-  border-radius: 999px;
+  border-radius: var(--r-pill);
   background: transparent;
   color: var(--od-ink-dim);
   cursor: pointer;
@@ -11690,7 +11771,7 @@ button.reset {
 }
 .rn-row .rn-thumb {
   aspect-ratio: 4/3;
-  border-radius: 3px;
+  border-radius: var(--r-xs);
   background: var(--od-bg-2);
   border: 1.5px dashed var(--od-line-strong);
   display: flex;
@@ -11734,7 +11815,7 @@ button.reset {
   gap: 6px;
   padding: 3px 9px;
   border: 1.5px solid var(--od-pcb-gold);
-  border-radius: 3px;
+  border-radius: var(--r-xs);
   background: var(--rn-gold-tint);
   color: var(--od-pcb-gold-2);
   font-family: var(--font-mono);
@@ -11755,7 +11836,7 @@ button.reset {
   color: var(--od-ink-faint);
   padding: 2px 7px;
   border: 1px solid var(--od-line);
-  border-radius: 2px;
+  border-radius: var(--r-2xs);
 }
 .rn-tag.is-firmware {
   color: var(--od-pcb-green-glow);
@@ -11810,7 +11891,7 @@ button.reset {
   text-align: center;
   padding: 40px 24px;
   border: 1.5px dashed var(--od-line-strong);
-  border-radius: 6px;
+  border-radius: var(--r-sm);
 }
 .rn-empty .rn-empty-icon {
   font-family: var(--font-mono);
@@ -11895,7 +11976,7 @@ button.reset {
   aspect-ratio: 16 / 9;
   margin: 0 0 40px;
   border: 1.5px solid var(--od-line-strong);
-  border-radius: 4px;
+  border-radius: var(--r-xs);
   background: var(--od-bg-2);
   overflow: hidden;
 }
@@ -11959,14 +12040,14 @@ button.reset {
   font-size: 0.92em;
   background: rgba(255, 255, 255, 0.04);
   padding: 1px 6px;
-  border-radius: 2px;
+  border-radius: var(--r-2xs);
   color: var(--od-pcb-green-glow);
   border: 1px solid var(--od-line);
 }
 .rn-post-body pre {
   background: #06080a;
   border: 1.5px solid var(--od-pcb-green-2);
-  border-radius: 4px;
+  border-radius: var(--r-xs);
   padding: 14px 18px;
   font-family: var(--font-mono);
   font-size: 12px;
@@ -12004,7 +12085,7 @@ button.reset {
   max-width: 100%;
   height: auto;
   border: 1.5px solid var(--od-line-strong);
-  border-radius: 3px;
+  border-radius: var(--r-xs);
 }
 .rn-post-body blockquote {
   margin: 0 0 14px;
@@ -12032,7 +12113,7 @@ button.reset {
   gap: 6px;
   padding: 16px 18px;
   border: 1.5px solid var(--od-line-strong);
-  border-radius: 4px;
+  border-radius: var(--r-xs);
   text-decoration: none;
   color: var(--od-ink);
   cursor: pointer;
@@ -12076,7 +12157,7 @@ button.reset {
   padding: 22px 24px;
   border: 1.5px solid var(--od-pcb-gold);
   background: var(--rn-gold-tint);
-  border-radius: 4px;
+  border-radius: var(--r-xs);
   display: flex;
   gap: 24px;
   align-items: center;
@@ -12113,7 +12194,7 @@ button.reset {
   max-width: 480px;
   text-align: center;
   border: 1.5px solid var(--od-line-strong);
-  border-radius: 4px;
+  border-radius: var(--r-xs);
   padding: 40px 32px;
   background: var(--od-bg-2);
 }
@@ -12124,7 +12205,7 @@ button.reset {
   width: 48px;
   height: 48px;
   border: 1.5px solid var(--od-pcb-green-2);
-  border-radius: 4px;
+  border-radius: var(--r-xs);
   background: rgba(31, 77, 44, 0.18);
   color: var(--od-pcb-green-glow);
   font-family: var(--font-display);
@@ -12174,7 +12255,7 @@ button.reset {
 /* Homepage strip — three variants --------------------------------- */
 .rn-strip {
   border: 1.5px solid var(--od-line-strong);
-  border-radius: 4px;
+  border-radius: var(--r-xs);
   background: var(--od-bg-2);
   padding: 18px 22px;
   display: grid;
@@ -12409,7 +12490,7 @@ button.reset {
 .support-sidebar-card {
   background: var(--od-bg-2);
   border: 1.5px solid var(--od-line-strong);
-  border-radius: 4px;
+  border-radius: var(--r-xs);
   padding: 16px 18px;
 }
 .support-sidebar-card .od-tile-eyebrow {margin: 0 0 12px;}
@@ -12454,7 +12535,7 @@ button.reset {
 .support-sidebar-count {
   background: var(--od-bg);
   border: 1.5px solid var(--od-line-strong);
-  border-radius: 4px;
+  border-radius: var(--r-xs);
   padding: 12px;
   display: flex;
   flex-direction: column;
@@ -12528,7 +12609,7 @@ button.reset {
   font-family: var(--font-sans);
   font-size: 12px;
   line-height: 1.3;
-  border-radius: 999px;
+  border-radius: var(--r-pill);
   border: 1px solid rgba(255, 255, 255, 0.12);
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.45),
     0 1px 2px rgba(185, 28, 28, 0.4);
@@ -12699,7 +12780,7 @@ button.reset {
   height: 100%;
   background: var(--color-gold);
   box-shadow: 0 0 10px var(--color-gold), 0 0 4px var(--color-gold);
-  border-radius: 0 2px 2px 0;
+  border-radius: 0 var(--r-2xs) var(--r-2xs) 0;
   transition: width 0.2s ease-out, opacity 0.28s ease-out;
 }
 
@@ -12722,6 +12803,19 @@ button.reset {
 .schematic-skeleton {
   min-height: clamp(260px, 30vw, 420px);
 }
+/* Ghost of the incoming board render behind the spinner. */
+.board-art-skeleton-preview {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  max-width: min(52%, 460px);
+  max-height: 70%;
+  object-fit: contain;
+  opacity: 0.18;
+  filter: saturate(0.5);
+}
+
 .board-art-skeleton-spinner {
   width: 30px;
   height: 30px;
@@ -13012,7 +13106,7 @@ button.reset {
     min-height: 4px;
     padding: 0;
     border: none;
-    border-radius: 2px;
+    border-radius: var(--r-2xs);
     background: var(--color-border-strong);
     cursor: pointer;
     transition: background 0.2s ease, transform 0.2s ease;

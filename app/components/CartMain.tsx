@@ -1,6 +1,8 @@
 import {useOptimisticCart} from '@shopify/hydrogen';
 import {useMemo} from 'react';
 import {Link, useFetchers} from 'react-router';
+import {useAutoAnimate} from '@formkit/auto-animate/react';
+import {useReducedMotion} from 'motion/react';
 import type {CartApiQueryFragment} from 'storefrontapi.generated';
 import {useAside} from '~/components/Aside';
 import {CartLineItem, type CartLine} from '~/components/CartLineItem';
@@ -65,6 +67,13 @@ export function CartMain({
   const cartHasItems = cart?.totalQuantity ? cart.totalQuantity > 0 : false;
   const childrenMap = getLineItemChildrenMap(cart?.lines?.nodes ?? []);
 
+  // Slide/fade cart lines as they're added or removed instead of snapping.
+  const reducedMotion = useReducedMotion();
+  const [linesRef] = useAutoAnimate<HTMLUListElement>({
+    duration: reducedMotion ? 0 : 220,
+    easing: 'ease-out',
+  });
+
   return (
     <section
       className={className}
@@ -77,7 +86,7 @@ export function CartMain({
           Line items
         </p>
         <div className="cart-lines-scroll">
-          <ul aria-labelledby="cart-lines">
+          <ul aria-labelledby="cart-lines" ref={linesRef}>
             {(cart?.lines?.nodes ?? []).map((line) => {
               // we do not render non-parent lines at the root of the cart
               if (

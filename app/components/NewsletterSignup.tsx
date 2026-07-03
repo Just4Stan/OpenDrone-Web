@@ -1,5 +1,6 @@
 import {useCallback, useEffect, useId, useRef, useState} from 'react';
 import {useFetcher} from 'react-router';
+import {Check} from 'lucide-react';
 import {getActiveTheme} from '~/lib/theme';
 
 // Engineering Essentials — dual-purpose: product-release announcements and
@@ -205,8 +206,9 @@ export function NewsletterSignup({
           }
           role="status"
         >
-          <p className="font-mono text-[12px] uppercase tracking-[0.14em] text-[var(--color-gold)]">
-            ✓ You&rsquo;re subscribed
+          <p className="inline-flex items-center gap-1.5 font-mono text-[12px] uppercase tracking-[0.14em] text-[var(--color-gold)]">
+            <Check size={13} strokeWidth={2.5} aria-hidden="true" />
+            You&rsquo;re subscribed
           </p>
           <p className="text-[12px] text-[var(--color-text-muted)] leading-snug">
             Build notes land in your inbox. Manage it anytime in your{' '}
