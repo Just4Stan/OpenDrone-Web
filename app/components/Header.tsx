@@ -210,6 +210,8 @@ function FamilyNav({
   const [products, setProducts] = useState<HeaderFamilyProduct[] | null>(null);
   const [open, setOpen] = useState<string | null>(null);
   const closeTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  // True for the tick after Escape restores focus to a chip (see onFocus).
+  const escFocus = useRef(false);
   const location = useLocation();
   // Cart drawer opener for the Stack chip's add buttons (named to avoid the
   // `open` dropdown-state collision above).
@@ -399,20 +401,45 @@ function FamilyNav({
         key={cat.label}
         onMouseEnter={() => openFamily(cat.label)}
         onMouseLeave={scheduleClose}
-        onFocus={() => openFamily(cat.label)}
+        onFocus={() => {
+          // Swallow the focus event caused by Escape's own focus restore —
+          // otherwise the menu instantly reopens.
+          if (escFocus.current) return;
+          openFamily(cat.label);
+        }}
         onBlur={scheduleClose}
+        onKeyDown={(e) => {
+          // Escape closes the pod and hands focus back to the chip, so a
+          // keyboard user isn't stranded in a closed popup.
+          if (e.key === 'Escape' && open === cat.label) {
+            e.stopPropagation();
+            clearTimeout(closeTimer.current);
+            setOpen(null);
+            escFocus.current = true;
+            e.currentTarget.querySelector('a')?.focus();
+            setTimeout(() => {
+              escFocus.current = false;
+            }, 0);
+          }
+        }}
       >
-        <NavLink prefetch="viewport" to={cat.to}>
+        <NavLink
+          prefetch="viewport"
+          to={cat.to}
+          aria-expanded={open === cat.label}
+        >
           {cat.label}
         </NavLink>
         <div className="header-cat-pod-wrap">
           <AnimatePresence>
+            {/* role=group, not menu: the pod is a list of links/buttons in
+                natural tab order, not an arrow-key ARIA menu widget. */}
             {open === cat.label && items.length > 0 ? (
               <Pod
                 animate
                 origin="top center"
                 className="header-cat-pod"
-                role="menu"
+                role="group"
                 ariaLabel={`${cat.label} products`}
               >
                 <ProductPods

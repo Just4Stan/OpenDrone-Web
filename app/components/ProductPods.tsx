@@ -158,7 +158,7 @@ export function ProductPods({
               {companions ? (
                 <div
                   className={`product-pod-companions${cascadeOpen ? ' is-open' : ''}`}
-                  role="menu"
+                  role="group"
                   aria-hidden={!cascadeOpen}
                 >
                   {companions.options.map((o) => (
