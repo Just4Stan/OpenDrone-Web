@@ -195,7 +195,7 @@ html.light .schematic-sheet {
 }
 
 /* Default price treatment. Display sans, tabular figures. Specialised
-   per-context by .product-buy-price and .product-stickybar overrides. */
+   per-context by .product-buy-price overrides. */
 .product-price {
   display: inline-flex;
   align-items: baseline;
@@ -1330,6 +1330,11 @@ html.hero-incutec-hint .incutec-hint {
   padding: clamp(0.5rem, 1.6vh, 0.85rem) var(--rail-gutter) 0;
   pointer-events: none;
 }
+/* While a family dropdown is open, lift the whole header above the pinned
+   buy rail (z 60) — otherwise the pod and its buy strip slide underneath. */
+.site-header:has(.header-cat-pod) {
+  z-index: 70;
+}
 
 /* The header bar is a pill Pod — shares the .pod surface tokens so it's the
    same material as the dropdowns / hero showcase / PDP scroll-bubble. */
@@ -1622,76 +1627,197 @@ html.anim-paused .board-sheet.is-active {
 }
 .header-cat-pod {
   width: max-content;
-  min-width: 15rem;
+  width: max-content;
+  max-width: 26rem;
   max-width: 24rem;
   padding: var(--sp-2);
 }
-/* Stack chip pod: one row per size-matched FC+ESC pair, addable in place.
-   Same reset as the product pods below — the chip rules bleed gold/uppercase
-   onto everything inside .site-header-categories. */
-.header-stack-rows {
+/* Pod-row buy actions: hovering a family-dropdown row reveals "Add to
+   cart?" and, on FC/ESC rows, an "also add an X ▸" cascade that opens a
+   nested companion panel. The chip rules bleed gold/uppercase into
+   .site-header-categories, so reset text styling explicitly. */
+.product-pod-wrap {
+  position: relative;
   display: flex;
   flex-direction: column;
-  gap: 0.25rem;
 }
-.header-stack-row {
+/* Actions fly out to the RIGHT of the hovered row as a seamless horizontal
+   extension: the strip's border-box matches the row's exactly (top: 0;
+   bottom: 0 → same height as .product-pod-wrap, whose only in-flow child is
+   the row), so its top/bottom edges align with the row's. Square left corners
+   butt against the row; right corners round. Zero vertical layout shift,
+   sibling rows stay put. */
+.product-pod-actions {
+  position: absolute;
+  left: calc(100% + 0.25rem);
+  top: 0;
+  bottom: 0;
   display: flex;
-  align-items: center;
-  gap: 0.65rem;
-  padding: 0.4rem 0.5rem;
-  border-radius: var(--r-lg);
+  align-items: stretch;
+  gap: 0.35rem;
+  padding: 0.35rem;
+  white-space: nowrap;
+  /* Solid Pod material: these pills float over arbitrary page content
+     (hero scene, gold CTAs) — without an opaque panel the ghost pill is
+     unreadable. */
+  background: var(--pod-bg-strong);
+  border: 1px solid var(--pod-border);
+  border-radius: 0 var(--r-md) var(--r-md) 0;
+  box-shadow: var(--pod-shadow);
+  opacity: 0;
+  transform: translateX(-6px);
+  pointer-events: none;
+  transition: opacity 0.15s ease, transform 0.15s ease;
   text-transform: none;
   letter-spacing: normal;
+  z-index: 25;
+}
+/* Invisible hover bridge over the row→strip gap. */
+.product-pod-actions::before {
+  content: '';
+  position: absolute;
+  left: -0.5rem;
+  top: 0;
+  bottom: 0;
+  width: 0.5rem;
+}
+.product-pod-wrap:hover .product-pod-actions,
+.product-pod-wrap:focus-within .product-pod-actions,
+.product-pod-wrap.is-cascade-open .product-pod-actions {
   opacity: 1;
+  transform: none;
+  pointer-events: auto;
 }
-.header-stack-row.is-out {
-  opacity: 0.45;
-}
-.header-stack-row img {
-  width: 44px;
-  height: 44px;
-  object-fit: contain;
-  flex: none;
-}
-.header-stack-info {
+.product-pod-add {
   display: flex;
-  flex-direction: column;
-  gap: 0.1rem;
-  min-width: 9rem;
-}
-.header-stack-title {
+  align-items: center;
   font-family: var(--font-mono);
-  font-size: 0.85rem;
-  color: var(--color-gold);
-}
-.header-stack-sub {
-  font-size: 0.72rem;
-  color: var(--color-text-dim);
-  white-space: nowrap;
-}
-.header-stack-price {
-  font-family: var(--font-mono);
-  font-size: 0.82rem;
-  color: var(--color-text);
-  margin-left: auto;
-}
-.header-stack-add {
-  flex: none;
-  font-family: var(--font-mono);
-  font-size: 0.78rem;
-  padding: 0.3rem 0.85rem;
+  font-size: 0.8rem;
+  padding: 0 1rem;
   background: var(--color-gold);
   color: var(--color-on-accent);
   border: none;
-  border-radius: var(--r-pill);
+  border-radius: var(--r-md);
   cursor: pointer;
+  white-space: nowrap;
 }
-.header-stack-add:hover {
+.product-pod-add:hover {
   background: var(--color-gold-hover);
 }
-.header-stack-add[disabled] {
+.product-pod-add[disabled] {
   opacity: 0.5;
   cursor: not-allowed;
+}
+.product-pod-cascade-toggle {
+  display: flex;
+  align-items: center;
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  padding: 0 0.9rem;
+  background: var(--color-bg-elevated);
+  border: 1px solid color-mix(in srgb, var(--color-gold) 55%, var(--color-border));
+  border-radius: var(--r-md);
+  color: var(--color-text);
+  cursor: pointer;
+  white-space: nowrap;
+}
+.product-pod-cascade-toggle:hover,
+.product-pod-wrap.is-cascade-open .product-pod-cascade-toggle {
+  border-color: var(--color-gold);
+  color: var(--color-text);
+}
+/* The cascade: a nested Pod-material panel dropping DOWN from the actions
+   strip (it lives inside .product-pod-actions, which is positioned) — a
+   vertical list of size-matched partner boards, its left edge aligned under
+   the strip. Top padding/bridge covers the hover gap. */
+.product-pod-companions {
+  position: absolute;
+  left: 0;
+  top: calc(100% + 0.3rem);
+  width: max-content;
+  max-width: 26rem;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 0.4rem;
+  background: var(--pod-bg-strong);
+  border: 1px solid var(--pod-border);
+  border-radius: var(--r-lg);
+  box-shadow: var(--pod-shadow);
+  text-transform: none;
+  letter-spacing: normal;
+}
+/* Invisible hover bridge over the vertical gap between the strip and the
+   panel, so the pointer never leaves the hover chain mid-transit. */
+.product-pod-companions.is-open {
+  display: flex;
+}
+.product-pod-companions::before {
+  content: '';
+  position: absolute;
+  top: -0.5rem;
+  left: 0;
+  right: 0;
+  height: 0.5rem;
+}
+.product-pod-companion {
+  width: 100%;
+  padding: 0.25rem 0.4rem;
+  background: none;
+  border: 1px solid transparent;
+  border-radius: var(--r-md);
+  color: var(--color-text);
+  cursor: pointer;
+}
+.product-pod-companion:hover {
+  border-color: color-mix(in srgb, var(--color-gold) 45%, var(--color-border));
+  background: color-mix(in srgb, var(--color-gold) 6%, transparent);
+}
+.product-pod-companion[disabled] {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.product-pod-companion .btn-label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+}
+/* Explicit affordance: the whole row submits, but this chip SAYS so. */
+.product-pod-companion-go {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  padding: 0.3rem 0.75rem;
+  background: var(--color-gold);
+  color: var(--color-on-accent);
+  border-radius: var(--r-pill);
+  white-space: nowrap;
+}
+.product-pod-companion:hover .product-pod-companion-go {
+  background: var(--color-gold-hover);
+}
+.product-pod-companion img {
+  width: 52px;
+  height: 52px;
+  object-fit: contain;
+  flex: none;
+  border-radius: var(--r-sm);
+}
+.product-pod-companion-title {
+  flex: 1;
+  text-align: left;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.product-pod-companion-price {
+  color: var(--color-text-muted);
+  display: inline-flex;
+}
+.product-pod-companion-pct {
+  color: var(--color-gold);
 }
 /* The chip rules (.site-header-categories a / .site-header-cat-group a) also
    match the pod's product links — they bled gold colour, UPPERCASE tracking and
@@ -1704,6 +1830,15 @@ html.anim-paused .board-sheet.is-active {
   padding: var(--sp-2);
   text-transform: none;
   letter-spacing: normal;
+}
+html.light .header-cat-pod {
+  background: var(--pod-bg-strong);
+}
+/* Bigger, clearer product imagery in the header dropdowns (50% up from the
+   3rem shared default; the hero showcase keeps its own sizing). */
+.site-header-categories .header-cat-pod .product-pod-media {
+  width: 4.5rem;
+  height: 4.5rem;
 }
 .site-header-categories .header-cat-pod .product-pod-title {
   color: var(--color-gold);
@@ -4461,80 +4596,6 @@ button.reset {
   font-variant-numeric: tabular-nums;
 }
 
-/* Sticky compact buy bar — pins to the bottom of the viewport on
-   mobile and to the top under the header on desktop once the user
-   scrolls past the in-page buy module. Always one tap from the CTA. */
-.product-stickybar {
-  position: fixed;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  z-index: 40;
-  display: flex;
-  align-items: center;
-  gap: var(--sp-3);
-  padding: 0.6rem var(--sp-5);
-  /* Near-opaque, no live blur: the bar is pinned for the entire scroll past
-     the buy module, and saturate+blur was the single priciest persistent
-     backdrop-filter on the site (same trade as the header pill — see the GPU
-     note above .site-header-main). */
-  background: color-mix(in srgb, var(--color-bg) 97%, transparent);
-  border-top: 1px solid var(--color-border);
-  transform: translateY(100%);
-  transition: transform 0.25s ease;
-}
-
-.product-stickybar.is-visible {
-  transform: translateY(0);
-}
-
-.product-stickybar-title {
-  display: none;
-  font-family: var(--font-display);
-  font-weight: 600;
-  font-size: var(--fs-sm);
-  color: var(--color-text);
-  margin: 0;
-  line-height: 1.1;
-  flex: 1 1 auto;
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.product-stickybar-price {
-  font-family: var(--font-display);
-  font-weight: 600;
-  font-size: var(--fs-md);
-  color: var(--color-text);
-  font-variant-numeric: tabular-nums;
-  white-space: nowrap;
-}
-
-.product-stickybar .btn-primary {
-  width: auto;
-  flex: 0 0 auto;
-  padding: 0.55rem 1.1rem;
-  font-size: var(--fs-sm);
-}
-
-@media (min-width: 768px) {
-  .product-stickybar {
-    bottom: auto;
-    top: var(--header-height);
-    border-top: none;
-    border-bottom: 1px solid var(--color-border);
-    transform: translateY(-100%);
-  }
-  .product-stickybar.is-visible {
-    transform: translateY(0);
-  }
-  .product-stickybar-title {
-    display: inline-block;
-  }
-}
-
 .product-buy-civilian a {
   color: var(--color-text-muted);
   text-decoration: underline;
@@ -4640,10 +4701,17 @@ button.reset {
     padding-top: 0.4rem;
   }
 }
-/* Pinned mobile bottom bar stays minimal: the in-flow buy box (a short
-   scroll up) still offers the stack. */
+/* Pinned rails stay minimal: the in-flow buy box still offers the stack.
+   The mobile bottom bar always hides it; on touch (hover:none, incl. iPad
+   at desktop widths) the desktop pinned rail hides it too — the static
+   in-flow row would otherwise stretch the shrink-wrapped pill. */
 .buy-rail.is-pinned.is-mobile .cta-stack-flyout {
   display: none;
+}
+@media (hover: none) {
+  .buy-rail.is-pinned .cta-stack-flyout {
+    display: none;
+  }
 }
 
 /* Catalog card quick-add: a pill pinned to the bottom-right of the media
