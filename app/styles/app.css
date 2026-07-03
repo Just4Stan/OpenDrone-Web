@@ -1644,9 +1644,8 @@ html.anim-paused .board-sheet.is-active {
    resizes. The wash paints the whole band on hover/focus. */
 .product-pod-wrap {
   display: flex;
+  flex-direction: column;
   align-items: stretch;
-  gap: var(--sp-2);
-  padding-right: var(--sp-2);
   border-radius: var(--r-lg);
   transition: background 0.15s ease;
 }
@@ -1655,7 +1654,6 @@ html.anim-paused .board-sheet.is-active {
   background: var(--color-gold-soft);
 }
 .product-pod-wrap .product-pod {
-  flex: 1;
   min-width: 0;
 }
 .product-pod-wrap .product-pod:hover,
@@ -1663,21 +1661,38 @@ html.anim-paused .board-sheet.is-active {
   background: transparent;
 }
 
-.product-pod-buy {
-  flex: none;
-  align-self: center;
-  display: grid;
+/* Hover/focus-revealed action bar under the row, spanning its full width.
+   Collapsed it holds no height; hovering the row (or tabbing to a button)
+   unfolds it. Buttons split the width evenly and wrap — N companions per
+   row each get an equal share. */
+.product-pod-actionbar {
+  display: flex;
+  flex-wrap: wrap;
   gap: 6px;
-  /* Fixed column: the pending "Adding…" swap can never reflow the row.
-     Wide enough for icon + label + deal badge at a readable size; buttons
-     stack vertically, so N companions per row just add rows here. */
-  width: 11rem;
+  padding: 0 var(--sp-2);
+  max-height: 0;
+  opacity: 0;
+  overflow: hidden;
+  transition: max-height 0.18s ease, opacity 0.14s ease, padding 0.18s ease;
   text-transform: none;
   letter-spacing: normal;
+}
+.product-pod-wrap:hover .product-pod-actionbar,
+.product-pod-wrap:focus-within .product-pod-actionbar {
+  max-height: 12rem;
+  opacity: 1;
+  padding: 0 var(--sp-2) var(--sp-2);
+}
+@media (prefers-reduced-motion: reduce) {
+  .product-pod-actionbar {
+    transition: none;
+  }
 }
 .pod-buy-add,
 .pod-buy-stack {
   position: relative;
+  flex: 1 1 0;
+  min-width: 10rem;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1689,6 +1704,10 @@ html.anim-paused .board-sheet.is-active {
   letter-spacing: 0.06em;
   text-transform: uppercase;
   white-space: nowrap;
+}
+.pod-buy-price {
+  opacity: 0.85;
+  font-weight: 400;
 }
 .pod-buy-add {
   background: var(--color-gold);
@@ -1711,7 +1730,7 @@ html.anim-paused .board-sheet.is-active {
 }
 
 .pod-buy-stack {
-  padding: 0 0.7rem 0 0.4rem;
+  padding: 0 0.85rem;
   background: var(--color-bg-elevated);
   border: 1px solid var(--color-border);
   color: var(--color-text-muted);
@@ -1730,12 +1749,12 @@ html.anim-paused .board-sheet.is-active {
 .pod-buy-stack .btn-label {
   display: flex;
   align-items: center;
-  gap: 0.35rem;
+  justify-content: center;
+  gap: 0.45rem;
   width: 100%;
 }
 .pod-buy-stack-label {
-  flex: 1;
-  text-align: left;
+  text-align: center;
 }
 .pod-buy-stack-pct {
   color: var(--color-gold);

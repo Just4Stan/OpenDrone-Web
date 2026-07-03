@@ -28,13 +28,17 @@ export type ProductPodItem = {
   imageUrl?: string | null;
   imageAlt?: string | null;
   price?: {amount: string; currencyCode: string} | null;
-  /** When set, the row carries an always-visible buy cell: an ADD chip and,
-   *  per companion, a "+ESC −10%" stack chip (both lines, one click). Hosts
-   *  without it (the hero showcase) render exactly as before. */
+  /** When set, the row grows a hover/focus-revealed action bar spanning the
+   *  row width: one "<self> only" button and one "<self> + <partner> stack"
+   *  button per companion (both lines, one click). Hosts without it (the
+   *  hero showcase) render exactly as before. */
   buy?: {
     lines: OptimisticCartLineInput[];
     available: boolean;
     flyImage?: string | null;
+    /** Short family name of the row's own product ("FC", "ESC") — names the
+     *  buttons so it's unambiguous what each one adds. */
+    selfShort?: string;
     companions?: PodCompanionOption[];
   };
 };
@@ -119,6 +123,7 @@ export function ProductPods({
 
         if (!it.buy) return link;
 
+        const self = it.buy.selfShort ?? 'board';
         return (
           <div
             key={it.key}
@@ -129,8 +134,12 @@ export function ProductPods({
             onBlur={() => onHover?.(null)}
           >
             {link}
+            {/* Hover/focus-revealed action bar across the full row width.
+                Every button says exactly what it adds: "<FC> only" vs
+                "<FC> + <ESC> stack". Keyboard: focusing a button opens the
+                bar via :focus-within. */}
             <div
-              className="product-pod-buy"
+              className="product-pod-actionbar"
               role="group"
               aria-label={`Buy ${it.title}`}
             >
@@ -143,7 +152,10 @@ export function ProductPods({
                 ariaLabel={`Add ${it.title} to cart`}
               >
                 <ShoppingCart size={15} strokeWidth={2.25} aria-hidden="true" />
-                Add
+                {self} only
+                {it.price ? (
+                  <span className="pod-buy-price">{fmt(it.price)}</span>
+                ) : null}
               </AddToCartButton>
               {(it.buy.companions ?? []).map((o) => (
                 <AddToCartButton
@@ -180,7 +192,9 @@ export function ProductPods({
                       />
                     </span>
                   ) : null}
-                  <span className="pod-buy-stack-label">+{o.short}</span>
+                  <span className="pod-buy-stack-label">
+                    {self} + {o.short} stack
+                  </span>
                   {o.pct ? (
                     <span className="pod-buy-stack-pct">−{o.pct}%</span>
                   ) : null}

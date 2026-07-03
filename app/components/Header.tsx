@@ -102,6 +102,12 @@ const STACK_COMPANIONS: Record<string, Array<{handle: string; short: string}>> =
 };
 const STACK_DISCOUNT_PCT = 10;
 
+/** Short family label ("FC", "ESC") for a productType — names the buy
+ *  buttons so "FC only" vs "FC + ESC stack" is unambiguous. */
+function selfShortFor(type: string): string {
+  return CATEGORY_LINKS.find((c) => c.type === type)?.label ?? 'board';
+}
+
 /** Minimal ProductVariant-ish shape so useOptimisticCart can render the
  *  pending line immediately instead of console-erroring and waiting for the
  *  server cart. Cast at the use site — the header only has the thin query. */
@@ -359,6 +365,7 @@ function FamilyNav({
                     available: Boolean(only.availableForSale),
                     flyImage:
                       only.image?.url ?? p.featuredImage?.url ?? null,
+                    selfShort: selfShortFor(type),
                   }
                 : undefined,
             },
@@ -392,6 +399,7 @@ function FamilyNav({
               ],
               available: Boolean(v.availableForSale),
               flyImage: v.image?.url ?? p.featuredImage?.url ?? null,
+              selfShort: selfShortFor(type),
               companions: companionsFor(type, v, {
                 title: p.title,
                 handle: p.handle,
