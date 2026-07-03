@@ -272,14 +272,17 @@ export function Layout({children}: {children?: React.ReactNode}) {
             consecutive janky windows add `perf-lite` (pauses the ambient
             infinite animations + strips live rail blurs via the same CSS as
             anim-paused), and — unlike the removed perf-tier system — RELEASE
-            it again after two clean windows. No device classification, no
-            React context: one <html> class, decorative effects only. */}
+            it again after two clean windows. Sampling is suspended while
+            `anim-paused` is freezing the workload (idle/unfocused), so the
+            governor never releases perf-lite off artificially clean idle
+            frames and oscillates. No device classification, no React
+            context: one <html> class, decorative effects only. */}
         <script
           nonce={nonce}
           suppressHydrationWarning
           dangerouslySetInnerHTML={{
             __html:
-              "(function(){var r=document.documentElement,last=0,jank=0,total=0,bad=0,good=0,lite=false;var JANK=34,WIN=90,BAD=0.4,GOOD=0.15;function tick(ts){if(!document.hidden&&document.hasFocus()){if(last){var d=ts-last;total++;if(d>JANK)jank++;}last=ts;if(total>=WIN){var f=jank/total;jank=0;total=0;if(f>BAD){good=0;if(++bad>=2&&!lite){lite=true;r.classList.add('perf-lite');}}else if(f<GOOD){bad=0;if(++good>=2&&lite){lite=false;r.classList.remove('perf-lite');}}else{bad=0;good=0;}}}else{last=0;}requestAnimationFrame(tick);}requestAnimationFrame(tick);})();",
+              "(function(){var r=document.documentElement,last=0,jank=0,total=0,bad=0,good=0,lite=false;var JANK=34,WIN=90,BAD=0.4,GOOD=0.15;function tick(ts){var paused=r.classList.contains('anim-paused');if(!document.hidden&&document.hasFocus()&&!paused){if(last){var d=ts-last;total++;if(d>JANK)jank++;}last=ts;if(total>=WIN){var f=jank/total;jank=0;total=0;if(f>BAD){good=0;if(++bad>=2&&!lite){lite=true;r.classList.add('perf-lite');}}else if(f<GOOD){bad=0;if(++good>=2&&lite){lite=false;r.classList.remove('perf-lite');}}else{bad=0;good=0;}}}else{last=0;jank=0;total=0;}requestAnimationFrame(tick);}requestAnimationFrame(tick);})();",
           }}
         />
         <link rel="stylesheet" href={resetStyles}></link>

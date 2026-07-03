@@ -36,15 +36,18 @@ export function AddToCartButton({
             <button
               type="submit"
               onClick={(e) => {
-                if (!(disabled ?? pending)) {
+                if (!(disabled || pending)) {
                   flyToCart(
                     e.currentTarget.getBoundingClientRect(),
                     flyImage,
                   );
                 }
+                // Drop focus after the click so :focus-within doesn't pin
+                // hover-revealed quick-add UI open once the pointer leaves.
+                e.currentTarget.blur();
                 onClick?.();
               }}
-              disabled={disabled ?? pending}
+              disabled={disabled || pending}
               aria-busy={pending || undefined}
               data-pending={pending || undefined}
               className={className}

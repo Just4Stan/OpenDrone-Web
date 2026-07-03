@@ -87,6 +87,27 @@ type Card = {
 
 const num = (m?: MoneyV2 | null) => (m ? parseFloat(m.amount) || 0 : 0);
 
+/** Minimal ProductVariant-ish shape for useOptimisticCart, composed from the
+ *  catalog fragment (which carries no variant title — the tier value or the
+ *  product title stands in). */
+function optimisticCatalogVariant(
+  v: NonNullable<CatalogProduct['variants']>['nodes'][number],
+  title: string,
+  p: CatalogProduct,
+) {
+  return {
+    id: v.id,
+    title,
+    availableForSale: v.availableForSale,
+    price: v.price,
+    image: v.image ?? p.featuredImage ?? null,
+    product: {title: p.title, handle: p.handle},
+    selectedOptions: v.selectedOptions ?? [],
+  } as unknown as NonNullable<
+    import('@shopify/hydrogen').OptimisticCartLineInput['selectedVariant']
+  >;
+}
+
 const productOnSale = (p: CatalogProduct) => {
   const compare = p.compareAtPriceRange?.minVariantPrice?.amount;
   return compare != null && parseFloat(compare) > num(p.priceRange.minVariantPrice);
@@ -96,8 +117,14 @@ const productOnSale = (p: CatalogProduct) => {
  *  so a tier card shows its real price/sale even though the tiers themselves
  *  come from the editorial source of truth. */
 function variantFor(p: CatalogProduct, axis: string, value: string) {
+  const a = axis.trim().toLowerCase();
+  const val = value.trim().toLowerCase();
   return p.variants?.nodes.find((v) =>
-    v.selectedOptions.some((o) => o.name === axis && o.value === value),
+    v.selectedOptions.some(
+      (o) =>
+        o.name.trim().toLowerCase() === a &&
+        o.value.trim().toLowerCase() === val,
+    ),
   );
 }
 
@@ -168,8 +195,20 @@ export default function Collection() {
                   pv.availableForSale && sv.availableForSale,
                 ),
                 lines: [
-                  {merchandiseId: sv.id, quantity: 1},
-                  {merchandiseId: pv.id, quantity: 1},
+                  {
+                    merchandiseId: sv.id,
+                    quantity: 1,
+                    selectedVariant: optimisticCatalogVariant(sv, value, p),
+                  },
+                  {
+                    merchandiseId: pv.id,
+                    quantity: 1,
+                    selectedVariant: optimisticCatalogVariant(
+                      pv,
+                      value,
+                      partner,
+                    ),
+                  },
                 ],
               },
             ];
@@ -187,7 +226,13 @@ export default function Collection() {
             createdAt: p.createdAt,
             quickAdd: sv
               ? {
-                  lines: [{merchandiseId: sv.id, quantity: 1}],
+                  lines: [
+                    {
+                      merchandiseId: sv.id,
+                      quantity: 1,
+                      selectedVariant: optimisticCatalogVariant(sv, value, p),
+                    },
+                  ],
                   available: Boolean(sv.availableForSale),
                   flyImage: sv.image?.url ?? p.featuredImage?.url ?? null,
                 }
@@ -199,7 +244,10 @@ export default function Collection() {
         // A line whose every tier is still coming soon (e.g. OpenFC) is an
         // unreleased teaser — show it greyed and non-clickable, not buyable.
         const comingSoon = allTiers.length > 0;
-        const firstVariant = p.variants?.nodes?.[0];
+        // Quick-add only when there is genuinely ONE variant — a future
+        // multi-option accessory must send the buyer to the PDP to choose.
+        const firstVariant =
+          (p.variants?.nodes?.length ?? 0) === 1 ? p.variants!.nodes[0] : undefined;
         out.push({
           key: p.id,
           product: p,
@@ -212,7 +260,17 @@ export default function Collection() {
           quickAdd:
             !comingSoon && firstVariant
               ? {
-                  lines: [{merchandiseId: firstVariant.id, quantity: 1}],
+                  lines: [
+                    {
+                      merchandiseId: firstVariant.id,
+                      quantity: 1,
+                      selectedVariant: optimisticCatalogVariant(
+                        firstVariant,
+                        p.title,
+                        p,
+                      ),
+                    },
+                  ],
                   available: Boolean(firstVariant.availableForSale),
                   flyImage:
                     firstVariant.image?.url ?? p.featuredImage?.url ?? null,

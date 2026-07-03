@@ -649,17 +649,17 @@ export default function Product() {
     return stackCfg.partners.flatMap((pc) => {
       const pp = stackProducts?.find((p) => p.handle === pc.handle);
       const nodes = pp?.variants?.nodes ?? [];
-      const match =
-        nodes.find((n) =>
-          n.selectedOptions?.some(
-            (o) =>
-              o.name.trim().toLowerCase() === stackAxis &&
-              o.value.trim().toLowerCase() ===
-                stackMatchValue.trim().toLowerCase(),
-          ),
-        ) ??
-        nodes.find((n) => n.availableForSale) ??
-        nodes[0];
+      // Exact size match ONLY: the pill names the selected size, so a
+      // fallback variant of another size would silently add the wrong board.
+      // No match -> no offer.
+      const match = nodes.find((n) =>
+        n.selectedOptions?.some(
+          (o) =>
+            o.name.trim().toLowerCase() === stackAxis &&
+            o.value.trim().toLowerCase() ===
+              stackMatchValue.trim().toLowerCase(),
+        ),
+      );
       if (!match) return [];
       return [
         {
@@ -672,8 +672,31 @@ export default function Product() {
             match.availableForSale &&
             Boolean(selectedVariant.availableForSale),
           lines: [
-            {merchandiseId: selectedVariant.id, quantity: 1},
-            {merchandiseId: match.id, quantity: 1},
+            {
+              merchandiseId: selectedVariant.id,
+              quantity: 1,
+              selectedVariant,
+            },
+            {
+              merchandiseId: match.id,
+              quantity: 1,
+              // Minimal optimistic shape: enough for useOptimisticCart to
+              // render the pending line instead of console-erroring.
+              selectedVariant: {
+                id: match.id,
+                title: stackMatchValue,
+                availableForSale: match.availableForSale,
+                price: match.price,
+                image: null,
+                product: {
+                  title: pc.label ?? pp?.title ?? pc.handle,
+                  handle: pc.handle,
+                },
+                selectedOptions: match.selectedOptions ?? [],
+              } as unknown as NonNullable<
+                typeof selectedVariant
+              >,
+            },
           ],
         },
       ];
