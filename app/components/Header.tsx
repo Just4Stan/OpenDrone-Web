@@ -396,6 +396,10 @@ function FamilyNav({
   function chip(cat: (typeof CATEGORY_LINKS)[number]) {
     const items = itemsFor(cat.type);
     return (
+      // The wrapper itself isn't interactive — the chip link and pod rows
+      // inside are. onKeyDown here is a container-level Escape listener so
+      // Escape works from anywhere within the open pod.
+      // eslint-disable-next-line jsx-a11y/no-static-element-interactions
       <div
         className="header-cat"
         key={cat.label}
