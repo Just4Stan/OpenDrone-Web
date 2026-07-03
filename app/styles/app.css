@@ -1628,15 +1628,17 @@ html.anim-paused .board-sheet.is-active {
 .header-cat-pod-wrap {
   position: absolute;
   top: calc(100% + 0.6rem);
-  left: 50%;
-  transform: translateX(-50%);
+  /* Left-anchored to the chip (not centered): a hovered row's action bar
+     unfolds rightward into the header's free space instead of pushing the
+     pod past the viewport's left edge. */
+  left: 0;
   z-index: 40;
 }
 .header-cat-pod {
   width: max-content;
-  /* Wide enough that the buy cell gets real buttons, not chips — the
-     dropdown is the buy surface, let it use the screen. */
-  max-width: 36rem;
+  /* Wide enough for a row + its unfolded action bar; clamped so it can
+     never run off screen. */
+  max-width: min(48rem, calc(100vw - 3rem));
   padding: var(--sp-2);
 }
 /* Buyable dropdown row = one band: PDP link + always-on buy cell. No hover
@@ -1644,8 +1646,7 @@ html.anim-paused .board-sheet.is-active {
    resizes. The wash paints the whole band on hover/focus. */
 .product-pod-wrap {
   display: flex;
-  flex-direction: column;
-  align-items: stretch;
+  align-items: center;
   border-radius: var(--r-lg);
   transition: background 0.15s ease;
 }
@@ -1653,7 +1654,10 @@ html.anim-paused .board-sheet.is-active {
 .product-pod-wrap:focus-within {
   background: var(--color-gold-soft);
 }
+/* Fixed-basis link column so every row's price lands on the same edge —
+   the action bar unfolds in the horizontal space beyond it. */
 .product-pod-wrap .product-pod {
+  flex: 0 0 19rem;
   min-width: 0;
 }
 .product-pod-wrap .product-pod:hover,
@@ -1661,27 +1665,26 @@ html.anim-paused .board-sheet.is-active {
   background: transparent;
 }
 
-/* Hover/focus-revealed action bar under the row, spanning its full width.
-   Collapsed it holds no height; hovering the row (or tabbing to a button)
-   unfolds it. Buttons split the width evenly and wrap — N companions per
-   row each get an equal share. */
+/* Hover/focus-revealed action bar IN-LINE with the row: collapsed it holds
+   zero width; hovering the row (or tabbing to a button) unfolds it sideways
+   and the center-anchored pod grows left+right around it. No vertical
+   growth, nothing below gets pushed. */
 .product-pod-actionbar {
   display: flex;
-  flex-wrap: wrap;
+  align-items: center;
   gap: 6px;
-  padding: 0 var(--sp-2);
-  max-height: 0;
+  max-width: 0;
   opacity: 0;
   overflow: hidden;
-  transition: max-height 0.18s ease, opacity 0.14s ease, padding 0.18s ease;
+  transition: max-width 0.22s ease, opacity 0.15s ease;
   text-transform: none;
   letter-spacing: normal;
 }
 .product-pod-wrap:hover .product-pod-actionbar,
 .product-pod-wrap:focus-within .product-pod-actionbar {
-  max-height: 12rem;
+  max-width: 28rem;
   opacity: 1;
-  padding: 0 var(--sp-2) var(--sp-2);
+  padding-right: var(--sp-2);
 }
 @media (prefers-reduced-motion: reduce) {
   .product-pod-actionbar {
@@ -1691,12 +1694,12 @@ html.anim-paused .board-sheet.is-active {
 .pod-buy-add,
 .pod-buy-stack {
   position: relative;
-  flex: 1 1 0;
-  min-width: 10rem;
+  flex: none;
   display: flex;
   align-items: center;
   justify-content: center;
   height: 2.5rem;
+  padding: 0 0.9rem;
   border-radius: var(--r-md);
   cursor: pointer;
   font-family: var(--font-mono);
