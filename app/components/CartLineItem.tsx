@@ -12,6 +12,31 @@ import type {
 
 export type CartLine = OptimisticCartLine<CartApiQueryFragment>;
 
+/** Sum a line's discount allocations into one label + amount (the stack BXGY
+ *  or a code). Shopify splits over-quantity lines itself, so a line either
+ *  carries allocations or none. */
+function lineDiscountOf(line: CartLine) {
+  const allocs =
+    (line as {discountAllocations?: Array<{
+      discountedAmount?: {amount: string; currencyCode: string} | null;
+      title?: string;
+      code?: string;
+    }>}).discountAllocations ?? [];
+  const total = allocs.reduce(
+    (sum, a) => sum + (a.discountedAmount ? parseFloat(a.discountedAmount.amount) : 0),
+    0,
+  );
+  if (total <= 0) return null;
+  const first = allocs.find((a) => a.title || a.code);
+  return {
+    label: first?.title ?? first?.code ?? 'Discount',
+    amount: {
+      amount: total.toFixed(2),
+      currencyCode: allocs[0]!.discountedAmount!.currencyCode,
+    },
+  };
+}
+
 /**
  * A single line item in the cart. It displays the product image, title, price.
  * It also provides controls to update the quantity or remove the line item.
@@ -31,6 +56,18 @@ export function CartLineItem({
   const {product, title, image, selectedOptions} = merchandise;
   const lineItemUrl = useVariantUrl(product.handle, selectedOptions);
   const {close} = useAside();
+  const lineDiscount = lineDiscountOf(line);
+  // What the line would cost undiscounted, for the strikethrough.
+  const preDiscountTotal =
+    lineDiscount && line.cost?.totalAmount
+      ? ({
+          amount: (
+            parseFloat(line.cost.totalAmount.amount) +
+            parseFloat(lineDiscount.amount.amount)
+          ).toFixed(2),
+          currencyCode: line.cost.totalAmount.currencyCode,
+        } as (typeof line.cost)['totalAmount'])
+      : undefined;
   const lineItemChildren = childrenMap[id];
   const childrenLabelId = `cart-line-children-${id}`;
 
@@ -62,7 +99,26 @@ export function CartLineItem({
               <strong>{product.title}</strong>
             </p>
           </Link>
-          <ProductPrice price={line?.cost?.totalAmount} />
+          <span className="cart-line-price">
+            <ProductPrice price={line?.cost?.totalAmount} />
+            {lineDiscount ? (
+              <>
+                <s className="cart-line-compare">
+                  <ProductPrice price={preDiscountTotal} />
+                </s>
+                <span className="cart-line-discount-badge">
+                  {lineDiscount.label} −
+                  <ProductPrice
+                    price={
+                      lineDiscount.amount as NonNullable<
+                        (typeof line.cost)['totalAmount']
+                      >
+                    }
+                  />
+                </span>
+              </>
+            ) : null}
+          </span>
           <ul>
             {selectedOptions
               .filter(

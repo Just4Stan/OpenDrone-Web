@@ -88,5 +88,9 @@
   },
   "engines": {
     "node": "^22 || ^24"
+  },
+  "optionalDependencies": {
+    "@emnapi/core": "^1.11.2",
+    "@emnapi/runtime": "^1.11.2"
   }
 }

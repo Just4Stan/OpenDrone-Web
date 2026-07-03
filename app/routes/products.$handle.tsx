@@ -534,11 +534,7 @@ export default function Product() {
 
   const {title} = product;
 
-  const galleryImages = product.images?.nodes?.length
-    ? product.images.nodes
-    : selectedVariant?.image
-      ? [selectedVariant.image]
-      : [];
+
 
   const primaryCollection = product.collections?.nodes?.[0];
   // isEditorial: this handle has a real PRODUCT_CONTENT entry. Fallback
@@ -580,6 +576,36 @@ export default function Product() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [shopifyAxisValue]);
   const activeVariant = content.variants?.[activeTier];
+
+  // Gallery: dedupe by URL and, on tiered products, hide images whose
+  // filename names a DIFFERENT tier (openesc-20x20-back.png has no business
+  // in the 30×30 deck). Normalizes '20×20' → '20x20' for the filename match;
+  // images naming no tier (lifestyle shots) always stay.
+  const galleryImages = useMemo(() => {
+    const nodes = product.images?.nodes?.length
+      ? product.images.nodes
+      : selectedVariant?.image
+        ? [selectedVariant.image]
+        : [];
+    const seen = new Set<string>();
+    const deduped = nodes.filter((img) => {
+      const key = img.url.split('?')[0];
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+    const tierKeys = content.variants ? Object.keys(content.variants) : [];
+    if (tierKeys.length < 2) return deduped;
+    const norm = (v: string) =>
+      v.trim().toLowerCase().replace(/[×x]/g, 'x').replace(/\s+/g, '');
+    const active = norm(activeTier);
+    const others = tierKeys.map(norm).filter((k) => k && k !== active);
+    return deduped.filter((img) => {
+      const name = img.url.split('?')[0].toLowerCase();
+      return !others.some((o) => o && name.includes(o));
+    });
+  }, [product.images, selectedVariant?.image, content.variants, activeTier]);
+
   // GitHub links (repo card / issues / latest commit) follow the selected tier:
   // split-repo lines (OpenFC-Lite ↔ OpenFC-Lite-Mini, OpenESC_20X20 ↔
   // OpenESC-30x30) point at the tier's repo, others at the product default.

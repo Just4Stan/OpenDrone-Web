@@ -10,6 +10,8 @@ export function AddToCartButton({
   onClick,
   flyImage,
   className = 'btn-primary',
+  ariaLabel,
+  dataTip,
 }: {
   analytics?: unknown;
   children: React.ReactNode;
@@ -21,6 +23,9 @@ export function AddToCartButton({
   /** Button class — defaults to the primary CTA; stack/quick-add surfaces
    *  pass their own compact pill styles. */
   className?: string;
+  ariaLabel?: string;
+  /** Attr-driven CSS tooltip content (see .pod-buy-stack[data-tip]). */
+  dataTip?: string;
 }) {
   return (
     <CartForm route="/cart" inputs={{lines}} action={CartForm.ACTIONS.LinesAdd}>
@@ -48,6 +53,8 @@ export function AddToCartButton({
                 onClick?.();
               }}
               disabled={disabled || pending}
+              aria-label={ariaLabel}
+              data-tip={dataTip}
               aria-busy={pending || undefined}
               data-pending={pending || undefined}
               className={className}
