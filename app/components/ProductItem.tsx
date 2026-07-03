@@ -1,5 +1,6 @@
 import {Link} from 'react-router';
-import {Image, Money} from '@shopify/hydrogen';
+import {Money} from '@shopify/hydrogen';
+import {SmoothImage} from './SmoothImage';
 import type {MoneyV2} from '@shopify/hydrogen/storefront-api-types';
 import type {
   ProductItemFragment,
@@ -162,13 +163,17 @@ export function ProductItem({
           aria-hidden="true"
           tabIndex={-1}
         >
-          {image && (
-            <Image
+          {image ? (
+            <SmoothImage
               alt={image.altText || product.title}
               data={image}
               loading={loading}
               sizes="(min-width: 64em) 340px, 100vw"
             />
+          ) : (
+            <span className="product-card-media-ghost">
+              {('productType' in product && product.productType) || 'OpenDrone'}
+            </span>
           )}
         </Link>
         <div className="product-feature-body">
@@ -196,18 +201,22 @@ export function ProductItem({
 
   const inner = (
     <>
-      {image && (
-        <div className="product-card-media">
-          {badge}
-          <Image
+      <div className={`product-card-media${image ? '' : ' is-empty'}`}>
+        {badge}
+        {image ? (
+          <SmoothImage
             alt={image.altText || product.title}
             aspectRatio="1/1"
             data={image}
             loading={loading}
             sizes="(min-width: 45em) 400px, 100vw"
           />
-        </div>
-      )}
+        ) : (
+          <span className="product-card-media-ghost" aria-hidden="true">
+            {('productType' in product && product.productType) || 'OpenDrone'}
+          </span>
+        )}
+      </div>
       <div className="product-card-body">
         <div className="product-card-row">
           <h2 className="product-card-title">{displayTitle}</h2>

@@ -2361,6 +2361,65 @@ html.hero-header-in .homepage-layout .site-header {
   transform: scale(1.04);
 }
 
+/* Streaming-image cover — SmoothImage.tsx. Appears only after hydration
+   while the file is still in flight, lifts on load. Cached images never
+   see it. */
+.smooth-media {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+.smooth-media::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--color-bg-elevated);
+  opacity: 0;
+  transition: opacity 0.45s ease;
+  pointer-events: none;
+}
+
+.smooth-media.is-loading::after {
+  opacity: 1;
+  animation: media-pulse 1.8s ease-in-out infinite;
+}
+
+@keyframes media-pulse {
+  0%,
+  100% {
+    filter: brightness(1);
+  }
+  50% {
+    filter: brightness(1.3);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .smooth-media.is-loading::after {
+    animation: none;
+  }
+}
+
+/* No-render-yet tile — keeps the media square so the grid rhythm holds and
+   an imageless product doesn't read as broken. Typographic, no asset. */
+.product-card-media.is-empty {
+  display: grid;
+  place-items: center;
+}
+
+.product-card-media-ghost {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--color-text-dim);
+  opacity: 0.6;
+  border: 1px dashed var(--color-border);
+  border-radius: var(--r-xs);
+  padding: 6px 12px;
+}
+
 .product-card-body {
   display: flex;
   flex-direction: column;
@@ -2482,6 +2541,13 @@ a.product-card-model:hover {
   position: relative;
   overflow: hidden;
   background: var(--color-bg-elevated);
+}
+
+.product-feature-media .product-card-media-ghost {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
 }
 
 .product-feature-media img {
