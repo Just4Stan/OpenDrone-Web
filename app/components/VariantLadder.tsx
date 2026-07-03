@@ -1,5 +1,6 @@
 import {useNavigate} from 'react-router';
 import {motion} from 'motion/react';
+import {Check} from 'lucide-react';
 import {type MappedProductOptions} from '@shopify/hydrogen';
 import type {VariantContent} from '~/lib/product-content';
 
@@ -111,7 +112,7 @@ export function VariantLadder({
                   <span className="variant-tier-flag">Sold out</span>
                 ) : selected ? (
                   <span className="variant-tier-flag is-selected" aria-hidden="true">
-                    ✓
+                    <Check size={12} strokeWidth={3} />
                   </span>
                 ) : null}
               </span>

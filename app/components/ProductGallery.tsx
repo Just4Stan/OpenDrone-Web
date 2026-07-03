@@ -1,6 +1,7 @@
 import {Image} from '@shopify/hydrogen';
 import {useSearchParams} from 'react-router';
 import {useEffect, useRef} from 'react';
+import {SmoothImage} from './SmoothImage';
 
 type GalleryImage = {
   id?: string | null;
@@ -45,7 +46,7 @@ export function ProductGallery({
   if (images.length === 0) {
     return (
       <div className="product-gallery-empty">
-        <span>No image</span>
+        <span className="product-card-media-ghost">Render pending</span>
       </div>
     );
   }
@@ -91,7 +92,7 @@ export function ProductGallery({
         onTouchStart={onTouchStart}
         onTouchEnd={onTouchEnd}
       >
-        <Image
+        <SmoothImage
           data={current}
           alt={current.altText || 'Product image'}
           aspectRatio="1/1"

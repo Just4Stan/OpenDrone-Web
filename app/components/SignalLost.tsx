@@ -1,5 +1,6 @@
 import {useEffect, useRef, useState} from 'react';
 import {useLocation} from 'react-router';
+import {TriangleAlert} from 'lucide-react';
 
 /**
  * The 404 easter egg. An FPV "lost signal / failsafe" screen — the quad has
@@ -72,7 +73,15 @@ export function SignalLost() {
         {/* bottom telemetry rail */}
         <div className="osd-rail osd-rail-bottom">
           <span className="osd-stat">GPS 0 SATS</span>
-          <span className="osd-stat osd-warn">⚠ FAILSAFE</span>
+          <span className="osd-stat osd-warn">
+            <TriangleAlert
+              size={12}
+              strokeWidth={2}
+              aria-hidden="true"
+              style={{display: 'inline', verticalAlign: '-1px', marginRight: '0.4em'}}
+            />
+            FAILSAFE
+          </span>
           <span className="osd-stat">ALT 0.0m</span>
         </div>
       </div>
