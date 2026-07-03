@@ -4596,9 +4596,6 @@ button.reset {
   font-variant-numeric: tabular-nums;
 }
 
-
-}
-
 .product-buy-civilian a {
   color: var(--color-text-muted);
   text-decoration: underline;
