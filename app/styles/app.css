@@ -7550,14 +7550,15 @@ button.reset {
   flex: 1;
   min-height: 0;
   gap: 1.25rem;
+  /* The drawer scrolls as ONE context (lines + donation upsell) with the
+     summary pinned below. The old split (lines scroll, donation+summary in
+     fixed flow) collapsed the line list to 0px whenever donation + summary
+     filled the drawer — the cart showed everything except its items. */
+  overflow-y: auto;
 }
 
-/* The line-items UL wrapper scrolls; everything else (donation, summary)
-   sticks below in normal flow so it never covers cart lines. */
 .cart-lines-scroll {
-  flex: 1;
-  min-height: 0;
-  overflow-y: auto;
+  flex: none;
 }
 
 .cart-lines-scroll ul {
@@ -7575,6 +7576,11 @@ button.reset {
 
 .cart-summary-aside {
   flex-shrink: 0;
+  /* Pin the subtotal/checkout to the drawer bottom while lines + donation
+     scroll behind it. Solid background so lines don't ghost through. */
+  position: sticky;
+  bottom: 0;
+  z-index: 1;
 }
 
 .cart-subtotal {
