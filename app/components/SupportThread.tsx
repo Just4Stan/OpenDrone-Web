@@ -1,4 +1,14 @@
 import {useCallback, useEffect, useId, useMemo, useRef, useState} from 'react';
+import {
+  Image as ImageFileIcon,
+  Film,
+  Headphones,
+  FolderArchive,
+  FileCode,
+  FileText,
+  File as GenericFileIcon,
+  Paperclip,
+} from 'lucide-react';
 
 /**
  * Active-ticket chat UI. Rebuilt for the Apr-2026 design — chat-bubble
@@ -24,14 +34,21 @@ const AUDIO_EXT = new Set(['mp3', 'wav', 'ogg', 'm4a', 'flac']);
 const ARCHIVE_EXT = new Set(['zip', 'rar', '7z', 'tar', 'gz']);
 const CODE_EXT = new Set(['js', 'ts', 'tsx', 'jsx', 'py', 'c', 'cpp', 'h', 'hex', 'bin', 'json', 'yml', 'yaml', 'toml']);
 
-function fileIcon(ext: string): string {
-  if (IMAGE_EXT.has(ext)) return '🖼';
-  if (VIDEO_EXT.has(ext)) return '🎞';
-  if (AUDIO_EXT.has(ext)) return '🎧';
-  if (ARCHIVE_EXT.has(ext)) return '🗜';
-  if (CODE_EXT.has(ext)) return '⌨';
-  if (ext === 'pdf') return '📕';
-  return '📄';
+function FileTypeIcon({ext}: {ext: string}) {
+  const Icon = IMAGE_EXT.has(ext)
+    ? ImageFileIcon
+    : VIDEO_EXT.has(ext)
+      ? Film
+      : AUDIO_EXT.has(ext)
+        ? Headphones
+        : ARCHIVE_EXT.has(ext)
+          ? FolderArchive
+          : CODE_EXT.has(ext)
+            ? FileCode
+            : ext === 'pdf'
+              ? FileText
+              : GenericFileIcon;
+  return <Icon size={14} strokeWidth={1.75} aria-hidden="true" />;
 }
 
 export type ThreadMessage = {
@@ -459,7 +476,7 @@ export function SupportThread({
                 onClick={() => fileInputRef.current?.click()}
                 disabled={sendBusy || composerFiles.length >= MAX_FILES}
               >
-                📎
+                <Paperclip size={15} strokeWidth={1.75} aria-hidden="true" />
               </button>
               <button
                 type="submit"
@@ -713,7 +730,7 @@ function Attachments({
               aria-label={`Pending: ${a.filename}`}
             >
               <span className="od-icon" aria-hidden="true">
-                {fileIcon(ext)}
+                <FileTypeIcon ext={ext} />
               </span>
               <span className="support-msg-file-name">{a.filename}</span>
             </span>
@@ -784,7 +801,7 @@ function Attachments({
             download
           >
             <span className="od-icon" aria-hidden="true">
-              {fileIcon(ext)}
+              <FileTypeIcon ext={ext} />
             </span>
             <span className="support-msg-file-name">{a.filename}</span>
           </a>
@@ -821,7 +838,10 @@ function ComposerChip({
           decoding="async"
         />
       ) : null}
-      <span>📎 {file.name}</span>
+      <span className="inline-flex items-center gap-1">
+        <Paperclip size={12} strokeWidth={1.75} aria-hidden="true" />
+        {file.name}
+      </span>
       <span className="od-help" style={{fontSize: '10px'}}>
         {formatBytes(file.size)}
       </span>
