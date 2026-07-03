@@ -13,6 +13,21 @@ export type CartLineFragment = Pick<
   'id' | 'quantity'
 > & {
   attributes: Array<Pick<StorefrontAPI.Attribute, 'key' | 'value'>>;
+  discountAllocations: Array<
+    | (Pick<StorefrontAPI.CartAutomaticDiscountAllocation, 'title'> & {
+        discountedAmount: Pick<
+          StorefrontAPI.MoneyV2,
+          'currencyCode' | 'amount'
+        >;
+      })
+    | (Pick<StorefrontAPI.CartCodeDiscountAllocation, 'code'> & {
+        discountedAmount: Pick<
+          StorefrontAPI.MoneyV2,
+          'currencyCode' | 'amount'
+        >;
+      })
+    | {discountedAmount: Pick<StorefrontAPI.MoneyV2, 'currencyCode' | 'amount'>}
+  >;
   cost: {
     totalAmount: Pick<StorefrontAPI.MoneyV2, 'currencyCode' | 'amount'>;
     amountPerQuantity: Pick<StorefrontAPI.MoneyV2, 'currencyCode' | 'amount'>;
@@ -46,6 +61,21 @@ export type CartLineComponentFragment = Pick<
   'id' | 'quantity'
 > & {
   attributes: Array<Pick<StorefrontAPI.Attribute, 'key' | 'value'>>;
+  discountAllocations: Array<
+    | (Pick<StorefrontAPI.CartAutomaticDiscountAllocation, 'title'> & {
+        discountedAmount: Pick<
+          StorefrontAPI.MoneyV2,
+          'currencyCode' | 'amount'
+        >;
+      })
+    | (Pick<StorefrontAPI.CartCodeDiscountAllocation, 'code'> & {
+        discountedAmount: Pick<
+          StorefrontAPI.MoneyV2,
+          'currencyCode' | 'amount'
+        >;
+      })
+    | {discountedAmount: Pick<StorefrontAPI.MoneyV2, 'currencyCode' | 'amount'>}
+  >;
   cost: {
     totalAmount: Pick<StorefrontAPI.MoneyV2, 'currencyCode' | 'amount'>;
     amountPerQuantity: Pick<StorefrontAPI.MoneyV2, 'currencyCode' | 'amount'>;
@@ -72,6 +102,26 @@ export type CartLineComponentFragment = Pick<
   lineComponents: Array<
     Pick<StorefrontAPI.CartLine, 'id' | 'quantity'> & {
       attributes: Array<Pick<StorefrontAPI.Attribute, 'key' | 'value'>>;
+      discountAllocations: Array<
+        | (Pick<StorefrontAPI.CartAutomaticDiscountAllocation, 'title'> & {
+            discountedAmount: Pick<
+              StorefrontAPI.MoneyV2,
+              'currencyCode' | 'amount'
+            >;
+          })
+        | (Pick<StorefrontAPI.CartCodeDiscountAllocation, 'code'> & {
+            discountedAmount: Pick<
+              StorefrontAPI.MoneyV2,
+              'currencyCode' | 'amount'
+            >;
+          })
+        | {
+            discountedAmount: Pick<
+              StorefrontAPI.MoneyV2,
+              'currencyCode' | 'amount'
+            >;
+          }
+      >;
       cost: {
         totalAmount: Pick<StorefrontAPI.MoneyV2, 'currencyCode' | 'amount'>;
         amountPerQuantity: Pick<
@@ -132,6 +182,26 @@ export type CartApiQueryFragment = Pick<
     nodes: Array<
       | (Pick<StorefrontAPI.CartLine, 'id' | 'quantity'> & {
           attributes: Array<Pick<StorefrontAPI.Attribute, 'key' | 'value'>>;
+          discountAllocations: Array<
+            | (Pick<StorefrontAPI.CartAutomaticDiscountAllocation, 'title'> & {
+                discountedAmount: Pick<
+                  StorefrontAPI.MoneyV2,
+                  'currencyCode' | 'amount'
+                >;
+              })
+            | (Pick<StorefrontAPI.CartCodeDiscountAllocation, 'code'> & {
+                discountedAmount: Pick<
+                  StorefrontAPI.MoneyV2,
+                  'currencyCode' | 'amount'
+                >;
+              })
+            | {
+                discountedAmount: Pick<
+                  StorefrontAPI.MoneyV2,
+                  'currencyCode' | 'amount'
+                >;
+              }
+          >;
           cost: {
             totalAmount: Pick<StorefrontAPI.MoneyV2, 'currencyCode' | 'amount'>;
             amountPerQuantity: Pick<
@@ -170,6 +240,26 @@ export type CartApiQueryFragment = Pick<
         })
       | (Pick<StorefrontAPI.ComponentizableCartLine, 'id' | 'quantity'> & {
           attributes: Array<Pick<StorefrontAPI.Attribute, 'key' | 'value'>>;
+          discountAllocations: Array<
+            | (Pick<StorefrontAPI.CartAutomaticDiscountAllocation, 'title'> & {
+                discountedAmount: Pick<
+                  StorefrontAPI.MoneyV2,
+                  'currencyCode' | 'amount'
+                >;
+              })
+            | (Pick<StorefrontAPI.CartCodeDiscountAllocation, 'code'> & {
+                discountedAmount: Pick<
+                  StorefrontAPI.MoneyV2,
+                  'currencyCode' | 'amount'
+                >;
+              })
+            | {
+                discountedAmount: Pick<
+                  StorefrontAPI.MoneyV2,
+                  'currencyCode' | 'amount'
+                >;
+              }
+          >;
           cost: {
             totalAmount: Pick<StorefrontAPI.MoneyV2, 'currencyCode' | 'amount'>;
             amountPerQuantity: Pick<
@@ -205,6 +295,29 @@ export type CartApiQueryFragment = Pick<
           lineComponents: Array<
             Pick<StorefrontAPI.CartLine, 'id' | 'quantity'> & {
               attributes: Array<Pick<StorefrontAPI.Attribute, 'key' | 'value'>>;
+              discountAllocations: Array<
+                | (Pick<
+                    StorefrontAPI.CartAutomaticDiscountAllocation,
+                    'title'
+                  > & {
+                    discountedAmount: Pick<
+                      StorefrontAPI.MoneyV2,
+                      'currencyCode' | 'amount'
+                    >;
+                  })
+                | (Pick<StorefrontAPI.CartCodeDiscountAllocation, 'code'> & {
+                    discountedAmount: Pick<
+                      StorefrontAPI.MoneyV2,
+                      'currencyCode' | 'amount'
+                    >;
+                  })
+                | {
+                    discountedAmount: Pick<
+                      StorefrontAPI.MoneyV2,
+                      'currencyCode' | 'amount'
+                    >;
+                  }
+              >;
               cost: {
                 totalAmount: Pick<
                   StorefrontAPI.MoneyV2,
@@ -431,6 +544,38 @@ export type DonationProductQuery = {
   >;
 };
 
+export type LlmsCatalogQueryVariables = StorefrontAPI.Exact<{
+  count: StorefrontAPI.Scalars['Int']['input'];
+}>;
+
+export type LlmsCatalogQuery = {
+  products: {
+    nodes: Array<
+      Pick<StorefrontAPI.Product, 'handle' | 'title' | 'description'> & {
+        variants: {
+          nodes: Array<
+            Pick<
+              StorefrontAPI.ProductVariant,
+              'id' | 'sku' | 'title' | 'availableForSale'
+            > & {price: Pick<StorefrontAPI.MoneyV2, 'amount' | 'currencyCode'>}
+          >;
+        };
+      }
+    >;
+  };
+  donation?: StorefrontAPI.Maybe<
+    Pick<StorefrontAPI.Product, 'handle' | 'title'> & {
+      variants: {
+        nodes: Array<
+          Pick<StorefrontAPI.ProductVariant, 'id' | 'title'> & {
+            price: Pick<StorefrontAPI.MoneyV2, 'amount'>;
+          }
+        >;
+      };
+    }
+  >;
+};
+
 export type NewsletterFeedQueryVariables = StorefrontAPI.Exact<{
   blogHandle: StorefrontAPI.Scalars['String']['input'];
   first: StorefrontAPI.Scalars['Int']['input'];
@@ -447,6 +592,38 @@ export type NewsletterFeedQuery = {
       >;
     };
   }>;
+};
+
+export type ProductsFeedQueryVariables = StorefrontAPI.Exact<{
+  count: StorefrontAPI.Scalars['Int']['input'];
+}>;
+
+export type ProductsFeedQuery = {
+  products: {
+    nodes: Array<
+      Pick<
+        StorefrontAPI.Product,
+        'id' | 'handle' | 'title' | 'description' | 'productType'
+      > & {
+        featuredImage?: StorefrontAPI.Maybe<
+          Pick<StorefrontAPI.Image, 'url' | 'altText'>
+        >;
+        variants: {
+          nodes: Array<
+            Pick<
+              StorefrontAPI.ProductVariant,
+              'id' | 'sku' | 'title' | 'availableForSale'
+            > & {
+              price: Pick<StorefrontAPI.MoneyV2, 'amount' | 'currencyCode'>;
+              selectedOptions: Array<
+                Pick<StorefrontAPI.SelectedOption, 'name' | 'value'>
+              >;
+            }
+          >;
+        };
+      }
+    >;
+  };
 };
 
 export type HomeMoneyFragment = Pick<
@@ -1462,9 +1639,17 @@ interface GeneratedQueryTypes {
     return: DonationProductQuery;
     variables: DonationProductQueryVariables;
   };
+  '#graphql\n  query LlmsCatalog($count: Int!) {\n    products(first: $count, query: "-product_type:Donation") {\n      nodes {\n        handle\n        title\n        description\n        variants(first: 12) {\n          nodes {\n            id\n            sku\n            title\n            availableForSale\n            price {\n              amount\n              currencyCode\n            }\n          }\n        }\n      }\n    }\n    donation: product(handle: "firmware-donation") {\n      handle\n      title\n      variants(first: 10) {\n        nodes {\n          id\n          title\n          price {\n            amount\n          }\n        }\n      }\n    }\n  }\n': {
+    return: LlmsCatalogQuery;
+    variables: LlmsCatalogQueryVariables;
+  };
   '#graphql\n  query NewsletterFeed($blogHandle: String!, $first: Int!) {\n    blog(handle: $blogHandle) {\n      articles(first: $first, sortKey: PUBLISHED_AT, reverse: true) {\n        nodes {\n          handle\n          title\n          publishedAt\n          excerpt\n          contentHtml\n        }\n      }\n    }\n  }\n': {
     return: NewsletterFeedQuery;
     variables: NewsletterFeedQueryVariables;
+  };
+  '#graphql\n  query ProductsFeed($count: Int!) {\n    products(first: $count, query: "-product_type:Donation") {\n      nodes {\n        id\n        handle\n        title\n        description\n        productType\n        featuredImage {\n          url\n          altText\n        }\n        variants(first: 12) {\n          nodes {\n            id\n            sku\n            title\n            availableForSale\n            price {\n              amount\n              currencyCode\n            }\n            selectedOptions {\n              name\n              value\n            }\n          }\n        }\n      }\n    }\n  }\n': {
+    return: ProductsFeedQuery;
+    variables: ProductsFeedQueryVariables;
   };
   '#graphql\n  fragment HomeMoney on MoneyV2 {\n    amount\n    currencyCode\n  }\n  fragment HomeProductCard on Product {\n    id\n    handle\n    title\n    productType\n    featuredImage {\n      id\n      altText\n      url\n      width\n      height\n    }\n    priceRange {\n      minVariantPrice {\n        ...HomeMoney\n      }\n      maxVariantPrice {\n        ...HomeMoney\n      }\n    }\n  }\n  fragment HomeProductVariants on Product {\n    variants(first: 30) {\n      nodes {\n        id\n        availableForSale\n        price {\n          ...HomeMoney\n        }\n        image {\n          id\n          altText\n          url\n          width\n          height\n        }\n        selectedOptions {\n          name\n          value\n        }\n      }\n    }\n  }\n  query HomeFeatured($country: CountryCode, $language: LanguageCode)\n  @inContext(country: $country, language: $language) {\n    frame: product(handle: "openframe") {\n      ...HomeProductCard\n    }\n    rx: product(handle: "openrx") {\n      ...HomeProductCard\n    }\n    fc: product(handle: "openfc-lite") {\n      ...HomeProductCard\n      ...HomeProductVariants\n    }\n    esc: product(handle: "openesc") {\n      ...HomeProductCard\n      ...HomeProductVariants\n    }\n  }\n': {
     return: HomeFeaturedQuery;
