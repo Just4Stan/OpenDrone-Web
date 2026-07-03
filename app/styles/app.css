@@ -1634,7 +1634,9 @@ html.anim-paused .board-sheet.is-active {
 }
 .header-cat-pod {
   width: max-content;
-  max-width: 27rem;
+  /* Wide enough that the buy cell gets real buttons, not chips — the
+     dropdown is the buy surface, let it use the screen. */
+  max-width: 36rem;
   padding: var(--sp-2);
 }
 /* Buyable dropdown row = one band: PDP link + always-on buy cell. No hover
@@ -1665,9 +1667,11 @@ html.anim-paused .board-sheet.is-active {
   flex: none;
   align-self: center;
   display: grid;
-  gap: 4px;
-  /* Fixed column: the pending "Adding…" swap can never reflow the row. */
-  width: 7.25rem;
+  gap: 6px;
+  /* Fixed column: the pending "Adding…" swap can never reflow the row.
+     Wide enough for icon + label + deal badge at a readable size; buttons
+     stack vertically, so N companions per row just add rows here. */
+  width: 11rem;
   text-transform: none;
   letter-spacing: normal;
 }
@@ -1677,12 +1681,12 @@ html.anim-paused .board-sheet.is-active {
   display: flex;
   align-items: center;
   justify-content: center;
-  height: 1.85rem;
-  border-radius: var(--r-sm);
+  height: 2.5rem;
+  border-radius: var(--r-md);
   cursor: pointer;
   font-family: var(--font-mono);
-  font-size: 0.72rem;
-  letter-spacing: 0.08em;
+  font-size: 0.82rem;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
   white-space: nowrap;
 }
@@ -1690,6 +1694,12 @@ html.anim-paused .board-sheet.is-active {
   background: var(--color-gold);
   color: var(--color-on-accent);
   border: none;
+}
+.pod-buy-add .btn-label {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
 }
 .pod-buy-add:hover {
   background: var(--color-gold-hover);
@@ -1701,7 +1711,7 @@ html.anim-paused .board-sheet.is-active {
 }
 
 .pod-buy-stack {
-  padding: 0 0.5rem 0 0.25rem;
+  padding: 0 0.7rem 0 0.4rem;
   background: var(--color-bg-elevated);
   border: 1px solid var(--color-border);
   color: var(--color-text-muted);
@@ -1735,15 +1745,15 @@ html.anim-paused .board-sheet.is-active {
 .pod-stack-glyph {
   position: relative;
   flex: none;
-  width: 1.8rem;
-  height: 1.55rem;
+  width: 2.2rem;
+  height: 2rem;
 }
 .pod-stack-glyph img {
   position: absolute;
-  width: 1.15rem;
-  height: 1.15rem;
+  width: 1.45rem;
+  height: 1.45rem;
   object-fit: contain;
-  border-radius: 3px;
+  border-radius: var(--r-xs);
   background: var(--color-bg-card);
   border: 1px solid var(--color-border);
 }
@@ -1811,6 +1821,10 @@ html.light .header-cat-pod {
   color: var(--color-gold);
   text-transform: uppercase;
   letter-spacing: 0.06em;
+  font-size: 0.95rem;
+}
+.site-header-categories .header-cat-pod .product-pod-price {
+  font-size: var(--fs-md);
 }
 .site-header-categories .header-cat-pod .product-pod-subtitle {
   color: var(--color-text-muted);

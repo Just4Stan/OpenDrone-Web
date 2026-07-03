@@ -87,11 +87,15 @@ const MOBILE_FAMILY_LABEL: Record<string, string> = {
   Frame: 'Frames',
 };
 
-/** Stack companions per family: hovering a family-pod row offers "also add
- *  an X" with these partner products, size-matched by the Model option. A
- *  future OpenFC Pro is one more handle in the ESC list. Mirrors `stack` in
- *  product-content.ts without pulling that whole module into the header;
- *  the percent is the Shopify automatic BXGY (display only). */
+/** Stack companions per family: each pod row offers "+X" buttons for these
+ *  partner products, size-matched by the Model option. N-to-N ready: every
+ *  entry in a family's list becomes its own button in the buy cell (they
+ *  stack vertically), so a second compatible ESC — or an OpenFC Pro on the
+ *  ESC side — is one more `{handle, short}` here. Keep `short` unique per
+ *  list ("ESC 30×30", "FC PRO") once a family has two partners, since it's
+ *  the visible label. Mirrors `stack` in product-content.ts without pulling
+ *  that whole module into the header; the percent is the Shopify automatic
+ *  BXGY (display only). */
 const STACK_COMPANIONS: Record<string, Array<{handle: string; short: string}>> = {
   'Flight Controller': [{handle: 'openesc', short: 'ESC'}],
   ESC: [{handle: 'openfc-lite', short: 'FC'}],

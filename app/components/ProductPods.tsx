@@ -1,5 +1,6 @@
 import {Link} from 'react-router';
 import {Money, type OptimisticCartLineInput} from '@shopify/hydrogen';
+import {ShoppingCart} from 'lucide-react';
 import {AddToCartButton} from './AddToCartButton';
 
 /** A stack companion for a pod row: one candidate partner board, size-matched,
@@ -141,6 +142,7 @@ export function ProductPods({
                 onClick={onAdd}
                 ariaLabel={`Add ${it.title} to cart`}
               >
+                <ShoppingCart size={15} strokeWidth={2.25} aria-hidden="true" />
                 Add
               </AddToCartButton>
               {(it.buy.companions ?? []).map((o) => (
