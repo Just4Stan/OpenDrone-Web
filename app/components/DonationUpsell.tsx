@@ -103,7 +103,25 @@ export function DonationUpsell({
               route="/cart"
               action={CartForm.ACTIONS.LinesAdd}
               inputs={{
-                lines: [{merchandiseId: variant.id, quantity: 1}],
+                lines: [
+                  {
+                    merchandiseId: variant.id,
+                    quantity: 1,
+                    // Minimal shape so useOptimisticCart renders the pending
+                    // line instead of console-erroring.
+                    selectedVariant: {
+                      id: variant.id,
+                      title: variant.title,
+                      availableForSale: variant.availableForSale,
+                      price: variant.price,
+                      image: null,
+                      product: {title: product.title, handle: product.handle},
+                      selectedOptions: [
+                        {name: 'Amount', value: variant.title},
+                      ],
+                    },
+                  },
+                ],
               }}
             >
               {(fetcher) => {

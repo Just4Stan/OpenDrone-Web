@@ -7578,6 +7578,32 @@ button.reset {
   color: var(--color-text);
 }
 
+/* Line price + stack/code discount presentation: current price first, the
+   undiscounted total struck through, and a labelled gold badge so a split
+   BXGY line ("1 × discounted" next to "1 × full") reads as a deal, not a
+   duplication bug. */
+.cart-line-price {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+.cart-line-compare {
+  color: var(--color-text-dim);
+  font-size: 0.85em;
+}
+.cart-line-discount-badge {
+  display: inline-flex;
+  gap: 0.2rem;
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  color: var(--color-gold);
+  border: 1px solid color-mix(in srgb, var(--color-gold) 45%, transparent);
+  border-radius: var(--r-pill);
+  padding: 0.05rem 0.5rem;
+  white-space: nowrap;
+}
+
 .cart-line-quantity {
   display: flex;
   align-items: center;
@@ -13546,4 +13572,17 @@ body:has(.overlay.expanded) .placeholder-banner {
    in the app shell, so this :has check on <body> sees both.) */
 body:has(.buy-rail.is-pinned.is-mobile) .placeholder-banner {
   display: none;
+}
+
+/* Cart controls on touch: the steppers and Remove were ~26px tall — below
+   any usable tap target. Pad them up only where there is no fine pointer. */
+@media (hover: none) {
+  .cart-line-quantity button {
+    min-width: 40px;
+    min-height: 40px;
+  }
+  .cart-line-quantity form button,
+  .cart-line-quantity + form button {
+    min-height: 40px;
+  }
 }

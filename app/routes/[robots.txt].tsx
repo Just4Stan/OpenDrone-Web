@@ -18,6 +18,7 @@ function robotsTxtData({url}: {url?: string}) {
   const sitemapUrl = url ? `${url}/sitemap.xml` : undefined;
 
   return `
+# AI assistants: agent guide at /llms.txt, catalog feed at /products.json
 User-agent: *
 ${generalDisallowRules({sitemapUrl})}
 
@@ -54,6 +55,7 @@ Crawl-delay: 1
  */
 function generalDisallowRules({sitemapUrl}: {sitemapUrl?: string}) {
   return `Disallow: /cart
+Allow: /cart/
 Disallow: /account
 Disallow: /api/
 Disallow: /support
