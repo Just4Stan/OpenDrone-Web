@@ -705,15 +705,17 @@ html {
 .hero-github {
   position: absolute;
   top: 50%;
-  margin-top: -44px; /* half of height — vertical centre on the left edge */
+  margin-top: -32px; /* half of height — vertical centre on the left edge */
   left: var(--rail-gutter);
   z-index: 25;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 88px;
-  height: 88px;
-  color: var(--color-text);
+  /* 64px muted, not 88px solid — a quiet side-door, not a second focal
+     point competing with the 3D scene. Full presence returns on hover. */
+  width: 64px;
+  height: 64px;
+  color: var(--color-text-muted);
   /* Hidden resting state — parked off the left edge. The is-visible class
      glides it in from there. */
   transform: translateX(-160%);
@@ -857,7 +859,10 @@ html {
    revealed card re-enable their own pointer events. */
 .hero-buy {
   position: absolute;
-  bottom: 2.5rem;
+  /* 4rem, not 2.5rem: keeps the Shop button's corner clear of the fixed
+     PRE-LAUNCH pill (bottom/right 16px). Can drop back to 2.5rem at launch
+     when the pill goes away. */
+  bottom: 4rem;
   right: 2.5rem;
   z-index: 20;
   display: flex;
@@ -3537,7 +3542,9 @@ button.reset {
   row-gap: 0.25rem;
   align-items: end;
   max-width: none;
-  margin-bottom: 1.25rem;
+  /* A full step of air between the page title row and the product grid —
+     the grid shouldn't crowd the headline. */
+  margin-bottom: var(--sp-6);
 }
 
 .collection-header .page-eyebrow {
@@ -12796,6 +12803,19 @@ button.reset {
 .schematic-skeleton {
   min-height: clamp(260px, 30vw, 420px);
 }
+/* Ghost of the incoming board render behind the spinner. */
+.board-art-skeleton-preview {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  max-width: min(52%, 460px);
+  max-height: 70%;
+  object-fit: contain;
+  opacity: 0.18;
+  filter: saturate(0.5);
+}
+
 .board-art-skeleton-spinner {
   width: 30px;
   height: 30px;

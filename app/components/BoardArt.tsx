@@ -1423,6 +1423,16 @@ export function BoardArt({
       ) : null}
       {!revealed && !failed ? (
         <div className="board-art-skeleton" aria-hidden="true">
+          {/* Dimmed static face render as backdrop — the asset the canvas is
+              about to draw anyway — so a slow init reads as "developing"
+              instead of a viewport of black. */}
+          <img
+            className="board-art-skeleton-preview"
+            src={src.replace(/board\.svg$/, 'front.png')}
+            alt=""
+            loading="lazy"
+            decoding="async"
+          />
           <span className="board-art-skeleton-spinner" />
           <span className="board-art-skeleton-label">Rendering board…</span>
         </div>
