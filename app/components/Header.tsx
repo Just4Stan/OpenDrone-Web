@@ -15,7 +15,11 @@ import {SiteWordmark} from '~/components/SiteWordmark';
 import {IncutecWordmark} from '~/components/IncutecWordmark';
 import {Pod} from '~/components/Pod';
 import {SearchForm} from '~/components/SearchForm';
-import {ProductPods, type ProductPodItem} from '~/components/ProductPods';
+import {
+  ProductPods,
+  type ProductPodItem,
+  type PodCompanionOption,
+} from '~/components/ProductPods';
 import {INCUTEC_HINT_SEEN_KEY} from '~/lib/incutec-hint';
 
 /** Retire the hero "Who's incutec?" hint: persist the dismissal and pull the
@@ -88,9 +92,9 @@ const MOBILE_FAMILY_LABEL: Record<string, string> = {
  *  future OpenFC Pro is one more handle in the ESC list. Mirrors `stack` in
  *  product-content.ts without pulling that whole module into the header;
  *  the percent is the Shopify automatic BXGY (display only). */
-const STACK_COMPANIONS: Record<string, {label: string; handles: string[]}> = {
-  'Flight Controller': {label: 'also add an ESC', handles: ['openesc']},
-  ESC: {label: 'also add an FC', handles: ['openfc-lite']},
+const STACK_COMPANIONS: Record<string, Array<{handle: string; short: string}>> = {
+  'Flight Controller': [{handle: 'openesc', short: 'ESC'}],
+  ESC: [{handle: 'openfc-lite', short: 'FC'}],
 };
 const STACK_DISCOUNT_PCT = 10;
 
@@ -269,14 +273,14 @@ function FamilyNav({
     type: string,
     v: HeaderFamilyVariant,
     rowProduct: {title: string; handle: string},
-  ): NonNullable<ProductPodItem['buy']>['companions'] {
+  ): PodCompanionOption[] | undefined {
     const cfg = STACK_COMPANIONS[type];
     if (!cfg) return undefined;
     const size = v.selectedOptions?.find(
       (o) => o.name.trim().toLowerCase() === 'model',
     )?.value;
     if (!size) return undefined;
-    const options = cfg.handles.flatMap((h) => {
+    const options = cfg.flatMap(({handle: h, short}) => {
       const partner = (products ?? []).find((p) => p.handle === h);
       const pv = partner?.variants?.nodes?.find((pvv) =>
         pvv.selectedOptions?.some(
@@ -290,6 +294,7 @@ function FamilyNav({
         {
           key: h,
           title: `${partner.title} · ${size}`,
+          short,
           price: pv.price ?? null,
           pct: STACK_DISCOUNT_PCT,
           available: Boolean(pv.availableForSale && v.availableForSale),
@@ -312,7 +317,7 @@ function FamilyNav({
         },
       ];
     });
-    return options.length ? {label: cfg.label, options} : undefined;
+    return options.length ? options : undefined;
   }
 
   function itemsFor(type: string): ProductPodItem[] {
@@ -396,6 +401,10 @@ function FamilyNav({
   function chip(cat: (typeof CATEGORY_LINKS)[number]) {
     const items = itemsFor(cat.type);
     return (
+      // The wrapper itself isn't interactive — the chip link and pod rows
+      // inside are. onKeyDown here is a container-level Escape listener so
+      // Escape works from anywhere within the open pod.
+      // eslint-disable-next-line jsx-a11y/no-static-element-interactions
       <div
         className="header-cat"
         key={cat.label}
