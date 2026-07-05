@@ -773,17 +773,89 @@ function HeaderMenuMobileToggle() {
 }
 
 function CartBadge({count}: {count: number}) {
-  const {open} = useAside();
+  const {open, close, type} = useAside();
   const {publish, shop, cart, prevCart} = useAnalytics();
+  // Hover (mouse only) opens the drawer as a quick preview — same feel as the
+  // family pods; click always commits to the /cart page, which is also the
+  // keyboard/touch path. The preview closes once the pointer settles outside
+  // both the icon and the drawer, and pins open the moment the visitor
+  // interacts with the drawer (it's a real cart session then, not a peek).
+  const [hoverOpen, setHoverOpen] = useState(false);
+  const closeTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+
+  // Drawer closed by other means (Escape, close button, add-to-cart flows) →
+  // leave preview mode so the global watchers below detach.
+  useEffect(() => {
+    if (type !== 'cart') setHoverOpen(false);
+  }, [type]);
+
+  useEffect(() => {
+    if (!hoverOpen) return;
+    // Same global-pointer backstop as FamilyNav: onMouseLeave alone can't
+    // bridge the gap between the icon and the drawer panel, so watch the
+    // pointer document-wide while the preview is open.
+    const onPointer = (e: PointerEvent) => {
+      const t = e.target as Element | null;
+      clearTimeout(closeTimer.current);
+      if (t?.closest?.('.overlay aside') || t?.closest?.('[data-cart-hover]'))
+        return;
+      closeTimer.current = setTimeout(() => {
+        setHoverOpen(false);
+        close();
+      }, 140);
+    };
+    // First press inside the drawer pins the preview open.
+    const onPointerDown = (e: PointerEvent) => {
+      const t = e.target as Element | null;
+      if (t?.closest?.('.overlay aside')) setHoverOpen(false);
+    };
+    // The open drawer scroll-locks the body — a wheel spin outside the panel
+    // means "get out of my way", so close immediately (pods close on scroll).
+    const onWheel = (e: WheelEvent) => {
+      const t = e.target as Element | null;
+      if (t?.closest?.('.overlay aside')) return;
+      clearTimeout(closeTimer.current);
+      setHoverOpen(false);
+      close();
+    };
+    document.addEventListener('pointermove', onPointer);
+    document.addEventListener('pointerdown', onPointerDown);
+    document.addEventListener('wheel', onWheel, {passive: true});
+    return () => {
+      clearTimeout(closeTimer.current);
+      document.removeEventListener('pointermove', onPointer);
+      document.removeEventListener('pointerdown', onPointerDown);
+      document.removeEventListener('wheel', onWheel);
+    };
+  }, [hoverOpen, close]);
 
   return (
-    <a
-      href="/cart"
+    <NavLink
+      prefetch="viewport"
+      to="/cart"
       data-cart-target=""
+      data-cart-hover=""
       className="site-header-icon text-[var(--color-text-muted)] hover:text-[var(--color-text)] transition-colors"
-      onClick={(e) => {
-        e.preventDefault();
-        open('cart');
+      onPointerEnter={(e) => {
+        if (e.pointerType !== 'mouse') return;
+        clearTimeout(closeTimer.current);
+        if (type === 'closed') {
+          setHoverOpen(true);
+          open('cart');
+          publish('cart_viewed', {
+            cart,
+            prevCart,
+            shop,
+            url: window.location.href || '',
+          } as CartViewPayload);
+        }
+      }}
+      onClick={() => {
+        // Committing to the page: drop the preview so the drawer doesn't sit
+        // open over /cart after the SPA navigation.
+        clearTimeout(closeTimer.current);
+        setHoverOpen(false);
+        close();
         publish('cart_viewed', {
           cart,
           prevCart,
@@ -806,7 +878,7 @@ function CartBadge({count}: {count: number}) {
           </span>
         )}
       </span>
-    </a>
+    </NavLink>
   );
 }
 
