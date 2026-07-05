@@ -2394,6 +2394,15 @@ html.hero-header-in .homepage-layout .site-header {
   transform: scale(1.12);
 }
 
+/* Card/feature hover zoom targets the real image; pin the cover thumb so
+   hovering a still-loading card doesn't animate the blur toward scale(1.04)
+   and expose the blur fringe. Doubled class outranks both zoom rules
+   (0,4,1 vs 0,3,1) regardless of source order. */
+.product-card:hover .smooth-media-cover.smooth-media-cover img,
+.product-feature:hover .smooth-media-cover.smooth-media-cover img {
+  transform: scale(1.12);
+}
+
 .smooth-media-cover.is-lifted {
   opacity: 0;
 }

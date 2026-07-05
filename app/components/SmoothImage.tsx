@@ -51,8 +51,23 @@ export function SmoothImage(props: ComponentProps<typeof Image>) {
     (typeof props.src === 'string' ? props.src : null);
   const tiny = lqipUrl(srcUrl);
 
+  // Synchronous re-arm on source change (sanctioned derived-state pattern:
+  // setting state during render restarts the render before commit). Without
+  // it the first committed frame after a source swap still has phase
+  // 'loaded', so the cover would mount lifted and fade IN over the
+  // stale/blank main image instead of appearing instantly.
+  const [armedFor, setArmedFor] = useState(srcUrl);
+  if (armedFor !== srcUrl) {
+    setArmedFor(srcUrl);
+    setPhase('loading');
+  }
+
   useEffect(() => {
-    const img = wrapRef.current?.querySelector('img');
+    // `:scope > img` — the main image is the wrapper's direct child; never
+    // match the cover's own thumb img.
+    const img = wrapRef.current?.querySelector<HTMLImageElement>(
+      ':scope > img',
+    );
     if (!img) return;
     if (img.complete) {
       // Already cached — drop any cover from a previous source, never
@@ -74,11 +89,23 @@ export function SmoothImage(props: ComponentProps<typeof Image>) {
     <div ref={wrapRef} className="smooth-media">
       <Image {...props} />
       {phase !== 'idle' ? (
+        // Keyed by source so a re-arm swaps in a FRESH node at full opacity
+        // instead of transitioning the old (lifted, mid-fade) one back up.
+        // Once the lift fade finishes the cover leaves the DOM entirely;
+        // under reduced motion the transition is disabled so no
+        // transitionend fires and the invisible cover simply stays — the
+        // pre-existing (harmless) behavior.
         <div
+          key={srcUrl ?? 'cover'}
           className={`smooth-media-cover${phase === 'loaded' ? ' is-lifted' : ''}${
             tiny ? '' : ' no-thumb'
           }`}
           aria-hidden="true"
+          onTransitionEnd={(e) => {
+            if (e.target === e.currentTarget && phase === 'loaded') {
+              setPhase('idle');
+            }
+          }}
         >
           {tiny ? (
             <img
