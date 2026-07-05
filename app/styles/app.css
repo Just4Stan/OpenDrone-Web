@@ -7801,6 +7801,84 @@ button.reset {
   color: var(--color-gold);
 }
 
+/* "Goes well with" companion row (drawer + page): one quiet suggestion of
+   the size-matched stack partner, a register below the cart lines and well
+   below the donation block. Tokens only — light mode comes for free. */
+.cart-companion {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  margin-top: var(--sp-3);
+  padding-top: var(--sp-3);
+  border-top: 1px solid var(--color-border);
+}
+
+.cart-companion-eyebrow {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--color-text-dim);
+}
+
+.cart-companion-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  min-width: 0;
+}
+
+.cart-companion-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  color: var(--color-text);
+  text-decoration: none;
+  transition: color 150ms ease;
+}
+
+.cart-companion-name:hover {
+  color: var(--color-gold);
+}
+
+.cart-companion-price {
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+  white-space: nowrap;
+}
+
+/* Compact quiet add pill — deliberately NOT the gold CTA register. */
+.cart-companion-add {
+  flex: none;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  padding: 0.3rem 0.7rem;
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--r-md);
+  color: var(--color-text);
+  cursor: pointer;
+  transition: border-color 150ms ease, background 150ms ease;
+}
+
+.cart-companion-add:hover:not(:disabled) {
+  border-color: var(--color-gold);
+  background: color-mix(in srgb, var(--color-gold) 8%, var(--color-bg-card));
+}
+
+.cart-companion-add:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 .cart-line-inner > div {
   min-width: 0;
   display: grid;
