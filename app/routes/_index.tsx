@@ -15,6 +15,8 @@ import type {CollectionItemFragment} from 'storefrontapi.generated';
 import type {MoneyV2} from '@shopify/hydrogen/storefront-api-types';
 import {INCUTEC_HINT_SEEN_KEY} from '~/lib/incutec-hint';
 import {buildSeoMeta} from '~/lib/seo';
+import {useComingSoon} from '~/lib/coming-soon';
+import {isComingSoon} from '~/lib/product-content';
 import {HeroWordmark} from '~/components/HeroWordmark';
 import {HeroSizeSlider} from '~/components/HeroSizeSlider';
 import {
@@ -366,6 +368,9 @@ function DesktopHome({
 }: {
   heroStacks: Promise<HeroStacks>;
 }) {
+  // Coming-soon reveal cards keep their link + title but swap the price
+  // for a Soon tag (handle parsed from the card's PDP url).
+  const globalComingSoon = useComingSoon();
   const scrollRef = useRef(0);
   const rafId = useRef(0);
   const [scrollProgress, setScrollProgress] = useState(0);
@@ -1108,7 +1113,12 @@ function DesktopHome({
                               <span className="hero-reveal-sub">{card.productType}</span>
                             ) : null}
                           </span>
-                          {card.price ? (
+                          {isComingSoon(
+                            card.url.split('?')[0].split('/').pop(),
+                            globalComingSoon,
+                          ) ? (
+                            <span className="hero-reveal-soon">Soon</span>
+                          ) : card.price ? (
                             <span className="hero-reveal-price">
                               <Money data={card.price} />
                             </span>

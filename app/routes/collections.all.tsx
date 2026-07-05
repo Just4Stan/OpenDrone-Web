@@ -7,7 +7,8 @@ import type {StackOffer} from '~/components/StackQuickAdd';
 import type {CollectionItemFragment} from 'storefrontapi.generated';
 import {buildSeoMeta} from '~/lib/seo';
 import {EmptyState} from '~/components/EmptyState';
-import {PRODUCT_CONTENT} from '~/lib/product-content';
+import {PRODUCT_CONTENT, isComingSoon} from '~/lib/product-content';
+import {useComingSoon} from '~/lib/coming-soon';
 
 export const meta: Route.MetaFunction = () =>
   buildSeoMeta({
@@ -159,6 +160,7 @@ export default function Collection() {
   // Expand each product into one card per purchasable model (skipping
   // coming-soon tiers); single products / bundles / accessories get one card.
   // Products arrive newest-first, so card order is newest-first by default.
+  const globalComingSoon = useComingSoon();
   const cards = useMemo<Card[]>(() => {
     const out: Card[] = [];
     for (const p of products) {
@@ -176,6 +178,9 @@ export default function Collection() {
           const stackOffers: StackOffer[] = (
             content?.stack?.partners ?? []
           ).flatMap((pc) => {
+            // Unlaunched partners can't join a stack offer (their price
+            // stays hidden everywhere).
+            if (isComingSoon(pc.handle, globalComingSoon)) return [];
             const partner = products.find((pp) => pp.handle === pc.handle);
             if (!partner || !sv) return [];
             const pv = variantFor(
@@ -280,7 +285,7 @@ export default function Collection() {
       }
     }
     return out;
-  }, [products]);
+  }, [products, globalComingSoon]);
 
   // Categories present in the catalog, in editorial order then any leftovers.
   const categories = useMemo(() => {

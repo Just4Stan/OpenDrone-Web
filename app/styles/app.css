@@ -972,6 +972,16 @@ html {
   font-size: var(--fs-md);
   color: var(--color-gold);
 }
+/* Coming-soon reveal cards: a quiet mono tag in the price slot. */
+.hero-reveal-soon {
+  flex: 0 0 auto;
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--color-gold);
+}
 
 /* Drag-to-view hint — centred over the drone, fades in after a few idle
    seconds and dismisses on first interaction. */
@@ -1262,6 +1272,19 @@ a:hover {
   color: var(--color-text-muted);
 }
 .product-pods--grid .product-pod-price {
+  margin-left: 0;
+}
+/* Coming-soon rows: a quiet mono tag holds the price slot. */
+.product-pod-soon {
+  margin-left: auto;
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--color-gold);
+}
+.product-pods--grid .product-pod-soon {
   margin-left: 0;
 }
 
