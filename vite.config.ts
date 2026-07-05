@@ -53,6 +53,10 @@ export default defineConfig({
         '**/tsconfig.tsbuildinfo',
         '**/.DS_Store',
         '**/.icloud',
+        // Subagent worktrees live under .claude/worktrees inside the repo;
+        // their branch churn (tsconfig writes force full reloads) storms the
+        // watcher and has crashed the dev server. Never watch them.
+        '**/.claude/**',
       ],
     },
   },
