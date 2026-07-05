@@ -30,6 +30,14 @@ interface NewsletterSignupProps {
    * prefilled with the account address so a signed-in visitor needn't retype it.
    */
   account?: {email: string; subscribed: boolean} | null;
+  /**
+   * Coming-soon mode: "Notify me at launch" for one product. Posts the same
+   * newsletter action with a hidden `product` field so the subscriber gets a
+   * `notify-<handle>` tag in Shopify. An already-subscribed account still
+   * sees the form (prefilled) — registering interest in the SKU is the point,
+   * not the subscription itself.
+   */
+  notify?: {productHandle: string; productTitle: string} | null;
 }
 
 type TurnstileRenderOpts = {
@@ -49,6 +57,7 @@ export function NewsletterSignup({
   className = '',
   turnstileSiteKey = null,
   account = null,
+  notify = null,
 }: NewsletterSignupProps) {
   const fetcher = useFetcher<NewsletterActionData>();
   const formRef = useRef<HTMLFormElement>(null);
@@ -145,7 +154,10 @@ export function NewsletterSignup({
 
   const isWide = variant === 'wide';
   const isFooter = variant === 'footer';
-  const alreadySubscribed = account?.subscribed === true;
+  const isNotify = Boolean(notify);
+  // Notify mode never short-circuits to the subscribed panel: an existing
+  // subscriber still needs to submit to get the per-product notify tag.
+  const alreadySubscribed = !isNotify && account?.subscribed === true;
   const message = clientError ?? serverMessage;
   const messageTone = clientError
     ? 'error'
@@ -160,6 +172,7 @@ export function NewsletterSignup({
       aria-labelledby={`${emailId}-heading`}
       className={[
         'newsletter-signup',
+        isNotify ? 'is-notify' : '',
         isWide
           ? 'border border-[var(--color-border)] bg-[var(--color-bg-card)] p-8 md:p-10 rounded-sm'
           : '',
@@ -173,7 +186,7 @@ export function NewsletterSignup({
     >
       <div>
         <p className="font-mono text-[12px] uppercase tracking-[0.2em] text-[var(--color-gold)] mb-0.5">
-          Newsletter · Engineering Essentials
+          {isNotify ? 'Launch list' : 'Newsletter · Engineering Essentials'}
         </p>
         <h3
           id={`${emailId}-heading`}
@@ -183,7 +196,7 @@ export function NewsletterSignup({
               : 'font-display text-sm font-bold tracking-[0.04em] uppercase text-[var(--color-text)] mb-0.5'
           }
         >
-          Product releases. Build notes.
+          {isNotify ? 'Get notified at launch.' : 'Product releases. Build notes.'}
         </h3>
         <p
           className={
@@ -192,8 +205,17 @@ export function NewsletterSignup({
               : 'text-[12px] text-[var(--color-text-muted)] leading-snug'
           }
         >
-          Only when there&rsquo;s something to ship. No marketing fluff.
-          Unsubscribe anytime.
+          {isNotify ? (
+            <>
+              One email when the {notify!.productTitle} opens for orders.
+              Unsubscribe anytime.
+            </>
+          ) : (
+            <>
+              Only when there&rsquo;s something to ship. No marketing fluff.
+              Unsubscribe anytime.
+            </>
+          )}
         </p>
       </div>
 
@@ -221,6 +243,16 @@ export function NewsletterSignup({
             .
           </p>
         </div>
+      ) : isNotify && isSuccess ? (
+        <div className="flex flex-col gap-1" role="status">
+          <p className="inline-flex items-center gap-1.5 font-mono text-[12px] uppercase tracking-[0.14em] text-[var(--color-gold)]">
+            <Check size={13} strokeWidth={2.5} aria-hidden="true" />
+            You&rsquo;re on the launch list
+          </p>
+          <p className="text-[12px] text-[var(--color-text-muted)] leading-snug">
+            {serverMessage}
+          </p>
+        </div>
       ) : (
       <fetcher.Form
         ref={formRef}
@@ -234,6 +266,10 @@ export function NewsletterSignup({
         }
         noValidate
       >
+        {notify ? (
+          <input type="hidden" name="product" value={notify.productHandle} />
+        ) : null}
+
         {/* Honeypot — hidden from humans, visible to bots */}
         <label className="sr-only" aria-hidden="true">
           Website
@@ -289,7 +325,13 @@ export function NewsletterSignup({
               isWide || isFooter ? 'sm:shrink-0' : '',
             ].join(' ')}
           >
-            {isSubmitting ? 'Subscribing…' : 'Subscribe'}
+            {isNotify
+              ? isSubmitting
+                ? 'Saving…'
+                : 'Notify me'
+              : isSubmitting
+                ? 'Subscribing…'
+                : 'Subscribe'}
           </button>
         </div>
 
