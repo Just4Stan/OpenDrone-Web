@@ -2386,27 +2386,57 @@ html.hero-header-in .homepage-layout .site-header {
 }
 
 /* Streaming-image cover — SmoothImage.tsx. Appears only after hydration
-   while the file is still in flight, lifts on load. Cached images never
-   see it. */
+   while the file is still in flight: a blurred ~1 KB CDN thumb of the same
+   image over a token background, crossfading away on load. Cached images
+   never see it. */
 .smooth-media {
   position: relative;
   width: 100%;
   height: 100%;
 }
 
-.smooth-media::after {
-  content: '';
+.smooth-media-cover {
   position: absolute;
   inset: 0;
+  overflow: hidden;
   background: var(--color-bg-elevated);
-  opacity: 0;
+  opacity: 1;
   transition: opacity 0.45s ease;
   pointer-events: none;
 }
 
-.smooth-media.is-loading::after {
-  opacity: 1;
+/* Doubled class for specificity — later context rules like
+   `.product-gallery-main img` must not re-fit or un-blur the thumb. */
+.smooth-media-cover.smooth-media-cover img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  /* Heavy blur + scale so the upsampled 32px thumb reads as a wash of the
+     image's own colors; the scale hides the blur's transparent edges. */
+  filter: blur(18px);
+  transform: scale(1.12);
+}
+
+/* Card/feature hover zoom targets the real image; pin the cover thumb so
+   hovering a still-loading card doesn't animate the blur toward scale(1.04)
+   and expose the blur fringe. Doubled class outranks both zoom rules
+   (0,4,1 vs 0,3,1) regardless of source order. */
+.product-card:hover .smooth-media-cover.smooth-media-cover img,
+.product-feature:hover .smooth-media-cover.smooth-media-cover img {
+  transform: scale(1.12);
+}
+
+.smooth-media-cover.is-lifted {
+  opacity: 0;
+}
+
+/* No CDN thumb derivable — flat token cover with the quiet pulse. */
+.smooth-media-cover.no-thumb {
   animation: media-pulse 1.8s ease-in-out infinite;
+}
+
+.smooth-media-cover.no-thumb.is-lifted {
+  animation: none;
 }
 
 @keyframes media-pulse {
@@ -2420,7 +2450,9 @@ html.hero-header-in .homepage-layout .site-header {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .smooth-media.is-loading::after {
+  .smooth-media-cover,
+  .smooth-media-cover.no-thumb {
+    transition: none;
     animation: none;
   }
 }
@@ -2442,6 +2474,69 @@ html.hero-header-in .homepage-layout .site-header {
   border: 1px dashed var(--color-border);
   border-radius: var(--r-xs);
   padding: 6px 12px;
+}
+
+/* Engineering-document ghost tile — ProductGhostTile.tsx. Products without
+   photography render as a catalog figure: hairline rules, product type as
+   the document header, a line glyph as the figure, title as the catalog
+   line. Tokens only — themes for free. */
+.product-card-media.is-empty .ghost-tile,
+.product-feature-media .ghost-tile {
+  position: absolute;
+  inset: 0;
+}
+
+.ghost-tile {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  color: var(--color-text-dim);
+  font-family: var(--font-mono);
+}
+
+.ghost-tile-rule {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--color-border);
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.ghost-tile-rule.is-foot {
+  border-bottom: 0;
+  border-top: 1px solid var(--color-border);
+}
+
+.ghost-tile-type,
+.ghost-tile-catalog {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+
+.ghost-tile-fig {
+  flex-shrink: 0;
+  opacity: 0.7;
+}
+
+.ghost-tile-figure {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  place-items: center;
+}
+
+.ghost-tile-figure svg {
+  width: 42%;
+  max-width: 128px;
+  height: auto;
+  opacity: 0.55;
 }
 
 .product-card-body {

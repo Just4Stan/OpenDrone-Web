@@ -1,6 +1,7 @@
 import {Link} from 'react-router';
 import {Money} from '@shopify/hydrogen';
 import {SmoothImage} from './SmoothImage';
+import {ProductGhostTile} from './ProductGhostTile';
 import type {MoneyV2} from '@shopify/hydrogen/storefront-api-types';
 import type {
   ProductItemFragment,
@@ -179,9 +180,10 @@ export function ProductItem({
               sizes="(min-width: 64em) 340px, 100vw"
             />
           ) : (
-            <span className="product-card-media-ghost">
-              {('productType' in product && product.productType) || 'OpenDrone'}
-            </span>
+            <ProductGhostTile
+              type={('productType' in product && product.productType) || null}
+              title={product.title}
+            />
           )}
         </Link>
         <div className="product-feature-body">
@@ -222,9 +224,10 @@ export function ProductItem({
             sizes="(min-width: 45em) 400px, 100vw"
           />
         ) : (
-          <span className="product-card-media-ghost" aria-hidden="true">
-            {('productType' in product && product.productType) || 'OpenDrone'}
-          </span>
+          <ProductGhostTile
+            type={('productType' in product && product.productType) || null}
+            title={displayTitle}
+          />
         )}
       </div>
       <div className="product-card-body">
