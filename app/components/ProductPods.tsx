@@ -28,6 +28,9 @@ export type ProductPodItem = {
   imageUrl?: string | null;
   imageAlt?: string | null;
   price?: {amount: string; currencyCode: string} | null;
+  /** Coming-soon product: a small SOON tag takes the price slot. Hosts also
+   *  omit `buy` for these rows — there is nothing to add yet. */
+  soon?: boolean;
   /** When set, the row grows a hover/focus-revealed action bar spanning the
    *  row width: one "<self> only" button and one "<self> + <partner> stack"
    *  button per companion (both lines, one click). Hosts without it (the
@@ -113,7 +116,9 @@ export function ProductPods({
                 <span className="product-pod-subtitle">{it.subtitle}</span>
               ) : null}
             </span>
-            {it.price ? (
+            {it.soon ? (
+              <span className="product-pod-soon">Soon</span>
+            ) : it.price ? (
               <span className="product-pod-price">
                 <Money data={it.price as MoneyData} />
               </span>

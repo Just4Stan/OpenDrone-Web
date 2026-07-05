@@ -1,5 +1,6 @@
 import type {Route} from './+types/[llms.txt]';
-import {PRODUCT_CONTENT} from '~/lib/product-content';
+import {PRODUCT_CONTENT, isComingSoon} from '~/lib/product-content';
+import {comingSoonFlag} from '~/lib/coming-soon';
 
 /**
  * /llms.txt — the machine-readable front door for AI agents (llmstxt.org).
@@ -58,6 +59,7 @@ const numericId = (gid: string) => gid.split('/').pop() ?? gid;
 
 export async function loader({context, request}: Route.LoaderArgs) {
   const origin = new URL(request.url).origin;
+  const globalSoon = comingSoonFlag(context.env);
   const data = await context.storefront.query(LLMS_CATALOG_QUERY, {
     variables: {count: 50},
     cache: context.storefront.CacheLong(),
@@ -67,14 +69,19 @@ export async function loader({context, request}: Route.LoaderArgs) {
     .map((p) => {
       const repo = PRODUCT_CONTENT[p.handle]?.repoUrl;
       const desc = (p.description ?? '').replace(/\s+/g, ' ').slice(0, 160);
+      // Locked products show "coming soon" instead of price + stock — this
+      // feed must not leak what the PDP hides.
+      const locked = isComingSoon(p.handle, globalSoon);
       const lines = (p.variants?.nodes ?? [])
         .map((v: LlmsVariant) => {
           const name = v.title === 'Default Title' ? p.title : v.title;
           return (
             `  - ${name}` +
             (v.sku ? ` (SKU ${v.sku})` : '') +
-            ` — €${Number(v.price.amount).toFixed(2)}` +
-            ` — ${v.availableForSale ? 'in stock' : 'out of stock'}` +
+            (locked
+              ? ' — coming soon, not yet orderable'
+              : ` — €${Number(v.price.amount).toFixed(2)}` +
+                ` — ${v.availableForSale ? 'in stock' : 'out of stock'}`) +
             ` — variant ID ${numericId(v.id)}`
           );
         })

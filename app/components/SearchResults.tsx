@@ -1,6 +1,8 @@
 import {Link} from 'react-router';
 import {Image, Money, Pagination} from '@shopify/hydrogen';
 import {urlWithTrackingParams, type RegularSearchReturn} from '~/lib/search';
+import {useComingSoon} from '~/lib/coming-soon';
+import {isComingSoon} from '~/lib/product-content';
 
 type SearchItems = RegularSearchReturn['result']['items'];
 type PartialSearchResult<ItemType extends keyof SearchItems> = Pick<
@@ -95,6 +97,8 @@ function SearchResultsProducts({
   term,
   products,
 }: PartialSearchResult<'products'>) {
+  // Coming-soon products list but never show a price.
+  const globalComingSoon = useComingSoon();
   if (!products?.nodes.length) {
     return null;
   }
@@ -111,7 +115,10 @@ function SearchResultsProducts({
               term,
             });
 
-            const price = product?.selectedOrFirstAvailableVariant?.price;
+            const soon = isComingSoon(product.handle, globalComingSoon);
+            const price = soon
+              ? undefined
+              : product?.selectedOrFirstAvailableVariant?.price;
             const image = product?.selectedOrFirstAvailableVariant?.image;
 
             return (
