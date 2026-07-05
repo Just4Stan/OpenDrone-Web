@@ -102,7 +102,11 @@ export async function loader({context, request}: Route.LoaderArgs) {
       status: 200,
       headers: {
         'Content-Type': 'application/json; charset=utf-8',
-        'Cache-Control': 'max-age=3600',
+        // While the coming-soon flag is ON, keep the feed on a short leash
+        // (5 min) so flipping PUBLIC_COMING_SOON on launch day doesn't leave
+        // agents reading a stale "coming soon" catalog for a full hour.
+        // Unlocked shop → the catalog is stable, cache the full hour.
+        'Cache-Control': globalSoon ? 'max-age=300' : 'max-age=3600',
       },
     },
   );
