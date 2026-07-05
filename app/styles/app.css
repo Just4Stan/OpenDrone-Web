@@ -7755,6 +7755,44 @@ button.reset {
   line-height: 1.6;
 }
 
+/* Quiet secondary actions under the checkout CTA: keep-shopping escape +
+   share-cart copier. Mono hairline language, no button chrome — these must
+   read a register below the gold CTA. The .cart-summary-* scope also lifts
+   the share <button> out of the shared gold-filled button rule below. */
+.cart-secondary-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-top: 0.85rem;
+}
+
+.cart-secondary-actions .cart-keep-shopping,
+.cart-secondary-actions .cart-share-btn {
+  border: none;
+  background: none;
+  border-radius: 0;
+  padding: 0;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  transition: color 150ms ease;
+}
+
+.cart-secondary-actions .cart-keep-shopping:hover,
+.cart-secondary-actions .cart-share-btn:hover {
+  background: none;
+  color: var(--color-text);
+}
+
+.cart-secondary-actions .cart-share-btn[data-copied] {
+  color: var(--color-gold);
+}
+
 .cart-line-inner > div {
   min-width: 0;
   display: grid;
