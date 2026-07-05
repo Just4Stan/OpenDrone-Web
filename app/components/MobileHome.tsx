@@ -4,6 +4,24 @@ import {motion, useReducedMotion, type MotionProps} from 'motion/react';
 import type {CollectionItemFragment} from 'storefrontapi.generated';
 import {HeroWordmark} from '~/components/HeroWordmark';
 import {ProductItem} from '~/components/ProductItem';
+import {AnimatedNumber} from '~/components/AnimatedNumber';
+import {PRODUCT_CONTENT} from '~/lib/product-content';
+
+/* Below-fold "index" band — the open-hardware ledger in the PDP's
+ * spec-table language. Every row is a fact already published elsewhere on
+ * the site (open-source page, PDP downloads); the design count is derived
+ * from the product-content registry so it can't drift. */
+const OPEN_DESIGN_COUNT = Object.values(PRODUCT_CONTENT).filter(
+  (c) => c.fileNumber !== '—',
+).length;
+
+const HOME_LEDGER: Array<[string, string]> = [
+  ['Board designs published', String(OPEN_DESIGN_COUNT).padStart(2, '0')],
+  ['Hardware licence', 'CERN-OHL-S 2.0'],
+  ['Source format', 'KiCad 9 · STEP · BOM'],
+  ['Firmware split', '€1 / unit upstream'],
+  ['Designed in', 'Belgium'],
+];
 
 /**
  * Phone homepage (≤768px). The desktop homepage IS the WebGL hero scene +
@@ -141,6 +159,23 @@ export function MobileHome({
           }
         </Await>
       </Suspense>
+
+      {/* Open-hardware index — spec-table rows (hairline rules, mono keys,
+          right-aligned values) with count-ups on the numerals. Reuses the
+          PDP's .spec-table so the band IS the house datasheet language. */}
+      <section className="home-mobile-ledger" aria-label="Open hardware index">
+        <p className="section-label">Open hardware — index</p>
+        <dl className="spec-table">
+          {HOME_LEDGER.map(([k, v]) => (
+            <div key={k}>
+              <dt>{k}</dt>
+              <dd>
+                <AnimatedNumber value={v} />
+              </dd>
+            </div>
+          ))}
+        </dl>
+      </section>
 
       <Link
         prefetch="viewport"

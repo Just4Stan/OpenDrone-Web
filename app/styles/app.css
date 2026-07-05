@@ -2232,6 +2232,24 @@ html.hero-header-in .homepage-layout .site-header {
   gap: 1rem;
 }
 
+/* Open-hardware index band — reuses .spec-table for the rows so the
+   homepage speaks the PDP datasheet language verbatim. Single column even
+   past 720px: this band lives on the phone layout's narrow rail. */
+.home-mobile-ledger {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.home-mobile-ledger .spec-table {
+  grid-template-columns: 1fr;
+}
+
+.home-mobile-ledger .spec-table dd {
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+}
+
 .home-mobile-browse {
   display: inline-flex;
   align-items: center;
