@@ -1,5 +1,10 @@
 import {redirect} from 'react-router';
 import type {Route} from './+types/cart.$lines';
+import {
+  anyComingSoonLocks,
+  comingSoonFlag,
+  findLockedMerchandise,
+} from '~/lib/coming-soon';
 
 /**
  * Automatically creates a new cart based on the URL and redirects straight to checkout.
@@ -23,7 +28,7 @@ export async function loader({request, context, params}: Route.LoaderArgs) {
   const {cart} = context;
   const {lines} = params;
   if (!lines) return redirect('/cart');
-  const linesMap = lines.split(',').map((line) => {
+  let linesMap = lines.split(',').map((line) => {
     const lineDetails = line.split(':');
     const variantId = lineDetails[0];
     const quantity = parseInt(lineDetails[1], 10);
@@ -37,6 +42,32 @@ export async function loader({request, context, params}: Route.LoaderArgs) {
       quantity,
     };
   });
+
+  // Server-side coming-soon gate: cart permalinks are the documented
+  // agent/deep-link order path, so locked SKUs must be dropped here too.
+  // Zero-cost when the shop is unlocked and nothing is override-locked.
+  const soonFlag = comingSoonFlag(context.env);
+  if (anyComingSoonLocks(soonFlag)) {
+    const {lockedIds, lockedHandles} = await findLockedMerchandise(
+      context.storefront,
+      soonFlag,
+      linesMap.map((l) => l.merchandiseId),
+    );
+    if (lockedIds.size > 0) {
+      const open = linesMap.filter((l) => !lockedIds.has(l.merchandiseId));
+      if (open.length === 0) {
+        // Every requested line is locked — send the visitor to the PDP,
+        // where the notify-at-launch signup lives (or the catalog when the
+        // lookup couldn't resolve a handle).
+        return redirect(
+          lockedHandles[0]
+            ? `/products/${lockedHandles[0]}`
+            : '/collections/all',
+        );
+      }
+      linesMap = open;
+    }
+  }
 
   const url = new URL(request.url);
   const searchParams = new URLSearchParams(url.search);
