@@ -2361,6 +2361,11 @@ html.hero-header-in .homepage-layout .site-header {
    ============================================ */
 
 .product-card {
+  /* Spotlight anchor defaults — overwritten per-frame by the card's
+     pointermove handler (ProductItem.tsx). */
+  --spot-x: 50%;
+  --spot-y: 0px;
+  position: relative;
   display: flex;
   flex-direction: column;
   background: var(--color-bg-card);
@@ -2373,6 +2378,42 @@ html.hero-header-in .homepage-layout .site-header {
 .product-card:hover {
   border-color: var(--color-border-strong);
   transform: translateY(-2px);
+}
+
+/* Cursor-tracked gold spotlight on hover — the same treatment as the PDP's
+   related cards, so the whole catalog speaks one hover language. Pointer
+   devices only ((hover: hover) — touch gets no phantom glow), sits below
+   the quick-add overlay (z-4) and never intercepts clicks. */
+@media (hover: hover) {
+  .product-card::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: 3;
+    background: radial-gradient(
+      280px circle at var(--spot-x) var(--spot-y),
+      var(--color-gold-soft),
+      transparent 70%
+    );
+    opacity: 0;
+    transition: opacity 0.25s ease;
+    pointer-events: none;
+  }
+
+  .product-card:hover::after {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .product-card,
+  .product-card::after {
+    transition: none;
+  }
+
+  .product-card:hover {
+    transform: none;
+  }
 }
 
 .product-card-media {
