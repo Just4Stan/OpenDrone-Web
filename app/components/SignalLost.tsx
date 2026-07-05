@@ -1,6 +1,7 @@
 import {useEffect, useRef, useState} from 'react';
 import {useLocation} from 'react-router';
 import {TriangleAlert} from 'lucide-react';
+import {ScrambleText} from '~/components/ScrambleText';
 
 /**
  * The 404 easter egg. An FPV "lost signal / failsafe" screen — the quad has
@@ -64,7 +65,12 @@ export function SignalLost() {
           <p className="signal-lost-status" data-glitch="404">
             404
           </p>
-          <p className="signal-lost-title">SIGNAL LOST</p>
+          <p className="signal-lost-title">
+            {/* Decode-in on the failsafe banner — corrupted-link flavor for
+                the OSD scene, and the one deliberate scramble easter egg the
+                design brief allows. */}
+            <ScrambleText text="SIGNAL LOST" duration={900} delay={200} />
+          </p>
           <p className="signal-lost-sub">
             no link to <code>{path}</code>. Failsafe engaged
           </p>
