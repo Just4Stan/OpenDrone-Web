@@ -172,7 +172,6 @@ export function NewsletterSignup({
       aria-labelledby={`${emailId}-heading`}
       className={[
         'newsletter-signup',
-        isNotify ? 'is-notify' : '',
         isWide
           ? 'border border-[var(--color-border)] bg-[var(--color-bg-card)] p-8 md:p-10 rounded-sm'
           : '',
@@ -207,8 +206,8 @@ export function NewsletterSignup({
         >
           {isNotify ? (
             <>
-              One email when the {notify!.productTitle} opens for orders.
-              Unsubscribe anytime.
+              Launch email for the {notify!.productTitle} + occasional build
+              notes. Unsubscribe anytime.
             </>
           ) : (
             <>

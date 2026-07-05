@@ -25,7 +25,12 @@ async function adminGraphql<T>(
   query: string,
   variables: Record<string, unknown>,
 ): Promise<T | null> {
-  if (!adminApiAvailable(env)) return null;
+  if (!adminApiAvailable(env)) {
+    console.error(
+      '[shopify-admin] notify tag skipped — SHOPIFY_ADMIN_API_TOKEN not set',
+    );
+    return null;
+  }
   const version = env.SHOPIFY_ADMIN_API_VERSION || ADMIN_API_VERSION_FALLBACK;
   const res = await fetch(
     `https://${env.PUBLIC_STORE_DOMAIN}/admin/api/${version}/graphql.json`,

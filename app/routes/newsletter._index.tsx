@@ -257,6 +257,21 @@ export async function action({request, context}: Route.ActionArgs) {
     24 * 60 * 60 * 1000,
   );
   if (!emailLimit.allowed) {
+    // Rate-limited, but a notify-at-launch click still carries signal: the
+    // tag is idempotent, so apply it before returning the generic success —
+    // otherwise the 4th product someone asks about in a day is silently
+    // dropped.
+    if (notifyProduct) {
+      await tagCustomerNotify(context.env, {
+        email,
+        productHandle: notifyProduct,
+      });
+      return data<NewsletterResult>({
+        ok: true,
+        message: "You're on the list — we'll email you at launch.",
+        alreadySubscribed: true,
+      });
+    }
     // Be generic to avoid confirming which addresses have already signed up.
     return data<NewsletterResult>({
       ok: true,
