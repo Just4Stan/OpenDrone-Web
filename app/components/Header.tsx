@@ -773,23 +773,111 @@ function HeaderMenuMobileToggle() {
 }
 
 function CartBadge({count}: {count: number}) {
-  const {open} = useAside();
+  const {openPreview, close, type, preview} = useAside();
   const {publish, shop, cart, prevCart} = useAnalytics();
+  // Hover (mouse only) opens the drawer as a quick preview — same feel as the
+  // family pods; click always commits to the /cart page, which is also the
+  // keyboard/touch path. The open goes through a short hover-intent delay so
+  // a pointer merely grazing the icon en route to something else never
+  // triggers it. The preview is NON-modal (see Aside `openPreview`): no focus
+  // steal, no scroll-lock — it closes once the pointer settles outside both
+  // the icon and the drawer, and pins to a full modal the moment the visitor
+  // interacts inside the drawer (it's a real cart session then, not a peek).
+  const previewActive = type === 'cart' && preview;
+  const openTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const closeTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  // One cart_viewed per drawer open — hover-open publishes, and the
+  // commit-click only publishes when no preview already did.
+  const viewedRef = useRef(false);
+
+  useEffect(() => {
+    if (type !== 'cart') viewedRef.current = false;
+  }, [type]);
+
+  useEffect(() => () => clearTimeout(openTimer.current), []);
+
+  // While the preview is open, lift the header above the drawer overlay
+  // (html[data-cart-preview] .site-header — same pattern as the family-pod
+  // z-index bump) so the cart icon stays hoverable AND clickable: the
+  // commit-click must land on the icon, not on the overlay.
+  useEffect(() => {
+    if (!previewActive) return;
+    document.documentElement.setAttribute('data-cart-preview', '');
+    return () => document.documentElement.removeAttribute('data-cart-preview');
+  }, [previewActive]);
+
+  useEffect(() => {
+    if (!previewActive) return;
+    // Same global-pointer backstop as FamilyNav: onMouseLeave alone can't
+    // bridge the gap between the icon and the drawer panel, so watch the
+    // pointer document-wide while the preview is open.
+    const onPointer = (e: PointerEvent) => {
+      const t = e.target as Element | null;
+      clearTimeout(closeTimer.current);
+      if (t?.closest?.('.overlay aside') || t?.closest?.('[data-cart-hover]'))
+        return;
+      closeTimer.current = setTimeout(() => close(), 140);
+    };
+    // A preview doesn't scroll-lock the body — a wheel spin outside the panel
+    // means "get out of my way", so close immediately (pods close on scroll).
+    const onWheel = (e: WheelEvent) => {
+      const t = e.target as Element | null;
+      if (t?.closest?.('.overlay aside')) return;
+      clearTimeout(closeTimer.current);
+      close();
+    };
+    document.addEventListener('pointermove', onPointer);
+    document.addEventListener('wheel', onWheel, {passive: true});
+    return () => {
+      clearTimeout(closeTimer.current);
+      document.removeEventListener('pointermove', onPointer);
+      document.removeEventListener('wheel', onWheel);
+    };
+  }, [previewActive, close]);
 
   return (
-    <a
-      href="/cart"
+    <NavLink
+      prefetch="viewport"
+      to="/cart"
       data-cart-target=""
+      data-cart-hover=""
       className="site-header-icon text-[var(--color-text-muted)] hover:text-[var(--color-text)] transition-colors"
-      onClick={(e) => {
-        e.preventDefault();
-        open('cart');
-        publish('cart_viewed', {
-          cart,
-          prevCart,
-          shop,
-          url: window.location.href || '',
-        } as CartViewPayload);
+      onPointerEnter={(e) => {
+        if (e.pointerType !== 'mouse') return;
+        clearTimeout(closeTimer.current);
+        clearTimeout(openTimer.current);
+        if (type !== 'closed') return;
+        // Hover intent: only open once the pointer has dwelled on the icon.
+        openTimer.current = setTimeout(() => {
+          openPreview('cart');
+          viewedRef.current = true;
+          publish('cart_viewed', {
+            cart,
+            prevCart,
+            shop,
+            url: window.location.href || '',
+          } as CartViewPayload);
+        }, 150);
+      }}
+      onPointerLeave={() => {
+        // Grazed, not committed — cancel a pending hover-open. The global
+        // pointermove watcher handles closing an already-open preview.
+        clearTimeout(openTimer.current);
+      }}
+      onClick={() => {
+        // Committing to the page: drop the preview so the drawer doesn't sit
+        // open over /cart after the SPA navigation.
+        clearTimeout(openTimer.current);
+        clearTimeout(closeTimer.current);
+        close();
+        if (!viewedRef.current) {
+          publish('cart_viewed', {
+            cart,
+            prevCart,
+            shop,
+            url: window.location.href || '',
+          } as CartViewPayload);
+        }
       }}
     >
       {/* Inner relative wrapper keeps the count badge pinned to the icon, not
@@ -806,7 +894,7 @@ function CartBadge({count}: {count: number}) {
           </span>
         )}
       </span>
-    </a>
+    </NavLink>
   );
 }
 

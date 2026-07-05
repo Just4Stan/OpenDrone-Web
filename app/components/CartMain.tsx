@@ -6,6 +6,7 @@ import {useReducedMotion} from 'motion/react';
 import type {CartApiQueryFragment} from 'storefrontapi.generated';
 import {useAside} from '~/components/Aside';
 import {CartLineItem, type CartLine} from '~/components/CartLineItem';
+import {CartCompanion} from '~/components/CartCompanion';
 import {CartSummary} from './CartSummary';
 import {DonationUpsell, type DonationProduct} from './DonationUpsell';
 
@@ -106,6 +107,9 @@ export function CartMain({
             })}
           </ul>
         </div>
+        {cartHasItems ? (
+          <CartCompanion lines={cart?.lines?.nodes ?? []} layout={layout} />
+        ) : null}
         {cartHasItems && donationProduct ? (
           <DonationUpsell
             product={donationProduct}
