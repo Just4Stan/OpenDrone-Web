@@ -5,9 +5,11 @@ import {
   Link,
   redirect,
   useLoaderData,
+  useRouteLoaderData,
   useSearchParams,
   type ShouldRevalidateFunctionArgs,
 } from 'react-router';
+import type {RootLoader} from '~/root';
 import type {Route} from './+types/products.$handle';
 import {
   getSelectedProductOptions,
@@ -39,7 +41,10 @@ import {useNoHover, useIsMobile} from '~/lib/use-media-query';
 import {
   PRODUCT_CONTENT,
   PRODUCT_CONTENT_FALLBACK,
+  isComingSoon,
 } from '~/lib/product-content';
+import {useComingSoon} from '~/lib/coming-soon';
+import {NewsletterSignup} from '~/components/NewsletterSignup';
 import type {
   ChapterPin,
   DownloadAsset,
@@ -526,6 +531,12 @@ export default function Product() {
   // otherwise the fixed overlay sits on top of the cart drawer.
   const {type: asideType} = useAside();
 
+  // Coming-soon state: no prices, no add-to-cart — the buy module becomes a
+  // notify-at-launch signup. Root data feeds the global flag + Turnstile key.
+  const rootData = useRouteLoaderData<RootLoader>('root');
+  const globalComingSoon = rootData?.comingSoon ?? true;
+  const soon = useComingSoon(product.handle);
+
   // Get the product options array
   const productOptions = getProductOptions({
     ...product,
@@ -673,6 +684,9 @@ export default function Product() {
   const stackOffers = useMemo(() => {
     if (!stackCfg || !selectedVariant) return [];
     return stackCfg.partners.flatMap((pc) => {
+      // A partner that hasn't launched can't join a stack offer — its price
+      // and add-to-cart must stay hidden even when this product is live.
+      if (isComingSoon(pc.handle, globalComingSoon)) return [];
       const pp = stackProducts?.find((p) => p.handle === pc.handle);
       const nodes = pp?.variants?.nodes ?? [];
       // Exact size match ONLY: the pill names the selected size, so a
@@ -727,7 +741,7 @@ export default function Product() {
         },
       ];
     });
-  }, [stackCfg, stackProducts, selectedVariant, stackAxis, stackMatchValue]);
+  }, [stackCfg, stackProducts, selectedVariant, stackAxis, stackMatchValue, globalComingSoon]);
 
   // The teardown board art follows the selected tier: a variant's own
   // `boardArt` wins, otherwise the shared `teardown.boardArt` (the default
@@ -1341,8 +1355,13 @@ export default function Product() {
   void primaryCollection;
 
   // Bundles advertise the composed component price (what add-to-cart actually
-  // charges), not the Shopify master-variant placeholder.
-  const jsonLdPrice = content.bundle ? bundlePrice : selectedVariant?.price;
+  // charges), not the Shopify master-variant placeholder. Coming soon → no
+  // offer at all: structured data must not leak a price the page hides.
+  const jsonLdPrice = soon
+    ? undefined
+    : content.bundle
+      ? bundlePrice
+      : selectedVariant?.price;
   const productJsonLd = buildProductJsonLd({
     title: product.title,
     description: product.description,
@@ -1395,7 +1414,29 @@ export default function Product() {
   const buyAvailable = isBundle
     ? bundleAvailable
     : Boolean(selectedVariant?.availableForSale);
-  const railBuyModule = (
+  // Coming-soon buy module: the price/stock/add-to-cart block becomes a
+  // COMING SOON plate + notify-at-launch signup (same newsletter action,
+  // tagged with this product's handle). Everything else on the PDP stays.
+  const railBuyModule = soon ? (
+    <div className="product-buy is-comingsoon" data-buy-module>
+      <div className="product-buy-price">
+        <span className="product-buy-soon" aria-label="Coming soon">
+          Coming soon
+        </span>
+        {selectedVariant?.sku ? (
+          <span className="product-buy-sku">SKU {selectedVariant.sku}</span>
+        ) : null}
+      </div>
+      <span className="product-buy-stock">
+        In development · built in Belgium
+      </span>
+      <NewsletterSignup
+        notify={{productHandle: product.handle, productTitle: product.title}}
+        turnstileSiteKey={rootData?.turnstileSiteKey ?? null}
+        className="product-buy-notify"
+      />
+    </div>
+  ) : (
     <div className="product-buy" data-buy-module>
       <div className="product-buy-price">
         {/* Price + the "incl. VAT" qualifier (Art. VI.45 WER pre-contractual
@@ -1582,8 +1623,10 @@ export default function Product() {
             {railBuyModule}
           </div>
           {/* Separate compact bar pinned to the top while the in-hero selector
-              is out of view, so variants stay switchable from anywhere. */}
-          {railPinned ? createPortal(pinnedRail, document.body) : null}
+              is out of view, so variants stay switchable from anywhere. Coming
+              soon: nothing to buy, so no pinned bar — an email form fixed to
+              the viewport would be noise, and the in-flow signup is enough. */}
+          {railPinned && !soon ? createPortal(pinnedRail, document.body) : null}
 
           {content.pairCta ? (
             <Link className="pair-cta" to={content.pairCta.to} prefetch="viewport">
@@ -2045,7 +2088,7 @@ export default function Product() {
           }
         >
           <FirmwareSplit
-            price={selectedVariant?.price}
+            price={soon ? null : selectedVariant?.price}
             firmwareProject={content.firmware.project}
             firmwareUrl={content.firmware.projectUrl}
           />
