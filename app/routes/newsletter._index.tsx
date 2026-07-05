@@ -3,6 +3,7 @@ import type {Route} from './+types/newsletter._index';
 import {buildSeoMeta} from '~/lib/seo';
 import {checkRateLimit, clientIp} from '~/lib/rate-limit';
 import {verifyTurnstile} from '~/lib/support/turnstile';
+import {tagCustomerNotify} from '~/lib/shopify-admin';
 import {
   ReleaseRow,
   type ReleaseRowArticle,
@@ -184,6 +185,11 @@ type NewsletterResult = {
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
+// Optional `product` form field: a Shopify product handle from the
+// coming-soon "Notify me at launch" signup. Strict slug shape — it becomes
+// a customer tag (`notify-<handle>`), so nothing free-form gets through.
+const PRODUCT_HANDLE_REGEX = /^[a-z0-9][a-z0-9-]{0,63}$/;
+
 function generateOpaquePassword(): string {
   // Shopify requires >=5 chars and caps at 40. The subscriber never uses
   // this — there is no /account login exposed for newsletter-only signups.
@@ -220,6 +226,12 @@ export async function action({request, context}: Route.ActionArgs) {
   const consent = formData.get('consent') === 'on';
   const honeypot = String(formData.get('website') ?? '');
   const turnstileToken = String(formData.get('cf-turnstile-response') ?? '');
+  const productRaw = String(formData.get('product') ?? '')
+    .trim()
+    .toLowerCase();
+  const notifyProduct = PRODUCT_HANDLE_REGEX.test(productRaw)
+    ? productRaw
+    : null;
 
   if (honeypot) {
     return data<NewsletterResult>({ok: true, message: 'Thanks.'});
@@ -245,6 +257,21 @@ export async function action({request, context}: Route.ActionArgs) {
     24 * 60 * 60 * 1000,
   );
   if (!emailLimit.allowed) {
+    // Rate-limited, but a notify-at-launch click still carries signal: the
+    // tag is idempotent, so apply it before returning the generic success —
+    // otherwise the 4th product someone asks about in a day is silently
+    // dropped.
+    if (notifyProduct) {
+      await tagCustomerNotify(context.env, {
+        email,
+        productHandle: notifyProduct,
+      });
+      return data<NewsletterResult>({
+        ok: true,
+        message: "You're on the list — we'll email you at launch.",
+        alreadySubscribed: true,
+      });
+    }
     // Be generic to avoid confirming which addresses have already signed up.
     return data<NewsletterResult>({
       ok: true,
@@ -282,6 +309,19 @@ export async function action({request, context}: Route.ActionArgs) {
         /taken|already/i.test(e.message),
     );
     if (taken) {
+      // Existing subscriber asking to be notified about a SKU: still tag
+      // them (lookup by email — customerCreate returned no id). Best-effort.
+      if (notifyProduct) {
+        await tagCustomerNotify(context.env, {
+          email,
+          productHandle: notifyProduct,
+        });
+        return data<NewsletterResult>({
+          ok: true,
+          message: "You're on the list — we'll email you at launch.",
+          alreadySubscribed: true,
+        });
+      }
       return data<NewsletterResult>({
         ok: true,
         message: "You're already on the list.",
@@ -305,6 +345,21 @@ export async function action({request, context}: Route.ActionArgs) {
         {ok: false, message: userFacing},
         {status: 400},
       );
+    }
+
+    // Per-product launch interest: tag the fresh customer so the SKU is
+    // segmentable in Shopify admin. The Storefront customer gid is the same
+    // gid the Admin API uses, so no lookup round-trip is needed here.
+    if (notifyProduct) {
+      await tagCustomerNotify(context.env, {
+        customerId: payload?.customer?.id ?? null,
+        email,
+        productHandle: notifyProduct,
+      });
+      return data<NewsletterResult>({
+        ok: true,
+        message: "You're on the list — we'll email you at launch.",
+      });
     }
 
     return data<NewsletterResult>({

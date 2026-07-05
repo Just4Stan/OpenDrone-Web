@@ -1,12 +1,14 @@
 import {Link} from 'react-router';
 import {Money} from '@shopify/hydrogen';
 import {SmoothImage} from './SmoothImage';
+import {ProductGhostTile} from './ProductGhostTile';
 import type {MoneyV2} from '@shopify/hydrogen/storefront-api-types';
 import type {
   ProductItemFragment,
   CollectionItemFragment,
 } from 'storefrontapi.generated';
 import {useVariantUrl} from '~/lib/variants';
+import {useComingSoon} from '~/lib/coming-soon';
 import {AddToCartButton} from './AddToCartButton';
 import {StackQuickAdd, type StackOffer} from './StackQuickAdd';
 import {useAside} from './Aside';
@@ -90,11 +92,18 @@ export function ProductItem({
   const image = imageOverride ?? product.featuredImage;
   const hasModels = Boolean(models && models.length > 0);
 
+  // Product-level coming-soon (PUBLIC_COMING_SOON / per-SKU override):
+  // unlike the `comingSoon` prop (unreleased tier, non-clickable tile) the
+  // card stays clickable — the PDP hosts the notify-at-launch signup — but
+  // shows no price and no quick-add.
+  const launchPending = useComingSoon(product.handle);
+  const showPrice = !launchPending;
+
   // Quick-add overlay: revealed on card hover (always visible on touch).
   // Rendered as a SIBLING of the card link, never inside it — a form inside
   // an anchor is invalid HTML and hijacks the navigation click.
   const quickAddNode =
-    quickAdd && !comingSoon && !feature ? (
+    quickAdd && !comingSoon && !launchPending && !feature ? (
       <div className="product-card-quickadd">
         <StackQuickAdd
           offers={stackOffers ?? []}
@@ -114,7 +123,7 @@ export function ProductItem({
       </div>
     ) : null;
 
-  const badge = comingSoon ? (
+  const badge = comingSoon || launchPending ? (
     <span className="product-card-badge is-soon">Coming soon</span>
   ) : onSale ? (
     <span className="product-card-badge is-sale">Sale</span>
@@ -171,9 +180,10 @@ export function ProductItem({
               sizes="(min-width: 64em) 340px, 100vw"
             />
           ) : (
-            <span className="product-card-media-ghost">
-              {('productType' in product && product.productType) || 'OpenDrone'}
-            </span>
+            <ProductGhostTile
+              type={('productType' in product && product.productType) || null}
+              title={product.title}
+            />
           )}
         </Link>
         <div className="product-feature-body">
@@ -184,9 +194,11 @@ export function ProductItem({
           >
             <div className="product-card-row">
               <h2 className="product-card-title">{product.title}</h2>
-              <span className="product-card-price">
-                <Money data={product.priceRange.minVariantPrice} />
-              </span>
+              {showPrice ? (
+                <span className="product-card-price">
+                  <Money data={product.priceRange.minVariantPrice} />
+                </span>
+              ) : null}
             </div>
             {'productType' in product && product.productType ? (
               <p className="product-card-meta">{product.productType}</p>
@@ -212,17 +224,20 @@ export function ProductItem({
             sizes="(min-width: 45em) 400px, 100vw"
           />
         ) : (
-          <span className="product-card-media-ghost" aria-hidden="true">
-            {('productType' in product && product.productType) || 'OpenDrone'}
-          </span>
+          <ProductGhostTile
+            type={('productType' in product && product.productType) || null}
+            title={displayTitle}
+          />
         )}
       </div>
       <div className="product-card-body">
         <div className="product-card-row">
           <h2 className="product-card-title">{displayTitle}</h2>
-          <span className="product-card-price">
-            <Money data={price} />
-          </span>
+          {showPrice ? (
+            <span className="product-card-price">
+              <Money data={price} />
+            </span>
+          ) : null}
         </div>
         {'productType' in product && product.productType ? (
           <p className="product-card-meta">{product.productType}</p>

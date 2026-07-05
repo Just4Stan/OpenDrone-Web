@@ -972,6 +972,16 @@ html {
   font-size: var(--fs-md);
   color: var(--color-gold);
 }
+/* Coming-soon reveal cards: a quiet mono tag in the price slot. */
+.hero-reveal-soon {
+  flex: 0 0 auto;
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--color-gold);
+}
 
 /* Drag-to-view hint — centred over the drone, fades in after a few idle
    seconds and dismisses on first interaction. */
@@ -1264,6 +1274,19 @@ a:hover {
 .product-pods--grid .product-pod-price {
   margin-left: 0;
 }
+/* Coming-soon rows: a quiet mono tag holds the price slot. */
+.product-pod-soon {
+  margin-left: auto;
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--color-gold);
+}
+.product-pods--grid .product-pod-soon {
+  margin-left: 0;
+}
 
 /* ============================================
    Header
@@ -1340,6 +1363,14 @@ html.hero-incutec-hint .incutec-hint {
 /* While a family dropdown is open, lift the whole header above the pinned
    buy rail (z 60) — otherwise the pod and its buy strip slide underneath. */
 .site-header:has(.header-cat-pod) {
+  z-index: 70;
+}
+/* While the cart drawer is open as a hover PREVIEW (html attr set by
+   CartBadge), lift the header above the drawer overlay (z 40) + panel (z 50)
+   so the cart icon stays hoverable and — critically — clickable: hovering
+   opens the peek, but the commit-click must still land on the icon and
+   navigate to /cart. Cleared the moment the preview pins or closes. */
+html[data-cart-preview] .site-header {
   z-index: 70;
 }
 
@@ -2363,27 +2394,57 @@ html.hero-header-in .homepage-layout .site-header {
 }
 
 /* Streaming-image cover — SmoothImage.tsx. Appears only after hydration
-   while the file is still in flight, lifts on load. Cached images never
-   see it. */
+   while the file is still in flight: a blurred ~1 KB CDN thumb of the same
+   image over a token background, crossfading away on load. Cached images
+   never see it. */
 .smooth-media {
   position: relative;
   width: 100%;
   height: 100%;
 }
 
-.smooth-media::after {
-  content: '';
+.smooth-media-cover {
   position: absolute;
   inset: 0;
+  overflow: hidden;
   background: var(--color-bg-elevated);
-  opacity: 0;
+  opacity: 1;
   transition: opacity 0.45s ease;
   pointer-events: none;
 }
 
-.smooth-media.is-loading::after {
-  opacity: 1;
+/* Doubled class for specificity — later context rules like
+   `.product-gallery-main img` must not re-fit or un-blur the thumb. */
+.smooth-media-cover.smooth-media-cover img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  /* Heavy blur + scale so the upsampled 32px thumb reads as a wash of the
+     image's own colors; the scale hides the blur's transparent edges. */
+  filter: blur(18px);
+  transform: scale(1.12);
+}
+
+/* Card/feature hover zoom targets the real image; pin the cover thumb so
+   hovering a still-loading card doesn't animate the blur toward scale(1.04)
+   and expose the blur fringe. Doubled class outranks both zoom rules
+   (0,4,1 vs 0,3,1) regardless of source order. */
+.product-card:hover .smooth-media-cover.smooth-media-cover img,
+.product-feature:hover .smooth-media-cover.smooth-media-cover img {
+  transform: scale(1.12);
+}
+
+.smooth-media-cover.is-lifted {
+  opacity: 0;
+}
+
+/* No CDN thumb derivable — flat token cover with the quiet pulse. */
+.smooth-media-cover.no-thumb {
   animation: media-pulse 1.8s ease-in-out infinite;
+}
+
+.smooth-media-cover.no-thumb.is-lifted {
+  animation: none;
 }
 
 @keyframes media-pulse {
@@ -2397,7 +2458,9 @@ html.hero-header-in .homepage-layout .site-header {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .smooth-media.is-loading::after {
+  .smooth-media-cover,
+  .smooth-media-cover.no-thumb {
+    transition: none;
     animation: none;
   }
 }
@@ -2419,6 +2482,69 @@ html.hero-header-in .homepage-layout .site-header {
   border: 1px dashed var(--color-border);
   border-radius: var(--r-xs);
   padding: 6px 12px;
+}
+
+/* Engineering-document ghost tile — ProductGhostTile.tsx. Products without
+   photography render as a catalog figure: hairline rules, product type as
+   the document header, a line glyph as the figure, title as the catalog
+   line. Tokens only — themes for free. */
+.product-card-media.is-empty .ghost-tile,
+.product-feature-media .ghost-tile {
+  position: absolute;
+  inset: 0;
+}
+
+.ghost-tile {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  color: var(--color-text-dim);
+  font-family: var(--font-mono);
+}
+
+.ghost-tile-rule {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--color-border);
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.ghost-tile-rule.is-foot {
+  border-bottom: 0;
+  border-top: 1px solid var(--color-border);
+}
+
+.ghost-tile-type,
+.ghost-tile-catalog {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+
+.ghost-tile-fig {
+  flex-shrink: 0;
+  opacity: 0.7;
+}
+
+.ghost-tile-figure {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  place-items: center;
+}
+
+.ghost-tile-figure svg {
+  width: 42%;
+  max-width: 128px;
+  height: auto;
+  opacity: 0.55;
 }
 
 .product-card-body {
@@ -4411,6 +4537,41 @@ button.reset {
 .product-buy-stock.is-out::before {
   background: var(--color-text-dim);
   box-shadow: none;
+}
+
+/* Coming-soon buy module — the price slot carries a hairline COMING SOON
+   plate instead of a figure; the stock dot goes gold ("in development"),
+   and the notify signup drops its section chrome to sit inside the card. */
+.product-buy-soon {
+  display: inline-flex;
+  align-items: center;
+  font-family: var(--font-mono);
+  font-weight: 600;
+  font-size: var(--fs-sm);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--color-gold);
+  padding: 0.35rem 0.7rem;
+  border: 1px solid color-mix(in srgb, var(--color-gold) 45%, transparent);
+  border-radius: var(--r-sm);
+  background: var(--color-gold-soft);
+  line-height: 1;
+}
+
+.product-buy.is-comingsoon .product-buy-stock {
+  color: var(--color-text-muted);
+}
+.product-buy.is-comingsoon .product-buy-stock::before {
+  background: var(--color-gold);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-gold) 18%, transparent);
+}
+
+.product-buy-notify {
+  border-top: 1px solid var(--color-border);
+  padding-top: var(--sp-3);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
 }
 
 /* Morphing buy rail — wraps the ladder + buy module. At rest it's a
@@ -7780,6 +7941,122 @@ button.reset {
   color: var(--color-text-muted);
   font-size: 0.85rem;
   line-height: 1.6;
+}
+
+/* Quiet secondary actions under the checkout CTA: keep-shopping escape +
+   share-cart copier. Mono hairline language, no button chrome — these must
+   read a register below the gold CTA. The .cart-summary-* scope also lifts
+   the share <button> out of the shared gold-filled button rule below. */
+.cart-secondary-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-top: 0.85rem;
+}
+
+.cart-secondary-actions .cart-keep-shopping,
+.cart-secondary-actions .cart-share-btn {
+  border: none;
+  background: none;
+  border-radius: 0;
+  padding: 0;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  transition: color 150ms ease;
+}
+
+.cart-secondary-actions .cart-keep-shopping:hover,
+.cart-secondary-actions .cart-share-btn:hover {
+  background: none;
+  color: var(--color-text);
+}
+
+.cart-secondary-actions .cart-share-btn[data-copied] {
+  color: var(--color-gold);
+}
+
+/* "Goes well with" companion row (drawer + page): one quiet suggestion of
+   the size-matched stack partner, a register below the cart lines and well
+   below the donation block. Tokens only — light mode comes for free. */
+.cart-companion {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  margin-top: var(--sp-3);
+  padding-top: var(--sp-3);
+  border-top: 1px solid var(--color-border);
+}
+
+.cart-companion-eyebrow {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--color-text-dim);
+}
+
+.cart-companion-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  min-width: 0;
+}
+
+.cart-companion-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  color: var(--color-text);
+  text-decoration: none;
+  transition: color 150ms ease;
+}
+
+.cart-companion-name:hover {
+  color: var(--color-gold);
+}
+
+.cart-companion-price {
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+  white-space: nowrap;
+}
+
+/* Compact quiet add pill — deliberately NOT the gold CTA register. */
+.cart-companion-add {
+  flex: none;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  padding: 0.3rem 0.7rem;
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--r-md);
+  color: var(--color-text);
+  cursor: pointer;
+  transition: border-color 150ms ease, background 150ms ease;
+}
+
+.cart-companion-add:hover:not(:disabled) {
+  border-color: var(--color-gold);
+  background: color-mix(in srgb, var(--color-gold) 8%, var(--color-bg-card));
+}
+
+.cart-companion-add:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .cart-line-inner > div {

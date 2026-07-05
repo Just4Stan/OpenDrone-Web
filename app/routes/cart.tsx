@@ -5,6 +5,11 @@ import {CartForm} from '@shopify/hydrogen';
 import {CartMain} from '~/components/CartMain';
 import {buildSeoMeta} from '~/lib/seo';
 import {DONATION_PRODUCT_QUERY} from '~/lib/fragments';
+import {
+  anyComingSoonLocks,
+  comingSoonFlag,
+  findLockedMerchandise,
+} from '~/lib/coming-soon';
 
 export const meta: Route.MetaFunction = () =>
   buildSeoMeta({
@@ -28,11 +33,54 @@ export async function action({request, context}: Route.ActionArgs) {
 
   let status = 200;
   let result: CartQueryDataReturn;
+  // Set when the coming-soon gate drops some (but not all) requested lines,
+  // so the cart drawer can tell the visitor what didn't make it in.
+  let comingSoonNotice: string | null = null;
 
   switch (action) {
-    case CartForm.ACTIONS.LinesAdd:
-      result = await cart.addLines(inputs.lines);
+    case CartForm.ACTIONS.LinesAdd: {
+      // Server-side coming-soon gate: the client hides add-to-cart for
+      // locked products, but a direct POST could still push one into the
+      // cart. Zero-cost when the shop is unlocked and nothing is
+      // override-locked — no extra query.
+      let lines = inputs.lines ?? [];
+      const soonFlag = comingSoonFlag(context.env);
+      if (lines.length > 0 && anyComingSoonLocks(soonFlag)) {
+        const {lockedIds} = await findLockedMerchandise(
+          context.storefront,
+          soonFlag,
+          lines
+            .map((l) => l.merchandiseId)
+            .filter((id): id is string => Boolean(id)),
+        );
+        if (lockedIds.size > 0) {
+          const open = lines.filter(
+            (l) => !l.merchandiseId || !lockedIds.has(l.merchandiseId),
+          );
+          if (open.length === 0) {
+            return data(
+              {
+                cart: null,
+                errors: [
+                  {
+                    message:
+                      'This product is coming soon and not orderable yet. Join the launch list on the product page instead.',
+                  },
+                ],
+                warnings: [],
+                analytics: {cartId: null},
+              },
+              {status: 409},
+            );
+          }
+          comingSoonNotice =
+            'Some items are coming soon and were not added to the cart.';
+          lines = open;
+        }
+      }
+      result = await cart.addLines(lines);
       break;
+    }
     case CartForm.ACTIONS.LinesUpdate:
       result = await cart.updateLines(inputs.lines);
       break;
@@ -103,7 +151,9 @@ export async function action({request, context}: Route.ActionArgs) {
     {
       cart: cartResult,
       errors,
-      warnings,
+      warnings: comingSoonNotice
+        ? [...(warnings ?? []), {message: comingSoonNotice}]
+        : warnings,
       analytics: {
         cartId,
       },
