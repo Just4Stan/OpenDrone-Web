@@ -1365,6 +1365,14 @@ html.hero-incutec-hint .incutec-hint {
 .site-header:has(.header-cat-pod) {
   z-index: 70;
 }
+/* While the cart drawer is open as a hover PREVIEW (html attr set by
+   CartBadge), lift the header above the drawer overlay (z 40) + panel (z 50)
+   so the cart icon stays hoverable and — critically — clickable: hovering
+   opens the peek, but the commit-click must still land on the icon and
+   navigate to /cart. Cleared the moment the preview pins or closes. */
+html[data-cart-preview] .site-header {
+  z-index: 70;
+}
 
 /* The header bar is a pill Pod — shares the .pod surface tokens so it's the
    same material as the dropdowns / hero showcase / PDP scroll-bubble. */
