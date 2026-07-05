@@ -42,6 +42,12 @@ declare global {
     // Pre-launch banner kill switch: unset/anything ≠ '0' keeps the banner.
     PUBLIC_PRELAUNCH?: string;
 
+    // Coming-soon kill switch: unset/anything ≠ '0' renders every product
+    // as coming soon (no prices, notify-me signup instead of add-to-cart).
+    // Set PUBLIC_COMING_SOON=0 in Oxygen the day orders open. Per-product
+    // overrides live in app/lib/product-content.ts (`comingSoon`).
+    PUBLIC_COMING_SOON?: string;
+
     PUBLIC_COMPANY_NAME?: string;
     PUBLIC_COMPANY_ADDRESS?: string;
     PUBLIC_COMPANY_KBO?: string;
