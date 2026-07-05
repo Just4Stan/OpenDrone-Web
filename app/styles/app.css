@@ -7995,6 +7995,224 @@ button.reset {
   border-bottom: 1px solid var(--color-border);
 }
 
+/* ============================================
+   /cart build sheet — the page cart as an engineering invoice: a
+   hairline-ruled table with fixed mono columns (item · qty · total), a
+   column-caption header, and a subtotal/VAT/total register. The drawer
+   keeps its compact stacked layout; everything here is layout='page' only.
+   ============================================ */
+
+/* Shared column template — header and rows must agree or nothing lines up.
+   ITEM = thumb + name, QTY and TOTAL are fixed so every row registers. */
+.cart-sheet-head,
+.cart-sheet-row {
+  display: grid;
+  grid-template-columns: 56px minmax(0, 1fr) 7.5rem 7rem;
+  column-gap: 1rem;
+  align-items: center;
+}
+
+.cart-sheet-head {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--color-text-dim);
+  padding-bottom: 0.55rem;
+  border-bottom: 1px solid var(--color-border-strong);
+}
+
+.cart-sheet-head-item {
+  grid-column: 1 / 3;
+}
+
+.cart-sheet-head-qty {
+  text-align: center;
+}
+
+.cart-sheet-head-total {
+  text-align: right;
+}
+
+.cart-line--sheet .cart-sheet-row img {
+  width: 56px;
+  height: 56px;
+}
+
+.cart-sheet-item {
+  min-width: 0;
+  display: grid;
+  gap: 0.2rem;
+  justify-items: start;
+}
+
+.cart-sheet-item p strong {
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: var(--color-text);
+}
+
+.cart-sheet-item ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.cart-sheet-item small {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  color: var(--color-text-muted);
+  letter-spacing: 0.02em;
+}
+
+/* Qty column: − n + cluster with the count as a tabular figure, remove
+   action underneath. */
+.cart-line-quantity--sheet {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.3rem;
+  margin: 0;
+}
+
+.cart-sheet-stepper {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.cart-sheet-qty-value {
+  min-width: 2ch;
+  text-align: center;
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text);
+}
+
+/* The stepper's + form is the last child of ITS parent, so the generic
+   text-remove rule (.cart-line-quantity form:last-child button) would
+   restyle it — pin the stepper buttons back to the boxed look. */
+.cart-line-quantity--sheet .cart-sheet-stepper form:last-child button {
+  width: 26px;
+  padding: 0;
+  border: 1px solid var(--color-border);
+  font-size: 14px;
+  color: var(--color-text-muted);
+  text-transform: none;
+  letter-spacing: 0;
+  margin-left: 0;
+}
+
+.cart-line-quantity--sheet .cart-sheet-stepper form:last-child button:hover {
+  background: var(--color-bg-elevated);
+  color: var(--color-text);
+  border-color: var(--color-gold);
+}
+
+/* Total column: mono tabular, right-registered like the header caption. */
+.cart-sheet-total {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.15rem;
+  text-align: right;
+}
+
+.cart-sheet-total .product-price {
+  font-family: var(--font-mono);
+  font-weight: 600;
+  font-size: 0.95rem;
+  letter-spacing: 0;
+}
+
+.cart-sheet-total .cart-line-compare .product-price {
+  font-weight: 400;
+  font-size: 0.8rem;
+  color: var(--color-text-dim);
+}
+
+/* Phone: qty + total wrap under the item text; captions header hides (each
+   cluster is self-evident at stacked scale). */
+@media (max-width: 640px) {
+  .cart-sheet-head {
+    display: none;
+  }
+
+  .cart-sheet-row {
+    grid-template-areas:
+      'img item total'
+      'img qty  qty';
+    grid-template-columns: 56px minmax(0, 1fr) max-content;
+    row-gap: 0.5rem;
+    align-items: start;
+  }
+
+  .cart-sheet-row > img {
+    grid-area: img;
+  }
+
+  .cart-sheet-item {
+    grid-area: item;
+  }
+
+  .cart-sheet-qty {
+    grid-area: qty;
+  }
+
+  .cart-sheet-total {
+    grid-area: total;
+  }
+
+  .cart-line-quantity--sheet {
+    flex-direction: row;
+    gap: 0.75rem;
+  }
+}
+
+/* Summary register — subtotal / VAT share / total in hairline rows. */
+.cart-register {
+  margin: 0;
+}
+
+.cart-register-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.cart-register-row dt {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+
+.cart-register-row dd {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 0.9rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text);
+}
+
+.cart-register-row.is-total {
+  border-bottom-color: var(--color-border-strong);
+}
+
+.cart-register-row.is-total dt {
+  color: var(--color-text);
+}
+
+.cart-register-row.is-total dd {
+  font-size: 1.05rem;
+  font-weight: 600;
+}
+
 .cart-summary-note {
   margin-top: 1rem;
   color: var(--color-text-muted);
@@ -8144,6 +8362,13 @@ button.reset {
   color: var(--color-text-dim);
   font-size: 0.85em;
 }
+
+.cart-line-compare .product-price {
+  font-family: inherit;
+  font-weight: inherit;
+  font-size: inherit;
+  color: inherit;
+}
 .cart-line-discount-badge {
   display: inline-flex;
   gap: 0.2rem;
@@ -8154,6 +8379,15 @@ button.reset {
   border-radius: var(--r-pill);
   padding: 0.05rem 0.5rem;
   white-space: nowrap;
+}
+
+/* The badge embeds a ProductPrice; without this the .product-price base
+   rule blows the amount up to display size inside the tiny pill. */
+.cart-line-discount-badge .product-price {
+  font-family: inherit;
+  font-weight: inherit;
+  font-size: inherit;
+  color: inherit;
 }
 
 .cart-line-quantity {

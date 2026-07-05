@@ -71,6 +71,95 @@ export function CartLineItem({
   const lineItemChildren = childrenMap[id];
   const childrenLabelId = `cart-line-children-${id}`;
 
+  const childrenRows = lineItemChildren ? (
+    <div>
+      <p id={childrenLabelId} className="sr-only">
+        Line items with {product.title}
+      </p>
+      <ul aria-labelledby={childrenLabelId} className="cart-line-children">
+        {lineItemChildren.map((childLine) => (
+          <CartLineItem
+            childrenMap={childrenMap}
+            key={childLine.id}
+            line={childLine}
+            layout={layout}
+          />
+        ))}
+      </ul>
+    </div>
+  ) : null;
+
+  // /cart page — "build sheet" row: fixed mono columns (item · qty · total)
+  // under the hairline-ruled header CartMain renders. The drawer keeps the
+  // compact stacked layout below; only the DOM shape differs, every control
+  // (qty forms, remove, discount badges) is the same machinery.
+  if (layout === 'page') {
+    return (
+      <li key={id} className="cart-line cart-line--sheet">
+        <div className="cart-sheet-row">
+          {image && (
+            <Image
+              alt={title}
+              aspectRatio="1/1"
+              data={image}
+              height={56}
+              loading="lazy"
+              width={56}
+            />
+          )}
+          <div className="cart-sheet-item">
+            <Link prefetch="viewport" to={lineItemUrl}>
+              <p>
+                <strong>{product.title}</strong>
+              </p>
+            </Link>
+            <ul>
+              {selectedOptions
+                .filter(
+                  (option) =>
+                    !(
+                      option.name === 'Title' &&
+                      option.value === 'Default Title'
+                    ),
+                )
+                .map((option) => (
+                  <li key={option.name}>
+                    <small>
+                      {option.name}: {option.value}
+                    </small>
+                  </li>
+                ))}
+            </ul>
+            {lineDiscount ? (
+              <span className="cart-line-discount-badge">
+                {lineDiscount.label} −
+                <ProductPrice
+                  price={
+                    lineDiscount.amount as NonNullable<
+                      (typeof line.cost)['totalAmount']
+                    >
+                  }
+                />
+              </span>
+            ) : null}
+          </div>
+          <div className="cart-sheet-qty">
+            <CartLineQuantity line={line} sheet />
+          </div>
+          <div className="cart-sheet-total">
+            <ProductPrice price={line?.cost?.totalAmount} />
+            {lineDiscount ? (
+              <s className="cart-line-compare">
+                <ProductPrice price={preDiscountTotal} />
+              </s>
+            ) : null}
+          </div>
+        </div>
+        {childrenRows}
+      </li>
+    );
+  }
+
   return (
     <li key={id} className="cart-line">
       <div className="cart-line-inner">
@@ -137,23 +226,7 @@ export function CartLineItem({
         </div>
       </div>
 
-      {lineItemChildren ? (
-        <div>
-          <p id={childrenLabelId} className="sr-only">
-            Line items with {product.title}
-          </p>
-          <ul aria-labelledby={childrenLabelId} className="cart-line-children">
-            {lineItemChildren.map((childLine) => (
-              <CartLineItem
-                childrenMap={childrenMap}
-                key={childLine.id}
-                line={childLine}
-                layout={layout}
-              />
-            ))}
-          </ul>
-        </div>
-      ) : null}
+      {childrenRows}
     </li>
   );
 }
@@ -163,11 +236,47 @@ export function CartLineItem({
  * These controls are disabled when the line item is new, and the server
  * hasn't yet responded that it was successfully added to the cart.
  */
-function CartLineQuantity({line}: {line: CartLine}) {
+function CartLineQuantity({line, sheet}: {line: CartLine; sheet?: boolean}) {
   if (!line || typeof line?.quantity === 'undefined') return null;
   const {id: lineId, quantity, isOptimistic} = line;
   const prevQuantity = Number(Math.max(0, quantity - 1).toFixed(0));
   const nextQuantity = Number((quantity + 1).toFixed(0));
+
+  // Build-sheet variant (/cart page): a tight − n + cluster with the count
+  // as a mono tabular figure between the steppers (the column header names
+  // the quantity, so no "Quantity:" label), remove below.
+  if (sheet) {
+    return (
+      <div className="cart-line-quantity cart-line-quantity--sheet">
+        <div className="cart-sheet-stepper">
+          <CartLineUpdateButton lines={[{id: lineId, quantity: prevQuantity}]}>
+            <button
+              aria-label="Decrease quantity"
+              disabled={quantity <= 1 || !!isOptimistic}
+              name="decrease-quantity"
+              value={prevQuantity}
+            >
+              <span>&#8722;</span>
+            </button>
+          </CartLineUpdateButton>
+          <span className="cart-sheet-qty-value" aria-label={`Quantity ${quantity}`}>
+            {quantity}
+          </span>
+          <CartLineUpdateButton lines={[{id: lineId, quantity: nextQuantity}]}>
+            <button
+              aria-label="Increase quantity"
+              name="increase-quantity"
+              value={nextQuantity}
+              disabled={!!isOptimistic}
+            >
+              <span>&#43;</span>
+            </button>
+          </CartLineUpdateButton>
+        </div>
+        <CartLineRemoveButton lineIds={[lineId]} disabled={!!isOptimistic} />
+      </div>
+    );
+  }
 
   return (
     <div className="cart-line-quantity">
