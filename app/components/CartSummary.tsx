@@ -94,11 +94,15 @@ function ShareCartButton({cart}: {cart: CartSummaryProps['cart']}) {
     ? `&discount=${encodeURIComponent(discountCodes.join(','))}`
     : '';
 
-  const path = `/cart/${shareable
-    .map(
-      (line) =>
-        `${line.merchandise.id.split('/').pop()}:${line.quantity ?? 1}`,
-    )
+  // Aggregate by variant — Shopify splits a line when a BXGY discount covers
+  // only part of its quantity, and the link shouldn't repeat the variant.
+  const qtyByVariant = new Map<string, number>();
+  for (const line of shareable) {
+    const id = line.merchandise.id.split('/').pop()!;
+    qtyByVariant.set(id, (qtyByVariant.get(id) ?? 0) + (line.quantity ?? 1));
+  }
+  const path = `/cart/${[...qtyByVariant]
+    .map(([id, qty]) => `${id}:${qty}`)
     .join(',')}?view=1${discountParam}`;
 
   function copy() {
