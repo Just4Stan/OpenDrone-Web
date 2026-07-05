@@ -3520,6 +3520,186 @@ button.reset {
   border-top: 1px solid var(--color-border);
 }
 
+/* Related cards — spec-forward tiles (board render, catalog-file eyebrow,
+   one-line spec, mono price) with a pointer-following gold spotlight on
+   hover. All tokens, so light mode comes for free. */
+.related-grid {
+  /* Same rhythm as .products-grid so the strip reads as one catalog. */
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: var(--sp-4);
+}
+
+.related-card {
+  --spot-x: 50%;
+  --spot-y: 0px;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--r-md);
+  overflow: hidden;
+  transition: border-color 0.2s ease;
+}
+
+.related-card::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    240px circle at var(--spot-x) var(--spot-y),
+    var(--color-gold-soft),
+    transparent 70%
+  );
+  opacity: 0;
+  transition: opacity 0.25s ease;
+  pointer-events: none;
+}
+
+.related-card:hover {
+  border-color: var(--color-border-strong);
+}
+
+.related-card:hover::after {
+  opacity: 1;
+}
+
+.related-card-link {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  color: inherit;
+  text-decoration: none;
+}
+
+.related-card-media {
+  position: relative;
+  aspect-ratio: 1 / 1;
+  background: var(--color-bg-elevated);
+  overflow: hidden;
+}
+
+.related-card-media.is-empty {
+  display: grid;
+  place-items: center;
+}
+
+.related-card-media img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.5s cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+.related-card:hover .related-card-media img {
+  transform: scale(1.04);
+}
+
+.related-card-body {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  gap: 0.3rem;
+  padding: var(--sp-3) var(--sp-4) var(--sp-4);
+  border-top: 1px solid var(--color-border);
+}
+
+.related-card-file {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--color-text-dim);
+  margin: 0;
+}
+
+.related-card-title {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: var(--fs-md);
+  letter-spacing: -0.01em;
+  line-height: 1.2;
+  color: var(--color-text);
+  margin: 0;
+  transition: color 0.15s ease;
+}
+
+.related-card:hover .related-card-title {
+  color: var(--color-gold);
+}
+
+.related-card-spec {
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  color: var(--color-text-muted);
+  letter-spacing: 0.04em;
+  line-height: 1.4;
+  margin: 0;
+}
+
+.related-card-price {
+  display: flex;
+  align-items: baseline;
+  gap: 0.35rem;
+  margin: auto 0 0;
+  padding-top: 0.4rem;
+  font-family: var(--font-mono);
+  font-size: var(--fs-sm);
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text);
+}
+
+.related-card-from {
+  font-size: var(--fs-xs);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--color-text-dim);
+}
+
+/* Quick-add overlay — same reveal recipe as the browse cards; sibling of
+   the card link (a form can't nest inside an anchor). */
+.related-card-quickadd {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  aspect-ratio: 1 / 1;
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-end;
+  padding: 0.6rem;
+  pointer-events: none;
+  z-index: 4;
+}
+
+.related-card-quickadd > * {
+  pointer-events: auto;
+}
+
+.related-card-quickadd .product-card-quickadd-btn {
+  opacity: 0;
+  transform: translateY(4px);
+  transition: opacity 0.15s ease, transform 0.15s ease;
+}
+
+.related-card.has-quickadd:hover .product-card-quickadd-btn,
+.related-card.has-quickadd:focus-within .product-card-quickadd-btn {
+  opacity: 1;
+  transform: none;
+}
+
+@media (hover: none) {
+  .related-card-quickadd .product-card-quickadd-btn {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.related-card-skeleton {
+  pointer-events: none;
+}
+
 .product-card-skeleton {
   pointer-events: none;
 }
