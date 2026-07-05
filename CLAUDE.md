@@ -35,27 +35,40 @@ token swap — follow it and new UI themes for free.
 - **Don't** reintroduce `class="dark"`-only assumptions or `prefers-color-scheme`
   media queries for color — the class on `<html>` is the single source of truth.
 
-## Git flow — trunk-based, one tree (READ THIS FIRST)
+## Git flow — worktree per agent, PRs into protected `main` (READ THIS FIRST)
 
-This repo is a solo project with Oxygen auto-deploying `main`. Past pain came
-from many long-lived feature branches all editing the PDP, plus multiple agents
-sharing one checkout and switching its branch — work kept getting overwritten.
-The rule now: **work on `main`, in one tree, and see it on `localhost:3000`.**
+`main` is protected on GitHub: direct pushes are **rejected**; everything lands
+via squash-merged PRs, and Oxygen deploys `main` on merge. Multiple Claude
+agents routinely work this repo in parallel (each in its own terminal). The
+2026-07-06 pile-up — reverted edits, deleted untracked files, branches switched
+under a running editor — all came from agents sharing one checkout. Hence:
 
-- **Trunk-based, no routine branches.** Pull `main`, edit, watch it live on
-  `localhost:3000` (HMR — no deploy needed), `commit` small + focused, `push`.
-  Oxygen deploys `main`. That's the whole loop. Do **not** open a feature branch
-  for ordinary work — divergence is what caused the overwrites.
-- **One agent at a time in this working tree.** Two agents editing the same
-  directory race and clobber each other (it has happened). If you genuinely need
-  parallel work, give each agent its **own** `git worktree` on its **own** dev
-  port (3001/3002) — never two agents in one directory — and merge back the same
-  day, then delete the worktree.
-- **Never `git checkout <other-branch>` in this tree while work is uncommitted.**
-  It yanks the tree out from under whoever is working. Commit or stash first.
-- **Never squash-merge a branch that redid work already on `main`** — it silently
-  reverts `main`'s newer version to the branch's older one.
-- **Keep changes small and ship them fast.** A change that lives a day before
-  landing is already at risk of being overwritten by parallel work.
+- **One agent = one worktree = one branch = one dev port.** Before touching
+  code, claim a lane:
+  `git worktree add ~/OpenDrone-Web-wt/<lane> -b feat/<lane> origin/main`
+  then work ONLY inside that directory (`npm ci` once, then
+  `npm run dev -- --port <port>`; ports 3001–3009, pick one nobody's using).
+  The main checkout `~/OpenDrone-Web` (port 3000) belongs to Stan and the
+  oversight/integration session — don't edit files there if `git status`
+  shows work that isn't yours.
+- **Hands off other lanes.** Never `git stash`, `git clean`, `checkout`/
+  `switch`, or delete untracked files over someone else's WIP — if something
+  blocks you, note it in the active brief's coordination section instead.
+- **Commit small, push after every commit** (`git push -u origin feat/<lane>`).
+- **PR early, merge fast**: `gh pr create` once the lane is coherent;
+  `gh pr merge --squash --delete-branch` after `npm run typecheck && npm run
+  lint` pass and the change is verified on your own port. Small PRs measured
+  in hours, not days.
+- **Never squash-merge a branch that redid work already on `main`** — it
+  silently reverts `main`'s newer version to the branch's older one.
+- **After any PR merges: every live lane rebases** — `git fetch && git rebase
+  origin/main`. Build only against `origin/main`, never against another
+  lane's unmerged branch; if you need unmerged work, get it merged first.
+- **Coordination map**: the active project brief (currently
+  `drafts/ui-overhaul-brief.md`, section "Coordination — LIVE") holds the
+  lane registry and file-ownership map. Check it before claiming files;
+  update it when you claim or finish a lane.
+- **When a lane is done**: merge the PR, then
+  `git worktree remove ~/OpenDrone-Web-wt/<lane>` and delete the branch.
 - Commit message trailer: `Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>`.
 - Always `git push` after committing (see Deployment above).
