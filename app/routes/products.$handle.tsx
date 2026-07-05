@@ -32,6 +32,7 @@ import {SceneErrorBoundary} from '~/components/SceneErrorBoundary';
 import {ProvenanceCard} from '~/components/ProvenanceCard';
 import {BrandName} from '~/components/BrandName';
 import {CommitHistoryCard, LatestCommitCard} from '~/components/LatestCommit';
+import {AnimatedNumber} from '~/components/AnimatedNumber';
 import {WatchCard} from '~/components/WatchCard';
 import {redirectIfHandleIsLocalized} from '~/lib/redirect';
 import {buildSeoMeta, buildProductJsonLd} from '~/lib/seo';
@@ -2117,7 +2118,13 @@ export default function Product() {
             {mergedSpecs.map(([k, v]) => (
               <div key={k}>
                 <dt>{k}</dt>
-                <dd>{v}</dd>
+                {/* Count-up on the numeric runs the first time the table
+                    scrolls into view. spec-table already sets tabular-nums,
+                    so digits don't jitter mid-count; reduced-motion and
+                    variant-switch re-renders are handled inside. */}
+                <dd>
+                  <AnimatedNumber value={v} />
+                </dd>
               </div>
             ))}
           </dl>
