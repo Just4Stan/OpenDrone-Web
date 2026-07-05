@@ -126,6 +126,9 @@ export async function loader(args: Route.LoaderArgs) {
     // Pre-launch banner kill switch: defaults ON; set PUBLIC_PRELAUNCH=0 in
     // Oxygen the day orders open.
     prelaunch: env.PUBLIC_PRELAUNCH !== '0',
+    // Coming-soon kill switch: defaults ON; set PUBLIC_COMING_SOON=0 the day
+    // orders open. Per-product overrides in product-content.ts win over this.
+    comingSoon: env.PUBLIC_COMING_SOON !== '0',
     turnstileSiteKey: env.TURNSTILE_SITE_KEY ?? null,
     shop: getShopAnalytics({
       storefront,

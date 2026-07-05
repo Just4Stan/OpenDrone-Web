@@ -260,6 +260,10 @@ export type ProductContent = {
   bundle?: {                    // when set, the PDP renders as a bundle
     components: BundleComponent[];
   };
+  /** Per-product coming-soon override. Unset = follow the global
+   *  PUBLIC_COMING_SOON flag. `false` unlocks this SKU for sale while the
+   *  global flag is still on; `true` keeps teasing it after the flag drops. */
+  comingSoon?: boolean;
 };
 
 export const PRODUCT_CONTENT: Record<string, ProductContent> = {
@@ -959,6 +963,21 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
   },
 
 };
+
+/**
+ * Resolve whether a product renders as coming soon (no prices, notify-me
+ * signup instead of add-to-cart). Per-product `comingSoon` in
+ * {@link PRODUCT_CONTENT} wins; otherwise the global PUBLIC_COMING_SOON
+ * flag (root loader `comingSoon`) decides. Callers without a handle
+ * (e.g. a generic surface) pass only the flag.
+ */
+export function isComingSoon(
+  handle: string | null | undefined,
+  globalFlag: boolean,
+): boolean {
+  const override = handle ? PRODUCT_CONTENT[handle]?.comingSoon : undefined;
+  return override ?? globalFlag;
+}
 
 /** Fallback when a handle has no editorial content yet. */
 export const PRODUCT_CONTENT_FALLBACK: ProductContent = {
