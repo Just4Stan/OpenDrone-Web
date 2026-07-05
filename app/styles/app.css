@@ -972,6 +972,16 @@ html {
   font-size: var(--fs-md);
   color: var(--color-gold);
 }
+/* Coming-soon reveal cards: a quiet mono tag in the price slot. */
+.hero-reveal-soon {
+  flex: 0 0 auto;
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--color-gold);
+}
 
 /* Drag-to-view hint — centred over the drone, fades in after a few idle
    seconds and dismisses on first interaction. */
@@ -1262,6 +1272,19 @@ a:hover {
   color: var(--color-text-muted);
 }
 .product-pods--grid .product-pod-price {
+  margin-left: 0;
+}
+/* Coming-soon rows: a quiet mono tag holds the price slot. */
+.product-pod-soon {
+  margin-left: auto;
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--color-gold);
+}
+.product-pods--grid .product-pod-soon {
   margin-left: 0;
 }
 
@@ -4231,6 +4254,41 @@ button.reset {
 .product-buy-stock.is-out::before {
   background: var(--color-text-dim);
   box-shadow: none;
+}
+
+/* Coming-soon buy module — the price slot carries a hairline COMING SOON
+   plate instead of a figure; the stock dot goes gold ("in development"),
+   and the notify signup drops its section chrome to sit inside the card. */
+.product-buy-soon {
+  display: inline-flex;
+  align-items: center;
+  font-family: var(--font-mono);
+  font-weight: 600;
+  font-size: var(--fs-sm);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--color-gold);
+  padding: 0.35rem 0.7rem;
+  border: 1px solid color-mix(in srgb, var(--color-gold) 45%, transparent);
+  border-radius: var(--r-sm);
+  background: var(--color-gold-soft);
+  line-height: 1;
+}
+
+.product-buy.is-comingsoon .product-buy-stock {
+  color: var(--color-text-muted);
+}
+.product-buy.is-comingsoon .product-buy-stock::before {
+  background: var(--color-gold);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-gold) 18%, transparent);
+}
+
+.product-buy-notify {
+  border-top: 1px solid var(--color-border);
+  padding-top: var(--sp-3);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
 }
 
 /* Morphing buy rail — wraps the ladder + buy module. At rest it's a

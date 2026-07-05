@@ -1,5 +1,6 @@
 import type {Route} from './+types/[products.json]';
-import {PRODUCT_CONTENT} from '~/lib/product-content';
+import {PRODUCT_CONTENT, isComingSoon} from '~/lib/product-content';
+import {comingSoonFlag} from '~/lib/coming-soon';
 
 /**
  * /products.json — machine-readable catalog feed for agents and tooling.
@@ -46,6 +47,7 @@ const numericId = (gid: string) => gid.split('/').pop() ?? gid;
 
 export async function loader({context, request}: Route.LoaderArgs) {
   const origin = new URL(request.url).origin;
+  const globalSoon = comingSoonFlag(context.env);
   const data = await context.storefront.query(FEED_QUERY, {
     variables: {count: 50},
     cache: context.storefront.CacheLong(),
@@ -53,6 +55,9 @@ export async function loader({context, request}: Route.LoaderArgs) {
 
   const products = (data.products?.nodes ?? []).map((p) => {
     const content = PRODUCT_CONTENT[p.handle];
+    // Locked products expose no price and no cart permalink — this feed is
+    // the most scrapeable surface, so it must match what the PDP shows.
+    const locked = isComingSoon(p.handle, globalSoon);
     return {
       handle: p.handle,
       title: p.title,
@@ -65,6 +70,7 @@ export async function loader({context, request}: Route.LoaderArgs) {
         content?.repoUrl && content.repoUrl !== 'https://github.com/incutec-hw'
           ? content.repoUrl
           : null,
+      ...(locked ? {coming_soon: true} : null),
       variants: (p.variants?.nodes ?? []).map((v) => {
         const id = numericId(v.id);
         return {
@@ -74,10 +80,10 @@ export async function loader({context, request}: Route.LoaderArgs) {
           options: Object.fromEntries(
             (v.selectedOptions ?? []).map((o) => [o.name, o.value]),
           ),
-          available: v.availableForSale,
-          price: v.price.amount,
-          currency: v.price.currencyCode,
-          cart_permalink: `${origin}/cart/${id}:1`,
+          available: locked ? false : v.availableForSale,
+          price: locked ? null : v.price.amount,
+          currency: locked ? null : v.price.currencyCode,
+          ...(locked ? null : {cart_permalink: `${origin}/cart/${id}:1`}),
         };
       }),
     };

@@ -7,6 +7,7 @@ import type {
   CollectionItemFragment,
 } from 'storefrontapi.generated';
 import {useVariantUrl} from '~/lib/variants';
+import {useComingSoon} from '~/lib/coming-soon';
 import {AddToCartButton} from './AddToCartButton';
 import {StackQuickAdd, type StackOffer} from './StackQuickAdd';
 import {useAside} from './Aside';
@@ -90,11 +91,18 @@ export function ProductItem({
   const image = imageOverride ?? product.featuredImage;
   const hasModels = Boolean(models && models.length > 0);
 
+  // Product-level coming-soon (PUBLIC_COMING_SOON / per-SKU override):
+  // unlike the `comingSoon` prop (unreleased tier, non-clickable tile) the
+  // card stays clickable — the PDP hosts the notify-at-launch signup — but
+  // shows no price and no quick-add.
+  const launchPending = useComingSoon(product.handle);
+  const showPrice = !launchPending;
+
   // Quick-add overlay: revealed on card hover (always visible on touch).
   // Rendered as a SIBLING of the card link, never inside it — a form inside
   // an anchor is invalid HTML and hijacks the navigation click.
   const quickAddNode =
-    quickAdd && !comingSoon && !feature ? (
+    quickAdd && !comingSoon && !launchPending && !feature ? (
       <div className="product-card-quickadd">
         <StackQuickAdd
           offers={stackOffers ?? []}
@@ -114,7 +122,7 @@ export function ProductItem({
       </div>
     ) : null;
 
-  const badge = comingSoon ? (
+  const badge = comingSoon || launchPending ? (
     <span className="product-card-badge is-soon">Coming soon</span>
   ) : onSale ? (
     <span className="product-card-badge is-sale">Sale</span>
@@ -184,9 +192,11 @@ export function ProductItem({
           >
             <div className="product-card-row">
               <h2 className="product-card-title">{product.title}</h2>
-              <span className="product-card-price">
-                <Money data={product.priceRange.minVariantPrice} />
-              </span>
+              {showPrice ? (
+                <span className="product-card-price">
+                  <Money data={product.priceRange.minVariantPrice} />
+                </span>
+              ) : null}
             </div>
             {'productType' in product && product.productType ? (
               <p className="product-card-meta">{product.productType}</p>
@@ -220,9 +230,11 @@ export function ProductItem({
       <div className="product-card-body">
         <div className="product-card-row">
           <h2 className="product-card-title">{displayTitle}</h2>
-          <span className="product-card-price">
-            <Money data={price} />
-          </span>
+          {showPrice ? (
+            <span className="product-card-price">
+              <Money data={price} />
+            </span>
+          ) : null}
         </div>
         {'productType' in product && product.productType ? (
           <p className="product-card-meta">{product.productType}</p>

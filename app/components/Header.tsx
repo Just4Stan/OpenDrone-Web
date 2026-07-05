@@ -21,6 +21,8 @@ import {
   type PodCompanionOption,
 } from '~/components/ProductPods';
 import {INCUTEC_HINT_SEEN_KEY} from '~/lib/incutec-hint';
+import {useComingSoon} from '~/lib/coming-soon';
+import {isComingSoon} from '~/lib/product-content';
 
 /** Retire the hero "Who's incutec?" hint: persist the dismissal and pull the
  *  class so it can't flash on a same-session SPA return to the homepage. */
@@ -230,6 +232,9 @@ function FamilyNav({
   // Cart drawer opener for the Stack chip's add buttons (named to avoid the
   // `open` dropdown-state collision above).
   const {open: openCartAside} = useAside();
+  // Global coming-soon flag; per-product overrides resolve in isComingSoon()
+  // below so unlaunched SKUs list without price or buy cell.
+  const globalComingSoon = useComingSoon();
 
   // Close the hover dropdown on any navigation — otherwise clicking a SKU drops
   // you on the page with the menu still stuck open (mouseleave never fires when
@@ -291,6 +296,8 @@ function FamilyNav({
     )?.value;
     if (!size) return undefined;
     const options = cfg.flatMap(({handle: h, short}) => {
+      // Unlaunched partners can't cascade into a stack add.
+      if (isComingSoon(h, globalComingSoon)) return [];
       const partner = (products ?? []).find((p) => p.handle === h);
       const pv = partner?.variants?.nodes?.find((pvv) =>
         pvv.selectedOptions?.some(
@@ -334,6 +341,9 @@ function FamilyNav({
     return (products ?? [])
       .filter((p) => (p.productType || '') === type)
       .flatMap((p) => {
+        // Coming-soon products list (the dropdown is navigation) but carry
+        // no price and no buy cell — the PDP hosts the notify signup.
+        const soon = isComingSoon(p.handle, globalComingSoon);
         // Real, distinguishable variants (drop the single "Default Title").
         const variants = (p.variants?.nodes ?? []).filter(
           (v) => v.title && v.title !== 'Default Title',
@@ -349,8 +359,11 @@ function FamilyNav({
               subtitle: p.productType ?? undefined,
               imageUrl: p.featuredImage?.url ?? null,
               imageAlt: p.featuredImage?.altText ?? null,
-              price: p.priceRange?.minVariantPrice ?? null,
-              buy: only
+              price: soon ? null : (p.priceRange?.minVariantPrice ?? null),
+              soon,
+              buy: soon
+                ? undefined
+                : only
                 ? {
                     lines: [
                       {
@@ -385,26 +398,29 @@ function FamilyNav({
             subtitle: p.title,
             imageUrl: v.image?.url ?? p.featuredImage?.url ?? null,
             imageAlt: v.image?.altText ?? p.featuredImage?.altText ?? null,
-            price: v.price ?? p.priceRange?.minVariantPrice ?? null,
-            buy: {
-              lines: [
-                {
-                  merchandiseId: v.id,
-                  quantity: 1,
-                  selectedVariant: optimisticVariant(v, {
+            price: soon ? null : (v.price ?? p.priceRange?.minVariantPrice ?? null),
+            soon,
+            buy: soon
+              ? undefined
+              : {
+                  lines: [
+                    {
+                      merchandiseId: v.id,
+                      quantity: 1,
+                      selectedVariant: optimisticVariant(v, {
+                        title: p.title,
+                        handle: p.handle,
+                      }),
+                    },
+                  ],
+                  available: Boolean(v.availableForSale),
+                  flyImage: v.image?.url ?? p.featuredImage?.url ?? null,
+                  selfShort: selfShortFor(type),
+                  companions: companionsFor(type, v, {
                     title: p.title,
                     handle: p.handle,
                   }),
                 },
-              ],
-              available: Boolean(v.availableForSale),
-              flyImage: v.image?.url ?? p.featuredImage?.url ?? null,
-              selfShort: selfShortFor(type),
-              companions: companionsFor(type, v, {
-                title: p.title,
-                handle: p.handle,
-              }),
-            },
           };
         });
       });
