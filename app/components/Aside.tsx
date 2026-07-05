@@ -1,6 +1,7 @@
 import {
   createContext,
   type ReactNode,
+  useCallback,
   useContext,
   useEffect,
   useRef,
@@ -11,7 +12,15 @@ import {useId} from 'react';
 type AsideType = 'search' | 'cart' | 'mobile' | 'closed';
 type AsideContextValue = {
   type: AsideType;
+  /** True while the aside is open as a non-modal hover preview. */
+  preview: boolean;
   open: (mode: AsideType) => void;
+  /** Open as a non-modal hover preview: no focus steal, no focus trap, no
+   *  aria-modal, no body scroll-lock — until the visitor interacts inside
+   *  the panel, at which point it upgrades ("pins") to a full modal. */
+  openPreview: (mode: AsideType) => void;
+  /** Upgrade the current preview to full modal behavior. */
+  pin: () => void;
   close: () => void;
 };
 
@@ -43,35 +52,42 @@ export function Aside({
   type: AsideType;
   heading: React.ReactNode;
 }) {
-  const {type: activeType, close} = useAside();
+  const {type: activeType, preview, pin, close} = useAside();
   const expanded = type === activeType;
+  // Hover-preview opens are deliberately non-modal (WCAG 3.2.1: an incidental
+  // pointer graze must not yank focus, trap Tab, or lock the page). The full
+  // dialog contract below only engages for real opens (click/keyboard/touch)
+  // — or once the visitor interacts inside a preview, which pins it.
+  const modal = expanded && !preview;
   const id = useId();
   const dialogRef = useRef<HTMLDivElement>(null);
   const lastFocusedRef = useRef<HTMLElement | null>(null);
 
-  // Scroll-lock the document body while any Aside is open so background
+  // Scroll-lock the document body while a modal Aside is open so background
   // content can't be scrolled behind the overlay. Paired with the focus
   // trap below so keyboard users can't tab outside the dialog.
   useEffect(() => {
-    if (!expanded) return;
+    if (!modal) return;
     const prev = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
     return () => {
       document.body.style.overflow = prev;
     };
-  }, [expanded]);
+  }, [modal]);
 
   useEffect(() => {
-    if (!expanded) return;
+    if (!modal) return;
 
     const abortController = new AbortController();
     lastFocusedRef.current =
       (document.activeElement as HTMLElement | null) ?? null;
 
     // Move focus into the dialog on open. Prefer the first focusable
-    // element inside it; fall back to the dialog itself.
+    // element inside it; fall back to the dialog itself. When the dialog
+    // already contains focus (a preview pinned by an interaction inside),
+    // leave the visitor's focus where they put it.
     const dialog = dialogRef.current;
-    if (dialog) {
+    if (dialog && !dialog.contains(document.activeElement)) {
       const first = dialog.querySelector<HTMLElement>(FOCUSABLE_SELECTOR);
       (first ?? dialog).focus({preventScroll: true});
     }
@@ -114,15 +130,52 @@ export function Aside({
 
     return () => {
       abortController.abort();
-      // Restore focus to whatever the user had focused before opening.
+      // Restore focus to whatever the user had focused before opening —
+      // but never steal it back from an element the user focused outside
+      // the dialog themselves (preview mode never took their focus).
       const prev = lastFocusedRef.current;
-      if (prev && document.contains(prev)) prev.focus({preventScroll: true});
+      const active = document.activeElement;
+      const dialogEl = dialogRef.current;
+      const focusIsOurs =
+        !active ||
+        active === document.body ||
+        (dialogEl ? dialogEl.contains(active) : false);
+      if (focusIsOurs && prev && document.contains(prev))
+        prev.focus({preventScroll: true});
     };
-  }, [close, expanded]);
+  }, [close, modal]);
+
+  // Preview mode: the first real interaction inside the panel means it's a
+  // cart session now, not a peek — pin it, which engages the full modal
+  // contract above (without re-stealing the focus the interaction set).
+  // Escape still dismisses a preview even though focus never moved into it.
+  useEffect(() => {
+    if (!expanded || !preview) return;
+    const dialog = dialogRef.current;
+    const abortController = new AbortController();
+    const onInteract = () => pin();
+    dialog?.addEventListener('pointerdown', onInteract, {
+      signal: abortController.signal,
+    });
+    dialog?.addEventListener('focusin', onInteract, {
+      signal: abortController.signal,
+    });
+    document.addEventListener(
+      'keydown',
+      (event: KeyboardEvent) => {
+        if (event.key === 'Escape') {
+          event.preventDefault();
+          close();
+        }
+      },
+      {signal: abortController.signal},
+    );
+    return () => abortController.abort();
+  }, [expanded, preview, pin, close]);
 
   return (
     <div
-      aria-modal
+      aria-modal={modal || undefined}
       aria-hidden={expanded ? undefined : true}
       className={`overlay ${expanded ? 'expanded' : ''}`}
       role="dialog"
@@ -147,14 +200,37 @@ export function Aside({
 const AsideContext = createContext<AsideContextValue | null>(null);
 
 Aside.Provider = function AsideProvider({children}: {children: ReactNode}) {
-  const [type, setType] = useState<AsideType>('closed');
+  const [state, setState] = useState<{type: AsideType; preview: boolean}>({
+    type: 'closed',
+    preview: false,
+  });
+
+  const open = useCallback(
+    (type: AsideType) => setState({type, preview: false}),
+    [],
+  );
+  const openPreview = useCallback(
+    (type: AsideType) => setState({type, preview: true}),
+    [],
+  );
+  const pin = useCallback(
+    () => setState((s) => (s.preview ? {...s, preview: false} : s)),
+    [],
+  );
+  const close = useCallback(
+    () => setState({type: 'closed', preview: false}),
+    [],
+  );
 
   return (
     <AsideContext.Provider
       value={{
-        type,
-        open: setType,
-        close: () => setType('closed'),
+        type: state.type,
+        preview: state.preview,
+        open,
+        openPreview,
+        pin,
+        close,
       }}
     >
       {children}

@@ -1,4 +1,5 @@
 import {redirect} from 'react-router';
+import {DONATION_PRODUCT_QUERY} from '~/lib/fragments';
 import type {Route} from './+types/cart.$lines';
 import {
   anyComingSoonLocks,
@@ -17,6 +18,16 @@ import {
  * More than one `<variant_id>:<quantity>` separated by a comma, can be supplied in the URL, for
  * carts with more than one product variant.
  *
+ * With `?view=1` the shared lines are applied and the visitor lands on /cart
+ * instead of being pushed straight into Shopify checkout — this is the
+ * "share this cart" link mode, where the recipient should review before
+ * paying. In view mode the shared lines MERGE into the recipient's existing
+ * cart (cart.addLines) when they already have lines — a shared link must
+ * never silently destroy someone's in-progress cart. A fresh/empty cart
+ * still goes through cart.create, as does the classic checkout deep link.
+ *
+ * `?discount=` accepts one code or several comma-separated codes.
+ *
  * @example
  * Example path creating a cart with two product variants, different quantities, and a discount code in the querystring:
  * ```js
@@ -25,7 +36,7 @@ import {
  * ```
  */
 export async function loader({request, context, params}: Route.LoaderArgs) {
-  const {cart} = context;
+  const {cart, storefront} = context;
   const {lines} = params;
   if (!lines) return redirect('/cart');
   let linesMap = lines.split(',').map((line) => {
@@ -69,11 +80,63 @@ export async function loader({request, context, params}: Route.LoaderArgs) {
     }
   }
 
+  // The firmware-donation product never enters through a cart link — a
+  // donation is the sender's deliberate choice, not something to forward.
+  // The share-link generator already excludes it client-side; this is the
+  // server-side backstop for handcrafted URLs. Best-effort: if the lookup
+  // fails we let the line through rather than break the link.
+  try {
+    const donation = await storefront.query(DONATION_PRODUCT_QUERY, {
+      variables: {handle: 'firmware-donation'},
+      cache: storefront.CacheLong(),
+    });
+    const donationVariantIds = new Set(
+      donation?.product?.variants?.nodes?.map((v) => v.id) ?? [],
+    );
+    if (donationVariantIds.size) {
+      linesMap = linesMap.filter((l) => !donationVariantIds.has(l.merchandiseId));
+    }
+  } catch {
+    // Lookup failed — proceed unfiltered.
+  }
+  if (!linesMap.length) return redirect('/cart');
+
   const url = new URL(request.url);
   const searchParams = new URLSearchParams(url.search);
 
   const discount = searchParams.get('discount');
-  const discountArray = discount ? [discount] : [];
+  const discountArray = discount
+    ? discount.split(',').filter(Boolean)
+    : [];
+  const viewMode = searchParams.get('view') === '1';
+
+  if (viewMode) {
+    // Shared-cart view mode with an existing non-empty cart: MERGE the
+    // shared lines into it instead of replacing it. cart.create would
+    // silently wipe whatever the recipient already had in progress.
+    const existing = await cart.get();
+    const existingLines = existing?.lines?.nodes ?? [];
+    if (existing && existingLines.length) {
+      const result = await cart.addLines(linesMap);
+      if (result.errors?.length || !result.cart) {
+        throw new Response('Link may be expired. Try checking the URL.', {
+          status: 410,
+        });
+      }
+      if (discountArray.length) {
+        // updateDiscountCodes replaces the whole set — keep whatever codes
+        // the recipient already applied and add the shared ones on top.
+        const existingCodes = (existing.discountCodes ?? []).map(
+          (c) => c.code,
+        );
+        await cart.updateDiscountCodes([
+          ...new Set([...existingCodes, ...discountArray]),
+        ]);
+      }
+      const headers = cart.setCartId(result.cart.id);
+      return redirect('/cart', {headers});
+    }
+  }
 
   // create a cart
   const result = await cart.create({
@@ -91,6 +154,11 @@ export async function loader({request, context, params}: Route.LoaderArgs) {
 
   // Update cart id in cookie
   const headers = cart.setCartId(cartResult.id);
+
+  // Shared-cart view mode: land on the cart page for review, not checkout.
+  if (viewMode) {
+    return redirect('/cart', {headers});
+  }
 
   // redirect to checkout
   if (cartResult.checkoutUrl) {
