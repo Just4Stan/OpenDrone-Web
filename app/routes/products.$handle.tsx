@@ -260,6 +260,7 @@ type ChapterNumbers = {
 function computeChapterNumbers(
   content: ProductContent,
   includeOpenSource = true,
+  includeFirmware = true,
 ): ChapterNumbers {
   let n = 1;
   const pad = (x: number) => x.toString().padStart(2, '0');
@@ -277,6 +278,7 @@ function computeChapterNumbers(
     out.inTheBox = pad(n++);
   }
   if (
+    includeFirmware &&
     !content.bundle &&
     content.firmware.project &&
     content.firmware.project !== '—'
@@ -555,7 +557,9 @@ export default function Product() {
   const isEditorial = Boolean(PRODUCT_CONTENT[product.handle]);
   const content = PRODUCT_CONTENT[product.handle] ?? PRODUCT_CONTENT_FALLBACK;
   const hasHeroCopy = Boolean(content.hero.line1);
-  const chapterNums = computeChapterNumbers(content, isEditorial);
+  // The "€1" firmware-split chapter is priceless copy without a price —
+  // skip it (and its chapter number) while the product is coming soon.
+  const chapterNums = computeChapterNumbers(content, isEditorial, !soon);
 
   // Comparison-ladder state for product lines (OpenRX/OpenESC). The
   // editorial `variants` map is the tier source of truth; the active tier
@@ -2060,7 +2064,8 @@ export default function Product() {
       ) : null}
 
       {/* === Chapter: The €1 — singles with a firmware project === */}
-      {!content.bundle &&
+      {!soon &&
+      !content.bundle &&
       content.firmware.project &&
       content.firmware.project !== '—' &&
       chapterNums.firmware ? (
@@ -2088,7 +2093,7 @@ export default function Product() {
           }
         >
           <FirmwareSplit
-            price={soon ? null : selectedVariant?.price}
+            price={selectedVariant?.price}
             firmwareProject={content.firmware.project}
             firmwareUrl={content.firmware.projectUrl}
           />
@@ -2145,7 +2150,8 @@ export default function Product() {
             {
               id: product.id,
               title: product.title,
-              price: selectedVariant?.price.amount || '0',
+              // Coming soon → no price anywhere, analytics payload included.
+              price: soon ? '0' : selectedVariant?.price.amount || '0',
               vendor: product.vendor,
               variantId: selectedVariant?.id || '',
               variantTitle: selectedVariant?.title || '',

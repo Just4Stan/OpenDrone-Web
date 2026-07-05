@@ -369,7 +369,7 @@ function DesktopHome({
   heroStacks: Promise<HeroStacks>;
 }) {
   // Coming-soon reveal cards keep their link + title but swap the price
-  // for a Soon tag (handle parsed from the card's PDP url).
+  // for a Soon tag (per-card handle resolved server-side on the card).
   const globalComingSoon = useComingSoon();
   const scrollRef = useRef(0);
   const rafId = useRef(0);
@@ -1113,10 +1113,7 @@ function DesktopHome({
                               <span className="hero-reveal-sub">{card.productType}</span>
                             ) : null}
                           </span>
-                          {isComingSoon(
-                            card.url.split('?')[0].split('/').pop(),
-                            globalComingSoon,
-                          ) ? (
+                          {isComingSoon(card.handle, globalComingSoon) ? (
                             <span className="hero-reveal-soon">Soon</span>
                           ) : card.price ? (
                             <span className="hero-reveal-price">
