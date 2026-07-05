@@ -140,7 +140,17 @@ export function Aside({
         !active ||
         active === document.body ||
         (dialogEl ? dialogEl.contains(active) : false);
-      if (focusIsOurs && prev && document.contains(prev))
+      // A pinned preview can capture lastFocused INSIDE the dialog (the
+      // focusin that pinned it). Restoring there would aim focus into the
+      // now-hidden drawer subtree — skip and let focus fall to the body.
+      const prevInsideDialog =
+        !!prev && !!dialogEl && dialogEl.contains(prev);
+      if (
+        focusIsOurs &&
+        prev &&
+        !prevInsideDialog &&
+        document.contains(prev)
+      )
         prev.focus({preventScroll: true});
     };
   }, [close, modal]);
@@ -163,10 +173,22 @@ export function Aside({
     document.addEventListener(
       'keydown',
       (event: KeyboardEvent) => {
-        if (event.key === 'Escape') {
-          event.preventDefault();
-          close();
-        }
+        if (event.key !== 'Escape') return;
+        // The preview is non-modal, so focus may legitimately sit in a page
+        // input while the drawer peeks open. Let text-editing contexts and
+        // anything that already claimed the event keep their Escape (clear
+        // field, dismiss combobox, …) — only a "free" Escape dismisses the
+        // preview.
+        if (event.defaultPrevented) return;
+        const target = event.target as HTMLElement | null;
+        const isEditable =
+          !!target &&
+          (target.tagName === 'INPUT' ||
+            target.tagName === 'TEXTAREA' ||
+            target.isContentEditable);
+        if (isEditable) return;
+        event.preventDefault();
+        close();
       },
       {signal: abortController.signal},
     );
