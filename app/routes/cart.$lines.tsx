@@ -12,6 +12,10 @@ import type {Route} from './+types/cart.$lines';
  * More than one `<variant_id>:<quantity>` separated by a comma, can be supplied in the URL, for
  * carts with more than one product variant.
  *
+ * With `?view=1` the cart is applied and the visitor lands on /cart instead
+ * of being pushed straight into Shopify checkout — this is the "share this
+ * cart" link mode, where the recipient should review before paying.
+ *
  * @example
  * Example path creating a cart with two product variants, different quantities, and a discount code in the querystring:
  * ```js
@@ -60,6 +64,11 @@ export async function loader({request, context, params}: Route.LoaderArgs) {
 
   // Update cart id in cookie
   const headers = cart.setCartId(cartResult.id);
+
+  // Shared-cart view mode: land on the cart page for review, not checkout.
+  if (searchParams.get('view')) {
+    return redirect('/cart', {headers});
+  }
 
   // redirect to checkout
   if (cartResult.checkoutUrl) {
