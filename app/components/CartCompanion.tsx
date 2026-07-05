@@ -84,8 +84,10 @@ function CartCompanionRow({
   const title = size ? `${product.title} · ${size}` : product.title;
   const imageUrl = variant.image?.url ?? product.featuredImage?.url ?? null;
 
+  // NOTE: <section>, not <aside> — the drawer's `.overlay aside` panel CSS
+  // (fixed, 100vh, 400px) would hijack any nested <aside> element.
   return (
-    <aside className="cart-companion" aria-label="Suggested companion product">
+    <section className="cart-companion" aria-label="Suggested companion product">
       <span className="cart-companion-eyebrow">Goes well with</span>
       <div className="cart-companion-row">
         <Link
@@ -128,7 +130,7 @@ function CartCompanionRow({
           + Add
         </AddToCartButton>
       </div>
-    </aside>
+    </section>
   );
 }
 
