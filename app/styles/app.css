@@ -9800,6 +9800,170 @@ button.reset {
   color: var(--color-gold-hover);
 }
 
+/* Roadmap (/roadmap) — hairline rows, mono status chips. Tokens only,
+   so light mode themes itself. */
+.roadmap-list {
+  list-style: none;
+  padding: 0;
+  margin: 0.75rem 0 0;
+}
+
+.roadmap-item {
+  padding: 0.85rem 0;
+  border-bottom: 1px solid color-mix(in srgb, var(--color-border) 80%, transparent);
+}
+
+.roadmap-item:last-child {
+  border-bottom: none;
+}
+
+.roadmap-item-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.roadmap-name {
+  font-family: var(--font-mono);
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.roadmap-status {
+  flex-shrink: 0;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--color-text-dim);
+}
+
+.roadmap-status[data-status='shipped'] {
+  color: var(--color-stock);
+}
+
+.roadmap-status[data-status='in-revision'] {
+  color: var(--color-gold);
+}
+
+.roadmap-status[data-status='next'] {
+  color: var(--color-text-muted);
+}
+
+.roadmap-note {
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  line-height: 1.65;
+  color: var(--color-text-muted);
+  margin: 0.35rem 0 0;
+}
+
+.roadmap-link {
+  display: inline-block;
+  margin-top: 0.35rem;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--color-gold);
+  transition: color 0.2s ease;
+}
+
+.roadmap-link:hover {
+  color: var(--color-gold-hover);
+}
+
+/* Upstream merged-PR receipts (/firmware-partners, section hidden while
+   the MERGED_PRS array is empty). */
+.upstream-list {
+  list-style: none;
+  padding: 0;
+  margin: 0.75rem 0 0;
+}
+
+.upstream-item {
+  padding: 0.85rem 0;
+  border-bottom: 1px solid color-mix(in srgb, var(--color-border) 80%, transparent);
+}
+
+.upstream-item:last-child {
+  border-bottom: none;
+}
+
+.upstream-project {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--color-gold);
+  margin: 0 0 0.3rem;
+}
+
+.upstream-title {
+  font-family: var(--font-mono);
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--color-text);
+  transition: color 0.2s ease;
+}
+
+.upstream-title:hover {
+  color: var(--color-gold);
+}
+
+.upstream-what {
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  line-height: 1.65;
+  color: var(--color-text-muted);
+  margin: 0.3rem 0 0;
+}
+
+/* "You asked, we changed" PDP chapter — community-driven revisions with
+   linked receipts. Hairline rows, matches the chapter-body mono voice. */
+.community-changes {
+  list-style: none;
+  padding: 0;
+  margin: 1.25rem 0 0;
+  max-width: 46rem;
+}
+
+.community-change {
+  padding: 0.9rem 0;
+  border-bottom: 1px solid color-mix(in srgb, var(--color-border) 80%, transparent);
+}
+
+.community-change:last-child {
+  border-bottom: none;
+}
+
+.community-change-asked {
+  font-family: var(--font-mono);
+  font-size: 0.9rem;
+  line-height: 1.65;
+  color: var(--color-text);
+  margin: 0;
+}
+
+.community-change-asked a {
+  color: var(--color-gold);
+  transition: color 0.2s ease;
+}
+
+.community-change-asked a:hover {
+  color: var(--color-gold-hover);
+}
+
+.community-change-changed {
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  line-height: 1.65;
+  color: var(--color-text-muted);
+  margin: 0.35rem 0 0;
+}
+
 /* ============================================
    Donation upsell in the cart
    ============================================ */

@@ -162,6 +162,9 @@ https://github.com/incutec-hw. Boards are OSHWA-certified (BE000026–BE000033).
 
 - [How OpenDrone makes money](${origin}/open-source)
 - [Firmware partners](${origin}/firmware-partners)
+- [Product roadmap](${origin}/roadmap)
+- [Where the boards are made](${origin}/production)
+- [Wholesale / dealer inquiries](${origin}/wholesale)
 - [The company, Incutec BV](${origin}/incutec)
 - [All products](${origin}/collections/all)
 - [Newsletter / release notes](${origin}/newsletter)
