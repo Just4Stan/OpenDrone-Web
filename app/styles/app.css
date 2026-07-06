@@ -5357,6 +5357,15 @@ button.reset {
   content-visibility: auto;
   contain-intrinsic-size: auto 640px;
 }
+/* content-visibility's paint containment clips descendants at the chapter's
+   box — but the teardown board art bleeds past its media column into the page
+   margin, and the frame-viewer backdrop over-bleeds into the neighbouring
+   sections. Those chapters give up the skip-render optimisation so the bleed
+   stays visible. */
+.chapter:has(.board-art),
+.chapter[data-backdrop] {
+  content-visibility: visible;
+}
 
 @media (min-width: 880px) {
   .chapter {
