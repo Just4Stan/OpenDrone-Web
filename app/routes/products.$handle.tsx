@@ -10,6 +10,7 @@ import {
   type ShouldRevalidateFunctionArgs,
 } from 'react-router';
 import type {RootLoader} from '~/root';
+import type {CompanyIdentity} from '~/lib/company';
 import type {Route} from './+types/products.$handle';
 import {
   getSelectedProductOptions,
@@ -222,6 +223,7 @@ const DOWNLOAD_ICONS: Record<DownloadKind, string> = {
   flash: '⚡',
   changelog: '↻',
   sbom: '◫',
+  doc: '✓',
   firmware_manifest: '⌘',
   other: '↓',
 };
@@ -250,6 +252,41 @@ function DownloadsGrid({downloads}: {downloads: DownloadAsset[]}) {
         </a>
       ))}
     </div>
+  );
+}
+
+/**
+ * GPSR manufacturer block (Regulation (EU) 2023/988, art. 19): every product
+ * listing must carry the manufacturer's identity, postal address and an
+ * electronic address. Identity comes from the company module via the root
+ * loader — never hardcode the legal entity here (product branding is not
+ * the seller). Placeholder values ('[pending]') are never rendered, same
+ * convention as CompanyFooterBlock.
+ *
+ * TODO(gpsr): company phone is '[pending]' in company.ts and therefore
+ * hidden — it appears automatically once PUBLIC_COMPANY_TEL is real.
+ */
+function ManufacturerBlock({company}: {company?: CompanyIdentity}) {
+  if (!company) return null;
+  const real = (v?: string) => Boolean(v && v.trim() && v !== '[pending]');
+  const rows: Array<[string, string]> = [];
+  if (real(company.name)) rows.push(['Company', company.name]);
+  if (real(company.address)) rows.push(['Address', company.address]);
+  if (real(company.email)) rows.push(['E-mail', company.email]);
+  if (real(company.tel)) rows.push(['Phone', company.tel]);
+  if (rows.length === 0) return null;
+  return (
+    <section className="pdp-manufacturer" aria-label="Manufacturer information">
+      <p className="pdp-manufacturer-label">Manufacturer</p>
+      <dl className="pdp-manufacturer-rows">
+        {rows.map(([k, v]) => (
+          <div key={k}>
+            <dt>{k}</dt>
+            <dd>{v}</dd>
+          </div>
+        ))}
+      </dl>
+    </section>
   );
 }
 
@@ -2151,6 +2188,9 @@ export default function Product() {
           <DownloadsGrid downloads={content.downloads} />
         </Chapter>
       ) : null}
+
+      {/* GPSR manufacturer identity — on every listing, coming-soon included. */}
+      <ManufacturerBlock company={rootData?.company} />
 
       <RelatedProducts recommendations={recommendations} />
       <Analytics.ProductView
