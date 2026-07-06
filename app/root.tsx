@@ -24,6 +24,7 @@ import {localeFromPathname, seoLocaleTag} from '~/lib/i18n';
 import {buildOrgJsonLd, buildSeoMeta} from '~/lib/seo';
 import {THEME_COLORS, THEME_INIT_SCRIPT} from '~/lib/theme';
 import {installViewTransitionGuard} from '~/lib/view-transition';
+import {captureAttribution} from '~/lib/growth/attribution';
 
 export type RootLoader = typeof loader;
 
@@ -261,6 +262,14 @@ export function Layout({children}: {children?: React.ReactNode}) {
     installViewTransitionGuard();
   }, []);
 
+  // First-touch channel attribution: stash utm_*/ref params from the
+  // landing URL in sessionStorage (session-scoped by design — see
+  // app/lib/growth/attribution.ts for the ePrivacy rationale). Runs once
+  // on hydration; later client-side navigations can't be a first touch.
+  useEffect(() => {
+    captureAttribution();
+  }, []);
+
   return (
     <html lang={htmlLang} className="dark" suppressHydrationWarning>
       <head>
@@ -313,13 +322,20 @@ export function Layout({children}: {children?: React.ReactNode}) {
         <Meta />
         <Links />
         {/* Plausible — cookieless analytics, no consent required.
+            Combined legacy-script variant: `tagged-events` enables custom
+            events with props, `revenue` attaches monetary values to them
+            (verified served 2026-07-06; extensions compose as
+            script.<ext1>.<ext2>.js). Manual events go through the
+            trackEvent() helper in app/lib/growth/plausible.ts, which
+            installs the window.plausible queue stub so events fired before
+            this deferred script loads are replayed on init.
             suppressHydrationWarning: nonce is per-request and only meaningful
             server-side; the client-side value is empty, which React would
             otherwise flag as a hydration mismatch. */}
         <script
           defer
           data-domain="opendrone.be"
-          src="https://plausible.io/js/script.js"
+          src="https://plausible.io/js/script.tagged-events.revenue.js"
           nonce={nonce}
           suppressHydrationWarning
         />

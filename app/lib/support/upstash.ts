@@ -110,6 +110,32 @@ export async function globalRateLimit(
   }
 }
 
+/**
+ * Atomic list append: LPUSH + LTRIM to `cap` entries (newest first).
+ * Added for the growth ledger's append-only indexes (app/lib/growth/
+ * ledger.ts) — the TicketStore shape above has no list primitive and a
+ * GET/SET read-modify-write would race under concurrent webhooks.
+ * Returns false when Upstash is unconfigured or the write failed; the
+ * caller decides whether that's warn-worthy.
+ */
+export async function listPush(
+  env: UpstashEnv,
+  key: string,
+  value: string,
+  cap = 5000,
+): Promise<boolean> {
+  const url = env.UPSTASH_REDIS_REST_URL?.replace(/\/$/, '');
+  const token = env.UPSTASH_REDIS_REST_TOKEN;
+  if (!url || !token) return false;
+  try {
+    await call(url, token, ['LPUSH', key, value]);
+    await call(url, token, ['LTRIM', key, '0', String(cap - 1)]);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 async function call(
   url: string,
   token: string,

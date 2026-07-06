@@ -2,6 +2,8 @@ import {useCallback, useEffect, useId, useRef, useState} from 'react';
 import {useFetcher} from 'react-router';
 import {Check} from 'lucide-react';
 import {getActiveTheme} from '~/lib/theme';
+import {trackEvent} from '~/lib/growth/plausible';
+import {attributionSource} from '~/lib/growth/attribution';
 
 // Engineering Essentials — dual-purpose: product-release announcements and
 // engineering content digest. Posts to app/routes/newsletter.tsx which
@@ -74,6 +76,26 @@ export function NewsletterSignup({
   const serverMessage = result?.message ?? null;
   const isSuccess = result?.ok === true;
   const isError = result?.ok === false;
+
+  // Funnel event: one `Notify Signup` per successful submit. The ref guard
+  // stops re-fires from unrelated re-renders while fetcher.data persists;
+  // it re-arms when a new submit starts (isSuccess drops to false).
+  const signupTracked = useRef(false);
+  const notifyHandle = notify?.productHandle;
+  useEffect(() => {
+    if (!isSuccess) {
+      signupTracked.current = false;
+      return;
+    }
+    if (signupTracked.current) return;
+    signupTracked.current = true;
+    trackEvent('Notify Signup', {
+      props: {
+        product: notifyHandle ?? 'newsletter',
+        source: attributionSource(),
+      },
+    });
+  }, [isSuccess, notifyHandle]);
 
   useEffect(() => {
     if (isSuccess) {
