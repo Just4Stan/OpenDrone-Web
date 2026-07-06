@@ -13947,16 +13947,19 @@ button.reset {
   }
   .board-deck-dot {
     flex: 1 1 0;
-    height: 4px;
-    min-height: 4px;
+    /* 12px visible bar (was 4px — the only pagination affordance on touch
+       was near-invisible and untappable, QA P2-6). */
+    height: 12px;
+    min-height: 12px;
     padding: 0;
     border: none;
-    border-radius: var(--r-2xs);
+    border-radius: var(--r-xs);
     background: var(--color-border-strong);
     cursor: pointer;
-    transition: background 0.2s ease, transform 0.2s ease;
+    transition: background 0.2s ease;
   }
-  /* Bigger invisible hit area so the 4px ticks are easy to tap (WCAG). */
+  /* Invisible overflow pads the tap target to 36px tall (12 + 2×12),
+     past the 24px a11y floor. */
   .board-deck-dot::after {
     content: '';
     position: absolute;
@@ -13970,7 +13973,6 @@ button.reset {
   }
   .board-deck-dot.is-active {
     background: var(--color-gold);
-    transform: scaleY(1.6);
   }
   .board-deck-meta {
     display: flex;
