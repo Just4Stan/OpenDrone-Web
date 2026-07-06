@@ -164,10 +164,15 @@ html.light {
   /* Deep amber-gold: saturated enough to read as gold (not olive) on white,
      deep enough that white sits legibly on gold fills. Hover DARKENS here —
      the light-mode convention for filled buttons — rather than lightening
-     like dark mode, so the white label keeps its contrast. */
-  --color-gold: #c08c10;
-  --color-gold-hover: #a87a0b;
-  --color-gold-soft: rgba(192, 140, 16, 0.14);
+     like dark mode, so the white label keeps its contrast.
+     Contrast (WCAG relative luminance): #8a6410 on --color-bg #f7f6f3 =
+     4.97:1, on --color-bg-card #fff = 5.37:1; --color-on-accent #fff on
+     #8a6410 fills = 5.37:1 — all past AA 4.5:1 for text (the old #c08c10
+     measured 2.78:1 / 3.00:1). Hover #745409 = 6.45:1 on bg, #fff on it
+     6.97:1, so labels gain contrast as the fill darkens. */
+  --color-gold: #8a6410;
+  --color-gold-hover: #745409;
+  --color-gold-soft: rgba(138, 100, 16, 0.14);
   --color-stock: #2f8a4e;       /* darker green for contrast on light */
   /* Error red deep enough for light: 6.08:1 on #f7f6f3, 6.57:1 on #fff (AA).
      The dark-mode #f87171 only hits 2.56:1 here. */
