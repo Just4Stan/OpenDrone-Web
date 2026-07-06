@@ -171,25 +171,24 @@ html.light {
   --color-text: #1a1a1e;
   --color-text-muted: #57575c;
   --color-text-dim: #86868c;
-  /* Light-mode golds — perceptual match to dark mode (owner decision,
-     Stan 2026-07-06): a light surround makes the same hex read browner
-     (simultaneous contrast), so BOTH light golds are set lighter than a
-     contrast-first pick would be, and fills sit one step ABOVE the dark
-     base to appear equal.
-     TEXT gold #b8922e: the original brand gold (og-image, wordmark asset,
-     email templates). ~2.9:1 on white — BELOW AA 4.5:1 for small text;
-     accepted deliberately, brand look wins. Do not walk this back down to
-     an AA-safe #8x6x0x brown; if a specific label proves unreadable, fix
-     that label (size/weight/color-text), not this token.
-     FILL gold #dab040 (= dark mode's hover): lighter than dark's #c89d2e
-     base so filled slabs look like the same gold across themes. Dark
-     on-accent ink on it: 9.4:1. Hover darkens to #c89d2e (light-mode
-     convention), ink 6.3:1. */
-  --color-gold: #b8922e;
-  --color-gold-hover: #a37f24;
+  /* Light-mode gold (owner decision, Stan 2026-07-06): ONE light gold —
+     #dab040, one step above dark mode's #c89d2e base — for text, fills
+     and accents alike; any darker "AA-safe" gold reads brown against a
+     bright surround. Gold TEXT never sits directly on white: every gold
+     label/badge/eyebrow gets a near-black tag behind it in light mode
+     (--color-tag-bg + the "Gold tags — light mode" section below), i.e.
+     gold-on-black exactly like dark mode. The only bare gold-on-white
+     text is inline headline accent words and hover states (~2:1, below
+     AA — accepted deliberately, brand look wins; do NOT walk the gold
+     back down to a dark amber). Hover darkens to #c89d2e. */
+  --color-gold: #dab040;
+  --color-gold-hover: #c89d2e;
   --color-gold-soft: rgba(218, 176, 64, 0.16);
   --color-gold-fill: #dab040;
   --color-gold-fill-hover: #c89d2e;
+  /* Near-black backing that keeps gold text "always on black" in light
+     mode. Unused in dark — the page/cards are already near-black there. */
+  --color-tag-bg: #101014;
   --color-stock: #2f8a4e;       /* darker green for contrast on light */
   /* Error red deep enough for light: 6.08:1 on #f7f6f3, 6.57:1 on #fff (AA).
      The dark-mode #f87171 only hits 2.56:1 here. */
@@ -222,6 +221,101 @@ html.light .product-gallery-swipe-hint {
    ink on a white sheet of paper. */
 html.light .schematic-sheet {
   filter: contrast(1.15);
+}
+
+/* ── Gold tags — light mode ─────────────────────────────────────────────
+   Rule (Stan 2026-07-06): gold TEXT is always gold-on-black. Dark mode
+   satisfies this for free (the page is near-black); in light mode every
+   gold label/badge/eyebrow gets a near-black tag chip behind it instead
+   of sitting faint on white. Scoped to html.light so dark mode stays
+   pixel-identical. Inline headline accent words and hover states are the
+   deliberate exception (plain light gold, no chip).
+   New gold label? Add its selector here, or put the `gold-tag` class on
+   it in JSX. */
+
+/* Standalone eyebrows / kickers / badges — roomy chip. */
+html.light .hero-reveal-soon,
+html.light .product-pod-soon,
+html.light .pair-cta-eyebrow,
+html.light .chapter-number,
+html.light .open-source-card-sub--oshwa,
+html.light .route-error-status,
+html.light .account-dashboard-eyebrow-mono,
+html.light .account-welcome-eyebrow,
+html.light .editorial-eyebrow,
+html.light .partner-label,
+html.light .upstream-project,
+html.light .donation-eyebrow,
+html.light .contact-hero-eyebrow,
+html.light .contact-tier-discord .contact-tier-eyebrow,
+html.light .support-eyebrow,
+html.light .provenance-label,
+html.light .section-label,
+html.light .page-eyebrow,
+html.light .product-eyebrow,
+html.light .support-resume-success,
+html.light .site-header-categories .header-cat-pod .product-pod-title {
+  display: inline-block;
+  width: fit-content;
+  background: var(--color-tag-bg);
+  color: var(--color-gold);
+  padding: 0.3em 0.6em;
+  border-radius: var(--r-xs);
+}
+
+/* JSX opt-in for Tailwind-styled gold labels. Display-neutral so it works
+   on block <p>s and inline-flex icon rows alike. */
+html.light .gold-tag {
+  width: fit-content;
+  background: var(--color-tag-bg);
+  color: var(--color-gold);
+  padding: 0.3em 0.6em;
+  border-radius: var(--r-xs);
+}
+
+/* Small in-flow tokens (counts, SHAs, status words inside a line) —
+   tighter chip so the line-height doesn't blow up. */
+html.light .board-folder-rail-count,
+html.light .schematic-rail-count,
+html.light .latest-commit-sha,
+html.light .latest-commit-label span,
+html.light .bundle-component-more,
+html.light .in-the-box-qty,
+html.light .board-deck-count,
+html.light .roadmap-status[data-status='in-revision'],
+html.light .variant-tier-flag.is-selected,
+html.light .donation-tier-active .donation-tier-label,
+html.light .support-msg-staff .support-msg-author,
+html.light .firmware-split-contrib,
+html.light .donation-tier-price,
+html.light .catalog-filter.is-active {
+  background: var(--color-tag-bg);
+  color: var(--color-gold);
+  padding: 0.12em 0.45em;
+  border-radius: var(--r-xs);
+}
+
+/* Elements that already are chips — swap their light backing to the black
+   tag; their own padding/borders stay. */
+html.light .site-header-categories .site-header-cat-group {
+  background: var(--color-tag-bg);
+  border-color: #26262c;
+}
+html.light .site-header-categories .site-header-cat-all,
+html.light .product-buy-soon,
+html.light .trust-chip-gold,
+html.light .teardown-pin-cost,
+html.light .cart-line-discount-badge,
+html.light .signal-lost-sub code,
+html.light .product-options-item[aria-checked='true'] {
+  background: var(--color-tag-bg);
+}
+/* Keep the All-Products chip black through hover/active (its shared hover
+   rules assume a light page behind a translucent gold wash). */
+html.light .site-header-categories .site-header-cat-all:hover,
+html.light .site-header-categories .site-header-cat-all.active,
+html.light .site-header-categories .site-header-cat-all[aria-current='page'] {
+  background: #1a1a20;
 }
 
 /* Default price treatment. Display sans, tabular figures. Specialised

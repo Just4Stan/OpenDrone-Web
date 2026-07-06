@@ -15,16 +15,19 @@ token swap — follow it and new UI themes for free.
   `--color-gold-soft`, `--color-gold-fill` + `--color-gold-fill-hover`,
   `--color-stock`. Never hardcode a hex/rgb for something that should change
   between themes.
-- **Two golds.** `--color-gold` is for gold TEXT/icons/borders sitting on page
-  backgrounds; `--color-gold-fill` (+ `-hover`) is for FILLED surfaces —
-  buttons, badges, active pills, the wordmark. Any rule that paints
-  `background: gold` with ink on top takes the fill token, never
-  `--color-gold`. Identical in dark mode; they split only in light.
-- **Light-mode gold is deliberately lighter than dark-mode gold** (Stan,
-  2026-07-06): a bright surround makes the same hex read brown, so light
-  text-gold is the brand `#b8922e` (~2.9:1 on white — below AA, accepted;
-  brand look wins) and light fill-gold `#dab040` sits one step above dark's
-  `#c89d2e`. Do NOT "fix" light golds back down to AA-safe dark ambers.
+- **Gold rules (Stan, 2026-07-06).** One light gold: `#dab040` in light mode
+  (text AND fills), `#c89d2e` base in dark. A darker "AA-safe" gold reads
+  brown on white — do NOT walk light gold back down to a dark amber.
+- **Gold text is always gold-on-black.** Dark mode gets this for free; in
+  light mode every gold label/badge/eyebrow sits on a near-black tag chip
+  (`--color-tag-bg`, see the "Gold tags — light mode" section in app.css).
+  Adding a new gold label? Add its selector to that section, or put the
+  `gold-tag` class on it in JSX. Deliberate exceptions (plain gold, no
+  chip): inline headline accent words and hover states — below AA on
+  white, accepted.
+- **`--color-gold-fill` (+ `-hover`)** is still the token for FILLED
+  surfaces (buttons, active pills, the wordmark) with `--color-on-accent`
+  ink on top; `background: gold` never takes `--color-gold`.
 - **Text on the gold accent** uses `--color-on-accent` (dark ink in both modes),
   not `--color-bg`. Use it for any filled-gold button/badge/active state.
 - **Where the values live** (`app/styles/app.css`): dark is the default in the
