@@ -62,9 +62,9 @@
      constraints in light mode: gold-as-text must hold AA 4.5:1 on light
      backgrounds (which forces it deep), while gold-as-fill only needs
      3:1 as a UI surface and carries --color-on-accent ink — so it can
-     stay bright and actually read as gold. These values are shared by
-     BOTH themes (light mode does not override them): filled gold is the
-     identical hue everywhere. */
+     stay bright and actually read as gold. Light mode overrides both
+     golds LIGHTER (see html.light) so they appear the same against a
+     bright surround. */
   --color-gold-fill: #c89d2e;
   --color-gold-fill-hover: #dab040;
   --color-stock: #4ea866;
@@ -171,23 +171,25 @@ html.light {
   --color-text: #1a1a1e;
   --color-text-muted: #57575c;
   --color-text-dim: #86868c;
-  /* Two golds in light mode — the fill/text split (see @theme block).
-     TEXT gold #886404: gold-as-text must hold AA 4.5:1 everywhere it can
-     appear — 5.02:1 on --color-bg #f7f6f3, 5.43:1 on --color-bg-card #fff,
-     4.60:1 on --color-bg-elevated #efece6 (the binding constraint; this is
-     as bright as AA allows). Same luminance as the old #8a6410 but purer:
-     blue channel 16→4 pushes hue 41°→44° and saturation .79→.94, so it
-     reads deep-gold instead of brown. Hover darkens (light-mode filled/text
-     convention).
-     FILL gold: NOT overridden here — light mode inherits the dark-mode
-     #c89d2e/#dab040 from @theme so filled surfaces are the identical gold
-     in both themes (owner decision, 2026-07-06). Trade-off, accepted: the
-     fill sits at 2.92:1 against --color-bg (under the 3:1 non-text floor);
-     the component stays identifiable via its --color-on-accent ink at
-     6.3:1. Do not "fix" this back to a deeper gold. */
-  --color-gold: #886404;
-  --color-gold-hover: #6f5203;
-  --color-gold-soft: rgba(200, 157, 46, 0.14);
+  /* Light-mode golds — perceptual match to dark mode (owner decision,
+     Stan 2026-07-06): a light surround makes the same hex read browner
+     (simultaneous contrast), so BOTH light golds are set lighter than a
+     contrast-first pick would be, and fills sit one step ABOVE the dark
+     base to appear equal.
+     TEXT gold #b8922e: the original brand gold (og-image, wordmark asset,
+     email templates). ~2.9:1 on white — BELOW AA 4.5:1 for small text;
+     accepted deliberately, brand look wins. Do not walk this back down to
+     an AA-safe #8x6x0x brown; if a specific label proves unreadable, fix
+     that label (size/weight/color-text), not this token.
+     FILL gold #dab040 (= dark mode's hover): lighter than dark's #c89d2e
+     base so filled slabs look like the same gold across themes. Dark
+     on-accent ink on it: 9.4:1. Hover darkens to #c89d2e (light-mode
+     convention), ink 6.3:1. */
+  --color-gold: #b8922e;
+  --color-gold-hover: #a37f24;
+  --color-gold-soft: rgba(218, 176, 64, 0.16);
+  --color-gold-fill: #dab040;
+  --color-gold-fill-hover: #c89d2e;
   --color-stock: #2f8a4e;       /* darker green for contrast on light */
   /* Error red deep enough for light: 6.08:1 on #f7f6f3, 6.57:1 on #fff (AA).
      The dark-mode #f87171 only hits 2.56:1 here. */
