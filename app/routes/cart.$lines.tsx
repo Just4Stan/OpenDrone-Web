@@ -117,11 +117,35 @@ export async function loader({request, context, params}: Route.LoaderArgs) {
     const existing = await cart.get();
     const existingLines = existing?.lines?.nodes ?? [];
     if (existing && existingLines.length) {
-      const result = await cart.addLines(linesMap);
-      if (result.errors?.length || !result.cart) {
-        throw new Response('Link may be expired. Try checking the URL.', {
-          status: 410,
-        });
+      // Idempotent-ish merge: a shared link re-clicked (refresh, back button,
+      // second tap) must not keep stacking quantities. Semantics: the link
+      // expresses "have at least <qty> of <variant>" — for each shared line
+      // we only add the DELTA up to the shared quantity. A recipient who
+      // already holds that variant at >= the shared quantity gets nothing
+      // added; one holding less is topped up to it. Quantities the recipient
+      // raised beyond the shared amount themselves are left untouched.
+      const haveByVariant = new Map<string, number>();
+      for (const line of existingLines) {
+        const mid = line.merchandise?.id;
+        if (!mid) continue;
+        haveByVariant.set(mid, (haveByVariant.get(mid) ?? 0) + line.quantity);
+      }
+      const deltaLines = linesMap
+        .map((l) => ({
+          ...l,
+          quantity: l.quantity - (haveByVariant.get(l.merchandiseId) ?? 0),
+        }))
+        .filter((l) => l.quantity > 0);
+
+      let cartId = existing.id;
+      if (deltaLines.length) {
+        const result = await cart.addLines(deltaLines);
+        if (result.errors?.length || !result.cart) {
+          throw new Response('Link may be expired. Try checking the URL.', {
+            status: 410,
+          });
+        }
+        cartId = result.cart.id;
       }
       if (discountArray.length) {
         // updateDiscountCodes replaces the whole set — keep whatever codes
@@ -129,11 +153,22 @@ export async function loader({request, context, params}: Route.LoaderArgs) {
         const existingCodes = (existing.discountCodes ?? []).map(
           (c) => c.code,
         );
-        await cart.updateDiscountCodes([
+        const discountResult = await cart.updateDiscountCodes([
           ...new Set([...existingCodes, ...discountArray]),
         ]);
+        const discountUserErrors = discountResult?.userErrors ?? [];
+        if (discountUserErrors.length) {
+          // Non-fatal (an invalid shared code shouldn't kill the merge), but
+          // don't swallow it silently either.
+          console.warn(
+            '[cart.$lines] updateDiscountCodes userErrors:',
+            discountUserErrors
+              .map((e) => `${e.code ?? 'UNKNOWN'}: ${e.message}`)
+              .join('; '),
+          );
+        }
       }
-      const headers = cart.setCartId(result.cart.id);
+      const headers = cart.setCartId(cartId);
       return redirect('/cart', {headers});
     }
   }
