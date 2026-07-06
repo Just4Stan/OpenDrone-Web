@@ -206,7 +206,7 @@ export function NewsletterSignup({
         .join(' ')}
     >
       <div>
-        <p className="font-mono text-[12px] uppercase tracking-[0.2em] text-[var(--color-gold)] mb-0.5">
+        <p className="gold-tag font-mono text-[12px] uppercase tracking-[0.2em] text-[var(--color-gold)] mb-0.5">
           {isNotify ? 'Launch list' : 'Newsletter · Engineering Essentials'}
         </p>
         <h3
@@ -249,7 +249,7 @@ export function NewsletterSignup({
           }
           role="status"
         >
-          <p className="inline-flex items-center gap-1.5 font-mono text-[12px] uppercase tracking-[0.14em] text-[var(--color-gold)]">
+          <p className="gold-tag inline-flex items-center gap-1.5 font-mono text-[12px] uppercase tracking-[0.14em] text-[var(--color-gold)]">
             <Check size={13} strokeWidth={2.5} aria-hidden="true" />
             You&rsquo;re subscribed
           </p>
@@ -266,7 +266,7 @@ export function NewsletterSignup({
         </div>
       ) : isNotify && isSuccess ? (
         <div className="flex flex-col gap-1" role="status">
-          <p className="inline-flex items-center gap-1.5 font-mono text-[12px] uppercase tracking-[0.14em] text-[var(--color-gold)]">
+          <p className="gold-tag inline-flex items-center gap-1.5 font-mono text-[12px] uppercase tracking-[0.14em] text-[var(--color-gold)]">
             <Check size={13} strokeWidth={2.5} aria-hidden="true" />
             You&rsquo;re on the launch list
           </p>
