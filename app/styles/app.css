@@ -58,6 +58,8 @@
   --color-gold-hover: #dab040;
   --color-gold-soft: rgba(200, 157, 46, 0.12);
   --color-stock: #4ea866;
+  /* Form/validation error text. 7.02:1 on --color-bg #0d0d10 (AA). */
+  --color-error: #f87171;
   --color-border: #24242a;
   --color-border-strong: #34343c;
 
@@ -167,6 +169,9 @@ html.light {
   --color-gold-hover: #a87a0b;
   --color-gold-soft: rgba(192, 140, 16, 0.14);
   --color-stock: #2f8a4e;       /* darker green for contrast on light */
+  /* Error red deep enough for light: 6.08:1 on #f7f6f3, 6.57:1 on #fff (AA).
+     The dark-mode #f87171 only hits 2.56:1 here. */
+  --color-error: #b42318;
   --color-border: #e4e0d8;
   --color-border-strong: #cfc9bd;
   /* White ink on gold fills in light mode — dark ink looked dull on the
