@@ -8,6 +8,14 @@ import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {MeshoptDecoder} from 'three/addons/libs/meshopt_decoder.module.js';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import {HERO_AIRFRAME_KEYS, DEFAULT_HERO_SIZE} from '~/lib/hero-airframes';
+import {
+  HERO_SLOTS,
+  HERO_ANCHOR_SLOT,
+  HERO_REVEAL_WINDOWS,
+  heroModelUrl,
+  heroSlotHandle,
+  type HeroSlotId,
+} from '~/lib/builder/registry';
 
 // The hero GLBs use EXT_meshopt_compression (the Onshape assemblies are
 // decimated to a few MB/size this way). MeshoptDecoder decodes on the main
@@ -273,22 +281,16 @@ function mergeGroupByBucket(
   return {group, meshes};
 }
 
-export type LabelRefs = {
-  fc: React.RefObject<HTMLDivElement | null>;
-  frame: React.RefObject<HTMLDivElement | null>;
-  esc: React.RefObject<HTMLDivElement | null>;
-};
+export type LabelRefs = Partial<
+  Record<HeroSlotId, React.RefObject<HTMLDivElement | null>>
+>;
 
-// A fully-processed airframe ready to drop into the scene: the three merged
-// groups and their material lists (for hover/opacity animation).
-type BuiltModel = {
-  frame: THREE.Group;
-  esc: THREE.Group;
-  fc: THREE.Group;
-  frameMats: THREE.Material[];
-  escMats: THREE.Material[];
-  fcMats: THREE.Material[];
-};
+// A fully-processed part ready to drop into the scene: the merged group and
+// its material list (for hover/opacity animation).
+type BuiltPart = {group: THREE.Group; mats: THREE.Material[]};
+// A fully-processed airframe: one BuiltPart per hero slot (registry order —
+// see HERO_SLOTS), keyed by slot id.
+type BuiltModel = Map<HeroSlotId, BuiltPart>;
 
 // Raycast no-op — see addProxyHitbox.
 const NO_RAYCAST = () => {};
@@ -331,7 +333,7 @@ function addProxyHitbox(group: THREE.Group) {
 }
 
 function disposeBuiltModel(m: BuiltModel) {
-  for (const g of [m.frame, m.esc, m.fc]) {
+  for (const {group: g} of m.values()) {
     g.parent?.remove(g);
     g.traverse((obj: any) => {
       if (obj.isMesh) {
@@ -366,7 +368,7 @@ function DroneAssembly({
   /** Which board the visitor is hovering on the right-side product cards, or
    *  null. A ref (not state) so hovering doesn't re-render the page; the render
    *  loop reads it each frame and pins that board's spotlight to full. */
-  spotlightRef?: React.RefObject<'fc' | 'esc' | 'frame' | null>;
+  spotlightRef?: React.RefObject<HeroSlotId | null>;
   /** Client-side navigate, threaded from HeroScene (outside the r3f Canvas,
    *  where Router context is available). Used by the part hotspots so a click
    *  is an instant SPA transition into the prefetched PDP rather than a full
@@ -390,9 +392,23 @@ function DroneAssembly({
   const camLocalVec = useRef(new THREE.Vector3()).current;
   const tmpQuat = useRef(new THREE.Quaternion()).current;
   const wrapperRef = useRef<Group>(null);
-  const frameRef = useRef<Group>(null);
-  const escRef = useRef<Group>(null);
-  const fcRef = useRef<Group>(null);
+  // One <group> per hero slot (registry-driven), replacing the old fixed
+  // frame/esc/fc ref trio. Populated by stable per-slot ref callbacks so the
+  // slot list can grow without touching this component's structure.
+  const slotGroupsRef = useRef(new Map<HeroSlotId, Group | null>());
+  const slotRefCallbacksRef = useRef(
+    new Map<HeroSlotId, (g: Group | null) => void>(),
+  );
+  const slotRefFor = (id: HeroSlotId) => {
+    let cb = slotRefCallbacksRef.current.get(id);
+    if (!cb) {
+      cb = (g: Group | null) => {
+        slotGroupsRef.current.set(id, g);
+      };
+      slotRefCallbacksRef.current.set(id, cb);
+    }
+    return cb;
+  };
 
   const rotRef = useRef(0);
   const dragRef = useRef({x: 0, y: 0});
@@ -401,11 +417,21 @@ function DroneAssembly({
   const lastPtr = useRef({x: 0, y: 0});
   const dampedP = useRef(0);
   const focusedRef = useRef(true);
-  const frameMats = useRef<any[]>([]);
-  const escMats = useRef<any[]>([]);
-  const fcMats = useRef<any[]>([]);
-  const hoverState = useRef({frame: 0, esc: 0, fc: 0});
-  const hoverTarget = useRef({frame: 0, esc: 0, fc: 0});
+  // Per-slot spotlight weights (smoothed value + target), keyed by slot id.
+  // Materials themselves live on the displayed BuiltModel (prevModelRef).
+  const zeroPerSlot = () =>
+    Object.fromEntries(HERO_SLOTS.map((s) => [s.id, 0])) as Record<
+      HeroSlotId,
+      number
+    >;
+  const hoverState = useRef<Record<HeroSlotId, number>>(zeroPerSlot());
+  const hoverTarget = useRef<Record<HeroSlotId, number>>(zeroPerSlot());
+  // Preallocated per-frame scratch (reveal + focus per slot) — the render loop
+  // must not allocate.
+  const revealsRef = useRef<number[]>(new Array(HERO_SLOTS.length).fill(0));
+  const focusScratchRef = useRef<number[]>(
+    new Array(HERO_SLOTS.length).fill(0),
+  );
   // Seconds parked on the frame stop — used to hold the frame's spotlight for a
   // beat after it reveals, then fade it out so the very end settles unlit.
   const frameHoldRef = useRef(0);
@@ -460,7 +486,7 @@ function DroneAssembly({
   const finishOutgoing = useCallback(() => {
     const og = outgoingRef.current;
     if (og && outWrapperRef.current) {
-      for (const g of [og.frame, og.esc, og.fc]) outWrapperRef.current.remove(g);
+      for (const {group} of og.values()) outWrapperRef.current.remove(group);
     }
     outgoingRef.current = null;
   }, []);
@@ -519,68 +545,61 @@ function DroneAssembly({
           if (shouldCancel()) return null;
         }
 
-        const loaded = [0, 0, 0];
-        const total = [0, 0, 0];
+        // One GLB per hero slot (registry manifest), fetched in parallel.
+        const slots = HERO_SLOTS;
+        const loaded = new Array<number>(slots.length).fill(0);
+        const total = new Array<number>(slots.length).fill(0);
         const reportProgress = () => {
           if (!onProg) return;
           let l = 0, t = 0, known = 0;
-          for (let i = 0; i < 3; i++)
+          for (let i = 0; i < slots.length; i++)
             if (total[i] > 0) { l += loaded[i]; t += total[i]; known += 1; }
           onProg(known === 0 ? -1 : Math.min(1, l / t));
         };
-        const [frameScene, escScene, fcScene] = await Promise.all([
-          loadModel(`/models/frame${sz}.glb`, (l, t) => { loaded[0] = l; total[0] = t; reportProgress(); }),
-          loadModel(`/models/esc${sz}.glb`, (l, t) => { loaded[1] = l; total[1] = t; reportProgress(); }),
-          loadModel(`/models/fc${sz}.glb`, (l, t) => { loaded[2] = l; total[2] = t; reportProgress(); }),
-        ]);
+        const loadedScenes = await Promise.all(
+          slots.map((slot, i) =>
+            loadModel(heroModelUrl(slot.id, sz), (l, t) => {
+              loaded[i] = l; total[i] = t; reportProgress();
+            }),
+          ),
+        );
         if (shouldCancel()) return null;
+        const sceneOf = new Map<HeroSlotId, THREE.Group>(
+          slots.map((slot, i) => [slot.id, loadedScenes[i]]),
+        );
 
         // Raw Onshape geometry (metres). Fit to a ~0.124-unit frame with ONE
-        // uniform scale across the trio — display only; proportions/positions
-        // stay exactly as exported.
+        // uniform scale across all parts — display only; proportions/positions
+        // stay exactly as exported. The anchor slot (the frame) defines the
+        // airframe's bounds for both the fit and the centering.
+        const anchorScene = sceneOf.get(HERO_ANCHOR_SLOT.id)!;
         const FIT_FRAME_SIZE = 0.124;
-        const fbox = new THREE.Box3().setFromObject(frameScene);
+        const fbox = new THREE.Box3().setFromObject(anchorScene);
         const fsize = fbox.getSize(new THREE.Vector3());
         const fit = FIT_FRAME_SIZE / Math.max(fsize.x, fsize.y, fsize.z, 1e-6);
-        for (const s of [frameScene, escScene, fcScene]) s.scale.setScalar(fit);
-        frameScene.updateMatrixWorld(true); escScene.updateMatrixWorld(true); fcScene.updateMatrixWorld(true);
+        for (const s of loadedScenes) s.scale.setScalar(fit);
+        for (const s of loadedScenes) s.updateMatrixWorld(true);
 
-        const box = new THREE.Box3().setFromObject(frameScene);
+        const box = new THREE.Box3().setFromObject(anchorScene);
         const c = box.getCenter(new THREE.Vector3());
-        frameScene.position.sub(c); escScene.position.sub(c); fcScene.position.sub(c);
-        frameScene.updateMatrixWorld(true); escScene.updateMatrixWorld(true); fcScene.updateMatrixWorld(true);
+        for (const s of loadedScenes) s.position.sub(c);
+        for (const s of loadedScenes) s.updateMatrixWorld(true);
 
+        // PCB-finish slots get their materials upgraded to PBR + deduped; the
+        // carbon-finish frame keeps a single scene-owned material (below), so
+        // its export materials are never touched.
+        const pcbSlots = slots.filter((s) => s.finish === 'pcb');
         await stageYield(); if (shouldCancel()) return null;
-        upgradeNonPBRMaterials(escScene);
-        await stageYield(); if (shouldCancel()) return null;
-        upgradeNonPBRMaterials(fcScene);
-        await stageYield(); if (shouldCancel()) return null;
-        dedupeMaterialsByFingerprint(escScene);
-        await stageYield(); if (shouldCancel()) return null;
-        dedupeMaterialsByFingerprint(fcScene);
-        await stageYield(); if (shouldCancel()) return null;
+        for (const slot of pcbSlots) {
+          upgradeNonPBRMaterials(sceneOf.get(slot.id)!);
+          await stageYield(); if (shouldCancel()) return null;
+        }
+        for (const slot of pcbSlots) {
+          dedupeMaterialsByFingerprint(sceneOf.get(slot.id)!);
+          await stageYield(); if (shouldCancel()) return null;
+        }
 
-        // Plain dark frame material — flat carbon colour, no woven texture.
-        // Stays partly transparent so the boards read through it; the colour is
-        // animated per-frame (see frameMats in useFrame).
-        const frameMat = new THREE.MeshStandardMaterial({
-          // Matte, near-non-metallic so the warm key light doesn't bloom the
-          // frame into a tan/grey plastic look — it should read as dark carbon.
-          color: 0xf2f2f2, metalness: 0.0, roughness: 0.82,
-          transparent: true, opacity: 0.62, depthWrite: true,
-          // polygonOffset pushes the transparent frame's depth back so the
-          // near-coplanar plates/boards don't z-fight (keeps see-through frame).
-          polygonOffset: true, polygonOffsetFactor: 2, polygonOffsetUnits: 2,
-        });
-        const framePack = mergeGroupByBucket(
-          frameScene,
-          () => 'body',
-          () => frameMat,
-        );
-        packs.push(framePack);
-        await stageYield(); if (shouldCancel()) return bail();
-
-        // ESC + FC: keep original materials, merge meshes sharing a material.
+        // Boards: keep original materials, merge meshes sharing a material.
         const mergeByMaterialRef = (scene: THREE.Group) => {
           const materialsByKey = new Map<string, THREE.Material>();
           return mergeGroupByBucket(
@@ -595,35 +614,7 @@ function DroneAssembly({
             (key) => materialsByKey.get(key) || new THREE.MeshStandardMaterial({color: 0x999999}),
           );
         };
-        const escPack = mergeByMaterialRef(escScene);
-        packs.push(escPack);
-        await stageYield(); if (shouldCancel()) return bail();
-        const fcPack = mergeByMaterialRef(fcScene);
-        packs.push(fcPack);
-        await stageYield(); if (shouldCancel()) return bail();
 
-        const frameMatsArr: THREE.Material[] = [frameMat];
-        const escMatsArr = Array.from(
-          new Set(escPack.group.children.map((m) => (m as THREE.Mesh).material)),
-        ).filter(Boolean) as THREE.Material[];
-        const fcMatsArr = Array.from(
-          new Set(fcPack.group.children.map((m) => (m as THREE.Mesh).material)),
-        ).filter(Boolean) as THREE.Material[];
-        for (const m of [...escMatsArr, ...fcMatsArr]) {
-          if (!m) continue;
-          // Force-zero board emissive so they only show the spotlight, not self-lit.
-          if ('emissive' in m) {
-            (m as any).emissive.setHex(0x000000);
-            (m as any).emissiveIntensity = 0;
-          }
-          // Onshape exports every board material DOUBLE-SIDED. PCBs are solid,
-          // so the inside/back faces never should show — and double-siding makes
-          // near-coplanar pad/board faces flicker through one another as the
-          // model rotates. Render front-only: correct for a solid and it removes
-          // the back-face z-fighting that drove the gold-pad shimmer.
-          (m as any).side = THREE.FrontSide;
-          (m as any).needsUpdate = true;
-        }
         const setShadowFlags = (g: THREE.Group, cast: boolean, receive: boolean) => {
           g.traverse((obj) => {
             const mesh = obj as THREE.Mesh;
@@ -632,36 +623,81 @@ function DroneAssembly({
             mesh.receiveShadow = receive;
           });
         };
-        // Frame: receives only (it's transparent, so it never casts cleanly).
-        setShadowFlags(framePack.group, false, true);
-        // Boards: OUT of shadows entirely. They used to self-shadow (cast+receive),
-        // which on the down-scaled 5" board produced crawling shadow-acne across
-        // the fine pad geometry — a fixed world-space bias + fixed shadow-map
-        // texel size can't resolve features that small, so the depth comparison
-        // flips per-texel as the view rotates. Dropping board self-shadow kills
-        // it (and is a small perf win); the look is unchanged at hero distance.
-        setShadowFlags(escPack.group, false, false);
-        setShadowFlags(fcPack.group, false, false);
 
-        // Swap per-triangle raycasting for invisible bounding-box proxies —
-        // pointer moves stop scanning ~700k triangles (see addProxyHitbox).
-        addProxyHitbox(framePack.group);
-        addProxyHitbox(escPack.group);
-        addProxyHitbox(fcPack.group);
+        const built: BuiltModel = new Map();
+        for (const slot of slots) {
+          const scene = sceneOf.get(slot.id)!;
+          let pack: {group: THREE.Group};
+          let mats: THREE.Material[];
+          if (slot.finish === 'carbon') {
+            // Plain dark frame material — flat carbon colour, no woven texture.
+            // Stays partly transparent so the boards read through it; the
+            // colour is animated per-frame (see the carbon block in useFrame).
+            const frameMat = new THREE.MeshStandardMaterial({
+              // Matte, near-non-metallic so the warm key light doesn't bloom
+              // the frame into a tan/grey plastic look — it should read as
+              // dark carbon.
+              color: 0xf2f2f2, metalness: 0.0, roughness: 0.82,
+              transparent: true, opacity: 0.62, depthWrite: true,
+              // polygonOffset pushes the transparent frame's depth back so the
+              // near-coplanar plates/boards don't z-fight (keeps see-through
+              // frame).
+              polygonOffset: true, polygonOffsetFactor: 2, polygonOffsetUnits: 2,
+            });
+            pack = mergeGroupByBucket(scene, () => 'body', () => frameMat);
+            mats = [frameMat];
+            // Frame: receives only (it's transparent, so it never casts cleanly).
+            setShadowFlags(pack.group, false, true);
+          } else {
+            pack = mergeByMaterialRef(scene);
+            mats = Array.from(
+              new Set(pack.group.children.map((m) => (m as THREE.Mesh).material)),
+            ).filter(Boolean) as THREE.Material[];
+            for (const m of mats) {
+              if (!m) continue;
+              // Force-zero board emissive so they only show the spotlight, not
+              // self-lit.
+              if ('emissive' in m) {
+                (m as any).emissive.setHex(0x000000);
+                (m as any).emissiveIntensity = 0;
+              }
+              // Onshape exports every board material DOUBLE-SIDED. PCBs are
+              // solid, so the inside/back faces never should show — and
+              // double-siding makes near-coplanar pad/board faces flicker
+              // through one another as the model rotates. Render front-only:
+              // correct for a solid and it removes the back-face z-fighting
+              // that drove the gold-pad shimmer.
+              (m as any).side = THREE.FrontSide;
+              (m as any).needsUpdate = true;
+            }
+            // Boards: OUT of shadows entirely. They used to self-shadow
+            // (cast+receive), which on the down-scaled 5" board produced
+            // crawling shadow-acne across the fine pad geometry — a fixed
+            // world-space bias + fixed shadow-map texel size can't resolve
+            // features that small, so the depth comparison flips per-texel as
+            // the view rotates. Dropping board self-shadow kills it (and is a
+            // small perf win); the look is unchanged at hero distance.
+            setShadowFlags(pack.group, false, false);
+          }
+          packs.push(pack);
+          // Swap per-triangle raycasting for invisible bounding-box proxies —
+          // pointer moves stop scanning ~700k triangles (see addProxyHitbox).
+          addProxyHitbox(pack.group);
+          built.set(slot.id, {group: pack.group, mats});
+          await stageYield(); if (shouldCancel()) return bail();
+        }
 
-        return {
-          frame: framePack.group, esc: escPack.group, fc: fcPack.group,
-          frameMats: frameMatsArr, escMats: escMatsArr, fcMats: fcMatsArr,
-        };
+        return built;
       } catch (err) {
         console.error('Failed to load drone models:', err);
         return bail();
       }
     }
 
-    // Drop a built model into the scene. On a toggle, hand the previous trio to
-    // the slide-out wrapper (cached, NOT disposed) so it can exit left while the
-    // new one slides in from the right. Models are never disposed here.
+    // Drop a built model into the scene. On a toggle, hand the previous parts
+    // to the slide-out wrapper (cached, NOT disposed) so they can exit left
+    // while the new ones slide in from the right. Models are never disposed
+    // here.
     const display = async (model: BuiltModel) => {
       const prev = prevModelRef.current;
       const isToggle = hasDisplayedRef.current && !!prev && prev !== model;
@@ -677,9 +713,9 @@ function DroneAssembly({
 
       if (isToggle && outWrapperRef.current && wrapperRef.current) {
         finishOutgoing(); // clear any still-in-flight slide-out first
-        // Reparent the previous trio into the slide-out wrapper, frozen at the
-        // main wrapper's current transform, then it just translates left.
-        outWrapperRef.current.add(prev.frame, prev.esc, prev.fc);
+        // Reparent the previous parts into the slide-out wrapper, frozen at
+        // the main wrapper's current transform, then it just translates left.
+        for (const {group} of prev.values()) outWrapperRef.current.add(group);
         outWrapperRef.current.position.copy(wrapperRef.current.position);
         outWrapperRef.current.quaternion.copy(wrapperRef.current.quaternion);
         outWrapperRef.current.scale.copy(wrapperRef.current.scale);
@@ -688,19 +724,18 @@ function DroneAssembly({
         outgoingRef.current = prev;
       }
 
-      // Main wrapper now holds only the incoming trio.
-      for (const ref of [frameRef, escRef, fcRef]) {
-        while (ref.current && ref.current.children.length) {
-          ref.current.remove(ref.current.children[0]);
+      // Main wrapper now holds only the incoming parts — one per slot group.
+      for (const slot of HERO_SLOTS) {
+        const holder = slotGroupsRef.current.get(slot.id);
+        while (holder && holder.children.length) {
+          holder.remove(holder.children[0]);
         }
       }
-      for (const g of [model.frame, model.esc, model.fc]) g.parent?.remove(g);
-      frameRef.current?.add(model.frame);
-      escRef.current?.add(model.esc);
-      fcRef.current?.add(model.fc);
-      frameMats.current = model.frameMats;
-      escMats.current = model.escMats;
-      fcMats.current = model.fcMats;
+      for (const {group} of model.values()) group.parent?.remove(group);
+      for (const slot of HERO_SLOTS) {
+        const part = model.get(slot.id);
+        if (part) slotGroupsRef.current.get(slot.id)?.add(part.group);
+      }
       if (isToggle) transitionRef.current = 0;
       hasDisplayedRef.current = true;
       prevModelRef.current = model;
@@ -719,7 +754,7 @@ function DroneAssembly({
       invalidate();
     };
 
-    void (async () => {
+    (async () => {
       let model: BuiltModel | null | undefined = modelCacheRef.current.get(airframeSize);
       if (!model) {
         model = await buildModel(airframeSize, {
@@ -764,11 +799,11 @@ function DroneAssembly({
           if (holder) {
             const prevX = holder.position.x;
             holder.position.x = 1e6;
-            holder.add(m.frame, m.esc, m.fc);
+            for (const {group} of m.values()) holder.add(group);
             try {
               await gl.compileAsync(scene, camera);
             } catch { /* best-effort */ }
-            for (const g of [m.frame, m.esc, m.fc]) holder.remove(g);
+            for (const {group} of m.values()) holder.remove(group);
             // A size toggle can claim the wrapper for a real slide-out while
             // we awaited; only restore the parking offset if it didn't.
             if (!outgoingRef.current) holder.position.x = prevX;
@@ -784,7 +819,13 @@ function DroneAssembly({
         if (typeof ric === 'function') ric(schedule, {timeout: 10000});
         else setTimeout(schedule, 3000);
       }
-    })();
+    })().catch((err: unknown) => {
+      // buildModel catches its own load errors, but a registry/data bug
+      // (heroModelUrl throwing) or a display() failure would otherwise be an
+      // unhandled rejection that strands the splash dim-layer — release it.
+      console.error('HeroScene: hero model build/display failed:', err);
+      onReady?.();
+    });
 
     return () => {
       // Cancel only the in-flight build for THIS size change. Displayed models
@@ -854,7 +895,10 @@ function DroneAssembly({
   }, []);
 
   useFrame((_, dt) => {
-    if (!wrapperRef.current || !frameRef.current || !escRef.current || !fcRef.current) return;
+    if (!wrapperRef.current) return;
+    for (const slot of HERO_SLOTS) {
+      if (!slotGroupsRef.current.get(slot.id)) return;
+    }
 
     const prevP = dampedP.current;
     const p = scrollRef.current;
@@ -865,16 +909,24 @@ function DroneAssembly({
     // bubble on the right (see _index.tsx) and, in here, (a) spotlights the
     // matching board as each card reveals and (b) pulls the camera back a touch
     // once the frame — the LAST card — appears, so the whole airframe reads.
-    // These reveal windows MUST match the linearstep windows the route uses to
-    // pop the cards, or the glow and the card fall out of sync. Spread out with
-    // dwell gaps between them so each card is a deliberate, separate scroll
-    // beat rather than a continuous sweep.
-    // Each reveal plays out within one snap-step gap (stops at p ≈ 0, 0.34,
-    // 0.67, 1.0 — see the step controller in _index.tsx), so each board's card
-    // is fully shown by the time the scroll settles on its stop.
-    const fcReveal = smoothstep(0.08, 0.3, p);
-    const escReveal = smoothstep(0.4, 0.62, p);
-    const frameReveal = smoothstep(0.72, 0.94, p);
+    // The reveal windows are the registry-generated HERO_REVEAL_WINDOWS —
+    // the SAME array the route uses to pop the cards, so the glow and the
+    // card can no longer fall out of sync. They're spread out with dwell gaps
+    // between them so each card is a deliberate, separate scroll beat rather
+    // than a continuous sweep, and each reveal plays out within one snap-step
+    // gap (HERO_SCROLL_STOPS — see the step controller in _index.tsx), so
+    // each board's card is fully shown by the time the scroll settles on its
+    // stop. (For 3 slots: [0.08,0.3] / [0.4,0.62] / [0.72,0.94].)
+    const reveals = revealsRef.current;
+    for (let i = 0; i < HERO_SLOTS.length; i++) {
+      reveals[i] = smoothstep(
+        HERO_REVEAL_WINDOWS[i][0],
+        HERO_REVEAL_WINDOWS[i][1],
+        p,
+      );
+    }
+    const lastIdx = HERO_SLOTS.length - 1;
+    const lastReveal = reveals[lastIdx];
 
     // Latch scroll direction. Scrolling back (p decreasing) suppresses the
     // per-part highlight choreography so it doesn't replay in reverse — the
@@ -884,31 +936,36 @@ function DroneAssembly({
     else if (p > prevP + 0.0008) reverseRef.current = false;
     const playing = reverseRef.current ? 0 : 1;
 
-    // Per-board focus weights — which centre board the spotlight is on.
-    // fcFocus peaks at the FC stop, escFocus at the ESC stop; boardFocus is 1
-    // while either is held, 0 at the top and once the frame reveals. Gated by
-    // `playing` so the highlights only run on the way down.
-    const fcFocus = fcReveal * (1 - escReveal) * playing;
-    const escFocus = escReveal * (1 - frameReveal) * playing;
-    const boardFocus = fcFocus + escFocus;
+    // Per-board focus weights — which centre board the spotlight is on. Each
+    // non-final slot's focus peaks at its own stop and hands off as the next
+    // slot reveals; boardFocus is 1 while any of them is held, 0 at the top
+    // and once the final slot (the frame) reveals. Gated by `playing` so the
+    // highlights only run on the way down.
+    const focus = focusScratchRef.current;
+    let boardFocus = 0;
+    for (let i = 0; i < HERO_SLOTS.length; i++) {
+      focus[i] =
+        i < lastIdx ? reveals[i] * (1 - reveals[i + 1]) * playing : 0;
+      boardFocus += focus[i];
+    }
 
     // Frame highlight with a timed hold: once parked on the frame stop the frame
     // stays highlighted for ~1.5s and then fades, so it gets a real beat in the
     // spotlight before the end settles unlit (a pure scroll-position fade would
     // be over in a frame since the stop sits at p≈1).
-    if (frameReveal > 0.98) frameHoldRef.current += dt;
+    if (lastReveal > 0.98) frameHoldRef.current += dt;
     else frameHoldRef.current = 0;
     const FRAME_HOLD = 1.5;
     const FRAME_FADE = 0.6;
     const frameHi =
-      frameReveal *
+      lastReveal *
       (1 - smoothstep(FRAME_HOLD, FRAME_HOLD + FRAME_FADE, frameHoldRef.current)) *
       playing;
 
     // Halt the auto-rotate while scrolling through the FC/ESC reveals so the
     // board being inspected holds still. Spin runs at the very top (the idle
     // hero) and resumes once the frame is revealed (zoomed out) at the end.
-    const rotateAmt = Math.max(1 - smoothstep(0, 0.06, p), frameReveal);
+    const rotateAmt = Math.max(1 - smoothstep(0, 0.06, p), lastReveal);
     if (!dragging.current && focusedRef.current) {
       rotRef.current += dt * 0.12 * rotateAmt;
     }
@@ -945,13 +1002,14 @@ function DroneAssembly({
       Math.min(1, boardFocus * 6 * dt),
     );
     wrapperRef.current.rotation.y = rotRef.current + dragRef.current.y;
-    // X tilt: resting 3/4 view normally. FC reads from a slight downward front
-    // angle; ESC sits beneath it, so it gets a steeper look-down so the FC
-    // doesn't cover it. Each board's angle is weighted by its own focus.
-    const FC_TILT = 0.32; // slight angle from the front
-    const ESC_TILT = 0.62; // steeper look-down to clear the FC
-    const targetTiltX =
-      (1 - boardFocus) * 0.45 + fcFocus * FC_TILT + escFocus * ESC_TILT;
+    // X tilt: resting 3/4 view normally. Each focusable board carries its own
+    // viewing angle in the registry (SlotDef.focusTiltX — FC reads from a
+    // slight downward front angle; the ESC sits beneath it so it gets a
+    // steeper look-down that clears the FC), weighted by its own focus.
+    let targetTiltX = (1 - boardFocus) * 0.45;
+    for (let i = 0; i < lastIdx; i++) {
+      targetTiltX += focus[i] * (HERO_SLOTS[i].focusTiltX ?? 0);
+    }
     const targetTiltZ = (1 - boardFocus) * 0.05;
     // Ease pitch/roll toward target so that when focus is suppressed on the way
     // back, the tilt settles to rest smoothly instead of snapping.
@@ -1025,9 +1083,6 @@ function DroneAssembly({
       if (outgoingRef.current) finishOutgoing();
     }
 
-    frameRef.current.position.set(0, 0, 0);
-    frameRef.current.scale.setScalar(1);
-
     // Highlight focus — smoothed per-part target (scroll reveal + hover
     // override). The frame's hold (frameHi) gives it a beat before settling.
     const hovered = spotlightRef?.current ?? null;
@@ -1036,17 +1091,20 @@ function DroneAssembly({
       // focus entirely — otherwise the hovered part AND the scroll-focused part
       // were both "selected" at once (both lifted toward the camera and glowed),
       // which collided into a broken-looking double state.
-      hoverTarget.current.fc = hovered === 'fc' ? 1 : 0;
-      hoverTarget.current.esc = hovered === 'esc' ? 1 : 0;
-      hoverTarget.current.frame = hovered === 'frame' ? 1 : 0;
+      for (const slot of HERO_SLOTS) {
+        hoverTarget.current[slot.id] = hovered === slot.id ? 1 : 0;
+      }
     } else {
-      hoverTarget.current.fc = fcFocus;
-      hoverTarget.current.esc = escFocus;
-      hoverTarget.current.frame = frameHi;
+      for (let i = 0; i < HERO_SLOTS.length; i++) {
+        // Non-final slots follow their scroll focus; the final slot (the
+        // frame) follows its timed hold.
+        hoverTarget.current[HERO_SLOTS[i].id] = i < lastIdx ? focus[i] : frameHi;
+      }
     }
     let glowAnimating = false;
     let anyFocus = 0;
-    for (const key of ['frame', 'esc', 'fc'] as const) {
+    for (const slot of HERO_SLOTS) {
+      const key = slot.id;
       const target = hoverTarget.current[key];
       const prev = hoverState.current[key];
       hoverState.current[key] += (target - prev) * Math.min(1, 8 * dt);
@@ -1065,22 +1123,30 @@ function DroneAssembly({
       .copy(camera.position)
       .normalize()
       .applyQuaternion(tmpQuat.copy(wrapperRef.current.quaternion).invert());
-    fcRef.current.position
-      .copy(camLocalVec)
-      .multiplyScalar(LIFT * hoverState.current.fc);
-    escRef.current.position
-      .copy(camLocalVec)
-      .multiplyScalar(LIFT * hoverState.current.esc);
+    for (const slot of HERO_SLOTS) {
+      const g = slotGroupsRef.current.get(slot.id)!;
+      if (slot.fitAnchor) {
+        // The anchor (frame) never lifts — it IS the airframe.
+        g.position.set(0, 0, 0);
+        g.scale.setScalar(1);
+      } else {
+        g.position
+          .copy(camLocalVec)
+          .multiplyScalar(LIFT * hoverState.current[slot.id]);
+      }
+    }
 
     const DIM = 0.82; // how hard non-focused parts darken
     const GLOW = 0.06; // gold emissive strength on the selected part (subtle)
     const brightOf = (f: number) => Math.max(0.2, 1 - (anyFocus - f) * DIM);
     // Darken non-focused parts (colour) AND glow the focused one (gold emissive
     // scaled by its own focus, so it lights up as it's selected and fades out
-    // again as focus moves on).
-    const applyPart = (matsRef: React.MutableRefObject<any[]>, focus: number) => {
+    // again as focus moves on). Materials live on the displayed BuiltModel.
+    const displayed = prevModelRef.current;
+    const applyPart = (mats: THREE.Material[] | undefined, focus: number) => {
+      if (!mats) return;
       const bright = brightOf(focus);
-      for (const m of matsRef.current) {
+      for (const m of mats as any[]) {
         if (!m || !m.color) continue;
         if (!m.userData.baseColor) m.userData.baseColor = m.color.clone();
         m.color.copy(m.userData.baseColor).multiplyScalar(bright);
@@ -1090,24 +1156,29 @@ function DroneAssembly({
         }
       }
     };
-    applyPart(fcMats, hoverState.current.fc);
-    applyPart(escMats, hoverState.current.esc);
+    for (const slot of HERO_SLOTS) {
+      if (slot.finish === 'carbon') continue; // scene-owned material, below
+      applyPart(displayed?.get(slot.id)?.mats, hoverState.current[slot.id]);
+    }
 
-    // Frame — fixed (less-transparent) opacity that firms up while it's the
-    // focused product; its grey darkens when a board holds the focus, and it
-    // glows gold while the frame itself is selected.
-    const frameFocus = hoverState.current.frame;
-    const frameBright = brightOf(frameFocus);
-    const fb = ((lightRef.current ? 0x6e : 0x14) / 255) * frameBright;
-    const frameBase = lightRef.current ? 0.58 : 0.6;
-    const frameHiOp = lightRef.current ? 0.82 : 0.92;
-    for (const m of frameMats.current) {
-      if (!m) continue;
-      m.opacity = THREE.MathUtils.lerp(frameBase, frameHiOp, frameFocus);
-      if (m.color) m.color.setRGB(fb, fb, fb);
-      if (m.emissive) {
-        m.emissive.copy(GLOW_TINT);
-        m.emissiveIntensity = frameFocus * GLOW * 0.6;
+    // Carbon frame — fixed (less-transparent) opacity that firms up while it's
+    // the focused product; its grey darkens when a board holds the focus, and
+    // it glows gold while the frame itself is selected.
+    for (const slot of HERO_SLOTS) {
+      if (slot.finish !== 'carbon') continue;
+      const frameFocus = hoverState.current[slot.id];
+      const frameBright = brightOf(frameFocus);
+      const fb = ((lightRef.current ? 0x6e : 0x14) / 255) * frameBright;
+      const frameBase = lightRef.current ? 0.58 : 0.6;
+      const frameHiOp = lightRef.current ? 0.82 : 0.92;
+      for (const m of (displayed?.get(slot.id)?.mats ?? []) as any[]) {
+        if (!m) continue;
+        m.opacity = THREE.MathUtils.lerp(frameBase, frameHiOp, frameFocus);
+        if (m.color) m.color.setRGB(fb, fb, fb);
+        if (m.emissive) {
+          m.emissive.copy(GLOW_TINT);
+          m.emissiveIntensity = frameFocus * GLOW * 0.6;
+        }
       }
     }
 
@@ -1145,9 +1216,10 @@ function DroneAssembly({
         el.style.transform = `translate3d(${x}px, ${y}px, 0) translate(-50%, 0)`;
         el.style.opacity = '';
       };
-      project(labelRefs.fc, fcRef.current);
-      project(labelRefs.frame, frameRef.current);
-      project(labelRefs.esc, escRef.current);
+      for (const slot of HERO_SLOTS) {
+        const target = labelRefs[slot.id];
+        if (target) project(target, slotGroupsRef.current.get(slot.id) ?? null);
+      }
     }
 
     // Keep rendering whenever anything is moving. Now that draw calls
@@ -1187,7 +1259,7 @@ function DroneAssembly({
     }
   }, [isInteractive, onNavigate]);
 
-  const hover = useCallback((key: 'frame' | 'esc' | 'fc', value: boolean) => {
+  const hover = useCallback((key: HeroSlotId, value: boolean) => {
     if (!isInteractive()) return;
     hoverTarget.current[key] = value ? 1 : 0;
     document.body.style.cursor = value ? 'pointer' : '';
@@ -1197,24 +1269,17 @@ function DroneAssembly({
   return (
     <>
       <group ref={wrapperRef} scale={7} rotation={[0.6, 0, 0.05]} onPointerDown={onDown}>
-        <group
-          ref={frameRef}
-          onPointerOver={() => hover('frame', true)}
-          onPointerOut={() => hover('frame', false)}
-          onClick={() => handleClick('/products/openframe')}
-        />
-        <group
-          ref={escRef}
-          onPointerOver={() => hover('esc', true)}
-          onPointerOut={() => hover('esc', false)}
-          onClick={() => handleClick('/products/openesc')}
-        />
-        <group
-          ref={fcRef}
-          onPointerOver={() => hover('fc', true)}
-          onPointerOut={() => hover('fc', false)}
-          onClick={() => handleClick('/products/openfc-lite')}
-        />
+        {/* One hit-target group per hero slot, registry order. The PDP url
+            comes from the slot's product handle (registry commerce data). */}
+        {HERO_SLOTS.map((slot) => (
+          <group
+            key={slot.id}
+            ref={slotRefFor(slot.id)}
+            onPointerOver={() => hover(slot.id, true)}
+            onPointerOut={() => hover(slot.id, false)}
+            onClick={() => handleClick(`/products/${heroSlotHandle(slot.id)}`)}
+          />
+        ))}
       </group>
       {/* Holds the previous assembly while it slides out on a size toggle. */}
       <group ref={outWrapperRef} />
@@ -1427,10 +1492,15 @@ function CameraRig({scrollRef}: {scrollRef: React.RefObject<number>}) {
   useFrame(() => {
     const p = scrollRef.current;
 
-    // Hold the tight assembled view through the FC + ESC reveals, then pull the
+    // Hold the tight assembled view through the board reveals, then pull the
     // camera back ONLY once it reaches the frame (the last card) so the whole
-    // airframe clears the edges. Window matches HeroScene's frame reveal.
-    const pull = smoothstep(0.72, 1.0, p);
+    // airframe clears the edges. Opens with the LAST registry reveal window
+    // (0.72 for the current 3 slots) — the same one DroneAssembly reads.
+    const pull = smoothstep(
+      HERO_REVEAL_WINDOWS[HERO_REVEAL_WINDOWS.length - 1][0],
+      1.0,
+      p,
+    );
 
     camera.position.set(
       0,
@@ -1459,7 +1529,7 @@ export function HeroScene({
   loadDelayMs?: number;
   size?: string;
   scrubRef?: React.RefObject<number | null>;
-  spotlightRef?: React.RefObject<'fc' | 'esc' | 'frame' | null>;
+  spotlightRef?: React.RefObject<HeroSlotId | null>;
 } = {}) {
   const [mounted, setMounted] = useState(false);
   const [perf, setPerf] = useState<PerfSample | null>(null);
