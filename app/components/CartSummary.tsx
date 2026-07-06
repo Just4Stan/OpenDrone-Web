@@ -24,15 +24,21 @@ export function CartSummary({cart, layout}: CartSummaryProps) {
   // Belgian VAT (21%) from the VAT-inclusive total — the market is forced
   // to BE by the cart action, so the rate is fixed, and the note below
   // already promises "prices include VAT".
+  // NB: Shopify returns "0.0" (truthy string) while taxes are unresolved —
+  // compare numerically or the register would show "VAT included — €0.00".
   const cost = cart?.cost;
-  const vatAmount = cost?.totalTaxAmount?.amount
-    ? cost.totalTaxAmount
-    : cost?.totalAmount?.amount
+  const reportedTax =
+    cost?.totalTaxAmount && parseFloat(cost.totalTaxAmount.amount ?? '0') > 0
+      ? cost.totalTaxAmount
+      : null;
+  const vatAmount =
+    reportedTax ??
+    (cost?.totalAmount?.amount
       ? {
           amount: (parseFloat(cost.totalAmount.amount) * (21 / 121)).toFixed(2),
           currencyCode: cost.totalAmount.currencyCode,
         }
-      : null;
+      : null);
 
   return (
     <div aria-labelledby={summaryId} className={className}>
