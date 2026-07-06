@@ -29,6 +29,10 @@ import {
 } from '~/lib/hero-airframes';
 import {MobileHome} from '~/components/MobileHome';
 import {SceneErrorBoundary} from '~/components/SceneErrorBoundary';
+import {
+  HERO_REVEAL_WINDOWS,
+  HERO_SCROLL_STOPS,
+} from '~/lib/builder/registry';
 
 // Kick off the HeroScene chunk download at module eval so it races with
 // hydration instead of waiting for useEffect — only on desktop and only
@@ -699,9 +703,10 @@ function DesktopHome({
   useEffect(() => {
     if (isMobile || !splashSettled) return;
     // Stop positions as fractions of one viewport of scroll: nothing → FC →
-    // ESC → Frame. Must bracket the reveal windows in REVEAL_WINDOWS so each
-    // stop rests on a fully-revealed card.
-    const STOPS = [0, 0.34, 0.67, 1.0];
+    // ESC → Frame. Generated from the parts registry's slot list ([0, 0.34,
+    // 0.67, 1.0] for the current three slots) and asserted there to bracket
+    // the reveal windows, so each stop rests on a fully-revealed card.
+    const STOPS = HERO_SCROLL_STOPS;
     const stopY = (i: number) =>
       Math.round(STOPS[i] * window.innerHeight * heroProgressVh);
     const lastStopY = () => stopY(STOPS.length - 1);
@@ -881,14 +886,13 @@ function DesktopHome({
 
   // Per-card reveal windows (shared 0..1 progress with the 3D scene). Each
   // product pops out of the Shop bubble in turn — FC, then ESC, then the frame
-  // last. These windows MUST match the smoothstep windows in HeroScene's
-  // useFrame, which spotlight the matching board + pull the camera back as the
-  // frame (last card) reveals. Reversing the scroll reverses all of it.
-  const REVEAL_WINDOWS: Array<[number, number]> = [
-    [0.08, 0.3], // FC   — revealed by the 0.34 stop
-    [0.4, 0.62], // ESC  — revealed by the 0.67 stop
-    [0.72, 0.94], // Frame — revealed by the 1.0 stop
-  ];
+  // last. Generated from the parts registry's slot order — the SAME array
+  // HeroScene's useFrame reads to spotlight the matching board + pull the
+  // camera back as the frame (last card) reveals, so the two sides can no
+  // longer drift apart. For the current three slots this is exactly the
+  // historical [0.08, 0.3] / [0.4, 0.62] / [0.72, 0.94] (asserted in the
+  // registry). Reversing the scroll reverses all of it.
+  const REVEAL_WINDOWS = HERO_REVEAL_WINDOWS;
 
   return (
     <div className="homepage">
