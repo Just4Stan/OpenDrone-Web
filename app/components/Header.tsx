@@ -893,7 +893,7 @@ function CartBadge({count}: {count: number}) {
           <path d="M16 10a4 4 0 01-8 0" />
         </svg>
         {count > 0 && (
-          <span className="absolute -top-1 -right-1.5 bg-[var(--color-gold)] text-[var(--color-on-accent)] text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center leading-none">
+          <span className="absolute -top-1 -right-1.5 bg-[var(--color-gold-fill)] text-[var(--color-on-accent)] text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center leading-none">
             {count}
           </span>
         )}

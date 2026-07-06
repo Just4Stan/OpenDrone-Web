@@ -33,7 +33,7 @@ export function flyToCart(from: DOMRect, imageUrl?: string | null) {
     overflow: 'hidden',
     zIndex: '2000',
     pointerEvents: 'none',
-    background: imageUrl ? '#fff' : 'var(--color-gold, #b8922e)',
+    background: imageUrl ? '#fff' : 'var(--color-gold-fill, #b8922e)',
     boxShadow: '0 12px 32px -10px rgba(0,0,0,0.55)',
     willChange: 'transform, opacity',
   } satisfies Partial<CSSStyleDeclaration>);
