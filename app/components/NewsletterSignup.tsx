@@ -317,9 +317,9 @@ export function NewsletterSignup({
             disabled={isSubmitting}
             className={[
               'font-mono text-xs uppercase tracking-[0.14em] font-bold',
-              'bg-[var(--color-gold)] text-[var(--color-on-accent)]',
+              'bg-[var(--color-gold-fill)] text-[var(--color-on-accent)]',
               'px-5 py-2.5 min-h-[44px] inline-flex items-center justify-center rounded-sm',
-              'transition-colors hover:bg-[var(--color-gold-hover)]',
+              'transition-colors hover:bg-[var(--color-gold-fill-hover)]',
               'disabled:opacity-60 disabled:cursor-not-allowed',
               isWide || isFooter ? 'sm:shrink-0' : '',
             ].join(' ')}
