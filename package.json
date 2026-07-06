@@ -21,6 +21,7 @@
     "lint": "eslint --no-error-on-unmatched-pattern .",
     "typecheck": "react-router typegen && tsc --noEmit",
     "codegen": "shopify hydrogen codegen && react-router typegen",
+    "check:registry": "node --experimental-strip-types scripts/check-registry.mjs",
     "sync:legal": "node scripts/sync-legal.mjs",
     "compose:newsletter": "node scripts/compose-newsletter.mjs",
     "publish:post": "node scripts/publish-post.mjs",
