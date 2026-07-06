@@ -9515,14 +9515,17 @@ button.reset {
    ============================================ */
 
 .editorial-page {
+  /* Centered reading column. The old layout kept the page at rail width
+     and left-capped every child at --prose-width, which parked the whole
+     text column on the left edge and left ~60% of a 1440px canvas empty
+     (QA P2-3). One measure, centered — margins are symmetric whitespace
+     instead of dead space. Slightly wider than --prose-width to suit the
+     mono body face. */
   width: var(--rail-width);
+  max-width: 720px;
   margin: 0 auto;
   padding: 3rem 0 5rem;
   color: var(--color-text);
-}
-
-.editorial-page > * {
-  max-width: var(--prose-width);
 }
 
 .editorial-hero {
