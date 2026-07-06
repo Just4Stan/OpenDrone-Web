@@ -71,6 +71,14 @@ export function NewsletterSignup({
   const [clientError, setClientError] = useState<string | null>(null);
   const [interacted, setInteracted] = useState(false);
 
+  // First-touch channel for the server-side growth ledger (Lane B).
+  // Attribution lives in sessionStorage, so read it after hydration to
+  // keep server and client markup identical.
+  const [channel, setChannel] = useState('direct');
+  useEffect(() => {
+    setChannel(attributionSource());
+  }, []);
+
   const isSubmitting = fetcher.state !== 'idle';
   const result = fetcher.data;
   const serverMessage = result?.message ?? null;
@@ -290,6 +298,7 @@ export function NewsletterSignup({
         {notify ? (
           <input type="hidden" name="product" value={notify.productHandle} />
         ) : null}
+        <input type="hidden" name="channel" value={channel} />
 
         {/* Honeypot — hidden from humans, visible to bots */}
         <label className="sr-only" aria-hidden="true">

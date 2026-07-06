@@ -4,6 +4,9 @@ import {buildSeoMeta} from '~/lib/seo';
 import {checkRateLimit, clientIp} from '~/lib/rate-limit';
 import {verifyTurnstile} from '~/lib/support/turnstile';
 import {tagCustomerNotify} from '~/lib/shopify-admin';
+import {recordSignup} from '~/lib/growth/ledger';
+import {upsertContact, sendWelcome} from '~/lib/growth/resend';
+import {getLocaleFromRequest} from '~/lib/i18n';
 import {
   ReleaseRow,
   type ReleaseRowArticle,
@@ -190,6 +193,12 @@ const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 // a customer tag (`notify-<handle>`), so nothing free-form gets through.
 const PRODUCT_HANDLE_REGEX = /^[a-z0-9][a-z0-9-]{0,63}$/;
 
+// Optional `channel` form field: client-side first-touch attribution
+// (NewsletterSignup.tsx fills it from sessionStorage). Same strictness —
+// it becomes a ledger dimension and a Resend contact property, so
+// anything free-form collapses to 'direct'.
+const CHANNEL_REGEX = /^[a-z0-9][a-z0-9_-]{0,63}$/;
+
 function generateOpaquePassword(): string {
   // Shopify requires >=5 chars and caps at 40. The subscriber never uses
   // this — there is no /account login exposed for newsletter-only signups.
@@ -232,6 +241,48 @@ export async function action({request, context}: Route.ActionArgs) {
   const notifyProduct = PRODUCT_HANDLE_REGEX.test(productRaw)
     ? productRaw
     : null;
+  const channelRaw = String(formData.get('channel') ?? '')
+    .trim()
+    .toLowerCase();
+  const channel = CHANNEL_REGEX.test(channelRaw) ? channelRaw : 'direct';
+
+  // Growth pipeline (Lane B), fired via waitUntil on every verified
+  // successful signup path: (a) sig:<email> ledger record (merge-don't-
+  // clobber), (b) Resend marketing contact upsert (+ notify-<handle>
+  // segment), (c) welcome email on the FIRST signup for the address
+  // only. Everything degrades to warn+no-op without its env keys and
+  // must never block or fail the response.
+  //
+  // `freshCustomer` is the fallback first-signup signal when the ledger
+  // is unconfigured: true only on a brand-new Shopify customerCreate,
+  // so an "already subscribed" resubmit can't re-trigger the welcome.
+  const scheduleGrowth = (freshCustomer: boolean) => {
+    const env = context.env;
+    const locale = getLocaleFromRequest(request);
+    const consentAt = new Date().toISOString();
+    const job = (async () => {
+      const ledger = await recordSignup(env, {
+        email,
+        consentAt,
+        product: notifyProduct,
+        locale,
+        channel,
+      });
+      await upsertContact(env, {
+        email,
+        locale,
+        channel,
+        product: notifyProduct ?? undefined,
+      });
+      const firstSignup = ledger ? ledger.created : freshCustomer;
+      if (firstSignup) {
+        await sendWelcome(env, {email, product: notifyProduct ?? undefined});
+      }
+    })().catch((err) => console.warn('[newsletter] growth job failed', err));
+    if (context.waitUntil) {
+      context.waitUntil(job);
+    }
+  };
 
   if (honeypot) {
     return data<NewsletterResult>({ok: true, message: 'Thanks.'});
@@ -279,6 +330,7 @@ export async function action({request, context}: Route.ActionArgs) {
         email,
         productHandle: notifyProduct,
       });
+      scheduleGrowth(false);
       return data<NewsletterResult>({
         ok: true,
         message: "You're on the list — we'll email you at launch.",
@@ -314,6 +366,10 @@ export async function action({request, context}: Route.ActionArgs) {
         /taken|already/i.test(e.message),
     );
     if (taken) {
+      // Existing Shopify customer, but possibly no ledger record yet
+      // (signed up before the growth pipeline existed) — recording here
+      // backfills the profile. freshCustomer=false: no ledger → no welcome.
+      scheduleGrowth(false);
       // Existing subscriber asking to be notified about a SKU: still tag
       // them (lookup by email — customerCreate returned no id). Best-effort.
       if (notifyProduct) {
@@ -351,6 +407,10 @@ export async function action({request, context}: Route.ActionArgs) {
         {status: 400},
       );
     }
+
+    // Fresh signup — full growth pipeline including the welcome email
+    // (unless the ledger says this address already signed up before).
+    scheduleGrowth(true);
 
     // Per-product launch interest: tag the fresh customer so the SKU is
     // segmentable in Shopify admin. The Storefront customer gid is the same
