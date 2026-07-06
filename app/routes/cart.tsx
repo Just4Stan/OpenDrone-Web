@@ -20,6 +20,20 @@ export const meta: Route.MetaFunction = () =>
 
 export const headers: HeadersFunction = ({actionHeaders}) => actionHeaders;
 
+// The only cart attributes a client may set — the first-touch attribution
+// promoted from sessionStorage (see app/lib/growth/attribution.ts). Cart
+// attributes flow into Shopify order custom attributes, which the
+// orders/create webhook joins back to a channel, so this must stay a
+// tight allowlist: without it a malicious POST could stuff arbitrary
+// keys/values into order records.
+const ATTRIBUTE_KEY_ALLOWLIST = new Set([
+  'utm_source',
+  'utm_medium',
+  'utm_campaign',
+  'landing',
+]);
+const ATTRIBUTE_VALUE_MAX = 64;
+
 export async function action({request, context}: Route.ActionArgs) {
   const {cart} = context;
 
@@ -128,6 +142,28 @@ export async function action({request, context}: Route.ActionArgs) {
         email: buyer.email,
         phone: buyer.phone,
       });
+      break;
+    }
+    case CartForm.ACTIONS.AttributesUpdate: {
+      // Allowlist + clamp, mirroring the BuyerIdentityUpdate hardening
+      // above: only the attribution keys, values trimmed and capped.
+      const requested = Array.isArray(inputs.attributes)
+        ? inputs.attributes
+        : [];
+      const attributes = requested
+        .filter(
+          (a): a is {key: string; value: string} =>
+            Boolean(a) &&
+            typeof a.key === 'string' &&
+            typeof a.value === 'string',
+        )
+        .filter((a) => ATTRIBUTE_KEY_ALLOWLIST.has(a.key))
+        .map((a) => ({
+          key: a.key,
+          value: a.value.trim().slice(0, ATTRIBUTE_VALUE_MAX),
+        }))
+        .filter((a) => a.value.length > 0);
+      result = await cart.updateAttributes(attributes);
       break;
     }
     default:
