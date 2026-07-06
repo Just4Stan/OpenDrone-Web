@@ -1,7 +1,7 @@
-export function PlaceholderBanner() {
+export function PlaceholderBanner({side = 'right'}: {side?: 'left' | 'right'}) {
   return (
     <div
-      className="placeholder-banner"
+      className={`placeholder-banner${side === 'left' ? ' placeholder-banner--left' : ''}`}
       role="note"
       aria-label="Pre-launch notice"
     >

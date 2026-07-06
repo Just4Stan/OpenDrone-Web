@@ -1483,7 +1483,7 @@ html[data-cart-preview] .site-header {
    global `*`, which would also freeze one-time entrances (the board fly-in,
    chapter reveals) mid-flight and strand them off-screen. */
 html.anim-paused .site-wordmark-sheen,
-html.anim-paused .placeholder-banner__dot,
+html.anim-paused .placeholder-banner__dot::after,
 html.anim-paused .hero-drag-hint.is-visible,
 html.anim-paused .hero-scroll-hint.is-visible svg,
 html.anim-paused .latest-commit-dot,
@@ -1491,7 +1491,7 @@ html.anim-paused .support-typing span,
 html.anim-paused .home-mobile-board-float--front,
 html.anim-paused .home-mobile-board-float--rear,
 html.perf-lite .site-wordmark-sheen,
-html.perf-lite .placeholder-banner__dot,
+html.perf-lite .placeholder-banner__dot::after,
 html.perf-lite .hero-drag-hint.is-visible,
 html.perf-lite .hero-scroll-hint.is-visible svg,
 html.perf-lite .latest-commit-dot,
@@ -13445,6 +13445,14 @@ button.reset {
   max-width: calc(100vw - 32px);
 }
 
+/* PDP variant: the right rail hosts the notify form (consent checkbox +
+   Privacy link land in the bottom-right corner at 1440×900), so the pill
+   moves to the free bottom-left corner there. Theme-independent. */
+.placeholder-banner--left {
+  right: auto;
+  left: 16px;
+}
+
 .placeholder-banner__dot {
   position: relative;
   width: 7px;
@@ -13503,7 +13511,8 @@ button.reset {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .placeholder-banner__dot {
+  /* The pulse lives on the ::after halo, not the dot itself. */
+  .placeholder-banner__dot::after {
     animation: none;
   }
 }
@@ -13517,6 +13526,9 @@ button.reset {
   }
   .placeholder-banner__msg {
     display: none;
+  }
+  .placeholder-banner--left {
+    left: 12px;
   }
 }
 
