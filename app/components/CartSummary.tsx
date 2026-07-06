@@ -4,6 +4,8 @@ import {Money, type OptimisticCart} from '@shopify/hydrogen';
 import {useEffect, useId, useRef, useState} from 'react';
 import {Link} from 'react-router';
 import {useAside} from '~/components/Aside';
+import {trackEvent} from '~/lib/growth/plausible';
+import {attributionSource} from '~/lib/growth/attribution';
 
 type CartSummaryProps = {
   cart: OptimisticCart<CartApiQueryFragment | null>;
@@ -84,7 +86,10 @@ export function CartSummary({cart, layout}: CartSummaryProps) {
           </dd>
         </dl>
       )}
-      <CartCheckoutActions checkoutUrl={cart?.checkoutUrl} />
+      <CartCheckoutActions
+        checkoutUrl={cart?.checkoutUrl}
+        total={cost?.totalAmount ?? null}
+      />
       {/* Quiet secondary actions under the CTA: an escape hatch back to the
           catalog so a populated cart isn't a dead end, and (page only) a
           share-this-cart link builder. */}
@@ -198,14 +203,33 @@ function ShareCartButton({cart}: {cart: CartSummaryProps['cart']}) {
   );
 }
 
-function CartCheckoutActions({checkoutUrl}: {checkoutUrl?: string}) {
+function CartCheckoutActions({
+  checkoutUrl,
+  total,
+}: {
+  checkoutUrl?: string;
+  total?: {amount?: string | null; currencyCode?: string | null} | null;
+}) {
   if (!checkoutUrl) return null;
+
+  // Funnel event with the cart value as revenue. Plausible sends via
+  // fetch keepalive, so the beacon survives the navigation to checkout.
+  const handleClick = () => {
+    const amount = total?.amount ? parseFloat(total.amount) : NaN;
+    trackEvent('Checkout Click', {
+      props: {source: attributionSource()},
+      ...(Number.isFinite(amount) && total?.currencyCode
+        ? {revenue: {currency: total.currencyCode, amount}}
+        : {}),
+    });
+  };
 
   return (
     <a
       href={checkoutUrl}
       target="_self"
       className="cart-checkout-cta"
+      onClick={handleClick}
     >
       Checkout
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" aria-hidden="true">
