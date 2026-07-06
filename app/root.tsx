@@ -24,6 +24,7 @@ import {localeFromPathname, seoLocaleTag} from '~/lib/i18n';
 import {buildOrgJsonLd, buildSeoMeta} from '~/lib/seo';
 import {THEME_COLORS, THEME_INIT_SCRIPT} from '~/lib/theme';
 import {installViewTransitionGuard} from '~/lib/view-transition';
+import {captureAttribution} from '~/lib/growth/attribution';
 
 export type RootLoader = typeof loader;
 
@@ -259,6 +260,14 @@ export function Layout({children}: {children?: React.ReactNode}) {
   // Idempotent + client-only.
   useEffect(() => {
     installViewTransitionGuard();
+  }, []);
+
+  // First-touch channel attribution: stash utm_*/ref params from the
+  // landing URL in sessionStorage (session-scoped by design — see
+  // app/lib/growth/attribution.ts for the ePrivacy rationale). Runs once
+  // on hydration; later client-side navigations can't be a first touch.
+  useEffect(() => {
+    captureAttribution();
   }, []);
 
   return (
