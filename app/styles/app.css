@@ -7305,6 +7305,60 @@ button.reset {
   color: var(--color-gold);
 }
 
+/* GPSR manufacturer block — compact legal identity strip under the chapters
+   (EU 2023/988 requires it on every product listing). Hairline top rule,
+   mono labels, same de-boxed spec-table grammar as the rest of the PDP.
+   Tokens only, so light mode needs no twin. */
+.pdp-manufacturer {
+  padding: var(--sp-4) 0 var(--sp-5);
+  border-top: 1px solid var(--color-border);
+}
+
+.pdp-manufacturer-label {
+  margin: 0 0 var(--sp-3);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+
+.pdp-manufacturer-rows {
+  margin: 0;
+  display: grid;
+  gap: 0.45rem;
+  max-width: 44rem;
+}
+
+.pdp-manufacturer-rows > div {
+  display: grid;
+  grid-template-columns: 7.5rem 1fr;
+  column-gap: 1rem;
+  align-items: baseline;
+}
+
+.pdp-manufacturer-rows dt {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+
+.pdp-manufacturer-rows dd {
+  margin: 0;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: var(--color-text);
+}
+
+@media (max-width: 480px) {
+  .pdp-manufacturer-rows > div {
+    grid-template-columns: 1fr;
+    row-gap: 0.1rem;
+  }
+}
+
 /* Bundle components — richer cards than the generic open-source cards
    because this is the "what's in the box" moment on a bundle PDP. */
 .bundle-components {
