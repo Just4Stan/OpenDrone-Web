@@ -86,6 +86,16 @@ export function CartMain({
         <p id="cart-lines" className="sr-only">
           Line items
         </p>
+        {/* Build-sheet column captions (/cart page only) — the hairline-ruled
+            header the sheet rows line up under. Decorative for AT (each row
+            already labels itself), hence aria-hidden. */}
+        {layout === 'page' && cartHasItems ? (
+          <div className="cart-sheet-head" aria-hidden="true">
+            <span className="cart-sheet-head-item">Item</span>
+            <span className="cart-sheet-head-qty">Qty</span>
+            <span className="cart-sheet-head-total">Total</span>
+          </div>
+        ) : null}
         <div className="cart-lines-scroll">
           <ul aria-labelledby="cart-lines" ref={linesRef}>
             {(cart?.lines?.nodes ?? []).map((line) => {

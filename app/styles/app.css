@@ -2232,6 +2232,24 @@ html.hero-header-in .homepage-layout .site-header {
   gap: 1rem;
 }
 
+/* Open-hardware index band — reuses .spec-table for the rows so the
+   homepage speaks the PDP datasheet language verbatim. Single column even
+   past 720px: this band lives on the phone layout's narrow rail. */
+.home-mobile-ledger {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.home-mobile-ledger .spec-table {
+  grid-template-columns: 1fr;
+}
+
+.home-mobile-ledger .spec-table dd {
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+}
+
 .home-mobile-browse {
   display: inline-flex;
   align-items: center;
@@ -2361,6 +2379,11 @@ html.hero-header-in .homepage-layout .site-header {
    ============================================ */
 
 .product-card {
+  /* Spotlight anchor defaults — overwritten per-frame by the card's
+     pointermove handler (ProductItem.tsx). */
+  --spot-x: 50%;
+  --spot-y: 0px;
+  position: relative;
   display: flex;
   flex-direction: column;
   background: var(--color-bg-card);
@@ -2373,6 +2396,42 @@ html.hero-header-in .homepage-layout .site-header {
 .product-card:hover {
   border-color: var(--color-border-strong);
   transform: translateY(-2px);
+}
+
+/* Cursor-tracked gold spotlight on hover — the same treatment as the PDP's
+   related cards, so the whole catalog speaks one hover language. Pointer
+   devices only ((hover: hover) — touch gets no phantom glow), sits below
+   the quick-add overlay (z-4) and never intercepts clicks. */
+@media (hover: hover) {
+  .product-card::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: 3;
+    background: radial-gradient(
+      280px circle at var(--spot-x) var(--spot-y),
+      var(--color-gold-soft),
+      transparent 70%
+    );
+    opacity: 0;
+    transition: opacity 0.25s ease;
+    pointer-events: none;
+  }
+
+  .product-card:hover::after {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .product-card,
+  .product-card::after {
+    transition: none;
+  }
+
+  .product-card:hover {
+    transform: none;
+  }
 }
 
 .product-card-media {
@@ -3644,6 +3703,205 @@ button.reset {
   padding-top: 1rem;
   padding-bottom: 0;
   border-top: 1px solid var(--color-border);
+}
+
+/* Related cards — spec-forward tiles (board render, catalog-file eyebrow,
+   one-line spec, mono price) with a pointer-following gold spotlight on
+   hover. All tokens, so light mode comes for free. */
+.related-grid {
+  /* Same rhythm as .products-grid so the strip reads as one catalog. */
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: var(--sp-4);
+}
+
+.related-card {
+  --spot-x: 50%;
+  --spot-y: 0px;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--r-md);
+  overflow: hidden;
+  transition: border-color 0.2s ease;
+}
+
+/* Spotlight on pointer devices only ((hover: hover)) — on touch, :hover
+   sticks after a tap and would pin a phantom glow. Same gate as
+   .product-card::after. */
+@media (hover: hover) {
+  .related-card::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(
+      240px circle at var(--spot-x) var(--spot-y),
+      var(--color-gold-soft),
+      transparent 70%
+    );
+    opacity: 0;
+    transition: opacity 0.25s ease;
+    pointer-events: none;
+  }
+
+  .related-card:hover::after {
+    opacity: 1;
+  }
+}
+
+.related-card:hover {
+  border-color: var(--color-border-strong);
+}
+
+.related-card-link {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  color: inherit;
+  text-decoration: none;
+}
+
+.related-card-media {
+  position: relative;
+  aspect-ratio: 1 / 1;
+  background: var(--color-bg-elevated);
+  overflow: hidden;
+}
+
+.related-card-media.is-empty {
+  display: grid;
+  place-items: center;
+}
+
+.related-card-media img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.5s cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+.related-card:hover .related-card-media img {
+  transform: scale(1.04);
+}
+
+/* Reduced-motion twin of the .product-card block: kill the spotlight fade
+   and the media zoom, keep the border-color cue. */
+@media (prefers-reduced-motion: reduce) {
+  .related-card,
+  .related-card::after,
+  .related-card-media img {
+    transition: none;
+  }
+
+  .related-card:hover .related-card-media img {
+    transform: none;
+  }
+}
+
+.related-card-body {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  gap: 0.3rem;
+  padding: var(--sp-3) var(--sp-4) var(--sp-4);
+  border-top: 1px solid var(--color-border);
+}
+
+.related-card-file {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--color-text-dim);
+  margin: 0;
+}
+
+.related-card-title {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: var(--fs-md);
+  letter-spacing: -0.01em;
+  line-height: 1.2;
+  color: var(--color-text);
+  margin: 0;
+  transition: color 0.15s ease;
+}
+
+.related-card:hover .related-card-title {
+  color: var(--color-gold);
+}
+
+.related-card-spec {
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  color: var(--color-text-muted);
+  letter-spacing: 0.04em;
+  line-height: 1.4;
+  margin: 0;
+}
+
+.related-card-price {
+  display: flex;
+  align-items: baseline;
+  gap: 0.35rem;
+  margin: auto 0 0;
+  padding-top: 0.4rem;
+  font-family: var(--font-mono);
+  font-size: var(--fs-sm);
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text);
+}
+
+.related-card-from {
+  font-size: var(--fs-xs);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--color-text-dim);
+}
+
+/* Quick-add overlay — same reveal recipe as the browse cards; sibling of
+   the card link (a form can't nest inside an anchor). */
+.related-card-quickadd {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  aspect-ratio: 1 / 1;
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-end;
+  padding: 0.6rem;
+  pointer-events: none;
+  z-index: 4;
+}
+
+.related-card-quickadd > * {
+  pointer-events: auto;
+}
+
+.related-card-quickadd .product-card-quickadd-btn {
+  opacity: 0;
+  transform: translateY(4px);
+  transition: opacity 0.15s ease, transform 0.15s ease;
+}
+
+.related-card.has-quickadd:hover .product-card-quickadd-btn,
+.related-card.has-quickadd:focus-within .product-card-quickadd-btn {
+  opacity: 1;
+  transform: none;
+}
+
+@media (hover: none) {
+  .related-card-quickadd .product-card-quickadd-btn {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.related-card-skeleton {
+  pointer-events: none;
 }
 
 .product-card-skeleton {
@@ -7756,6 +8014,243 @@ button.reset {
   border-bottom: 1px solid var(--color-border);
 }
 
+/* ============================================
+   /cart build sheet — the page cart as an engineering invoice: a
+   hairline-ruled table with fixed mono columns (item · qty · total), a
+   column-caption header, and a subtotal/VAT/total register. The drawer
+   keeps its compact stacked layout; everything here is layout='page' only.
+   ============================================ */
+
+/* Shared column template — header and rows must agree or nothing lines up.
+   ITEM = thumb + name, QTY and TOTAL are fixed so every row registers. */
+.cart-sheet-head,
+.cart-sheet-row {
+  display: grid;
+  grid-template-columns: 56px minmax(0, 1fr) 7.5rem 7rem;
+  column-gap: 1rem;
+  align-items: center;
+}
+
+.cart-sheet-head {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--color-text-dim);
+  padding-bottom: 0.55rem;
+  border-bottom: 1px solid var(--color-border-strong);
+}
+
+.cart-sheet-head-item {
+  grid-column: 1 / 3;
+}
+
+.cart-sheet-head-qty {
+  text-align: center;
+}
+
+.cart-sheet-head-total {
+  text-align: right;
+}
+
+.cart-line--sheet .cart-sheet-row img {
+  width: 56px;
+  height: 56px;
+}
+
+/* Pin each cell to its column — a line without an image (no auto-placed
+   <img> in column 1) must not slide the whole row one column left. The
+   phone layout below overrides these via grid-area. */
+.cart-sheet-row > img {
+  grid-column: 1;
+}
+
+.cart-sheet-item {
+  grid-column: 2;
+}
+
+.cart-sheet-qty {
+  grid-column: 3;
+}
+
+.cart-sheet-total {
+  grid-column: 4;
+}
+
+.cart-sheet-item {
+  min-width: 0;
+  display: grid;
+  gap: 0.2rem;
+  justify-items: start;
+}
+
+.cart-sheet-item p strong {
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: var(--color-text);
+}
+
+.cart-sheet-item ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.cart-sheet-item small {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  color: var(--color-text-muted);
+  letter-spacing: 0.02em;
+}
+
+/* Qty column: − n + cluster with the count as a tabular figure, remove
+   action underneath. */
+.cart-line-quantity--sheet {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.3rem;
+  margin: 0;
+}
+
+.cart-sheet-stepper {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.cart-sheet-qty-value {
+  min-width: 2ch;
+  text-align: center;
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text);
+}
+
+/* The stepper's + form is the last child of ITS parent, so the generic
+   text-remove rule (.cart-line-quantity form:last-child button) would
+   restyle it — pin the stepper buttons back to the boxed look. */
+.cart-line-quantity--sheet .cart-sheet-stepper form:last-child button {
+  width: 26px;
+  padding: 0;
+  border: 1px solid var(--color-border);
+  font-size: 14px;
+  color: var(--color-text-muted);
+  text-transform: none;
+  letter-spacing: 0;
+  margin-left: 0;
+}
+
+.cart-line-quantity--sheet .cart-sheet-stepper form:last-child button:hover {
+  background: var(--color-bg-elevated);
+  color: var(--color-text);
+  border-color: var(--color-gold);
+}
+
+/* Total column: mono tabular, right-registered like the header caption. */
+.cart-sheet-total {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.15rem;
+  text-align: right;
+}
+
+.cart-sheet-total .product-price {
+  font-family: var(--font-mono);
+  font-weight: 600;
+  font-size: 0.95rem;
+  letter-spacing: 0;
+}
+
+.cart-sheet-total .cart-line-compare .product-price {
+  font-weight: 400;
+  font-size: 0.8rem;
+  color: var(--color-text-dim);
+}
+
+/* Phone: qty + total wrap under the item text; captions header hides (each
+   cluster is self-evident at stacked scale). */
+@media (max-width: 640px) {
+  .cart-sheet-head {
+    display: none;
+  }
+
+  .cart-sheet-row {
+    grid-template-areas:
+      'img item total'
+      'img qty  qty';
+    grid-template-columns: 56px minmax(0, 1fr) max-content;
+    row-gap: 0.5rem;
+    align-items: start;
+  }
+
+  .cart-sheet-row > img {
+    grid-area: img;
+  }
+
+  .cart-sheet-item {
+    grid-area: item;
+  }
+
+  .cart-sheet-qty {
+    grid-area: qty;
+  }
+
+  .cart-sheet-total {
+    grid-area: total;
+  }
+
+  .cart-line-quantity--sheet {
+    flex-direction: row;
+    gap: 0.75rem;
+  }
+}
+
+/* Summary register — subtotal / VAT share / total in hairline rows. */
+.cart-register {
+  margin: 0;
+}
+
+.cart-register-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.cart-register-row dt {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+
+.cart-register-row dd {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 0.9rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text);
+}
+
+.cart-register-row.is-total {
+  border-bottom-color: var(--color-border-strong);
+}
+
+.cart-register-row.is-total dt {
+  color: var(--color-text);
+}
+
+.cart-register-row.is-total dd {
+  font-size: 1.05rem;
+  font-weight: 600;
+}
+
 .cart-summary-note {
   margin-top: 1rem;
   color: var(--color-text-muted);
@@ -7905,6 +8400,13 @@ button.reset {
   color: var(--color-text-dim);
   font-size: 0.85em;
 }
+
+.cart-line-compare .product-price {
+  font-family: inherit;
+  font-weight: inherit;
+  font-size: inherit;
+  color: inherit;
+}
 .cart-line-discount-badge {
   display: inline-flex;
   gap: 0.2rem;
@@ -7915,6 +8417,25 @@ button.reset {
   border-radius: var(--r-pill);
   padding: 0.05rem 0.5rem;
   white-space: nowrap;
+}
+
+/* Phone: a long stack-offer title inside the pill would overflow the item
+   column — let the label wrap instead of clipping. */
+@media (max-width: 640px) {
+  .cart-line-discount-badge {
+    white-space: normal;
+    flex-wrap: wrap;
+    row-gap: 0;
+  }
+}
+
+/* The badge embeds a ProductPrice; without this the .product-price base
+   rule blows the amount up to display size inside the tiny pill. */
+.cart-line-discount-badge .product-price {
+  font-family: inherit;
+  font-weight: inherit;
+  font-size: inherit;
+  color: inherit;
 }
 
 .cart-line-quantity {

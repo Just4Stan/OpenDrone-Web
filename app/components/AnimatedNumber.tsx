@@ -20,6 +20,34 @@ import {useInView, useReducedMotion} from 'motion/react';
  */
 type Seg = {text: string; num?: number; decimals?: number; comma?: boolean};
 
+/** Part of an identifier token (part numbers, licence tags, BF targets). */
+const IDENT = /[A-Za-z_-]/;
+
+/**
+ * True when a digit run is part of an identifier rather than a free-standing
+ * quantity — sweeping it would display fake-but-plausible part numbers
+ * ("AT32F398…") mid-count. Static cases:
+ * - letter/underscore/ASCII-hyphen immediately before (AT32…, RP2354, M33,
+ *   CERN-OHL-S-2.0, OPENFC_LITE_…). En-dash ranges ("3–6S") are not hyphens
+ *   and still sweep.
+ * - a letter after that continues into a longer token ("8U7") — a single
+ *   trailing unit letter that ends the token ("6S", "5V") still sweeps.
+ * - an extra dot/comma joining a further digit run — multi-part version
+ *   strings ("3.5.0") beyond the one decimal separator the regex consumes.
+ */
+function isIdentifierRun(value: string, at: number, raw: string): boolean {
+  const before = value[at - 1] ?? '';
+  const after = value[at + raw.length] ?? '';
+  const after2 = value[at + raw.length + 1] ?? '';
+  if (IDENT.test(before)) return true;
+  if (IDENT.test(after) && /[A-Za-z0-9_-]/.test(after2)) return true;
+  if ((after === '.' || after === ',') && /\d/.test(after2)) return true;
+  if ((before === '.' || before === ',') && /\d/.test(value[at - 2] ?? '')) {
+    return true;
+  }
+  return false;
+}
+
 function parse(value: string): Seg[] {
   const segs: Seg[] = [];
   const re = /\d+(?:[.,]\d+)?/g;
@@ -28,15 +56,19 @@ function parse(value: string): Seg[] {
     const at = m.index ?? 0;
     if (at > last) segs.push({text: value.slice(last, at)});
     const raw = m[0];
-    const comma = raw.includes(',');
-    const norm = raw.replace(',', '.');
-    const dot = norm.indexOf('.');
-    segs.push({
-      text: raw,
-      num: parseFloat(norm),
-      decimals: dot === -1 ? 0 : norm.length - dot - 1,
-      comma,
-    });
+    if (isIdentifierRun(value, at, raw)) {
+      segs.push({text: raw});
+    } else {
+      const comma = raw.includes(',');
+      const norm = raw.replace(',', '.');
+      const dot = norm.indexOf('.');
+      segs.push({
+        text: raw,
+        num: parseFloat(norm),
+        decimals: dot === -1 ? 0 : norm.length - dot - 1,
+        comma,
+      });
+    }
     last = at + raw.length;
   }
   if (last < value.length) segs.push({text: value.slice(last)});
@@ -46,6 +78,9 @@ function parse(value: string): Seg[] {
 function formatSeg(n: number, seg: Seg): string {
   let out = n.toFixed(seg.decimals ?? 0);
   if (seg.comma) out = out.replace('.', ',');
+  // Odometer-pad to the final string's width so zero-padded figures ("04")
+  // keep their leading zero mid-sweep and the column width never wobbles.
+  if (out.length < seg.text.length) out = out.padStart(seg.text.length, '0');
   return out;
 }
 
@@ -66,9 +101,12 @@ export function AnimatedNumber({
   const played = useRef(false);
 
   // Variant switches merge new spec deltas over the table — swap the text
-  // silently instead of re-counting.
+  // silently instead of re-counting. Unconditional: under reduced motion the
+  // count effect never runs (and never sets `played`), so gating this on
+  // `played` would freeze the visible value at its mount text across variant
+  // switches. `played` only exists to stop the count effect re-counting.
   useEffect(() => {
-    if (played.current) setDisplay(value);
+    setDisplay(value);
   }, [value]);
 
   useEffect(() => {
