@@ -92,5 +92,22 @@
   "optionalDependencies": {
     "@emnapi/core": "^1.11.2",
     "@emnapi/runtime": "^1.11.2"
+  },
+  "overrides": {
+    "lodash": "^4.18.1",
+    "qs": "^6.15.3",
+    "@shopify/cli": {
+      "esbuild": "0.28.1"
+    },
+    "@shopify/mini-oxygen": {
+      "undici": "^7.28.0"
+    },
+    "miniflare": {
+      "undici": "^6.27.0",
+      "ws": "^8.21.0",
+      "youch": {
+        "cookie": "^0.7.0"
+      }
+    }
   }
 }
