@@ -688,9 +688,10 @@ export function HeaderMenu({
       {isMobile ? (
         <>
           <p className="site-mobile-nav-label">Account</p>
+          {/* No prefetch — auth-gated route, see the desktop account link. */}
           <NavLink
             onClick={close}
-            prefetch="intent"
+            prefetch="none"
             to="/account"
             className="text-sm font-mono uppercase tracking-wider text-[var(--color-text-muted)] hover:text-[var(--color-text)] transition-colors"
           >
@@ -737,8 +738,11 @@ function HeaderCtas({
       >
         Contact
       </NavLink>
+      {/* No prefetch: /account is auth-gated, so a viewport prefetch fired a
+          wasted 400 /account.data request (+ console error) on every single
+          pageview for logged-out visitors. */}
       <NavLink
-        prefetch="viewport"
+        prefetch="none"
         to="/account"
         className="font-mono text-[12px] uppercase tracking-[0.15em] text-[var(--color-text-muted)] hover:text-[var(--color-text)] transition-colors hidden md:block"
       >

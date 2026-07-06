@@ -376,7 +376,7 @@ export function NewsletterSignup({
               messageTone === 'success'
                 ? 'text-[var(--color-accent-light)]'
                 : messageTone === 'error'
-                  ? 'text-red-400'
+                  ? 'text-[var(--color-error)]'
                   : 'text-[var(--color-text-muted)]',
             ].join(' ')}
           >
