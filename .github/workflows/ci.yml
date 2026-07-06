@@ -37,6 +37,21 @@ jobs:
       - run: npm ci
       - run: npm run typecheck
 
+  # The registry's data invariants are dev-import-gated (they must never 500
+  # the production worker), and lint/tsc/build never evaluate module bodies —
+  # this job is the ONLY automated place the asserts actually execute.
+  # No `npm ci`: the registry module is dependency-free by design and runs
+  # under Node's type stripping.
+  registry:
+    name: Registry invariants
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "22"
+      - run: npm run check:registry
+
   build:
     name: Build
     runs-on: ubuntu-latest

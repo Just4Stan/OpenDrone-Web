@@ -22,6 +22,7 @@ import {
   HERO_VARIANT_AXIS as REGISTRY_VARIANT_AXIS,
   heroPartFor,
   type HeroSlotId,
+  type PartCommerce,
 } from '~/lib/builder/registry';
 
 export type HeroAirframe = {
@@ -70,38 +71,33 @@ export type HeroBoard = {
  * `sizeVariant` boards link to the active size's `Model` variant and show that
  * variant's price; the frame is one SKU shared across sizes (its 3D model
  * differs per size, the product doesn't). Derived: a slot is size-variant when
- * its default parts select a variant on the `Model` axis. One handle per slot
- * across all sizes is asserted — the hero cards assume it.
+ * its default parts select a variant on the `Model` axis.
+ *
+ * The strict invariants behind this reshaping (every slot × size resolves to
+ * a shopify part, ONE handle per slot, option values agree with the
+ * airframe's Model mapping) live in the registry's assertBuilderRegistry()
+ * — thrown at import in dev and executed in CI (`npm run check:registry`),
+ * never at production module scope. Here the derivation only degrades: a
+ * broken slot keeps its last-known-good shape with an empty handle, and the
+ * hero card falls back to the base product link.
  */
 export const HERO_BOARDS: readonly HeroBoard[] = HERO_SLOTS.map((slot) => {
-  const parts = AIRFRAMES.map((a) => heroPartFor(slot.id, a.size));
-  const commerces = parts.map((p, i) => {
-    if (p.commerce.kind !== 'shopify') {
-      throw new Error(
-        `hero-airframes: hero slot "${slot.id}" part "${p.id}" is not purchasable`,
-      );
+  const commerces: Extract<PartCommerce, {kind: 'shopify'}>[] = [];
+  for (const airframe of AIRFRAMES) {
+    try {
+      const commerce = heroPartFor(slot.id, airframe.size).commerce;
+      if (commerce.kind === 'shopify') commerces.push(commerce);
+    } catch {
+      // Missing part/build entry — assertBuilderRegistry reports it loudly
+      // in dev/CI; in production the slot degrades instead of 500ing boot.
     }
-    // buildHeroStacks matches the AIRFRAME's model value against live
-    // variants; a part whose own option value disagrees would silently link
-    // the wrong variant — fail loudly at import instead.
-    const opt = p.commerce.options?.[REGISTRY_VARIANT_AXIS];
-    if (opt && opt !== AIRFRAMES[i].shopifyModel) {
-      throw new Error(
-        `hero-airframes: part "${p.id}" selects ${REGISTRY_VARIANT_AXIS}="${opt}" but airframe "${AIRFRAMES[i].size}" maps to "${AIRFRAMES[i].shopifyModel}"`,
-      );
-    }
-    return p.commerce;
-  });
-  const handle = commerces[0].handle;
-  if (commerces.some((c) => c.handle !== handle)) {
-    throw new Error(
-      `hero-airframes: hero slot "${slot.id}" mixes product handles across sizes`,
-    );
   }
   return {
     boardKey: slot.id,
-    handle,
-    sizeVariant: commerces.some((c) => Boolean(c.options?.[REGISTRY_VARIANT_AXIS])),
+    handle: commerces[0]?.handle ?? '',
+    sizeVariant: commerces.some((c) =>
+      Boolean(c.options?.[REGISTRY_VARIANT_AXIS]),
+    ),
   };
 });
 

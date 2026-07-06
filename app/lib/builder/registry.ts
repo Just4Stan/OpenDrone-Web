@@ -27,6 +27,18 @@
  *     (mount-named for FC/ESC: `20×20` / `30×30`).
  */
 
+/**
+ * Dev-only invariant gate. In the Vite dev server (and dev SSR) this is true,
+ * so a violated registry invariant throws loudly at first import. In the
+ * production worker bundle `import.meta.env.DEV` is statically `false`, so a
+ * bad data edit degrades (fallbacks below) instead of 500ing every route at
+ * boot — server.ts statically imports the route graph, which imports this
+ * module. CI executes the same asserts via `npm run check:registry`
+ * (scripts/check-registry.mjs → assertBuilderRegistry()).
+ */
+const DEV: boolean =
+  typeof import.meta.env !== 'undefined' && Boolean(import.meta.env.DEV);
+
 /** Airframe size class. Extends HERO_AIRFRAMES' key space. */
 export type SizeClass = '3' | '5';
 
@@ -194,19 +206,13 @@ export const HERO_SLOTS: HeroSlotDef[] = SLOTS.filter(isHeroSlot).sort(
   (a, b) => a.order - b.order,
 );
 
-if (HERO_SLOTS.length !== HERO_SLOT_IDS.length) {
-  throw new Error('registry: a HERO_SLOT_IDS entry is missing from SLOTS');
-}
-
-/** The slot the assembly is fit-scaled/centered on (the frame). */
+/** The slot the assembly is fit-scaled/centered on (the frame).
+ *  Exactly-one-anchor is asserted in assertBuilderRegistry() (dev + CI); in
+ *  production a mis-tagged registry falls back to the first tagged slot, or
+ *  the last hero slot (the frame position), rather than throwing at import. */
 export const HERO_ANCHOR_SLOT: HeroSlotDef = (() => {
   const anchors = HERO_SLOTS.filter((s) => s.fitAnchor);
-  if (anchors.length !== 1) {
-    throw new Error(
-      `registry: expected exactly one fitAnchor hero slot, got ${anchors.length}`,
-    );
-  }
-  return anchors[0];
+  return anchors[0] ?? HERO_SLOTS[HERO_SLOTS.length - 1];
 })();
 
 // ─── Parts ───────────────────────────────────────────────────────────────────
@@ -342,88 +348,185 @@ export function heroSlotHandle(slotId: HeroSlotId): string {
 
 /** First window opens at this progress — a beat after the scroll starts. */
 const REVEAL_FIRST_START = 0.08;
-/** Every window spans this much progress (reveal duration per card). */
-const REVEAL_WIDTH = 0.22;
+/** Widest a window may span (reveal duration per card) — the 3-slot value. */
+const REVEAL_MAX_WIDTH = 0.22;
 /** Last window closes here — leaves a settle beat before progress hits 1. */
 const REVEAL_LAST_END = 0.94;
+/** Minimum dead beat between one window's close and the next one's open —
+ *  keeps reveals reading as discrete pops even when windows shrink to fit. */
+const REVEAL_MIN_GAP = 0.06;
 
 const round2 = (x: number) => Math.round(x * 100) / 100;
 
 /**
- * Evenly space `count` reveal windows of REVEAL_WIDTH between
- * REVEAL_FIRST_START and REVEAL_LAST_END. For the current 3 slots this
- * reproduces the historical literals EXACTLY (asserted below):
+ * Evenly space `count` reveal windows between REVEAL_FIRST_START and
+ * REVEAL_LAST_END. Width is DERIVED from the count: as wide as possible up to
+ * REVEAL_MAX_WIDTH while keeping at least REVEAL_MIN_GAP between consecutive
+ * windows — so any slot count yields non-overlapping windows instead of the
+ * fixed width colliding at n≥4. For the current 3 slots this reproduces the
+ * historical literals EXACTLY (asserted in assertBuilderRegistry):
  * [0.08, 0.3], [0.4, 0.62], [0.72, 0.94].
  */
-export function heroRevealWindows(count: number): Array<[number, number]> {
-  const spacing =
-    count > 1
-      ? (REVEAL_LAST_END - REVEAL_WIDTH - REVEAL_FIRST_START) / (count - 1)
-      : 0;
-  return Array.from({length: count}, (_, i) => {
-    const start = round2(REVEAL_FIRST_START + i * spacing);
-    return [start, round2(start + REVEAL_WIDTH)] as [number, number];
-  });
+export function heroRevealWindows(
+  count: number,
+): ReadonlyArray<readonly [number, number]> {
+  if (count <= 0) return Object.freeze([]);
+  const span = REVEAL_LAST_END - REVEAL_FIRST_START;
+  const width =
+    count === 1
+      ? Math.min(REVEAL_MAX_WIDTH, span)
+      : Math.min(
+          REVEAL_MAX_WIDTH,
+          (span - (count - 1) * REVEAL_MIN_GAP) / count,
+        );
+  const spacing = count === 1 ? 0 : (span - width) / (count - 1);
+  return Object.freeze(
+    Array.from({length: count}, (_, i) => {
+      const start = round2(REVEAL_FIRST_START + i * spacing);
+      return Object.freeze([start, round2(start + width)] as const);
+    }),
+  );
 }
 
 /**
- * Scroll stops: rest position 0 plus one stop per slot, evenly spaced and
- * rounded UP to 2 decimals so each stop lands at-or-after its window's close
- * (the "stop rests on a fully-revealed card" invariant, asserted below).
- * For 3 slots this reproduces the historical [0, 0.34, 0.67, 1.0] exactly.
+ * Scroll stops: rest position 0 plus one stop per slot — evenly spaced,
+ * rounded UP to 2 decimals, and floored at the matching window's close so
+ * each stop rests on a fully-revealed card at ANY slot count (the invariant
+ * assertBuilderRegistry verifies). For 3 slots this reproduces the historical
+ * [0, 0.34, 0.67, 1.0] exactly.
  */
-export function heroScrollStops(count: number): number[] {
-  return [
+export function heroScrollStops(count: number): readonly number[] {
+  const windows = heroRevealWindows(count);
+  return Object.freeze([
     0,
-    ...Array.from(
-      {length: count},
-      (_, i) => Math.ceil(((i + 1) / count) * 100) / 100,
+    ...windows.map(([, close], i) =>
+      Math.max(Math.ceil(((i + 1) * 100) / count) / 100, close),
     ),
-  ];
+  ]);
 }
 
 /** Per-card / per-board reveal windows, index-aligned with HERO_SLOTS. */
-export const HERO_REVEAL_WINDOWS: Array<[number, number]> = heroRevealWindows(
+export const HERO_REVEAL_WINDOWS: ReadonlyArray<readonly [number, number]> =
+  heroRevealWindows(HERO_SLOTS.length);
+
+/** Wheel-step controller stops (routes/_index.tsx). */
+export const HERO_SCROLL_STOPS: readonly number[] = heroScrollStops(
   HERO_SLOTS.length,
 );
 
-/** Wheel-step controller stops (routes/_index.tsx). */
-export const HERO_SCROLL_STOPS: number[] = heroScrollStops(HERO_SLOTS.length);
+// ─── Invariants (dev import + CI) ────────────────────────────────────────────
 
-// Equivalence + invariant checks. Deterministic (pure functions of constants
-// above), so a failure is a build-time data bug that surfaces on first import
-// — typecheck/dev/tests all hit it — never a user-dependent runtime surprise.
-(() => {
-  // 1. Behavior-identical guarantee for the refactor: with the current three
-  //    hero slots, the generated values MUST equal the previous literals.
-  if (HERO_SLOTS.length === 3) {
-    const legacyWindows = JSON.stringify([
-      [0.08, 0.3],
-      [0.4, 0.62],
-      [0.72, 0.94],
-    ]);
-    const legacyStops = JSON.stringify([0, 0.34, 0.67, 1.0]);
-    if (JSON.stringify(HERO_REVEAL_WINDOWS) !== legacyWindows) {
+function assertChoreography(count: number): void {
+  const windows = heroRevealWindows(count);
+  const stops = heroScrollStops(count);
+  if (windows.length !== count || stops.length !== count + 1) {
+    throw new Error(`registry: wrong choreography lengths for count=${count}`);
+  }
+  if (stops[stops.length - 1] !== 1) {
+    throw new Error(`registry: last scroll stop must be 1 (count=${count})`);
+  }
+  for (let i = 0; i < windows.length; i++) {
+    const [open, close] = windows[i];
+    if (!(open > 0 && close > open && close <= REVEAL_LAST_END)) {
       throw new Error(
-        `registry: generated reveal windows ${JSON.stringify(HERO_REVEAL_WINDOWS)} != legacy ${legacyWindows}`,
+        `registry: reveal window ${i} [${open}, ${close}] out of range (count=${count})`,
       );
     }
-    if (JSON.stringify(HERO_SCROLL_STOPS) !== legacyStops) {
+    // Stop i+1 rests at-or-after window i's close — the card is fully
+    // revealed at its stop.
+    if (stops[i + 1] < close) {
       throw new Error(
-        `registry: generated scroll stops ${JSON.stringify(HERO_SCROLL_STOPS)} != legacy ${legacyStops}`,
+        `registry: scroll stop ${i + 1} (${stops[i + 1]}) precedes reveal window ${i} close (${close}) (count=${count})`,
+      );
+    }
+    if (stops[i + 1] <= stops[i]) {
+      throw new Error(
+        `registry: scroll stops not strictly increasing at ${i + 1} (count=${count})`,
+      );
+    }
+    if (i > 0 && windows[i][0] <= windows[i - 1][1]) {
+      throw new Error(
+        `registry: reveal windows ${i - 1} and ${i} overlap (count=${count})`,
       );
     }
   }
-  // 2. Structural invariant: stop i+1 rests at-or-after window i's close, and
-  //    windows don't overlap — every card is fully revealed at its stop.
-  for (let i = 0; i < HERO_REVEAL_WINDOWS.length; i++) {
-    if (HERO_SCROLL_STOPS[i + 1] < HERO_REVEAL_WINDOWS[i][1]) {
+}
+
+/**
+ * Every deterministic registry invariant, in one callable place. Runs on
+ * import in dev only (see the DEV gate at the top — a violated invariant must
+ * never 500 the production worker at boot), and in CI via
+ * `npm run check:registry` (scripts/check-registry.mjs), so the asserts
+ * actually EXECUTE somewhere on every PR even though lint/tsc/build never
+ * evaluate module bodies.
+ */
+export function assertBuilderRegistry(): void {
+  // ── Slot / anchor shape ──
+  if (HERO_SLOTS.length !== HERO_SLOT_IDS.length) {
+    throw new Error('registry: a HERO_SLOT_IDS entry is missing from SLOTS');
+  }
+  const anchors = HERO_SLOTS.filter((s) => s.fitAnchor);
+  if (anchors.length !== 1) {
+    throw new Error(
+      `registry: expected exactly one fitAnchor hero slot, got ${anchors.length}`,
+    );
+  }
+
+  // ── Hero build data: every slot × size resolves to a purchasable part with
+  //    a GLB, one product handle per slot, and variant options that agree
+  //    with the airframe's Model value (buildHeroStacks matches the
+  //    AIRFRAME's value against live variants — a disagreeing part would
+  //    silently link the wrong variant). ──
+  for (const slot of HERO_SLOTS) {
+    const handles = new Set<string>();
+    for (const airframe of AIRFRAMES) {
+      const part = heroPartFor(slot.id, airframe.size); // throws if missing
+      heroModelUrl(slot.id, airframe.size); // throws if no GLB for the size
+      if (part.commerce.kind !== 'shopify') {
+        throw new Error(
+          `registry: hero slot "${slot.id}" part "${part.id}" is not purchasable`,
+        );
+      }
+      handles.add(part.commerce.handle);
+      const opt = part.commerce.options?.[HERO_VARIANT_AXIS];
+      if (opt && opt !== airframe.shopifyModel) {
+        throw new Error(
+          `registry: part "${part.id}" selects ${HERO_VARIANT_AXIS}="${opt}" but airframe "${airframe.size}" maps to "${airframe.shopifyModel}"`,
+        );
+      }
+    }
+    if (handles.size !== 1) {
       throw new Error(
-        `registry: scroll stop ${i + 1} (${HERO_SCROLL_STOPS[i + 1]}) precedes reveal window ${i} close (${HERO_REVEAL_WINDOWS[i][1]})`,
+        `registry: hero slot "${slot.id}" mixes product handles across sizes`,
       );
     }
-    if (i > 0 && HERO_REVEAL_WINDOWS[i][0] <= HERO_REVEAL_WINDOWS[i - 1][1]) {
-      throw new Error(`registry: reveal windows ${i - 1} and ${i} overlap`);
-    }
   }
-})();
+
+  // ── Choreography ──
+  // 1. Behavior-identical guarantee for the generator refactor: with three
+  //    hero slots the generated values MUST equal the previous literals.
+  const legacyWindows = JSON.stringify([
+    [0.08, 0.3],
+    [0.4, 0.62],
+    [0.72, 0.94],
+  ]);
+  const legacyStops = JSON.stringify([0, 0.34, 0.67, 1.0]);
+  if (JSON.stringify(heroRevealWindows(3)) !== legacyWindows) {
+    throw new Error(
+      `registry: generated reveal windows ${JSON.stringify(heroRevealWindows(3))} != legacy ${legacyWindows}`,
+    );
+  }
+  if (JSON.stringify(heroScrollStops(3)) !== legacyStops) {
+    throw new Error(
+      `registry: generated scroll stops ${JSON.stringify(heroScrollStops(3))} != legacy ${legacyStops}`,
+    );
+  }
+  // 2. Structural invariants — for the live slot count AND the next counts
+  //    Phase 1 grows into (rx, battery), so "add a slot" can't reintroduce
+  //    overlapping windows or stops that undercut them.
+  for (const count of new Set([HERO_SLOTS.length, 1, 2, 3, 4, 5, 6])) {
+    assertChoreography(count);
+  }
+}
+
+if (DEV) assertBuilderRegistry();
