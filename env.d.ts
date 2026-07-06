@@ -111,9 +111,10 @@ declare global {
     //   write_content (metafields). Server-only — never exposed.
     // - SHOPIFY_ADMIN_API_VERSION: defaults to 2026-01 when unset.
     // - SHOPIFY_WEBHOOK_SECRET: shared secret configured on Shopify
-    //   admin webhooks. Verifies inbound X-Shopify-Hmac-Sha256 headers.
-    //   Used by /api/webhooks/shopify (orders/create → growth ledger,
-    //   app/routes/api.webhooks.shopify.tsx) and the planned
+    //   webhooks (Dev Dashboard custom app). Verifies inbound
+    //   X-Shopify-Hmac-Sha256 headers. Used by /api/webhooks/shopify
+    //   (orders/paid primary, orders/create also accepted → growth
+    //   ledger, app/routes/api.webhooks.shopify.tsx) and the planned
     //   articles/update newsletter dispatch. One secret for all topics.
     // - NEWSLETTER_DISPATCH_SECRET: bearer token for manual dispatch
     //   trigger (CLI/curl) AND HMAC key for per-recipient unsubscribe

@@ -126,15 +126,18 @@ function AddToCartTracking({
     const attribution = getAttribution();
     if (!attribution || wasAttributionSent()) return;
     markAttributionSent();
+    // Underscore prefix: Shopify hides `_`-prefixed cart attributes from
+    // the customer at checkout/order confirmation while still copying them
+    // into order note_attributes for the webhook join.
     const attributes = [
-      {key: 'utm_source', value: attribution.source},
+      {key: '_utm_source', value: attribution.source},
       ...(attribution.medium
-        ? [{key: 'utm_medium', value: attribution.medium}]
+        ? [{key: '_utm_medium', value: attribution.medium}]
         : []),
       ...(attribution.campaign
-        ? [{key: 'utm_campaign', value: attribution.campaign}]
+        ? [{key: '_utm_campaign', value: attribution.campaign}]
         : []),
-      {key: 'landing', value: attribution.landing},
+      {key: '_landing', value: attribution.landing},
     ];
     void attributesFetcher.submit(
       {
