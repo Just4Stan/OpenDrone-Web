@@ -16,12 +16,15 @@ token swap — follow it and new UI themes for free.
   `--color-stock`. Never hardcode a hex/rgb for something that should change
   between themes.
 - **Two golds.** `--color-gold` is for gold TEXT/icons/borders sitting on page
-  backgrounds — it must hold AA 4.5:1 in light mode, which forces it deep.
-  `--color-gold-fill` (+ `-hover`) is for FILLED surfaces — buttons, badges,
-  active pills, the wordmark — and stays bright true gold in light mode. Any
-  rule that paints `background: gold` with ink on top takes the fill token,
-  never `--color-gold`. The two are identical in dark mode; they split only
-  in light.
+  backgrounds; `--color-gold-fill` (+ `-hover`) is for FILLED surfaces —
+  buttons, badges, active pills, the wordmark. Any rule that paints
+  `background: gold` with ink on top takes the fill token, never
+  `--color-gold`. Identical in dark mode; they split only in light.
+- **Light-mode gold is deliberately lighter than dark-mode gold** (Stan,
+  2026-07-06): a bright surround makes the same hex read brown, so light
+  text-gold is the brand `#b8922e` (~2.9:1 on white — below AA, accepted;
+  brand look wins) and light fill-gold `#dab040` sits one step above dark's
+  `#c89d2e`. Do NOT "fix" light golds back down to AA-safe dark ambers.
 - **Text on the gold accent** uses `--color-on-accent` (dark ink in both modes),
   not `--color-bg`. Use it for any filled-gold button/badge/active state.
 - **Where the values live** (`app/styles/app.css`): dark is the default in the
