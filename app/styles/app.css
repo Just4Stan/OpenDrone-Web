@@ -5378,9 +5378,14 @@ button.reset {
   .chapter[data-big-media] {
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   }
-  /* No media column — body spans the full chapter width (e.g. spec table). */
+  /* No media column — body spans the full chapter width (e.g. spec table).
+     The body col is width-capped for readability, so centre it in the row
+     rather than leaving all the leftover space as a dead right gutter. */
   .chapter[data-no-media] {
     grid-template-columns: minmax(0, 1fr);
+  }
+  .chapter[data-no-media] .chapter-body-col {
+    margin-inline: auto;
   }
   .chapter-index {
     grid-column: 1 / -1;
