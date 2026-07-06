@@ -13537,6 +13537,10 @@ button.reset {
   }
   .placeholder-banner--left {
     left: 12px;
+    /* The generic mobile rule above re-sets `right: 12px` later in the
+       cascade than the desktop --left override; without re-clearing it here
+       a fixed element with both insets stretches full-width. */
+    right: auto;
   }
 }
 
