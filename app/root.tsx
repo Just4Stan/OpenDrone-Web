@@ -313,13 +313,20 @@ export function Layout({children}: {children?: React.ReactNode}) {
         <Meta />
         <Links />
         {/* Plausible — cookieless analytics, no consent required.
+            Combined legacy-script variant: `tagged-events` enables custom
+            events with props, `revenue` attaches monetary values to them
+            (verified served 2026-07-06; extensions compose as
+            script.<ext1>.<ext2>.js). Manual events go through the
+            trackEvent() helper in app/lib/growth/plausible.ts, which
+            installs the window.plausible queue stub so events fired before
+            this deferred script loads are replayed on init.
             suppressHydrationWarning: nonce is per-request and only meaningful
             server-side; the client-side value is empty, which React would
             otherwise flag as a hydration mismatch. */}
         <script
           defer
           data-domain="opendrone.be"
-          src="https://plausible.io/js/script.js"
+          src="https://plausible.io/js/script.tagged-events.revenue.js"
           nonce={nonce}
           suppressHydrationWarning
         />
