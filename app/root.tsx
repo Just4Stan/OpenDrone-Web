@@ -21,11 +21,31 @@ import {PageLayout} from './components/PageLayout';
 import {SignalLost} from './components/SignalLost';
 import {getCompanyIdentity} from '~/lib/company';
 import {localeFromPathname, seoLocaleTag} from '~/lib/i18n';
-import {buildOrgJsonLd} from '~/lib/seo';
+import {buildOrgJsonLd, buildSeoMeta} from '~/lib/seo';
 import {THEME_COLORS, THEME_INIT_SCRIPT} from '~/lib/theme';
 import {installViewTransitionGuard} from '~/lib/view-transition';
 
 export type RootLoader = typeof loader;
+
+/**
+ * Root meta — the fallback when no deeper route supplies meta, and the ONLY
+ * meta that runs when an error renders root's ErrorBoundary (meta from
+ * routes below the rendering boundary is discarded, which is why the 404
+ * page used to ship an empty <title>). Healthy routes with their own meta
+ * export override this wholesale (meta v2 semantics).
+ */
+export const meta: Route.MetaFunction = ({error}) => {
+  if (!error) return buildSeoMeta({});
+  const status = isRouteErrorResponse(error) ? error.status : 500;
+  return buildSeoMeta({
+    title: status === 404 ? 'Signal lost' : 'Something went wrong',
+    description:
+      status === 404
+        ? 'This page does not exist. Return to home.'
+        : 'An unexpected error occurred.',
+    robots: 'noindex,nofollow',
+  });
+};
 
 /**
  * This is important to avoid re-fetching root queries on sub-navigations
