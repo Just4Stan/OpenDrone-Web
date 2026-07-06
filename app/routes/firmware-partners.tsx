@@ -21,6 +21,26 @@ type Partner = {
   donationUrl?: string;           // where we forward funds (GitHub Sponsors, OpenCollective, bank)
 };
 
+type MergedPr = {
+  project: string;   // upstream project name
+  title: string;     // the PR title as it reads on GitHub
+  url: string;       // the real PR URL — must resolve
+  what: string;      // one line: what the change does for users
+};
+
+/**
+ * Upstream contributions with receipts. HARD RULE: only list PRs that are
+ * real, authored by us, and MERGED on the upstream repo — verify the URL
+ * before adding an entry. Never list aspirational or in-progress work here.
+ *
+ * Verified 2026-07-06 (gh pr list --author Just4Stan on betaflight/betaflight,
+ * am32-firmware/AM32, ExpressLRS/ExpressLRS + a global PR search): zero
+ * merged and zero open upstream PRs so far. The Betaflight RP2350-platform
+ * work lives on our fork and hasn't been submitted upstream yet. The section
+ * below stays hidden until this array gains its first verified entry.
+ */
+const MERGED_PRS: MergedPr[] = [];
+
 const PARTNERS: Partner[] = [
   {
     project: 'Betaflight',
@@ -125,6 +145,33 @@ export default function FirmwarePartnersRoute() {
           entirely; the cart option is there if it&apos;s more convenient.
         </p>
       </section>
+
+      {MERGED_PRS.length > 0 ? (
+        <section className="editorial-section">
+          <h2 className="editorial-section-title">04 · Merged upstream</h2>
+          {/* TODO(copy-stan): placeholder framing line. */}
+          <p>
+            Money is one half; patches are the other. These are our changes
+            that upstream actually merged — every link goes to the real PR.
+          </p>
+          <ul className="upstream-list">
+            {MERGED_PRS.map((pr) => (
+              <li className="upstream-item" key={pr.url}>
+                <p className="upstream-project">{pr.project}</p>
+                <a
+                  className="upstream-title"
+                  href={pr.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  {pr.title} ↗
+                </a>
+                <p className="upstream-what">{pr.what}</p>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
 
       <section className="editorial-cta">
         <Link prefetch="viewport" to="/open-source" className="editorial-cta-primary">
