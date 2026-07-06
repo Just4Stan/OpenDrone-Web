@@ -33,6 +33,15 @@
  *                  Resend marketing contact (DELETE /contacts/{email},
  *                  see app/lib/growth/resend.ts).
  *
+ *                  Survey fields (Lane C): euPremium / interviewOptIn
+ *                  are opinions tied to the email, written by
+ *                  recordSurveyAnswers via /api/survey. GDPR: covered by
+ *                  the same RtbF DEL as the rest of the record; no
+ *                  separate consent needed — the survey is optional,
+ *                  skippable, and only offered after the signup consent
+ *                  was given (the endpoint is gated on a token minted by
+ *                  the consented signup). No IP is stored with answers.
+ *
  * att:idx          Append-only export index: a Redis list (LPUSH, newest
  *                  first, LTRIM-capped at 5000) of ledger keys written,
  *                  e.g. "ord:6234098751". Export/reconciliation scripts
@@ -84,6 +93,21 @@ export type AttributedOrder = {
 };
 
 /**
+ * Micro-survey answer to "would you pay more for EU-assembled?" —
+ * 'no' or the percentage premium the subscriber says they'd accept.
+ * NOT a purchase commitment of any kind (no pre-orders, decision
+ * 2026-07-06); pure research signal.
+ */
+export type EuPremiumAnswer = 'no' | '10' | '20' | '30';
+
+export const EU_PREMIUM_ANSWERS: readonly EuPremiumAnswer[] = [
+  'no',
+  '10',
+  '20',
+  '30',
+];
+
+/**
  * Newsletter/notify signup profile (`sig:<email>`). GDPR: email +
  * consent timestamp + the visitor's own locale/channel — no IP, no UA.
  */
@@ -98,7 +122,7 @@ export type SignupRecord = {
   /** First-touch channel (utm_source, else 'direct'). Set once. */
   channel?: string;
   /** Micro-survey answers (Lane C writes these; preserved on merge). */
-  euPremium?: string;
+  euPremium?: EuPremiumAnswer;
   interviewOptIn?: boolean;
   /** Last write, unix seconds. */
   updatedAt: number;
@@ -172,6 +196,75 @@ export async function recordSignup(
   } catch (err) {
     console.warn('[growth/ledger] recordSignup failed', err);
     return null;
+  }
+}
+
+/**
+ * Merge micro-survey answers into the `sig:<email>` record (Lane C).
+ * Read-modify-write like recordSignup: fields owned by other writers
+ * (consentAt, products, channel, …) are never clobbered. Answers can
+ * arrive one at a time (each question POSTs on click), so a call with
+ * only `euPremium` must not erase a previously stored `interviewOptIn`
+ * and vice versa — undefined means "not answered in this call", not
+ * "clear it".
+ *
+ * The record normally exists (the survey token is only minted after a
+ * signup, which writes it), but if the ledger was unconfigured at
+ * signup time or the write raced, a minimal record is created rather
+ * than dropping the answer.
+ *
+ * Degrade-soft: no-op + warn when Upstash is unconfigured.
+ */
+export async function recordSurveyAnswers(
+  env: UpstashEnv,
+  opts: {
+    email: string;
+    euPremium?: EuPremiumAnswer;
+    interviewOptIn?: boolean;
+  },
+): Promise<void> {
+  const store = getTicketStore(env);
+  if (!store) {
+    console.warn(
+      '[growth/ledger] Upstash not configured — survey answers dropped',
+    );
+    return;
+  }
+  const key = `sig:${opts.email}`;
+  try {
+    let existing: SignupRecord | null = null;
+    const raw = await store.get(key);
+    if (raw) {
+      try {
+        existing = JSON.parse(raw) as SignupRecord;
+      } catch {
+        existing = null; // corrupt record — rebuild it
+      }
+    }
+    const record: SignupRecord = {
+      // Spread first — merge, don't clobber (same pattern as recordSignup).
+      ...existing,
+      email: opts.email,
+      // Survey tokens are only minted at signup time (consent just given),
+      // so "now" is an honest fallback when no record predates us.
+      consentAt: existing?.consentAt ?? new Date().toISOString(),
+      products: existing?.products ?? [],
+      ...(opts.euPremium !== undefined ? {euPremium: opts.euPremium} : {}),
+      ...(opts.interviewOptIn !== undefined
+        ? {interviewOptIn: opts.interviewOptIn}
+        : {}),
+      updatedAt: Math.floor(Date.now() / 1000),
+    };
+    await store.put(key, JSON.stringify(record));
+
+    if (!existing) {
+      const indexed = await listPush(env, INDEX_KEY, key, INDEX_CAP);
+      if (!indexed) {
+        console.warn('[growth/ledger] att:idx append failed for', key);
+      }
+    }
+  } catch (err) {
+    console.warn('[growth/ledger] recordSurveyAnswers failed', err);
   }
 }
 
