@@ -1,19 +1,32 @@
 import type {Route} from './+types/api.webhooks.shopify';
-import {verifyShopifyHmac} from '~/lib/growth/shopify-webhook';
+import {
+  extractOrderAttribution,
+  ORDER_TOPICS,
+  verifyShopifyHmac,
+} from '~/lib/growth/shopify-webhook';
 import {recordOrder, type AttributedOrder} from '~/lib/growth/ledger';
 
-// Shopify webhook receiver. Currently handles one topic:
+// Shopify webhook receiver. Handles order topics:
 //
-//   orders/create → attributed-order record in the growth ledger
-//   (app/lib/growth/ledger.ts, key ord:<order_id>). The order's custom
-//   attributes carry the first-touch UTM tags promoted from the cart
-//   (see app/routes/cart.tsx AttributesUpdateInput), closing the
-//   per-channel funnel: visit → signup → add-to-cart → checkout → paid.
+//   orders/paid (primary — payment captured, the number CAC/AOV wants)
+//   orders/create (accepted too; recordOrder is idempotent on order id)
+//   → attributed-order record in the growth ledger
+//   (app/lib/growth/ledger.ts, key ord:<order_id>). The order's
+//   note_attributes carry the first-touch UTM tags promoted from the cart
+//   as hidden `_`-prefixed attributes (see app/routes/cart.tsx
+//   AttributesUpdateInput), closing the per-channel funnel:
+//   visit → signup → add-to-cart → checkout → paid.
 //
-// Registration is manual (Shopify admin → custom app → webhooks):
+// Registration is manual, via a Dev Dashboard custom app (legacy admin
+// custom apps closed 2026-01):
 //   POST https://opendrone.be/api/webhooks/shopify
-//   topic: orders/create, format: JSON
+//   topic: orders/paid, format: JSON
 //   The custom app needs the read_orders scope.
+//
+// Basic-plan caveat: Shopify redacts Level-2 protected customer data
+// (name/email/address) from webhook payloads on Basic — order id, totals,
+// line items, and note_attributes survive, which is all we need. Buyer
+// email joins happen later via our own signup records (sig:<email>).
 //
 // Auth: X-Shopify-Hmac-Sha256 = base64(HMAC-SHA256(secret, raw body)),
 // verified over the RAW body before parsing (app/lib/growth/
@@ -35,13 +48,6 @@ type ShopifyOrderPayload = {
   note_attributes?: ShopifyNoteAttribute[];
 };
 
-const ATTRIBUTION_KEYS = [
-  'utm_source',
-  'utm_medium',
-  'utm_campaign',
-  'landing',
-] as const;
-
 export async function action({request, context}: Route.ActionArgs) {
   if (request.method !== 'POST') {
     return new Response('Method not allowed.', {status: 405});
@@ -62,7 +68,7 @@ export async function action({request, context}: Route.ActionArgs) {
   const topic = request.headers.get('X-Shopify-Topic') ?? '';
   // Unknown topics are ACKed: they're authenticated (HMAC passed) and a
   // non-2xx would only make Shopify retry a delivery we'll never handle.
-  if (topic !== 'orders/create') {
+  if (!ORDER_TOPICS.has(topic)) {
     return new Response('OK (topic ignored)', {status: 200});
   }
 
@@ -72,23 +78,21 @@ export async function action({request, context}: Route.ActionArgs) {
   } catch {
     // Authenticated but malformed — ACK so Shopify doesn't retry a body
     // that will never parse.
-    console.warn('[webhooks/shopify] unparseable orders/create body');
+    console.warn(`[webhooks/shopify] unparseable ${topic} body`);
     return new Response('OK (unparseable)', {status: 200});
   }
 
   const orderId = payload.id != null ? String(payload.id) : '';
   if (!orderId) {
-    console.warn('[webhooks/shopify] orders/create without id — dropped');
+    console.warn(`[webhooks/shopify] ${topic} without id — dropped`);
     return new Response('OK (no id)', {status: 200});
   }
 
-  const attribution: AttributedOrder['attribution'] = {};
-  for (const attr of payload.note_attributes ?? []) {
-    const name = attr?.name as (typeof ATTRIBUTION_KEYS)[number];
-    if (ATTRIBUTION_KEYS.includes(name) && typeof attr.value === 'string') {
-      attribution[name] = attr.value.slice(0, 64);
-    }
-  }
+  // `_utm_*` note_attributes → un-prefixed ledger attribution (mapping +
+  // 64-char cap live in app/lib/growth/shopify-webhook.ts, unit-tested).
+  const attribution: AttributedOrder['attribution'] = extractOrderAttribution(
+    payload.note_attributes,
+  );
 
   const order: AttributedOrder = {
     id: orderId,

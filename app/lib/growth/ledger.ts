@@ -3,21 +3,26 @@
  * AOV numbers. Thin layer over the Upstash REST helpers in
  * app/lib/support/upstash.ts (imported, not duplicated); this module is
  * the SINGLE OWNER of the growth key shapes. Lanes B (email) and C
- * (reserve flow) extend this file — add key shapes to the docs block
- * below, don't invent keys elsewhere.
+ * (notify survey) extend this file — add key shapes to the docs block
+ * below, don't invent keys elsewhere. (No pre-order/reserve records:
+ * pre-orders were dropped entirely, 2026-07-06.)
  *
  * docs: key shapes
  * ----------------------------------------------------------------------
  * ord:<order_id>   JSON `AttributedOrder` (below). One per Shopify
- *                  orders/create webhook delivery; order_id is Shopify's
- *                  numeric order id, so redelivered webhooks overwrite
- *                  idempotently rather than duplicate. No TTL.
+ *                  orders/paid (or orders/create) webhook delivery;
+ *                  order_id is Shopify's numeric order id, so redelivered
+ *                  webhooks overwrite idempotently rather than duplicate.
+ *                  No TTL. Attribution arrives as hidden `_utm_*`
+ *                  note_attributes and is stored un-prefixed. Basic-plan
+ *                  payloads redact buyer name/email/address — the email
+ *                  join comes from sig:<email>, not the order payload.
  *                  RtbF: DEL — the order itself lives in Shopify; this
  *                  record is only the attribution join.
  *
  * sig:<email>      RESERVED for Lane B — signup/profile record
  *                  {email, consentAt, product, locale, channel,
- *                   reserveIntent?, euPremium?, interviewOptIn?}.
+ *                   euPremium?, interviewOptIn?}.
  *                  No TTL; RtbF = DEL.
  *
  * att:idx          Append-only export index: a Redis list (LPUSH, newest

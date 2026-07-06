@@ -12,6 +12,64 @@
  * is harmless: a SHA-256 base64 digest is always 44 chars.
  */
 
+/**
+ * Order topics the /api/webhooks/shopify receiver records.
+ * `orders/paid` is the primary registration (payment captured — the
+ * number CAC/AOV wants); `orders/create` is also accepted because the
+ * ledger write is idempotent on order id, so registering both (or a
+ * historical create-only registration) can't double-count.
+ */
+export const ORDER_TOPICS: ReadonlySet<string> = new Set([
+  'orders/paid',
+  'orders/create',
+]);
+
+/** Un-prefixed attribution shape stored in the ledger (matches
+ *  OrderAttribution in app/lib/growth/ledger.ts; kept structural here so
+ *  this module stays dependency-free for `node --test`). */
+export type ExtractedAttribution = {
+  utm_source?: string;
+  utm_medium?: string;
+  utm_campaign?: string;
+  landing?: string;
+};
+
+// note_attributes arrive with the hiding `_` prefix (cart attributes
+// prefixed with `_` are invisible to the customer at checkout but still
+// copy into order note_attributes — see app/routes/cart.tsx). The ledger
+// stores them un-prefixed. Legacy un-prefixed names are still accepted
+// for any order placed before the prefix change.
+const ATTRIBUTION_KEY_MAP: Record<string, keyof ExtractedAttribution> = {
+  _utm_source: 'utm_source',
+  _utm_medium: 'utm_medium',
+  _utm_campaign: 'utm_campaign',
+  _landing: 'landing',
+  utm_source: 'utm_source',
+  utm_medium: 'utm_medium',
+  utm_campaign: 'utm_campaign',
+  landing: 'landing',
+};
+
+const ATTRIBUTION_VALUE_MAX = 64;
+
+/** Map a Shopify order's note_attributes to the ledger's un-prefixed
+ *  attribution record. Unknown keys are dropped, values capped. */
+export function extractOrderAttribution(
+  noteAttributes:
+    | Array<{name?: string; value?: string} | null | undefined>
+    | null
+    | undefined,
+): ExtractedAttribution {
+  const attribution: ExtractedAttribution = {};
+  for (const attr of noteAttributes ?? []) {
+    const target = attr?.name ? ATTRIBUTION_KEY_MAP[attr.name] : undefined;
+    if (target && typeof attr?.value === 'string') {
+      attribution[target] = attr.value.slice(0, ATTRIBUTION_VALUE_MAX);
+    }
+  }
+  return attribution;
+}
+
 export async function verifyShopifyHmac(
   rawBody: string,
   hmacHeader: string | null | undefined,

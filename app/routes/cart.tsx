@@ -23,14 +23,15 @@ export const headers: HeadersFunction = ({actionHeaders}) => actionHeaders;
 // The only cart attributes a client may set — the first-touch attribution
 // promoted from sessionStorage (see app/lib/growth/attribution.ts). Cart
 // attributes flow into Shopify order custom attributes, which the
-// orders/create webhook joins back to a channel, so this must stay a
+// orders/paid webhook joins back to a channel, so this must stay a
 // tight allowlist: without it a malicious POST could stuff arbitrary
-// keys/values into order records.
+// keys/values into order records. The `_` prefix keeps the attributes
+// hidden from the customer at checkout (Shopify convention).
 const ATTRIBUTE_KEY_ALLOWLIST = new Set([
-  'utm_source',
-  'utm_medium',
-  'utm_campaign',
-  'landing',
+  '_utm_source',
+  '_utm_medium',
+  '_utm_campaign',
+  '_landing',
 ]);
 const ATTRIBUTE_VALUE_MAX = 64;
 
