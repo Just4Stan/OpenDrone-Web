@@ -297,6 +297,7 @@ type ChapterNumbers = {
   firmware?: string;
   specs?: string;
   downloads?: string;
+  community?: string;
 };
 
 /** Compute chapter numbers that stay contiguous when any chapter is hidden. */
@@ -333,6 +334,9 @@ function computeChapterNumbers(
   }
   if (content.downloads.length > 0) {
     out.downloads = pad(n++);
+  }
+  if (content.communityChanges && content.communityChanges.length > 0) {
+    out.community = pad(n++);
   }
   return out;
 }
@@ -2186,6 +2190,48 @@ export default function Product() {
             back.
           </p>
           <DownloadsGrid downloads={content.downloads} />
+        </Chapter>
+      ) : null}
+
+      {/* === Chapter: You asked, we changed — community-driven revisions.
+             Entries live in product-content.ts (`communityChanges`) and must
+             be backed by a real GitHub issue/PR — see the type's doc rule. === */}
+      {content.communityChanges &&
+      content.communityChanges.length > 0 &&
+      chapterNums.community ? (
+        <Chapter
+          number={chapterNums.community}
+          label="Community"
+          title={
+            <>
+              You asked. <em>We changed it.</em>
+            </>
+          }
+          noMedia
+        >
+          {/* TODO(copy-stan): placeholder framing line. */}
+          <p className="chapter-body">
+            Open hardware means the feedback loop is public too. These are
+            design changes that started as an issue or a PR from someone who
+            isn&apos;t us — receipts linked.
+          </p>
+          <ul className="community-changes">
+            {content.communityChanges.map((c) => (
+              <li className="community-change" key={c.url}>
+                <p className="community-change-asked">
+                  <a
+                    href={c.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    {c.who} ↗
+                  </a>{' '}
+                  {c.asked}
+                </p>
+                <p className="community-change-changed">{c.changed}</p>
+              </li>
+            ))}
+          </ul>
         </Chapter>
       ) : null}
 
