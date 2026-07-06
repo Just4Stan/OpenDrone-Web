@@ -73,6 +73,13 @@ declare global {
     RESEND_API_KEY?: string;
     SUPPORT_FROM_EMAIL?: string;
 
+    // Marketing email (growth, app/lib/growth/resend.ts). Reuses
+    // RESEND_API_KEY — the key must have access to Resend
+    // Contacts/Segments/Broadcasts, not just transactional sends.
+    // From-address for the launch-list welcome email + broadcasts;
+    // defaults to hello@opendrone.be. Domain must be verified in Resend.
+    RESEND_MARKETING_FROM?: string;
+
     // Stage 2 moderation gate
     SUPPORT_MOD_ROLE_ID?: string;
     SUPPORT_APPROVE_EMOJI?: string;
