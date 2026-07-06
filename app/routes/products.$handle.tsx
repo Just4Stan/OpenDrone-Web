@@ -1437,9 +1437,6 @@ export default function Product() {
           <span className="product-buy-sku">SKU {selectedVariant.sku}</span>
         ) : null}
       </div>
-      <span className="product-buy-stock">
-        In development · built in Belgium
-      </span>
       <NewsletterSignup
         notify={{productHandle: product.handle, productTitle: product.title}}
         turnstileSiteKey={rootData?.turnstileSiteKey ?? null}
