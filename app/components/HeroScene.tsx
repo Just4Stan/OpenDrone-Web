@@ -754,7 +754,7 @@ function DroneAssembly({
       invalidate();
     };
 
-    void (async () => {
+    (async () => {
       let model: BuiltModel | null | undefined = modelCacheRef.current.get(airframeSize);
       if (!model) {
         model = await buildModel(airframeSize, {
@@ -819,7 +819,13 @@ function DroneAssembly({
         if (typeof ric === 'function') ric(schedule, {timeout: 10000});
         else setTimeout(schedule, 3000);
       }
-    })();
+    })().catch((err: unknown) => {
+      // buildModel catches its own load errors, but a registry/data bug
+      // (heroModelUrl throwing) or a display() failure would otherwise be an
+      // unhandled rejection that strands the splash dim-layer — release it.
+      console.error('HeroScene: hero model build/display failed:', err);
+      onReady?.();
+    });
 
     return () => {
       // Cancel only the in-flight build for THIS size change. Displayed models

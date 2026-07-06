@@ -32,6 +32,7 @@ import {SceneErrorBoundary} from '~/components/SceneErrorBoundary';
 import {
   HERO_REVEAL_WINDOWS,
   HERO_SCROLL_STOPS,
+  HERO_SLOTS,
 } from '~/lib/builder/registry';
 
 // Kick off the HeroScene chunk download at module eval so it races with
@@ -1073,7 +1074,7 @@ function DesktopHome({
                     animate="center"
                     exit={reduceMotion ? undefined : 'exit'}
                   >
-                    {items.slice(0, 3).map((card, i) => {
+                    {items.slice(0, HERO_SLOTS.length).map((card, i) => {
                       const [lo, hi] = REVEAL_WINDOWS[i] ?? [1, 1];
                       const r = linearstep(lo, hi, scrollProgress);
                       const setSpot = (v: HeroBoardKey | null) => {
