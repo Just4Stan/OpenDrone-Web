@@ -251,6 +251,19 @@ export async function action({request, context}: Route.ActionArgs) {
     );
   }
 
+  // Verify Turnstile BEFORE the per-email rate-limit branch: that branch can
+  // still tag a customer (tagCustomerNotify below), and a mutation must never
+  // run on an unverified request — otherwise a bot hammering a known email
+  // past the limit could tag arbitrary customers without ever solving a
+  // challenge.
+  const turnstile = await verifyTurnstile(context.env, turnstileToken, ip);
+  if (!turnstile.ok) {
+    return data<NewsletterResult>(
+      {ok: false, message: 'Could not verify you are human. Refresh and try again.'},
+      {status: 400},
+    );
+  }
+
   const emailLimit = checkRateLimit(
     `newsletter:email:${email}`,
     3,
@@ -260,7 +273,7 @@ export async function action({request, context}: Route.ActionArgs) {
     // Rate-limited, but a notify-at-launch click still carries signal: the
     // tag is idempotent, so apply it before returning the generic success —
     // otherwise the 4th product someone asks about in a day is silently
-    // dropped.
+    // dropped. (Token-gated: Turnstile already verified above.)
     if (notifyProduct) {
       await tagCustomerNotify(context.env, {
         email,
@@ -278,14 +291,6 @@ export async function action({request, context}: Route.ActionArgs) {
       message: "You're already on the list.",
       alreadySubscribed: true,
     });
-  }
-
-  const turnstile = await verifyTurnstile(context.env, turnstileToken, ip);
-  if (!turnstile.ok) {
-    return data<NewsletterResult>(
-      {ok: false, message: 'Could not verify you are human. Refresh and try again.'},
-      {status: 400},
-    );
   }
 
   try {
