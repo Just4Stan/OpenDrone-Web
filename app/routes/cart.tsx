@@ -144,18 +144,19 @@ export async function action({request, context}: Route.ActionArgs) {
       });
       break;
     }
-    case CartForm.ACTIONS.AttributesUpdate: {
+    case CartForm.ACTIONS.AttributesUpdateInput: {
       // Allowlist + clamp, mirroring the BuyerIdentityUpdate hardening
       // above: only the attribution keys, values trimmed and capped.
-      const requested = Array.isArray(inputs.attributes)
+      const requested: unknown[] = Array.isArray(inputs.attributes)
         ? inputs.attributes
         : [];
       const attributes = requested
+        .map((a) => a as {key?: unknown; value?: unknown} | null)
         .filter(
           (a): a is {key: string; value: string} =>
             Boolean(a) &&
-            typeof a.key === 'string' &&
-            typeof a.value === 'string',
+            typeof a?.key === 'string' &&
+            typeof a?.value === 'string',
         )
         .filter((a) => ATTRIBUTE_KEY_ALLOWLIST.has(a.key))
         .map((a) => ({

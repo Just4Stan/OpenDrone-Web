@@ -1,6 +1,14 @@
-import {type FetcherWithComponents} from 'react-router';
+import {useEffect, useRef} from 'react';
+import {useFetcher, type FetcherWithComponents} from 'react-router';
 import {CartForm, type OptimisticCartLineInput} from '@shopify/hydrogen';
 import {flyToCart} from '~/lib/fly-to-cart';
+import {trackEvent} from '~/lib/growth/plausible';
+import {
+  attributionSource,
+  getAttribution,
+  markAttributionSent,
+  wasAttributionSent,
+} from '~/lib/growth/attribution';
 
 export function AddToCartButton({
   analytics,
@@ -38,6 +46,7 @@ export function AddToCartButton({
               type="hidden"
               value={JSON.stringify(analytics)}
             />
+            <AddToCartTracking fetcher={fetcher} lines={lines} />
             <button
               type="submit"
               onClick={(e) => {
@@ -67,4 +76,76 @@ export function AddToCartButton({
       }}
     </CartForm>
   );
+}
+
+/** Low-cardinality product identifier for event props. */
+function lineProduct(lines: Array<OptimisticCartLineInput>): string {
+  const variant = lines[0]?.selectedVariant as
+    | {sku?: string | null; product?: {handle?: string | null} | null}
+    | null
+    | undefined;
+  return variant?.product?.handle ?? variant?.sku ?? 'unknown';
+}
+
+/**
+ * Invisible side-channel on the LinesAdd fetcher. On each completed,
+ * successful add it (a) fires the `Add to Cart` funnel event and (b) on
+ * the FIRST add of the session promotes the first-touch attribution into
+ * cart attributes via the allowlisted AttributesUpdate action — the
+ * sessionStorage latch makes it once-per-session, so later adds and
+ * re-renders never re-submit.
+ */
+function AddToCartTracking({
+  fetcher,
+  lines,
+}: {
+  fetcher: FetcherWithComponents<any>;
+  lines: Array<OptimisticCartLineInput>;
+}) {
+  const attributesFetcher = useFetcher();
+  const prevState = useRef(fetcher.state);
+  // Snapshot lines in a ref so the transition effect doesn't need them in
+  // its dependency list (their identity changes every render).
+  const linesRef = useRef(lines);
+  linesRef.current = lines;
+
+  useEffect(() => {
+    const was = prevState.current;
+    prevState.current = fetcher.state;
+    // Only act on the submit → idle transition of a successful add.
+    if (fetcher.state !== 'idle' || was === 'idle') return;
+    if (!fetcher.data?.cart?.id) return;
+
+    trackEvent('Add to Cart', {
+      props: {
+        product: lineProduct(linesRef.current),
+        source: attributionSource(),
+      },
+    });
+
+    const attribution = getAttribution();
+    if (!attribution || wasAttributionSent()) return;
+    markAttributionSent();
+    const attributes = [
+      {key: 'utm_source', value: attribution.source},
+      ...(attribution.medium
+        ? [{key: 'utm_medium', value: attribution.medium}]
+        : []),
+      ...(attribution.campaign
+        ? [{key: 'utm_campaign', value: attribution.campaign}]
+        : []),
+      {key: 'landing', value: attribution.landing},
+    ];
+    void attributesFetcher.submit(
+      {
+        [CartForm.INPUT_NAME]: JSON.stringify({
+          action: CartForm.ACTIONS.AttributesUpdateInput,
+          inputs: {attributes},
+        }),
+      },
+      {method: 'post', action: '/cart'},
+    );
+  }, [fetcher.state, fetcher.data, attributesFetcher]);
+
+  return null;
 }
