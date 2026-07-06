@@ -182,8 +182,12 @@ function RelatedCard({product}: {product: RelatedProduct}) {
           {/* Money defaults to a <div>; inside a <p> the HTML parser
               auto-closes the paragraph and hydration structurally
               mismatches — render it as a span. */}
+          {/* Price is gated on coming-soon exactly like ProductItem's
+              showPrice — useComingSoon() is fail-closed (defaults locked
+              when root data is missing), so a locked shop never leaks a
+              number here. */}
           <p className="related-card-price">
-            {priced ? (
+            {priced && !comingSoon ? (
               <>
                 {fromPrice ? (
                   <span className="related-card-from">from</span>

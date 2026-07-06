@@ -58,7 +58,14 @@ export function PageLayout({
             Skip to main content
           </a>
           <RouteProgress />
-          {prelaunch && <PlaceholderBanner />}
+          {/* On PDPs the bottom-right corner belongs to the buy rail's
+              notify-at-launch form (consent checkbox + Privacy link at
+              common scroll positions) — park the pill bottom-left there. */}
+          {prelaunch && (
+            <PlaceholderBanner
+              side={pathname.startsWith('/products/') ? 'left' : 'right'}
+            />
+          )}
           {header && (
             <Header
               header={header}
