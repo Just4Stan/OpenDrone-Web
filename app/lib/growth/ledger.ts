@@ -20,10 +20,18 @@
  *                  RtbF: DEL — the order itself lives in Shopify; this
  *                  record is only the attribution join.
  *
- * sig:<email>      RESERVED for Lane B — signup/profile record
- *                  {email, consentAt, product, locale, channel,
- *                   euPremium?, interviewOptIn?}.
- *                  No TTL; RtbF = DEL.
+ * sig:<email>      Signup/profile record — JSON `SignupRecord` (below),
+ *                  written by recordSignup (Lane B). Merge-don't-clobber:
+ *                  writes are read-modify-write so fields set by other
+ *                  lanes (survey euPremium/interviewOptIn, Lane C)
+ *                  survive a re-signup. consentAt/locale/channel are
+ *                  first-touch (set once); `products` accumulates every
+ *                  notify-<handle> interest. Known race: two concurrent
+ *                  signups for the same address can drop one product
+ *                  entry — acceptable (per-email rate limit is 3/day).
+ *                  No TTL. RtbF = DEL sig:<email> here AND delete the
+ *                  Resend marketing contact (DELETE /contacts/{email},
+ *                  see app/lib/growth/resend.ts).
  *
  * att:idx          Append-only export index: a Redis list (LPUSH, newest
  *                  first, LTRIM-capped at 5000) of ledger keys written,
@@ -75,8 +83,97 @@ export type AttributedOrder = {
   receivedAt: number;
 };
 
+/**
+ * Newsletter/notify signup profile (`sig:<email>`). GDPR: email +
+ * consent timestamp + the visitor's own locale/channel — no IP, no UA.
+ */
+export type SignupRecord = {
+  email: string;
+  /** First consent, ISO 8601. Set once — never overwritten on merge. */
+  consentAt: string;
+  /** notify-<handle> interests, accumulated (deduped) across signups. */
+  products: string[];
+  /** Site locale at first signup ('en' | 'nl' | 'fr'). First-touch. */
+  locale?: string;
+  /** First-touch channel (utm_source, else 'direct'). Set once. */
+  channel?: string;
+  /** Micro-survey answers (Lane C writes these; preserved on merge). */
+  euPremium?: string;
+  interviewOptIn?: boolean;
+  /** Last write, unix seconds. */
+  updatedAt: number;
+};
+
 const INDEX_KEY = 'att:idx';
 const INDEX_CAP = 5000;
+
+/**
+ * Record a newsletter/notify signup (`sig:<email>`), merging into any
+ * existing record: unknown/extra fields (e.g. Lane C's survey answers)
+ * are preserved, first-touch fields keep their original values, and the
+ * optional product handle is appended to `products`. Appends the key to
+ * `att:idx` only on first creation.
+ *
+ * Returns `{created}` — true when no record existed before (the caller
+ * uses this to send the welcome email exactly once) — or null when
+ * Upstash is unconfigured / the write failed (degrade-soft).
+ */
+export async function recordSignup(
+  env: UpstashEnv,
+  opts: {
+    email: string;
+    consentAt: string;
+    product?: string | null;
+    locale?: string;
+    channel?: string | null;
+  },
+): Promise<{created: boolean} | null> {
+  const store = getTicketStore(env);
+  if (!store) {
+    console.warn(
+      '[growth/ledger] Upstash not configured — signup record dropped',
+    );
+    return null;
+  }
+  const key = `sig:${opts.email}`;
+  try {
+    let existing: SignupRecord | null = null;
+    const raw = await store.get(key);
+    if (raw) {
+      try {
+        existing = JSON.parse(raw) as SignupRecord;
+      } catch {
+        existing = null; // corrupt record — rebuild it
+      }
+    }
+    const products = new Set(existing?.products ?? []);
+    if (opts.product) products.add(opts.product);
+
+    const record: SignupRecord = {
+      // Spread first: preserves fields this module doesn't own (survey
+      // answers and any future additions) — merge, don't clobber.
+      ...existing,
+      email: opts.email,
+      consentAt: existing?.consentAt ?? opts.consentAt,
+      products: Array.from(products),
+      locale: existing?.locale ?? opts.locale,
+      channel: existing?.channel ?? opts.channel ?? undefined,
+      updatedAt: Math.floor(Date.now() / 1000),
+    };
+    await store.put(key, JSON.stringify(record));
+
+    if (!existing) {
+      const indexed = await listPush(env, INDEX_KEY, key, INDEX_CAP);
+      if (!indexed) {
+        console.warn('[growth/ledger] att:idx append failed for', key);
+      }
+    }
+    return {created: !existing};
+  } catch (err) {
+    console.warn('[growth/ledger] recordSignup failed', err);
+    return null;
+  }
+}
 
 /** Persist an attributed order (`ord:<id>`) and append it to `att:idx`. */
 export async function recordOrder(
