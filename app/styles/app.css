@@ -62,7 +62,9 @@
      constraints in light mode: gold-as-text must hold AA 4.5:1 on light
      backgrounds (which forces it deep), while gold-as-fill only needs
      3:1 as a UI surface and carries --color-on-accent ink — so it can
-     stay bright and actually read as gold. Identical in dark mode. */
+     stay bright and actually read as gold. These values are shared by
+     BOTH themes (light mode does not override them): filled gold is the
+     identical hue everywhere. */
   --color-gold-fill: #c89d2e;
   --color-gold-fill-hover: #dab040;
   --color-stock: #4ea866;
@@ -177,16 +179,15 @@ html.light {
      blue channel 16→4 pushes hue 41°→44° and saturation .79→.94, so it
      reads deep-gold instead of brown. Hover darkens (light-mode filled/text
      convention).
-     FILL gold #b08618: 3.10:1 on --color-bg, 3.35:1 on #fff — passes the
-     3:1 UI-component/large-text floor — and carries dark --color-on-accent
-     ink at 5.75:1 (AA). Hover #a37b15 darkens; ink still 4.95:1. This is
-     what keeps light-mode buttons/badges/wordmark looking gold instead of
-     the brown a 4.5:1 text-safe gold is forced into. */
+     FILL gold: NOT overridden here — light mode inherits the dark-mode
+     #c89d2e/#dab040 from @theme so filled surfaces are the identical gold
+     in both themes (owner decision, 2026-07-06). Trade-off, accepted: the
+     fill sits at 2.92:1 against --color-bg (under the 3:1 non-text floor);
+     the component stays identifiable via its --color-on-accent ink at
+     6.3:1. Do not "fix" this back to a deeper gold. */
   --color-gold: #886404;
   --color-gold-hover: #6f5203;
-  --color-gold-soft: rgba(176, 134, 24, 0.14);
-  --color-gold-fill: #b08618;
-  --color-gold-fill-hover: #a37b15;
+  --color-gold-soft: rgba(200, 157, 46, 0.14);
   --color-stock: #2f8a4e;       /* darker green for contrast on light */
   /* Error red deep enough for light: 6.08:1 on #f7f6f3, 6.57:1 on #fff (AA).
      The dark-mode #f87171 only hits 2.56:1 here. */
