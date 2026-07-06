@@ -29,6 +29,18 @@ export const DURATION = {
 } as const;
 
 /**
+ * Spring vocabulary for user-initiated detent mechanics (SegmentedControl,
+ * sheet tabs, theme/lang flick switches). `sled` moves the thumb, `detent`
+ * settles it — ≤1px overshoot, so it reads as a mechanical click, not a
+ * bounce. User-initiated: doesn't count against the ≤2-animated-things
+ * viewport budget.
+ */
+export const SPRING = {
+  detent: {type: 'spring', stiffness: 900, damping: 52, mass: 0.6},
+  sled: {type: 'spring', stiffness: 550, damping: 42},
+} as const;
+
+/**
  * In-view reveal: fade + a small rise. Travel is deliberately small (16px)
  * to read as "settling into place", not "flying in". Matches the existing
  * `.chapter` reveal (opacity 0→1, translateY 16px→0) so JS reveals and the
@@ -52,6 +64,23 @@ export const staggerContainer = {
   hidden: {},
   visible: {
     transition: {staggerChildren: 0.06, delayChildren: 0.02},
+  },
+} as const;
+
+/**
+ * TITLE BLOCK signature reveal: a section hairline *draws in* left-to-right
+ * (scaleX 0→1) instead of the generic fade-up stagger. Use with
+ * `whileInView="visible"` + `viewport={{once: true}}` on the rule element.
+ * `originX: 0` pins the transform origin to the left edge so the rule draws
+ * like a plotter stroke. Reduced-motion (global MotionConfig) renders the
+ * rule already drawn.
+ */
+export const drawRule = {
+  hidden: {scaleX: 0, originX: 0},
+  visible: {
+    scaleX: 1,
+    originX: 0,
+    transition: {duration: DURATION.slow, ease: EASE.reveal},
   },
 } as const;
 

@@ -56,33 +56,13 @@
   --color-text-dim: #6a6a6a;
   --color-gold: #c89d2e;
   --color-gold-hover: #dab040;
-  /* Brand gold at full brightness — the physical product color (motor
-     bells, print) is #fdb600. Highest-luminance gold in the ramp; reach
-     for it when gold text/icons/accents sit on a dark or photographic
-     surface (hero, dark cards, imagery) where the muted --color-gold
-     washes out. ~10.7:1 on near-black. Do NOT use it as text on white
-     (~1.6:1) — that's what --color-gold is for. */
-  --color-gold-bright: #fdb600;
   --color-gold-soft: rgba(200, 157, 46, 0.12);
-  /* Gold for FILLED surfaces (buttons, badges, active sleds, wordmark) —
-     always carries --color-on-accent dark ink on top. Kept distinct from
-     text gold so a fill can stay bright without dragging text contrast. */
-  --color-gold-fill: #c89d2e;
-  --color-gold-fill-hover: #dab040;
-
-  /* Brand / PCB green. --color-green is the emerald brand green — a
-     physical product color (#147A31, used on the motors). Rendered
-     lighter on dark for legibility (#4ea866); the true #147A31 takes over
-     on light (AA 5.4:1 on white, see html.light). --color-green-deep is
-     the dark solder-mask PCB green for fills/borders (same in both modes).
-     --color-stock aliases the brand green, so stock/success re-theme with
-     it automatically. */
-  --color-green: #4ea866;
-  --color-green-deep: #327014;
-  --color-stock: var(--color-green);
+  --color-stock: #4ea866;
   /* Form/validation error text. 7.02:1 on --color-bg #0d0d10 (AA). */
   --color-error: #f87171;
-  --color-border: #24242a;
+  /* Hairlines now carry the page structure (TITLE BLOCK) — dark border
+     lifted one step so rules read on #0d0d10 without shouting. */
+  --color-border: #26262c;
   --color-border-strong: #34343c;
 
   /* Text/icon color that sits ON the gold accent (filled buttons, badges,
@@ -133,24 +113,39 @@
   --sp-7: 3rem;
   --sp-8: 4.5rem;
 
-  /* Radii */
-  --r-2xs: 2px; /* hairline elements: meters, underline bars */
-  --r-xs: 4px; /* chips, badges, small controls */
-  --r-sm: 6px;
-  --r-md: 10px;
-  --r-lg: 14px;
-  --r-pod: 22px; /* floating Pods: dropdowns, hero showcase, PDP scroll-bubble */
+  /* Radii — TITLE BLOCK retune: the site is a ruled engineering sheet, so
+     corners square off. One edit here re-skins every pod/chip consumer. */
+  --r-2xs: 0px; /* hairline elements: meters, underline bars */
+  --r-xs: 2px; /* chips, badges, small controls */
+  --r-sm: 2px;
+  --r-md: 3px;
+  --r-lg: 3px;
+  --r-pod: 4px; /* callout panels (ex-Pods): dropdowns, hero showcase, PDP scroll-bubble */
+  /* --r-pill KEPT, but usage is restricted to status dots, NEW/REC indicator
+     dots, and SegmentedControl sled tracks. Nothing else stays a pill. */
   --r-pill: 999px;
 
-  /* Pod surface — ONE recipe shared by every floating surface (header pill,
-     dropdowns, hero showcase, PDP scroll-bubble) so they read as one material
-     and theme-swap together. See incutec/content/opendrone-web-architecture.md. */
-  --pod-bg: rgba(13, 13, 16, 0.8);
-  --pod-bg-strong: rgba(16, 16, 20, 0.94);
+  /* Pod surface → callout panel. ONE recipe shared by every floating surface
+     (header bar, dropdowns, hero showcase, PDP scroll-bubble) so they read as
+     one material and theme-swap together. TITLE BLOCK: opaque, no blur; the
+     "shadow" IS a 1px hairline ring — structure from rules, not elevation.
+     Values are token-derived, so html.light needs no twin. */
+  --pod-bg: color-mix(in srgb, var(--color-bg) 97%, transparent);
+  --pod-bg-strong: var(--color-bg-card);
   --pod-border: var(--color-border);
-  --pod-blur: 14px;
-  --pod-shadow: 0 10px 34px -16px rgba(0, 0, 0, 0.55);
+  --pod-blur: 0px;
+  --pod-shadow: 0 0 0 1px var(--color-border);
   --pod-pad: clamp(var(--sp-3), 1.5vw, var(--sp-5));
+
+  /* Documentation stratum — TITLE BLOCK tokens (light twins in html.light
+     where the value isn't token-derived). */
+  --color-hairline: var(--color-border);
+  --color-hairline-faint: color-mix(in srgb, var(--color-border) 55%, transparent);
+  --color-highlight: rgba(200, 157, 46, 0.16); /* gold highlighter wash */
+  --color-ink-annot: var(--color-text-dim);
+  --color-grid-dot: color-mix(in srgb, var(--color-border) 60%, transparent);
+  --sheet-inset: clamp(10px, 1.2vw, 18px);
+  --keycap-travel: 1px;
 
   --header-height: 56px;
   --aside-width: 400px;
@@ -183,48 +178,45 @@ html.light {
   --color-text: #1a1a1e;
   --color-text-muted: #57575c;
   --color-text-dim: #86868c;
-  /* Light-mode gold (Stan 2026-07-12): gold text sits DIRECTLY on the
-     light background now — the old "gold is always on a black chip" rule
-     is gone (it scattered near-black boxes across light pages and read as
-     broken). A true gold can't reach AA on white without turning brown,
-     which we refuse; so gold text on white is a deliberate ~2.6:1 brand
-     accent (labels/eyebrows/accents), never body copy. Base gold is
-     unified with dark mode (#c89d2e) — as legible as a vibrant gold gets
-     on white — and brightens to #dab040 on hover. For gold on a DARK
-     surface inside a light page (dark cards, hero imagery) use
-     --color-gold-bright (#fdb600); it carries over from @theme unchanged. */
-  --color-gold: #c89d2e;
-  --color-gold-hover: #dab040;
-  --color-gold-soft: rgba(200, 157, 46, 0.14);
-  /* Fill stays bright — dark ink (--color-on-accent) rides on top. */
-  --color-gold-fill: #dab040;
-  --color-gold-fill-hover: #c89d2e;
-  /* Emerald PCB/brand green, AA 5.4:1 on white. --color-green-deep and
-     --color-stock (= var(--color-green)) inherit from @theme and re-theme
-     through this value automatically. */
-  --color-green: #147A31;
+  /* Deep amber-gold: saturated enough to read as gold (not olive) on white,
+     deep enough that white sits legibly on gold fills. Hover DARKENS here —
+     the light-mode convention for filled buttons — rather than lightening
+     like dark mode, so the white label keeps its contrast.
+     Contrast (WCAG relative luminance): #8a6410 on --color-bg #f7f6f3 =
+     4.97:1, on --color-bg-card #fff = 5.37:1; --color-on-accent #fff on
+     #8a6410 fills = 5.37:1 — all past AA 4.5:1 for text (the old #c08c10
+     measured 2.78:1 / 3.00:1). Hover #745409 = 6.45:1 on bg, #fff on it
+     6.97:1, so labels gain contrast as the fill darkens. */
+  --color-gold: #8a6410;
+  --color-gold-hover: #745409;
+  --color-gold-soft: rgba(138, 100, 16, 0.14);
+  --color-stock: #2f8a4e;       /* darker green for contrast on light */
   /* Error red deep enough for light: 6.08:1 on #f7f6f3, 6.57:1 on #fff (AA).
      The dark-mode #f87171 only hits 2.56:1 here. */
   --color-error: #b42318;
-  --color-border: #e4e0d8;
-  --color-border-strong: #cfc9bd;
-  /* --color-on-accent stays the dark default from @theme: bright gold fill
-     + dark ink is exactly the dark-mode combination, now shared by both
-     themes. (The old white-on-deep-gold pairing is what forced the fill
-     brown in the first place.) */
+  /* TITLE BLOCK: light borders darken one step — hairlines carry structure
+     now, and light mode is the harder mode for hairline design. */
+  --color-border: #d9d3c8;
+  --color-border-strong: #c2bbae;
+  /* White ink on gold fills in light mode — dark ink looked dull on the
+     lighter gold. (Dark mode keeps the dark-on-gold default above.) */
+  --color-on-accent: #ffffff;
 
-  /* Pod surface, light twin. */
-  --pod-bg: rgba(247, 246, 243, 0.82);
-  --pod-bg-strong: rgba(255, 255, 255, 0.96);
-  --pod-shadow: 0 10px 30px -16px rgba(60, 50, 30, 0.3);
+  /* Pod/callout surface needs no light twin anymore — the @theme recipe is
+     token-derived (color-mix over --color-bg / --color-bg-card / --color-border)
+     and re-themes with the color tokens above. */
+
+  /* Documentation-stratum light twins (literal values only; the aliases and
+     color-mix tokens re-theme via --color-border / --color-text-dim). */
+  --color-highlight: rgba(138, 100, 16, 0.12);
 }
 
 /* Mode-specific surfaces that bypassed the token system. */
 html.light .scene-dim {
   background-color: rgba(247, 246, 243, 0.9);
 }
-/* header pill + frame slider now use --pod-bg, which has its own light twin —
-   no per-surface light override needed. */
+/* header bar + frame slider use --pod-bg, which is token-derived (re-themes
+   with --color-bg) — no per-surface light override needed. */
 html.light .product-gallery-controls,
 html.light .product-gallery-swipe-hint {
   background: rgba(255, 255, 255, 0.7);
@@ -236,17 +228,219 @@ html.light .schematic-sheet {
   filter: contrast(1.15);
 }
 
-/* ── Gold tags — REMOVED (Stan 2026-07-12) ──────────────────────────────
-   The old "gold text is always on a near-black chip" rule lived here: in
-   light mode every gold label/eyebrow/badge got a --color-tag-bg chip so
-   gold never touched white. It scattered black boxes across light pages
-   and read as broken, so the whole block is gone. Gold text now sits
-   directly on the light background as a ~2.6:1 brand accent (see the
-   light-mode --color-gold note above). The `.gold-tag` JSX class is now
-   inert — safe to leave in markup, no styling attached. If you need gold
-   on a genuinely dark surface within a light page, set the text to
-   var(--color-gold-bright) and give the element its own dark background;
-   don't reintroduce a blanket chip rule. */
+/* ============================================================
+   TITLE BLOCK — documentation stratum utilities
+   The storefront is one dense engineering document: structure
+   comes from 1px hairline rules, JetBrains Mono is the
+   structural voice, gold is a highlighter stroke. These are
+   additive primitives consumed by every surface lane. All
+   colors are semantic tokens — both themes for free.
+   ============================================================ */
+
+/* Mono microtype scale.
+   .doc-annot — zone ticks, figure plates, sheet counters, REV readouts.
+   .doc-label — eyebrows, table headers, nav items, buttons.
+   .doc-cell  — table cells, prices, spec values (tabular, slashed zero). */
+.doc-annot {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--color-ink-annot);
+  font-variant-numeric: tabular-nums slashed-zero;
+}
+.doc-label {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  font-variant-numeric: tabular-nums slashed-zero;
+}
+.doc-cell {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  letter-spacing: 0.02em;
+  font-variant-numeric: tabular-nums slashed-zero;
+}
+
+/* Ruled table — the 1px-gap technique: the grid's background IS the rule
+   work, cells paint over it. Theme-safe by construction. Set
+   grid-template-columns at the call site; override cell bg with
+   --ruled-cell-bg when a table sits on a card surface. */
+.ruled-table {
+  display: grid;
+  gap: 1px;
+  background: var(--color-hairline);
+  border: 1px solid var(--color-hairline);
+}
+.ruled-table > * {
+  background: var(--ruled-cell-bg, var(--color-bg));
+}
+
+/* Register row — hairline-separated list row (catalog register, BOM strips,
+   related-documents). ≥56px keeps mobile rows tappable. */
+.register-row {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  min-height: 56px;
+  border-bottom: 1px solid var(--color-hairline);
+}
+
+/* Engineering "no-part" hatch — imageless thumb cells, ghost rows, empty
+   states. Always pair with a data cell so the surface is never meaning-empty. */
+.hatch {
+  background-image: repeating-linear-gradient(
+    -45deg,
+    var(--color-hairline-faint) 0,
+    var(--color-hairline-faint) 1px,
+    transparent 1px,
+    transparent 7px
+  );
+}
+
+/* Dot-grid backdrop — board renders in media frames, hover plates,
+   hatched-adjacent media cells. 12px pitch. */
+.dot-grid {
+  background-image: radial-gradient(
+    circle,
+    var(--color-grid-dot) 1px,
+    transparent 1px
+  );
+  background-size: 12px 12px;
+}
+
+/* Keycap press — filled-gold CTAs only (Shop, Add to cart, Checkout,
+   Notify me, Subscribe). Pure CSS, user-initiated: 1px of travel and the
+   hairline shadow collapses. A click, not a bounce. */
+.keycap {
+  transition:
+    transform 120ms ease,
+    box-shadow 120ms ease;
+}
+.keycap:active {
+  transform: translateY(var(--keycap-travel));
+  box-shadow: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .keycap {
+    transition: none;
+  }
+  .keycap:active {
+    transform: none;
+  }
+}
+
+/* Edge-light hover — replaces ALL pointer-follow spotlight machinery.
+   Border brightens, primary ink lifts; row surfaces add the gold
+   highlighter wash via the -wash modifier. Pure CSS. */
+.edge-light {
+  transition:
+    border-color 180ms ease,
+    background-color 180ms ease,
+    color 180ms ease;
+}
+.edge-light:hover,
+.edge-light:focus-within {
+  border-color: var(--color-border-strong);
+  color: var(--color-text);
+}
+.edge-light-wash:hover,
+.edge-light-wash:focus-within {
+  background-color: var(--color-highlight);
+}
+
+/* On-rule label — a .doc-label/.doc-annot sitting ON a full-bleed hairline.
+   Put .on-rule on the container that spans the bleed; the label punches out
+   of the rule with background padding. Override --on-rule-bg when the
+   section sits on a non-default surface. */
+.on-rule {
+  position: relative;
+}
+.on-rule::before {
+  content: "";
+  position: absolute;
+  inset-inline: 0;
+  top: 50%;
+  height: 1px;
+  background: var(--color-hairline);
+}
+.on-rule-label {
+  position: relative;
+  display: inline-block;
+  background: var(--on-rule-bg, var(--color-bg));
+  padding-inline: var(--sp-2);
+}
+
+/* ---- SheetFrame (app/components/SheetFrame.tsx) ----
+   Absolute-inset hairline rectangle with corner registration crosses and
+   optional zone ticks — frames exhibits (hero, PDP gallery, chapter media,
+   404), never chrome. pointer-events: none, aria-hidden, hidden <480px. */
+.sheet-frame {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.sheet-frame-rect {
+  position: absolute;
+  inset: var(--sheet-inset);
+  border: 1px solid var(--color-hairline);
+}
+/* Corner registration crosses — centered on the frame's corners. */
+.sheet-frame-cross {
+  position: absolute;
+  width: 11px;
+  height: 11px;
+  transform: translate(-50%, -50%);
+}
+.sheet-frame-cross::before,
+.sheet-frame-cross::after {
+  content: "";
+  position: absolute;
+  background: var(--color-border-strong);
+}
+.sheet-frame-cross::before {
+  left: 0;
+  right: 0;
+  top: 5px;
+  height: 1px;
+}
+.sheet-frame-cross::after {
+  top: 0;
+  bottom: 0;
+  left: 5px;
+  width: 1px;
+}
+.sheet-frame-cross.is-tl { top: var(--sheet-inset); left: var(--sheet-inset); }
+.sheet-frame-cross.is-tr { top: var(--sheet-inset); left: calc(100% - var(--sheet-inset)); }
+.sheet-frame-cross.is-bl { top: calc(100% - var(--sheet-inset)); left: var(--sheet-inset); }
+.sheet-frame-cross.is-br { top: calc(100% - var(--sheet-inset)); left: calc(100% - var(--sheet-inset)); }
+/* Zone ticks — evenly-spaced A–D across the top edge, 1–6 down the left
+   edge, sitting in the sheet margin like a KiCad border. */
+.sheet-frame-scale {
+  position: absolute;
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+}
+.sheet-frame-scale-x {
+  inset-inline: var(--sheet-inset);
+  top: 0;
+  height: var(--sheet-inset);
+}
+.sheet-frame-scale-y {
+  inset-block: var(--sheet-inset);
+  left: 0;
+  width: var(--sheet-inset);
+  flex-direction: column;
+}
+@media (max-width: 479px) {
+  .sheet-frame {
+    display: none;
+  }
+}
 
 /* Default price treatment. Display sans, tabular figures. Specialised
    per-context by .product-buy-price overrides. */
@@ -423,8 +617,8 @@ html {
   border-radius: var(--r-pill);
   background: linear-gradient(
     180deg,
-    color-mix(in srgb, var(--color-gold-fill) 88%, white) 0%,
-    var(--color-gold-fill) 55%
+    color-mix(in srgb, var(--color-gold) 88%, white) 0%,
+    var(--color-gold) 55%
   );
   box-shadow:
     0 2px 10px -2px rgba(184, 146, 46, 0.55),
@@ -828,7 +1022,7 @@ html {
   gap: 0.75rem;
   min-width: 26rem; /* 30% wider than the old 20rem anchor */
   padding: 1rem 2.25rem;
-  background: var(--color-gold-fill);
+  background: var(--color-gold);
   color: var(--color-on-accent);
   font-family: var(--font-mono);
   font-size: 0.95rem;
@@ -840,7 +1034,7 @@ html {
 }
 
 .hero-action-primary:hover {
-  background: var(--color-gold-fill-hover);
+  background: var(--color-gold-hover);
   color: var(--color-on-accent);
 }
 
@@ -1032,11 +1226,6 @@ html {
   font-weight: 600;
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  /* On the dark reveal card, use full-brightness brand gold so the badge
-     pops; light mode swaps back to --color-gold (the card goes near-white). */
-  color: var(--color-gold-bright);
-}
-html.light .hero-reveal-soon {
   color: var(--color-gold);
 }
 
@@ -1193,7 +1382,7 @@ body {
 
 /* Selection */
 ::selection {
-  background-color: var(--color-gold-fill);
+  background-color: var(--color-gold);
   color: var(--color-on-accent);
 }
 
@@ -1365,7 +1554,7 @@ a:hover {
   display: inline-flex;
   align-items: center;
   padding: 0.4rem 0.75rem;
-  background: var(--color-gold-fill);
+  background: var(--color-gold);
   color: var(--color-on-accent);
   font-family: var(--font-mono);
   font-size: 0.7rem;
@@ -1387,7 +1576,7 @@ a:hover {
   left: 1rem;
   width: 10px;
   height: 10px;
-  background: var(--color-gold-fill);
+  background: var(--color-gold);
   transform: rotate(45deg);
   border-radius: 1px;
 }
@@ -1400,7 +1589,7 @@ html.hero-incutec-hint .incutec-hint {
 .incutec-hint:focus-visible {
   /* Keep the dark ink — the global `a:hover` would otherwise recolor the text
      gold, leaving it gold-on-gold with no contrast. */
-  background: var(--color-gold-fill-hover);
+  background: var(--color-gold-hover);
   color: var(--color-on-accent);
 }
 
@@ -1801,7 +1990,7 @@ html.anim-paused .board-sheet.is-active {
   font-weight: 400;
 }
 .pod-buy-add {
-  background: var(--color-gold-fill);
+  background: var(--color-gold);
   color: var(--color-on-accent);
   border: none;
 }
@@ -1812,7 +2001,7 @@ html.anim-paused .board-sheet.is-active {
   gap: 0.45rem;
 }
 .pod-buy-add:hover {
-  background: var(--color-gold-fill-hover);
+  background: var(--color-gold-hover);
 }
 .pod-buy-add[disabled],
 .pod-buy-stack[disabled] {
@@ -1986,7 +2175,7 @@ html.light .header-cat-pod {
   right: 0;
   bottom: -6px;
   height: 2px;
-  background: var(--color-gold-fill);
+  background: var(--color-gold);
   border-radius: 1px;
 }
 
@@ -2249,13 +2438,13 @@ html.hero-header-in .homepage-layout .site-header {
   transform: translateY(1px);
 }
 .home-mobile-cta-shop {
-  background: var(--color-gold-fill);
+  background: var(--color-gold);
   color: var(--color-on-accent);
-  border: 1px solid var(--color-gold-fill);
-  box-shadow: 0 8px 22px color-mix(in srgb, var(--color-gold-fill) 28%, transparent);
+  border: 1px solid var(--color-gold);
+  box-shadow: 0 8px 22px color-mix(in srgb, var(--color-gold) 28%, transparent);
 }
 .home-mobile-cta-shop:hover {
-  background: var(--color-gold-fill-hover);
+  background: var(--color-gold-hover);
 }
 .home-mobile-cta-github {
   background: var(--color-bg-card);
@@ -2350,7 +2539,7 @@ html.hero-header-in .homepage-layout .site-header {
   align-items: center;
   gap: 0.375rem;
   padding: 0.5rem 1.25rem;
-  background: var(--color-gold-fill);
+  background: var(--color-gold);
   color: var(--color-on-accent);
   font-family: var(--font-mono);
   font-size: 12px;
@@ -2362,7 +2551,7 @@ html.hero-header-in .homepage-layout .site-header {
 }
 
 .hero-cta-primary:hover {
-  background: var(--color-gold-fill-hover);
+  background: var(--color-gold-hover);
   color: var(--color-on-accent);
 }
 
@@ -3025,9 +3214,9 @@ button.reset {
   width: 100%;
   padding: 0.95rem 1.25rem;
   margin-top: 0.75rem;
-  background: var(--color-gold-fill);
-  color: var(--color-on-accent);
-  border: 1px solid color-mix(in srgb, var(--color-gold-fill) 80%, transparent);
+  background: var(--color-accent);
+  color: var(--color-text);
+  border: 1px solid color-mix(in srgb, var(--color-accent-light) 80%, transparent);
   border-radius: var(--r-md);
   font-family: var(--font-mono);
   font-weight: 700;
@@ -3037,13 +3226,13 @@ button.reset {
   text-decoration: none;
   transition: background-color 150ms ease, box-shadow 150ms ease,
     border-color 150ms ease, transform 150ms ease;
-  box-shadow: 0 0 24px color-mix(in srgb, var(--color-gold-fill) 30%, transparent);
+  box-shadow: 0 0 24px rgba(31, 77, 44, 0.35);
 }
 
 .cart-checkout-cta:hover {
-  background: var(--color-gold-fill-hover);
-  border-color: var(--color-gold-fill-hover);
-  box-shadow: 0 0 32px color-mix(in srgb, var(--color-gold-fill) 42%, transparent);
+  background: var(--color-accent-hover);
+  border-color: var(--color-accent-light);
+  box-shadow: 0 0 32px rgba(52, 122, 68, 0.5);
   text-decoration: none;
   transform: translateY(-1px);
 }
@@ -4158,9 +4347,9 @@ button.reset {
     font-size: 0.85rem;
   }
   .catalog-filter.is-active {
-    border-color: var(--color-gold-fill);
+    border-color: var(--color-gold);
     color: var(--color-on-accent);
-    background: var(--color-gold-fill);
+    background: var(--color-gold);
   }
 }
 
@@ -4178,7 +4367,7 @@ button.reset {
   padding: 0.25rem 0.5rem;
   border-radius: var(--r-xs);
   color: var(--color-on-accent);
-  background: var(--color-gold-fill);
+  background: var(--color-gold);
 }
 
 .product-card-badge.is-sale {
@@ -4540,7 +4729,7 @@ button.reset {
   gap: 0.5rem;
   width: 100%;
   padding: 0.85rem 1.25rem;
-  background: var(--color-gold-fill);
+  background: var(--color-gold);
   color: var(--color-on-accent);
   font-family: var(--font-display);
   font-weight: 600;
@@ -4554,8 +4743,8 @@ button.reset {
 }
 
 .btn-primary:hover {
-  background: var(--color-gold-fill-hover);
-  box-shadow: 0 6px 20px -8px color-mix(in srgb, var(--color-gold-fill) 55%, transparent);
+  background: var(--color-gold-hover);
+  box-shadow: 0 6px 20px -8px color-mix(in srgb, var(--color-gold) 55%, transparent);
 }
 
 .btn-primary:active {
@@ -4716,7 +4905,7 @@ button.reset {
   color: var(--color-text-muted);
 }
 .product-buy.is-comingsoon .product-buy-stock::before {
-  background: var(--color-gold-fill);
+  background: var(--color-gold);
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-gold) 18%, transparent);
 }
 
@@ -5331,7 +5520,7 @@ button.reset {
   font-family: var(--font-mono);
   font-size: 0.78rem;
   padding: 0.35rem 0.9rem;
-  background: var(--color-gold-fill);
+  background: var(--color-gold);
   color: var(--color-on-accent);
   border: none;
   border-radius: var(--r-pill);
@@ -5339,7 +5528,7 @@ button.reset {
   cursor: pointer;
 }
 .product-card-quickadd-btn:hover {
-  background: var(--color-gold-fill-hover);
+  background: var(--color-gold-hover);
 }
 .product-card-quickadd-btn[disabled] {
   opacity: 0.5;
@@ -5455,14 +5644,9 @@ button.reset {
   .chapter[data-big-media] {
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   }
-  /* No media column — body spans the full chapter width (e.g. spec table).
-     The body col is width-capped for readability, so centre it in the row
-     rather than leaving all the leftover space as a dead right gutter. */
+  /* No media column — body spans the full chapter width (e.g. spec table). */
   .chapter[data-no-media] {
     grid-template-columns: minmax(0, 1fr);
-  }
-  .chapter[data-no-media] .chapter-body-col {
-    margin-inline: auto;
   }
   .chapter-index {
     grid-column: 1 / -1;
@@ -6106,9 +6290,9 @@ button.reset {
 .board-folder-tabs button.is-active,
 .schematic-rail-tabs button.is-active {
   color: var(--color-on-accent);
-  background: var(--color-gold-fill);
-  border-color: var(--color-gold-fill);
-  box-shadow: 0 0 16px color-mix(in srgb, var(--color-gold-fill) 35%, transparent);
+  background: var(--color-gold);
+  border-color: var(--color-gold);
+  box-shadow: 0 0 16px color-mix(in srgb, var(--color-gold) 35%, transparent);
 }
 /* Layer buttons stack a name over a function blurb, left-aligned — so the
    centred via-spine would cut through the text; drop it on the board rail. */
@@ -6356,7 +6540,7 @@ button.reset {
   position: absolute;
   inset: 0;
   z-index: 3;
-  background: var(--color-gold-fill);
+  background: var(--color-gold);
   filter: drop-shadow(
     0 0 10px color-mix(in srgb, var(--color-gold) 75%, transparent)
   );
@@ -6762,7 +6946,7 @@ button.reset {
   top: 0;
   bottom: 0;
   width: 2px;
-  background: var(--color-gold-fill);
+  background: var(--color-gold);
   transform: scaleY(0);
   transform-origin: center;
   transition: transform 0.14s ease;
@@ -7367,60 +7551,6 @@ button.reset {
   color: var(--color-gold);
 }
 
-/* GPSR manufacturer block — compact legal identity strip under the chapters
-   (EU 2023/988 requires it on every product listing). Hairline top rule,
-   mono labels, same de-boxed spec-table grammar as the rest of the PDP.
-   Tokens only, so light mode needs no twin. */
-.pdp-manufacturer {
-  padding: var(--sp-4) 0 var(--sp-5);
-  border-top: 1px solid var(--color-border);
-}
-
-.pdp-manufacturer-label {
-  margin: 0 0 var(--sp-3);
-  font-family: var(--font-mono);
-  font-size: 11px;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-  color: var(--color-text-muted);
-}
-
-.pdp-manufacturer-rows {
-  margin: 0;
-  display: grid;
-  gap: 0.45rem;
-  max-width: 44rem;
-}
-
-.pdp-manufacturer-rows > div {
-  display: grid;
-  grid-template-columns: 7.5rem 1fr;
-  column-gap: 1rem;
-  align-items: baseline;
-}
-
-.pdp-manufacturer-rows dt {
-  font-family: var(--font-mono);
-  font-size: 11px;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  color: var(--color-text-muted);
-}
-
-.pdp-manufacturer-rows dd {
-  margin: 0;
-  font-size: 0.9rem;
-  line-height: 1.5;
-  color: var(--color-text);
-}
-
-@media (max-width: 480px) {
-  .pdp-manufacturer-rows > div {
-    grid-template-columns: 1fr;
-    row-gap: 0.1rem;
-  }
-}
-
 /* Bundle components — richer cards than the generic open-source cards
    because this is the "what's in the box" moment on a bundle PDP. */
 .bundle-components {
@@ -7709,7 +7839,7 @@ button.reset {
 
 .category-chip.is-active {
   color: var(--color-on-accent);
-  background: var(--color-gold-fill);
+  background: var(--color-gold);
   border-color: var(--color-gold);
 }
 
@@ -7993,7 +8123,7 @@ button.reset {
 }
 .osd-bars i {
   width: 3px;
-  background: var(--color-gold-fill);
+  background: var(--color-gold);
   opacity: 0.25;
   transition: opacity 0.15s linear;
 }
@@ -8669,7 +8799,7 @@ button.reset {
 .order-search-form button,
 .account-button {
   border: 1px solid var(--color-border);
-  background: var(--color-gold-fill);
+  background: var(--color-gold);
   color: var(--color-on-accent);
   border-radius: var(--r-sm);
   padding: 0.75rem 1rem;
@@ -8699,7 +8829,7 @@ button.reset {
 .predictive-search-form button:hover,
 .order-search-form button:hover,
 .account-button:hover {
-  background: var(--color-gold-fill-hover);
+  background: var(--color-gold-hover);
 }
 
 .account-button-secondary:hover {
@@ -9462,7 +9592,7 @@ button.reset {
 
 .lang-toggle button[aria-pressed="true"],
 .lang-toggle a[data-active="true"] {
-  background: var(--color-gold-fill);
+  background: var(--color-gold);
   color: var(--color-on-accent);
 }
 
@@ -9765,7 +9895,7 @@ button.reset {
   display: inline-flex;
   align-items: center;
   padding: 0.9rem 1.5rem;
-  background: var(--color-gold-fill);
+  background: var(--color-gold);
   color: var(--color-on-accent);
   font-family: var(--font-mono);
   font-size: 12px;
@@ -9777,7 +9907,7 @@ button.reset {
 }
 
 .editorial-cta-primary:hover {
-  background: var(--color-gold-fill-hover);
+  background: var(--color-gold-hover);
   color: var(--color-on-accent);
 }
 
@@ -10281,12 +10411,12 @@ button.reset {
 }
 
 .contact-tier-cta-primary {
-  background: var(--color-gold-fill);
+  background: var(--color-gold);
   color: var(--color-on-accent);
 }
 
 .contact-tier-cta-primary:hover {
-  background: var(--color-gold-fill-hover);
+  background: var(--color-gold-hover);
   color: var(--color-on-accent);
 }
 
@@ -10306,7 +10436,7 @@ button.reset {
   position: absolute;
   inset: 0 auto 0 0;
   width: 3px;
-  background: var(--color-gold-fill);
+  background: var(--color-gold);
   border-radius: var(--r-2xs) 0 0 var(--r-2xs);
 }
 
@@ -10620,7 +10750,7 @@ button.reset {
   letter-spacing: 0.14em;
   text-transform: uppercase;
   font-weight: 700;
-  background: var(--color-gold-fill);
+  background: var(--color-gold);
   color: var(--color-on-accent);
   border: none;
   padding: 0.65rem 1.1rem;
@@ -10667,7 +10797,7 @@ button.reset {
 }
 
 .support-submit:hover:not(:disabled) {
-  background: var(--color-gold-fill-hover);
+  background: var(--color-gold-hover);
 }
 
 .support-submit:disabled {
@@ -11115,7 +11245,7 @@ button.reset {
   top: 0;
   z-index: 100;
   padding: 0.75rem 1rem;
-  background: var(--color-gold-fill);
+  background: var(--color-gold);
   color: var(--color-on-accent);
   font-family: var(--font-mono);
   font-size: 12px;
@@ -13962,8 +14092,8 @@ button.reset {
 }
 .route-progress-bar {
   height: 100%;
-  background: var(--color-gold-fill);
-  box-shadow: 0 0 10px var(--color-gold-fill), 0 0 4px var(--color-gold-fill);
+  background: var(--color-gold);
+  box-shadow: 0 0 10px var(--color-gold), 0 0 4px var(--color-gold);
   border-radius: 0 var(--r-2xs) var(--r-2xs) 0;
   transition: width 0.2s ease-out, opacity 0.28s ease-out;
 }
@@ -14308,10 +14438,10 @@ button.reset {
     position: relative;
   }
   .board-deck-dot.is-done {
-    background: color-mix(in srgb, var(--color-gold-fill) 45%, transparent);
+    background: color-mix(in srgb, var(--color-gold) 45%, transparent);
   }
   .board-deck-dot.is-active {
-    background: var(--color-gold-fill);
+    background: var(--color-gold);
   }
   .board-deck-meta {
     display: flex;
@@ -14559,7 +14689,7 @@ button.reset {
     height: 7px;
     margin-right: 0.5em;
     border-radius: 50%;
-    background: var(--color-gold-fill);
+    background: var(--color-gold);
     vertical-align: middle;
   }
   /* The KiCanvas deep-dive links ("Inspect interactively", "Open schematic")
