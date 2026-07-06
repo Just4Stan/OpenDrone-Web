@@ -3,8 +3,9 @@
  * AOV numbers. Thin layer over the Upstash REST helpers in
  * app/lib/support/upstash.ts (imported, not duplicated); this module is
  * the SINGLE OWNER of the growth key shapes. Lanes B (email) and C
- * (reserve flow) extend this file — add key shapes to the docs block
- * below, don't invent keys elsewhere.
+ * (notify survey) extend this file — add key shapes to the docs block
+ * below, don't invent keys elsewhere. (No pre-order/reserve records:
+ * pre-orders were dropped entirely, 2026-07-06.)
  *
  * docs: key shapes
  * ----------------------------------------------------------------------
