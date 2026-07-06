@@ -1,3 +1,4 @@
+import {useCallback} from 'react';
 import {Link} from 'react-router';
 import {Money} from '@shopify/hydrogen';
 import {SmoothImage} from './SmoothImage';
@@ -86,6 +87,17 @@ export function ProductItem({
 }) {
   const variantUrl = useVariantUrl(product.handle);
   const {open: openAside} = useAside();
+
+  // Cursor-tracked gold spotlight (same recipe as .related-card): write the
+  // pointer position into CSS vars the card's ::after radial reads. Mouse
+  // only — touch/pen never hover — and the ::after itself is gated behind
+  // @media (hover: hover) in app.css, so this is a no-op on touch devices.
+  const onSpotMove = useCallback((e: React.PointerEvent<HTMLElement>) => {
+    if (e.pointerType !== 'mouse') return;
+    const r = e.currentTarget.getBoundingClientRect();
+    e.currentTarget.style.setProperty('--spot-x', `${e.clientX - r.left}px`);
+    e.currentTarget.style.setProperty('--spot-y', `${e.clientY - r.top}px`);
+  }, []);
   const url = to ?? variantUrl;
   const displayTitle = title ?? product.title;
   const price = priceOverride ?? product.priceRange.minVariantPrice;
@@ -260,7 +272,7 @@ export function ProductItem({
   if (!hasModels) {
     if (quickAddNode) {
       return (
-        <div className="product-card has-quickadd">
+        <div className="product-card has-quickadd" onPointerMove={onSpotMove}>
           <Link
             className="product-card-link"
             prefetch="viewport"
@@ -274,7 +286,13 @@ export function ProductItem({
       );
     }
     return (
-      <Link className="product-card" prefetch="viewport" viewTransition to={url}>
+      <Link
+        className="product-card"
+        prefetch="viewport"
+        viewTransition
+        to={url}
+        onPointerMove={onSpotMove}
+      >
         {inner}
       </Link>
     );
@@ -285,7 +303,10 @@ export function ProductItem({
   // links and nesting anchors is invalid HTML. So the tile body is one link
   // and each model is a sibling link below it.
   return (
-    <div className={`product-card has-models${quickAddNode ? ' has-quickadd' : ''}`}>
+    <div
+      className={`product-card has-models${quickAddNode ? ' has-quickadd' : ''}`}
+      onPointerMove={onSpotMove}
+    >
       <Link
         className="product-card-link"
         prefetch="viewport"

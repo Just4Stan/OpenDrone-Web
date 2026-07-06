@@ -19,18 +19,71 @@ export function CartSummary({cart, layout}: CartSummaryProps) {
   const summaryId = useId();
   const {close} = useAside();
 
+  // VAT figure for the page register. Shopify reports totalTaxAmount once
+  // it has resolved taxes for the cart; until then derive the included
+  // Belgian VAT (21%) from the VAT-inclusive total — the market is forced
+  // to BE by the cart action, so the rate is fixed, and the note below
+  // already promises "prices include VAT".
+  // NB: Shopify returns "0.0" (truthy string) while taxes are unresolved —
+  // compare numerically or the register would show "VAT included — €0.00".
+  const cost = cart?.cost;
+  const reportedTax =
+    cost?.totalTaxAmount && parseFloat(cost.totalTaxAmount.amount ?? '0') > 0
+      ? cost.totalTaxAmount
+      : null;
+  const vatAmount =
+    reportedTax ??
+    (cost?.totalAmount?.amount
+      ? {
+          amount: (parseFloat(cost.totalAmount.amount) * (21 / 121)).toFixed(2),
+          currencyCode: cost.totalAmount.currencyCode,
+        }
+      : null);
+
   return (
     <div aria-labelledby={summaryId} className={className}>
-      <dl role="group" className="cart-subtotal">
-        <dt>Subtotal</dt>
-        <dd>
-          {cart?.cost?.subtotalAmount?.amount ? (
-            <Money data={cart?.cost?.subtotalAmount} />
-          ) : (
-            '-'
-          )}
-        </dd>
-      </dl>
+      {layout === 'page' ? (
+        // Build-sheet register: hairline-ruled rows, mono tabular figures —
+        // subtotal, the VAT share inside it, and the total the checkout
+        // will charge.
+        <dl role="group" className="cart-register">
+          <div className="cart-register-row">
+            <dt>Subtotal</dt>
+            <dd>
+              {cost?.subtotalAmount?.amount ? (
+                <Money data={cost.subtotalAmount} />
+              ) : (
+                '—'
+              )}
+            </dd>
+          </div>
+          <div className="cart-register-row">
+            <dt>VAT included (21%)</dt>
+            <dd>{vatAmount ? <Money data={vatAmount} /> : '—'}</dd>
+          </div>
+          <div className="cart-register-row is-total">
+            <dt>Total</dt>
+            <dd>
+              {cost?.totalAmount?.amount ? (
+                <Money data={cost.totalAmount} />
+              ) : (
+                '—'
+              )}
+            </dd>
+          </div>
+        </dl>
+      ) : (
+        <dl role="group" className="cart-subtotal">
+          <dt>Subtotal</dt>
+          <dd>
+            {cart?.cost?.subtotalAmount?.amount ? (
+              <Money data={cart?.cost?.subtotalAmount} />
+            ) : (
+              '-'
+            )}
+          </dd>
+        </dl>
+      )}
       <CartCheckoutActions checkoutUrl={cart?.checkoutUrl} />
       {/* Quiet secondary actions under the CTA: an escape hatch back to the
           catalog so a populated cart isn't a dead end, and (page only) a

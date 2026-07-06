@@ -32,6 +32,7 @@ import {SceneErrorBoundary} from '~/components/SceneErrorBoundary';
 import {ProvenanceCard} from '~/components/ProvenanceCard';
 import {BrandName} from '~/components/BrandName';
 import {CommitHistoryCard, LatestCommitCard} from '~/components/LatestCommit';
+import {AnimatedNumber} from '~/components/AnimatedNumber';
 import {WatchCard} from '~/components/WatchCard';
 import {redirectIfHandleIsLocalized} from '~/lib/redirect';
 import {buildSeoMeta, buildProductJsonLd} from '~/lib/seo';
@@ -193,13 +194,18 @@ function loadDeferredData({context, params}: Route.LoaderArgs) {
       variables: {handle},
     })
     .then(async (res) => {
-      const rec = res?.productRecommendations;
+      // The firmware-donation tip product is cart-only chrome — Shopify's
+      // recommendation engine doesn't know that, so filter it here too
+      // (the fallback query already excludes it server-side).
+      const keep = (p: {handle: string; productType?: string | null}) =>
+        p.handle !== handle && p.productType !== 'Donation';
+      const rec = res?.productRecommendations?.filter(keep);
       if (rec && rec.length > 0) return rec;
       const fallback = await storefront
         .query(FALLBACK_PRODUCTS_QUERY, {variables: {first: 8}})
         .catch(() => null);
       const items = fallback?.products?.nodes ?? [];
-      return items.filter((p) => p.handle !== handle).slice(0, 4);
+      return items.filter(keep).slice(0, 4);
     })
     .catch(() => null);
 
@@ -2112,7 +2118,13 @@ export default function Product() {
             {mergedSpecs.map(([k, v]) => (
               <div key={k}>
                 <dt>{k}</dt>
-                <dd>{v}</dd>
+                {/* Count-up on the numeric runs the first time the table
+                    scrolls into view. spec-table already sets tabular-nums,
+                    so digits don't jitter mid-count; reduced-motion and
+                    variant-switch re-renders are handled inside. */}
+                <dd>
+                  <AnimatedNumber value={v} />
+                </dd>
               </div>
             ))}
           </dl>
@@ -2302,6 +2314,54 @@ const BUNDLE_COMPONENT_QUERY = `#graphql
   }
 ` as const;
 
+// Shared card shape for the related strip — enough for a spec-forward card
+// (render, price band) plus the single variant a quick-add needs. Multi-
+// variant lines get no quick-add, so two variant nodes is enough to tell
+// "one" from "many" without dragging the whole ladder over the wire.
+const RELATED_PRODUCT_CARD_FRAGMENT = `#graphql
+  fragment RelatedProductCard on Product {
+    id
+    handle
+    title
+    productType
+    featuredImage {
+      id
+      url
+      altText
+      width
+      height
+    }
+    priceRange {
+      minVariantPrice {
+        amount
+        currencyCode
+      }
+      maxVariantPrice {
+        amount
+        currencyCode
+      }
+    }
+    variants(first: 2) {
+      nodes {
+        id
+        availableForSale
+        price {
+          amount
+          currencyCode
+        }
+        image {
+          url
+          altText
+        }
+        selectedOptions {
+          name
+          value
+        }
+      }
+    }
+  }
+` as const;
+
 const PRODUCT_RECOMMENDATIONS_QUERY = `#graphql
   query ProductRecommendations(
     $country: CountryCode
@@ -2309,28 +2369,10 @@ const PRODUCT_RECOMMENDATIONS_QUERY = `#graphql
     $language: LanguageCode
   ) @inContext(country: $country, language: $language) {
     productRecommendations(productHandle: $handle) {
-      id
-      handle
-      title
-      featuredImage {
-        id
-        url
-        altText
-        width
-        height
-      }
-      priceRange {
-        minVariantPrice {
-          amount
-          currencyCode
-        }
-        maxVariantPrice {
-          amount
-          currencyCode
-        }
-      }
+      ...RelatedProductCard
     }
   }
+  ${RELATED_PRODUCT_CARD_FRAGMENT}
 ` as const;
 
 const FALLBACK_PRODUCTS_QUERY = `#graphql
@@ -2339,29 +2381,16 @@ const FALLBACK_PRODUCTS_QUERY = `#graphql
     $first: Int!
     $language: LanguageCode
   ) @inContext(country: $country, language: $language) {
-    products(first: $first, sortKey: BEST_SELLING) {
+    # The firmware-donation tip product is cart-only chrome, not a related card.
+    products(
+      first: $first
+      sortKey: BEST_SELLING
+      query: "-product_type:Donation"
+    ) {
       nodes {
-        id
-        handle
-        title
-        featuredImage {
-          id
-          url
-          altText
-          width
-          height
-        }
-        priceRange {
-          minVariantPrice {
-            amount
-            currencyCode
-          }
-          maxVariantPrice {
-            amount
-            currencyCode
-          }
-        }
+        ...RelatedProductCard
       }
     }
   }
+  ${RELATED_PRODUCT_CARD_FRAGMENT}
 ` as const;
