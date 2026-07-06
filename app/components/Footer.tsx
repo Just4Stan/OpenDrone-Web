@@ -120,7 +120,7 @@ export function Footer({
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           {/* Company identity */}
           <div className="md:col-span-1">
-            <h3 className="font-display text-sm font-bold tracking-[0.08em] uppercase text-[var(--color-gold)] mb-3">
+            <h3 className="gold-tag font-display text-sm font-bold tracking-[0.08em] uppercase text-[var(--color-gold)] mb-3">
               OpenDrone
             </h3>
             <p className="text-[12px] text-[var(--color-text-muted)] mb-3 leading-relaxed">
