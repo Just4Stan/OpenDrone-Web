@@ -1,5 +1,9 @@
 import type {Route} from './+types/api.webhooks.shopify';
-import {verifyShopifyHmac} from '~/lib/growth/shopify-webhook';
+import {
+  extractOrderAttribution,
+  ORDER_TOPICS,
+  verifyShopifyHmac,
+} from '~/lib/growth/shopify-webhook';
 import {recordOrder, type AttributedOrder} from '~/lib/growth/ledger';
 
 // Shopify webhook receiver. Handles order topics:
@@ -44,25 +48,6 @@ type ShopifyOrderPayload = {
   note_attributes?: ShopifyNoteAttribute[];
 };
 
-// note_attributes arrive with the hiding `_` prefix (see cart.tsx); the
-// ledger stores them un-prefixed. Legacy un-prefixed names are still
-// accepted for any order placed before the prefix change.
-const ATTRIBUTION_KEY_MAP: Record<
-  string,
-  keyof NonNullable<AttributedOrder['attribution']>
-> = {
-  _utm_source: 'utm_source',
-  _utm_medium: 'utm_medium',
-  _utm_campaign: 'utm_campaign',
-  _landing: 'landing',
-  utm_source: 'utm_source',
-  utm_medium: 'utm_medium',
-  utm_campaign: 'utm_campaign',
-  landing: 'landing',
-};
-
-const ORDER_TOPICS = new Set(['orders/paid', 'orders/create']);
-
 export async function action({request, context}: Route.ActionArgs) {
   if (request.method !== 'POST') {
     return new Response('Method not allowed.', {status: 405});
@@ -103,13 +88,11 @@ export async function action({request, context}: Route.ActionArgs) {
     return new Response('OK (no id)', {status: 200});
   }
 
-  const attribution: AttributedOrder['attribution'] = {};
-  for (const attr of payload.note_attributes ?? []) {
-    const target = attr?.name ? ATTRIBUTION_KEY_MAP[attr.name] : undefined;
-    if (target && typeof attr.value === 'string') {
-      attribution[target] = attr.value.slice(0, 64);
-    }
-  }
+  // `_utm_*` note_attributes → un-prefixed ledger attribution (mapping +
+  // 64-char cap live in app/lib/growth/shopify-webhook.ts, unit-tested).
+  const attribution: AttributedOrder['attribution'] = extractOrderAttribution(
+    payload.note_attributes,
+  );
 
   const order: AttributedOrder = {
     id: orderId,

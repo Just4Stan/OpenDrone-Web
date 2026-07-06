@@ -1,7 +1,11 @@
 import {describe, it} from 'node:test';
 import assert from 'node:assert/strict';
 import {createHmac} from 'node:crypto';
-import {verifyShopifyHmac} from './shopify-webhook.ts';
+import {
+  extractOrderAttribution,
+  ORDER_TOPICS,
+  verifyShopifyHmac,
+} from './shopify-webhook.ts';
 
 // Run with:
 //   node --experimental-strip-types --test app/lib/growth/shopify-webhook.test.ts
@@ -56,5 +60,76 @@ describe('verifyShopifyHmac', () => {
       await verifyShopifyHmac(utf8Body, sign(utf8Body, SECRET), SECRET),
       true,
     );
+  });
+});
+
+describe('ORDER_TOPICS', () => {
+  it('handles orders/paid (primary) and orders/create (idempotent extra)', () => {
+    assert.equal(ORDER_TOPICS.has('orders/paid'), true);
+    assert.equal(ORDER_TOPICS.has('orders/create'), true);
+  });
+
+  it('ignores everything else', () => {
+    for (const topic of [
+      'orders/updated',
+      'orders/cancelled',
+      'refunds/create',
+      'app/uninstalled',
+      '',
+    ]) {
+      assert.equal(ORDER_TOPICS.has(topic), false, `should ignore ${topic}`);
+    }
+  });
+});
+
+describe('extractOrderAttribution', () => {
+  it('maps hidden _-prefixed note_attributes to un-prefixed ledger keys', () => {
+    assert.deepEqual(
+      extractOrderAttribution([
+        {name: '_utm_source', value: 'bardwell'},
+        {name: '_utm_medium', value: 'video'},
+        {name: '_utm_campaign', value: 'launch-openfc-lite'},
+        {name: '_landing', value: '/products/openfc-lite'},
+      ]),
+      {
+        utm_source: 'bardwell',
+        utm_medium: 'video',
+        utm_campaign: 'launch-openfc-lite',
+        landing: '/products/openfc-lite',
+      },
+    );
+  });
+
+  it('still accepts legacy un-prefixed names (pre-prefix orders)', () => {
+    assert.deepEqual(
+      extractOrderAttribution([{name: 'utm_source', value: 'youtube'}]),
+      {utm_source: 'youtube'},
+    );
+  });
+
+  it('drops unknown keys and malformed entries', () => {
+    assert.deepEqual(
+      extractOrderAttribution([
+        {name: 'gift_note', value: 'happy flying'},
+        {name: '_utm_source'},
+        {value: 'orphan'},
+        null,
+        undefined,
+        {name: '_utm_medium', value: 'chat'},
+      ]),
+      {utm_medium: 'chat'},
+    );
+  });
+
+  it('caps values at 64 chars', () => {
+    const long = 'x'.repeat(200);
+    const out = extractOrderAttribution([{name: '_utm_campaign', value: long}]);
+    assert.equal(out.utm_campaign?.length, 64);
+  });
+
+  it('returns an empty record for missing note_attributes', () => {
+    assert.deepEqual(extractOrderAttribution(undefined), {});
+    assert.deepEqual(extractOrderAttribution(null), {});
+    assert.deepEqual(extractOrderAttribution([]), {});
   });
 });
