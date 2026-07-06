@@ -176,13 +176,16 @@ function RelatedCard({product}: {product: RelatedProduct}) {
           {fileLine ? <p className="related-card-file">{fileLine}</p> : null}
           <h3 className="related-card-title">{product.title}</h3>
           {specLine ? <p className="related-card-spec">{specLine}</p> : null}
+          {/* Money defaults to a <div>; inside a <p> the HTML parser
+              auto-closes the paragraph and hydration structurally
+              mismatches — render it as a span. */}
           <p className="related-card-price">
             {priced ? (
               <>
                 {fromPrice ? (
                   <span className="related-card-from">from</span>
                 ) : null}
-                <Money data={min} />
+                <Money as="span" data={min} />
               </>
             ) : (
               <span>&nbsp;</span>
