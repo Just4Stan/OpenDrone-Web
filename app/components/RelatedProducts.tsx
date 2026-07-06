@@ -138,9 +138,12 @@ function RelatedCard({product}: {product: RelatedProduct}) {
     : [];
 
   // Spotlight hover — a gold radial that follows the pointer (CSS vars read
-  // by .related-card::after). Pointer-only; keyboard focus keeps the plain
-  // border cue.
-  const onMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+  // by .related-card::after). Mouse-only, mirroring .product-card: touch
+  // taps fire pointermove too and would pin a phantom glow (the ::after is
+  // also gated behind (hover: hover) in app.css). Keyboard focus keeps the
+  // plain border cue.
+  const onMove = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
+    if (e.pointerType !== 'mouse') return;
     const r = e.currentTarget.getBoundingClientRect();
     e.currentTarget.style.setProperty('--spot-x', `${e.clientX - r.left}px`);
     e.currentTarget.style.setProperty('--spot-y', `${e.clientY - r.top}px`);
@@ -149,7 +152,7 @@ function RelatedCard({product}: {product: RelatedProduct}) {
   return (
     <div
       className={`related-card${only ? ' has-quickadd' : ''}`}
-      onMouseMove={onMove}
+      onPointerMove={onMove}
     >
       <Link
         className="related-card-link"

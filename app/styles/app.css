@@ -3728,26 +3728,31 @@ button.reset {
   transition: border-color 0.2s ease;
 }
 
-.related-card::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: radial-gradient(
-    240px circle at var(--spot-x) var(--spot-y),
-    var(--color-gold-soft),
-    transparent 70%
-  );
-  opacity: 0;
-  transition: opacity 0.25s ease;
-  pointer-events: none;
+/* Spotlight on pointer devices only ((hover: hover)) — on touch, :hover
+   sticks after a tap and would pin a phantom glow. Same gate as
+   .product-card::after. */
+@media (hover: hover) {
+  .related-card::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(
+      240px circle at var(--spot-x) var(--spot-y),
+      var(--color-gold-soft),
+      transparent 70%
+    );
+    opacity: 0;
+    transition: opacity 0.25s ease;
+    pointer-events: none;
+  }
+
+  .related-card:hover::after {
+    opacity: 1;
+  }
 }
 
 .related-card:hover {
   border-color: var(--color-border-strong);
-}
-
-.related-card:hover::after {
-  opacity: 1;
 }
 
 .related-card-link {
@@ -3779,6 +3784,20 @@ button.reset {
 
 .related-card:hover .related-card-media img {
   transform: scale(1.04);
+}
+
+/* Reduced-motion twin of the .product-card block: kill the spotlight fade
+   and the media zoom, keep the border-color cue. */
+@media (prefers-reduced-motion: reduce) {
+  .related-card,
+  .related-card::after,
+  .related-card-media img {
+    transition: none;
+  }
+
+  .related-card:hover .related-card-media img {
+    transform: none;
+  }
 }
 
 .related-card-body {
@@ -8039,6 +8058,25 @@ button.reset {
   height: 56px;
 }
 
+/* Pin each cell to its column — a line without an image (no auto-placed
+   <img> in column 1) must not slide the whole row one column left. The
+   phone layout below overrides these via grid-area. */
+.cart-sheet-row > img {
+  grid-column: 1;
+}
+
+.cart-sheet-item {
+  grid-column: 2;
+}
+
+.cart-sheet-qty {
+  grid-column: 3;
+}
+
+.cart-sheet-total {
+  grid-column: 4;
+}
+
 .cart-sheet-item {
   min-width: 0;
   display: grid;
@@ -8379,6 +8417,16 @@ button.reset {
   border-radius: var(--r-pill);
   padding: 0.05rem 0.5rem;
   white-space: nowrap;
+}
+
+/* Phone: a long stack-offer title inside the pill would overflow the item
+   column — let the label wrap instead of clipping. */
+@media (max-width: 640px) {
+  .cart-line-discount-badge {
+    white-space: normal;
+    flex-wrap: wrap;
+    row-gap: 0;
+  }
 }
 
 /* The badge embeds a ProductPrice; without this the .product-price base
