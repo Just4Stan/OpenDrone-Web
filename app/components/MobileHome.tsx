@@ -15,8 +15,11 @@ const OPEN_DESIGN_COUNT = Object.values(PRODUCT_CONTENT).filter(
   (c) => c.fileNumber !== '—',
 ).length;
 
-const HOME_LEDGER: Array<[string, string]> = [
-  ['Board designs published', String(OPEN_DESIGN_COUNT).padStart(2, '0')],
+/* [key, value, countUp?] — only the derived design COUNT is a quantity worth
+ * sweeping; licence versions, tool versions and prices are identifiers/fixed
+ * figures and render static. */
+const HOME_LEDGER: Array<[string, string, boolean?]> = [
+  ['Board designs published', String(OPEN_DESIGN_COUNT).padStart(2, '0'), true],
   ['Hardware licence', 'CERN-OHL-S 2.0'],
   ['Source format', 'KiCad 9 · STEP · BOM'],
   ['Firmware split', '€1 / unit upstream'],
@@ -166,12 +169,10 @@ export function MobileHome({
       <section className="home-mobile-ledger" aria-label="Open hardware index">
         <p className="section-label">Open hardware — index</p>
         <dl className="spec-table">
-          {HOME_LEDGER.map(([k, v]) => (
+          {HOME_LEDGER.map(([k, v, countUp]) => (
             <div key={k}>
               <dt>{k}</dt>
-              <dd>
-                <AnimatedNumber value={v} />
-              </dd>
+              <dd>{countUp ? <AnimatedNumber value={v} /> : v}</dd>
             </div>
           ))}
         </dl>
