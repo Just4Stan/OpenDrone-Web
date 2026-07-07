@@ -1,6 +1,5 @@
-import {useEffect, useState} from 'react';
-import {AnimatePresence, motion} from 'motion/react';
-import {DURATION, EASE} from '~/lib/motion';
+import {useEffect, useState, type MouseEvent as ReactMouseEvent} from 'react';
+import {SegmentedControl} from '~/components/SegmentedControl';
 import {
   applyTheme,
   getActiveTheme,
@@ -23,13 +22,18 @@ const SUN = (
 );
 
 /**
- * Light/dark switch. Renders the icon for the theme it will switch TO.
+ * Light/dark switch — a two-position flick switch (SegmentedControl): a moon
+ * segment and a sun segment, the sled resting over the active theme. Clicking
+ * or keyboarding to the other segment slides the sled with the detent spring
+ * and swaps the theme via the circular View-Transition reveal.
  *
- * The button starts in a deterministic state ('dark') so SSR and the first
- * client render agree; a mount effect then syncs it to whatever the inline
- * head script already applied (stored choice or OS preference). Until mount
- * we render aria-hidden, neutral chrome — the page is already themed
- * correctly by the head script, this only catches the toggle's own state up.
+ * theme.ts mechanics are untouched: applyTheme persists the choice, the
+ * mount effect syncs to whatever the inline head script resolved, and it
+ * live-follows the OS preference until the visitor makes an explicit choice.
+ *
+ * The control starts in a deterministic state ('dark') so SSR and the first
+ * client render agree; the mount effect then catches it up to the already-
+ * applied theme (the page is themed correctly by the head script regardless).
  */
 export function ThemeToggle({className}: {className?: string}) {
   const [theme, setTheme] = useState<Theme>('dark');
@@ -66,10 +70,10 @@ export function ThemeToggle({className}: {className?: string}) {
     return () => mq.removeEventListener('change', onChange);
   }, []);
 
-  function toggle(e?: React.MouseEvent) {
-    // Read the live theme from the DOM rather than React state — state can
-    // lag the DOM by a render, which would mis-toggle on rapid clicks.
-    const next: Theme = getActiveTheme() === 'dark' ? 'light' : 'dark';
+  function change(next: Theme, e?: ReactMouseEvent) {
+    // Read the live theme from the DOM rather than React state — state can lag
+    // the DOM by a render, which would mis-toggle on rapid clicks.
+    if (next === getActiveTheme()) return;
     const apply = () => {
       applyTheme(next);
       setTheme(next);
@@ -77,9 +81,7 @@ export function ThemeToggle({className}: {className?: string}) {
     // Circular reveal from the click point via the View Transitions API. The
     // new theme wipes in as an expanding circle. Falls back to an instant swap
     // where unsupported, under reduced-motion, or — critically — while another
-    // transition (e.g. a React Router navigation) is already in flight: starting
-    // one then would abort the other and throw
-    // `InvalidStateError: Transition was aborted because of invalid state`.
+    // transition (e.g. a React Router navigation) is already in flight.
     // safeStartViewTransition guards all of that, always applies the theme, and
     // never throws/rejects.
     const root = document.documentElement;
@@ -88,8 +90,6 @@ export function ThemeToggle({className}: {className?: string}) {
     root.classList.add('theme-vt');
     const vt = safeStartViewTransition(apply);
     if (!vt) {
-      // Ran the swap directly (no transition) — drop the marker class again so
-      // it can't leak into a later transition.
       root.classList.remove('theme-vt');
       return;
     }
@@ -98,35 +98,20 @@ export function ThemeToggle({className}: {className?: string}) {
       .finally(() => root.classList.remove('theme-vt'));
   }
 
-  const next = theme === 'dark' ? 'light' : 'dark';
-  // Moon while in light mode (tap → dark), sun while in dark (tap → light).
-  // Before mount, show the sun so SSR/first paint is stable.
-  const showMoon = mounted && theme === 'light';
+  // Before mount, hold the deterministic 'dark' state so SSR/first paint agree.
+  const value: Theme = mounted ? theme : 'dark';
 
   return (
-    <motion.button
-      type="button"
-      onClick={toggle}
-      className={`theme-toggle${className ? ' ' + className : ''}`}
-      aria-label={`Switch to ${next} mode`}
-      title={`Switch to ${next} mode`}
-      suppressHydrationWarning
-      whileTap={{scale: 0.88}}
-    >
-      {/* Crossfade + rotate the icon on toggle so the theme change is
-          acknowledged. */}
-      <AnimatePresence mode="wait" initial={false}>
-        <motion.span
-          key={showMoon ? 'moon' : 'sun'}
-          style={{display: 'inline-flex'}}
-          initial={{rotate: -90, opacity: 0}}
-          animate={{rotate: 0, opacity: 1}}
-          exit={{rotate: 90, opacity: 0}}
-          transition={{duration: DURATION.fast, ease: [...EASE.out]}}
-        >
-          {showMoon ? MOON : SUN}
-        </motion.span>
-      </AnimatePresence>
-    </motion.button>
+    <SegmentedControl<Theme>
+      value={value}
+      onChange={change}
+      ariaLabel="Theme"
+      compact
+      className={className}
+      segments={[
+        {value: 'dark', label: MOON, ariaLabel: 'Switch to dark mode'},
+        {value: 'light', label: SUN, ariaLabel: 'Switch to light mode'},
+      ]}
+    />
   );
 }

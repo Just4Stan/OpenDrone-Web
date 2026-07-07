@@ -287,6 +287,28 @@ export function findPart(id: string): PartDef | undefined {
   return PART_CATALOG.find((p) => p.id === id);
 }
 
+/**
+ * Commerce handle → the build SlotId it fills, or `null` for anything that
+ * isn't a buildable part. Pure lookup over PART_CATALOG's Shopify handles —
+ * NO invented slot assignments. Non-parts (kits, spares, accessories) return
+ * null; callers group those under an AUX bucket keyed by Shopify `productType`
+ * (which the storefront already carries). Used by the catalog/PDP/cart register
+ * surfaces to derive CompatBadge chips and slot-position lines, and available
+ * as a grouping key for register section breaks.
+ *
+ * Every handle maps to exactly one slot (a handle spanning size variants — e.g.
+ * `openfc-lite` at 20×20 and 30×30 — is one product in one slot); that
+ * invariant is enforced in assertBuilderRegistry().
+ */
+export function slotForHandle(handle: string): SlotId | null {
+  for (const part of PART_CATALOG) {
+    if (part.commerce.kind === 'shopify' && part.commerce.handle === handle) {
+      return part.slot;
+    }
+  }
+  return null;
+}
+
 // ─── Hero default builds ─────────────────────────────────────────────────────
 
 /**
@@ -500,6 +522,36 @@ export function assertBuilderRegistry(): void {
         `registry: hero slot "${slot.id}" mixes product handles across sizes`,
       );
     }
+  }
+
+  // ── slotForHandle: every Shopify handle resolves to exactly ONE slot, and
+  //    the lookup agrees with the catalog / returns null for unknown handles.
+  //    (A handle mapping to two slots would make the register's slot-position
+  //    line ambiguous.) ──
+  const handleSlot = new Map<string, SlotId>();
+  for (const part of PART_CATALOG) {
+    if (part.commerce.kind !== 'shopify') continue;
+    const existing = handleSlot.get(part.commerce.handle);
+    if (existing && existing !== part.slot) {
+      throw new Error(
+        `registry: handle "${part.commerce.handle}" maps to both slots "${existing}" and "${part.slot}"`,
+      );
+    }
+    handleSlot.set(part.commerce.handle, part.slot);
+  }
+  for (const [handle, slot] of handleSlot) {
+    if (slotForHandle(handle) !== slot) {
+      throw new Error(
+        `registry: slotForHandle("${handle}") = ${String(
+          slotForHandle(handle),
+        )}, expected "${slot}"`,
+      );
+    }
+  }
+  if (slotForHandle('__nonexistent-handle__') !== null) {
+    throw new Error(
+      'registry: slotForHandle must return null for an unknown handle',
+    );
   }
 
   // ── Choreography ──

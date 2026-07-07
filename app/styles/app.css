@@ -1593,18 +1593,19 @@ html.hero-incutec-hint .incutec-hint {
   color: var(--color-on-accent);
 }
 
-/* Floating pill header. The .site-header is a transparent fixed band that
-   provides the top gap + side gutters and lets pointer events fall through to
-   the hero; the visible chrome is .site-header-main, a centered rounded pill
-   that stays pinned while scrolling. */
+/* TITLE BLOCK ruled bar. The floating pill is retired: .site-header is now a
+   full-width band filled with the page background and ruled off from the
+   content by a single 1px hairline at its foot — structure from a rule, not a
+   floating panel. .site-header-main is the centered content row inside it. */
 .site-header {
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
   z-index: 30;
-  padding: clamp(0.5rem, 1.6vh, 0.85rem) var(--rail-gutter) 0;
-  pointer-events: none;
+  pointer-events: auto;
+  background: var(--color-bg);
+  border-bottom: 1px solid var(--color-hairline);
 }
 /* While a family dropdown is open, lift the whole header above the pinned
    buy rail (z 60) — otherwise the pod and its buy strip slide underneath. */
@@ -1640,11 +1641,7 @@ html[data-cart-preview] .site-header {
   width: 100%;
   max-width: 1240px;
   margin: 0 auto;
-  padding: 0 1.25rem;
-  background: var(--pod-bg-strong);
-  border: 1px solid var(--pod-border);
-  border-radius: var(--r-pill);
-  box-shadow: var(--pod-shadow);
+  padding: 0 var(--rail-gutter);
 }
 
 /* Content clears the floating pill on every non-home route (the pill is out of
@@ -1842,6 +1839,19 @@ html.anim-paused .board-sheet.is-active {
   }
 }
 
+/* Cart counter — the round gold dot is retired for a square mono readout
+   `[N]` in gold text, sitting inline beside the cart glyph. The count ticks
+   0→N via AnimatedNumber on first mount. */
+.site-cart-count {
+  margin-left: 3px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 1;
+  letter-spacing: 0.02em;
+  color: var(--color-gold);
+  font-variant-numeric: tabular-nums slashed-zero;
+}
+
 /* Header icon controls (theme, search, cart, menu). Desktop keeps the compact
    icon footprint; on phones each gets a 44x44 minimum hit area (Apple HIG /
    WCAG 2.5.5) without enlarging the glyph itself. Negative inline margin
@@ -1892,7 +1902,7 @@ html.anim-paused .board-sheet.is-active {
 .site-header-categories {
   display: none;
   align-items: center;
-  gap: clamp(0.7rem, 1.4vw, 1.4rem);
+  gap: clamp(1.1rem, 2.2vw, 2.2rem);
   margin-left: clamp(1rem, 2vw, 2.5rem);
 }
 
@@ -2141,105 +2151,90 @@ html.light .header-cat-pod {
   height: 0.6rem;
 }
 
+/* Category nav — TITLE BLOCK ruled bar: plain mono doc-labels, each carrying a
+   dim file-number index prefix, with a 2px gold underline bar drawing in on
+   hover/active. Gold is demoted from chip paint to a highlighter stroke; no
+   pill/chip backgrounds anywhere in the nav. */
 .site-header-categories a {
   font-family: var(--font-mono);
-  font-size: var(--fs-sm);
+  font-size: 11px;
   letter-spacing: 0.16em;
   text-transform: uppercase;
-  color: var(--color-gold);
-  opacity: 0.7;
+  color: var(--color-text-muted);
   font-weight: 500;
   position: relative;
-  padding-bottom: 4px;
+  padding-bottom: 5px;
   white-space: nowrap;
-  transition: opacity 0.15s ease, color 0.15s ease, font-weight 0.15s ease;
+  font-variant-numeric: tabular-nums slashed-zero;
+  transition: color 0.15s ease;
 }
-
 .site-header-categories a:hover {
-  opacity: 1;
-  color: var(--color-gold-hover);
+  color: var(--color-text);
 }
-
 .site-header-categories a.active,
-.site-header-categories a[aria-current="page"] {
-  opacity: 1;
-  color: var(--color-gold-hover);
-  font-weight: 600;
+.site-header-categories a[aria-current='page'] {
+  color: var(--color-text);
 }
-
-.site-header-categories a.active::after,
-.site-header-categories a[aria-current="page"]::after {
+/* Gold underline bar — grows from the left on hover/active. */
+.site-header-categories a::after {
   content: '';
   position: absolute;
   left: 0;
   right: 0;
-  bottom: -6px;
+  bottom: 0;
   height: 2px;
+  border-radius: var(--r-2xs);
   background: var(--color-gold);
-  border-radius: 1px;
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.18s ease;
 }
-
-/* Category families live in segmented bubbles, not a plain row: FC/ESC/Stack in
-   one (a Stack is just an FC + ESC), RX/Frame in another, and All Products in
-   its own accented bubble as the route into the full catalogue. No dividers —
-   the bubbles do the grouping. Items carry fixed padding so the active state
-   only swaps colour; the bubbles never resize as you navigate. */
+.site-header-categories a:hover::after,
+.site-header-categories a.active::after,
+.site-header-categories a[aria-current='page']::after {
+  transform: scaleX(1);
+}
+@media (prefers-reduced-motion: reduce) {
+  .site-header-categories a::after {
+    transition: none;
+  }
+}
+/* File-number index prefix — the KiCad drawing number ahead of the family. */
+.header-cat-index {
+  color: var(--color-ink-annot);
+  margin-right: 0.45em;
+  transition: color 0.15s ease;
+}
+.site-header-categories a:hover .header-cat-index,
+.site-header-categories a.active .header-cat-index,
+.site-header-categories a[aria-current='page'] .header-cat-index {
+  color: var(--color-gold);
+}
+/* Families group inline with plain flow (FC/ESC read as a pair by tighter
+   spacing) — the bubbles are gone; the rule bar does the framing. */
 .site-header-categories .site-header-cat-group {
   display: inline-flex;
   align-items: center;
-  gap: 0.2rem;
-  padding: 0.25rem;
-  border-radius: var(--r-pill);
-  background: var(--color-bg-elevated);
-  border: 1px solid var(--color-border);
+  gap: clamp(0.8rem, 1.5vw, 1.5rem);
 }
-.site-header-categories .site-header-cat-group a {
-  padding: 0.36em 0.82em;
-  border-radius: var(--r-pill);
-  opacity: 0.72;
-}
-.site-header-categories .site-header-cat-group a:hover {
-  opacity: 1;
-  color: var(--color-gold-hover);
-}
-/* Active = high-contrast label (white in dark, black in light) on a raised
-   chip. A gold fill washed the text out — gold is a mid-tone, so neither dark
-   nor light ink reads cleanly on it in both themes. */
-.site-header-categories .site-header-cat-group a.active,
-.site-header-categories .site-header-cat-group a[aria-current='page'] {
-  color: var(--color-text);
-  background: var(--color-bg-card);
-  border: 1px solid var(--color-border-strong);
-  padding: calc(0.36em - 1px) calc(0.82em - 1px);
-  opacity: 1;
-  font-weight: 600;
-}
-.site-header-categories .site-header-cat-group a.active::after,
-.site-header-categories .site-header-cat-group a[aria-current='page']::after {
-  display: none;
-}
-/* All Products — an accented bubble so it reads as the catalogue entry, not
-   just another family. Gold-tinted fill + outline + label, kept legible
-   (gold-on-tint) rather than a solid gold fill that would wash the text out. */
+/* ALL PRODUCTS — the one boxed nav item: a square 1px-border box that reads as
+   the route into the full catalogue register. */
 .site-header-categories .site-header-cat-all {
-  padding: 0.42em 0.95em;
-  border-radius: var(--r-pill);
-  background: var(--color-gold-soft);
-  border: 1px solid color-mix(in srgb, var(--color-gold) 50%, transparent);
-  color: var(--color-gold);
-  opacity: 1;
+  padding: 0.5em 0.9em;
+  border-radius: var(--r-xs);
+  border: 1px solid var(--color-border-strong);
+  background: transparent;
+  color: var(--color-text-muted);
+  transition: color 0.15s ease, border-color 0.15s ease;
 }
 .site-header-categories .site-header-cat-all:hover {
-  background: color-mix(in srgb, var(--color-gold) 20%, transparent);
-  border-color: var(--color-gold);
-  color: var(--color-gold-hover);
+  color: var(--color-text);
+  border-color: var(--color-text);
 }
 .site-header-categories .site-header-cat-all.active,
 .site-header-categories .site-header-cat-all[aria-current='page'] {
-  background: color-mix(in srgb, var(--color-gold) 24%, transparent);
-  border-color: var(--color-gold);
-  color: var(--color-gold-hover);
-  font-weight: 600;
+  color: var(--color-text);
+  border-color: var(--color-text);
 }
 .site-header-categories .site-header-cat-all::after {
   display: none !important;
@@ -3352,6 +3347,98 @@ button.reset {
 @media (min-width: 768px) {
   .site-footer-inner {
     padding: 0.75rem 0 1.5rem;
+  }
+}
+
+/* ---- Footer KiCad title block --------------------------------------------
+   A ruled multi-cell grid (the .ruled-table 1px-gap technique): owner box
+   (company identity), three nav cells, a license box and a REV box. The gaps
+   ARE the rule work, so it reads right in both themes by construction. Mobile
+   collapses to a single column — the gaps become horizontal rules. */
+.footer-titleblock {
+  grid-template-columns: 1.35fr 1fr 1fr 1fr;
+  margin-top: 1.75rem;
+}
+.footer-cell {
+  display: flex;
+  flex-direction: column;
+  padding: 1.15rem 1.2rem 1.35rem;
+}
+.footer-cell-heading {
+  color: var(--color-ink-annot);
+  margin-bottom: 0.9rem;
+}
+.footer-cell-heading--stacked {
+  margin-top: 1.5rem;
+}
+.footer-brand-heading {
+  color: var(--color-gold);
+  letter-spacing: 0.14em;
+}
+.footer-brand-note {
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--color-text-muted);
+  margin-bottom: 0.9rem;
+}
+.footer-cell-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+/* License box spans the first three columns; the REV box is the far cell. */
+.footer-cell--license {
+  grid-column: 1 / 4;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+.footer-cell--rev {
+  grid-column: 4 / 5;
+  align-items: flex-start;
+  justify-content: center;
+}
+.footer-license {
+  color: var(--color-text-muted);
+  letter-spacing: 0.02em;
+  line-height: 1.5;
+}
+/* REV cell — the revision box readout. */
+.footer-rev {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  text-decoration: none;
+  transition: color 0.15s ease;
+}
+.footer-rev-label {
+  color: var(--color-ink-annot);
+}
+.footer-rev-value {
+  color: var(--color-text-muted);
+  white-space: nowrap;
+  transition: color 0.15s ease;
+}
+.footer-rev:hover .footer-rev-value {
+  color: var(--color-text);
+}
+.footer-rev-sha {
+  color: var(--color-gold);
+}
+.footer-rev-sep {
+  color: var(--color-ink-annot);
+}
+@media (max-width: 767px) {
+  .footer-titleblock {
+    grid-template-columns: 1fr;
+    margin-top: 1.25rem;
+  }
+  .footer-cell--license {
+    grid-column: auto;
+  }
+  .footer-cell--rev {
+    grid-column: auto;
   }
 }
 
@@ -13885,17 +13972,14 @@ button.reset {
   align-items: center;
   gap: 0.5rem;
   padding: 0.4rem 0.7rem 0.4rem 0.55rem;
-  background: rgba(185, 28, 28, 0.95);
-  color: #fff;
-  font-family: var(--font-sans);
+  background: var(--pod-bg-strong);
+  color: var(--color-error);
+  font-family: var(--font-mono);
   font-size: 12px;
   line-height: 1.3;
-  border-radius: var(--r-pill);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.45),
-    0 1px 2px rgba(185, 28, 28, 0.4);
-  /* No backdrop-filter: the banner is 95% opaque so the blur was imperceptible,
-     yet the pulsing dot inside it forced a perpetual per-frame re-blur. */
+  border-radius: var(--r-xs);
+  border: 1px solid var(--color-hairline);
+  box-shadow: var(--pod-shadow);
   /* The pill shell stays click-through; only the __msg link re-enables
      pointer events for itself. */
   pointer-events: none;
@@ -13916,7 +14000,7 @@ button.reset {
   width: 7px;
   height: 7px;
   border-radius: 50%;
-  background: #fff;
+  background: var(--color-error);
   flex-shrink: 0;
 }
 
@@ -13930,7 +14014,7 @@ button.reset {
   position: absolute;
   inset: 0;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.55);
+  background: color-mix(in srgb, var(--color-error) 55%, transparent);
   pointer-events: none;
   animation: placeholder-banner-pulse 2.4s ease-out infinite;
 }
@@ -13966,7 +14050,7 @@ button.reset {
 .placeholder-banner__msg {
   font-weight: 500;
   font-size: 12px;
-  opacity: 0.95;
+  color: var(--color-text-muted);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -14732,23 +14816,40 @@ button.reset {
   .overlay aside main {
     overflow-y: auto;
   }
+  /* Mobile menu = full-screen index sheet: numbered mono rows separated by
+     hairlines, section labels sitting on a top rule — no pills. */
   .site-mobile-nav {
-    gap: 0.15rem;
+    gap: 0;
   }
-  /* Section dividers in the drawer (Shop / More / Account). */
+  .site-mobile-nav a {
+    border-bottom: 1px solid var(--color-hairline);
+    font-variant-numeric: tabular-nums slashed-zero;
+  }
+  /* File-number index prefix on the numbered drawer rows. */
+  .site-mobile-nav-index {
+    display: inline-block;
+    min-width: 1.9em;
+    color: var(--color-ink-annot);
+  }
+  /* Section labels (Shop / More / Account) sit on a full-bleed top rule. */
   .site-mobile-nav-label {
-    margin: 0.85rem 0 0.1rem;
+    position: relative;
+    margin: 1.1rem 0 0.35rem;
+    padding-top: 0.85rem;
+    border-top: 1px solid var(--color-hairline);
     font-family: var(--font-mono);
-    font-size: 12px;
+    font-size: 11px;
     letter-spacing: 0.2em;
     text-transform: uppercase;
-    color: var(--color-text-dim);
+    color: var(--color-ink-annot);
   }
   .site-mobile-nav-label:first-child {
     margin-top: 0;
+    padding-top: 0;
+    border-top: none;
   }
   /* Search affordance — a real search field at the top of the drawer (submits
-     to /search and closes the drawer). The form is the pill; the input fills it. */
+     to /search and closes the drawer). A squared hairline well, not a pill. */
   .site-mobile-nav-search {
     display: flex;
     align-items: center;
@@ -14756,7 +14857,7 @@ button.reset {
     min-height: 44px;
     margin-bottom: 0.5rem;
     padding: 0 0.9rem;
-    border-radius: var(--r-pill);
+    border-radius: var(--r-xs);
     border: 1px solid var(--color-border-strong);
     background: var(--color-bg-card);
     color: var(--color-text-muted);
