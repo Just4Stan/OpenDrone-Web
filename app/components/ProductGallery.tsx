@@ -2,6 +2,7 @@ import {Image} from '@shopify/hydrogen';
 import {useSearchParams} from 'react-router';
 import {useEffect, useRef} from 'react';
 import {SmoothImage} from './SmoothImage';
+import {SheetFrame} from './SheetFrame';
 
 type GalleryImage = {
   id?: string | null;
@@ -102,6 +103,10 @@ export function ProductGallery({
           // competes with the route chunk + fonts at default priority.
           fetchPriority="high"
         />
+        {/* The gallery is the PDP's exhibit sheet — corner registration crosses
+            + zone ticks turn the render into a numbered drawing. Decorative,
+            pointer-events:none, hidden <480px. */}
+        <SheetFrame ticks />
         {images.length > 1 && (
           <div className="product-gallery-controls" aria-hidden="false">
             <button

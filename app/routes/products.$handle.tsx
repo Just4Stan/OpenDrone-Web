@@ -59,6 +59,13 @@ import {useComingSoon} from '~/lib/coming-soon';
 import {stackDiscountedPrice} from '~/lib/stack-discount';
 import {trackEvent} from '~/lib/growth/plausible';
 import {attributionSource} from '~/lib/growth/attribution';
+import {CompatBadge} from '~/components/slots/CompatBadge';
+import {
+  slotForHandle,
+  SLOTS,
+  PART_CATALOG,
+  HERO_VARIANT_AXIS,
+} from '~/lib/builder/registry';
 import {NewsletterSignup} from '~/components/NewsletterSignup';
 import type {
   ChapterPin,
@@ -236,6 +243,19 @@ function loadDeferredData({context, params}: Route.LoaderArgs) {
 
   return {recommendations, latestCommits, reviews};
 }
+
+/**
+ * Fixed annotation-label vocabulary for the PDP sheet (isolated here for a
+ * single Stan review pass, mirroring Footer's DOC_ANNOTATIONS — the
+ * edges-polish lane consolidates any stragglers into one module). Every label
+ * is chrome: each layout must read fine with the label dropped (a figure plate
+ * still reads `03-1`, the ordering line still reads its SKU value alone).
+ */
+const PDP_DOC_ANNOTATIONS = {
+  fig: 'FIG',
+  sku: 'SKU',
+  fits: 'FITS',
+} as const;
 
 const DOWNLOAD_ICONS: Record<DownloadKind, string> = {
   schematic: '▱',
@@ -481,6 +501,7 @@ function ChapterMediaPlaceholder({kind}: {kind: string}) {
 
 function Chapter({
   number,
+  label,
   title,
   children,
   media,
@@ -522,6 +543,7 @@ function Chapter({
     <section
       id={id}
       className="chapter"
+      id={`chapter-${number}`}
       data-chapter={number}
       data-backdrop={backdrop ? '' : undefined}
       data-wide-media={wideMedia ? '' : undefined}
@@ -531,6 +553,14 @@ function Chapter({
     >
       {backdrop ? <div className="chapter-backdrop">{backdrop}</div> : null}
       <div className="chapter-body-col">
+        {/* Numbered mono prefix cell — "3 | TEARDOWN" — a hairline-separated
+            doc index. Reads fine with the label dropped (the number alone
+            still orders the sheet). */}
+        <p className="chapter-index">
+          <span className="chapter-number">{number}</span>
+          <span className="chapter-index-sep" aria-hidden="true" />
+          <span className="chapter-label">{label}</span>
+        </p>
         {title ? <h2 className="chapter-title">{title}</h2> : null}
         {children}
       </div>
@@ -543,9 +573,95 @@ function Chapter({
           ) : (
             <ChapterMediaPlaceholder kind={number} />
           )}
+          {/* Figure plate — the drawing-sheet caption, in normal flow BELOW the
+              media so it never disturbs the bleeding live viewers. FIG is chrome
+              (docAnnotations); the number + section name carry it alone. */}
+          <p className="chapter-fig-plate doc-annot">
+            {PDP_DOC_ANNOTATIONS.fig} {number}-1
+            <span className="chapter-fig-plate-label"> · {label}</span>
+          </p>
         </aside>
       )}
     </section>
+  );
+}
+
+/**
+ * Sticky mini-TOC rail (desktop ≥1280px, data-only): mono chapter numbers +
+ * existing chapter labels with an IntersectionObserver scrollspy marking the
+ * current section gold. Omitted on mobile via CSS. Every string is derived —
+ * numbers from `chapterNums`, labels are the same verbatim section names the
+ * chapters already carry.
+ */
+function ChapterTOC({items}: {items: Array<{number: string; label: string}>}) {
+  const [active, setActive] = useState<string | null>(items[0]?.number ?? null);
+  // Only reveal the rail while the chapters actually occupy the viewport — it
+  // is position:fixed, so without this it would float over the hero above and
+  // the footer below.
+  const [visible, setVisible] = useState(false);
+  useEffect(() => {
+    if (typeof IntersectionObserver === 'undefined') return;
+    const secs = items
+      .map((it) => document.getElementById(`chapter-${it.number}`))
+      .filter((el): el is HTMLElement => Boolean(el));
+    if (secs.length === 0) return;
+    const io = new IntersectionObserver(
+      (entries) => {
+        const vis = entries
+          .filter((e) => e.isIntersecting)
+          .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
+        if (vis) setActive(vis.target.getAttribute('data-chapter'));
+      },
+      {rootMargin: '-45% 0px -45% 0px', threshold: [0, 0.25, 0.5, 1]},
+    );
+    secs.forEach((el) => io.observe(el));
+    const first = secs[0];
+    const last = secs[secs.length - 1];
+    let raf = 0;
+    const onScroll = () => {
+      if (raf) return;
+      raf = requestAnimationFrame(() => {
+        raf = 0;
+        const h = window.innerHeight;
+        setVisible(
+          first.getBoundingClientRect().top < h * 0.5 &&
+            last.getBoundingClientRect().bottom > h * 0.25,
+        );
+      });
+    };
+    onScroll();
+    window.addEventListener('scroll', onScroll, {passive: true});
+    window.addEventListener('resize', onScroll);
+    return () => {
+      io.disconnect();
+      window.removeEventListener('scroll', onScroll);
+      window.removeEventListener('resize', onScroll);
+      if (raf) cancelAnimationFrame(raf);
+    };
+  }, [items]);
+  if (items.length < 2) return null;
+  return (
+    <nav
+      className={`pdp-toc${visible ? ' is-visible' : ''}`}
+      aria-label="Chapters"
+    >
+      <ul>
+        {items.map((it) => (
+          <li key={it.number}>
+            <a
+              href={`#chapter-${it.number}`}
+              className={`pdp-toc-item${
+                active === it.number ? ' is-active' : ''
+              }`}
+              aria-current={active === it.number ? 'true' : undefined}
+            >
+              <span className="pdp-toc-num">{it.number}</span>
+              <span className="pdp-toc-label">{it.label}</span>
+            </a>
+          </li>
+        ))}
+      </ul>
+    </nav>
   );
 }
 
@@ -1572,19 +1688,60 @@ export default function Product() {
   const buyAvailable = isBundle
     ? bundleAvailable
     : Boolean(selectedVariant?.availableForSale);
+
+  // Slot-position line + CompatBadge for the ordering table (the SLOT MAP
+  // graft — answers "does this fit my build?" from registry facts, no diagram).
+  // Renders nothing for handles the registry doesn't map (kits/accessories).
+  const buySlot = slotForHandle(product.handle);
+  const buySlotLabel = buySlot
+    ? (SLOTS.find((s) => s.id === buySlot)?.label ?? null)
+    : null;
+  const buyPart = useMemo(() => {
+    const candidates = PART_CATALOG.filter(
+      (p) =>
+        p.commerce.kind === 'shopify' && p.commerce.handle === product.handle,
+    );
+    if (candidates.length === 0) return null;
+    const modelVal = selectedVariant?.selectedOptions?.find(
+      (o) => o.name.trim().toLowerCase() === HERO_VARIANT_AXIS.toLowerCase(),
+    )?.value;
+    if (!modelVal) return candidates[0];
+    return (
+      candidates.find(
+        (p) =>
+          p.commerce.kind === 'shopify' &&
+          p.commerce.options?.[HERO_VARIANT_AXIS]?.toLowerCase() ===
+            modelVal.toLowerCase(),
+      ) ?? candidates[0]
+    );
+  }, [product.handle, selectedVariant]);
+  const buyCompat =
+    buyPart && (buySlotLabel || buyPart) ? (
+      <div className="product-buy-compat">
+        {buySlotLabel ? (
+          <span className="product-buy-slot doc-label">
+            {PDP_DOC_ANNOTATIONS.fits} · {buySlotLabel}
+          </span>
+        ) : null}
+        <CompatBadge part={buyPart} />
+      </div>
+    ) : null;
   // Coming-soon buy module: the price/stock/add-to-cart block becomes a
   // COMING SOON plate + notify-at-launch signup (same newsletter action,
   // tagged with this product's handle). Everything else on the PDP stays.
   const railBuyModule = soon ? (
-    <div className="product-buy is-comingsoon" data-buy-module>
+    <div className="product-buy product-buy--ordering is-comingsoon" data-buy-module>
       <div className="product-buy-price">
         <span className="product-buy-soon" aria-label="Coming soon">
           Coming soon
         </span>
         {selectedVariant?.sku ? (
-          <span className="product-buy-sku">SKU {selectedVariant.sku}</span>
+          <span className="product-buy-sku">
+            {PDP_DOC_ANNOTATIONS.sku} {selectedVariant.sku}
+          </span>
         ) : null}
       </div>
+      {buyCompat}
       <NewsletterSignup
         notify={{productHandle: product.handle, productTitle: product.title}}
         turnstileSiteKey={rootData?.turnstileSiteKey ?? null}
@@ -1592,7 +1749,7 @@ export default function Product() {
       />
     </div>
   ) : (
-    <div className="product-buy" data-buy-module>
+    <div className="product-buy product-buy--ordering" data-buy-module>
       <div className="product-buy-price">
         {/* Price + the "incl. VAT" qualifier (Art. VI.45 WER pre-contractual
             info) grouped together — also fills the dead space beside the price. */}
@@ -1611,9 +1768,12 @@ export default function Product() {
             )?.[1] ?? `OpenFC-Lite + OpenESC · ${activeTier}`}
           </span>
         ) : selectedVariant?.sku ? (
-          <span className="product-buy-sku">SKU {selectedVariant.sku}</span>
+          <span className="product-buy-sku">
+            {PDP_DOC_ANNOTATIONS.sku} {selectedVariant.sku}
+          </span>
         ) : null}
       </div>
+      {buyCompat}
       <span className={`product-buy-stock${buyAvailable ? '' : ' is-out'}`}>
         {isBundle
           ? buyAvailable
@@ -1634,6 +1794,7 @@ export default function Product() {
         bundleDisabled={isBundle ? !bundleAvailable : undefined}
         bundleCtaLabel={isBundle ? 'Add the stack: both boards' : undefined}
         stackOffers={stackOffers}
+        expandStack
       />
     </div>
   );
@@ -1659,8 +1820,32 @@ export default function Product() {
     </div>
   );
 
+  // Mini-TOC entries — mirror the chapter render conditions below exactly so
+  // the rail lists only sections that exist. Labels are the verbatim section
+  // names the chapters already carry; numbers come from `chapterNums`.
+  const tocItems: Array<{number: string; label: string}> = [];
+  if (content.teardown && chapterNums.teardown)
+    tocItems.push({number: chapterNums.teardown, label: 'Teardown'});
+  if (isEditorial && chapterNums.openSource)
+    tocItems.push({number: chapterNums.openSource, label: 'Open for learning'});
+  if ((content.inTheBox.length > 0 || content.bundle) && chapterNums.inTheBox)
+    tocItems.push({number: chapterNums.inTheBox, label: 'In the box'});
+  if (
+    !soon &&
+    !content.bundle &&
+    content.firmware.project &&
+    content.firmware.project !== '—' &&
+    chapterNums.firmware
+  )
+    tocItems.push({number: chapterNums.firmware, label: 'The €1'});
+  if (content.specs.length > 0 && chapterNums.specs)
+    tocItems.push({number: chapterNums.specs, label: 'Datasheet'});
+  if (content.downloads.length > 0 && chapterNums.downloads)
+    tocItems.push({number: chapterNums.downloads, label: 'Downloads'});
+
   return (
     <div className="product-page">
+      <ChapterTOC items={tocItems} />
       <script
         type="application/ld+json"
          

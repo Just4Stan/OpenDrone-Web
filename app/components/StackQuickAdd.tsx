@@ -47,12 +47,17 @@ export function StackQuickAdd({
   offers,
   flyImage,
   onAdd,
+  expanded = false,
 }: {
   /** The primary CTA (usually an AddToCartButton). */
   children: React.ReactNode;
   offers: StackOffer[];
   flyImage?: string | null;
   onAdd?: () => void;
+  /** Desktop PDP promotes the offers from a hover flyout to a visible ruled
+   *  sheet under the CTA. The compact hover flyout is still rendered for the
+   *  pinned buy bar (CSS shows one or the other per context). */
+  expanded?: boolean;
 }) {
   if (!offers.length) return <>{children}</>;
   // Low-cardinality product handle for the Stack Toggle event: the first
@@ -64,59 +69,67 @@ export function StackQuickAdd({
       | undefined;
     return v?.product?.handle ?? 'unknown';
   };
+  const renderOffer = (o: StackOffer) => (
+    <AddToCartButton
+      key={o.key}
+      className="cta-stack-offer keycap"
+      lines={o.lines}
+      disabled={!o.available}
+      flyImage={flyImage}
+      onClick={() => {
+        // Stack-builder engagement, distinct from the generic Add to
+        // Cart that also fires: which pairings sell, from where.
+        trackEvent('Stack Toggle', {
+          props: {
+            product: offerProduct(o),
+            partner: o.key,
+            surface: 'pdp',
+            source: attributionSource(),
+          },
+        });
+        onAdd?.();
+      }}
+    >
+      <span className="cta-stack-offer-plus" aria-hidden="true">
+        +
+      </span>
+      <span className="cta-stack-offer-label">
+        {o.label}
+        {o.size ? ` · ${o.size}` : ''}
+      </span>
+      {o.price ? (
+        <span className="cta-stack-offer-price">
+          {o.compareAtPrice ? (
+            <s className="cta-stack-offer-was">
+              <Money data={o.compareAtPrice} />
+            </s>
+          ) : null}
+          <Money data={o.price} />
+        </span>
+      ) : null}
+      {/* The pct is off ONE board, never the pair: next to a struck
+          partner price it reads as that line's cut; otherwise it must
+          name the discounted board ("OpenESC −10%"). No side known →
+          no claim. */}
+      {o.pct && (o.discountedLabel || o.compareAtPrice) ? (
+        <span className="cta-stack-offer-pct">
+          {o.discountedLabel ? `${o.discountedLabel} ` : ''}−{o.pct}%
+        </span>
+      ) : null}
+    </AddToCartButton>
+  );
   return (
     <div className="cta-stack-group">
       {children}
+      {/* Visible ruled sheet — desktop PDP. Hidden in the pinned bar (CSS),
+          which falls back to the hover flyout below. */}
+      {expanded ? (
+        <div className="cta-stack-sheet" aria-label="Buy as a stack">
+          {offers.map(renderOffer)}
+        </div>
+      ) : null}
       <div className="cta-stack-flyout" aria-label="Buy as a stack">
-        {offers.map((o) => (
-          <AddToCartButton
-            key={o.key}
-            className="cta-stack-offer"
-            lines={o.lines}
-            disabled={!o.available}
-            flyImage={flyImage}
-            onClick={() => {
-              // Stack-builder engagement, distinct from the generic Add to
-              // Cart that also fires: which pairings sell, from where.
-              trackEvent('Stack Toggle', {
-                props: {
-                  product: offerProduct(o),
-                  partner: o.key,
-                  surface: 'pdp',
-                  source: attributionSource(),
-                },
-              });
-              onAdd?.();
-            }}
-          >
-            <span className="cta-stack-offer-plus" aria-hidden="true">
-              +
-            </span>
-            <span className="cta-stack-offer-label">
-              {o.label}
-              {o.size ? ` · ${o.size}` : ''}
-            </span>
-            {o.price ? (
-              <span className="cta-stack-offer-price">
-                {o.compareAtPrice ? (
-                  <s className="cta-stack-offer-was">
-                    <Money data={o.compareAtPrice} />
-                  </s>
-                ) : null}
-                <Money data={o.price} />
-              </span>
-            ) : null}
-            {/* The pct is off ONE board, never the pair: next to a struck
-                partner price it reads as that line's cut; otherwise it must
-                name the discounted board ("OpenESC −10%"). No side known →
-                no claim. */}
-            {o.pct && (o.discountedLabel || o.compareAtPrice) ? (
-              <span className="cta-stack-offer-pct">
-                {o.discountedLabel ? `${o.discountedLabel} ` : ''}−{o.pct}%
-              </span>
-            ) : null}
-          </AddToCartButton>
-        ))}
+        {offers.map(renderOffer)}
       </div>
     </div>
   );

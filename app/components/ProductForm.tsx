@@ -22,6 +22,7 @@ export function ProductForm({
   bundleDisabled,
   bundleCtaLabel,
   stackOffers,
+  expandStack = false,
 }: {
   productOptions: MappedProductOptions[];
   selectedVariant: ProductFragment['selectedOrFirstAvailableVariant'];
@@ -39,6 +40,9 @@ export function ProductForm({
   /** "Buy it as a stack" offers revealed on hover of the CTA — one click
    *  adds this board plus the size-matched partner (FC↔ESC). */
   stackOffers?: StackOffer[];
+  /** Desktop PDP promotes the stack offers from a hover flyout to a visible
+   *  ruled sheet under the CTA. Other call sites keep the compact hover mode. */
+  expandStack?: boolean;
 }) {
   const navigate = useNavigate();
   const {open} = useAside();
@@ -171,8 +175,10 @@ export function ProductForm({
         offers={stackOffers ?? []}
         flyImage={selectedVariant?.image?.url}
         onAdd={() => open('cart')}
+        expanded={expandStack}
       >
         <AddToCartButton
+          className="btn-primary keycap"
           disabled={
             isBundle
               ? (bundleDisabled ?? bundleLines!.length === 0)

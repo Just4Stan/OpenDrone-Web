@@ -1,13 +1,15 @@
-import {Suspense, useCallback} from 'react';
+import {Suspense} from 'react';
 import {Await, Link} from 'react-router';
 import {Money} from '@shopify/hydrogen';
 import type {MoneyV2} from '@shopify/hydrogen/storefront-api-types';
 import type {OptimisticCartLineInput} from '@shopify/hydrogen';
 import {SmoothImage} from '~/components/SmoothImage';
 import {AddToCartButton} from '~/components/AddToCartButton';
+import {CompatBadge} from '~/components/slots/CompatBadge';
 import {useAside} from '~/components/Aside';
 import {useComingSoon} from '~/lib/coming-soon';
 import {PRODUCT_CONTENT} from '~/lib/product-content';
+import {PART_CATALOG, type PartDef} from '~/lib/builder/registry';
 
 /** The slice of a product the related strip needs — matches what the
  *  recommendations + fallback queries in products.$handle.tsx select. */
@@ -73,6 +75,28 @@ function fileLineOf(p: RelatedProduct): string | null {
   return p.productType ?? null;
 }
 
+/** Register document number — "OD-02" from the editorial file number. */
+function docNoOf(p: RelatedProduct): string | null {
+  const c = PRODUCT_CONTENT[p.handle];
+  if (c && c.fileNumber !== '—') return `OD-${c.fileNumber}`;
+  return null;
+}
+
+/** Product family for the register FAMILY cell (editorial, else Shopify type). */
+function familyOf(p: RelatedProduct): string | null {
+  return PRODUCT_CONTENT[p.handle]?.family ?? p.productType ?? null;
+}
+
+/** The first PART_CATALOG entry a handle maps to (for CompatBadge chips);
+ *  null for handles the registry doesn't carry (kits/accessories). */
+function partForHandle(handle: string): PartDef | null {
+  return (
+    PART_CATALOG.find(
+      (p) => p.commerce.kind === 'shopify' && p.commerce.handle === handle,
+    ) ?? null
+  );
+}
+
 export function RelatedProducts({
   recommendations,
 }: {
@@ -86,9 +110,9 @@ export function RelatedProducts({
           {(items) => {
             if (!items || items.length === 0) return null;
             return (
-              <div className="related-grid">
+              <div className="related-register">
                 {items.slice(0, 4).map((product) => (
-                  <RelatedCard key={product.id} product={product} />
+                  <RelatedRow key={product.id} product={product} />
                 ))}
               </div>
             );
@@ -99,7 +123,7 @@ export function RelatedProducts({
   );
 }
 
-function RelatedCard({product}: {product: RelatedProduct}) {
+function RelatedRow({product}: {product: RelatedProduct}) {
   const {open: openAside} = useAside();
   const comingSoon = useComingSoon(product.handle);
   const image = product.featuredImage;
@@ -108,7 +132,9 @@ function RelatedCard({product}: {product: RelatedProduct}) {
   const priced = parseFloat(min.amount) > 0;
   const fromPrice = priced && parseFloat(max.amount) > parseFloat(min.amount);
   const specLine = specLineOf(product);
-  const fileLine = fileLineOf(product);
+  const docNo = docNoOf(product);
+  const family = familyOf(product);
+  const part = partForHandle(product.handle);
 
   // Quick-add only when the product has exactly ONE variant — a multi-model
   // line (FC/ESC/RX) must send the buyer to the PDP to pick a mount/model —
@@ -137,71 +163,63 @@ function RelatedCard({product}: {product: RelatedProduct}) {
       ]
     : [];
 
-  // Spotlight hover — a gold radial that follows the pointer (CSS vars read
-  // by .related-card::after). Mouse-only, mirroring .product-card: touch
-  // taps fire pointermove too and would pin a phantom glow (the ::after is
-  // also gated behind (hover: hover) in app.css). Keyboard focus keeps the
-  // plain border cue.
-  const onMove = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
-    if (e.pointerType !== 'mouse') return;
-    const r = e.currentTarget.getBoundingClientRect();
-    e.currentTarget.style.setProperty('--spot-x', `${e.clientX - r.left}px`);
-    e.currentTarget.style.setProperty('--spot-y', `${e.clientY - r.top}px`);
-  }, []);
-
   return (
     <div
-      className={`related-card${only ? ' has-quickadd' : ''}`}
-      onPointerMove={onMove}
+      className={`related-row register-row edge-light edge-light-wash${
+        only ? ' has-quickadd' : ''
+      }`}
     >
       <Link
-        className="related-card-link"
+        className="related-row-link"
         prefetch="viewport"
         viewTransition
         to={`/products/${product.handle}`}
       >
-        <div className={`related-card-media${image ? '' : ' is-empty'}`}>
+        {docNo ? <span className="related-row-doc doc-annot">{docNo}</span> : null}
+        <span
+          className={`related-row-thumb${image ? '' : ' hatch'}`}
+          aria-hidden="true"
+        >
           {image ? (
             <SmoothImage
               alt={image.altText || product.title}
               aspectRatio="1/1"
               data={image}
               loading="lazy"
-              sizes="(min-width: 45em) 260px, 50vw"
+              sizes="96px"
             />
+          ) : null}
+        </span>
+        <span className="related-row-main">
+          <span className="related-row-title">{product.title}</span>
+          {specLine ? (
+            <span className="related-row-spec doc-cell">{specLine}</span>
+          ) : null}
+        </span>
+        {family ? (
+          <span className="related-row-family doc-label">{family}</span>
+        ) : null}
+        {part ? (
+          <CompatBadge part={part} className="related-row-compat" />
+        ) : null}
+        {/* Price is gated on coming-soon exactly like ProductItem's
+            showPrice — useComingSoon() is fail-closed (defaults locked when
+            root data is missing), so a locked shop never leaks a number. */}
+        <span className="related-row-price doc-cell">
+          {priced && !comingSoon ? (
+            <>
+              {fromPrice ? (
+                <span className="related-row-from">from</span>
+              ) : null}
+              <Money as="span" data={min} />
+            </>
           ) : (
-            <span className="product-card-media-ghost" aria-hidden="true">
-              {product.productType || 'OpenDrone'}
-            </span>
+            <span>&nbsp;</span>
           )}
-        </div>
-        <div className="related-card-body">
-          {fileLine ? <p className="related-card-file">{fileLine}</p> : null}
-          <h3 className="related-card-title">{product.title}</h3>
-          {specLine ? <p className="related-card-spec">{specLine}</p> : null}
-          {/* Money defaults to a <div>; inside a <p> the HTML parser
-              auto-closes the paragraph and hydration structurally
-              mismatches — render it as a span. */}
-          {/* Price is gated on coming-soon exactly like ProductItem's
-              showPrice — useComingSoon() is fail-closed (defaults locked
-              when root data is missing), so a locked shop never leaks a
-              number here. */}
-          <p className="related-card-price">
-            {priced && !comingSoon ? (
-              <>
-                {fromPrice ? (
-                  <span className="related-card-from">from</span>
-                ) : null}
-                <Money as="span" data={min} />
-              </>
-            ) : (
-              <span>&nbsp;</span>
-            )}
-          </p>
-        </div>
+        </span>
       </Link>
       {only ? (
-        <div className="related-card-quickadd">
+        <div className="related-row-quickadd">
           <AddToCartButton
             className="product-card-quickadd-btn"
             lines={lines}
@@ -221,15 +239,14 @@ const SKELETON_IDS = ['s1', 's2', 's3', 's4'];
 
 function RelatedSkeleton() {
   return (
-    <div className="related-grid" aria-hidden="true">
+    <div className="related-register" aria-hidden="true">
       {SKELETON_IDS.map((id) => (
-        <div key={id} className="related-card related-card-skeleton">
-          <div className="related-card-media animate-pulse" />
-          <div className="related-card-body">
-            <div className="h-3 w-1/2 bg-[var(--color-bg-elevated)] rounded animate-pulse" />
-            <div className="h-4 w-3/4 bg-[var(--color-bg-elevated)] rounded animate-pulse" />
-            <div className="h-3 w-1/3 bg-[var(--color-bg-elevated)] rounded animate-pulse" />
-          </div>
+        <div key={id} className="related-row register-row related-row-skeleton">
+          <span className="related-row-thumb animate-pulse" />
+          <span className="related-row-main">
+            <span className="h-4 w-3/4 bg-[var(--color-bg-elevated)] rounded animate-pulse" />
+            <span className="h-3 w-1/3 bg-[var(--color-bg-elevated)] rounded animate-pulse" />
+          </span>
         </div>
       ))}
     </div>
