@@ -28,6 +28,7 @@ import {CompatBadge} from '~/components/slots/CompatBadge';
 import {AnimatedNumber} from '~/components/AnimatedNumber';
 import {HOME_LEDGER} from '~/lib/home-content';
 import {drawRule} from '~/lib/motion';
+import {withScrub} from '~/lib/gsap';
 import {
   HERO_AIRFRAMES,
   HERO_AIRFRAME_KEYS,
@@ -464,6 +465,9 @@ function DesktopHome({
   const globalComingSoon = useComingSoon();
   const scrollRef = useRef(0);
   const rafId = useRef(0);
+  // The 205vh scroll spacer — GSAP ScrollTrigger uses it as the pin range
+  // trigger for the hero snap driver (see the effect below).
+  const heroSpacerRef = useRef<HTMLDivElement>(null);
   const [scrollProgress, setScrollProgress] = useState(0);
   // Which airframe the hero shows — 5-inch or 3-inch. Toggling swaps the
   // GLB trio loaded by HeroScene.
@@ -779,175 +783,65 @@ function DesktopHome({
     };
   }, [tick, heroProgressVh]);
 
-  // Scroll guiderails — step snapping through the hero. The hero pins for one
-  // viewport of progress (heroProgressVh = 1), so progress p maps 1:1 to scrollY
-  // over [0, innerHeight]. We define four stops along that range; one scroll
-  // gesture advances exactly one stop so OpenFC, then OpenESC, then OpenFrame
-  // reveal one after the other and a hard fling can't skip past them. A short
-  // lock after each step swallows trackpad inertia; the animation is quick
-  // (~440ms) so mouse-wheel users aren't held up. Past the last stop, scrolling
-  // is handed back to the browser so the footer below scrolls normally.
+  // Hero scroll driver — GSAP ScrollTrigger snap over the pinned hero range.
+  //
+  // Replaces the old hand-rolled wheel/touch `preventDefault` + cooldown +
+  // reverse-breather state machine. That machine hijacked every gesture,
+  // stepped exactly one stop at a time, and moved the scrollbar itself — so it
+  // swallowed input and lied to the native scrollbar. This drives NATIVE scroll
+  // instead: one ScrollTrigger over the 205vh spacer that snaps the real
+  // scrollbar to the registry stops once a scroll gesture settles. Reverse is
+  // symmetric (the breather is gone), the scrollbar never lies, and a fling
+  // just lands on the nearest stop.
+  //
+  // WHY NO REF-BRIDGE / SCRUB: both hero consumers self-read `window.scrollY` —
+  // this route's buy-card `scrollProgress` readout (the effect above) and
+  // HeroScene's OWN scroll listener + ScrollDamper (SCROLL_RATE = 14, ~70ms
+  // time constant). They therefore stay frame-synced with zero rewiring of the
+  // memoized ClientHeroScene contract (which this lane must not touch). A GSAP
+  // `scrub` layer could only reach the DOM cards, not the r3f scene, so it would
+  // desync the two — a visual regression the "screenshot-diff clean" bar
+  // forbids. Snap's `power2.inOut` ease supplies the smoothed stop-to-stop feel;
+  // the scene's own damper supplies the between-stops smoothing as before.
+  //
+  // WHY CSS STILL PINS: the existing `sticky top-0` child inside the explicit
+  // 205vh spacer already pins the hero exactly right. The spacer height is
+  // authored, so handing the pin to GSAP would double-count it. GSAP owns only
+  // the snap.
+  //
+  // Desktop + no-reduced-motion only (baked into `withScrub`'s matchMedia).
+  // Phones and reduced-motion visitors get plain native scroll with no snap and
+  // no gsap in their bundle.
   useEffect(() => {
     if (isMobile || !splashSettled) return;
-    // Stop positions as fractions of one viewport of scroll: nothing → FC →
-    // ESC → Frame. Generated from the parts registry's slot list ([0, 0.34,
-    // 0.67, 1.0] for the current three slots) and asserted there to bracket
-    // the reveal windows, so each stop rests on a fully-revealed card.
-    const STOPS = HERO_SCROLL_STOPS;
-    const stopY = (i: number) =>
-      Math.round(STOPS[i] * window.innerHeight * heroProgressVh);
-    const lastStopY = () => stopY(STOPS.length - 1);
-    const nearestIndex = () => {
-      const y = window.scrollY;
-      let best = 0;
-      let bestD = Infinity;
-      for (let i = 0; i < STOPS.length; i++) {
-        const d = Math.abs(stopY(i) - y);
-        if (d < bestD) {
-          bestD = d;
-          best = i;
-        }
-      }
-      return best;
-    };
-
-    let idx = nearestIndex();
-    let raf = 0;
-    let lockUntil = 0;
-    // Reverse breather — scrolling back up to the top requires a deliberate,
-    // sustained upward gesture, not a single flick. We accumulate upward delta
-    // and only jump to the top once it clears REVERSE_THRESHOLD; any downward
-    // input zeroes the buffer, and the buffer decays if the up-input stalls
-    // (REVERSE_DECAY_MS). This stops a stray up-jitter mid-downward-scroll from
-    // yanking the visitor back to the top by accident.
-    const REVERSE_THRESHOLD = 200;
-    const REVERSE_DECAY_MS = 350;
-    let upAccum = 0;
-    let lastUp = 0;
-    // Damped step: a longer, eased glide plus a generous cooldown so the reveals
-    // can't be rushed. One step per ~820ms — a fling's inertia lands inside the
-    // cooldown and is swallowed (no skipping), a slow scroll paces one at a
-    // time, and a mouse-wheel click still steps on the next deliberate notch.
-    const DUR = 600;
-    const COOLDOWN = DUR + 220;
-    // easeInOutCubic — gentle acceleration and deceleration for a damped feel.
-    const ease = (t: number) =>
-      t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
-
-    const animateTo = (targetY: number) => {
-      cancelAnimationFrame(raf);
-      const startY = window.scrollY;
-      const dist = targetY - startY;
-      const t0 = performance.now();
-      lockUntil = t0 + COOLDOWN;
-      if (Math.abs(dist) < 1) return;
-      const stepFrame = (now: number) => {
-        const t = Math.min(1, (now - t0) / DUR);
-        window.scrollTo(0, Math.round(startY + dist * ease(t)));
-        if (t < 1) raf = requestAnimationFrame(stepFrame);
-      };
-      raf = requestAnimationFrame(stepFrame);
-    };
-
-    // Drive one step from a scroll gesture. Returns whether to preventDefault
-    // (true = we own this gesture; false = hand it back to the page).
-    const onGesture = (dir: 1 | -1): boolean => {
-      // Past the last stop → in the footer; let the page scroll and keep idx
-      // pinned so scrolling back up resumes stepping.
-      if (window.scrollY > lastStopY() + 4) {
-        idx = STOPS.length - 1;
-        return false;
-      }
-      if (performance.now() < lockUntil) return true; // cooldown — swallow
-      // Scroll back → skip straight to the top with no reverse animation (the
-      // scene damper snaps backward too). The forward reveals only ever play
-      // on the way down.
-      if (dir < 0) {
-        if (window.scrollY <= 1) return false; // already at the top → let it be
-        window.scrollTo(0, 0);
-        idx = 0;
-        lockUntil = performance.now() + 220;
-        return true;
-      }
-      const next = idx + 1;
-      if (next > STOPS.length - 1) return false; // past the last stop → footer
-      idx = next;
-      animateTo(stopY(idx));
-      return true;
-    };
-
-    // Upward intent gate — feed it the magnitude of an up-scroll. Returns true
-    // once a deliberate, sustained up-gesture has built past the threshold, at
-    // which point the caller should reverse. Holds (swallows) sub-threshold ups
-    // so the page stays pinned at the current stop while the buffer fills.
-    const wantsReverse = (mag: number): boolean => {
-      // Out of the stepping range (already at top / down in the footer) — no
-      // accumulation, let the normal path decide.
-      if (window.scrollY <= 1 || window.scrollY > lastStopY() + 4) return false;
-      const now = performance.now();
-      if (now - lastUp > REVERSE_DECAY_MS) upAccum = 0; // stalled → start fresh
-      lastUp = now;
-      upAccum += mag;
-      if (upAccum < REVERSE_THRESHOLD) return false;
-      upAccum = 0;
-      return true;
-    };
-
-    const onWheel = (e: WheelEvent) => {
-      if (e.deltaY > 0) {
-        upAccum = 0; // downward intent cancels any pending reverse
-        if (onGesture(1)) e.preventDefault();
-        return;
-      }
-      // Upward: swallow it (hold position) and only reverse once the buffer
-      // clears the threshold.
-      if (window.scrollY > 1 && window.scrollY <= lastStopY() + 4) {
-        e.preventDefault();
-        if (wantsReverse(-e.deltaY)) onGesture(-1);
-      }
-    };
-
-    let touchY = 0;
-    const onTouchStart = (e: TouchEvent) => {
-      touchY = e.touches[0]?.clientY ?? 0;
-    };
-    const onTouchMove = (e: TouchEvent) => {
-      const y = e.touches[0]?.clientY ?? 0;
-      const dy = touchY - y;
-      if (dy > 0) {
-        upAccum = 0; // downward drag cancels any pending reverse
-        if (Math.abs(dy) < 14 && performance.now() >= lockUntil) return;
-        if (onGesture(1)) {
-          e.preventDefault();
-          touchY = y;
-        }
-        return;
-      }
-      // Upward drag — same breather as the wheel before snapping to the top.
-      if (window.scrollY > 1 && window.scrollY <= lastStopY() + 4) {
-        e.preventDefault();
-        touchY = y;
-        if (wantsReverse(-dy)) onGesture(-1);
-      }
-    };
-
-    // Keep idx synced when native (footer) scrolling brings us back into range.
-    const onScrollSync = () => {
-      if (performance.now() >= lockUntil && window.scrollY <= lastStopY() + 4) {
-        idx = nearestIndex();
-      }
-    };
-
-    window.addEventListener('wheel', onWheel, {passive: false});
-    window.addEventListener('touchstart', onTouchStart, {passive: true});
-    window.addEventListener('touchmove', onTouchMove, {passive: false});
-    window.addEventListener('scroll', onScrollSync, {passive: true});
+    let dispose = () => {};
+    let cancelled = false;
+    void withScrub(({ScrollTrigger}) => {
+      const spacer = heroSpacerRef.current;
+      if (!spacer) return;
+      ScrollTrigger.create({
+        trigger: spacer,
+        start: 'top top',
+        // One viewport of progress drives the whole reveal (heroProgressVh = 1)
+        // and HERO_SCROLL_STOPS are fractions of exactly that range, so end the
+        // snap range at that distance — snapTo values map 1:1 to the stops.
+        end: () => `+=${window.innerHeight * heroProgressVh}`,
+        snap: {
+          // [0, 0.34, 0.67, 1.0] for the current 3 slots — registry-generated
+          // and asserted to rest each stop on a fully-revealed card.
+          snapTo: [...HERO_SCROLL_STOPS],
+          duration: {min: 0.2, max: 0.6},
+          ease: 'power2.inOut',
+        },
+      });
+    }).then((d) => {
+      // Effect may have cleaned up before the async gsap import resolved.
+      if (cancelled) d();
+      else dispose = d;
+    });
     return () => {
-      cancelAnimationFrame(raf);
-      window.removeEventListener('wheel', onWheel);
-      window.removeEventListener('touchstart', onTouchStart);
-      window.removeEventListener('touchmove', onTouchMove);
-      window.removeEventListener('scroll', onScrollSync);
+      cancelled = true;
+      dispose();
     };
   }, [isMobile, splashSettled, heroProgressVh]);
 
@@ -1006,7 +900,11 @@ function DesktopHome({
         user scrolls past the bottom of the spacer the sticky releases and
         the legal footer (in normal document flow below) comes into view.
       */}
-      <div className="relative" style={{height: `${heroSpacerVh}vh`}}>
+      <div
+        ref={heroSpacerRef}
+        className="relative"
+        style={{height: `${heroSpacerVh}vh`}}
+      >
         <div className="sticky top-0 h-screen overflow-hidden pointer-events-none">
           {/* Exhibit frame — the pinned teardown becomes the exploded-view
               drawing on a numbered sheet (hairline rect, corner crosses, A–D /
