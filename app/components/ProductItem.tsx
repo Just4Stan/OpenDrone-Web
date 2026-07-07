@@ -580,7 +580,11 @@ export const REGISTER_STYLES = `
     display: block;
     position: absolute;
     left: 70px;
-    bottom: calc(100% + 6px);
+    /* Drops BELOW the hovered row (was above). Anchoring above made the top
+       rows' plates float up over the page header — obscuring the product
+       count annotation + sort control. Below-the-row is always adjacent to
+       its own row and never collides with the header band. */
+    top: calc(100% + 6px);
     width: 220px;
     height: 220px;
     padding: 10px;
@@ -588,7 +592,7 @@ export const REGISTER_STYLES = `
     background-color: var(--pod-bg-strong);
     box-shadow: var(--pod-shadow);
     opacity: 0;
-    transform: translateY(6px);
+    transform: translateY(-6px);
     transition: opacity 0.16s ease, transform 0.16s ease;
     pointer-events: none;
     z-index: 30;

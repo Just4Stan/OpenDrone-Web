@@ -4060,6 +4060,10 @@ button.reset {
   color: inherit;
   text-decoration: none;
   min-height: 56px;
+  /* The link is a flex item inside the fixed-width .related-row; without this
+     its default min-width:auto (= min-content) keeps it from shrinking into a
+     narrow column, forcing horizontal page overflow on phones. */
+  min-width: 0;
 }
 .related-row-doc {
   flex: 0 0 auto;
@@ -4172,8 +4176,11 @@ button.reset {
 /* Drop the family/compat cells before they collide with the price on narrow
    viewports — the row link still reaches the PDP. */
 @media (max-width: 559px) {
-  .related-row-family,
-  .related-row-compat {
+  /* Scoped under .related-row-link so it outranks CompatBadge's own injected
+     `.compat-badge { display: inline-flex }` rule — otherwise the compat chip
+     stayed visible on phones and overflowed the row past the price cell. */
+  .related-row-link .related-row-family,
+  .related-row-link .related-row-compat {
     display: none;
   }
 }
@@ -15359,12 +15366,19 @@ body:has(.buy-rail.is-pinned.is-mobile) .placeholder-banner {
 .pdp-toc {
   display: none;
 }
-@media (min-width: 1280px) {
+/* The content column is --rail-width (up to 1520px) wide, so a real left
+   gutter only opens up on ~1080p-and-wider displays. Below that the rail had
+   nowhere to sit and overlapped the chapter content (e.g. the teardown spec
+   chips). Show it only once the gutter can hold it, and anchor it to extend
+   LEFT of the content edge (its right edge one gap left of the column) so it
+   can never cross into the chapters. */
+@media (min-width: 1920px) {
   .pdp-toc {
     display: block;
     position: fixed;
     top: 50%;
-    left: max(var(--sp-4), calc((100vw - var(--page-max, 1200px)) / 2 - var(--sp-5)));
+    left: auto;
+    right: calc(50% + var(--rail-width) / 2 + var(--sp-4));
     transform: translateY(-50%);
     z-index: 30;
     pointer-events: none;
