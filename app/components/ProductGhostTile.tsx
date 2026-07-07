@@ -59,7 +59,7 @@ export function ProductGhostTile({
         <span className="ghost-tile-type">{type || 'OpenDrone'}</span>
         <span className="ghost-tile-fig">Fig. —</span>
       </div>
-      <div className="ghost-tile-figure">
+      <div className="ghost-tile-figure hatch">
         <svg
           viewBox="0 0 120 120"
           xmlns="http://www.w3.org/2000/svg"

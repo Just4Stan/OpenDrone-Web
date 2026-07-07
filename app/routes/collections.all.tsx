@@ -2,7 +2,11 @@ import type {Route} from './+types/collections.all';
 import {useMemo} from 'react';
 import {useLoaderData, useSearchParams} from 'react-router';
 import type {MoneyV2} from '@shopify/hydrogen/storefront-api-types';
-import {ProductItem, type ProductQuickAdd} from '~/components/ProductItem';
+import {
+  ProductItem,
+  REGISTER_STYLES,
+  type ProductQuickAdd,
+} from '~/components/ProductItem';
 import type {StackOffer} from '~/components/StackQuickAdd';
 import type {CollectionItemFragment} from 'storefrontapi.generated';
 import {buildSeoMeta} from '~/lib/seo';
@@ -10,6 +14,12 @@ import {EmptyState} from '~/components/EmptyState';
 import {PRODUCT_CONTENT, isComingSoon} from '~/lib/product-content';
 import {useComingSoon} from '~/lib/coming-soon';
 import {stackDiscountedPrice} from '~/lib/stack-discount';
+import {
+  PART_CATALOG,
+  slotForHandle,
+  HERO_VARIANT_AXIS,
+  type PartDef,
+} from '~/lib/builder/registry';
 
 export const meta: Route.MetaFunction = () =>
   buildSeoMeta({
@@ -85,9 +95,37 @@ type Card = {
   quickAdd?: ProductQuickAdd;
   /** Stack offers layered on the quick-add (FC/ESC cards only). */
   stackOffers?: StackOffer[];
+  /** Registry part backing this card (when the handle maps to a build slot) —
+   *  drives the register row's CompatBadge chips. */
+  compatPart?: PartDef;
 };
 
 const num = (m?: MoneyV2 | null) => (m ? parseFloat(m.amount) || 0 : 0);
+
+/**
+ * Resolve a Shopify handle (and optional tier value) to its registry PartDef,
+ * so the register row can render CompatBadge chips from build-slot facts.
+ * Returns undefined for anything that isn't a buildable part (kits, spares,
+ * accessories) — the row then shows no chips. A handle spanning size variants
+ * (openfc-lite at 20×20 / 30×30) resolves to the variant matching `value`.
+ */
+function compatPartFor(handle: string, value?: string): PartDef | undefined {
+  if (slotForHandle(handle) == null) return undefined;
+  const matches = PART_CATALOG.filter(
+    (p) => p.commerce.kind === 'shopify' && p.commerce.handle === handle,
+  );
+  if (matches.length === 0) return undefined;
+  if (value) {
+    const v = value.trim().toLowerCase();
+    const exact = matches.find(
+      (p) =>
+        p.commerce.kind === 'shopify' &&
+        p.commerce.options?.[HERO_VARIANT_AXIS]?.trim().toLowerCase() === v,
+    );
+    if (exact) return exact;
+  }
+  return matches[0];
+}
 
 /** Minimal ProductVariant-ish shape for useOptimisticCart, composed from the
  *  catalog fragment (which carries no variant title — the tier value or the
@@ -258,6 +296,7 @@ export default function Collection() {
                 }
               : undefined,
             stackOffers,
+            compatPart: compatPartFor(p.handle, value),
           });
         }
       } else {
@@ -296,6 +335,7 @@ export default function Collection() {
                     firstVariant.image?.url ?? p.featuredImage?.url ?? null,
                 }
               : undefined,
+          compatPart: compatPartFor(p.handle),
         });
       }
     }
@@ -318,6 +358,21 @@ export default function Collection() {
   }, [products]);
 
   const anyOnSale = useMemo(() => cards.some((c) => c.onSale), [cards]);
+
+  // Per-category card counts for the register's mono index rail
+  // ("FLIGHT CONTROLLERS · 02" — numerals are data, not authored prose).
+  const typeCounts = useMemo(() => {
+    const m = new Map<string, number>();
+    for (const c of cards) {
+      const t = c.product.productType || 'Other';
+      m.set(t, (m.get(t) ?? 0) + 1);
+    }
+    return m;
+  }, [cards]);
+  const onSaleCount = useMemo(
+    () => cards.filter((c) => c.onSale).length,
+    [cards],
+  );
 
   // Filter, then sort. `newest` keeps the loader's fetch order.
   const visible = useMemo(() => {
@@ -358,6 +413,7 @@ export default function Collection() {
     label: string,
     active: boolean,
     onClick: () => void,
+    count?: number,
   ) => (
     <li key={key}>
       <button
@@ -366,7 +422,12 @@ export default function Collection() {
         aria-pressed={active}
         onClick={onClick}
       >
-        {label}
+        <span className="catalog-filter-label">{label}</span>
+        {count != null ? (
+          <span className="catalog-filter-count doc-annot">
+            {String(count).padStart(2, '0')}
+          </span>
+        ) : null}
       </button>
     </li>
   );
@@ -376,7 +437,8 @@ export default function Collection() {
     createdAt ? now - Date.parse(createdAt) < NEW_WINDOW_MS : false;
 
   return (
-    <div className="collection page-shell">
+    <div className="collection page-shell catalog-register">
+      <style>{REGISTER_STYLES}</style>
       <header className="page-header collection-header">
         <p className="page-eyebrow">Shop</p>
         <h1 className="page-title">All Products</h1>
@@ -389,19 +451,34 @@ export default function Collection() {
             <div className="catalog-filter-group">
               <h2 className="catalog-filter-head">Categories</h2>
               <ul className="catalog-filter-list">
-                {filterLink('all', 'All products', !activeType && !onlySale, () => {
-                  const next = new URLSearchParams(searchParams);
-                  next.delete('type');
-                  next.delete('sale');
-                  setSearchParams(next, {preventScrollReset: true});
-                })}
+                {filterLink(
+                  'all',
+                  'All products',
+                  !activeType && !onlySale,
+                  () => {
+                    const next = new URLSearchParams(searchParams);
+                    next.delete('type');
+                    next.delete('sale');
+                    setSearchParams(next, {preventScrollReset: true});
+                  },
+                  cards.length,
+                )}
                 {anyOnSale &&
-                  filterLink('on-sale', 'On sale', onlySale, () =>
-                    setParam('sale', onlySale ? null : '1'),
+                  filterLink(
+                    'on-sale',
+                    'On sale',
+                    onlySale,
+                    () => setParam('sale', onlySale ? null : '1'),
+                    onSaleCount,
                   )}
                 {categories.map((c) =>
-                  filterLink(c.value, c.label, activeType === c.value, () =>
-                    setParam('type', activeType === c.value ? null : c.value),
+                  filterLink(
+                    c.value,
+                    c.label,
+                    activeType === c.value,
+                    () =>
+                      setParam('type', activeType === c.value ? null : c.value),
+                    typeCounts.get(c.value) ?? 0,
                   ),
                 )}
               </ul>
@@ -410,12 +487,12 @@ export default function Collection() {
 
           {/* Main column — toolbar (count + sort) above the product grid. */}
           <div className="catalog-main">
-            <div className="catalog-toolbar">
-              <p className="catalog-count">
+            <div className="catalog-toolbar on-rule">
+              <p className="catalog-count on-rule-label doc-label">
                 {visible.length} {visible.length === 1 ? 'product' : 'products'}
               </p>
-              <label className="collection-sort catalog-sort">
-                <span className="collection-sort-label">Sort</span>
+              <label className="collection-sort catalog-sort on-rule-label">
+                <span className="collection-sort-label doc-label">Sort</span>
                 <select
                   value={sort}
                   onChange={(e) =>
@@ -432,10 +509,11 @@ export default function Collection() {
             </div>
 
             {visible.length > 0 ? (
-              <div className="products-grid">
+              <div className="parts-register">
                 {visible.map((card, index) => (
                   <ProductItem
                     key={card.key}
+                    variant="register"
                     product={card.product}
                     to={card.to}
                     title={card.title}
@@ -447,6 +525,7 @@ export default function Collection() {
                     comingSoon={card.comingSoon}
                     quickAdd={card.quickAdd}
                     stackOffers={card.stackOffers}
+                    compatPart={card.compatPart}
                   />
                 ))}
               </div>

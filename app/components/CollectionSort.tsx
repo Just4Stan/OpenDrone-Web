@@ -32,7 +32,7 @@ export function CollectionSort() {
   const busy = navigation.state !== 'idle';
   return (
     <label className="collection-sort" data-pending={busy || undefined}>
-      <span className="collection-sort-label">Sort</span>
+      <span className="collection-sort-label doc-label">Sort</span>
       <select
         value={active}
         aria-busy={busy || undefined}
