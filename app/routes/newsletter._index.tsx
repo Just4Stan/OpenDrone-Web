@@ -4,6 +4,7 @@ import {buildSeoMeta} from '~/lib/seo';
 import {checkRateLimit, clientIp} from '~/lib/rate-limit';
 import {verifyTurnstile} from '~/lib/support/turnstile';
 import {tagCustomerNotify} from '~/lib/shopify-admin';
+import {signSurveyToken} from '~/lib/growth/survey-token';
 import {recordSignup} from '~/lib/growth/ledger';
 import {upsertContact, sendWelcome} from '~/lib/growth/resend';
 import {getLocaleFromRequest} from '~/lib/i18n';
@@ -184,6 +185,12 @@ type NewsletterResult = {
   ok: boolean;
   message: string;
   alreadySubscribed?: boolean;
+  /**
+   * Notify mode only: short-lived HMAC token (app/lib/growth/survey-token.ts)
+   * that lets the success panel POST micro-survey answers to /api/survey
+   * without a second Turnstile round. Absent in plain-newsletter mode.
+   */
+  surveyToken?: string;
 };
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -315,6 +322,15 @@ export async function action({request, context}: Route.ActionArgs) {
     );
   }
 
+  // Micro-survey gate (Lane C): notify signups get a short-lived token so
+  // the success panel can submit the 2-question survey to /api/survey.
+  // Minted only AFTER Turnstile verification — the token is the survey
+  // endpoint's entire bot defence. Null when SESSION_SECRET is unset
+  // (degrade-soft: the survey simply doesn't render).
+  const surveyToken = notifyProduct
+    ? await signSurveyToken(context.env, email)
+    : null;
+
   const emailLimit = checkRateLimit(
     `newsletter:email:${email}`,
     3,
@@ -335,6 +351,7 @@ export async function action({request, context}: Route.ActionArgs) {
         ok: true,
         message: "You're on the list — we'll email you at launch.",
         alreadySubscribed: true,
+        ...(surveyToken ? {surveyToken} : {}),
       });
     }
     // Be generic to avoid confirming which addresses have already signed up.
@@ -424,6 +441,7 @@ export async function action({request, context}: Route.ActionArgs) {
       return data<NewsletterResult>({
         ok: true,
         message: "You're on the list — we'll email you at launch.",
+        ...(surveyToken ? {surveyToken} : {}),
       });
     }
 

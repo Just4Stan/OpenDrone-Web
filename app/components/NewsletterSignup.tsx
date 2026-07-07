@@ -19,6 +19,8 @@ type NewsletterActionData = {
   ok: boolean;
   message: string;
   alreadySubscribed?: boolean;
+  /** Notify mode: short-lived token gating the /api/survey micro-survey. */
+  surveyToken?: string;
 };
 
 interface NewsletterSignupProps {
@@ -273,14 +275,21 @@ export function NewsletterSignup({
           </p>
         </div>
       ) : isNotify && isSuccess ? (
-        <div className="flex flex-col gap-1" role="status">
-          <p className="gold-tag inline-flex items-center gap-1.5 font-mono text-[12px] uppercase tracking-[0.14em] text-[var(--color-gold)]">
+        <div className="flex flex-col gap-1">
+          <p
+            role="status"
+            className="gold-tag inline-flex items-center gap-1.5 font-mono text-[12px] uppercase tracking-[0.14em] text-[var(--color-gold)]"
+          >
             <Check size={13} strokeWidth={2.5} aria-hidden="true" />
             You&rsquo;re on the launch list
           </p>
           <p className="text-[12px] text-[var(--color-text-muted)] leading-snug">
             {serverMessage}
           </p>
+          {result?.surveyToken ? (
+            // key: a fresh signup (new token) restarts the survey state.
+            <NotifySurvey key={result.surveyToken} token={result.surveyToken} />
+          ) : null}
         </div>
       ) : (
       <fetcher.Form
@@ -417,5 +426,151 @@ export function NewsletterSignup({
       </fetcher.Form>
       )}
     </section>
+  );
+}
+
+// --- Notify micro-survey (Lane C) -------------------------------------------
+//
+// Two research questions shown inline after a successful notify signup.
+// RESEARCH ONLY — no pre-order/reserve semantics, no quantities, no
+// commitments (decision #2, 2026-07-06). Each answer POSTs immediately to
+// /api/survey with the short-lived token from the signup response; the UI
+// advances optimistically (an analytics-grade write must never block or
+// error the panel — worst case the answer is dropped server-side).
+// Sits inside the PDP buy module and every footer, so: minimal height,
+// tokens-only styling, mono/uppercase micro-label language.
+
+type EuPremiumAnswer = 'no' | '10' | '20' | '30';
+
+const EU_PREMIUM_OPTIONS: {value: EuPremiumAnswer; label: string}[] = [
+  {value: 'no', label: 'No'},
+  {value: '10', label: '+10%'},
+  {value: '20', label: '+20%'},
+  {value: '30', label: '+30%'},
+];
+
+const SURVEY_PILL_CLASS = [
+  'font-mono text-[11px] uppercase tracking-[0.1em]',
+  'border border-[var(--color-border-strong)] rounded-sm',
+  'px-3 py-1.5 min-h-[32px]',
+  'text-[var(--color-text-muted)]',
+  'transition-colors cursor-pointer',
+  'hover:border-[var(--color-gold)] hover:text-[var(--color-text)]',
+].join(' ');
+
+function NotifySurvey({token}: {token: string}) {
+  // One fetcher per question: answering Q2 while Q1's POST is still
+  // in flight must not cancel it (React Router aborts an in-flight
+  // fetcher submission on resubmit of the SAME fetcher).
+  const euFetcher = useFetcher();
+  const interviewFetcher = useFetcher();
+  const [step, setStep] = useState<'eu' | 'interview' | 'done'>('eu');
+  const [answeredAny, setAnsweredAny] = useState(false);
+
+  function answerEu(answer: EuPremiumAnswer) {
+    void euFetcher.submit(
+      {token, euPremium: answer},
+      {method: 'post', action: '/api/survey'},
+    );
+    trackEvent('Survey EU Premium', {props: {answer}});
+    setAnsweredAny(true);
+    setStep('interview');
+  }
+
+  function answerInterview(optIn: boolean) {
+    void interviewFetcher.submit(
+      {token, interviewOptIn: String(optIn)},
+      {method: 'post', action: '/api/survey'},
+    );
+    trackEvent('Survey Interview', {props: {answer: optIn ? 'yes' : 'no'}});
+    setAnsweredAny(true);
+    setStep('done');
+  }
+
+  const skipLink = (
+    <button
+      type="button"
+      onClick={() => setStep('done')}
+      className="font-mono text-[11px] text-[var(--color-text-dim)] underline underline-offset-2 hover:text-[var(--color-text-muted)] cursor-pointer self-start"
+    >
+      {/* TODO(copy-stan) */}
+      skip
+    </button>
+  );
+
+  if (step === 'done') {
+    // Nothing answered → vanish quietly; answered → terse thanks.
+    if (!answeredAny) return null;
+    return (
+      <p className="mt-2 pt-2 border-t border-[var(--color-border)] font-mono text-[11px] uppercase tracking-[0.1em] text-[var(--color-text-dim)]">
+        {/* TODO(copy-stan) */}
+        Noted — thanks for the signal.
+      </p>
+    );
+  }
+
+  return (
+    <div className="mt-2 pt-2 border-t border-[var(--color-border)] flex flex-col gap-1.5">
+      <p className="font-mono text-[11px] uppercase tracking-[0.14em] text-[var(--color-text-dim)]">
+        {/* TODO(copy-stan) */}
+        Two-question survey · optional
+      </p>
+
+      {step === 'eu' ? (
+        <div
+          role="group"
+          aria-label="Would you pay more for EU-assembled boards?"
+          className="flex flex-col gap-1.5"
+        >
+          <p className="text-[12px] text-[var(--color-text-muted)] leading-snug">
+            {/* TODO(copy-stan) */}
+            Would you pay more for EU-assembled boards?
+          </p>
+          <div className="flex flex-wrap items-center gap-1.5">
+            {EU_PREMIUM_OPTIONS.map((opt) => (
+              <button
+                key={opt.value}
+                type="button"
+                onClick={() => answerEu(opt.value)}
+                className={SURVEY_PILL_CLASS}
+              >
+                {opt.label}
+              </button>
+            ))}
+            {skipLink}
+          </div>
+        </div>
+      ) : (
+        <div
+          role="group"
+          aria-label="15-minute call with the builder?"
+          className="flex flex-col gap-1.5"
+        >
+          <p className="text-[12px] text-[var(--color-text-muted)] leading-snug">
+            {/* TODO(copy-stan) */}
+            15-min call with the builder? Early-adopter perk for interviewees.
+          </p>
+          <div className="flex flex-wrap items-center gap-1.5">
+            <button
+              type="button"
+              onClick={() => answerInterview(true)}
+              className={SURVEY_PILL_CLASS}
+            >
+              {/* TODO(copy-stan) */}
+              Yes
+            </button>
+            <button
+              type="button"
+              onClick={() => answerInterview(false)}
+              className={SURVEY_PILL_CLASS}
+            >
+              {/* TODO(copy-stan) */}
+              No
+            </button>
+            {skipLink}
+          </div>
+        </div>
+      )}
+    </div>
   );
 }
