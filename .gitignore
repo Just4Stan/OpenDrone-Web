@@ -58,3 +58,11 @@ __pycache__/
 
 # Generated brand bundle — rebuild with scripts/gen-logo-package.py
 brand.zip
+
+# overhaul-v2 QA scratch (screenshots + probe scripts)
+.qa-shots/
+.qa-*.mjs
+scratch-*.mjs
+scratchpad-*.mjs
+scratch-qa.mjs
+/shot.mjs
