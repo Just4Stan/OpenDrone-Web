@@ -216,7 +216,7 @@ export function NewsletterSignup({
         .join(' ')}
     >
       <div>
-        <p className="gold-tag font-mono text-[12px] uppercase tracking-[0.2em] text-[var(--color-gold)] mb-0.5">
+        <p className="font-mono text-[12px] uppercase tracking-[0.2em] text-[var(--color-gold)] mb-0.5">
           {isNotify ? 'Launch list' : 'Newsletter · Engineering Essentials'}
         </p>
         <h3
