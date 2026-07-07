@@ -10,9 +10,20 @@ import type {
 } from '~/components/Header';
 import {AddToCartButton} from '~/components/AddToCartButton';
 import {useAside} from '~/components/Aside';
+import {CompatBadge} from '~/components/slots/CompatBadge';
+import {PART_CATALOG, type PartDef} from '~/lib/builder/registry';
 import {PRODUCT_CONTENT, isComingSoon} from '~/lib/product-content';
 import {trackEvent} from '~/lib/growth/plausible';
 import {attributionSource} from '~/lib/growth/attribution';
+
+/** The buildable PartDef behind a Shopify handle (for the ghost row's
+ *  CompatBadge chips), or undefined for non-part products. Registry facts
+ *  only — never authored prose. */
+function partForHandle(handle: string): PartDef | undefined {
+  return PART_CATALOG.find(
+    (p) => p.commerce.kind === 'shopify' && p.commerce.handle === handle,
+  );
+}
 
 /** The thin header-catalogue price ({amount, currencyCode} strings) cast to
  *  Money's expected shape — same pattern as the header pods. */
@@ -85,28 +96,39 @@ function CartCompanionRow({
   const {product, variant, size} = suggestion;
   const title = size ? `${product.title} · ${size}` : product.title;
   const imageUrl = variant.image?.url ?? product.featuredImage?.url ?? null;
+  // Registry-derived compatibility chips for the uncovered position — the
+  // SLOT MAP graft, structural not prose.
+  const partnerPart = partForHandle(product.handle);
 
   // NOTE: <section>, not <aside> — the drawer's `.overlay aside` panel CSS
   // (fixed, 100vh, 400px) would hijack any nested <aside> element.
+  // A hatched "missing-position" ghost row: the hatch thumb cell reads as an
+  // empty slot in the build, the copy + wiring are unchanged.
   return (
     <section className="cart-companion" aria-label="Suggested companion product">
-      <span className="cart-companion-eyebrow">Goes well with</span>
+      <span className="cart-companion-eyebrow doc-annot">Goes well with</span>
       <div className="cart-companion-row">
-        <Link
-          to={`/products/${product.handle}`}
-          prefetch="intent"
-          className="cart-companion-name"
-          onClick={layout === 'aside' ? close : undefined}
-        >
-          {title}
-        </Link>
+        <span className="hatch cart-companion-ghost" aria-hidden="true" />
+        <div className="cart-companion-body">
+          <Link
+            to={`/products/${product.handle}`}
+            prefetch="intent"
+            className="cart-companion-name"
+            onClick={layout === 'aside' ? close : undefined}
+          >
+            {title}
+          </Link>
+          {partnerPart ? (
+            <CompatBadge part={partnerPart} className="cart-companion-compat" />
+          ) : null}
+        </div>
         {variant.price ? (
-          <span className="cart-companion-price">
+          <span className="cart-companion-price doc-cell">
             <Money data={variant.price as MoneyData} />
           </span>
         ) : null}
         <AddToCartButton
-          className="cart-companion-add"
+          className="cart-companion-add keycap"
           ariaLabel={`Add ${title} to cart`}
           flyImage={imageUrl}
           onClick={() =>

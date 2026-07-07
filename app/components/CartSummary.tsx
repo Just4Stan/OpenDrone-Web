@@ -4,6 +4,7 @@ import {Money, type OptimisticCart} from '@shopify/hydrogen';
 import {useEffect, useId, useRef, useState} from 'react';
 import {Link} from 'react-router';
 import {useAside} from '~/components/Aside';
+import {AnimatedMoney} from '~/components/CartLineItem';
 import {trackEvent} from '~/lib/growth/plausible';
 import {attributionSource} from '~/lib/growth/attribution';
 import {trackCheckoutClick} from '~/lib/growth/checkout-beacon';
@@ -54,7 +55,7 @@ export function CartSummary({cart, layout}: CartSummaryProps) {
             <dt>Subtotal</dt>
             <dd>
               {cost?.subtotalAmount?.amount ? (
-                <Money data={cost.subtotalAmount} />
+                <AnimatedMoney data={cost.subtotalAmount} />
               ) : (
                 '—'
               )}
@@ -62,13 +63,13 @@ export function CartSummary({cart, layout}: CartSummaryProps) {
           </div>
           <div className="cart-register-row">
             <dt>VAT included (21%)</dt>
-            <dd>{vatAmount ? <Money data={vatAmount} /> : '—'}</dd>
+            <dd>{vatAmount ? <AnimatedMoney data={vatAmount} /> : '—'}</dd>
           </div>
           <div className="cart-register-row is-total">
             <dt>Total</dt>
             <dd>
               {cost?.totalAmount?.amount ? (
-                <Money data={cost.totalAmount} />
+                <AnimatedMoney data={cost.totalAmount} />
               ) : (
                 '—'
               )}
@@ -229,7 +230,7 @@ function CartCheckoutActions({
     <a
       href={checkoutUrl}
       target="_self"
-      className="cart-checkout-cta"
+      className="cart-checkout-cta keycap"
       onClick={handleClick}
     >
       Checkout

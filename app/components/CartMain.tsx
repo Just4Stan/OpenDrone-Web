@@ -25,6 +25,18 @@ export type CartMainProps = {
   layout: CartLayout;
 };
 
+/** BOM column captions for the /cart invoice header. Isolated here (the
+ *  annotation-vocabulary review pattern) — every one is either existing chrome
+ *  or a standard invoice column name, and the table reads fine with the whole
+ *  row dropped (each cell registers under its position regardless). */
+const CART_BOM_COLUMNS = {
+  item: 'Item',
+  description: 'Description',
+  qty: 'Qty',
+  unit: 'Unit',
+  ext: 'Ext',
+} as const;
+
 export type LineItemChildrenMap = {[parentId: string]: CartLine[]};
 /** Returns a map of all line items and their children. */
 function getLineItemChildrenMap(lines: CartLine[]): LineItemChildrenMap {
@@ -61,6 +73,12 @@ export function CartMain({layout, cart: originalCart}: CartMainProps) {
   const className = `cart-main ${withDiscount ? 'with-discount' : ''}`;
   const cartHasItems = cart?.totalQuantity ? cart.totalQuantity > 0 : false;
   const childrenMap = getLineItemChildrenMap(cart?.lines?.nodes ?? []);
+  // Root lines only (bundle children re-expand under their parent) — the BOM
+  // line numbers run over these.
+  const rootLines = (cart?.lines?.nodes ?? []).filter(
+    (line) =>
+      !('parentRelationship' in line && line.parentRelationship?.parent),
+  );
 
   // Slide/fade cart lines as they're added or removed instead of snapping.
   const reducedMotion = useReducedMotion();
@@ -84,31 +102,27 @@ export function CartMain({layout, cart: originalCart}: CartMainProps) {
             header the sheet rows line up under. Decorative for AT (each row
             already labels itself), hence aria-hidden. */}
         {layout === 'page' && cartHasItems ? (
-          <div className="cart-sheet-head" aria-hidden="true">
-            <span className="cart-sheet-head-item">Item</span>
-            <span className="cart-sheet-head-qty">Qty</span>
-            <span className="cart-sheet-head-total">Total</span>
+          <div className="cart-sheet-head doc-annot" aria-hidden="true">
+            <span className="cart-sheet-head-no">{CART_BOM_COLUMNS.item}</span>
+            <span className="cart-sheet-head-item">
+              {CART_BOM_COLUMNS.description}
+            </span>
+            <span className="cart-sheet-head-qty">{CART_BOM_COLUMNS.qty}</span>
+            <span className="cart-sheet-head-unit">{CART_BOM_COLUMNS.unit}</span>
+            <span className="cart-sheet-head-total">{CART_BOM_COLUMNS.ext}</span>
           </div>
         ) : null}
         <div className="cart-lines-scroll">
           <ul aria-labelledby="cart-lines" ref={linesRef}>
-            {(cart?.lines?.nodes ?? []).map((line) => {
-              // we do not render non-parent lines at the root of the cart
-              if (
-                'parentRelationship' in line &&
-                line.parentRelationship?.parent
-              ) {
-                return null;
-              }
-              return (
-                <CartLineItem
-                  key={line.id}
-                  line={line}
-                  layout={layout}
-                  childrenMap={childrenMap}
-                />
-              );
-            })}
+            {rootLines.map((line, i) => (
+              <CartLineItem
+                key={line.id}
+                line={line}
+                layout={layout}
+                childrenMap={childrenMap}
+                index={i + 1}
+              />
+            ))}
           </ul>
         </div>
         {cartHasItems ? (
@@ -199,7 +213,7 @@ function CartEmpty({
         to="/collections/all"
         onClick={close}
         prefetch="viewport"
-        className="hero-cta-primary"
+        className="hero-cta-primary keycap"
       >
         Shop all
       </Link>
@@ -212,7 +226,7 @@ function CartEmpty({
             to={f.to}
             onClick={close}
             prefetch="viewport"
-            className="cart-empty-chip"
+            className="cart-empty-chip keycap"
           >
             {f.label}
           </Link>

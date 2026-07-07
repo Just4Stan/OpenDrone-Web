@@ -1,9 +1,19 @@
-import type {CartLineUpdateInput} from '@shopify/hydrogen/storefront-api-types';
+import type {
+  CartLineUpdateInput,
+  MoneyV2,
+} from '@shopify/hydrogen/storefront-api-types';
 import type {CartLayout, LineItemChildrenMap} from '~/components/CartMain';
-import {CartForm, Image, type OptimisticCartLine} from '@shopify/hydrogen';
+import {
+  CartForm,
+  Image,
+  Money,
+  useMoney,
+  type OptimisticCartLine,
+} from '@shopify/hydrogen';
 import {useVariantUrl} from '~/lib/variants';
 import {Link} from 'react-router';
 import {ProductPrice} from './ProductPrice';
+import {AnimatedNumber} from './AnimatedNumber';
 import {useAside} from './Aside';
 import type {
   CartApiQueryFragment,
@@ -11,6 +21,36 @@ import type {
 } from 'storefrontapi.generated';
 
 export type CartLine = OptimisticCartLine<CartApiQueryFragment>;
+
+/**
+ * Money figure that ROLLS to its new value whenever it changes — the cart's
+ * "the invoice recalculates before your eyes" move. Re-keying on the localized
+ * string remounts AnimatedNumber, which counts the numeric runs up to the new
+ * total (reactbits Count Up port); a quantity bump therefore visibly re-tallies
+ * the line EXT and the summary total. Reuses Shopify's own `useMoney` so the
+ * currency formatting is byte-identical to <Money> — we roll the figure, never
+ * re-derive it. Reduced motion degrades to the final value instantly (handled
+ * inside AnimatedNumber).
+ */
+export function AnimatedMoney({
+  data,
+  className,
+  duration = 520,
+}: {
+  data: React.ComponentProps<typeof Money>['data'];
+  className?: string;
+  duration?: number;
+}) {
+  const {localizedString} = useMoney(data as MoneyV2);
+  return (
+    <AnimatedNumber
+      key={localizedString}
+      value={localizedString}
+      duration={duration}
+      className={className}
+    />
+  );
+}
 
 /** Sum a line's discount allocations into one label + amount (the stack BXGY
  *  or a code). Shopify splits over-quantity lines itself, so a line either
@@ -47,10 +87,14 @@ export function CartLineItem({
   layout,
   line,
   childrenMap,
+  index,
 }: {
   layout: CartLayout;
   line: CartLine;
   childrenMap: LineItemChildrenMap;
+  /** 1-based position in the BOM (page layout only). Undefined for the drawer
+   *  and for nested bundle-component rows. */
+  index?: number;
 }) {
   const {id, merchandise} = line;
   const {product, title, image, selectedOptions} = merchandise;
@@ -89,24 +133,39 @@ export function CartLineItem({
     </div>
   ) : null;
 
-  // /cart page — "build sheet" row: fixed mono columns (item · qty · total)
-  // under the hairline-ruled header CartMain renders. The drawer keeps the
-  // compact stacked layout below; only the DOM shape differs, every control
-  // (qty forms, remove, discount badges) is the same machinery.
+  // /cart page — engineering BOM/invoice row: ITEM · DESCRIPTION · QTY · UNIT
+  // · EXT, mono tabular money columns, square hairline thumb, all under the
+  // ruled column header CartMain renders. The drawer keeps the compact stacked
+  // layout below; only the DOM shape differs, every control (qty forms, remove,
+  // discount badges) is the same machinery.
   if (layout === 'page') {
+    // 1-based item line number (01, 02, …) — pure derived data. Blank for
+    // nested bundle-component rows, which carry no top-level index.
+    const itemNo = index != null ? String(index).padStart(2, '0') : '';
+    const unitAmount = line?.cost?.amountPerQuantity;
+    const extAmount = line?.cost?.totalAmount;
     return (
       <li key={id} className="cart-line cart-line--sheet">
         <div className="cart-sheet-row">
-          {image && (
-            <Image
-              alt={title}
-              aspectRatio="1/1"
-              data={image}
-              height={56}
-              loading="lazy"
-              width={56}
-            />
-          )}
+          <span className="cart-sheet-no doc-cell" aria-hidden="true">
+            {itemNo}
+          </span>
+          <div className="cart-sheet-thumb">
+            {image ? (
+              <Image
+                alt={title}
+                aspectRatio="1/1"
+                data={image}
+                height={56}
+                loading="lazy"
+                width={56}
+              />
+            ) : (
+              // No render for this variant — an engineering "no-part" hatch,
+              // never an empty cell.
+              <span className="hatch cart-sheet-thumb-hatch" aria-hidden="true" />
+            )}
+          </div>
           <div className="cart-sheet-item">
             <Link prefetch="viewport" to={lineItemUrl}>
               <p>
@@ -146,8 +205,11 @@ export function CartLineItem({
           <div className="cart-sheet-qty">
             <CartLineQuantity line={line} sheet />
           </div>
-          <div className="cart-sheet-total">
-            <ProductPrice price={line?.cost?.totalAmount} />
+          <div className="cart-sheet-unit doc-cell">
+            {unitAmount?.amount ? <Money data={unitAmount} /> : '—'}
+          </div>
+          <div className="cart-sheet-total doc-cell">
+            {extAmount?.amount ? <AnimatedMoney data={extAmount} /> : '—'}
             {lineDiscount ? (
               <s className="cart-line-compare">
                 <ProductPrice price={preDiscountTotal} />
