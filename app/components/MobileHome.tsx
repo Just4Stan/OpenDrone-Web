@@ -1,30 +1,53 @@
 import {Suspense} from 'react';
 import {Await, Link} from 'react-router';
+import {Money} from '@shopify/hydrogen';
 import {motion, useReducedMotion, type MotionProps} from 'motion/react';
 import type {CollectionItemFragment} from 'storefrontapi.generated';
 import {HeroWordmark} from '~/components/HeroWordmark';
-import {ProductItem} from '~/components/ProductItem';
+import {SheetFrame} from '~/components/SheetFrame';
 import {AnimatedNumber} from '~/components/AnimatedNumber';
-import {PRODUCT_CONTENT} from '~/lib/product-content';
+import {useComingSoon} from '~/lib/coming-soon';
+import {
+  isComingSoon,
+  PRODUCT_CONTENT,
+  PRODUCT_CONTENT_FALLBACK,
+} from '~/lib/product-content';
+import {HOME_LEDGER, HOME_TAGLINE} from '~/lib/home-content';
 
-/* Below-fold "index" band — the open-hardware ledger in the PDP's
- * spec-table language. Every row is a fact already published elsewhere on
- * the site (open-source page, PDP downloads); the design count is derived
- * from the product-content registry so it can't drift. */
-const OPEN_DESIGN_COUNT = Object.values(PRODUCT_CONTENT).filter(
-  (c) => c.fileNumber !== '—',
-).length;
-
-/* [key, value, countUp?] — only the derived design COUNT is a quantity worth
- * sweeping; licence versions, tool versions and prices are identifiers/fixed
- * figures and render static. */
-const HOME_LEDGER: Array<[string, string, boolean?]> = [
-  ['Board designs published', String(OPEN_DESIGN_COUNT).padStart(2, '0'), true],
-  ['Hardware licence', 'CERN-OHL-S 2.0'],
-  ['Source format', 'KiCad 9 · STEP · BOM'],
-  ['Firmware split', '€1 / unit upstream'],
-  ['Designed in', 'Belgium'],
-];
+/* Component-scoped skin for the phone homepage's register rows + ruled browse
+ * row. Leans on the ds-tokens utility classes (.register-row, .doc-annot,
+ * .doc-cell, .hatch, .dot-grid, .edge-light) for the shared recipe; this only
+ * carries the layout specifics (thumb size, column widths, gold doc flip). */
+const MOBILE_HOME_STYLE = `
+.home-mobile-reg{list-style:none;margin:0;padding:0;border-top:1px solid var(--color-hairline);}
+.home-mobile-reg-row{
+  display:flex;align-items:center;gap:0.85rem;
+  min-height:64px;padding:0.5rem 0.25rem;
+  border-bottom:1px solid var(--color-hairline);
+  color:var(--color-text);text-decoration:none;
+}
+.home-mobile-reg-thumb{
+  flex:0 0 auto;width:56px;height:56px;
+  border:1px solid var(--color-hairline);
+  border-radius:var(--r-xs);
+  display:grid;place-items:center;overflow:hidden;
+  background-color:var(--color-bg-elevated);
+}
+.home-mobile-reg-thumb img{width:100%;height:100%;object-fit:contain;}
+.home-mobile-reg-thumb .home-mobile-reg-hatch{width:100%;height:100%;}
+.home-mobile-reg-main{display:flex;flex-direction:column;gap:3px;min-width:0;flex:1 1 auto;}
+.home-mobile-reg-title{
+  font-weight:600;font-size:var(--fs-md);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.home-mobile-reg-doc{color:var(--color-ink-annot);transition:color 180ms ease;}
+.home-mobile-reg-row:hover .home-mobile-reg-doc{color:var(--color-gold);}
+.home-mobile-reg-status{flex:0 0 auto;text-align:right;color:var(--color-text);}
+.home-mobile-reg-soon{
+  font-family:var(--font-mono);font-size:11px;font-weight:600;
+  letter-spacing:0.14em;text-transform:uppercase;color:var(--color-gold);
+}
+`;
 
 /**
  * Phone homepage (≤768px). The desktop homepage IS the WebGL hero scene +
@@ -33,8 +56,9 @@ const HOME_LEDGER: Array<[string, string, boolean?]> = [
  * phone. This is the mobile counterpart: not a plain fallback but a hero in its
  * own right — the animated wordmark, a floating "stack" of the real board
  * renders under a gold glow (the desktop hero's product showcase, distilled),
- * and a Dynamic-Island Shop pill — then a clear path to the flagship line and
- * the full catalogue. No 3D, no scroll tricks: fast, legible, touch-first.
+ * and a Dynamic-Island Shop pill — then a clear path to the flagship line
+ * (rendered as an engineering register) and the full catalogue. No 3D, no
+ * scroll tricks: fast, legible, touch-first.
  */
 export function MobileHome({
   featured,
@@ -42,6 +66,7 @@ export function MobileHome({
   featured: Promise<CollectionItemFragment[]>;
 }) {
   const reduce = useReducedMotion();
+  const globalComingSoon = useComingSoon();
 
   // Staggered entrance: each block rises + fades a beat after the last. Skipped
   // wholesale under prefers-reduced-motion (rendered static, no transform).
@@ -60,7 +85,13 @@ export function MobileHome({
 
   return (
     <div className="home-mobile">
-      <section className="home-mobile-hero">
+      <style>{MOBILE_HOME_STYLE}</style>
+      <section className="home-mobile-hero relative">
+        {/* Light exhibit frame — the phone hero as a numbered sheet. Frame
+            only, no zone ticks; the ds-tokens SheetFrame hides itself below
+            480px, so it reads on small tablets/landscape and stays out of the
+            way on narrow phones. */}
+        <SheetFrame />
         {/* Floating board "stack" — the two flagship boards (FC over ESC),
             offset like a mounted stack, on a gold-glow island. The desktop
             hero's rotatable 3D trio, distilled to a still that loads instantly. */}
@@ -102,8 +133,7 @@ export function MobileHome({
         </motion.h1>
 
         <motion.p className="home-mobile-tagline" {...rise(2)}>
-          Open Source drone parts, designed in Belgium. Published and transparent
-          so you can understand it, not just fly it.
+          {HOME_TAGLINE}
         </motion.p>
 
         {/* Two full-width actions side by side — Shop (gold) + GitHub (ghost).
@@ -112,7 +142,7 @@ export function MobileHome({
           <Link
             prefetch="viewport"
             to="/collections/all"
-            className="home-mobile-cta-btn home-mobile-cta-shop"
+            className="home-mobile-cta-btn home-mobile-cta-shop keycap"
           >
             Shop
             <svg
@@ -148,15 +178,57 @@ export function MobileHome({
             items.length > 0 ? (
               <section className="home-mobile-featured">
                 <p className="section-label">Flagship hardware</p>
-                <div className="home-mobile-grid">
-                  {items.map((product, i) => (
-                    <ProductItem
-                      key={product.id}
-                      product={product}
-                      loading={i === 0 ? 'eager' : 'lazy'}
-                    />
-                  ))}
-                </div>
+                <ul className="home-mobile-reg">
+                  {items.map((product) => {
+                    const content =
+                      PRODUCT_CONTENT[product.handle] ??
+                      PRODUCT_CONTENT_FALLBACK;
+                    const soon = isComingSoon(product.handle, globalComingSoon);
+                    const img = product.featuredImage;
+                    return (
+                      <li key={product.id}>
+                        <Link
+                          prefetch="viewport"
+                          to={`/products/${product.handle}`}
+                          className="home-mobile-reg-row edge-light edge-light-wash"
+                        >
+                          <span className="home-mobile-reg-thumb dot-grid">
+                            {img?.url ? (
+                              <img
+                                src={img.url}
+                                alt={img.altText ?? ''}
+                                loading="lazy"
+                                decoding="async"
+                              />
+                            ) : (
+                              <span
+                                className="home-mobile-reg-hatch hatch"
+                                aria-hidden="true"
+                              />
+                            )}
+                          </span>
+                          <span className="home-mobile-reg-main">
+                            <span className="home-mobile-reg-title">
+                              {product.title}
+                            </span>
+                            <span className="home-mobile-reg-doc doc-annot">
+                              OD-{content.fileNumber} · {content.family}
+                            </span>
+                          </span>
+                          <span className="home-mobile-reg-status doc-cell">
+                            {soon ? (
+                              <span className="home-mobile-reg-soon">
+                                Coming soon
+                              </span>
+                            ) : (
+                              <Money data={product.priceRange.minVariantPrice} />
+                            )}
+                          </span>
+                        </Link>
+                      </li>
+                    );
+                  })}
+                </ul>
               </section>
             ) : null
           }

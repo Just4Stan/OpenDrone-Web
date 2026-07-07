@@ -1,6 +1,38 @@
 import {useEffect, useRef, useState} from 'react';
 import {animate, motion, useMotionValue, useReducedMotion} from 'motion/react';
 import {HERO_AIRFRAMES} from '~/lib/hero-airframes';
+import {SPRING} from '~/lib/motion';
+
+/* Sheet-tab skin (TITLE BLOCK): the pill slider restyled as two square tabs
+ * attached to the hero sheet's top rule — a 2px gold underline bar (the old
+ * thumb) slides between them and the active tab's ink flips gold. The drag +
+ * snap + ink-flip detent physics are untouched; only the paint changes. The
+ * root keeps its 5px padding so the underline geometry (travel() in the
+ * component) still lines the bar up under each tab. */
+const HERO_TABS_STYLE = `
+.hero-size-slider.hero-size-tabs{
+  border-radius:var(--r-sm);
+  border:1px solid var(--color-hairline);
+  background:var(--color-bg-card);
+  backdrop-filter:none;-webkit-backdrop-filter:none;
+}
+.hero-size-tabs .hero-size-slider__thumb{
+  top:auto;bottom:4px;height:2px;
+  border-radius:0;background:var(--color-gold);box-shadow:none;
+}
+.hero-size-tabs .hero-size-slider__thumb-label{display:none;}
+.hero-size-tabs .hero-size-slider__opt{
+  border-radius:0;min-width:5rem;
+  padding:0.5rem 1rem;
+  font-family:var(--font-mono);font-size:12px;font-weight:600;
+  letter-spacing:0.14em;text-transform:uppercase;
+  color:var(--color-text-muted);
+}
+.hero-size-tabs .hero-size-slider__opt.is-active{color:var(--color-gold);}
+.hero-size-tabs .hero-size-slider__opt + .hero-size-slider__opt{
+  border-left:1px solid var(--color-hairline);
+}
+`;
 
 // Sizes + labels come from the single hero registry (app/lib/hero-airframes.ts)
 // so adding an airframe is a config edit there, not a change here.
@@ -71,7 +103,7 @@ export function HeroSizeSlider({
       x.set(dest);
       return;
     }
-    const controls = animate(x, dest, {type: 'spring', stiffness: 360, damping: 34});
+    const controls = animate(x, dest, SPRING.detent);
     return () => controls.stop();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [value, dragging, reduce]);
@@ -111,11 +143,12 @@ export function HeroSizeSlider({
 
   return (
     <div
-      className="hero-size-slider"
+      className="hero-size-slider hero-size-tabs"
       role="group"
       aria-label="Airframe size"
       ref={trackRef}
     >
+      <style>{HERO_TABS_STYLE}</style>
       <motion.div
         className="hero-size-slider__thumb"
         aria-hidden="true"

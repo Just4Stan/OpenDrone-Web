@@ -16,9 +16,18 @@ import type {MoneyV2} from '@shopify/hydrogen/storefront-api-types';
 import {INCUTEC_HINT_SEEN_KEY} from '~/lib/incutec-hint';
 import {buildSeoMeta} from '~/lib/seo';
 import {useComingSoon} from '~/lib/coming-soon';
-import {isComingSoon} from '~/lib/product-content';
+import {
+  isComingSoon,
+  PRODUCT_CONTENT,
+  PRODUCT_CONTENT_FALLBACK,
+} from '~/lib/product-content';
 import {HeroWordmark} from '~/components/HeroWordmark';
 import {HeroSizeSlider} from '~/components/HeroSizeSlider';
+import {SheetFrame} from '~/components/SheetFrame';
+import {CompatBadge} from '~/components/slots/CompatBadge';
+import {AnimatedNumber} from '~/components/AnimatedNumber';
+import {HOME_LEDGER} from '~/lib/home-content';
+import {drawRule} from '~/lib/motion';
 import {
   HERO_AIRFRAMES,
   HERO_AIRFRAME_KEYS,
@@ -33,7 +42,82 @@ import {
   HERO_REVEAL_WINDOWS,
   HERO_SCROLL_STOPS,
   HERO_SLOTS,
+  heroPartFor,
+  PART_CATALOG,
+  type PartDef,
+  type HeroSlotId,
 } from '~/lib/builder/registry';
+
+/** First registry PartDef fronting a commerce handle, or undefined for
+ *  non-parts (openrx, kits) — CompatBadge renders nothing for those. Used by
+ *  the Drawing Register where rows are per-product (not per hero size). */
+function partForHandle(handle: string): PartDef | undefined {
+  return PART_CATALOG.find(
+    (p) => p.commerce.kind === 'shopify' && p.commerce.handle === handle,
+  );
+}
+
+/** Size-specific PartDef behind a hero board, for the BOM strip's CompatBadge.
+ *  Falls back to undefined on any registry mismatch (never throws into render). */
+function heroCompatPart(
+  boardKey: HeroBoardKey,
+  sizeKey: string,
+): PartDef | undefined {
+  try {
+    return heroPartFor(boardKey as HeroSlotId, sizeKey);
+  } catch {
+    return undefined;
+  }
+}
+
+/* Component-scoped skin for the desktop homepage's new surfaces: the hero BOM
+ * strip (reveal cards restyled as engineering rows), the sheet title-block
+ * annotation, and the below-the-fold ledger + Drawing Register. Leans on the
+ * ds-tokens utility classes (.doc-annot, .doc-cell, .doc-label, .hatch,
+ * .dot-grid, .edge-light, .on-rule) — this only carries layout specifics. */
+const DESKTOP_HOME_STYLE = `
+.bom-row{gap:0.75rem;padding:0.55rem 0.7rem;}
+.bom-item{flex:0 0 auto;width:1.4rem;text-align:right;}
+.bom-thumb{width:2.6rem;height:2.6rem;border:1px solid var(--color-hairline);border-radius:var(--r-xs);}
+.bom-main{display:flex;flex-direction:column;gap:3px;min-width:0;flex:1 1 auto;}
+.bom-title{font-size:var(--fs-sm);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.bom-meta{display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap;}
+.hero-titleblock{
+  position:absolute;bottom:1.05rem;left:50%;transform:translateX(-50%);
+  z-index:15;pointer-events:none;white-space:nowrap;
+  transition:opacity 0.4s ease;
+}
+.home-below{background:var(--color-bg);border-top:1px solid var(--color-hairline);}
+.home-below-inner{
+  max-width:72rem;margin:0 auto;
+  padding:clamp(3rem,6vw,5rem) clamp(1.25rem,4vw,3rem);
+  display:flex;flex-direction:column;gap:clamp(2.5rem,5vw,4rem);
+}
+.home-ledger .spec-table{max-width:48rem;}
+.home-register-head{margin-bottom:1rem;--on-rule-bg:var(--color-bg);}
+.home-register-rule{height:1px;background:var(--color-hairline);transform-origin:left;}
+.home-register-table{border-top:1px solid var(--color-hairline);}
+.home-register-row{
+  display:grid;grid-template-columns:6rem minmax(0,1fr) 11rem auto 8rem;
+  align-items:center;gap:1rem;padding:0.85rem 0.5rem;
+  border-bottom:1px solid var(--color-hairline);
+  color:var(--color-text);text-decoration:none;
+}
+.home-register-row.is-head{color:var(--color-ink-annot);padding-block:0.55rem;}
+.home-register-doc{color:var(--color-ink-annot);transition:color 180ms ease;}
+.home-register-row:hover .home-register-doc,
+.home-register-row:focus-visible .home-register-doc{color:var(--color-gold);}
+.home-register-title{font-weight:600;font-size:var(--fs-md);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.home-register-family{color:var(--color-text-muted);}
+.home-register-status{text-align:right;}
+.home-register-soon{font-family:var(--font-mono);font-size:11px;font-weight:600;letter-spacing:0.14em;text-transform:uppercase;color:var(--color-gold);}
+@media (max-width:900px){
+  .home-register-row{grid-template-columns:5rem minmax(0,1fr) 7rem;}
+  .home-register-compat,.home-register-family,
+  .home-register-row.is-head span:nth-child(3),
+  .home-register-row.is-head span:nth-child(4){display:none;}
+}
+`;
 
 // Kick off the HeroScene chunk download at module eval so it races with
 // hydration instead of waiting for useEffect — only on desktop and only
@@ -365,13 +449,15 @@ export default function Homepage() {
   }, []);
 
   if (isMobile) return <MobileHome featured={featured} />;
-  return <DesktopHome heroStacks={heroStacks} />;
+  return <DesktopHome heroStacks={heroStacks} featured={featured} />;
 }
 
 function DesktopHome({
   heroStacks,
+  featured,
 }: {
   heroStacks: Promise<HeroStacks>;
+  featured: Promise<CollectionItemFragment[]>;
 }) {
   // Coming-soon reveal cards keep their link + title but swap the price
   // for a Soon tag (per-card handle resolved server-side on the card).
@@ -895,8 +981,14 @@ function DesktopHome({
   // registry). Reversing the scroll reverses all of it.
   const REVEAL_WINDOWS = HERO_REVEAL_WINDOWS;
 
+  // Active size's drafting label ("5″ Freestyle") for the sheet title-block —
+  // derived from the hero registry, never authored prose.
+  const heroSizeLabel =
+    HERO_AIRFRAMES.find((a) => a.key === heroSize)?.label ?? heroSize;
+
   return (
     <div className="homepage">
+      <style>{DESKTOP_HOME_STYLE}</style>
       {/*
         Warm the three flagship PDPs (the live handles the 3D part hotspots
         navigate to) so clicking a part is an instant SPA transition with its
@@ -916,6 +1008,10 @@ function DesktopHome({
       */}
       <div className="relative" style={{height: `${heroSpacerVh}vh`}}>
         <div className="sticky top-0 h-screen overflow-hidden pointer-events-none">
+          {/* Exhibit frame — the pinned teardown becomes the exploded-view
+              drawing on a numbered sheet (hairline rect, corner crosses, A–D /
+              1–6 zone ticks). Decorative, pointer-events:none, hidden <480px. */}
+          <SheetFrame ticks className="z-10" />
           {/* Full-screen 3D — pinned behind everything via sticky parent */}
           <div
             className="absolute inset-0 z-0"
@@ -1080,12 +1176,19 @@ function DesktopHome({
                       const setSpot = (v: HeroBoardKey | null) => {
                         heroSpotlightRef.current = v;
                       };
+                      // Registry facts for the BOM row: the family label and
+                      // the size-specific compatibility chips (mount / size).
+                      const compatPart = heroCompatPart(card.boardKey, heroSize);
+                      const family =
+                        PRODUCT_CONTENT[card.handle]?.family ??
+                        card.productType ??
+                        '';
                       return (
                         <Link
                           key={card.boardKey}
                           to={card.url}
                           prefetch="intent"
-                          className="hero-reveal-card"
+                          className="hero-reveal-card bom-row"
                           style={{
                             maxHeight: `${(r * 7.5).toFixed(3)}rem`,
                             marginTop: `${(r * 0.55).toFixed(3)}rem`,
@@ -1100,7 +1203,10 @@ function DesktopHome({
                           onFocus={() => setSpot(card.boardKey)}
                           onBlur={() => setSpot(null)}
                         >
-                          <span className="hero-reveal-media">
+                          <span className="bom-item doc-annot" aria-hidden="true">
+                            {String(i + 1).padStart(2, '0')}
+                          </span>
+                          <span className="hero-reveal-media bom-thumb dot-grid">
                             {card.image?.url ? (
                               <img
                                 src={card.image.url}
@@ -1109,14 +1215,24 @@ function DesktopHome({
                                 decoding="async"
                               />
                             ) : (
-                              <span className="hero-reveal-ph" aria-hidden="true" />
+                              <span
+                                className="hero-reveal-ph hatch"
+                                aria-hidden="true"
+                              />
                             )}
                           </span>
-                          <span className="hero-reveal-text">
-                            <span className="hero-reveal-title">{card.title}</span>
-                            {card.productType ? (
-                              <span className="hero-reveal-sub">{card.productType}</span>
-                            ) : null}
+                          <span className="bom-main">
+                            <span className="bom-title">{card.title}</span>
+                            <span className="bom-meta">
+                              {family ? (
+                                <span className="bom-family doc-annot">
+                                  {family}
+                                </span>
+                              ) : null}
+                              {compatPart ? (
+                                <CompatBadge part={compatPart} />
+                              ) : null}
+                            </span>
                           </span>
                           {isComingSoon(card.handle, globalComingSoon) ? (
                             <span className="hero-reveal-soon">Soon</span>
@@ -1169,6 +1285,17 @@ function DesktopHome({
           />
         </div>
 
+        {/* Sheet title-block strip — completes the wordmark (left) / SHOP
+            (right) baseline with a centered mono readout: a fixed sheet number
+            and the active airframe size, both derived data (never prose). */}
+        <div
+          className="hero-titleblock doc-annot"
+          style={{opacity: splashSettled ? 1 : 0}}
+          aria-hidden="true"
+        >
+          SHEET 01 · {heroSizeLabel}
+        </div>
+
         {/* Scroll hint */}
         <div
           className="absolute bottom-3 left-1/2 -translate-x-1/2"
@@ -1206,6 +1333,104 @@ function DesktopHome({
         </div>
         </div>
       </div>
+
+      {/* ── Below the fold ───────────────────────────────────────────────
+          The pinned hero releases into normal document flow here (desktop
+          finally gets content under the sheet): the open-hardware ledger, then
+          the Drawing Register — every product as a numbered doc row linking to
+          its PDP. */}
+      <section className="home-below">
+        <div className="home-below-inner">
+          <div className="home-ledger" aria-label="Open hardware index">
+            <p className="section-label">Open hardware — index</p>
+            <dl className="spec-table">
+              {HOME_LEDGER.map(([k, v, countUp]) => (
+                <div key={k}>
+                  <dt>{k}</dt>
+                  <dd>{countUp ? <AnimatedNumber value={v} /> : v}</dd>
+                </div>
+              ))}
+            </dl>
+          </div>
+
+          <Suspense fallback={null}>
+            <Await resolve={featured} errorElement={null}>
+              {(items) =>
+                items.length > 0 ? (
+                  <section
+                    className="home-register"
+                    aria-label="Drawing register"
+                  >
+                    <div className="on-rule home-register-head">
+                      <span className="on-rule-label doc-label">
+                        Drawing register
+                      </span>
+                    </div>
+                    <motion.div
+                      className="home-register-rule"
+                      variants={drawRule}
+                      initial="hidden"
+                      whileInView="visible"
+                      viewport={{once: true, amount: 0.6}}
+                    />
+                    <div className="home-register-table">
+                      <div className="home-register-row is-head doc-annot">
+                        <span>Doc no</span>
+                        <span>Title</span>
+                        <span>Family</span>
+                        <span>Compat</span>
+                        <span className="home-register-status">Status</span>
+                      </div>
+                      {items.map((product) => {
+                        const content =
+                          PRODUCT_CONTENT[product.handle] ??
+                          PRODUCT_CONTENT_FALLBACK;
+                        const soon = isComingSoon(
+                          product.handle,
+                          globalComingSoon,
+                        );
+                        const part = partForHandle(product.handle);
+                        return (
+                          <Link
+                            key={product.id}
+                            to={`/products/${product.handle}`}
+                            prefetch="intent"
+                            className="home-register-row edge-light edge-light-wash"
+                          >
+                            <span className="home-register-doc doc-annot">
+                              OD-{content.fileNumber}
+                            </span>
+                            <span className="home-register-title">
+                              {product.title}
+                            </span>
+                            <span className="home-register-family doc-cell">
+                              {content.family}
+                            </span>
+                            <span className="home-register-compat">
+                              {part ? <CompatBadge part={part} /> : null}
+                            </span>
+                            <span className="home-register-status doc-cell">
+                              {soon ? (
+                                <span className="home-register-soon">
+                                  Coming soon
+                                </span>
+                              ) : (
+                                <Money
+                                  data={product.priceRange.minVariantPrice}
+                                />
+                              )}
+                            </span>
+                          </Link>
+                        );
+                      })}
+                    </div>
+                  </section>
+                ) : null
+              }
+            </Await>
+          </Suspense>
+        </div>
+      </section>
     </div>
   );
 }
