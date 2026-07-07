@@ -8058,6 +8058,13 @@ button.reset {
   padding: 3.5rem 1.25rem 5rem;
 }
 
+/* The exhibit frame wraps the bezel: the SheetFrame hairline + zone ticks sit
+   in this padding band, around the OSD (not over its telemetry rails). */
+.signal-lost-frame {
+  position: relative;
+  padding: calc(var(--sheet-inset) + 12px);
+}
+
 /* the OSD "video feed" frame */
 .signal-lost-osd {
   position: relative;
@@ -8074,7 +8081,8 @@ button.reset {
   overflow: hidden;
   font-family: var(--font-mono);
   color: var(--color-gold);
-  box-shadow: 0 30px 80px -40px rgba(0, 0, 0, 0.6);
+  /* de-float: the bezel stands on its hairline, not a drop shadow. */
+  box-shadow: var(--pod-shadow);
   isolation: isolate;
 }
 
@@ -8138,7 +8146,7 @@ button.reset {
   font-weight: 600;
 }
 .osd-warn {
-  color: #e0533d;
+  color: var(--color-error);
   animation: osd-blink 1.1s steps(1) infinite;
 }
 @keyframes osd-blink {
@@ -8156,7 +8164,7 @@ button.reset {
   width: 0.55em;
   height: 0.55em;
   border-radius: 50%;
-  background: #e0533d;
+  background: var(--color-error);
   animation: osd-blink 1.1s steps(1) infinite;
 }
 .osd-rssi {
@@ -8223,7 +8231,7 @@ button.reset {
   opacity: 0.7;
 }
 .signal-lost-status::before {
-  color: #e0533d;
+  color: var(--color-error);
   animation: glitch-x 2.4s steps(2) infinite;
 }
 .signal-lost-status::after {
@@ -9051,24 +9059,107 @@ button.reset {
 
 .search-results-list {
   display: grid;
-  gap: 0.75rem;
+  gap: 0;
 }
 
-.search-results-item {
-  border-top: 1px solid var(--color-border);
-  padding-top: 0.75rem;
+/* The section label sits ON the group's opening hairline. */
+.search-section .on-rule {
+  margin-bottom: var(--sp-4);
 }
 
-.search-results-item:first-child {
-  border-top: 0;
-  padding-top: 0;
+/* Search results as a parts register: hairline-separated rows, mono chrome,
+   doc numbers where PRODUCT_CONTENT has one, hatched thumb fallback, and the
+   pure-CSS edge-light wash on hover — the same register language the catalog,
+   PDP and cart share. */
+.search-row {
+  border-bottom: 1px solid var(--color-hairline);
 }
 
-.search-product-link,
-.predictive-search-result-item a {
-  display: flex;
-  gap: 0.75rem;
+.search-row-link {
+  display: grid;
+  grid-template-columns: auto 64px minmax(0, 1fr) auto auto;
   align-items: center;
+  gap: var(--sp-3);
+  min-height: 56px;
+  padding: 0.5rem 0.5rem;
+  color: var(--color-text-muted);
+}
+.search-row-link:hover {
+  text-decoration: none;
+}
+
+/* Non-product rows (pages, articles) have no doc/family/price columns. */
+.search-row:not(.is-product) .search-row-link {
+  grid-template-columns: 40px minmax(0, 1fr);
+}
+
+.search-row-doc {
+  transition: color 180ms ease;
+}
+.search-row:hover .search-row-doc,
+.search-row:focus-within .search-row-doc {
+  color: var(--color-gold);
+}
+
+.search-row-thumb {
+  width: 64px;
+  height: 64px;
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--r-xs);
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--color-bg-card);
+}
+.search-row:not(.is-product) .search-row-thumb {
+  width: 40px;
+  height: 40px;
+}
+.search-row-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.search-row-title {
+  font-family: var(--font-sans);
+  font-size: var(--fs-sm);
+  color: var(--color-text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.search-row-family {
+  justify-self: end;
+  white-space: nowrap;
+}
+
+.search-row-price {
+  justify-self: end;
+  color: var(--color-text);
+  white-space: nowrap;
+}
+
+@media (max-width: 640px) {
+  .search-row-link,
+  .search-row.is-product .search-row-link {
+    grid-template-columns: auto 56px minmax(0, 1fr);
+    row-gap: 0.15rem;
+  }
+  .search-row-thumb {
+    width: 56px;
+    height: 56px;
+  }
+  /* Family and price wrap under the title on narrow rows. */
+  .search-row-family {
+    grid-column: 3;
+    justify-self: start;
+  }
+  .search-row-price {
+    grid-column: 3;
+    justify-self: start;
+  }
 }
 
 .search-pagination {
@@ -9088,7 +9179,8 @@ button.reset {
   border-top: 1px solid var(--color-border);
 }
 
-.predictive-search-result h5 {
+/* The predictive dropdown renders <h4> group headings — mono doc-labels. */
+.predictive-search-result h4 {
   margin-bottom: 0.75rem;
   font-family: var(--font-mono);
   font-size: 12px;
@@ -9099,16 +9191,23 @@ button.reset {
 
 .predictive-search-result ul {
   display: grid;
-  gap: 0.5rem;
+  gap: 0;
 }
 
 .predictive-search-result-item a {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
   padding: 0.5rem;
-  border-radius: var(--r-md);
+  border-radius: var(--r-xs);
+  border-bottom: 1px solid var(--color-hairline-faint);
+  color: var(--color-text-muted);
+  transition: background-color 180ms ease, color 180ms ease;
 }
 
+/* Edge-light wash — the register hover language, not a coloured pill. */
 .predictive-search-result-item a:hover {
-  background: color-mix(in srgb, var(--color-accent) 18%, transparent);
+  background: var(--color-highlight);
   color: var(--color-text);
 }
 

@@ -2,7 +2,20 @@ import {Link} from 'react-router';
 import {Image, Money, Pagination} from '@shopify/hydrogen';
 import {urlWithTrackingParams, type RegularSearchReturn} from '~/lib/search';
 import {useComingSoon} from '~/lib/coming-soon';
-import {isComingSoon} from '~/lib/product-content';
+import {isComingSoon, PRODUCT_CONTENT} from '~/lib/product-content';
+
+/** Document number for a search register row — "OD-02" from PRODUCT_CONTENT's
+ *  fileNumber, or "—" when the product has no editorial file. Registry fact,
+ *  never authored prose. */
+function searchDocNo(handle: string): string {
+  const n = PRODUCT_CONTENT[handle]?.fileNumber;
+  return n && n !== '—' ? `OD-${n}` : '—';
+}
+
+/** Family label for a search register row — a PRODUCT_CONTENT fact. */
+function searchFamily(handle: string): string | null {
+  return PRODUCT_CONTENT[handle]?.family ?? null;
+}
 
 type SearchItems = RegularSearchReturn['result']['items'];
 type PartialSearchResult<ItemType extends keyof SearchItems> = Pick<
@@ -42,7 +55,9 @@ function SearchResultsArticles({
 
   return (
     <section className="search-section">
-      <h2>Articles</h2>
+      <div className="on-rule">
+        <h2 className="on-rule-label doc-label">Articles</h2>
+      </div>
       <div className="search-results-list">
         {articles?.nodes?.map((article) => {
           const articleUrl = urlWithTrackingParams({
@@ -52,9 +67,13 @@ function SearchResultsArticles({
           });
 
           return (
-            <div className="search-results-item" key={article.id}>
-              <Link prefetch="viewport" to={articleUrl}>
-                {article.title}
+            <div
+              className="search-row edge-light edge-light-wash"
+              key={article.id}
+            >
+              <Link className="search-row-link" prefetch="viewport" to={articleUrl}>
+                <span className="search-row-thumb hatch" aria-hidden="true" />
+                <span className="search-row-title">{article.title}</span>
               </Link>
             </div>
           );
@@ -71,7 +90,9 @@ function SearchResultsPages({term, pages}: PartialSearchResult<'pages'>) {
 
   return (
     <section className="search-section">
-      <h2>Pages</h2>
+      <div className="on-rule">
+        <h2 className="on-rule-label doc-label">Pages</h2>
+      </div>
       <div className="search-results-list">
         {pages?.nodes?.map((page) => {
           const pageUrl = urlWithTrackingParams({
@@ -81,9 +102,13 @@ function SearchResultsPages({term, pages}: PartialSearchResult<'pages'>) {
           });
 
           return (
-            <div className="search-results-item" key={page.id}>
-              <Link prefetch="viewport" to={pageUrl}>
-                {page.title}
+            <div
+              className="search-row edge-light edge-light-wash"
+              key={page.id}
+            >
+              <Link className="search-row-link" prefetch="viewport" to={pageUrl}>
+                <span className="search-row-thumb hatch" aria-hidden="true" />
+                <span className="search-row-title">{page.title}</span>
               </Link>
             </div>
           );
@@ -105,7 +130,9 @@ function SearchResultsProducts({
 
   return (
     <section className="search-section">
-      <h2>Products</h2>
+      <div className="on-rule">
+        <h2 className="on-rule-label doc-label">Products</h2>
+      </div>
       <Pagination connection={products}>
         {({nodes, isLoading, NextLink, PreviousLink}) => {
           const ItemsMarkup = nodes.map((product) => {
@@ -120,17 +147,34 @@ function SearchResultsProducts({
               ? undefined
               : product?.selectedOrFirstAvailableVariant?.price;
             const image = product?.selectedOrFirstAvailableVariant?.image;
+            const docNo = searchDocNo(product.handle);
+            const family = searchFamily(product.handle);
 
             return (
-              <div className="search-results-item" key={product.id}>
-                <Link className="search-product-link" prefetch="viewport" to={productUrl}>
-                  {image && (
-                    <Image data={image} alt={product.title} width={50} />
+              <div
+                className="search-row is-product edge-light edge-light-wash"
+                key={product.id}
+              >
+                <Link
+                  className="search-row-link"
+                  prefetch="viewport"
+                  to={productUrl}
+                >
+                  <span className="search-row-doc doc-annot">{docNo}</span>
+                  <span
+                    className={`search-row-thumb${image ? ' dot-grid' : ' hatch'}`}
+                  >
+                    {image && (
+                      <Image data={image} alt={product.title} width={64} />
+                    )}
+                  </span>
+                  <span className="search-row-title">{product.title}</span>
+                  {family && (
+                    <span className="search-row-family doc-annot">{family}</span>
                   )}
-                  <div>
-                    <p>{product.title}</p>
-                    <small>{price && <Money data={price} />}</small>
-                  </div>
+                  <span className="search-row-price doc-cell">
+                    {price && <Money data={price} />}
+                  </span>
                 </Link>
               </div>
             );

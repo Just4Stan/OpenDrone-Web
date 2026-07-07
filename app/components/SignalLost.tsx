@@ -2,6 +2,7 @@ import {useEffect, useRef, useState} from 'react';
 import {useLocation} from 'react-router';
 import {TriangleAlert} from 'lucide-react';
 import {ScrambleText} from '~/components/ScrambleText';
+import {SheetFrame} from '~/components/SheetFrame';
 
 /**
  * The 404 easter egg. An FPV "lost signal / failsafe" screen — the quad has
@@ -40,7 +41,12 @@ export function SignalLost() {
 
   return (
     <div className="signal-lost" role="alert">
-      <div className="signal-lost-osd">
+      {/* The OSD bezel is framed as a numbered drawing sheet — the easter egg
+          and the annotation layer are one system (SheetFrame consumes the same
+          hairline/zone tokens as every other exhibit). */}
+      <div className="signal-lost-frame">
+        <SheetFrame ticks />
+        <div className="signal-lost-osd">
         {/* top telemetry rail */}
         <div className="osd-rail osd-rail-top">
           <span className="osd-stat">
@@ -90,10 +96,11 @@ export function SignalLost() {
           </span>
           <span className="osd-stat">ALT 0.0m</span>
         </div>
+        </div>
       </div>
 
       <div className="signal-lost-actions">
-        <a href="/" className="hero-cta-primary">
+        <a href="/" className="hero-cta-primary keycap">
           Return to Home <span className="rth-tag">RTH</span>
         </a>
         <a href="/collections/all" className="hero-cta-secondary">
