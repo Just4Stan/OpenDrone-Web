@@ -24,6 +24,16 @@ import {INCUTEC_HINT_SEEN_KEY} from '~/lib/incutec-hint';
 import {useComingSoon} from '~/lib/coming-soon';
 import {isComingSoon, PRODUCT_CONTENT} from '~/lib/product-content';
 import {stackDiscountedPrice} from '~/lib/stack-discount';
+import {AnimatedNumber} from '~/components/AnimatedNumber';
+
+/** KiCad drawing number for a category's representative PDP — the file-number
+ *  index prefix on the nav rows. Derived from PRODUCT_CONTENT; returns null for
+ *  the unnumbered fallback so the label renders bare. */
+function fileNumberFor(to: string): string | null {
+  const handle = to.replace('/products/', '');
+  const n = PRODUCT_CONTENT[handle]?.fileNumber;
+  return n && n !== '—' ? n : null;
+}
 
 /** Retire the hero "Who's incutec?" hint: persist the dismissal and pull the
  *  class so it can't flash on a same-session SPA return to the homepage. */
@@ -491,6 +501,11 @@ function FamilyNav({
           to={cat.to}
           aria-expanded={open === cat.label}
         >
+          {fileNumberFor(cat.to) ? (
+            <span className="header-cat-index" aria-hidden="true">
+              {fileNumberFor(cat.to)}
+            </span>
+          ) : null}
           {cat.label}
         </NavLink>
         <div className="header-cat-pod-wrap">
@@ -591,6 +606,12 @@ export function HeaderMenu({
                   placeholder="Search products"
                   aria-label="Search products"
                   enterKeyHint="search"
+                  // Password managers / form-fill extensions inject inline
+                  // styles (e.g. caret-color:transparent) onto search inputs
+                  // before React hydrates, which trips a one-off hydration
+                  // attribute-mismatch warning on cold load. The attribute is
+                  // client-only and harmless — suppress the false positive.
+                  suppressHydrationWarning
                 />
               </>
             )}
@@ -604,6 +625,11 @@ export function HeaderMenu({
               to={c.to}
               className="text-sm font-mono uppercase tracking-wider text-[var(--color-text-muted)] hover:text-[var(--color-text)] transition-colors"
             >
+              {fileNumberFor(c.to) ? (
+                <span className="site-mobile-nav-index" aria-hidden="true">
+                  {fileNumberFor(c.to)}
+                </span>
+              ) : null}
               {MOBILE_FAMILY_LABEL[c.type] ?? c.label}
             </NavLink>
           ))}
@@ -910,18 +936,21 @@ function CartBadge({count}: {count: number}) {
         }
       }}
     >
-      {/* Inner relative wrapper keeps the count badge pinned to the icon, not
-          to the enlarged 44px tap area the anchor gets on mobile. */}
-      <span className="relative inline-flex">
+      {/* Cart glyph + a square mono `[N]` counter in gold — the round badge is
+          retired for the title-block readout. AnimatedNumber ticks the count on
+          mount; brackets are static, the numeral sweeps. */}
+      <span className="inline-flex items-center">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
           <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z" />
           <line x1="3" y1="6" x2="21" y2="6" />
           <path d="M16 10a4 4 0 01-8 0" />
         </svg>
         {count > 0 && (
-          <span className="absolute -top-1 -right-1.5 bg-[var(--color-gold-fill)] text-[var(--color-on-accent)] text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center leading-none">
-            {count}
-          </span>
+          <AnimatedNumber
+            className="site-cart-count"
+            value={`[${count}]`}
+            duration={500}
+          />
         )}
       </span>
     </NavLink>

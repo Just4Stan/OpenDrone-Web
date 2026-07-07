@@ -1,4 +1,87 @@
+import {useRef} from 'react';
+import {useInView} from 'motion/react';
 import type {LatestCommit} from '~/lib/github';
+import {ScrambleText} from '~/components/ScrambleText';
+
+/**
+ * Footer REV cell — the KiCad title block's revision box. Renders the flagship
+ * repo's HEAD as `REV {short-hash} · {date}`, the hash decoding in ONCE on
+ * first in-view via ScrambleText (the single sanctioned decode outside the 404
+ * — flagged for Stan's sign-off; flip {@link REV_DECODE} to retire it in one
+ * line). Values are pure derived data: a git short-hash and an ISO date.
+ *
+ * Data source: a `commit` prop, so the box stays a pure render with zero
+ * network cost in global chrome. It is NOT fetched here — the storefront CSP
+ * (`connectSrc` in entry.server.tsx) blocks api.github.com from the browser,
+ * and the commit fetch that feeds it (`fetchLatestCommits`) already runs
+ * server-side on the routes that have it. Until a global loader threads a
+ * commit through PageLayout, the box degrades to the em-dash placeholder and
+ * links to the repo's commit history — a title block before first issue, never
+ * a broken cell. Wiring a live hash is a one-line `commit={…}` once the value
+ * is available in Footer's data.
+ */
+
+/** Flip to false to retire the footer REV decode in one line (Stan sign-off). */
+export const REV_DECODE = true;
+
+/** Flagship repo the REV box reports (also linked in the footer's Open Source
+ *  column); its /commits page is the placeholder link target. */
+export const REV_REPO_URL = 'https://github.com/incutec-hw/OpenFC';
+
+export function FooterRevCell({
+  label = 'REV',
+  commit,
+}: {
+  label?: string;
+  commit?: LatestCommit | null;
+}) {
+  const ref = useRef<HTMLSpanElement>(null);
+  const inView = useInView(ref, {once: true, margin: '0px 0px -8% 0px'});
+
+  const sha = commit?.shortSha ?? '';
+  const date = commit?.date ? commit.date.slice(0, 10) : '';
+  const href = commit?.url ?? `${REV_REPO_URL.replace(/\/$/, '')}/commits`;
+
+  return (
+    <a
+      className="footer-rev"
+      href={href}
+      target="_blank"
+      rel="noopener noreferrer"
+      aria-label={sha ? `Revision ${sha}, ${date}` : 'Revision history'}
+    >
+      <span className="footer-rev-label doc-annot" aria-hidden="true">
+        {label}
+      </span>
+      <span ref={ref} className="footer-rev-value doc-cell">
+        {sha ? (
+          REV_DECODE && inView ? (
+            <ScrambleText
+              key={sha}
+              className="footer-rev-sha"
+              text={sha}
+              duration={650}
+            />
+          ) : (
+            <span className="footer-rev-sha">{sha}</span>
+          )
+        ) : (
+          <span className="footer-rev-sha" aria-hidden="true">
+            —
+          </span>
+        )}
+        {date ? (
+          <>
+            <span className="footer-rev-sep" aria-hidden="true">
+              {' · '}
+            </span>
+            <span className="footer-rev-date">{date}</span>
+          </>
+        ) : null}
+      </span>
+    </a>
+  );
+}
 
 function relativeTime(iso: string): string {
   if (!iso) return '';
