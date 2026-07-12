@@ -56,18 +56,30 @@
   --color-text-dim: #6a6a6a;
   --color-gold: #c89d2e;
   --color-gold-hover: #dab040;
+  /* Brand gold at full brightness — the physical product color (motor
+     bells, print) is #fdb600. Highest-luminance gold in the ramp; reach
+     for it when gold text/icons/accents sit on a dark or photographic
+     surface (hero, dark cards, imagery) where the muted --color-gold
+     washes out. ~10.7:1 on near-black. Do NOT use it as text on white
+     (~1.6:1) — that's what --color-gold is for. */
+  --color-gold-bright: #fdb600;
   --color-gold-soft: rgba(200, 157, 46, 0.12);
-  /* Gold for FILLED surfaces (buttons, badges, active sleds, wordmark).
-     Split from --color-gold because the two have incompatible contrast
-     constraints in light mode: gold-as-text must hold AA 4.5:1 on light
-     backgrounds (which forces it deep), while gold-as-fill only needs
-     3:1 as a UI surface and carries --color-on-accent ink — so it can
-     stay bright and actually read as gold. Light mode overrides both
-     golds LIGHTER (see html.light) so they appear the same against a
-     bright surround. */
+  /* Gold for FILLED surfaces (buttons, badges, active sleds, wordmark) —
+     always carries --color-on-accent dark ink on top. Kept distinct from
+     text gold so a fill can stay bright without dragging text contrast. */
   --color-gold-fill: #c89d2e;
   --color-gold-fill-hover: #dab040;
-  --color-stock: #4ea866;
+
+  /* Brand / PCB green. --color-green is the emerald brand green — a
+     physical product color (#147A31, used on the motors). Rendered
+     lighter on dark for legibility (#4ea866); the true #147A31 takes over
+     on light (AA 5.4:1 on white, see html.light). --color-green-deep is
+     the dark solder-mask PCB green for fills/borders (same in both modes).
+     --color-stock aliases the brand green, so stock/success re-theme with
+     it automatically. */
+  --color-green: #4ea866;
+  --color-green-deep: #327014;
+  --color-stock: var(--color-green);
   /* Form/validation error text. 7.02:1 on --color-bg #0d0d10 (AA). */
   --color-error: #f87171;
   --color-border: #24242a;
@@ -171,25 +183,26 @@ html.light {
   --color-text: #1a1a1e;
   --color-text-muted: #57575c;
   --color-text-dim: #86868c;
-  /* Light-mode gold (owner decision, Stan 2026-07-06): ONE light gold —
-     #dab040, one step above dark mode's #c89d2e base — for text, fills
-     and accents alike; any darker "AA-safe" gold reads brown against a
-     bright surround. Gold TEXT never sits directly on white: every gold
-     label/badge/eyebrow gets a near-black tag behind it in light mode
-     (--color-tag-bg + the "Gold tags — light mode" section below), i.e.
-     gold-on-black exactly like dark mode. The only bare gold-on-white
-     text is inline headline accent words and hover states (~2:1, below
-     AA — accepted deliberately, brand look wins; do NOT walk the gold
-     back down to a dark amber). Hover darkens to #c89d2e. */
-  --color-gold: #dab040;
-  --color-gold-hover: #c89d2e;
-  --color-gold-soft: rgba(218, 176, 64, 0.16);
+  /* Light-mode gold (Stan 2026-07-12): gold text sits DIRECTLY on the
+     light background now — the old "gold is always on a black chip" rule
+     is gone (it scattered near-black boxes across light pages and read as
+     broken). A true gold can't reach AA on white without turning brown,
+     which we refuse; so gold text on white is a deliberate ~2.6:1 brand
+     accent (labels/eyebrows/accents), never body copy. Base gold is
+     unified with dark mode (#c89d2e) — as legible as a vibrant gold gets
+     on white — and brightens to #dab040 on hover. For gold on a DARK
+     surface inside a light page (dark cards, hero imagery) use
+     --color-gold-bright (#fdb600); it carries over from @theme unchanged. */
+  --color-gold: #c89d2e;
+  --color-gold-hover: #dab040;
+  --color-gold-soft: rgba(200, 157, 46, 0.14);
+  /* Fill stays bright — dark ink (--color-on-accent) rides on top. */
   --color-gold-fill: #dab040;
   --color-gold-fill-hover: #c89d2e;
-  /* Near-black backing that keeps gold text "always on black" in light
-     mode. Unused in dark — the page/cards are already near-black there. */
-  --color-tag-bg: #101014;
-  --color-stock: #2f8a4e;       /* darker green for contrast on light */
+  /* Emerald PCB/brand green, AA 5.4:1 on white. --color-green-deep and
+     --color-stock (= var(--color-green)) inherit from @theme and re-theme
+     through this value automatically. */
+  --color-green: #147A31;
   /* Error red deep enough for light: 6.08:1 on #f7f6f3, 6.57:1 on #fff (AA).
      The dark-mode #f87171 only hits 2.56:1 here. */
   --color-error: #b42318;
@@ -223,100 +236,17 @@ html.light .schematic-sheet {
   filter: contrast(1.15);
 }
 
-/* ── Gold tags — light mode ─────────────────────────────────────────────
-   Rule (Stan 2026-07-06): gold TEXT is always gold-on-black. Dark mode
-   satisfies this for free (the page is near-black); in light mode every
-   gold label/badge/eyebrow gets a near-black tag chip behind it instead
-   of sitting faint on white. Scoped to html.light so dark mode stays
-   pixel-identical. Inline headline accent words and hover states are the
-   deliberate exception (plain light gold, no chip).
-   New gold label? Add its selector here, or put the `gold-tag` class on
-   it in JSX. */
-
-/* Standalone eyebrows / kickers / badges — roomy chip. */
-html.light .hero-reveal-soon,
-html.light .product-pod-soon,
-html.light .pair-cta-eyebrow,
-html.light .chapter-number,
-html.light .open-source-card-sub--oshwa,
-html.light .route-error-status,
-html.light .account-dashboard-eyebrow-mono,
-html.light .account-welcome-eyebrow,
-html.light .editorial-eyebrow,
-html.light .partner-label,
-html.light .upstream-project,
-html.light .donation-eyebrow,
-html.light .contact-hero-eyebrow,
-html.light .contact-tier-discord .contact-tier-eyebrow,
-html.light .support-eyebrow,
-html.light .provenance-label,
-html.light .section-label,
-html.light .page-eyebrow,
-html.light .product-eyebrow,
-html.light .support-resume-success,
-html.light .site-header-categories .header-cat-pod .product-pod-title {
-  display: inline-block;
-  width: fit-content;
-  background: var(--color-tag-bg);
-  color: var(--color-gold);
-  padding: 0.3em 0.6em;
-  border-radius: var(--r-xs);
-}
-
-/* JSX opt-in for Tailwind-styled gold labels. Display-neutral so it works
-   on block <p>s and inline-flex icon rows alike. */
-html.light .gold-tag {
-  width: fit-content;
-  background: var(--color-tag-bg);
-  color: var(--color-gold);
-  padding: 0.3em 0.6em;
-  border-radius: var(--r-xs);
-}
-
-/* Small in-flow tokens (counts, SHAs, status words inside a line) —
-   tighter chip so the line-height doesn't blow up. */
-html.light .board-folder-rail-count,
-html.light .schematic-rail-count,
-html.light .latest-commit-sha,
-html.light .latest-commit-label span,
-html.light .bundle-component-more,
-html.light .in-the-box-qty,
-html.light .board-deck-count,
-html.light .roadmap-status[data-status='in-revision'],
-html.light .variant-tier-flag.is-selected,
-html.light .donation-tier-active .donation-tier-label,
-html.light .support-msg-staff .support-msg-author,
-html.light .firmware-split-contrib,
-html.light .donation-tier-price,
-html.light .catalog-filter.is-active {
-  background: var(--color-tag-bg);
-  color: var(--color-gold);
-  padding: 0.12em 0.45em;
-  border-radius: var(--r-xs);
-}
-
-/* Elements that already are chips — swap their light backing to the black
-   tag; their own padding/borders stay. */
-html.light .site-header-categories .site-header-cat-group {
-  background: var(--color-tag-bg);
-  border-color: #26262c;
-}
-html.light .site-header-categories .site-header-cat-all,
-html.light .product-buy-soon,
-html.light .trust-chip-gold,
-html.light .teardown-pin-cost,
-html.light .cart-line-discount-badge,
-html.light .signal-lost-sub code,
-html.light .product-options-item[aria-checked='true'] {
-  background: var(--color-tag-bg);
-}
-/* Keep the All-Products chip black through hover/active (its shared hover
-   rules assume a light page behind a translucent gold wash). */
-html.light .site-header-categories .site-header-cat-all:hover,
-html.light .site-header-categories .site-header-cat-all.active,
-html.light .site-header-categories .site-header-cat-all[aria-current='page'] {
-  background: #1a1a20;
-}
+/* ── Gold tags — REMOVED (Stan 2026-07-12) ──────────────────────────────
+   The old "gold text is always on a near-black chip" rule lived here: in
+   light mode every gold label/eyebrow/badge got a --color-tag-bg chip so
+   gold never touched white. It scattered black boxes across light pages
+   and read as broken, so the whole block is gone. Gold text now sits
+   directly on the light background as a ~2.6:1 brand accent (see the
+   light-mode --color-gold note above). The `.gold-tag` JSX class is now
+   inert — safe to leave in markup, no styling attached. If you need gold
+   on a genuinely dark surface within a light page, set the text to
+   var(--color-gold-bright) and give the element its own dark background;
+   don't reintroduce a blanket chip rule. */
 
 /* Default price treatment. Display sans, tabular figures. Specialised
    per-context by .product-buy-price overrides. */
@@ -1102,6 +1032,11 @@ html {
   font-weight: 600;
   letter-spacing: 0.14em;
   text-transform: uppercase;
+  /* On the dark reveal card, use full-brightness brand gold so the badge
+     pops; light mode swaps back to --color-gold (the card goes near-white). */
+  color: var(--color-gold-bright);
+}
+html.light .hero-reveal-soon {
   color: var(--color-gold);
 }
 
