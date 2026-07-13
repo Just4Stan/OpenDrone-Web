@@ -33,7 +33,7 @@
   },
   "prettier": "@shopify/prettier-config",
   "dependencies": {
-    "@formkit/auto-animate": "^0.9.0",
+    "@formkit/auto-animate": "^0.10.0",
     "@react-three/fiber": "^9.6.1",
     "@react-three/postprocessing": "^3.0.4",
     "@shopify/hydrogen": "^2026.4.1",
