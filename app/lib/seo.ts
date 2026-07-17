@@ -189,6 +189,12 @@ type ProductJsonLdInput = {
   price?: {amount: string; currencyCode: string} | null;
   availableForSale: boolean;
   productHandle: string;
+  /**
+   * Star aggregate from the synced review metafields (app/lib/reviews.ts).
+   * Only pass a value when count > 0 — a zero-review AggregateRating is
+   * malformed structured data. Null/undefined skips the block entirely.
+   */
+  rating?: {value: number; count: number} | null;
 };
 
 export function buildProductJsonLd(input: ProductJsonLdInput) {
@@ -208,6 +214,15 @@ export function buildProductJsonLd(input: ProductJsonLdInput) {
   }
   if (input.sku) product.sku = input.sku;
   if (input.gtin) product.gtin = input.gtin;
+  if (input.rating && input.rating.count > 0) {
+    product.aggregateRating = {
+      '@type': 'AggregateRating',
+      ratingValue: input.rating.value,
+      reviewCount: input.rating.count,
+      bestRating: 5,
+      worstRating: 1,
+    };
+  }
   if (input.price) {
     product.offers = {
       '@type': 'Offer',
