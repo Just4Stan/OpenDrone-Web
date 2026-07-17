@@ -127,9 +127,10 @@ function layerFunction(
 ): string {
   if (override?.[slug]) return override[slug];
   // The realistic composite faces describe the physical board side, not a
-  // copper stack position — they must NOT get the position-based guess.
+  // copper stack position, so they must not get the position-based guess.
+  // Both faces carry components on these boards (double-sided SMT).
   if (slug === 'front') return 'Component side';
-  if (slug === 'back') return 'Solder side';
+  if (slug === 'back') return 'Component side';
   // The position guess applies to the copper sheets only. Front sits at index 0
   // and back at index total-1, so exclude those ends from the copper logic by
   // measuring position within the copper run (front=1st sheet, back=last).
