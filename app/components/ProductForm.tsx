@@ -1,5 +1,5 @@
-import {Link, useNavigate} from 'react-router';
-import {type MappedProductOptions} from '@shopify/hydrogen';
+import {Link, useNavigate, useRouteLoaderData} from 'react-router';
+import {ShopPayButton, type MappedProductOptions} from '@shopify/hydrogen';
 import type {
   Maybe,
   ProductOptionValueSwatch,
@@ -7,6 +7,8 @@ import type {
 import {AddToCartButton} from './AddToCartButton';
 import {StackQuickAdd, type StackOffer} from './StackQuickAdd';
 import {useAside} from './Aside';
+import {useComingSoon} from '~/lib/coming-soon';
+import type {RootLoader} from '~/root';
 import type {ProductFragment} from 'storefrontapi.generated';
 
 export function ProductForm({
@@ -41,6 +43,30 @@ export function ProductForm({
   const ctaLabelAvailable = 'Add to cart';
   const ctaLabelSoldOut = 'Sold out';
   const hidden = new Set((hideOptionNames ?? []).map((n) => n.trim().toLowerCase()));
+  // Shop Pay accelerated checkout under the main CTA. Hard-gated on the
+  // coming-soon lock (belt and braces: the PDP already swaps this whole form
+  // for the notify signup while locked) and on purchasability, so the locked
+  // shop never renders a checkout entry point. Variant selection drives it:
+  // the ids re-derive from selectedVariant / bundleLines on every switch.
+  // shop-js parses store-url with `new URL()`, so the bare
+  // PUBLIC_STORE_DOMAIN ("x.myshopify.com") must become a full https URL or
+  // the button renders dead with a console TypeError.
+  const rawStoreDomain =
+    useRouteLoaderData<RootLoader>('root')?.publicStoreDomain;
+  const storeDomain = rawStoreDomain
+    ? rawStoreDomain.startsWith('http')
+      ? rawStoreDomain
+      : `https://${rawStoreDomain}`
+    : undefined;
+  const soon = useComingSoon(selectedVariant?.product?.handle);
+  const buyable = isBundle
+    ? !(bundleDisabled ?? bundleLines!.length === 0)
+    : Boolean(selectedVariant?.availableForSale);
+  const shopPayVariants = isBundle
+    ? bundleLines!.map((l) => ({id: l.merchandiseId, quantity: l.quantity}))
+    : selectedVariant
+      ? [{id: selectedVariant.id, quantity: 1}]
+      : [];
   return (
     <div className="product-form">
       {productOptions.map((option) => {
@@ -163,6 +189,14 @@ export function ProductForm({
               : ctaLabelSoldOut}
         </AddToCartButton>
       </StackQuickAdd>
+      {!soon && buyable && storeDomain && shopPayVariants.length > 0 ? (
+        <ShopPayButton
+          className="product-buy-shoppay"
+          variantIdsAndQuantities={shopPayVariants}
+          storeDomain={storeDomain}
+          channel="hydrogen"
+        />
+      ) : null}
     </div>
   );
 }

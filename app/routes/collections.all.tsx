@@ -9,6 +9,7 @@ import {buildSeoMeta} from '~/lib/seo';
 import {EmptyState} from '~/components/EmptyState';
 import {PRODUCT_CONTENT, isComingSoon} from '~/lib/product-content';
 import {useComingSoon} from '~/lib/coming-soon';
+import {stackDiscountedPrice} from '~/lib/stack-discount';
 
 export const meta: Route.MetaFunction = () =>
   buildSeoMeta({
@@ -189,13 +190,27 @@ export default function Collection() {
               value,
             );
             if (!pv) return [];
+            // The BXGY pct is off the discountedHandle board only (the
+            // OpenESC), never the pair: partner discounted -> show its
+            // derived checkout price; self discounted -> name it instead.
+            const pct = content?.stack?.discountPct;
+            const partnerDiscounted =
+              Boolean(pct) &&
+              content?.stack?.discountedHandle === pc.handle;
+            const selfDiscounted =
+              Boolean(pct) && content?.stack?.discountedHandle === p.handle;
             return [
               {
                 key: pc.handle,
                 label: pc.label ?? partner.title,
                 size: value,
-                price: pv.price,
-                pct: content?.stack?.discountPct,
+                price:
+                  partnerDiscounted && pct
+                    ? stackDiscountedPrice(pv.price, pct)
+                    : pv.price,
+                compareAtPrice: partnerDiscounted ? pv.price : null,
+                pct,
+                discountedLabel: selfDiscounted ? p.title : undefined,
                 available: Boolean(
                   pv.availableForSale && sv.availableForSale,
                 ),

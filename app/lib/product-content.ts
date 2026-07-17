@@ -91,9 +91,12 @@ export type CommunityChange = {
  * "Complete the stack" cross-sell rendered inside the buy module. The buyer
  * toggles it on and the partner board is added to the cart in the same
  * add-to-cart submit; the stack discount itself is a Shopify automatic
- * Buy-X-Get-Y and applies at checkout. `partners` is a list on purpose:
- * one entry today renders as a fixed line, several (e.g. a future
- * OpenFC Pro next to OpenFC Lite) render as a picker.
+ * Buy-X-Get-Y and applies at checkout. It discounts the "get Y" board
+ * ONLY (today: 10% off the OpenESC when bought with an OpenFC Lite),
+ * never the whole pair, so copy must name the discounted board.
+ * `partners` is a list on purpose: one entry today renders as a fixed
+ * line, several (e.g. a future OpenFC Pro next to OpenFC Lite) render
+ * as a picker.
  */
 export type StackConfig = {
   /** What the partner adds, for copy: 'flight controller', 'ESC'. */
@@ -106,6 +109,10 @@ export type StackConfig = {
   /** Advertised discount percent. Display only: the real discount is the
    *  automatic BXGY configured in Shopify. */
   discountPct?: number;
+  /** Handle of the board the BXGY actually discounts (its "get Y" side).
+   *  The pct is off THIS board only, not the pair. Surfaces use it to word
+   *  the badge and to derive the discounted price they display. */
+  discountedHandle?: string;
 };
 
 /**
@@ -525,6 +532,8 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
       partners: [{handle: 'openfc-lite', label: 'OpenFC Lite'}],
       matchOption: 'Model',
       discountPct: 10,
+      // The BXGY discounts the ESC itself (this product) when the FC joins.
+      discountedHandle: 'openesc',
     },
     // Verified 2026-07-06: PR #1 on OpenESC_20X20 by Vishal01Mehra, merged
     // 2026-03-11 — the shipping design's JST-SH FC connector (SM08B-SRSS-TB,
@@ -733,6 +742,8 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
       partners: [{handle: 'openesc', label: 'OpenESC'}],
       matchOption: 'Model',
       discountPct: 10,
+      // The BXGY discounts the added ESC, not this FC and not the pair.
+      discountedHandle: 'openesc',
     },
   },
 

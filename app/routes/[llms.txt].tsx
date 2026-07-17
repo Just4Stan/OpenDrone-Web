@@ -44,6 +44,43 @@ type LlmsVariant = {
 
 const numericId = (gid: string) => gid.split('/').pop() ?? gid;
 
+/**
+ * The stack example's discount claim, derived from the same StackConfig the
+ * storefront surfaces use (product-content.ts): the automatic BXGY is a
+ * percent off ONE board (`discountedHandle`), never the pair. Returns the
+ * parenthetical tail for the example sentence, or '' when no pct + side is
+ * configured or either board of the pair is still coming-soon (a locked
+ * feed hides prices, so it advertises no checkout discount either), so the
+ * feed makes no claim the checkout won't honour.
+ */
+function stackDiscountNote(globalSoon: boolean): string {
+  for (const [hostHandle, c] of Object.entries(PRODUCT_CONTENT)) {
+    const s = c.stack;
+    if (!s?.discountPct || !s.discountedHandle) continue;
+    if (
+      isComingSoon(hostHandle, globalSoon) ||
+      isComingSoon(s.discountedHandle, globalSoon)
+    )
+      continue;
+    // Word the claim from the side whose PARTNER is the discounted board;
+    // the discounted product's own config points at itself and names the
+    // host instead.
+    const discounted = s.partners.find((p) => p.handle === s.discountedHandle);
+    if (!discounted) continue;
+    const discountedName = discounted.label ?? s.discountedHandle;
+    const hostName =
+      PRODUCT_CONTENT[s.discountedHandle]?.stack?.partners.find(
+        (p) => p.handle === hostHandle,
+      )?.label ?? hostHandle;
+    return (
+      `; the ${discountedName} is automatically ${s.discountPct}% off at ` +
+      `checkout when bought together with the ${hostName}, a discount on ` +
+      `the ${discountedName} only, not on the pair`
+    );
+  }
+  return '';
+}
+
 export async function loader({context, request}: Route.LoaderArgs) {
   const origin = new URL(request.url).origin;
   const globalSoon = comingSoonFlag(context.env);
@@ -119,8 +156,8 @@ Multiple lines are comma-separated; an optional discount code goes in the query:
 
     ${origin}/cart/<variantId>:<qty>,<variantId>:<qty>?discount=CODE
 
-Example, a 20×20 flight stack (OpenFC Lite + OpenESC; the stack discount is
-automatic at checkout): fetch the two 20×20 variant IDs from the catalog below
+Example, a 20×20 flight stack (OpenFC Lite + OpenESC${stackDiscountNote(globalSoon)}):
+fetch the two 20×20 variant IDs from the catalog below
 and request ${origin}/cart/<fcId>:1,<escId>:1 — the response is a 302 to the
 Shopify checkout; hand that URL to the human to pay. Only the opendrone.be
 domain works. A machine-readable feed lives at ${origin}/products.json.
