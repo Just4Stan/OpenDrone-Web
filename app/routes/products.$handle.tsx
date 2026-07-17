@@ -597,8 +597,14 @@ export default function Product() {
   // Funnel step 1: one `PDP View` per product per navigation, carrying the
   // product handle + first-touch channel props that aggregate pageviews
   // lack (Plausible pageviews cannot join page path to a custom source
-  // prop, so the per-channel funnel needs its own event).
+  // prop, so the per-channel funnel needs its own event). Ref guard on
+  // the handle: StrictMode's double effect run and unrelated re-renders
+  // cannot double-fire; navigating away and back is a fresh view again
+  // because the ref updates with the handle.
+  const pdpViewTracked = useRef<string | null>(null);
   useEffect(() => {
+    if (pdpViewTracked.current === product.handle) return;
+    pdpViewTracked.current = product.handle;
     trackEvent('PDP View', {
       props: {product: product.handle, source: attributionSource()},
     });
