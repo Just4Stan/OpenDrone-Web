@@ -35,11 +35,16 @@ export function HeroSizeSlider({
   value,
   onChange,
   scrubRef,
+  busy = false,
 }: {
   value: Size;
   onChange: (v: Size) => void;
   /** Shared ref the hero reads each frame for the live scrub fraction. */
   scrubRef: React.RefObject<number | null>;
+  /** True while the target size's model is still building (uncached toggle).
+   *  Shows a small spinner in the thumb so the wait reads as loading, not a
+   *  dead control. The toggle stays interactive throughout. */
+  busy?: boolean;
 }) {
   const trackRef = useRef<HTMLDivElement>(null);
   const x = useMotionValue(0);
@@ -114,10 +119,11 @@ export function HeroSizeSlider({
       className="hero-size-slider"
       role="group"
       aria-label="Airframe size"
+      aria-busy={busy || undefined}
       ref={trackRef}
     >
       <motion.div
-        className="hero-size-slider__thumb"
+        className={`hero-size-slider__thumb${busy ? ' is-busy' : ''}`}
         aria-hidden="true"
         style={{x}}
         drag="x"
@@ -130,6 +136,9 @@ export function HeroSizeSlider({
         whileTap={{scale: 0.97}}
       >
         <span className="hero-size-slider__thumb-label">{LABELS[active]}</span>
+        {busy ? (
+          <span className="hero-size-slider__spinner" aria-hidden="true" />
+        ) : null}
       </motion.div>
       {SIZES.map((s) => (
         <button

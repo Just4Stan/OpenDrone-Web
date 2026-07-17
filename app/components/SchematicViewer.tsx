@@ -14,7 +14,13 @@ export type SchematicViewerProps = {
   inspectUrl?: string;
 };
 
-type Sheet = {slug: string; label: string; file: string; w?: number; h?: number};
+type Sheet = {
+  slug: string;
+  label: string;
+  file: string;
+  w?: number;
+  h?: number;
+};
 type Manifest = {sheets?: Sheet[]};
 
 // `?v=` busts Oxygen's 1-year immutable cache when schematics are regenerated in
@@ -37,18 +43,27 @@ const sheetUrl = (h: string, file: string) =>
  * never flashes blank. Self-hiding: renders nothing until a manifest loads, and
  * stays empty if the board has no exported schematic.
  */
-export function SchematicViewer({handle, handles, inspectUrl}: SchematicViewerProps) {
+export function SchematicViewer({
+  handle,
+  handles,
+  inspectUrl,
+}: SchematicViewerProps) {
   const ref = useRef<HTMLDivElement | null>(null);
   // The board currently on screen (handle + its sheets). Seed from cache so a
   // tier that was warmed earlier paints immediately. Kept until the next
   // board's manifest resolves, so a tier toggle never blanks.
-  const [display, setDisplay] = useState<{handle: string; sheets: Sheet[]} | null>(
-    () => {
-      const m = peekJson<Manifest>(manifestUrl(handle));
-      return m ? {handle, sheets: m.sheets ?? []} : null;
-    },
-  );
+  const [display, setDisplay] = useState<{
+    handle: string;
+    sheets: Sheet[];
+  } | null>(() => {
+    const m = peekJson<Manifest>(manifestUrl(handle));
+    return m ? {handle, sheets: m.sheets ?? []} : null;
+  });
   const [active, setActive] = useState(0);
+  // Mirror of `active` for async prefetch callbacks (the manifest effect must
+  // not re-run on every sheet page).
+  const activeRef = useRef(0);
+  activeRef.current = active;
   const [loaded, setLoaded] = useState<Record<string, boolean>>({});
   const [inView, setInView] = useState(false);
 
@@ -69,7 +84,10 @@ export function SchematicViewer({handle, handles, inspectUrl}: SchematicViewerPr
           }
         }
       },
-      {rootMargin: '500px 0px', threshold: 0.01},
+      // Generous pre-mount margin: the sheet images are ~1MB each and their
+      // first decode+raster caused a ~0.5s frame when mounted only 500px
+      // ahead of an active scroll (see the same fix in BoardArt).
+      {rootMargin: '1800px 0px', threshold: 0.01},
     );
     io.observe(el);
     return () => io.disconnect();
@@ -89,7 +107,17 @@ export function SchematicViewer({handle, handles, inspectUrl}: SchematicViewerPr
         // Keep the current sheet across a tier swap (clamped below if the new
         // board has fewer sheets) — mirrors BoardArt holding its active layer,
         // rather than snapping back to the first sheet on every variant switch.
-        for (const s of sheets) prefetchImage(sheetUrl(handle, s.file));
+        // Warm every sheet's bytes, but eagerly DECODE only the one that will
+        // actually paint: decoding the whole sheaf (~1 MB per multi-megapixel
+        // sheet) just evicts the on-screen bitmaps from the decoded-image
+        // cache. Paging/hovering decodes the rest on demand (rail handlers).
+        const visible = Math.min(
+          activeRef.current,
+          Math.max(0, sheets.length - 1),
+        );
+        sheets.forEach((s, i) =>
+          prefetchImage(sheetUrl(handle, s.file), {decode: i === visible}),
+        );
       })
       .catch(() => {
         if (alive) setDisplay({handle, sheets: []});
@@ -104,7 +132,8 @@ export function SchematicViewer({handle, handles, inspectUrl}: SchematicViewerPr
           if (h === handle) continue;
           void fetchJsonCached<Manifest>(manifestUrl(h))
             .then((m) => {
-              for (const s of m.sheets ?? []) prefetchImage(sheetUrl(h, s.file));
+              for (const s of m.sheets ?? [])
+                prefetchImage(sheetUrl(h, s.file));
             })
             .catch(() => {});
         }
@@ -117,7 +146,8 @@ export function SchematicViewer({handle, handles, inspectUrl}: SchematicViewerPr
     return () => {
       alive = false;
       if (warmId != null) {
-        if (typeof cancelIdleCallback !== 'undefined') cancelIdleCallback(warmId);
+        if (typeof cancelIdleCallback !== 'undefined')
+          cancelIdleCallback(warmId);
         else clearTimeout(warmId);
       }
     };
@@ -271,8 +301,12 @@ export function SchematicViewer({handle, handles, inspectUrl}: SchematicViewerPr
                     className={i === active ? 'is-active' : undefined}
                     aria-pressed={i === active}
                     onClick={() => setActive(i)}
-                    onMouseEnter={() => prefetchImage(sheetUrl(dh, s.file))}
-                    onFocus={() => prefetchImage(sheetUrl(dh, s.file))}
+                    onMouseEnter={() =>
+                      prefetchImage(sheetUrl(dh, s.file), {decode: true})
+                    }
+                    onFocus={() =>
+                      prefetchImage(sheetUrl(dh, s.file), {decode: true})
+                    }
                   >
                     {s.label}
                   </button>
@@ -285,12 +319,12 @@ export function SchematicViewer({handle, handles, inspectUrl}: SchematicViewerPr
               className={`schematic-page${dragging ? ' is-dragging' : ''}${
                 outgoing ? ' is-wiping' : ''
               }${revealing ? ' is-revealing' : ''}`}
-              style={{
-                ...(pageAr
-                  ? {['--sheet-ar' as string]: `${pageAr}`}
-                  : {}),
-                ['--drag' as string]: drag,
-              } as React.CSSProperties}
+              style={
+                {
+                  ...(pageAr ? {['--sheet-ar' as string]: `${pageAr}`} : {}),
+                  ['--drag' as string]: drag,
+                } as React.CSSProperties
+              }
             >
               {/* Outgoing board held underneath while the new sheet wipes in. */}
               {outgoing ? (
@@ -311,7 +345,9 @@ export function SchematicViewer({handle, handles, inspectUrl}: SchematicViewerPr
                   <img
                     key={k}
                     className={`schematic-sheet${loaded[k] ? ' is-loaded' : ''}${i === active ? ' is-active' : ''}${outgoing && i === active ? ' schematic-sheet--entering' : ''}`}
-                    style={{['--rel' as string]: i - active} as React.CSSProperties}
+                    style={
+                      {['--rel' as string]: i - active} as React.CSSProperties
+                    }
                     src={sheetUrl(dh, s.file)}
                     alt={`${s.label} schematic sheet`}
                     loading="lazy"

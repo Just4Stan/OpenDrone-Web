@@ -7,10 +7,7 @@ import {
   useRef,
   useState,
 } from 'react';
-import type {
-  AnimationEvent as ReactAnimationEvent,
-  CSSProperties,
-} from 'react';
+import type {AnimationEvent as ReactAnimationEvent, CSSProperties} from 'react';
 
 // useLayoutEffect on the server logs a warning; fall back to useEffect there.
 // The board swap it drives is a client-only interaction, so this never matters
@@ -197,8 +194,7 @@ function parseSheets(raw: string): Sheet[] {
     // markup and bitmaps refetch together. Done on the parsed DOM before
     // serialization; copper layers carry no <image> so they're unaffected.
     for (const img of Array.from(svg.querySelectorAll('image'))) {
-      const href =
-        img.getAttribute('href') ?? img.getAttribute('xlink:href');
+      const href = img.getAttribute('href') ?? img.getAttribute('xlink:href');
       if (href && !href.includes('?v=')) {
         const v = versioned(href);
         if (img.hasAttribute('href')) img.setAttribute('href', v);
@@ -211,9 +207,7 @@ function parseSheets(raw: string): Sheet[] {
       // the faint edge underlay would be hidden behind them, so skip it (and
       // tag the sheet so CSS can opt them out of any copper-only treatment).
       const isFace = slug === 'front' || slug === 'back';
-      const edge = isFace
-        ? ''
-        : `<g class="board-sheet-edge">${edgeInner}</g>`;
+      const edge = isFace ? '' : `<g class="board-sheet-edge">${edgeInner}</g>`;
       const faceClass = isFace ? ` board-sheet-svg-${slug}` : '';
       return {
         slug,
@@ -418,7 +412,13 @@ export function BoardArt({
     return peeked ? parseManifest(peeked) : null;
   });
 
-  // Lazy gate: fetch nothing until the section nears the viewport.
+  // Lazy gate: fetch nothing until the section nears the viewport. The margin
+  // is generous (2 viewports-ish) and an idle fallback arms it a few seconds
+  // after load regardless: fetching + DOMParser-splitting a multi-MB SVG and
+  // laying out its ~30k paths lands as ONE huge frame if it happens while the
+  // user is actively scrolling into it (measured: a 1.1s frame at 4x CPU
+  // right at this section). Front-loading it into idle time keeps the scroll
+  // clean; the network/parse caches make the early work free to repeat.
   useEffect(() => {
     const el = ref.current;
     if (!el || typeof IntersectionObserver === 'undefined') {
@@ -435,10 +435,41 @@ export function BoardArt({
           }
         }
       },
-      {rootMargin: '400px 0px', threshold: 0.01},
+      {rootMargin: '1800px 0px', threshold: 0.01},
     );
     io.observe(el);
-    return () => io.disconnect();
+    // Idle fallback: warm only the BYTES (network cache) for a visitor who
+    // parks above the fold, so their eventual scroll pays parse+layout with
+    // the fetch already local - the expensive DOM build stays behind the
+    // IntersectionObserver. Full-building here forced every PDP visit to
+    // download AND lay out the multi-MB SVG even when the visitor never
+    // scrolls near it; on top of that, rIC's timeout fires mid-scroll, so
+    // building from here could land the build inside the scroll anyway.
+    // Skipped entirely for data-saver visitors.
+    const conn = (navigator as any).connection;
+    const frugal = Boolean(
+      conn?.saveData || /(^|\b)2g/.test(String(conn?.effectiveType ?? '')),
+    );
+    const ric = (window as any).requestIdleCallback;
+    const warmBytes = () => {
+      void fetchTextCached(versioned(src)).catch(() => {});
+    };
+    const idleId = frugal
+      ? null
+      : typeof ric === 'function'
+        ? ric(warmBytes, {timeout: 6000})
+        : window.setTimeout(warmBytes, 4000);
+    return () => {
+      io.disconnect();
+      if (idleId == null) return;
+      const cancel = (window as any).cancelIdleCallback;
+      if (typeof ric === 'function' && typeof cancel === 'function')
+        cancel(idleId);
+      else window.clearTimeout(idleId as number);
+    };
+    // src is stable for the mounted board; a variant swap re-fetches through
+    // its own cached path, so re-arming the warm on src change buys nothing.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Lazily fetch + parse the component manifest for the active board (reuses the
@@ -455,8 +486,7 @@ export function BoardArt({
     fetchJsonCached<unknown>(componentsSrc)
       .then((data) => {
         if (!alive) return;
-        const parsed =
-          manifestCache.get(componentsSrc) ?? parseManifest(data);
+        const parsed = manifestCache.get(componentsSrc) ?? parseManifest(data);
         manifestCache.set(componentsSrc, parsed);
         setManifest(parsed);
       })
@@ -596,7 +626,8 @@ export function BoardArt({
     const warm = () => {
       if (cancelled) return;
       for (const s of srcs) {
-        if (s !== src && !parsedCache.has(s)) void warmParsed(s).catch(() => {});
+        if (s !== src && !parsedCache.has(s))
+          void warmParsed(s).catch(() => {});
       }
     };
     const id: number =
@@ -726,7 +757,9 @@ export function BoardArt({
       );
       const sheetRect = flyDone ? activeSheet?.getBoundingClientRect() : null;
       const boardLeft =
-        sheetRect && sheetRect.width ? sheetRect.left : sr.left - sr.width * 0.065;
+        sheetRect && sheetRect.width
+          ? sheetRect.left
+          : sr.left - sr.width * 0.065;
       const railFull = widthOf(rail);
       // The rail floats centred on the board; the stack box is its stable vertical
       // anchor. Inset the band a little from the stack's top so the chapter title
@@ -746,7 +779,10 @@ export function BoardArt({
       const placeWidth = (w: number) => {
         const slack = gutterEnd - gutterStart - w;
         const centred = gutterStart + slack / 2;
-        return Math.min(Math.max(centred, gutterStart), Math.max(gutterStart, gutterEnd - w));
+        return Math.min(
+          Math.max(centred, gutterStart),
+          Math.max(gutterStart, gutterEnd - w),
+        );
       };
       let target: number;
       if (gutterEnd - gutterStart >= railFull) {
@@ -824,7 +860,12 @@ export function BoardArt({
       if (!c || c.layer !== visibleFace || !c.bbox) continue;
       out.push({
         ref: r,
-        rect: [c.bbox.x - PAD, c.bbox.y - PAD, c.bbox.w + 2 * PAD, c.bbox.h + 2 * PAD],
+        rect: [
+          c.bbox.x - PAD,
+          c.bbox.y - PAD,
+          c.bbox.w + 2 * PAD,
+          c.bbox.h + 2 * PAD,
+        ],
       });
     }
     return out;
@@ -900,7 +941,8 @@ export function BoardArt({
     // slides the lit window; the dim never re-rasterises, the image never
     // re-decodes (that was the flash).
     const paintWindows = (brightClip: Element, group: Element) => {
-      while (brightClip.firstChild) brightClip.removeChild(brightClip.firstChild);
+      while (brightClip.firstChild)
+        brightClip.removeChild(brightClip.firstChild);
       for (const h of boxes) {
         const cr = document.createElementNS(NS, 'rect');
         cr.setAttribute('x', String(h.rect[0]));
@@ -1096,7 +1138,10 @@ export function BoardArt({
           // --rel = position relative to the active layer (0 = on screen, ±n =
           // n cards off either edge); the mobile peel slides each sheet to
           // (--rel + --drag) * 100%. Desktop ignores it (uses the --depth fan).
-          style={{['--depth' as string]: i, ['--rel' as string]: i - shownIndex}}
+          style={{
+            ['--depth' as string]: i,
+            ['--rel' as string]: i - shownIndex,
+          }}
           aria-label={`Show ${s.label} layer`}
           aria-pressed={i === shownIndex}
           onClick={() => setActive(i)}
@@ -1144,7 +1189,8 @@ export function BoardArt({
     // The board to fly OUT is the one committedSrc was showing — read it from the
     // parse cache (always warmed for an on-screen tier), frozen at the index the
     // visitor was on. NEVER read live `sheets`/`active` (already the NEW board).
-    const outSheets = parsedCache.get(swap.committedSrc) ?? lastSheetsRef.current;
+    const outSheets =
+      parsedCache.get(swap.committedSrc) ?? lastSheetsRef.current;
     // Off-screen swap: the user changed the SKU while looking elsewhere on the
     // page (the board isn't in view), so animating the layer fly-out/in is wasted
     // work and reads as lag. Hard-cut to the new board AND re-arm the entrance, so
@@ -1292,7 +1338,9 @@ export function BoardArt({
           // The IN phase waits for the OUT phase to finish (old fully leaves before
           // the new arrives — no overlap). Computed live from the outgoing count.
           ['--swap-in-delay' as string]:
-            swap.phase === 'run' ? `${swapInDelayS(swap.outCount || 1)}s` : '0s',
+            swap.phase === 'run'
+              ? `${swapInDelayS(swap.outCount || 1)}s`
+              : '0s',
         } as CSSProperties
       }
       data-board={handle}
@@ -1415,7 +1463,9 @@ export function BoardArt({
                 <span className="board-deck-count">
                   {shownIndex + 1}/{sheets.length}
                 </span>
-                <span className="board-deck-name">{sheets[shownIndex]?.label}</span>
+                <span className="board-deck-name">
+                  {sheets[shownIndex]?.label}
+                </span>
                 <span className="board-deck-hint">Swipe ←/→</span>
               </p>
             </div>

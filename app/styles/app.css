@@ -447,6 +447,33 @@ html {
   pointer-events: none;
 }
 
+/* Uncached size toggle: the trio is still fetching/building, so the thumb
+   carries a small spinner next to its label. Purely additive - the control
+   keeps working and the label stays put. */
+.hero-size-slider__spinner {
+  position: absolute;
+  right: 0.55rem;
+  width: 0.7rem;
+  height: 0.7rem;
+  border-radius: 50%;
+  border: 2px solid color-mix(in srgb, var(--color-on-accent) 35%, transparent);
+  border-top-color: var(--color-on-accent);
+  animation: hero-size-spin 0.7s linear infinite;
+  pointer-events: none;
+}
+
+/* Make room for the spinner so it never overlaps the thumb label on narrow
+   slider widths. */
+.hero-size-slider__thumb.is-busy .hero-size-slider__thumb-label {
+  padding-right: 1.2rem;
+}
+
+@keyframes hero-size-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 .hero-size-slider__opt {
   position: relative;
   z-index: 1;
@@ -953,11 +980,18 @@ html {
 }
 
 /* A single revealing product card. max-height / opacity / transform are driven
-   inline per scroll frame (scrubbed off scrollProgress), so they carry NO CSS
-   transition — only the hover affordances do — otherwise the transition would
-   fight the per-frame scrub and lag behind the scroll. overflow:hidden lets the
-   inline max-height clip the card as it grows out of the bubble. */
+   by the --hero-p custom property (written once per scroll frame on .homepage)
+   through the per-card --lo/--win reveal window - the same linearstep the route
+   used to compute inline, now in calc() so the scrub costs zero React renders.
+   They carry NO CSS transition - only the hover affordances do - otherwise the
+   transition would fight the per-frame scrub and lag behind the scroll.
+   overflow:hidden lets max-height clip the card as it grows out of the bubble. */
 .hero-reveal-card {
+  --r: clamp(0, calc((var(--hero-p, 0) - var(--lo, 1)) / var(--win, 1)), 1);
+  max-height: calc(var(--r) * 7.5rem);
+  margin-top: calc(var(--r) * 0.55rem);
+  opacity: var(--r);
+  transform: translateY(calc((1 - var(--r)) * 28px));
   display: flex;
   align-items: center;
   gap: 1rem;
@@ -976,6 +1010,14 @@ html {
 }
 .hero-reveal-card:hover {
   border-color: color-mix(in srgb, var(--color-gold) 50%, transparent);
+}
+
+/* Thin-line scroll hint under the hero - fades out over the first ~13% of
+   scroll. Driven by --hero-p so it needs no per-frame React render. Named
+   distinctly from .hero-scroll-hint (the "scroll to explore" text cue below,
+   which gates on .is-visible and would zero this element's opacity). */
+.hero-scroll-fade {
+  opacity: clamp(0, calc(0.4 - var(--hero-p, 0) * 3), 0.4);
 }
 .hero-reveal-media {
   flex: 0 0 auto;
@@ -3538,6 +3580,32 @@ button.reset {
   color: var(--color-text);
 }
 
+/* Variant switch in flight: the clicked pill pulses its border until the
+   server navigation lands, so slow connections read as loading rather than
+   a dead click. */
+.product-options-item.is-pending,
+.variant-tier.is-pending {
+  animation: option-pending-pulse 0.9s ease-in-out infinite;
+}
+
+@keyframes option-pending-pulse {
+  0%,
+  100% {
+    border-color: color-mix(in srgb, var(--color-gold) 35%, transparent);
+  }
+  50% {
+    border-color: var(--color-gold);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .product-options-item.is-pending,
+  .variant-tier.is-pending {
+    animation: none;
+    border-color: var(--color-gold);
+  }
+}
+
 .product-option-label-swatch {
   width: 1.5rem;
   height: 1.5rem;
@@ -5765,6 +5833,9 @@ button.reset {
   animation: board-sheet-fly 1.2s cubic-bezier(0.16, 0.84, 0.3, 1)
     calc(var(--depth) * 0.11s) both;
   animation-play-state: paused;
+  /* Promote for the entrance: translate + the color-op-only grey (below) can
+     then run fully on the compositor. Dropped with .is-armed at flyDone. */
+  will-change: translate, filter;
 }
 /* Non-active layers grey out one-by-one as each lands — in fly order, so the
    first layer to fly in is the first to grey — instead of all snapping grey at
@@ -5795,10 +5866,16 @@ button.reset {
 .board-art.is-flying .board-sheet.is-active {
   animation-play-state: running;
 }
+/* PERF - same trade the variant swap makes: the grey-out animates ONLY the
+   color ops (brightness/saturate, compositor-accelerated on the promoted
+   layers above). Interpolating the drop-shadow here forced a full re-raster
+   of each multi-thousand-path layer per frame and made the entrance stutter
+   on slow hardware; instead the resting shadow (in the settled .board-sheet
+   rules) appears when .is-armed drops at flyDone, exactly like the swap's
+   shadows returning when .is-swapping drops. */
 @keyframes board-sheet-grey {
   to {
-    filter: brightness(0.55) saturate(0.7)
-      drop-shadow(0 14px 22px rgba(0, 0, 0, 0.55));
+    filter: brightness(0.55) saturate(0.7);
   }
 }
 @keyframes board-sheet-glow {

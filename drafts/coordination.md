@@ -24,7 +24,12 @@ Merged 2026-07-17, all adversarially reviewed before merge: #301 donation
 mechanics removed (product archived in admin), #302 Judge.me reviews
 (widget-free, dormant until env vars land), #303 funnel analytics (client
 events + server Purchase event + chk: counter), #304 ShopPay button + honest
-stack-discount copy (10% off the ESC only; admin discount renamed to match).
+stack-discount copy (10% off the ESC only; admin discount renamed to match),
+#310 sitewide performance pass (hero build-pipeline time-slicing, CSS-var
+scroll drive, viewer pre-mounts, FrameViewer outline merge, pending
+affordances; measured with the new scripts/perf-audit.mjs harness at 1x and
+4x CPU against the production preview: home first scroll 46→120fps at 1x,
+24→~120fps at 4x, PDP worst scroll frame 359→25ms, no visual changes).
 
 ## Stan's tasks
 
