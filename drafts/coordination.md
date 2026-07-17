@@ -10,9 +10,8 @@ flow rules in CLAUDE.md.
 | Lane | Branch | Worktree | Port | State |
 |---|---|---|---|---|
 | back-in-stock | `feat/back-in-stock` | `~/OpenDrone-Web-wt/back-in-stock` | 3003 | Claimed 2026-07-17, parked: code map done (reuse notify ledger path, add inventory_levels/update topic to the #303 webhook receiver, Resend segment notify-<handle> as audience). Build is dormant-safe; production needs SHOPIFY_ADMIN_API_TOKEN in Oxygen (Stan task 1). |
-| perf | `feat/perf` | `~/OpenDrone-Web-wt/perf` | 3001 | Claimed 2026-07-17: sitewide performance pass, measured with scripts/perf-audit.mjs (Playwright + CDP CPU throttle, FPS/long-task/interaction metrics, dev + production preview, 1x and 4x CPU). Landed: hero build-pipeline time-slicing (home first scroll 46→120fps at 1x, 24→118fps at 4x on prod), CSS-var scroll drive (no per-frame route renders), scroll-recency-gated preloads, PDP viewer pre-mounts (worst scroll frame 359→25ms), FrameViewer outline merge (zero long tasks in headed Chrome), pending affordances (variant pills/tiers, size slider). PR open; awaiting review. |
 
-Free ports: 3002, 3004-3009.
+Free ports: 3001-3002, 3004-3009.
 
 Dropped 2026-07-17: the ui-overhaul-v2 lane (draft PR #285, TITLE BLOCK
 re-skin). Stan rejected the re-skin on visual review; main's current UI is
@@ -25,7 +24,12 @@ Merged 2026-07-17, all adversarially reviewed before merge: #301 donation
 mechanics removed (product archived in admin), #302 Judge.me reviews
 (widget-free, dormant until env vars land), #303 funnel analytics (client
 events + server Purchase event + chk: counter), #304 ShopPay button + honest
-stack-discount copy (10% off the ESC only; admin discount renamed to match).
+stack-discount copy (10% off the ESC only; admin discount renamed to match),
+#310 sitewide performance pass (hero build-pipeline time-slicing, CSS-var
+scroll drive, viewer pre-mounts, FrameViewer outline merge, pending
+affordances; measured with the new scripts/perf-audit.mjs harness at 1x and
+4x CPU against the production preview: home first scroll 46→120fps at 1x,
+24→~120fps at 4x, PDP worst scroll frame 359→25ms, no visual changes).
 
 ## Stan's tasks
 
