@@ -9,7 +9,7 @@ flow rules in CLAUDE.md.
 
 | Lane | Branch | Worktree | Port | State |
 |---|---|---|---|---|
-| overhaul-v2 | `feat/ui-overhaul-v2` | `~/OpenDrone-Web-wt/overhaul-v2` | 3006 | Draft PR #285 (TITLE BLOCK re-skin). Rebased onto main through #305 (2026-07-17): #301 donation removal, #302 reviews, #303 analytics, #304 ShopPay + derived stack copy all preserved under the re-skin. Awaiting Stan's visual review. Review note: the branch's homepage header shows a teal "incutec" wordmark with a "Who's incutec?" tag; confirm intentional. |
+| overhaul-v2 | `feat/ui-overhaul-v2` | `~/OpenDrone-Web-wt/overhaul-v2` | 3006 | Draft PR #285 (TITLE BLOCK re-skin). Rebased onto main through #306 (2026-07-17): #301 donation removal, #302 reviews, #303 analytics, #304 ShopPay + derived stack copy all preserved under the re-skin. Awaiting Stan's visual review. Review note: the branch's homepage header shows a teal "incutec" wordmark with a "Who's incutec?" tag; confirm intentional. |
 
 Free ports: 3001-3005, 3007-3009.
 
