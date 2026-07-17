@@ -1768,17 +1768,18 @@ export default function Product() {
           </ul>
 
           {/* In-flow buy box — scrolls past with the page like any content,
-              so nothing vanishes or leaves a gap. The sentinel sits between
-              the selector and the buy module: once the selector scrolls under
-              the header the compact top bar takes over. */}
+              so nothing vanishes or leaves a gap. The sentinel sits BELOW the
+              buy module: the compact top bar takes over only once the whole
+              module (CTA included) is under the header, otherwise the two
+              overlap now that the column scrolls normally. */}
           <div className="buy-rail">
             {railLadder}
+            {railBuyModule}
             <div
               ref={railSentinelRef}
               className="buy-rail-sentinel"
               aria-hidden="true"
             />
-            {railBuyModule}
           </div>
           {/* Separate compact bar pinned to the top while the in-hero selector
               is out of view, so variants stay switchable from anywhere. Coming
