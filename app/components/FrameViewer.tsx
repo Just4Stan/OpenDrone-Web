@@ -3,6 +3,7 @@ import {useEffect, useReducer, useRef, useState} from 'react';
 import * as THREE from 'three';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {MeshoptDecoder} from 'three/addons/libs/meshopt_decoder.module.js';
+import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import {useIsMobile, usePrefersReducedMotion} from '~/lib/use-media-query';
 import {getActiveTheme} from '~/lib/theme';
 
@@ -58,6 +59,25 @@ const GROUPS = [
   {key: 'base', match: (n: string) => n.startsWith('base')},
 ] as const;
 
+// Unclamped main-thread yield (same pattern as HeroScene's build pipeline):
+// scheduler.yield() where available, MessageChannel otherwise. setTimeout is
+// unusable — nested-timer clamping stretches a sliced build by seconds.
+function yieldToMain(): Promise<void> {
+  const sched = (globalThis as any).scheduler;
+  if (typeof sched?.yield === 'function') return sched.yield() as Promise<void>;
+  if (typeof MessageChannel !== 'undefined') {
+    return new Promise<void>((resolve) => {
+      const ch = new MessageChannel();
+      ch.port1.onmessage = () => {
+        ch.port1.close();
+        resolve();
+      };
+      ch.port2.postMessage(null);
+    });
+  }
+  return new Promise<void>((resolve) => setTimeout(resolve, 0));
+}
+
 // Explode travel as a fraction of the assembly's largest dimension. These set
 // the spread at e = 1 (the "fully exploded" hero look as chapter 2 arrives).
 const PLATE_TRAVEL = 0.4;
@@ -80,7 +100,7 @@ function classify(name: string): number {
  * gold edge outlines, and centre + normalise the scene to a fixed size. The
  * scene is mutated in place and returned alongside its part list.
  */
-function prepareModel(scene: THREE.Object3D): Part[] {
+async function prepareModel(scene: THREE.Object3D): Promise<Part[]> {
   scene.updateMatrixWorld(true);
   // glTF wraps the whole frame under a single identity root node (both the
   // OnShape and the OCCT/cascadio STEP exports name it "Assembly 1"). The node
@@ -165,32 +185,77 @@ function prepareModel(scene: THREE.Object3D): Part[] {
     }
   }
 
-  // Vector edge outlines instead of solid fills. The outline is added as
-  // a CHILD of its mesh so it inherits the mesh's transform — and crucially
-  // travels with the part when the explode moves the mesh node. The solid
-  // surface is suppressed via the material's `visible`, NOT the object's
-  // `visible` (which would also hide the child outline, leaving nothing on
-  // screen). Hiding the object was the bug: the outline used to be a
-  // sibling on the parent "occurrence" node, so it never moved.
+  // Vector edge outlines instead of solid fills — ONE merged LineSegments
+  // per explode part (plus one for the static rest), not one per mesh.
+  // The per-mesh version left hundreds of scene-graph nodes and draw calls
+  // alive; three.js then spent 15-70ms of main thread PER FRAME on matrix
+  // updates + draw submission while this decorative backdrop was on screen
+  // (profiled at 4x CPU). Merging is pixel-identical: each mesh's edges are
+  // baked into its owning part's local space, so the explode still moves
+  // whole parts, and the source meshes are dropped from the graph entirely.
   const style = FRAME_LINE[getActiveTheme()];
   const lineMat = new THREE.LineBasicMaterial({
     color: style.color,
     transparent: true,
     opacity: style.opacity,
   });
-  const meshes: THREE.Mesh[] = [];
+  const allMeshes: THREE.Mesh[] = [];
   scene.traverse((o) => {
     const m = o as THREE.Mesh;
-    if (m.isMesh && m.geometry) meshes.push(m);
+    if (m.isMesh && m.geometry) allMeshes.push(m);
   });
-  for (const m of meshes) {
-    const ls = new THREE.LineSegments(new THREE.EdgesGeometry(m.geometry, 24), lineMat);
-    m.add(ls);
-    const mats = Array.isArray(m.material) ? m.material : [m.material];
-    mats.forEach((mat) => {
-      if (mat) mat.visible = false;
-    });
+  const ownerOf = (m: THREE.Mesh): THREE.Object3D => {
+    let p: THREE.Object3D | null = m;
+    while (p) {
+      const part = found.find((f) => f.obj === p);
+      if (part) return part.obj;
+      p = p.parent;
+    }
+    return scene;
+  };
+  const byOwner = new Map<THREE.Object3D, THREE.Mesh[]>();
+  for (const m of allMeshes) {
+    const o = ownerOf(m);
+    if (!byOwner.has(o)) byOwner.set(o, []);
+    byOwner.get(o)!.push(m);
   }
+  const tmpMat = new THREE.Matrix4();
+  const inv = new THREE.Matrix4();
+  // EdgesGeometry is the expensive step (per-triangle edge extraction);
+  // yield between meshes so it never blocks a frame for more than one
+  // mesh's worth of work.
+  let sliceStart = performance.now();
+  for (const [owner, meshes] of byOwner) {
+    inv.copy(owner.matrixWorld).invert();
+    const edgeGeoms: THREE.BufferGeometry[] = [];
+    for (const m of meshes) {
+      const eg = new THREE.EdgesGeometry(m.geometry, 24);
+      eg.applyMatrix4(tmpMat.copy(inv).multiply(m.matrixWorld));
+      edgeGeoms.push(eg);
+      if (performance.now() - sliceStart > 10) {
+        await yieldToMain();
+        sliceStart = performance.now();
+      }
+    }
+    const merged =
+      edgeGeoms.length === 1 ? edgeGeoms[0] : mergeGeometries(edgeGeoms, false);
+    if (edgeGeoms.length > 1) edgeGeoms.forEach((g) => g.dispose());
+    if (merged) owner.add(new THREE.LineSegments(merged, lineMat));
+  }
+  // Drop the source meshes: their edges are baked into the merged outlines,
+  // and keeping them (even material-hidden) is what kept the per-frame
+  // graph traversal expensive.
+  const geoms = new Set<THREE.BufferGeometry>();
+  const mats = new Set<THREE.Material>();
+  for (const m of allMeshes) {
+    m.parent?.remove(m);
+    geoms.add(m.geometry);
+    (Array.isArray(m.material) ? m.material : [m.material]).forEach(
+      (mm) => mm && mats.add(mm),
+    );
+  }
+  geoms.forEach((g) => g.dispose());
+  mats.forEach((mm) => mm.dispose());
 
   const box = new THREE.Box3().setFromObject(scene);
   scene.position.sub(box.getCenter(new THREE.Vector3()));
@@ -234,6 +299,9 @@ function FrameModel({
   const rigScale = isMobile ? 1.35 : 1;
   // All loaded models, keyed by src. Only the active one is `visible`.
   const models = useRef<Map<string, Model>>(new Map());
+  // Escape hatch for the tier-switch effect below: kick an immediate load of
+  // a src whose idle-deferred warm hasn't started yet.
+  const loadRef = useRef<(s: string) => void>(() => {});
   const [, bump] = useReducer((c: number) => c + 1, 0);
   // The chapter following the teardown ("Open for learning"). The explode is
   // scrubbed across the gap between the two chapters' centres, so we need its
@@ -251,9 +319,8 @@ function FrameModel({
     // throws "setMeshoptDecoder must be called before loading compressed files".
     loader.setMeshoptDecoder(MeshoptDecoder);
     const wanted = srcs.length ? srcs : [src];
-    const order = [src, ...wanted.filter((s) => s !== src)];
-    for (const s of order) {
-      if (models.current.has(s)) continue;
+    const load = (s: string) => {
+      if (models.current.has(s)) return;
       // Reserve the slot synchronously so a re-render mid-load doesn't queue a
       // duplicate fetch for the same src.
       models.current.set(s, {root: new THREE.Group(), parts: []});
@@ -262,19 +329,53 @@ function FrameModel({
         (gltf) => {
           if (cancelled || !groupRef.current) return;
           const scene = gltf.scene;
-          const parts = prepareModel(scene);
-          scene.visible = s === src;
-          models.current.set(s, {root: scene, parts});
-          groupRef.current.add(scene);
-          invalidate();
-          bump();
+          void prepareModel(scene).then((parts) => {
+            if (cancelled || !groupRef.current) {
+              disposeObject(scene);
+              return;
+            }
+            scene.visible = s === src;
+            models.current.set(s, {root: scene, parts});
+            groupRef.current.add(scene);
+            invalidate();
+            bump();
+          });
         },
         undefined,
         (err) => console.error('[FrameViewer] failed to load', s, err),
       );
+    };
+    loadRef.current = load;
+    // Active tier immediately; the other tiers only once the thread idles
+    // AND the visitor isn't mid-scroll (a GLB parse + edge extraction is an
+    // atomic task that would land straight in the scroll). Loading them all
+    // at once was a >1s task right as the teardown scrolled in. THREE.Cache
+    // still dedupes bytes across mounts.
+    load(src);
+    const others = wanted.filter((s) => s !== src);
+    let lastScrollTs = 0;
+    const onScroll = () => {
+      lastScrollTs = performance.now();
+    };
+    let warmTimer: number | undefined;
+    if (others.length) {
+      window.addEventListener('scroll', onScroll, {passive: true});
+      const started = performance.now();
+      const tryWarm = () => {
+        const quiet = performance.now() - lastScrollTs > 300;
+        const overdue = performance.now() - started > 15000;
+        if (quiet || overdue) {
+          for (const s of others) load(s);
+        } else {
+          warmTimer = window.setTimeout(tryWarm, 500);
+        }
+      };
+      warmTimer = window.setTimeout(tryWarm, 2500);
     }
     return () => {
       cancelled = true;
+      window.removeEventListener('scroll', onScroll);
+      if (warmTimer != null) window.clearTimeout(warmTimer);
     };
     // srcs is a stable list for the product; src changes are handled by the
     // visibility effect below, not by reloading.
@@ -291,8 +392,10 @@ function FrameModel({
   }, [rot.x, rot.y, offsetX, rigScale]);
 
   // Instant tier switch: show the requested model, hide the rest. If the model
-  // hasn't finished loading yet it simply becomes visible once it lands.
+  // hasn't finished loading yet it simply becomes visible once it lands; if
+  // its idle-deferred warm hasn't even started, start it now.
   useEffect(() => {
+    if (!models.current.has(src)) loadRef.current(src);
     for (const [s, m] of models.current) m.root.visible = s === src;
     invalidate();
   }, [src]);
@@ -364,26 +467,53 @@ function FrameModel({
   // e = 1 once the next chapter's centre reaches the viewport centre (fully
   // exploded). Normalised by the centre-to-centre distance, so it's stable
   // regardless of section heights or the gap between them.
+  //
+  // The chapter centres are cached in DOCUMENT space and refreshed on resize
+  // and every ~60th rendered frame — NOT read per frame. During a scroll each
+  // rendered frame runs right after other main-thread work has dirtied style/
+  // layout, so a per-frame getBoundingClientRect forced a full synchronous
+  // reflow of the PDP every frame (measured 50-70ms/frame at 4x CPU).
+  const centersRef = useRef<{c1: number; c2: number | null} | null>(null);
+  const framesSinceMeasure = useRef(0);
+  useEffect(() => {
+    const onResize = () => {
+      centersRef.current = null;
+      invalidate();
+    };
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, []);
   useFrame(() => {
     const active = models.current.get(src);
     if (!active || !active.parts.length) return;
     let e = 0;
     const el = containerRef.current;
     if (el && !reducedMotion) {
-      const section = (el.closest('.chapter') as HTMLElement | null) ?? el;
-      let next = nextChapter.current;
-      if (!next || !next.isConnected) {
-        let n = section.nextElementSibling as HTMLElement | null;
-        while (n && !n.classList.contains('chapter'))
-          n = n.nextElementSibling as HTMLElement | null;
-        nextChapter.current = next = n;
+      framesSinceMeasure.current += 1;
+      if (!centersRef.current || framesSinceMeasure.current >= 60) {
+        framesSinceMeasure.current = 0;
+        const section = (el.closest('.chapter') as HTMLElement | null) ?? el;
+        let next = nextChapter.current;
+        if (!next || !next.isConnected) {
+          let n = section.nextElementSibling as HTMLElement | null;
+          while (n && !n.classList.contains('chapter'))
+            n = n.nextElementSibling as HTMLElement | null;
+          nextChapter.current = next = n;
+        }
+        const r1 = section.getBoundingClientRect();
+        const c1 = r1.top + r1.height / 2 + window.scrollY;
+        let c2: number | null = null;
+        if (next) {
+          const r2 = next.getBoundingClientRect();
+          c2 = r2.top + r2.height / 2 + window.scrollY;
+        }
+        centersRef.current = {c1, c2};
       }
       const vh = window.innerHeight || 1;
-      const r1 = section.getBoundingClientRect();
-      const c1 = r1.top + r1.height / 2;
-      if (next) {
-        const r2 = next.getBoundingClientRect();
-        const c2 = r2.top + r2.height / 2;
+      const cached = centersRef.current;
+      const c1 = cached.c1 - window.scrollY;
+      if (cached.c2 != null) {
+        const c2 = cached.c2 - window.scrollY;
         // Hold the frame assembled (e = 0) through chapter 1 — it only starts
         // coming apart once chapter 2 reaches the viewport centre. (vh/2 − c2)
         // is how far ch.2's centre has risen past the centre; normalise by the

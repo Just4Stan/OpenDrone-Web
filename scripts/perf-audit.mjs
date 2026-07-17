@@ -16,6 +16,12 @@
  *     [--out perf-report.json] [--headed] [--scenario home,pdp,...]
  *
  * Baseline vs fix runs: keep the JSON reports and diff the numbers.
+ *
+ * CAVEAT: chrome-headless-shell exaggerates some WebGL costs — a first
+ * canvas render can appear as a >1s "long task" that does not reproduce in
+ * headed Chrome (verified on /products/openframe). For scenarios that mount
+ * a WebGL canvas mid-scroll, confirm suspicious stalls with --headed before
+ * chasing them.
  */
 import {chromium} from 'playwright';
 import fs from 'node:fs';
