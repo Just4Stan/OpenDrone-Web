@@ -5252,6 +5252,17 @@ button.reset {
 }
 .cta-stack-offer-price {
   color: var(--color-text-muted);
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.35rem;
+}
+/* Struck full price next to a discounted partner price: the stack BXGY is
+   10% off the OpenESC only (never the pair), so when the added board is the
+   ESC its line shows full -> discounted, and the pct badge belongs to that
+   line, not to the stack total. */
+.cta-stack-offer-was {
+  color: var(--color-text-dim);
+  text-decoration: line-through;
 }
 .cta-stack-offer-pct {
   color: var(--color-gold);

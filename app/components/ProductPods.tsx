@@ -11,8 +11,15 @@ export type PodCompanionOption = {
   title: string;
   /** Chip label, e.g. "ESC" (renders as "+ESC"). */
   short: string;
+  /** Displayed price. When the companion is the board the BXGY discounts,
+   *  the host passes the derived discounted price (what checkout actually
+   *  charges for it once the pair is in the cart). */
   price?: {amount: string; currencyCode: string} | null;
   pct?: number;
+  /** Short label of the board the pct is off (the BXGY discounts ONE board,
+   *  today the OpenESC, never the pair), e.g. "ESC". Without it the pct is
+   *  not shown: an unattributed percent would read as pair-wide. */
+  discountedShort?: string;
   lines: OptimisticCartLineInput[];
   available: boolean;
   imageUrl?: string | null;
@@ -170,12 +177,18 @@ export function ProductPods({
                   disabled={!o.available}
                   flyImage={o.imageUrl ?? it.buy?.flyImage}
                   onClick={onAdd}
-                  ariaLabel={`Add ${it.title} and ${o.title} as a stack, ${
-                    o.pct ?? 10
-                  }% off at checkout`}
+                  ariaLabel={`Add ${it.title} and ${o.title} as a stack${
+                    o.pct && o.discountedShort
+                      ? `, ${o.discountedShort} ${o.pct}% off at checkout`
+                      : ''
+                  }`}
                   dataTip={
                     o.available
-                      ? `${o.title} · +${fmt(o.price)} · −${o.pct ?? 10}% at checkout`
+                      ? `${o.title} · +${fmt(o.price)}${
+                          o.pct && o.discountedShort
+                            ? ` · ${o.discountedShort} −${o.pct}% at checkout`
+                            : ''
+                        }`
                       : 'Out of stock'
                   }
                 >
@@ -200,8 +213,10 @@ export function ProductPods({
                   <span className="pod-buy-stack-label">
                     {self} + {o.short} stack
                   </span>
-                  {o.pct ? (
-                    <span className="pod-buy-stack-pct">−{o.pct}%</span>
+                  {o.pct && o.discountedShort ? (
+                    <span className="pod-buy-stack-pct">
+                      {o.discountedShort} −{o.pct}%
+                    </span>
                   ) : null}
                 </AddToCartButton>
               ))}

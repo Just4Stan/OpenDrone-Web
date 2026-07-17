@@ -119,8 +119,10 @@ Multiple lines are comma-separated; an optional discount code goes in the query:
 
     ${origin}/cart/<variantId>:<qty>,<variantId>:<qty>?discount=CODE
 
-Example, a 20×20 flight stack (OpenFC Lite + OpenESC; the stack discount is
-automatic at checkout): fetch the two 20×20 variant IDs from the catalog below
+Example, a 20×20 flight stack (OpenFC Lite + OpenESC; the OpenESC is
+automatically 10% off at checkout when bought together with the FC, a
+discount on the ESC only, not on the pair): fetch the two 20×20 variant IDs
+from the catalog below
 and request ${origin}/cart/<fcId>:1,<escId>:1 — the response is a 302 to the
 Shopify checkout; hand that URL to the human to pay. Only the opendrone.be
 domain works. A machine-readable feed lives at ${origin}/products.json.
