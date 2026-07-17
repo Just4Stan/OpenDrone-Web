@@ -195,9 +195,9 @@ function loadDeferredData({context, params}: Route.LoaderArgs) {
       variables: {handle},
     })
     .then(async (res) => {
-      // The firmware-donation tip product is cart-only chrome — Shopify's
-      // recommendation engine doesn't know that, so filter it here too
-      // (the fallback query already excludes it server-side).
+      // The legacy firmware-donation tip product (cart upsell removed
+      // 2026-07) must stay out of recommendations while it still exists in
+      // Shopify; the fallback query already excludes it server-side.
       const keep = (p: {handle: string; productType?: string | null}) =>
         p.handle !== handle && p.productType !== 'Donation';
       const rec = res?.productRecommendations?.filter(keep);
@@ -2464,7 +2464,7 @@ const FALLBACK_PRODUCTS_QUERY = `#graphql
     $first: Int!
     $language: LanguageCode
   ) @inContext(country: $country, language: $language) {
-    # The firmware-donation tip product is cart-only chrome, not a related card.
+    # The legacy firmware-donation tip product is not catalog; keep it out of related cards.
     products(
       first: $first
       sortKey: BEST_SELLING
