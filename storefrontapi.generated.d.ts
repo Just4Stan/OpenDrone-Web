@@ -539,27 +539,6 @@ export type FooterQuery = {
   >;
 };
 
-export type DonationProductQueryVariables = StorefrontAPI.Exact<{
-  country?: StorefrontAPI.InputMaybe<StorefrontAPI.CountryCode>;
-  language?: StorefrontAPI.InputMaybe<StorefrontAPI.LanguageCode>;
-  handle: StorefrontAPI.Scalars['String']['input'];
-}>;
-
-export type DonationProductQuery = {
-  product?: StorefrontAPI.Maybe<
-    Pick<StorefrontAPI.Product, 'id' | 'title' | 'handle' | 'description'> & {
-      variants: {
-        nodes: Array<
-          Pick<
-            StorefrontAPI.ProductVariant,
-            'id' | 'title' | 'availableForSale'
-          > & {price: Pick<StorefrontAPI.MoneyV2, 'amount' | 'currencyCode'>}
-        >;
-      };
-    }
-  >;
-};
-
 export type LlmsCatalogQueryVariables = StorefrontAPI.Exact<{
   count: StorefrontAPI.Scalars['Int']['input'];
 }>;
@@ -579,17 +558,6 @@ export type LlmsCatalogQuery = {
       }
     >;
   };
-  donation?: StorefrontAPI.Maybe<
-    Pick<StorefrontAPI.Product, 'handle' | 'title'> & {
-      variants: {
-        nodes: Array<
-          Pick<StorefrontAPI.ProductVariant, 'id' | 'title'> & {
-            price: Pick<StorefrontAPI.MoneyV2, 'amount'>;
-          }
-        >;
-      };
-    }
-  >;
 };
 
 export type NewsletterFeedQueryVariables = StorefrontAPI.Exact<{
@@ -1707,11 +1675,7 @@ interface GeneratedQueryTypes {
     return: FooterQuery;
     variables: FooterQueryVariables;
   };
-  '#graphql\n  query DonationProduct(\n    $country: CountryCode\n    $language: LanguageCode\n    $handle: String!\n  ) @inContext(country: $country, language: $language) {\n    product(handle: $handle) {\n      id\n      title\n      handle\n      description\n      variants(first: 10) {\n        nodes {\n          id\n          title\n          availableForSale\n          price {\n            amount\n            currencyCode\n          }\n        }\n      }\n    }\n  }\n': {
-    return: DonationProductQuery;
-    variables: DonationProductQueryVariables;
-  };
-  '#graphql\n  query LlmsCatalog($count: Int!) {\n    products(first: $count, query: "-product_type:Donation") {\n      nodes {\n        handle\n        title\n        description\n        variants(first: 12) {\n          nodes {\n            id\n            sku\n            title\n            availableForSale\n            price {\n              amount\n              currencyCode\n            }\n          }\n        }\n      }\n    }\n    donation: product(handle: "firmware-donation") {\n      handle\n      title\n      variants(first: 10) {\n        nodes {\n          id\n          title\n          price {\n            amount\n          }\n        }\n      }\n    }\n  }\n': {
+  '#graphql\n  query LlmsCatalog($count: Int!) {\n    products(first: $count, query: "-product_type:Donation") {\n      nodes {\n        handle\n        title\n        description\n        variants(first: 12) {\n          nodes {\n            id\n            sku\n            title\n            availableForSale\n            price {\n              amount\n              currencyCode\n            }\n          }\n        }\n      }\n    }\n  }\n': {
     return: LlmsCatalogQuery;
     variables: LlmsCatalogQueryVariables;
   };
