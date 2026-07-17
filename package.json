@@ -39,7 +39,7 @@
     "@shopify/hydrogen": "^2026.4.1",
     "@tailwindcss/vite": "^4.3.1",
     "graphql": "^16.14.2",
-    "isbot": "^5.1.44",
+    "isbot": "^5.2.0",
     "lucide-react": "^1.23.0",
     "motion": "^12.42.2",
     "postprocessing": "^6.39.2",
