@@ -734,10 +734,19 @@ export default function Product() {
     const norm = (v: string) =>
       v.trim().toLowerCase().replace(/[×x]/g, 'x').replace(/\s+/g, '');
     const active = norm(activeTier);
-    const others = tierKeys.map(norm).filter((k) => k && k !== active);
+    const keys = tierKeys.map(norm).filter(Boolean);
+    // Longest-match-wins: tier keys can be substrings of each other
+    // (Lite vs Lite-UFL). Naively excluding every other-tier key dropped
+    // the Lite-UFL render under its own tier ("lite" matches inside
+    // "lite-ufl"), leaving an empty gallery. An image belongs to the
+    // longest tier key its filename contains; keep it when that's the
+    // active tier or when it names no tier at all.
     return deduped.filter((img) => {
       const name = img.url.split('?')[0].toLowerCase();
-      return !others.some((o) => o && name.includes(o));
+      const best = keys
+        .filter((k) => name.includes(k))
+        .sort((a, b) => b.length - a.length)[0];
+      return !best || best === active;
     });
   }, [product.images, selectedVariant?.image, content.variants, activeTier]);
 
