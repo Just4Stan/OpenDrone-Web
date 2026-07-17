@@ -76,7 +76,7 @@ Plausible Business.
 | `Cart Drawer Open` | deliberate drawer opens: full open or pinned hover preview; grazes excluded (`Aside.tsx` provider) | `source` | no |
 | `Add to Cart` (existing) | successful LinesAdd (`AddToCartButton.tsx`) | `product`, `source` | no |
 | `Share Cart` | cart-link copy button (`CartSummary.tsx`) | `source` | no |
-| `Checkout Click` (existing) | checkout CTA (`CartSummary.tsx`) | `source` | cart total |
+| `Checkout Click` (existing) | cart checkout CTA (`CartSummary.tsx`) AND the PDP ShopPay express button (`ProductForm.tsx`, #304), via the shared `trackCheckoutClick` helper (`checkout-beacon.ts`) | `source` | cart total, or the express item's price |
 | `Notify Signup` (existing) | notify success (`NewsletterSignup.tsx`) | `product`, `source` | no |
 | `Survey EU Premium` / `Survey Interview` (existing) | micro-survey answers | `answer` | no |
 | `Purchase` (NEW, server) | orders/paid webhook, Plausible Events API (`plausible-server.ts`) | `source`, `campaign` | order total |
@@ -118,12 +118,21 @@ ingestion) from inside the existing waitUntil job. Details:
 ### Checkout-abandonment counter (no Plausible Business required)
 
 `chk:<YYYY-MM-DD>` (UTC day) in the Upstash ledger counts Checkout Clicks,
-incremented by a sendBeacon from the checkout CTA to the new rate-limited
-`/api/track/checkout` route (always 204, per-IP + global caps, production
-host only, no body, no PII). With `ord:` records on the other side:
+incremented by a sendBeacon to the new rate-limited `/api/track/checkout`
+route (always 204, per-IP + global caps, production host only, no body,
+no PII). Every checkout entry point fires it through the one
+`trackCheckoutClick` helper: the cart CTA and the PDP ShopPay express
+button (#304). A path that skips the helper undercounts the denominator
+while its orders still land in the numerator; add any future express
+button to the helper, not around it. With `ord:` records on the other
+side:
 
 - buy-rate = paid orders that day / `chk:<day>`
 - checkout abandonment = 1 minus that
+
+Known caveat: ShopPay express checkouts start from the variant list, not
+from our cart, so they carry no `_utm_*` cart attributes; their orders
+record and count correctly but attribute as `direct`.
 
 Key shapes stay documented in `app/lib/growth/ledger.ts`, the single owner.
 

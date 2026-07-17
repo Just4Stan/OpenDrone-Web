@@ -6,6 +6,7 @@ import {Link} from 'react-router';
 import {useAside} from '~/components/Aside';
 import {trackEvent} from '~/lib/growth/plausible';
 import {attributionSource} from '~/lib/growth/attribution';
+import {trackCheckoutClick} from '~/lib/growth/checkout-beacon';
 
 type CartSummaryProps = {
   cart: OptimisticCart<CartApiQueryFragment | null>;
@@ -212,31 +213,16 @@ function CartCheckoutActions({
 }) {
   if (!checkoutUrl) return null;
 
-  // Funnel event with the cart value as revenue. Plausible sends via
-  // fetch keepalive, so the beacon survives the navigation to checkout.
+  // Funnel event with the cart value as revenue, plus the chk:<day>
+  // beacon (buy-rate denominator). Shared helper so the ShopPay express
+  // path counts identically; see app/lib/growth/checkout-beacon.ts.
   const handleClick = () => {
     const amount = total?.amount ? parseFloat(total.amount) : NaN;
-    trackEvent('Checkout Click', {
-      props: {source: attributionSource()},
-      ...(Number.isFinite(amount) && total?.currencyCode
-        ? {revenue: {currency: total.currencyCode, amount}}
-        : {}),
-    });
-    // Server-side twin: bump the ledger's chk:<day> counter so buy-rate
-    // (paid orders / checkout clicks) is computable without Plausible
-    // Business. sendBeacon survives the navigation to Shopify's checkout;
-    // keepalive fetch is the fallback. Fire-and-forget, must never block
-    // or break the checkout navigation.
-    try {
-      if (!navigator.sendBeacon?.('/api/track/checkout')) {
-        void fetch('/api/track/checkout', {
-          method: 'POST',
-          keepalive: true,
-        }).catch(() => {});
-      }
-    } catch {
-      // Analytics must not take down checkout.
-    }
+    trackCheckoutClick(
+      Number.isFinite(amount) && total?.currencyCode
+        ? {currency: total.currencyCode, amount}
+        : null,
+    );
   };
 
   return (
