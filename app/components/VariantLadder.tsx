@@ -1,4 +1,5 @@
-import {useNavigate} from 'react-router';
+import {useLocation, useNavigate, useNavigation} from 'react-router';
+import {useEffect, useState} from 'react';
 import {motion} from 'motion/react';
 import {Check} from 'lucide-react';
 import {type MappedProductOptions} from '@shopify/hydrogen';
@@ -38,6 +39,19 @@ export function VariantLadder({
   compact?: boolean;
 }) {
   const navigate = useNavigate();
+  // The tier card previews instantly via onSelect, but price/stock/cart wiring
+  // arrive with the server navigation. Mark the clicked tier busy until the
+  // navigation settles so a slow connection reads as syncing, not as a broken
+  // click (`.variant-tier.is-pending` pulses the card border).
+  const navigation = useNavigation();
+  const location = useLocation();
+  const [pendingValue, setPendingValue] = useState<string | null>(null);
+  // Two clear triggers: state returning to idle covers slow navigations; the
+  // search-string change covers prefetched ones that settle inside a single
+  // render batch, where navigation.state never observably leaves 'idle'.
+  useEffect(() => {
+    if (navigation.state === 'idle') setPendingValue(null);
+  }, [navigation.state, location.search]);
 
   const norm = (s: string) => s.trim().toLowerCase();
   const shopifyOption = productOptions.find((o) => norm(o.name) === norm(axis));
@@ -74,6 +88,7 @@ export function VariantLadder({
             optionValue && optionValue.exists && !optionValue.available,
           );
           const disabled = comingSoon || soldOut;
+          const pending = pendingValue === value;
           return (
             <button
               type="button"
@@ -82,13 +97,15 @@ export function VariantLadder({
               aria-checked={selected}
               aria-disabled={disabled}
               disabled={disabled}
+              aria-busy={pending || undefined}
               className={`variant-tier${selected ? ' is-selected' : ''}${
                 comingSoon ? ' is-comingsoon' : soldOut ? ' is-soldout' : ''
-              }`}
+              }${pending ? ' is-pending' : ''}`}
               onClick={() => {
                 if (comingSoon) return;
                 onSelect(value);
                 if (optionValue?.variantUriQuery && !optionValue.selected) {
+                  setPendingValue(value);
                   void navigate(`?${optionValue.variantUriQuery}`, {
                     replace: true,
                     preventScrollReset: true,
