@@ -15,18 +15,23 @@ Free ports: 3001-3005, 3007-3009. (wip-banner lane merged as #296 and closed.)
 
 ## Stan's tasks
 
-1. Oxygen preview environment: set `PUBLIC_COMING_SOON=0` (and
-   `PUBLIC_PRELAUNCH=0`) so the unlocked full shop is browsable on the preview
-   URL while production stays locked (view-split decision, 2026-07-17).
-2. Oxygen env vars, Production + Preview: `SHOPIFY_WEBHOOK_SECRET`,
-   `SHOPIFY_ADMIN_API_TOKEN`. Production notify tagging stays broken until the
-   token lands.
-3. Activate a payment provider (launch blocker #1; BV verification + bank
+1. Oxygen env vars (agent cannot enter secrets): add `SHOPIFY_WEBHOOK_SECRET`
+   (value shown at Settings > Notifications > Webhooks, "signed with" line;
+   mark secret, Production + Preview) and `SHOPIFY_ADMIN_API_TOKEN` (the
+   shpat_ value from local .env; mark secret, Production + Preview).
+   Production notify tagging stays broken until the token lands.
+2. Activate a payment provider (launch blocker #1; BV verification + bank
    account).
-4. Shopify prices: replace placeholders with the vault beta prices (e.g.
-   OpenESC 20x20 is EUR 69 in admin vs EUR 24.99 in the vault).
-5. www.opendrone.be points at the legacy password-protected store; redirect
-   www to the apex/Hydrogen channel.
+3. Prices still unreviewed in admin: OpenFrame 5"/3" (EUR 41/35) and the
+   accessories (strap 4.50, antenna 6/7, hw kit 3/5, spares 8-24). Boards were
+   set to Stan's 2026-07-17 numbers, see Done note below.
+4. Stack discount math: the automatic discount gives 10% off the ESC only, so
+   FC+ESC 20x20 checks out at 66,50. Stan's target (63 / 72) means 10% off the
+   pair; decide and reconfigure the automatic discount (or accept 66,50/76,50).
+5. Belgian VAT registration: Settings > Taxes and duties > European Union >
+   "Collect VAT" next to Belgium, VAT number BE 1038.934.039. The agent's
+   attempt hit a Shopify admin 404 on the add-registration route (twice);
+   retry from a normal session. OSS already collects in 26 regions.
 6. Legal pages final text + privacy-policy processor table (with Iebe; ePrivacy
    verdict on attribution storage belongs to the same pass).
 7. Plausible Business tier, then goals/funnels per PR #279's list. Resend:
@@ -36,6 +41,13 @@ Free ports: 3001-3005, 3007-3009. (wip-banner lane merged as #296 and closed.)
 9. End-to-end test order once payments are live (also confirms which webhook
    fields survive Basic-plan redaction).
 10. Review PR #285 visually once rebased; decide merge.
+
+Done 2026-07-17 (agent, browser): Preview env unlocked (`PUBLIC_COMING_SOON=0`
++ `PUBLIC_PRELAUNCH=0`, Preview only); board prices set to Stan's numbers
+(OpenFC Lite 35/35; OpenESC 35/45; OpenRX Lite 18, Lite-UFL 20, Mono 25,
+Gemini 35, all verified saved); www.opendrone.be retargeted to Hydrogen
+Production, 301 to apex verified; OpenStack confirmed archived; untaxed
+variants confirmed to be only the four firmware-donation tiers (deliberate).
 
 ## Agent-ready backlog (claim a lane, work top-down)
 
