@@ -1529,15 +1529,19 @@ export default function Product() {
   // Both copies share `activeTier`, so switching in either keeps them in sync.
   // Ladder clicks are the PDP's main variant switch: track them as
   // `Variant Select` (user-initiated only; deep links and Shopify
-  // re-syncs go through setActiveTier directly and stay silent).
+  // re-syncs go through setActiveTier directly and stay silent). Only an
+  // actual change counts: the ladder fires onSelect for clicks on the
+  // already-active tier too, and re-clicks are not selections.
   const selectTier = (value: string) => {
-    trackEvent('Variant Select', {
-      props: {
-        product: product.handle,
-        variant: value,
-        source: attributionSource(),
-      },
-    });
+    if (value !== activeTier) {
+      trackEvent('Variant Select', {
+        props: {
+          product: product.handle,
+          variant: value,
+          source: attributionSource(),
+        },
+      });
+    }
     setActiveTier(value);
   };
   const railLadder =
