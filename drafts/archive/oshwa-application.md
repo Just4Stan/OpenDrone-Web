@@ -1,6 +1,6 @@
-# OSHWA Certification — fill-in packet (electronics)
+# OSHWA Certification - fill-in packet (electronics)
 
-Form: <https://application.oshwa.org/apply> — public, no login to fill. 4 sections.
+Form: <https://application.oshwa.org/apply> - public, no login to fill. 4 sections.
 Certification is **free**, **self-certified**, renewed **annually**.
 
 > **I cannot submit these for you.** The final step accepts the *Certification Mark
@@ -8,12 +8,12 @@ Certification is **free**, **self-certified**, renewed **annually**.
 > data. You click submit. Everything below is exact values to paste.
 
 When each is approved OSHWA issues a **UID** with prefix `BE` (Belgium), e.g. `BE000001`.
-Send me the three UIDs and I flip them on in the site (wiring already merged — see
+Send me the three UIDs and I flip them on in the site (wiring already merged - see
 `product-content.ts` `oshwaUid`).
 
 ---
 
-## Section 1 — Basic information (SAME for all three)
+## Section 1 - Basic information (SAME for all three)
 
 | Field | Value |
 |---|---|
@@ -31,7 +31,7 @@ Send me the three UIDs and I flip them on in the site (wiring already merged —
 
 ---
 
-## Section 2 — Project details (per product)
+## Section 2 - Project details (per product)
 
 ### 1) OpenFC Lite
 | Field | Value |
@@ -42,7 +42,7 @@ Send me the three UIDs and I flip them on in the site (wiring already merged —
 | Project website | **https://opendrone.be/products/openfc-lite** |
 | Primary Project Type | **Electronics** |
 | Keywords | FPV, flight controller, Betaflight, RP2350, drone |
-| Description | *An RP2354 dual-core M33 flight controller running Betaflight on a 6-layer board: 6-axis IMU, microSD blackbox, PIO-driven analog OSD, switchable 10 V VTX rail. No barometer, no onboard radio — bring your own RX over UART. Two mounts: 20×20 (RP2354A, "Mini") and 30×30 (RP2354B).* |
+| Description | *An RP2354 dual-core M33 flight controller running Betaflight on a 6-layer board: 6-axis IMU, microSD blackbox, PIO-driven analog OSD, switchable 10 V VTX rail. No barometer, no onboard radio - bring your own RX over UART. Two mounts: 20×20 (RP2354A, "Mini") and 30×30 (RP2354B).* |
 | Repo(s) | github.com/incutec-hw/OpenFC-Lite · /OpenFC-Lite-Mini |
 
 ### 2) OpenESC
@@ -71,12 +71,12 @@ Send me the three UIDs and I flip them on in the site (wiring already merged —
 
 ---
 
-## Section 3 — Licenses (SAME for all three)
+## Section 3 - Licenses (SAME for all three)
 
 | Field | Value |
 |---|---|
 | Hardware license | **CERN-OHL-S-2.0** |
-| Software license | **GPL-3.0** ❓or "No software" — see note |
+| Software license | **GPL-3.0** ❓or "No software" - see note |
 | Documentation license | **CERN-OHL-S-2.0** ❓or CC-BY-4.0 |
 
 **Software-license note:** the boards run upstream firmware (Betaflight / AM32 /
@@ -86,7 +86,7 @@ authored → **GPL-3.0**. If the repo is hardware-only and ships no software →
 
 ---
 
-## Section 4 — Compliance attestations (all **Yes** for all three)
+## Section 4 - Compliance attestations (all **Yes** for all three)
 
 | Statement | Answer |
 |---|---|
@@ -98,7 +98,7 @@ authored → **GPL-3.0**. If the repo is hardware-only and ships no software →
 | *(final)* Agree to the Certification Mark License Agreement | **you accept** |
 
 **Closed-component note (in case any "explain" box appears):** the only closed parts
-are the MCU/radio silicon (RP2354, SX1281/LR1121) — third-party, not under our control,
+are the MCU/radio silicon (RP2354, SX1281/LR1121) - third-party, not under our control,
 and their datasheets are public. That satisfies OSHWA's "where possible / accessible
 datasheets" rule. Answer **Yes** to the openly-licensed-components question.
 
@@ -106,15 +106,15 @@ datasheets" rule. Answer **Yes** to the openly-licensed-components question.
 
 ## Open decisions (what I need from you)
 
-1. **Public contact email** — `contact@opendrone.be`? (it's shown publicly on the cert)
-2. **Documentation license** — CERN-OHL-S-2.0 (match hardware) or CC-BY-4.0?
-3. **Software license** — GPL-3.0 or "No software", per board?
-4. **PCB version string** — the rev to register (default "1.0")?
-5. **Granularity** — this packet files **one cert per product line (3 total)**. The
+1. **Public contact email** - `contact@opendrone.be`? (it's shown publicly on the cert)
+2. **Documentation license** - CERN-OHL-S-2.0 (match hardware) or CC-BY-4.0?
+3. **Software license** - GPL-3.0 or "No software", per board?
+4. **PCB version string** - the rev to register (default "1.0")?
+5. **Granularity** - this packet files **one cert per product line (3 total)**. The
    split variants (FC 20×20/30×30, ESC 20×20/30×30, RX ×4) are genuinely separate PCBs;
    OSHWA registers *unique products*, so you *can* file one per board (~8 UIDs) if you
    want a distinct UID per variant on the site. Recommend starting with 3.
-6. **Official mark** — after approval, download the OSHWA "Certified" mark (SVG) from
+6. **Official mark** - after approval, download the OSHWA "Certified" mark (SVG) from
    your cert dashboard and drop it at `public/oshwa-certified.svg` if you want the logo;
    otherwise the card renders a clean text badge + UID link.
 

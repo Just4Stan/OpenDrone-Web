@@ -1,4 +1,4 @@
-# OpenBrain CRM buildout — scope (Lane F, drafted 2026-07-06)
+# OpenBrain CRM buildout - scope (Lane F, drafted 2026-07-06)
 
 Companion to `drafts/growth-infra-brief.md` (Lane F) and the OpenBrain repo's
 IMPLEMENTATION.md track C. This is the marketing/demand side; track C (support
@@ -10,26 +10,26 @@ ticket store) already exists flag-gated in `/Users/stan/OpenBrain`.
   system of record for signups (`sig:<email>`: consentAt, locale, channel,
   products[], euPremium, interviewOptIn) and attributed orders (`ord:<id>`).
 - OpenBrain becomes the durable home once the EU box + DPA review land
-  (IMPLEMENTATION.md hard prerequisites — unchanged by this lane).
+  (IMPLEMENTATION.md hard prerequisites - unchanged by this lane).
 - Research verdict (growth-stack-research.md §D): build contacts/consents/
   interactions tables in OpenBrain + a sqladmin/Starlette-Admin panel. No
   Twenty/Attio/EspoCRM. Respect the old M4 non-goals: no deal pipelines, no CDP.
 
 ## Schema (extends crm.* alongside existing customer/ticket/message)
 
-- `crm.contact` — id, email UNIQUE (join key), shopify_customer_id NULL (link
+- `crm.contact` - id, email UNIQUE (join key), shopify_customer_id NULL (link
   when known), locale, first_channel, created_at, erasure_requested_at.
   NOTE: unlike crm.customer (account-bound, ticket FK), contact is
   marketing-side and exists pre-account. Merge policy: when a contact later
   gets a Shopify account, link both records by email; do NOT unify tables.
-- `crm.consent` — contact FK, kind ('newsletter' | 'notify:<handle>'),
+- `crm.consent` - contact FK, kind ('newsletter' | 'notify:<handle>'),
   granted_at, source ('web-form'), revoked_at NULL. Mirrors Shopify
   acceptsMarketing + Resend unsubscribe state; this table is the audit trail.
-- `crm.interaction` — contact FK, ts, kind ('signup' | 'survey' | 'order' |
+- `crm.interaction` - contact FK, ts, kind ('signup' | 'survey' | 'order' |
   'email-blast' | 'interview'), payload JSONB (euPremium answer, order id +
   channel + total, broadcast id…). Append-only.
 - RtbF: DEL cascade from contact + the web-side dual delete (Upstash sig DEL +
-  Resend contact delete) — one runbook, three stores.
+  Resend contact delete) - one runbook, three stores.
 
 ## Ingest
 
@@ -37,11 +37,11 @@ ticket store) already exists flag-gated in `/Users/stan/OpenBrain`.
    (`att:idx` walk) → upsert contacts/consents/interactions. Idempotent on
    (email, ts, kind). Runs from the EU box; Upstash creds provided at run time.
 2. **Ongoing**: web repo POSTs to OpenBrain (`X-OpenBrain-Key`, same trust
-   boundary as tickets API) — new endpoint `POST /crm/events` accepting the
+   boundary as tickets API) - new endpoint `POST /crm/events` accepting the
    ledger record shapes verbatim. Web keeps writing Upstash too until cutover;
    flag `GROWTH_SINK=upstash|openbrain|both` web-side.
 3. **Shopify webhooks direct to OpenBrain** (old M4 scope: ORDERS_*, CUSTOMERS_*,
-   GDPR topics) — phase 2, replaces the web-repo webhook as attribution sink.
+   GDPR topics) - phase 2, replaces the web-repo webhook as attribution sink.
 
 ## Admin panel
 

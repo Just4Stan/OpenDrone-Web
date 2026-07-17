@@ -1,7 +1,7 @@
-# UTM conventions — OpenDrone channel attribution
+# UTM conventions - OpenDrone channel attribution
 
 *Lane A, 2026-07-06. Companion to `drafts/growth-infra-brief.md`. These values
-are what the Plausible dashboards and the Upstash order ledger break down on —
+are what the Plausible dashboards and the Upstash order ledger break down on -
 one typo = one phantom channel. Copy links from the templates below, don't
 hand-type parameters.*
 
@@ -13,7 +13,7 @@ add-to-cart (underscore prefix = invisible to the customer at checkout) →
 Shopify order note_attributes → orders/paid webhook → `ord:<id>` ledger
 record. First touch wins for the whole session; later links don't overwrite.
 
-## Canonical values — lowercase, exactly these
+## Canonical values - lowercase, exactly these
 
 ### utm_source (the channel; anything else shows up as noise)
 
@@ -26,7 +26,7 @@ record. First touch wins for the whole session; later links don't overwrite.
 | `newsletter` | Engineering Essentials emails |
 | `x` | X/Twitter posts |
 
-Short links may use `?ref=<source>` instead — the site folds `ref` into
+Short links may use `?ref=<source>` instead - the site folds `ref` into
 `utm_source` at capture. Full `utm_*` preferred wherever length allows.
 
 ### utm_medium (the format)
@@ -46,7 +46,7 @@ Format: kebab-case, one of two shapes:
 - Per-video: `video-<slug>` → `video-esc-desync-deep-dive`
 - (occasional) Evergreen profile/bio links: `evergreen`
 
-Keep it under 64 chars — the cart-attribute pipeline truncates beyond that.
+Keep it under 64 chars - the cart-attribute pipeline truncates beyond that.
 
 ## Ready-to-paste templates
 

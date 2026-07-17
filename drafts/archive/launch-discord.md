@@ -1,7 +1,7 @@
-# Discord launch runbook — product launch announcement
+# Discord launch runbook - product launch announcement
 
 *Lane C draft, 2026-07-06. Companion to `drafts/utm-conventions.md` and
-`drafts/growth-infra-brief.md`. ALL COPY IS PLACEHOLDER — Stan rewrites voice
+`drafts/growth-infra-brief.md`. ALL COPY IS PLACEHOLDER - Stan rewrites voice
 before anything is posted (TODO(copy-stan) on every prose block). No
 pre-order/reserve language anywhere: notify-at-launch → normal sale, that's
 the whole funnel (decision #2, 2026-07-06).*
@@ -11,7 +11,7 @@ the whole funnel (decision #2, 2026-07-06).*
 Post in the announcements channel (see etiquette below for ping choice).
 
 ```
-TODO(copy-stan) — placeholder structure, rewrite in your own voice:
+TODO(copy-stan) - placeholder structure, rewrite in your own voice:
 
 **<PRODUCT NAME> is live.**
 
@@ -19,24 +19,24 @@ TODO(copy-stan) — placeholder structure, rewrite in your own voice:
 
 <2-3 bullets max:>
 • <headline spec / what's new vs prev rev>
-• <price> — shipping from <region/date>
+• <price> - shipping from <region/date>
 • Open source: hardware + firmware links
 
 Board page: https://opendrone.be/products/<HANDLE>?utm_source=discord&utm_medium=chat&utm_campaign=launch-<HANDLE>
-Docs / repo: <hardware repo URL — no UTM needed on GitHub links>
+Docs / repo: <hardware repo URL - no UTM needed on GitHub links>
 
-<one honest line about stock level — "N units on hand, restock lead time
-is X weeks" — informational, NOT scarcity-pressure marketing>
+<one honest line about stock level - "N units on hand, restock lead time
+is X weeks" - informational, NOT scarcity-pressure marketing>
 ```
 
 Notes:
 - Keep it one message, no @everyone walls of text. One image or board
   render attached (use the hardware-repo render, white/transparent).
-- The UTM'd product link is the ONLY opendrone.be link in the post —
+- The UTM'd product link is the ONLY opendrone.be link in the post -
   one link = clean attribution (`utm_source=discord`, `utm_medium=chat`,
   `utm_campaign=launch-<HANDLE>`, exactly per `drafts/utm-conventions.md`).
 - If the post gets pinned or re-shared later, the campaign value still
-  identifies the launch push — don't mint new campaign names for re-pins.
+  identifies the launch push - don't mint new campaign names for re-pins.
 - Cross-post a short pointer (not a copy) in the general/build channels if
   chatter starts there: "launch post → #announcements".
 
@@ -46,10 +46,10 @@ Notes:
 - If no such role exists yet: create `@launch-news` (self-assign via the
   server's roles/onboarding flow), announce it once in general a few days
   BEFORE launch ("want a ping when it drops? grab the role"), then ping it
-  in the launch post. First launch may have a small role list — that's
+  in the launch post. First launch may have a small role list - that's
   fine, the email blast is the primary channel; Discord is secondary.
 - One ping per launch. Restocks/minor revs: post without ping.
-- Answer questions in-thread for the first hours — launch-day
+- Answer questions in-thread for the first hours - launch-day
   responsiveness is the community-trust play (and interview-opt-in leads
   hang out here).
 
@@ -61,17 +61,17 @@ Pre-flight (day before):
       without checking the launch plan's payments status).
 - [ ] Plausible goals exist (Stan, dashboard): `Notify Signup`,
       `Add to Cart`, `Checkout Click`, `Survey EU Premium`,
-      `Survey Interview` — check they're registering, not just created.
+      `Survey Interview` - check they're registering, not just created.
 - [ ] `SHOPIFY_WEBHOOK_SECRET` + `SHOPIFY_ADMIN_API_TOKEN` set in Oxygen
       prod env (growth-infra brief follow-up #2) so orders land in the
       attribution ledger.
 - [ ] Announcement copy written (Stan) + UTM link built from
-      `drafts/utm-conventions.md` template — copy-paste, don't hand-type.
+      `drafts/utm-conventions.md` template - copy-paste, don't hand-type.
 - [ ] `@launch-news` role teased in general (if using role-ping).
 
 Launch blast (email first, then Discord):
 - [ ] Dry-run the launch email: `node scripts/launch-blast.mjs` (dry-run is
-      the default — prints the segment + rendered email, sends nothing).
+      the default - prints the segment + rendered email, sends nothing).
       Check recipient count matches the `notify-<handle>` segment.
 - [ ] Real send: `node scripts/launch-blast.mjs --send`.
 - [ ] Flip product to purchasable / publish the PDP (if not already).
@@ -90,6 +90,6 @@ Post-launch (same day):
 - No countdowns, no "reserve yours", no "only X left" pressure framing,
   no DM campaigns. Stock line is plain information, stated once.
 - No pre-order or deposit mechanics of any kind (decision #2).
-- Don't post opendrone.be links without UTMs during launch week — every
+- Don't post opendrone.be links without UTMs during launch week - every
   untagged click pollutes the per-channel numbers the whole growth stack
   was built to read.
