@@ -22,8 +22,8 @@ import {
 } from '~/components/ProductPods';
 import {INCUTEC_HINT_SEEN_KEY} from '~/lib/incutec-hint';
 import {useComingSoon} from '~/lib/coming-soon';
-import {isComingSoon} from '~/lib/product-content';
-import {STACK_DISCOUNT_PCT, stackDiscountedPrice} from '~/lib/stack-discount';
+import {isComingSoon, PRODUCT_CONTENT} from '~/lib/product-content';
+import {stackDiscountedPrice} from '~/lib/stack-discount';
 
 /** Retire the hero "Who's incutec?" hint: persist the dismissal and pull the
  *  class so it can't flash on a same-session SPA return to the homepage. */
@@ -96,20 +96,14 @@ const MOBILE_FAMILY_LABEL: Record<string, string> = {
  *  stack vertically), so a second compatible ESC — or an OpenFC Pro on the
  *  ESC side — is one more `{handle, short}` here. Keep `short` unique per
  *  list ("ESC 30×30", "FC PRO") once a family has two partners, since it's
- *  the visible label. Mirrors `stack` in product-content.ts without pulling
- *  that whole module into the header; the percent is the Shopify automatic
- *  BXGY (display only), and it is off ONE board of the pair (today the
- *  OpenESC), never both: `discounted` says which side that board is so the
- *  buy cell can word the badge and derive the shown price honestly. */
-const STACK_COMPANIONS: Record<
-  string,
-  Array<{handle: string; short: string; discounted: 'self' | 'partner'}>
-> = {
-  // FC rows add the ESC, and the ESC is the discounted board (partner).
-  'Flight Controller': [{handle: 'openesc', short: 'ESC', discounted: 'partner'}],
-  // ESC rows add the FC at full price; the discounted board is the ESC
-  // itself (self).
-  ESC: [{handle: 'openfc-lite', short: 'FC', discounted: 'self'}],
+ *  the visible label. Only the pairing lives here; the discount claim (the
+ *  automatic BXGY's percent and which ONE board of the pair it is off,
+ *  today the OpenESC, never both) derives per row from that product's
+ *  `stack` config in product-content.ts, so removing `discountPct` or
+ *  `discountedHandle` there silences the header's claim too. */
+const STACK_COMPANIONS: Record<string, Array<{handle: string; short: string}>> = {
+  'Flight Controller': [{handle: 'openesc', short: 'ESC'}],
+  ESC: [{handle: 'openfc-lite', short: 'FC'}],
 };
 
 /** Short family label ("FC", "ESC") for a productType — names the buy
@@ -303,7 +297,15 @@ function FamilyNav({
       (o) => o.name.trim().toLowerCase() === 'model',
     )?.value;
     if (!size) return undefined;
-    const options = cfg.flatMap(({handle: h, short, discounted}) => {
+    // The discount claim derives from the row product's StackConfig: the
+    // pct is off the discountedHandle board ONLY, never the pair. Both
+    // fields absent or partial -> no pct, no badge, full prices.
+    const stack = PRODUCT_CONTENT[rowProduct.handle]?.stack;
+    const pct =
+      stack?.discountPct && stack.discountedHandle
+        ? stack.discountPct
+        : undefined;
+    const options = cfg.flatMap(({handle: h, short}) => {
       // Unlaunched partners can't cascade into a stack add.
       if (isComingSoon(h, globalComingSoon)) return [];
       const partner = (products ?? []).find((p) => p.handle === h);
@@ -315,23 +317,29 @@ function FamilyNav({
         ),
       );
       if (!partner || !pv) return [];
-      // The pct is off ONE board (the OpenESC), never the pair. Partner
-      // discounted (FC row adding the ESC): show the ESC's derived checkout
-      // price. Self discounted (ESC row adding the FC): the FC price stays
-      // full and the badge names the ESC instead.
-      const partnerDiscounted = discounted === 'partner';
+      // Partner discounted (FC row adding the ESC): show the ESC's derived
+      // checkout price, full price alongside for the tooltip. Self
+      // discounted (ESC row adding the FC): the FC price stays full and
+      // the badge names the ESC instead.
+      const partnerDiscounted = Boolean(pct) && stack?.discountedHandle === h;
+      const selfDiscounted =
+        Boolean(pct) && stack?.discountedHandle === rowProduct.handle;
       return [
         {
           key: h,
           title: `${partner.title} · ${size}`,
           short,
-          price: pv.price
-            ? partnerDiscounted
-              ? stackDiscountedPrice(pv.price, STACK_DISCOUNT_PCT)
-              : pv.price
-            : null,
-          pct: STACK_DISCOUNT_PCT,
-          discountedShort: partnerDiscounted ? short : selfShortFor(type),
+          price:
+            pv.price && partnerDiscounted && pct
+              ? stackDiscountedPrice(pv.price, pct)
+              : (pv.price ?? null),
+          fullPrice: partnerDiscounted ? (pv.price ?? null) : null,
+          pct,
+          discountedShort: partnerDiscounted
+            ? short
+            : selfDiscounted
+              ? selfShortFor(type)
+              : undefined,
           available: Boolean(pv.availableForSale && v.availableForSale),
           imageUrl: pv.image?.url ?? partner.featuredImage?.url ?? null,
           lines: [

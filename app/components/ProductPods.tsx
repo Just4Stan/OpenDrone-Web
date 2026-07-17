@@ -15,6 +15,10 @@ export type PodCompanionOption = {
    *  the host passes the derived discounted price (what checkout actually
    *  charges for it once the pair is in the cart). */
   price?: {amount: string; currencyCode: string} | null;
+  /** The companion's undiscounted price, set ONLY when `price` is the
+   *  derived discounted one: the tooltip then shows "full -> discounted"
+   *  so the pct never reads as a further cut on the shown price. */
+  fullPrice?: {amount: string; currencyCode: string} | null;
   pct?: number;
   /** Short label of the board the pct is off (the BXGY discounts ONE board,
    *  today the OpenESC, never the pair), e.g. "ESC". Without it the pct is
@@ -184,11 +188,16 @@ export function ProductPods({
                   }`}
                   dataTip={
                     o.available
-                      ? `${o.title} · +${fmt(o.price)}${
-                          o.pct && o.discountedShort
-                            ? ` · ${o.discountedShort} −${o.pct}% at checkout`
-                            : ''
-                        }`
+                      ? // When the shown price is already the derived
+                        // discounted one, spell out full -> discounted so
+                        // the pct can't read as a further cut on it.
+                        o.fullPrice && o.pct && o.discountedShort
+                        ? `${o.title} · +${fmt(o.fullPrice)} → ${fmt(o.price)} (${o.discountedShort} −${o.pct}% at checkout)`
+                        : `${o.title} · +${fmt(o.price)}${
+                            o.pct && o.discountedShort
+                              ? ` · ${o.discountedShort} −${o.pct}% at checkout`
+                              : ''
+                          }`
                       : 'Out of stock'
                   }
                 >
