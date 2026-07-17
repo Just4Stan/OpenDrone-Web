@@ -112,9 +112,10 @@ export async function loader({context, request}: Route.LoaderArgs) {
 > OpenDrone is a brand of Incutec BV, Stapelhuisstraat 15, 3000 Leuven, Belgium
 > (VAT BE 1038.934.039). Prices in EUR, VAT included, ship from Belgium.
 
-IMPORTANT — PRE-LAUNCH: the shop is not yet taking orders. Some copy and numbers
-on the site are placeholders. Treat all prices as subject to change; re-check the
-product page (its JSON-LD is authoritative) before quoting a price to a user.
+IMPORTANT, OPENING SOON: the webshop is not yet taking orders. Visitors can
+subscribe on /newsletter to be notified when it opens. Treat all prices as
+subject to change; re-check the product page (its JSON-LD is authoritative)
+before quoting a price to a user.
 
 ## Policy for shopping agents
 
