@@ -135,9 +135,10 @@ export default function FirmwarePartnersRoute() {
       <section className="editorial-section">
         <h2 className="editorial-section-title">03 · Giving directly</h2>
         <p>
-          Want to give the maintainers more than the baked-in €1? Every
-          project above links to its own donation page. Giving directly means
-          no payment-processor fee: 100% of what you send reaches them.
+          Want to give the maintainers more than the baked-in €1? Where a
+          project runs a public donation page, its card above links to it.
+          Giving directly means no payment-processor fee: 100% of what you
+          send reaches them.
         </p>
       </section>
 
