@@ -80,6 +80,20 @@ declare global {
     // defaults to hello@opendrone.be. Domain must be verified in Resend.
     RESEND_MARKETING_FROM?: string;
 
+    // Product reviews — Judge.me seam (app/lib/reviews.ts is the only
+    // module that knows the provider). BOTH must be set for the PDP
+    // reviews chapter, the buy-area stars and the AggregateRating
+    // JSON-LD to render; leave either unset and the storefront behaves
+    // exactly as if the feature did not exist (no logs, no placeholders).
+    // - JUDGEME_PRIVATE_TOKEN: server-only secret. Shopify admin →
+    //   Apps → Judge.me → Settings → Integrations → Judge.me API →
+    //   "Private API Token". Never exposed to the client despite living
+    //   next to PUBLIC_ vars.
+    // - PUBLIC_JUDGEME_SHOP_DOMAIN: the *.myshopify.com domain Judge.me
+    //   is installed on — same value as PUBLIC_STORE_DOMAIN.
+    JUDGEME_PRIVATE_TOKEN?: string;
+    PUBLIC_JUDGEME_SHOP_DOMAIN?: string;
+
     // Stage 2 moderation gate
     SUPPORT_MOD_ROLE_ID?: string;
     SUPPORT_APPROVE_EMOJI?: string;
