@@ -8,6 +8,7 @@ import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {MeshoptDecoder} from 'three/addons/libs/meshopt_decoder.module.js';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import {HERO_AIRFRAME_KEYS, DEFAULT_HERO_SIZE} from '~/lib/hero-airframes';
+import {SLICE_BUDGET_MS, forEachSliced, yieldToMain} from '~/lib/scheduling';
 import {
   HERO_SLOTS,
   HERO_ANCHOR_SLOT,
@@ -41,7 +42,10 @@ function useScrollProgress() {
     // splash lock releases on slow networks; resetting here teleported a
     // user who had already scrolled back to the top.
     const onScroll = () => {
-      targetRef.current = Math.min(1, Math.max(0, window.scrollY / window.innerHeight));
+      targetRef.current = Math.min(
+        1,
+        Math.max(0, window.scrollY / window.innerHeight),
+      );
       invalidate();
     };
     window.addEventListener('scroll', onScroll, {passive: true});
@@ -123,31 +127,16 @@ function smoothstep(edge0: number, edge1: number, x: number) {
 /** How the build pipeline gives the main thread back between work slices. */
 type YieldFn = () => Promise<void>;
 
-// Cooperative time-slicing for the model build pipeline. The per-slot
-// processing stages (material upgrade/dedupe, geometry bake + merge) used to
-// run as single 100-600ms tasks; when the background size-preload's idle
-// callback hit its timeout during a continuous scroll, one of those tasks
-// landed mid-scroll and dropped frames wholesale. Slicing the same loops so
-// no task exceeds ~budgetMs keeps every stage invisible to the frame loop —
-// identical output, just spread across more, smaller tasks.
-const SLICE_BUDGET_MS = 10;
-async function forEachSliced<T>(
-  items: readonly T[],
-  fn: (item: T, index: number) => void,
-  yieldFn: YieldFn,
-  budgetMs = SLICE_BUDGET_MS,
-): Promise<void> {
-  let sliceStart = performance.now();
-  for (let i = 0; i < items.length; i++) {
-    fn(items[i], i);
-    if (performance.now() - sliceStart > budgetMs) {
-      await yieldFn();
-      sliceStart = performance.now();
-    }
-  }
-}
+// Cooperative time-slicing for the model build pipeline (shared primitives in
+// app/lib/scheduling). The per-slot processing stages (material upgrade/
+// dedupe, geometry bake + merge) used to run as single 100-600ms tasks; when
+// the background size-preload's idle callback hit its timeout during a
+// continuous scroll, one of those tasks landed mid-scroll and dropped frames
+// wholesale. Slicing the same loops so no task exceeds ~SLICE_BUDGET_MS keeps
+// every stage invisible to the frame loop - identical output, just spread
+// across more, smaller tasks.
 
-// Stage timing marks (hero:<stage>) — visible in DevTools Performance and to
+// Stage timing marks (hero:<stage>) - visible in DevTools Performance and to
 // the perf-audit harness via performance.getEntriesByType('measure').
 function heroMeasure(name: string, startTime: number) {
   try {
@@ -202,7 +191,9 @@ async function dedupeMaterialsByFingerprint(
     meshes,
     (mesh) => {
       if (Array.isArray(mesh.material)) {
-        mesh.material = mesh.material.map((m) => swap(m)!).filter(Boolean) as THREE.Material[];
+        mesh.material = mesh.material
+          .map((m) => swap(m)!)
+          .filter(Boolean) as THREE.Material[];
       } else {
         const next = swap(mesh.material);
         if (next) mesh.material = next;
@@ -247,7 +238,9 @@ async function upgradeNonPBRMaterials(scene: THREE.Group, yieldFn: YieldFn) {
     meshes,
     (mesh) => {
       if (Array.isArray(mesh.material)) {
-        mesh.material = mesh.material.map((m) => swap(m)).filter(Boolean) as THREE.Material[];
+        mesh.material = mesh.material
+          .map((m) => swap(m))
+          .filter(Boolean) as THREE.Material[];
       } else {
         const next = swap(mesh.material);
         if (next) mesh.material = next;
@@ -282,7 +275,7 @@ async function mergeGroupByBucket(
     const mesh = child as THREE.Mesh;
     if (mesh.isMesh && mesh.geometry) sourceMeshes.push(mesh);
   });
-  // Clone + bake per mesh, time-sliced — with 1200+ meshes this loop was the
+  // Clone + bake per mesh, time-sliced - with 1200+ meshes this loop was the
   // first half of the monolithic merge task.
   await forEachSliced(
     sourceMeshes,
@@ -302,7 +295,7 @@ async function mergeGroupByBucket(
       if (!geom.attributes.uv) {
         // No material samples UVs (frame is a flat colour; boards are untextured),
         // but mergeGeometries needs every primitive in a bucket to share the same
-        // attribute set — give the UV-less ones zeroed coords.
+        // attribute set - give the UV-less ones zeroed coords.
         const count = geom.attributes.position.count;
         geom.setAttribute(
           'uv',
@@ -332,12 +325,13 @@ async function mergeGroupByBucket(
       for (let i = 0; i < level.length; i += MERGE_CHUNK) {
         const chunk = level.slice(i, i + MERGE_CHUNK);
         // Always merge (even single-element chunks) so every level yields
-        // freshly-allocated geometries — the caller's clones are never
+        // freshly-allocated geometries - the caller's clones are never
         // returned and can be disposed unconditionally, same as before.
         const merged = mergeGeometries(chunk, false);
         if (disposeLevel) chunk.forEach((g) => g.dispose());
         if (!merged) {
-          if (disposeLevel) level.slice(i + MERGE_CHUNK).forEach((g) => g.dispose());
+          if (disposeLevel)
+            level.slice(i + MERGE_CHUNK).forEach((g) => g.dispose());
           next.forEach((g) => g.dispose());
           return null;
         }
@@ -373,7 +367,9 @@ async function mergeGroupByBucket(
     sourceMeshes,
     (mesh) => {
       mesh.geometry?.dispose();
-      const mats = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+      const mats = Array.isArray(mesh.material)
+        ? mesh.material
+        : [mesh.material];
       mats.forEach((m) => m && (m as THREE.Material).dispose?.());
     },
     yieldFn,
@@ -439,7 +435,9 @@ function disposeBuiltModel(m: BuiltModel) {
     g.traverse((obj: any) => {
       if (obj.isMesh) {
         obj.geometry?.dispose();
-        const mats = Array.isArray(obj.material) ? obj.material : [obj.material];
+        const mats = Array.isArray(obj.material)
+          ? obj.material
+          : [obj.material];
         mats.forEach((mat: any) => mat?.dispose());
       }
     });
@@ -573,6 +571,17 @@ function DroneAssembly({
   // Flipped false on unmount so a background preload that finishes afterwards
   // disposes its model instead of leaking it into a torn-down cache.
   const aliveRef = useRef(true);
+  // Last scroll event timestamp, read by the background builds' idle gate.
+  // Component-lifetime (not per-build-effect) because a background build
+  // outlives the effect run that started it.
+  const lastScrollTsRef = useRef(0);
+  useEffect(() => {
+    const onScroll = () => {
+      lastScrollTsRef.current = performance.now();
+    };
+    window.addEventListener('scroll', onScroll, {passive: true});
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
   // Light vs dark site theme (the `light` class on <html>). The frame is
   // transparent in both, but on the light page it needs to be a touch darker +
   // more solid so it reads instead of the pale page bleeding through.
@@ -584,7 +593,10 @@ function DroneAssembly({
     };
     read();
     const obs = new MutationObserver(read);
-    obs.observe(document.documentElement, {attributes: true, attributeFilter: ['class']});
+    obs.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ['class'],
+    });
     return () => obs.disconnect();
   }, []);
 
@@ -598,47 +610,21 @@ function DroneAssembly({
     outgoingRef.current = null;
   }, []);
 
-
   useEffect(() => {
     let cancelled = false;
 
-    // Foreground yield between work slices. scheduler.yield() (Chrome 129+)
-    // resumes with continuation priority and no timer clamping; the
-    // MessageChannel fallback is likewise unclamped. setTimeout(0) is NOT
-    // usable here: Chrome clamps nested timer chains to >=4ms (and throttles
-    // harder for background pages), which stretched the now finely-sliced
-    // build from ~0.6s of work into many seconds of wall time.
-    const yieldToMain = (): Promise<void> => {
-      const sched = (globalThis as any).scheduler;
-      if (typeof sched?.yield === 'function') {
-        return sched.yield() as Promise<void>;
-      }
-      if (typeof MessageChannel !== 'undefined') {
-        return new Promise<void>((resolve) => {
-          const ch = new MessageChannel();
-          ch.port1.onmessage = () => {
-            ch.port1.close();
-            resolve();
-          };
-          ch.port2.postMessage(null);
-        });
-      }
-      return new Promise<void>((resolve) => setTimeout(resolve, 0));
-    };
-
     // Idle-gated yield for background builds: each work slice waits for a
     // real idle slot instead of racing the user's first scroll. rIC's timeout
-    // alone isn't enough — during a long continuous scroll the 1s timeout
+    // alone isn't enough - during a long continuous scroll the 1s timeout
     // fired anyway and dropped work (worst: an atomic ~50-150ms GLB parse)
     // right into the animation. So after each idle slot, if a scroll event
-    // happened in the last 150ms, keep waiting — bounded at ~5s so a
+    // happened in the last 150ms, keep waiting - bounded at ~5s so a
     // scroll-happy visitor still gets the preload eventually (150ms gaps
     // between wheel gestures are common, so in practice it runs far sooner).
-    let lastScrollTs = 0;
-    const onBgScroll = () => {
-      lastScrollTs = performance.now();
-    };
-    window.addEventListener('scroll', onBgScroll, {passive: true});
+    // The timestamp lives in a component-lifetime ref (listener installed in
+    // the mount effect below): a size toggle re-runs THIS effect while a
+    // background build keeps going, and an effect-scoped listener would be
+    // removed from under it, silently disabling the quiet gate.
     const ricOnce = () =>
       new Promise<void>((resolve) => {
         const ric = (window as any).requestIdleCallback;
@@ -649,7 +635,7 @@ function DroneAssembly({
       const start = performance.now();
       await ricOnce();
       while (
-        performance.now() - lastScrollTs < 150 &&
+        performance.now() - lastScrollTsRef.current < 150 &&
         performance.now() - start < 5000
       ) {
         await ricOnce();
@@ -698,9 +684,15 @@ function DroneAssembly({
         const total = new Array<number>(slots.length).fill(0);
         const reportProgress = () => {
           if (!onProg) return;
-          let l = 0, t = 0, known = 0;
+          let l = 0,
+            t = 0,
+            known = 0;
           for (let i = 0; i < slots.length; i++)
-            if (total[i] > 0) { l += loaded[i]; t += total[i]; known += 1; }
+            if (total[i] > 0) {
+              l += loaded[i];
+              t += total[i];
+              known += 1;
+            }
           onProg(known === 0 ? -1 : Math.min(1, l / t));
         };
         const tFetch = performance.now();
@@ -712,19 +704,24 @@ function DroneAssembly({
           // during the user's first scroll was the last big jank source.
           loadedScenes = [];
           for (let i = 0; i < slots.length; i++) {
-            await stageYield(); if (shouldCancel()) return null;
+            await stageYield();
+            if (shouldCancel()) return null;
             loadedScenes.push(
               await loadModel(heroModelUrl(slots[i].id, sz), (l, t) => {
-                loaded[i] = l; total[i] = t; reportProgress();
+                loaded[i] = l;
+                total[i] = t;
+                reportProgress();
               }),
             );
           }
         } else {
-          // Foreground (splash / uncached toggle): parallel — latency wins.
+          // Foreground (splash / uncached toggle): parallel - latency wins.
           loadedScenes = await Promise.all(
             slots.map((slot, i) =>
               loadModel(heroModelUrl(slot.id, sz), (l, t) => {
-                loaded[i] = l; total[i] = t; reportProgress();
+                loaded[i] = l;
+                total[i] = t;
+                reportProgress();
               }),
             ),
           );
@@ -756,7 +753,8 @@ function DroneAssembly({
         // carbon-finish frame keeps a single scene-owned material (below), so
         // its export materials are never touched.
         const pcbSlots = slots.filter((s) => s.finish === 'pcb');
-        await stageYield(); if (shouldCancel()) return null;
+        await stageYield();
+        if (shouldCancel()) return null;
         const tMats = performance.now();
         for (const slot of pcbSlots) {
           await upgradeNonPBRMaterials(sceneOf.get(slot.id)!, stageYield);
@@ -774,18 +772,26 @@ function DroneAssembly({
           return mergeGroupByBucket(
             scene,
             (mesh) => {
-              const mat = Array.isArray(mesh.material) ? mesh.material[0] : mesh.material;
+              const mat = Array.isArray(mesh.material)
+                ? mesh.material[0]
+                : mesh.material;
               if (!mat) return 'default';
               const key = mat.uuid;
               if (!materialsByKey.has(key)) materialsByKey.set(key, mat);
               return key;
             },
-            (key) => materialsByKey.get(key) || new THREE.MeshStandardMaterial({color: 0x999999}),
+            (key) =>
+              materialsByKey.get(key) ||
+              new THREE.MeshStandardMaterial({color: 0x999999}),
             stageYield,
           );
         };
 
-        const setShadowFlags = (g: THREE.Group, cast: boolean, receive: boolean) => {
+        const setShadowFlags = (
+          g: THREE.Group,
+          cast: boolean,
+          receive: boolean,
+        ) => {
           g.traverse((obj) => {
             const mesh = obj as THREE.Mesh;
             if (!mesh.isMesh) return;
@@ -808,21 +814,34 @@ function DroneAssembly({
               // Matte, near-non-metallic so the warm key light doesn't bloom
               // the frame into a tan/grey plastic look — it should read as
               // dark carbon.
-              color: 0xf2f2f2, metalness: 0.0, roughness: 0.82,
-              transparent: true, opacity: 0.62, depthWrite: true,
+              color: 0xf2f2f2,
+              metalness: 0.0,
+              roughness: 0.82,
+              transparent: true,
+              opacity: 0.62,
+              depthWrite: true,
               // polygonOffset pushes the transparent frame's depth back so the
               // near-coplanar plates/boards don't z-fight (keeps see-through
               // frame).
-              polygonOffset: true, polygonOffsetFactor: 2, polygonOffsetUnits: 2,
+              polygonOffset: true,
+              polygonOffsetFactor: 2,
+              polygonOffsetUnits: 2,
             });
-            pack = await mergeGroupByBucket(scene, () => 'body', () => frameMat, stageYield);
+            pack = await mergeGroupByBucket(
+              scene,
+              () => 'body',
+              () => frameMat,
+              stageYield,
+            );
             mats = [frameMat];
             // Frame: receives only (it's transparent, so it never casts cleanly).
             setShadowFlags(pack.group, false, true);
           } else {
             pack = await mergeByMaterialRef(scene);
             mats = Array.from(
-              new Set(pack.group.children.map((m) => (m as THREE.Mesh).material)),
+              new Set(
+                pack.group.children.map((m) => (m as THREE.Mesh).material),
+              ),
             ).filter(Boolean) as THREE.Material[];
             for (const m of mats) {
               if (!m) continue;
@@ -856,7 +875,8 @@ function DroneAssembly({
           addProxyHitbox(pack.group);
           built.set(slot.id, {group: pack.group, mats});
           heroMeasure(`${sz}:merge:${slot.id}`, tSlot);
-          await stageYield(); if (shouldCancel()) return bail();
+          await stageYield();
+          if (shouldCancel()) return bail();
         }
 
         return built;
@@ -878,7 +898,8 @@ function DroneAssembly({
         // Direction along the registry's size row: moving to a later index
         // slides in from the right (+1), to an earlier one from the left (−1).
         const order = HERO_AIRFRAME_KEYS;
-        const d = order.indexOf(airframeSize) - order.indexOf(displayedSizeRef.current);
+        const d =
+          order.indexOf(airframeSize) - order.indexOf(displayedSizeRef.current);
         slideDirRef.current = d < 0 ? -1 : 1;
       }
       displayedSizeRef.current = airframeSize;
@@ -927,87 +948,110 @@ function DroneAssembly({
     };
 
     (async () => {
-      let model: BuiltModel | null | undefined = modelCacheRef.current.get(airframeSize);
-      // Cache miss on a size TOGGLE (initial load reports via the splash):
-      // surface a busy cue so the slider doesn't look dead while the trio
-      // fetches + builds. Cleared below on every exit path, and by the
-      // effect cleanup if this run is cancelled by another toggle.
-      const toggleBuild = !model && hasDisplayedRef.current;
-      if (toggleBuild) onBuildingChange?.(true);
-      if (!model) {
-        model = await buildModel(airframeSize, {
-          onProg: onProgress,
-          delayMs: loadDelayMs ?? 0,
-          shouldCancel: () => cancelled,
-        });
+      let toggleBuild = false;
+      try {
+        let model: BuiltModel | null | undefined =
+          modelCacheRef.current.get(airframeSize);
+        // Cache miss on a size TOGGLE (initial load reports via the splash):
+        // surface a busy cue so the slider doesn't look dead while the trio
+        // fetches + builds. Cleared structurally by the finally below (and by
+        // the effect cleanup if this run is cancelled by another toggle), so
+        // no future early return can strand the spinner.
+        toggleBuild = !model && hasDisplayedRef.current;
+        if (toggleBuild) onBuildingChange?.(true);
         if (!model) {
-          if (toggleBuild) onBuildingChange?.(false);
-          onReady?.(); // release the splash even on failure / cancel
-          return;
-        }
-        modelCacheRef.current.set(airframeSize, model);
-      }
-      if (cancelled) {
-        if (toggleBuild) onBuildingChange?.(false);
-        return;
-      }
-      await display(model);
-      if (toggleBuild) onBuildingChange?.(false);
-      onReady?.();
-
-      // Build the OTHER size(s) lazily, only once the thread is idle —
-      // scheduled AFTER the active model is shown so it never delays the
-      // initial load. With >2 registry sizes each remaining one is built in
-      // turn; the chained idle callbacks keep them off the first scroll.
-      const others = HERO_AIRFRAME_KEYS.filter((k) => k !== airframeSize);
-      const preloadSize = (sz: string) => {
-        if (!aliveRef.current || modelCacheRef.current.has(sz)) return;
-        void buildModel(sz, {
-          shouldCancel: () => !aliveRef.current,
-          // Every build stage waits for an idle slot — the background build
-          // used to chain setTimeout(0) and its 50–200ms merge stages landed
-          // exactly during the user's first scroll-through.
-          idleYields: true,
-        }).then(async (m) => {
-          if (!m) return;
-          if (!aliveRef.current) { disposeBuiltModel(m); return; }
-          // Warm the size's shaders offscreen too, so the eventual toggle (and
-          // the scroll right after it) is smooth instead of stalling on a
-          // first-render compile. Parent it into the (idle) slide-out wrapper
-          // while the programs link. compileAsync yields to the frame loop, so
-          // park the wrapper far outside the frustum for the duration — an
-          // on-screen parent would let interleaved frames draw a ghost second
-          // drone mid-warm.
-          const holder = outWrapperRef.current;
-          if (holder) {
-            const prevX = holder.position.x;
-            holder.position.x = 1e6;
-            for (const {group} of m.values()) holder.add(group);
-            try {
-              await gl.compileAsync(scene, camera);
-            } catch { /* best-effort */ }
-            for (const {group} of m.values()) holder.remove(group);
-            // A size toggle can claim the wrapper for a real slide-out while
-            // we awaited; only restore the parking offset if it didn't.
-            if (!outgoingRef.current) holder.position.x = prevX;
+          model = await buildModel(airframeSize, {
+            onProg: onProgress,
+            delayMs: loadDelayMs ?? 0,
+            shouldCancel: () => cancelled,
+          });
+          if (!model) {
+            onReady?.(); // release the splash even on failure / cancel
+            return;
           }
-          if (!aliveRef.current) { disposeBuiltModel(m); return; }
-          modelCacheRef.current.set(sz, m);
-        });
-      };
-      for (const sz of others) {
-        if (modelCacheRef.current.has(sz)) continue;
-        const schedule = () => preloadSize(sz);
-        const ric = (window as any).requestIdleCallback;
-        if (typeof ric === 'function') ric(schedule, {timeout: 10000});
-        else setTimeout(schedule, 3000);
+          // A background preload of this same size can have finished while we
+          // built (its window is now seconds long under the idle+scroll gates).
+          // Never overwrite an existing cache entry: the displayed model must
+          // BE the cached one or the unmount disposal leaks it.
+          const raced = modelCacheRef.current.get(airframeSize);
+          if (raced && raced !== model) {
+            disposeBuiltModel(model);
+            model = raced;
+          } else {
+            modelCacheRef.current.set(airframeSize, model);
+          }
+        }
+        if (cancelled) return;
+        await display(model);
+        onReady?.();
+
+        // Build the OTHER size(s) lazily, only once the thread is idle —
+        // scheduled AFTER the active model is shown so it never delays the
+        // initial load. With >2 registry sizes each remaining one is built in
+        // turn; the chained idle callbacks keep them off the first scroll.
+        const others = HERO_AIRFRAME_KEYS.filter((k) => k !== airframeSize);
+        const preloadSize = (sz: string) => {
+          if (!aliveRef.current || modelCacheRef.current.has(sz)) return;
+          void buildModel(sz, {
+            shouldCancel: () => !aliveRef.current,
+            // Every build stage waits for an idle slot — the background build
+            // used to chain setTimeout(0) and its 50–200ms merge stages landed
+            // exactly during the user's first scroll-through.
+            idleYields: true,
+          }).then(async (m) => {
+            if (!m) return;
+            if (!aliveRef.current) {
+              disposeBuiltModel(m);
+              return;
+            }
+            // Warm the size's shaders offscreen too, so the eventual toggle (and
+            // the scroll right after it) is smooth instead of stalling on a
+            // first-render compile. Parent it into the (idle) slide-out wrapper
+            // while the programs link. compileAsync yields to the frame loop, so
+            // park the wrapper far outside the frustum for the duration — an
+            // on-screen parent would let interleaved frames draw a ghost second
+            // drone mid-warm.
+            const holder = outWrapperRef.current;
+            if (holder) {
+              const prevX = holder.position.x;
+              holder.position.x = 1e6;
+              for (const {group} of m.values()) holder.add(group);
+              try {
+                await gl.compileAsync(scene, camera);
+              } catch {
+                /* best-effort */
+              }
+              for (const {group} of m.values()) holder.remove(group);
+              // A size toggle can claim the wrapper for a real slide-out while
+              // we awaited; only restore the parking offset if it didn't.
+              if (!outgoingRef.current) holder.position.x = prevX;
+            }
+            // A foreground toggle build for this size can have landed while we
+            // warmed shaders; its model is displayed AND cached. Keep that one
+            // canonical and drop ours - overwriting would orphan the displayed
+            // model from the cache and leak it at unmount.
+            if (!aliveRef.current || modelCacheRef.current.has(sz)) {
+              disposeBuiltModel(m);
+              return;
+            }
+            modelCacheRef.current.set(sz, m);
+          });
+        };
+        for (const sz of others) {
+          if (modelCacheRef.current.has(sz)) continue;
+          const schedule = () => preloadSize(sz);
+          const ric = (window as any).requestIdleCallback;
+          if (typeof ric === 'function') ric(schedule, {timeout: 10000});
+          else setTimeout(schedule, 3000);
+        }
+      } finally {
+        if (toggleBuild) onBuildingChange?.(false);
       }
     })().catch((err: unknown) => {
       // buildModel catches its own load errors, but a registry/data bug
       // (heroModelUrl throwing) or a display() failure would otherwise be an
       // unhandled rejection that strands the splash dim-layer — release it.
       console.error('HeroScene: hero model build/display failed:', err);
-      onBuildingChange?.(false);
       onReady?.();
     });
 
@@ -1017,7 +1061,6 @@ function DroneAssembly({
       // The next effect run owns the busy cue from here; drop this run's.
       cancelled = true;
       onBuildingChange?.(false);
-      window.removeEventListener('scroll', onBgScroll);
     };
   }, [airframeSize]);
 
@@ -1071,8 +1114,13 @@ function DroneAssembly({
   // on refocus to resume. We don't unmount on blur — that would replay the load.
   useEffect(() => {
     focusedRef.current = document.hasFocus();
-    const onFocus = () => { focusedRef.current = true; invalidate(); };
-    const onBlur = () => { focusedRef.current = false; };
+    const onFocus = () => {
+      focusedRef.current = true;
+      invalidate();
+    };
+    const onBlur = () => {
+      focusedRef.current = false;
+    };
     window.addEventListener('focus', onFocus);
     window.addEventListener('blur', onBlur);
     return () => {
@@ -1131,8 +1179,7 @@ function DroneAssembly({
     const focus = focusScratchRef.current;
     let boardFocus = 0;
     for (let i = 0; i < HERO_SLOTS.length; i++) {
-      focus[i] =
-        i < lastIdx ? reveals[i] * (1 - reveals[i + 1]) * playing : 0;
+      focus[i] = i < lastIdx ? reveals[i] * (1 - reveals[i + 1]) * playing : 0;
       boardFocus += focus[i];
     }
 
@@ -1146,7 +1193,8 @@ function DroneAssembly({
     const FRAME_FADE = 0.6;
     const frameHi =
       lastReveal *
-      (1 - smoothstep(FRAME_HOLD, FRAME_HOLD + FRAME_FADE, frameHoldRef.current)) *
+      (1 -
+        smoothstep(FRAME_HOLD, FRAME_HOLD + FRAME_FADE, frameHoldRef.current)) *
       playing;
 
     // Halt the auto-rotate while scrolling through the FC/ESC reveals so the
@@ -1182,7 +1230,8 @@ function DroneAssembly({
     // drone AT this front view and the spin simply resumes from here; it no
     // longer snaps back to whatever angle it was at before you scrolled in.
     const frontTarget =
-      Math.round(rotRef.current / (Math.PI * 2)) * (Math.PI * 2) + FOCUS_AZIMUTH;
+      Math.round(rotRef.current / (Math.PI * 2)) * (Math.PI * 2) +
+      FOCUS_AZIMUTH;
     rotRef.current = THREE.MathUtils.lerp(
       rotRef.current,
       frontTarget,
@@ -1256,7 +1305,10 @@ function DroneAssembly({
       applyCrossSlide(transitionRef.current);
       invalidate();
     } else if (transitionRef.current < 1) {
-      transitionRef.current = Math.min(1, transitionRef.current + dt / TRANS_DUR);
+      transitionRef.current = Math.min(
+        1,
+        transitionRef.current + dt / TRANS_DUR,
+      );
       applyCrossSlide(transitionRef.current);
       if (transitionRef.current >= 1) {
         wrapperRef.current.position.x = 0;
@@ -1285,7 +1337,8 @@ function DroneAssembly({
       for (let i = 0; i < HERO_SLOTS.length; i++) {
         // Non-final slots follow their scroll focus; the final slot (the
         // frame) follows its timed hold.
-        hoverTarget.current[HERO_SLOTS[i].id] = i < lastIdx ? focus[i] : frameHi;
+        hoverTarget.current[HERO_SLOTS[i].id] =
+          i < lastIdx ? focus[i] : frameHi;
       }
     }
     let glowAnimating = false;
@@ -1295,8 +1348,10 @@ function DroneAssembly({
       const target = hoverTarget.current[key];
       const prev = hoverState.current[key];
       hoverState.current[key] += (target - prev) * Math.min(1, 8 * dt);
-      if (Math.abs(hoverState.current[key] - target) > 0.01) glowAnimating = true;
-      if (hoverState.current[key] > anyFocus) anyFocus = hoverState.current[key];
+      if (Math.abs(hoverState.current[key] - target) > 0.01)
+        glowAnimating = true;
+      if (hoverState.current[key] > anyFocus)
+        anyFocus = hoverState.current[key];
     }
 
     // Spotlight ONE component at a time. Two cheap, robust moves (NO transparency
@@ -1437,25 +1492,36 @@ function DroneAssembly({
   // nothing rather than navigate to a guessed PDP. Drag-to-rotate still works.
   const isInteractive = useCallback(() => false, []);
 
-  const handleClick = useCallback((url: string) => {
-    if (!dragMoved.current && isInteractive()) {
-      // Client-side nav into the prefetched PDP — instant. Falls back to a
-      // hard load only if no navigate was threaded in.
-      if (onNavigate) onNavigate(url);
-      else window.location.href = url;
-    }
-  }, [isInteractive, onNavigate]);
+  const handleClick = useCallback(
+    (url: string) => {
+      if (!dragMoved.current && isInteractive()) {
+        // Client-side nav into the prefetched PDP — instant. Falls back to a
+        // hard load only if no navigate was threaded in.
+        if (onNavigate) onNavigate(url);
+        else window.location.href = url;
+      }
+    },
+    [isInteractive, onNavigate],
+  );
 
-  const hover = useCallback((key: HeroSlotId, value: boolean) => {
-    if (!isInteractive()) return;
-    hoverTarget.current[key] = value ? 1 : 0;
-    document.body.style.cursor = value ? 'pointer' : '';
-    invalidate();
-  }, [isInteractive]);
+  const hover = useCallback(
+    (key: HeroSlotId, value: boolean) => {
+      if (!isInteractive()) return;
+      hoverTarget.current[key] = value ? 1 : 0;
+      document.body.style.cursor = value ? 'pointer' : '';
+      invalidate();
+    },
+    [isInteractive],
+  );
 
   return (
     <>
-      <group ref={wrapperRef} scale={7} rotation={[0.6, 0, 0.05]} onPointerDown={onDown}>
+      <group
+        ref={wrapperRef}
+        scale={7}
+        rotation={[0.6, 0, 0.05]}
+        onPointerDown={onDown}
+      >
         {/* One hit-target group per hero slot, registry order. The PDP url
             comes from the slot's product handle (registry commerce data). */}
         {HERO_SLOTS.map((slot) => (
@@ -1494,11 +1560,7 @@ type PerfSample = {
 const PERF_WINDOW_MS = 3000;
 const PERF_JANK_MS = 20;
 
-function PerfProbe({
-  onSample,
-}: {
-  onSample: (s: PerfSample) => void;
-}) {
+function PerfProbe({onSample}: {onSample: (s: PerfSample) => void}) {
   const {gl, size, viewport} = useThree();
   const frames = useRef(0);
   const lastT = useRef(performance.now());
@@ -1514,7 +1576,9 @@ function PerfProbe({
   const lastTris = useRef(0);
   useEffect(() => {
     gl.info.autoReset = false;
-    return () => { gl.info.autoReset = true; };
+    return () => {
+      gl.info.autoReset = true;
+    };
   }, [gl]);
 
   useFrame(() => {
@@ -1724,7 +1788,9 @@ export function HeroScene({
   const [perf, setPerf] = useState<PerfSample | null>(null);
   const navigate = useNavigate();
   const {targetRef, smoothRef} = useScrollProgress();
-  useEffect(() => { setMounted(true); }, []);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // NOTE: the Canvas is deliberately NOT unmounted when the hero scrolls
   // off-screen or the tab hides. The old unmount-at-200vh "pause" disposed
@@ -1737,16 +1803,21 @@ export function HeroScene({
   // hidden tab gets no RAF at all), so keeping it mounted is effectively
   // free and scrolling back up is instant.
 
-  if (!mounted) return (
-    <div className="absolute inset-0 flex items-center justify-center">
-      <div className="w-16 h-16 border border-[var(--color-border)] rounded-full flex items-center justify-center">
-        <div className="w-8 h-8 border-t border-[var(--color-gold)] rounded-full animate-spin" />
+  if (!mounted)
+    return (
+      <div className="absolute inset-0 flex items-center justify-center">
+        <div className="w-16 h-16 border border-[var(--color-border)] rounded-full flex items-center justify-center">
+          <div className="w-8 h-8 border-t border-[var(--color-gold)] rounded-full animate-spin" />
+        </div>
       </div>
-    </div>
-  );
+    );
 
   return (
-    <div className="absolute inset-0" role="img" aria-label="3D interactive drone assembly viewer">
+    <div
+      className="absolute inset-0"
+      role="img"
+      aria-label="3D interactive drone assembly viewer"
+    >
       <Canvas
         // near/far kept tight around the drone (~0.7–1.5 units away, ~1 unit
         // across). The three.js default far of 2000 wastes almost all depth

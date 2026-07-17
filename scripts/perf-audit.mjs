@@ -17,7 +17,7 @@
  *
  * Baseline vs fix runs: keep the JSON reports and diff the numbers.
  *
- * CAVEAT: chrome-headless-shell exaggerates some WebGL costs — a first
+ * CAVEAT: chrome-headless-shell exaggerates some WebGL costs - a first
  * canvas render can appear as a >1s "long task" that does not reproduce in
  * headed Chrome (verified on /products/openframe). For scenarios that mount
  * a WebGL canvas mid-scroll, confirm suspicious stalls with --headed before
@@ -397,7 +397,7 @@ async function main() {
     }
     sr.wallMs = Date.now() - t0;
     report.scenarios[name] = sr;
-    console.error(`— ${name} done in ${sr.wallMs}ms`);
+    console.error(`- ${name} done in ${sr.wallMs}ms`);
   }
 
   report.consoleErrors = consoleErrors.slice(0, 30);

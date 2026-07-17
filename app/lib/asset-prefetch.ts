@@ -72,8 +72,15 @@ export function peekJson<T>(url: string): T | undefined {
 const imgPrefetched = new Set<string>();
 
 /** Warm an image into the browser cache so a later <img src> paints instantly. */
+const imgDecoded = new Set<string>();
+
 export function prefetchImage(url: string, opts?: {decode?: boolean}): void {
-  if (imgPrefetched.has(url) || typeof Image === 'undefined') return;
+  if (typeof Image === 'undefined') return;
+  const wantDecode = Boolean(opts?.decode);
+  // A byte-only warm must still be upgradeable to a decoded warm later (a
+  // sibling tier prefetched without decode, then activated), so the dedupe
+  // only short-circuits when this call adds nothing new.
+  if (imgPrefetched.has(url) && (!wantDecode || imgDecoded.has(url))) return;
   imgPrefetched.add(url);
   const img = new Image();
   img.decoding = 'async';
@@ -81,8 +88,11 @@ export function prefetchImage(url: string, opts?: {decode?: boolean}): void {
   // decode: true also decodes the bitmap now (off the main thread) so the
   // browser caches the decoded pixels; without it the first paint of a
   // warmed multi-megapixel sheet still paid its full decode during scroll.
-  // Only request it for images that will actually paint soon — decoding a
+  // Only request it for images that will actually paint soon - decoding a
   // whole sibling tier's sheaf just evicts the ones that matter from the
   // decoded-image cache. Best-effort: decode() rejects for broken images.
-  if (opts?.decode) img.decode?.().catch(() => {});
+  if (wantDecode) {
+    imgDecoded.add(url);
+    img.decode?.().catch(() => {});
+  }
 }

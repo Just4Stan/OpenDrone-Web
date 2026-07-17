@@ -448,7 +448,7 @@ html {
 }
 
 /* Uncached size toggle: the trio is still fetching/building, so the thumb
-   carries a small spinner next to its label. Purely additive — the control
+   carries a small spinner next to its label. Purely additive - the control
    keeps working and the label stays put. */
 .hero-size-slider__spinner {
   position: absolute;
@@ -460,6 +460,12 @@ html {
   border-top-color: var(--color-on-accent);
   animation: hero-size-spin 0.7s linear infinite;
   pointer-events: none;
+}
+
+/* Make room for the spinner so it never overlaps the thumb label on narrow
+   slider widths. */
+.hero-size-slider__thumb.is-busy .hero-size-slider__thumb-label {
+  padding-right: 1.2rem;
 }
 
 @keyframes hero-size-spin {
@@ -975,9 +981,9 @@ html {
 
 /* A single revealing product card. max-height / opacity / transform are driven
    by the --hero-p custom property (written once per scroll frame on .homepage)
-   through the per-card --lo/--win reveal window — the same linearstep the route
+   through the per-card --lo/--win reveal window - the same linearstep the route
    used to compute inline, now in calc() so the scrub costs zero React renders.
-   They carry NO CSS transition — only the hover affordances do — otherwise the
+   They carry NO CSS transition - only the hover affordances do - otherwise the
    transition would fight the per-frame scrub and lag behind the scroll.
    overflow:hidden lets max-height clip the card as it grows out of the bubble. */
 .hero-reveal-card {
@@ -1006,9 +1012,11 @@ html {
   border-color: color-mix(in srgb, var(--color-gold) 50%, transparent);
 }
 
-/* Scroll hint under the hero — fades out over the first ~13% of scroll.
-   Driven by --hero-p so it needs no per-frame React render. */
-.hero-scroll-hint {
+/* Thin-line scroll hint under the hero - fades out over the first ~13% of
+   scroll. Driven by --hero-p so it needs no per-frame React render. Named
+   distinctly from .hero-scroll-hint (the "scroll to explore" text cue below,
+   which gates on .is-visible and would zero this element's opacity). */
+.hero-scroll-fade {
   opacity: clamp(0, calc(0.4 - var(--hero-p, 0) * 3), 0.4);
 }
 .hero-reveal-media {
@@ -5858,7 +5866,7 @@ button.reset {
 .board-art.is-flying .board-sheet.is-active {
   animation-play-state: running;
 }
-/* PERF — same trade the variant swap makes: the grey-out animates ONLY the
+/* PERF - same trade the variant swap makes: the grey-out animates ONLY the
    color ops (brightness/saturate, compositor-accelerated on the promoted
    layers above). Interpolating the drop-shadow here forced a full re-raster
    of each multi-thousand-path layer per frame and made the entrance stutter

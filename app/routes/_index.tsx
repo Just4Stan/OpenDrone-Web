@@ -3,14 +3,7 @@ import {AnimatePresence, motion, useReducedMotion} from 'motion/react';
 import {Link} from '~/components/nav';
 import {Money} from '@shopify/hydrogen';
 import type {Route} from './+types/_index';
-import {
-  useEffect,
-  useRef,
-  useState,
-  useCallback,
-  memo,
-  Suspense,
-} from 'react';
+import {useEffect, useRef, useState, useCallback, memo, Suspense} from 'react';
 import type {CollectionItemFragment} from 'storefrontapi.generated';
 import type {MoneyV2} from '@shopify/hydrogen/storefront-api-types';
 import {INCUTEC_HINT_SEEN_KEY} from '~/lib/incutec-hint';
@@ -47,7 +40,8 @@ const heroScenePromise =
 
 function shouldLoadHero(): boolean {
   if (typeof window === 'undefined') return false;
-  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return false;
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches)
+    return false;
   if (window.matchMedia('(max-width: 768px)').matches) return false;
   return true;
 }
@@ -251,9 +245,8 @@ export async function loader({request, context}: Route.LoaderArgs) {
   // first paint instead of rendering the desktop 3D tree (and its
   // scroll-lock) for a frame before matchMedia corrects it client-side.
   const ua = request.headers.get('user-agent') || '';
-  const isMobileHint = /Mobi|Android|iPhone|iPod|Windows Phone|BlackBerry/i.test(
-    ua,
-  );
+  const isMobileHint =
+    /Mobi|Android|iPhone|iPod|Windows Phone|BlackBerry/i.test(ua);
 
   // Flagship line for the mobile showcase. Deferred, not awaited: desktop
   // never renders these cards, and on mobile they sit below the hero — so
@@ -267,8 +260,9 @@ export async function loader({request, context}: Route.LoaderArgs) {
     .query(HOME_FEATURED_QUERY, {cache: context.storefront.CacheLong()})
     .then((data) => {
       const d = data as HomeFeaturedResult;
-      const keep = (p: CollectionItemFragment | null): p is CollectionItemFragment =>
-        Boolean(p);
+      const keep = (
+        p: CollectionItemFragment | null,
+      ): p is CollectionItemFragment => Boolean(p);
       return {
         // Mobile flagship line: the four core parts (FC, ESC, RX, frame). The
         // OpenStack is intentionally NOT here — it's just the FC + ESC bundled,
@@ -288,10 +282,6 @@ export async function loader({request, context}: Route.LoaderArgs) {
   const heroStacks = home.then((h) => h.heroStacks);
 
   return {isMobileHint, featured, heroStacks};
-}
-
-function linearstep(edge0: number, edge1: number, x: number) {
-  return Math.max(0, Math.min(1, (x - edge0) / (edge1 - edge0)));
 }
 
 // Hero scroll budget — the 3D scene + phased UI stays pinned for this many
@@ -324,7 +314,11 @@ const HERO_SWAP_EASE = [0.65, 0, 0.35, 1] as const; // easeInOutCubic ≈ HeroSc
 const HERO_SWAP_DIST = 110; // px of horizontal travel
 const HERO_SWAP_DIP = 0.9; // mid-swap scale (the zoom-out dip), ~ HeroScene's 0.18 sine dip
 const HERO_STACK_SWAP = {
-  enter: (dir: number) => ({x: dir * HERO_SWAP_DIST, opacity: 0, scale: HERO_SWAP_DIP}),
+  enter: (dir: number) => ({
+    x: dir * HERO_SWAP_DIST,
+    opacity: 0,
+    scale: HERO_SWAP_DIP,
+  }),
   center: {
     x: 0,
     opacity: 1,
@@ -372,11 +366,7 @@ export default function Homepage() {
   return <DesktopHome heroStacks={heroStacks} />;
 }
 
-function DesktopHome({
-  heroStacks,
-}: {
-  heroStacks: Promise<HeroStacks>;
-}) {
+function DesktopHome({heroStacks}: {heroStacks: Promise<HeroStacks>}) {
   // Coming-soon reveal cards keep their link + title but swap the price
   // for a Soon tag (per-card handle resolved server-side on the card).
   const globalComingSoon = useComingSoon();
@@ -384,16 +374,20 @@ function DesktopHome({
   const rafId = useRef(0);
   // Scroll progress reaches the DOM two ways:
   //  - visuals (card reveal geometry, scroll-hint fade) read the `--hero-p`
-  //    custom property, written imperatively once per scroll frame below —
+  //    custom property, written imperatively once per scroll frame below -
   //    smooth, and NO React re-render per frame;
-  //  - `scrollProgress` state now updates ONLY when an interactivity gate
-  //    (stack aria-hidden at 0.1, per-card focus/pointer at r>0.6, hint
-  //    visibility) crosses its threshold — a handful of renders per scroll
-  //    instead of one per frame. Re-rendering the whole route at every
-  //    scroll frame was the single biggest CPU cost on slow machines.
+  //  - interactivity gates (stack aria-hidden, per-card focus/pointer) are a
+  //    small state BITMASK that only changes when a threshold is crossed - a
+  //    handful of renders per scroll instead of one per frame. Re-rendering
+  //    the whole route at every scroll frame was the single biggest CPU cost
+  //    on slow machines. Gate and consumer read the same bit, so the two
+  //    can't disagree at a boundary the way a duplicated `> 0.6` check did.
   const heroVarRef = useRef<HTMLDivElement | null>(null);
-  const [scrollProgress, setScrollProgress] = useState(0);
-  const gateSigRef = useRef('');
+  // Bit 0: the buy stack is on screen (p >= 0.1). Bits 1..n: card i has
+  // revealed past its interactive point (r > 0.6 within its window).
+  const [heroGates, setHeroGates] = useState(0);
+  const stackVisibleGate = (heroGates & 1) !== 0;
+  const cardInteractiveGate = (i: number) => (heroGates & (1 << (i + 1))) !== 0;
   // Which airframe the hero shows — 5-inch or 3-inch. Toggling swaps the
   // GLB trio loaded by HeroScene.
   const [heroSize, setHeroSize] = useState<string>(DEFAULT_HERO_SIZE);
@@ -426,9 +420,13 @@ function DesktopHome({
   // finished loading AND a minimum wait has elapsed (so the wordmark
   // always gets a readable beat), or when a max timeout fires as a
   // safety net, or when the user starts scrolling.
-  const [splashSettled, setSplashSettled] = useState(splashHasPlayedThisSession);
+  const [splashSettled, setSplashSettled] = useState(
+    splashHasPlayedThisSession,
+  );
   const [sceneReady, setSceneReady] = useState(splashHasPlayedThisSession);
-  const [minWaitElapsed, setMinWaitElapsed] = useState(splashHasPlayedThisSession);
+  const [minWaitElapsed, setMinWaitElapsed] = useState(
+    splashHasPlayedThisSession,
+  );
   const [isMobile, setIsMobile] = useState(false);
   // Hero-wordmark fill progress, 0..1. Driven by real GLTFLoader byte
   // progress when Content-Length is available, otherwise by the synthetic
@@ -493,16 +491,15 @@ function DesktopHome({
     const p = scrollRef.current;
     // Smooth visuals: one style-property write, no reconciliation.
     heroVarRef.current?.style.setProperty('--hero-p', p.toFixed(4));
-    // Discrete gates: stack visibility (0.1), scroll hint (0.4/3), and each
-    // card's interactive threshold (r > 0.6 within its reveal window).
-    let sig = `${p >= 0.1 ? 1 : 0}${p >= 0.4 / 3 ? 1 : 0}`;
-    for (const [lo, hi] of HERO_REVEAL_WINDOWS) {
-      sig += p >= lo + 0.6 * (hi - lo) ? 1 : 0;
+    // Discrete gates: stack visibility (0.1) and each card's interactive
+    // threshold (r > 0.6 within its reveal window), packed into a bitmask.
+    // setState is a no-op re-render-wise while the mask is unchanged.
+    let gates = p >= 0.1 ? 1 : 0;
+    for (let i = 0; i < HERO_REVEAL_WINDOWS.length; i++) {
+      const [lo, hi] = HERO_REVEAL_WINDOWS[i];
+      if (p > lo + 0.6 * (hi - lo)) gates |= 1 << (i + 1);
     }
-    if (sig !== gateSigRef.current) {
-      gateSigRef.current = sig;
-      setScrollProgress(p);
-    }
+    setHeroGates(gates);
     rafId.current = 0;
   }, []);
 
@@ -700,7 +697,9 @@ function DesktopHome({
     return () => window.clearTimeout(t);
   }, [headerIn]);
 
-  const heroSpacerVh = isMobile ? HERO_SPACER_VH_MOBILE : HERO_SPACER_VH_DESKTOP;
+  const heroSpacerVh = isMobile
+    ? HERO_SPACER_VH_MOBILE
+    : HERO_SPACER_VH_DESKTOP;
   const heroProgressVh = isMobile
     ? HERO_PROGRESS_VH_MOBILE
     : HERO_PROGRESS_VH_DESKTOP;
@@ -1043,7 +1042,8 @@ function DesktopHome({
               aria-live="polite"
             >
               <span className="hero-load-overflow__text">loading models…</span>
-              <Link prefetch="viewport"
+              <Link
+                prefetch="viewport"
                 to="/collections/all"
                 className="hero-load-overflow__skip"
                 onClick={() => setSplashSettled(true)}
@@ -1082,7 +1082,7 @@ function DesktopHome({
           {/* Buy bubble — bottom-right. The Shop button is the anchor; as the
               user scrolls, the on-screen hardware (FC → ESC → Frame) pops out
               of it one by one, the stack growing upward. Each card's reveal is
-              driven off scrollProgress and mirrors the spotlight in HeroScene.
+              driven off --hero-p and mirrors the spotlight in HeroScene.
               Scrolling back up retracts them in reverse. */}
           <div
             className={`hero-buy${splashSettled ? ' is-visible' : ''}`}
@@ -1097,80 +1097,90 @@ function DesktopHome({
                   const items = stacks[heroSize] ?? [];
                   const dir = heroSwapDirRef.current;
                   return (
-                  <div className="hero-buy-swap">
-                  <AnimatePresence custom={dir} initial={false} mode="sync">
-                  <motion.div
-                    key={heroSize}
-                    className="hero-buy-stack"
-                    aria-hidden={scrollProgress < 0.1}
-                    custom={dir}
-                    variants={HERO_STACK_SWAP}
-                    initial={reduceMotion ? false : 'enter'}
-                    animate="center"
-                    exit={reduceMotion ? undefined : 'exit'}
-                  >
-                    {items.slice(0, HERO_SLOTS.length).map((card, i) => {
-                      const [lo, hi] = REVEAL_WINDOWS[i] ?? [1, 1];
-                      // Interactivity gate only — the reveal GEOMETRY
-                      // (max-height/opacity/transform) is CSS driven by
-                      // --hero-p + the per-card --lo/--win below, so it
-                      // stays per-frame smooth without React renders.
-                      const interactive =
-                        linearstep(lo, hi, scrollProgress) > 0.6;
-                      const setSpot = (v: HeroBoardKey | null) => {
-                        heroSpotlightRef.current = v;
-                      };
-                      return (
-                        <Link
-                          key={card.boardKey}
-                          to={card.url}
-                          prefetch="intent"
-                          className="hero-reveal-card"
-                          style={
-                            {
-                              '--lo': lo,
-                              '--win': hi - lo,
-                              pointerEvents: interactive ? 'auto' : 'none',
-                            } as React.CSSProperties
-                          }
-                          tabIndex={interactive ? undefined : -1}
-                          aria-hidden={!interactive}
-                          onMouseEnter={() => setSpot(card.boardKey)}
-                          onMouseLeave={() => setSpot(null)}
-                          onFocus={() => setSpot(card.boardKey)}
-                          onBlur={() => setSpot(null)}
+                    <div className="hero-buy-swap">
+                      <AnimatePresence custom={dir} initial={false} mode="sync">
+                        <motion.div
+                          key={heroSize}
+                          className="hero-buy-stack"
+                          aria-hidden={!stackVisibleGate}
+                          custom={dir}
+                          variants={HERO_STACK_SWAP}
+                          initial={reduceMotion ? false : 'enter'}
+                          animate="center"
+                          exit={reduceMotion ? undefined : 'exit'}
                         >
-                          <span className="hero-reveal-media">
-                            {card.image?.url ? (
-                              <img
-                                src={card.image.url}
-                                alt={card.image.altText ?? ''}
-                                loading="lazy"
-                                decoding="async"
-                              />
-                            ) : (
-                              <span className="hero-reveal-ph" aria-hidden="true" />
-                            )}
-                          </span>
-                          <span className="hero-reveal-text">
-                            <span className="hero-reveal-title">{card.title}</span>
-                            {card.productType ? (
-                              <span className="hero-reveal-sub">{card.productType}</span>
-                            ) : null}
-                          </span>
-                          {isComingSoon(card.handle, globalComingSoon) ? (
-                            <span className="hero-reveal-soon">Soon</span>
-                          ) : card.price ? (
-                            <span className="hero-reveal-price">
-                              <Money data={card.price} />
-                            </span>
-                          ) : null}
-                        </Link>
-                      );
-                    })}
-                  </motion.div>
-                  </AnimatePresence>
-                  </div>
+                          {items.slice(0, HERO_SLOTS.length).map((card, i) => {
+                            const [lo, hi] = REVEAL_WINDOWS[i] ?? [1, 1];
+                            // Interactivity gate only - the reveal GEOMETRY
+                            // (max-height/opacity/transform) is CSS driven by
+                            // --hero-p + the per-card --lo/--win below, so it
+                            // stays per-frame smooth without React renders. The
+                            // gate bit is computed in tick(), the single place
+                            // that owns the thresholds.
+                            const interactive = cardInteractiveGate(i);
+                            const setSpot = (v: HeroBoardKey | null) => {
+                              heroSpotlightRef.current = v;
+                            };
+                            return (
+                              <Link
+                                key={card.boardKey}
+                                to={card.url}
+                                prefetch="intent"
+                                className="hero-reveal-card"
+                                style={
+                                  {
+                                    '--lo': lo,
+                                    '--win': hi - lo,
+                                    pointerEvents: interactive
+                                      ? 'auto'
+                                      : 'none',
+                                  } as React.CSSProperties
+                                }
+                                tabIndex={interactive ? undefined : -1}
+                                aria-hidden={!interactive}
+                                onMouseEnter={() => setSpot(card.boardKey)}
+                                onMouseLeave={() => setSpot(null)}
+                                onFocus={() => setSpot(card.boardKey)}
+                                onBlur={() => setSpot(null)}
+                              >
+                                <span className="hero-reveal-media">
+                                  {card.image?.url ? (
+                                    <img
+                                      src={card.image.url}
+                                      alt={card.image.altText ?? ''}
+                                      loading="lazy"
+                                      decoding="async"
+                                    />
+                                  ) : (
+                                    <span
+                                      className="hero-reveal-ph"
+                                      aria-hidden="true"
+                                    />
+                                  )}
+                                </span>
+                                <span className="hero-reveal-text">
+                                  <span className="hero-reveal-title">
+                                    {card.title}
+                                  </span>
+                                  {card.productType ? (
+                                    <span className="hero-reveal-sub">
+                                      {card.productType}
+                                    </span>
+                                  ) : null}
+                                </span>
+                                {isComingSoon(card.handle, globalComingSoon) ? (
+                                  <span className="hero-reveal-soon">Soon</span>
+                                ) : card.price ? (
+                                  <span className="hero-reveal-price">
+                                    <Money data={card.price} />
+                                  </span>
+                                ) : null}
+                              </Link>
+                            );
+                          })}
+                        </motion.div>
+                      </AnimatePresence>
+                    </div>
                   );
                 }}
               </Await>
@@ -1181,68 +1191,89 @@ function DesktopHome({
               className="hero-action-primary hero-buy-btn"
             >
               Shop
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+              <svg
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
+              >
                 <line x1="5" y1="12" x2="19" y2="12" />
                 <polyline points="12 5 19 12 12 19" />
               </svg>
             </Link>
           </div>
 
-        {/* Airframe size toggle — swaps the 5" / 3" GLB trio in the hero.
+          {/* Airframe size toggle — swaps the 5" / 3" GLB trio in the hero.
             Stays visible through the scroll so the toggle is always reachable. */}
-        <div
-          className="absolute left-1/2 -translate-x-1/2 z-20 pointer-events-auto"
-          style={{
-            // Springs down from the top edge when the splash settles, resting
-            // high (2.5rem). When the header bar lands ~2s later it shoves the
-            // selector down to 6rem — the spring `top` transition sells the push.
-            top: !splashSettled ? '-3rem' : headerIn ? '6rem' : '2.5rem',
-            opacity: splashSettled ? 1 : 0,
-            transition:
-              'top 0.7s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.4s ease',
-          }}
-        >
-          <HeroSizeSlider
-            value={heroSize}
-            onChange={changeHeroSize}
-            scrubRef={heroScrubRef}
-            busy={heroBuilding}
-          />
-        </div>
+          <div
+            className="absolute left-1/2 -translate-x-1/2 z-20 pointer-events-auto"
+            style={{
+              // Springs down from the top edge when the splash settles, resting
+              // high (2.5rem). When the header bar lands ~2s later it shoves the
+              // selector down to 6rem — the spring `top` transition sells the push.
+              top: !splashSettled ? '-3rem' : headerIn ? '6rem' : '2.5rem',
+              opacity: splashSettled ? 1 : 0,
+              transition:
+                'top 0.7s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.4s ease',
+            }}
+          >
+            <HeroSizeSlider
+              value={heroSize}
+              onChange={changeHeroSize}
+              scrubRef={heroScrubRef}
+              busy={heroBuilding}
+            />
+          </div>
 
-        {/* Scroll hint — fade driven by --hero-p in CSS (see .hero-scroll-hint)
+          {/* Scroll hint - fade driven by --hero-p in CSS (see .hero-scroll-fade)
             so it tracks every scroll frame without a React render. */}
-        <div className="absolute bottom-3 left-1/2 -translate-x-1/2 hero-scroll-hint">
-          <div className="w-px h-5 bg-gradient-to-b from-[var(--color-text-muted)] to-transparent animate-pulse" />
-        </div>
+          <div className="absolute bottom-3 left-1/2 -translate-x-1/2 hero-scroll-fade">
+            <div className="w-px h-5 bg-gradient-to-b from-[var(--color-text-muted)] to-transparent animate-pulse" />
+          </div>
 
-        {/* Drag-to-view hint — appears a few seconds in if the visitor hasn't
+          {/* Drag-to-view hint — appears a few seconds in if the visitor hasn't
             touched the drone yet, dismissed on first drag/scroll. */}
-        <div
-          className={`hero-drag-hint${showDragHint ? ' is-visible' : ''}`}
-          aria-hidden="true"
-        >
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <polyline points="7 8 3 12 7 16" />
-            <polyline points="17 8 21 12 17 16" />
-            <line x1="3" y1="12" x2="21" y2="12" />
-          </svg>
-          drag to rotate
-        </div>
+          <div
+            className={`hero-drag-hint${showDragHint ? ' is-visible' : ''}`}
+            aria-hidden="true"
+          >
+            <svg
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+            >
+              <polyline points="7 8 3 12 7 16" />
+              <polyline points="17 8 21 12 17 16" />
+              <line x1="3" y1="12" x2="21" y2="12" />
+            </svg>
+            drag to rotate
+          </div>
 
-        {/* Scroll-to-explore cue — anchored at the bottom of the hero, shares the
+          {/* Scroll-to-explore cue — anchored at the bottom of the hero, shares the
             drag hint's lifecycle (fades in a few seconds in, dismissed on the
             first drag/scroll). */}
-        <div
-          className={`hero-scroll-hint${showDragHint ? ' is-visible' : ''}`}
-          aria-hidden="true"
-        >
-          scroll to explore
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <polyline points="8 7 12 11 16 7" />
-            <polyline points="8 13 12 17 16 13" />
-          </svg>
-        </div>
+          <div
+            className={`hero-scroll-hint${showDragHint ? ' is-visible' : ''}`}
+            aria-hidden="true"
+          >
+            scroll to explore
+            <svg
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+            >
+              <polyline points="8 7 12 11 16 7" />
+              <polyline points="8 13 12 17 16 13" />
+            </svg>
+          </div>
         </div>
       </div>
     </div>

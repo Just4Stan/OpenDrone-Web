@@ -6,6 +6,7 @@ import {MeshoptDecoder} from 'three/addons/libs/meshopt_decoder.module.js';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import {useIsMobile, usePrefersReducedMotion} from '~/lib/use-media-query';
 import {getActiveTheme} from '~/lib/theme';
+import {SLICE_BUDGET_MS, yieldToMain} from '~/lib/scheduling';
 
 // Wireframe stroke per theme. Gold-on-near-black reads fine in dark; on light's
 // cream page that same gold is nearly invisible, so light uses a dark bronze at
@@ -59,25 +60,6 @@ const GROUPS = [
   {key: 'base', match: (n: string) => n.startsWith('base')},
 ] as const;
 
-// Unclamped main-thread yield (same pattern as HeroScene's build pipeline):
-// scheduler.yield() where available, MessageChannel otherwise. setTimeout is
-// unusable — nested-timer clamping stretches a sliced build by seconds.
-function yieldToMain(): Promise<void> {
-  const sched = (globalThis as any).scheduler;
-  if (typeof sched?.yield === 'function') return sched.yield() as Promise<void>;
-  if (typeof MessageChannel !== 'undefined') {
-    return new Promise<void>((resolve) => {
-      const ch = new MessageChannel();
-      ch.port1.onmessage = () => {
-        ch.port1.close();
-        resolve();
-      };
-      ch.port2.postMessage(null);
-    });
-  }
-  return new Promise<void>((resolve) => setTimeout(resolve, 0));
-}
-
 // Explode travel as a fraction of the assembly's largest dimension. These set
 // the spread at e = 1 (the "fully exploded" hero look as chapter 2 arrives).
 const PLATE_TRAVEL = 0.4;
@@ -86,7 +68,12 @@ const ARM_TRAVEL = 0.78;
 // At e = 1 arms are ~at the frame edge; ~e = 2.5–3 takes everything off.
 const EXPLODE_MAX = 3;
 
-type Part = {obj: THREE.Object3D; groupIndex: number; base: THREE.Vector3; explode: THREE.Vector3};
+type Part = {
+  obj: THREE.Object3D;
+  groupIndex: number;
+  base: THREE.Vector3;
+  explode: THREE.Vector3;
+};
 type Model = {root: THREE.Object3D; parts: Part[]};
 
 function classify(name: string): number {
@@ -107,8 +94,7 @@ async function prepareModel(scene: THREE.Object3D): Promise<Part[]> {
   // we translate must sit DIRECTLY beneath that root, so its position lives in
   // the identity assembly frame and the world-space explode delta applies
   // without a parent rotation/flip twisting it.
-  const assemblyRoot =
-    scene.children.length === 1 ? scene.children[0] : scene;
+  const assemblyRoot = scene.children.length === 1 ? scene.children[0] : scene;
   const found: Part[] = [];
   scene.traverse((o) => {
     const idx = classify(o.name);
@@ -185,7 +171,7 @@ async function prepareModel(scene: THREE.Object3D): Promise<Part[]> {
     }
   }
 
-  // Vector edge outlines instead of solid fills — ONE merged LineSegments
+  // Vector edge outlines instead of solid fills - ONE merged LineSegments
   // per explode part (plus one for the static rest), not one per mesh.
   // The per-mesh version left hundreds of scene-graph nodes and draw calls
   // alive; three.js then spent 15-70ms of main thread PER FRAME on matrix
@@ -204,11 +190,11 @@ async function prepareModel(scene: THREE.Object3D): Promise<Part[]> {
     const m = o as THREE.Mesh;
     if (m.isMesh && m.geometry) allMeshes.push(m);
   });
+  const partObjs = new Set(found.map((f) => f.obj));
   const ownerOf = (m: THREE.Mesh): THREE.Object3D => {
     let p: THREE.Object3D | null = m;
     while (p) {
-      const part = found.find((f) => f.obj === p);
-      if (part) return part.obj;
+      if (partObjs.has(p)) return p;
       p = p.parent;
     }
     return scene;
@@ -232,7 +218,7 @@ async function prepareModel(scene: THREE.Object3D): Promise<Part[]> {
       const eg = new THREE.EdgesGeometry(m.geometry, 24);
       eg.applyMatrix4(tmpMat.copy(inv).multiply(m.matrixWorld));
       edgeGeoms.push(eg);
-      if (performance.now() - sliceStart > 10) {
+      if (performance.now() - sliceStart > SLICE_BUDGET_MS) {
         await yieldToMain();
         sliceStart = performance.now();
       }
@@ -244,10 +230,20 @@ async function prepareModel(scene: THREE.Object3D): Promise<Part[]> {
   }
   // Drop the source meshes: their edges are baked into the merged outlines,
   // and keeping them (even material-hidden) is what kept the per-frame
-  // graph traversal expensive.
+  // graph traversal expensive. Exception: on the cascadio/OCCT export path a
+  // part's move node IS the mesh itself (see the moveNode comment above) and
+  // now carries its merged outline as a child - removing it would take the
+  // outline with it, so those meshes stay in-graph with hidden materials
+  // (the pre-PR treatment) and keep their geometry.
   const geoms = new Set<THREE.BufferGeometry>();
   const mats = new Set<THREE.Material>();
   for (const m of allMeshes) {
+    if (partObjs.has(m)) {
+      (Array.isArray(m.material) ? m.material : [m.material]).forEach((mm) => {
+        if (mm) mm.visible = false;
+      });
+      continue;
+    }
     m.parent?.remove(m);
     geoms.add(m.geometry);
     (Array.isArray(m.material) ? m.material : [m.material]).forEach(
@@ -257,10 +253,12 @@ async function prepareModel(scene: THREE.Object3D): Promise<Part[]> {
   geoms.forEach((g) => g.dispose());
   mats.forEach((mm) => mm.dispose());
 
-  const box = new THREE.Box3().setFromObject(scene);
-  scene.position.sub(box.getCenter(new THREE.Vector3()));
-  const size = box.getSize(new THREE.Vector3());
-  scene.scale.setScalar(2.2 / (Math.max(size.x, size.y, size.z) || 1));
+  // Centre + normalise from the SOLID bounds captured before the meshes were
+  // replaced by outlines: EdgesGeometry drops edges on faces smoother than
+  // its threshold, so a box measured from the outlines alone could shrink on
+  // models with smooth extremal surfaces and shift the centring/scale.
+  scene.position.sub(sceneBox.getCenter(new THREE.Vector3()));
+  scene.scale.setScalar(2.2 / (unit || 1));
   return found;
 }
 
@@ -302,6 +300,12 @@ function FrameModel({
   // Escape hatch for the tier-switch effect below: kick an immediate load of
   // a src whose idle-deferred warm hasn't started yet.
   const loadRef = useRef<(s: string) => void>(() => {});
+  // Current tier, readable from async load completions. The load effect's
+  // closure captures the MOUNT-time `src` (its deps are srcs only); a model
+  // landing after a tier switch must compare against the live value or it
+  // gets added invisible and the backdrop blanks until the next toggle.
+  const activeSrcRef = useRef(src);
+  activeSrcRef.current = src;
   const [, bump] = useReducer((c: number) => c + 1, 0);
   // The chapter following the teardown ("Open for learning"). The explode is
   // scrubbed across the gap between the two chapters' centres, so we need its
@@ -334,7 +338,7 @@ function FrameModel({
               disposeObject(scene);
               return;
             }
-            scene.visible = s === src;
+            scene.visible = s === activeSrcRef.current;
             models.current.set(s, {root: scene, parts});
             groupRef.current.add(scene);
             invalidate();
@@ -468,20 +472,30 @@ function FrameModel({
   // exploded). Normalised by the centre-to-centre distance, so it's stable
   // regardless of section heights or the gap between them.
   //
-  // The chapter centres are cached in DOCUMENT space and refreshed on resize
-  // and every ~60th rendered frame — NOT read per frame. During a scroll each
-  // rendered frame runs right after other main-thread work has dirtied style/
-  // layout, so a per-frame getBoundingClientRect forced a full synchronous
-  // reflow of the PDP every frame (measured 50-70ms/frame at 4x CPU).
+  // The chapter centres are cached in DOCUMENT space - NOT read per frame.
+  // During a scroll each rendered frame runs right after other main-thread
+  // work has dirtied style/layout, so a per-frame getBoundingClientRect
+  // forced a full synchronous reflow of the PDP every frame (measured
+  // 50-70ms/frame at 4x CPU). The cache invalidates on window resize AND on
+  // any document-height change (ResizeObserver on <body> - late images,
+  // lazily built viewers, accordions all change the body's height, which is
+  // exactly when positions above/around the chapters shift).
   const centersRef = useRef<{c1: number; c2: number | null} | null>(null);
-  const framesSinceMeasure = useRef(0);
   useEffect(() => {
-    const onResize = () => {
+    const invalidateCenters = () => {
       centersRef.current = null;
       invalidate();
     };
-    window.addEventListener('resize', onResize);
-    return () => window.removeEventListener('resize', onResize);
+    window.addEventListener('resize', invalidateCenters);
+    let ro: ResizeObserver | null = null;
+    if (typeof ResizeObserver !== 'undefined') {
+      ro = new ResizeObserver(invalidateCenters);
+      ro.observe(document.body);
+    }
+    return () => {
+      window.removeEventListener('resize', invalidateCenters);
+      ro?.disconnect();
+    };
   }, []);
   useFrame(() => {
     const active = models.current.get(src);
@@ -489,9 +503,7 @@ function FrameModel({
     let e = 0;
     const el = containerRef.current;
     if (el && !reducedMotion) {
-      framesSinceMeasure.current += 1;
-      if (!centersRef.current || framesSinceMeasure.current >= 60) {
-        framesSinceMeasure.current = 0;
+      if (!centersRef.current) {
         const section = (el.closest('.chapter') as HTMLElement | null) ?? el;
         let next = nextChapter.current;
         if (!next || !next.isConnected) {
@@ -519,7 +531,11 @@ function FrameModel({
         // is how far ch.2's centre has risen past the centre; normalise by the
         // ch.1→ch.2 centre distance so e ≈ 1 about one chapter later, then it
         // keeps climbing to EXPLODE_MAX so the parts fly off as you scroll on.
-        e = THREE.MathUtils.clamp((vh / 2 - c2) / (c2 - c1 || vh), 0, EXPLODE_MAX);
+        e = THREE.MathUtils.clamp(
+          (vh / 2 - c2) / (c2 - c1 || vh),
+          0,
+          EXPLODE_MAX,
+        );
       } else {
         // No following chapter — fall back to a single-pass scrub.
         e = THREE.MathUtils.clamp(1 - c1 / vh, 0, 1);
@@ -570,7 +586,12 @@ export function FrameViewer({src, srcs}: FrameViewerProps) {
   }, [mounted]);
 
   return (
-    <div ref={wrapRef} className="frame-viewer" data-loaded={mounted} aria-hidden="true">
+    <div
+      ref={wrapRef}
+      className="frame-viewer"
+      data-loaded={mounted}
+      aria-hidden="true"
+    >
       {mounted && onScreen ? (
         // DPR capped at 1.5 to match the hero — 1.75 rasterized ~40% more
         // fragments for a decorative wireframe backdrop.
