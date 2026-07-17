@@ -31,19 +31,6 @@ const LLMS_CATALOG_QUERY = `#graphql
         }
       }
     }
-    donation: product(handle: "firmware-donation") {
-      handle
-      title
-      variants(first: 10) {
-        nodes {
-          id
-          title
-          price {
-            amount
-          }
-        }
-      }
-    }
   }
 ` as const;
 
@@ -97,13 +84,6 @@ export async function loader({context, request}: Route.LoaderArgs) {
     })
     .join('\n');
 
-  const donation = data.donation
-    ? `- [${data.donation.title}](${origin}/products/${data.donation.handle}): 100% forwarded to the firmware maintainers — ` +
-      data.donation.variants.nodes
-        .map((v) => `${v.title} (${numericId(v.id)})`)
-        .join(', ')
-    : '';
-
   const body = `# OpenDrone
 
 > Open-source FPV drone hardware, sold as assembled boards. Every product's full
@@ -150,7 +130,6 @@ domain works. A machine-readable feed lives at ${origin}/products.json.
 Prices EUR incl. VAT, subject to change — verify on the product page.
 
 ${catalog}
-${donation}
 
 ## Design sources
 

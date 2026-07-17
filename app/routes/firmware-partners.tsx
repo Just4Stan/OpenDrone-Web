@@ -133,16 +133,11 @@ export default function FirmwarePartnersRoute() {
       </section>
 
       <section className="editorial-section">
-        <h2 className="editorial-section-title">03 · The optional donation</h2>
+        <h2 className="editorial-section-title">03 · Giving directly</h2>
         <p>
-          In the cart you&apos;ll see an optional donation: €1, €3, €5, €10 or
-          skip. 100% of that line is forwarded on top of the baked-in €1. We
-          don&apos;t keep a cut.
-        </p>
-        <p>
-          If you&apos;d rather give directly, every project above links to its
-          own donation page. Direct giving skips the payment-processor fee
-          entirely; the cart option is there if it&apos;s more convenient.
+          Want to give the maintainers more than the baked-in €1? Every
+          project above links to its own donation page. Giving directly means
+          no payment-processor fee: 100% of what you send reaches them.
         </p>
       </section>
 
