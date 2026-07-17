@@ -161,6 +161,9 @@ function ShareCartButton({cart}: {cart: CartSummaryProps['cart']}) {
     .join(',')}?view=1${discountParam}`;
 
   function copy() {
+    // Share intent (fires even when the clipboard falls back to the
+    // prompt): a shared cart is our only word-of-mouth loop signal.
+    trackEvent('Share Cart', {props: {source: attributionSource()}});
     const url = `${window.location.origin}${path}`;
     // No Clipboard API at all (http, ancient browser): the call below would
     // throw a *synchronous* TypeError that bypasses the rejection handler —
@@ -219,6 +222,21 @@ function CartCheckoutActions({
         ? {revenue: {currency: total.currencyCode, amount}}
         : {}),
     });
+    // Server-side twin: bump the ledger's chk:<day> counter so buy-rate
+    // (paid orders / checkout clicks) is computable without Plausible
+    // Business. sendBeacon survives the navigation to Shopify's checkout;
+    // keepalive fetch is the fallback. Fire-and-forget, must never block
+    // or break the checkout navigation.
+    try {
+      if (!navigator.sendBeacon?.('/api/track/checkout')) {
+        void fetch('/api/track/checkout', {
+          method: 'POST',
+          keepalive: true,
+        }).catch(() => {});
+      }
+    } catch {
+      // Analytics must not take down checkout.
+    }
   };
 
   return (
