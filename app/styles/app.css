@@ -4272,30 +4272,16 @@ button.reset {
   min-width: 0;
 }
 
-/* Buy column sticks to the top of the viewport while the gallery
-   scrolls past. align-self: start so it doesn't try to fill the
-   gallery's height. */
+/* The buy column scrolls with the page like any other content. It used
+   to be sticky with a hidden inner scrollbar (max-height + overflow-y),
+   which made the wheel scroll an invisible inner container before the
+   page moved: Stan flagged that as unacceptable (2026-07-17). The pinned
+   compact rail already keeps add-to-cart reachable once the column
+   scrolls away, so stickiness bought nothing. align-self: start stays so
+   the column doesn't stretch to the gallery's height. */
 @media (min-width: 960px) {
   .product-hero-copy {
-    position: sticky;
-    top: calc(var(--header-height) + var(--sp-4));
     align-self: start;
-    max-height: calc(100vh - var(--header-height) - var(--sp-5));
-    overflow-y: auto;
-    /* overflow-x is *coerced* to auto here: the spec forces a non-visible
-       value on the cross axis whenever the other axis isn't visible. That clip
-       ate the left edge of the selected variant-tier's gold ring (it sits ~2.5px
-       outside the card via inset:-1px + box-shadow). A small inline pad shifts
-       all column content in together (alignment preserved) so the ring clears
-       the clip edge. */
-    overflow-x: visible;
-    padding-inline: var(--sp-1);
-    /* Hide scrollbar but keep scrollability — buy module shouldn't show
-       a chrome scrollbar when the right rail is shorter than the page. */
-    scrollbar-width: none;
-  }
-  .product-hero-copy::-webkit-scrollbar {
-    display: none;
   }
 }
 
@@ -5045,12 +5031,17 @@ button.reset {
 
 .variant-ladder-track {
   display: grid;
-  /* 220px min: two roomy columns in the ~630px buy column instead of four
-     squeezed ones — with spec cells collapsed on unselected tiers the cards
-     are light enough that 2×2 reads calmer than a 4-across strip, and a
-     4-tier line never wraps into a 3+1 orphan row. */
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: var(--sp-3);
+  /* Always two columns: a 4-tier line reads as a stable 2×2 at any column
+     width (auto-fit produced 3+1 orphan rows on some widths and oversized
+     cards on wide monitors, "make these smaller" — Stan, 2026-07-17). */
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--sp-2);
+}
+
+@media (max-width: 479px) {
+  .variant-ladder-track {
+    grid-template-columns: 1fr;
+  }
 }
 
 .variant-tier {
@@ -5059,7 +5050,7 @@ button.reset {
   flex-direction: column;
   gap: var(--sp-2);
   text-align: left;
-  padding: var(--sp-4);
+  padding: var(--sp-3);
   background: var(--color-bg-card);
   border: 1px solid var(--color-border);
   border-radius: var(--r-md);
@@ -5129,7 +5120,7 @@ button.reset {
 .variant-tier-name {
   font-family: var(--font-display);
   font-weight: 600;
-  font-size: var(--fs-base);
+  font-size: var(--fs-sm);
   letter-spacing: -0.01em;
   color: var(--color-text);
 }
