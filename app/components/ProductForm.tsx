@@ -1,4 +1,11 @@
-import {Link, useNavigate, useRouteLoaderData} from 'react-router';
+import {
+  Link,
+  useLocation,
+  useNavigate,
+  useNavigation,
+  useRouteLoaderData,
+} from 'react-router';
+import {useEffect, useState} from 'react';
 import {ShopPayButton, type MappedProductOptions} from '@shopify/hydrogen';
 import type {
   Maybe,
@@ -42,6 +49,18 @@ export function ProductForm({
 }) {
   const navigate = useNavigate();
   const {open} = useAside();
+  // Variant switches are server navigations; on a slow connection the pill
+  // used to give no feedback until the new loader data landed (only the
+  // global RouteProgress bar moved). Track which pill was clicked and mark
+  // it aria-busy/is-pending until the navigation settles.
+  const navigation = useNavigation();
+  const location = useLocation();
+  const [pendingOption, setPendingOption] = useState<string | null>(null);
+  // Clear on idle (slow navigations) AND on search change (prefetched ones
+  // settle inside one render batch without an observable 'loading' state).
+  useEffect(() => {
+    if (navigation.state === 'idle') setPendingOption(null);
+  }, [navigation.state, location.search]);
   const isBundle = bundleLines !== undefined;
   const ctaLabelAvailable = 'Add to cart';
   const ctaLabelSoldOut = 'Sold out';
@@ -124,12 +143,13 @@ export function ProductForm({
                   // render it as a button with javascript navigating to
                   // the variant so that SEO bots do not index these as
                   // duplicated links
+                  const pending = pendingOption === option.name + name;
                   return (
                     <button
                       type="button"
                       className={`product-options-item${
                         exists && !selected ? ' link' : ''
-                      }`}
+                      }${pending ? ' is-pending' : ''}`}
                       key={option.name + name}
                       style={{
                         opacity: available ? 1 : 0.3,
@@ -137,8 +157,10 @@ export function ProductForm({
                       disabled={!exists}
                       aria-label={name}
                       aria-pressed={selected}
+                      aria-busy={pending || undefined}
                       onClick={() => {
                         if (!selected) {
+                          setPendingOption(option.name + name);
                           // Same event as the PDP's tier ladder: any
                           // user-initiated variant switch is one
                           // `Variant Select`.

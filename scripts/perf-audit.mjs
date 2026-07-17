@@ -181,7 +181,7 @@ const scenarios = {
       report.steps.push(await measure(page, 'filter-click', () => chip.click(), 1500));
     }
     // Hover a product card (spotlight/quick-add reveal)
-    const card = page.locator('[class*="product"] a, a[href*="/products/"]').first();
+    const card = page.locator('main a[href*="/products/"]').first();
     if (await card.count()) {
       report.steps.push(await measure(page, 'card-hover', () => card.hover(), 1200));
     }
@@ -238,7 +238,7 @@ const scenarios = {
     await idle(page, 600);
     report.nav = await page.evaluate(() => window.__pa.nav());
     report.steps = [];
-    const input = page.locator('input[type="search"], input[name="q"]').first();
+    const input = page.locator('main input[type="search"]').first();
     if (await input.count()) {
       // Count network requests fired while typing
       let fetches = 0;
@@ -281,7 +281,7 @@ const scenarios = {
     await idle(page, 900);
     report.nav = await page.evaluate(() => window.__pa.nav());
     report.steps = [];
-    const link = page.locator('a[href*="/products/"]').first();
+    const link = page.locator('main a[href*="/products/"]').first();
     if (await link.count()) {
       report.steps.push(
         await measure(page, 'spa-to-pdp', async () => {
