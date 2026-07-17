@@ -9,9 +9,16 @@ flow rules in CLAUDE.md.
 
 | Lane | Branch | Worktree | Port | State |
 |---|---|---|---|---|
-| overhaul-v2 | `feat/ui-overhaul-v2` | `~/OpenDrone-Web-wt/overhaul-v2` | 3006 | Draft PR #285 (TITLE BLOCK re-skin). Needs a fresh rebase (main gained #301-#304 on 2026-07-17), then Stan's visual review. Review note: the branch's homepage header shows a teal "incutec" wordmark with a "Who's incutec?" tag; confirm intentional. |
+| back-in-stock | `feat/back-in-stock` | `~/OpenDrone-Web-wt/back-in-stock` | 3003 | Claimed 2026-07-17, parked: code map done (reuse notify ledger path, add inventory_levels/update topic to the #303 webhook receiver, Resend segment notify-<handle> as audience). Build is dormant-safe; production needs SHOPIFY_ADMIN_API_TOKEN in Oxygen (Stan task 1). |
 
-Free ports: 3001-3005, 3007-3009.
+Free ports: 3001-3002, 3004-3009.
+
+Dropped 2026-07-17: the ui-overhaul-v2 lane (draft PR #285, TITLE BLOCK
+re-skin). Stan rejected the re-skin on visual review; main's current UI is
+canon. Two fixes were salvaged onto main before deletion (locale-prefixed
+menu URLs leaking Home/Catalog/Contact into the desktop nav, and the PDP
+buy-column breathing-room pass). The closed PR keeps the commits if anything
+else ever needs digging out.
 
 Merged 2026-07-17, all adversarially reviewed before merge: #301 donation
 mechanics removed (product archived in admin), #302 Judge.me reviews
@@ -56,7 +63,6 @@ stack-discount copy (10% off the ESC only; admin discount renamed to match).
 11. Copy pass on TODO(copy-stan) markers + banner wording.
 12. End-to-end test order once payments live (also validates the Purchase
     event path end-to-end and webhook field redaction).
-13. Review PR #285 visually after its rebase; decide merge.
 
 ## Agent-ready backlog (claim a lane, work top-down)
 
@@ -80,8 +86,9 @@ stack-discount copy (10% off the ESC only; admin discount renamed to match).
 
 ## Branch registry notes
 
-- `origin/feat/phase2-thin-surfaces`: backup of a dropped lane. Delete once
-  #285 lands.
+- `origin/feat/phase2-thin-surfaces`: backup of a dropped lane. Its planned
+  successor #285 was itself dropped 2026-07-17, so this is the only copy of
+  that work; keep until Stan explicitly writes it off.
 - `origin/feat/cart-interaction`: pre-#260 integration branch, never merged.
   Delete after confirming nothing in it is still wanted.
 - Local `fix/*-review`, `phase2-complete`, `save/my-cart-dupes`: unverified
