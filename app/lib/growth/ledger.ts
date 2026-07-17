@@ -47,6 +47,16 @@
  *                  e.g. "ord:6234098751". Export/reconciliation scripts
  *                  walk this instead of SCANning the keyspace.
  *
+ * pev:<order_id>   One-shot claim marker for the server-side Plausible
+ *                  `Purchase` event (unix seconds of the claim). SETNX'd
+ *                  by the webhook route before the send and deleted when
+ *                  the send fails, so a redelivery can retry. The
+ *                  orders/create + orders/paid pair and webhook
+ *                  redeliveries can run concurrently in separate
+ *                  isolates, so a GET-check on the ord: record alone
+ *                  would double-send; this key is the atomic winner
+ *                  election. No PII, no TTL, not indexed.
+ *
  * chk:<day>        Integer counter of Checkout Click beacons for one UTC
  *                  day (`chk:2026-07-17`), INCR'd by /api/track/checkout
  *                  (rate-limited, production host only). Site-wide
@@ -68,9 +78,11 @@
  */
 
 import {
+  deleteKey,
   getTicketStore,
   increment,
   listPush,
+  setIfAbsent,
   type UpstashEnv,
 } from '~/lib/support/upstash';
 
@@ -103,10 +115,11 @@ export type AttributedOrder = {
   receivedAt: number;
   /**
    * Unix seconds when the server-side Plausible `Purchase` event for this
-   * order was accepted (app/lib/growth/plausible-server.ts). Presence is
-   * the dedupe latch: webhook redeliveries and the orders/create +
-   * orders/paid topic pair must not double-count revenue in Plausible.
-   * Absent = not sent yet (or send failed, so a redelivery may retry).
+   * order was accepted (app/lib/growth/plausible-server.ts). Absent = not
+   * sent yet (or the send failed, so a redelivery may retry). The atomic
+   * winner election between concurrent deliveries is the `pev:<order_id>`
+   * claim key (claimPurchaseEvent below); this field is the durable
+   * cheap-to-read record of it for reconciliation.
    */
   purchaseEventAt?: number;
 };
@@ -321,6 +334,71 @@ export async function recordCheckoutClick(
 ): Promise<number | null> {
   const day = new Date().toISOString().slice(0, 10);
   return increment(env, `chk:${day}`);
+}
+
+/**
+ * Atomically claim the one-shot right to send the Plausible `Purchase`
+ * event for an order (`pev:<order_id>`, SETNX). Concurrent webhook
+ * deliveries (orders/create + orders/paid pair, redeliveries) elect
+ * exactly one winner. Returns true when this caller won the claim,
+ * false when another delivery already holds it, null when Upstash is
+ * unconfigured or erroring (caller decides; the webhook route proceeds
+ * unlatched in that case, documented as accepted).
+ */
+export async function claimPurchaseEvent(
+  env: UpstashEnv,
+  orderId: string,
+): Promise<boolean | null> {
+  return setIfAbsent(
+    env,
+    `pev:${orderId}`,
+    String(Math.floor(Date.now() / 1000)),
+  );
+}
+
+/**
+ * Release a Purchase-event claim after a FAILED send, so a webhook
+ * redelivery can retry it. Best-effort: if the DEL itself fails the
+ * claim sticks and that order's Purchase event is lost (undercount,
+ * never double-count).
+ */
+export async function releasePurchaseEvent(
+  env: UpstashEnv,
+  orderId: string,
+): Promise<void> {
+  const released = await deleteKey(env, `pev:${orderId}`);
+  if (!released) {
+    console.warn(
+      '[growth/ledger] pev claim release failed, Purchase event for order',
+      orderId,
+      'will not be retried',
+    );
+  }
+}
+
+/**
+ * Stamp `purchaseEventAt` on an existing `ord:` record after Plausible
+ * accepted the event. Read-modify-write of the record only, no att:idx
+ * re-push (recordOrder already indexed it). No-ops when the record is
+ * missing or Upstash is unconfigured; the pev: claim key still holds
+ * the dedupe in that case.
+ */
+export async function latchPurchaseEvent(
+  env: UpstashEnv,
+  orderId: string,
+  at: number,
+): Promise<void> {
+  const store = getTicketStore(env);
+  if (!store) return;
+  try {
+    const key = `ord:${orderId}`;
+    const raw = await store.get(key);
+    if (!raw) return;
+    const record = JSON.parse(raw) as AttributedOrder;
+    await store.put(key, JSON.stringify({...record, purchaseEventAt: at}));
+  } catch (err) {
+    console.warn('[growth/ledger] purchaseEventAt latch failed', orderId, err);
+  }
 }
 
 /** Read one attributed order back, or null (missing / unconfigured). */
