@@ -15,7 +15,8 @@ OUT = os.path.join(ROOT, "brand")
 GROUP_TF = "translate(0,433) scale(0.1,-0.1)"
 WM_VB = "-36 -17.32 2472 467.64"
 MARK_VB = "-25 -13 381 381"
-GOLD, INK, PAPER = "#c89d2e", "#1a1a1e", "#e5e5e5"
+GOLD, GOLD_BRIGHT, INK, PAPER = "#c89d2e", "#fdb600", "#1a1a1e", "#e5e5e5"
+GREEN, GREEN_DEEP = "#147a31", "#327014"
 BG_DARK, BG_LIGHT = "#0d0d10", "#f7f6f3"
 
 P = [" ".join(p.split()) for p in re.findall(r'<path d="(.*?)"', open(SRC).read(), re.S)]
@@ -41,7 +42,7 @@ def txt(x, y, s, fill, t, weight=400, anchor="start", family="SF Pro Display, He
             f'text-anchor="{anchor}" font-family="{family}">{t}</text>')
 
 
-W, H = 1600, 1120
+W, H = 1600, 1240
 e = [f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {W} {H}" font-family="SF Pro Display, Helvetica, Arial, sans-serif">']
 e.append(f'<rect width="{W}" height="{H}" fill="#ffffff"/>')
 
@@ -56,7 +57,7 @@ e.append(wm(150, 250, 540, INK, GOLD))
 e.append(txt(100, 216, 16, "#86868c", "PRIMARY / ON LIGHT", weight=600))
 
 e.append('<rect x="840" y="180" width="680" height="230" rx="10" fill="#0d0d10"/>')
-e.append(wm(910, 250, 540, PAPER, GOLD))
+e.append(wm(910, 250, 540, PAPER, GOLD_BRIGHT))  # gold goes bright on dark
 e.append(txt(860, 216, 16, "#86868c", "PRIMARY / ON DARK", weight=600))
 
 # mark row
@@ -75,27 +76,41 @@ e.append(wm(760, 505, 420, "#000000", "#000000"))
 e.append('<rect x="720" y="586" width="800" height="80" rx="8" fill="#f7f6f3" stroke="#e5e2dc"/>')
 e.append(wm(760, 605, 420, GOLD, GOLD))
 
-# colour swatches
+# colour swatches — row 1 brand anchors, row 2 neutrals/surfaces
 e.append(txt(80, 730, 16, "#86868c", "COLOUR", weight=600))
-sw = [
-    ("Brand Gold", GOLD, "#ffffff"),
-    ("Ink", INK, "#ffffff"),
-    ("Off-white", PAPER, INK),
-    ("Surface Dark", BG_DARK, "#ffffff"),
-    ("Surface Light", BG_LIGHT, INK),
+
+
+def swatch(x, y, name, hexv, label, note=None):
+    e.append(f'<rect x="{x}" y="{y}" width="330" height="140" rx="10" fill="{hexv}" stroke="#e5e2dc"/>')
+    e.append(txt(x + 20, y + 94, 20, label, name, weight=600))
+    e.append(txt(x + 20, y + 120, 16, label, hexv.upper()))
+    if note:
+        e.append(txt(x + 310, y + 32, 13, label, note, anchor="end"))
+
+
+row1 = [
+    ("Brand Gold", GOLD, INK, "on light"),
+    ("Gold Bright", GOLD_BRIGHT, INK, "on dark"),
+    ("PCB Green", GREEN, "#ffffff", "motors"),
+    ("PCB Green Deep", GREEN_DEEP, "#ffffff", "fills"),
 ]
-x = 80
-for name, hexv, label in sw:
-    e.append(f'<rect x="{x}" y="748" width="270" height="150" rx="10" fill="{hexv}" stroke="#e5e2dc"/>')
-    e.append(txt(x + 20, 860, 20, label, name, weight=600))
-    e.append(txt(x + 20, 886, 16, label, hexv.upper()))
-    x += 290
+row2 = [
+    ("Ink", INK, "#ffffff", None),
+    ("Off-white", PAPER, INK, None),
+    ("Surface Dark", BG_DARK, "#ffffff", None),
+    ("Surface Light", BG_LIGHT, INK, None),
+]
+for i, (name, hexv, label, note) in enumerate(row1):
+    swatch(80 + i * 350, 748, name, hexv, label, note)
+for i, (name, hexv, label, note) in enumerate(row2):
+    swatch(80 + i * 350, 904, name, hexv, label, note)
 
 # footer note
-e.append(f'<rect x="80" y="948" width="{W-160}" height="2" fill="#e5e2dc"/>')
-e.append(txt(80, 998, 18, INK, "Editable vector: open the PDF or SVG in Illustrator, Affinity Designer, or Inkscape.", weight=600))
-e.append(txt(80, 1028, 16, "#57575c", "Wordmark set in SF Pro Display Bold, delivered as outlined paths. Brand Gold #C89D2E ≈ Pantone 111 C · CMYK 0/22/77/22 (verify on press)."))
-e.append(txt(80, 1054, 16, "#57575c", "opendrone.be"))
+e.append(f'<rect x="80" y="1084" width="{W-160}" height="2" fill="#e5e2dc"/>')
+e.append(txt(80, 1128, 18, INK, "Editable vector: open the PDF or SVG in Illustrator, Affinity Designer, or Inkscape.", weight=600))
+e.append(txt(80, 1158, 16, "#57575c", "SF Pro Display Bold, outlined paths. Gold is background-aware: Brand Gold #C89D2E on light, Gold Bright #FDB600 on dark surfaces."))
+e.append(txt(80, 1184, 16, "#57575c", "#FDB600 gold and #147A31 green are the physical product colours (motors); deep PCB green #327014 for fills. Brand Gold ≈ Pantone 111 C · CMYK 0/22/77/22 — verify on press."))
+e.append(txt(80, 1210, 16, "#57575c", "opendrone.be"))
 e.append("</svg>")
 
 sheet = "\n".join(e)

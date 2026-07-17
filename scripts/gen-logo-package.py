@@ -29,8 +29,10 @@ WM_VIEWBOX = "-36 -17.32 2472 467.64"
 # squared crop around the "O" glyph for the standalone mark (from favicon.svg)
 MARK_VIEWBOX = "-25 -13 381 381"
 
-GOLD = "#c89d2e"          # canonical brand gold (site --color-gold, dark)
-GOLD_LIGHT = "#c08c10"    # light-background variant (documented, not baked)
+GOLD = "#c89d2e"          # canonical brand gold on LIGHT bg (site --color-gold)
+GOLD_BRIGHT = "#fdb600"   # brand gold on DARK bg — the physical product gold (motors)
+GREEN = "#147a31"         # brand/PCB green — physical product green (motors)
+GREEN_DEEP = "#327014"    # deep solder-mask PCB green (fills/borders)
 INK = "#1a1a1e"           # near-black neutral for "Open" on light bg
 PAPER = "#e5e5e5"         # off-white neutral for "Open" on dark bg
 BG_DARK = "#0d0d10"       # brand dark surface
@@ -85,10 +87,10 @@ def build_manifest():
     return [
         # --- primary full-colour wordmark ---
         ("opendrone-wordmark-onlight.svg", wordmark_svg(INK, GOLD), None),
-        ("opendrone-wordmark-ondark.svg", wordmark_svg(PAPER, GOLD, bg=None), BG_DARK),
+        ("opendrone-wordmark-ondark.svg", wordmark_svg(PAPER, GOLD_BRIGHT, bg=None), BG_DARK),
         # embedded-background lockups (safe on any surface)
         ("opendrone-wordmark-onlight-bg.svg", wordmark_svg(INK, GOLD, bg=BG_LIGHT), None),
-        ("opendrone-wordmark-ondark-bg.svg", wordmark_svg(PAPER, GOLD, bg=BG_DARK), None),
+        ("opendrone-wordmark-ondark-bg.svg", wordmark_svg(PAPER, GOLD_BRIGHT, bg=BG_DARK), None),
         # --- monochrome wordmark ---
         ("opendrone-wordmark-black.svg", wordmark_svg("#000000", "#000000"), None),
         ("opendrone-wordmark-white.svg", wordmark_svg("#ffffff", "#ffffff"), BG_DARK),
