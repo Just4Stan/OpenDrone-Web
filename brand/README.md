@@ -30,7 +30,7 @@ wide; mark PNG at 512/1024 px square).
 | File | Use |
 |------|-----|
 | `opendrone-wordmark-onlight` | Primary. "Open" ink + "Drone" gold, on light/white backgrounds. |
-| `opendrone-wordmark-ondark` | Primary for dark backgrounds ("Open" off-white + "Drone" gold). Transparent; PNG preview has dark bg baked in. |
+| `opendrone-wordmark-ondark` | Primary for dark backgrounds ("Open" off-white + "Drone" Gold Bright `#fdb600`). Transparent; PNG preview has dark bg baked in. |
 | `opendrone-wordmark-onlight-bg` / `-ondark-bg` | Same lockups with the brand background rectangle embedded — drop-in safe on any surface. |
 | `opendrone-wordmark-black` | One-colour black (single-plate print, fax, engraving, stamps). |
 | `opendrone-wordmark-white` | One-colour white (knockout / reverse). Transparent. |
@@ -39,17 +39,22 @@ wide; mark PNG at 512/1024 px square).
 
 ## Colour
 
+Gold is **background-aware**: it deepens on light surfaces and brightens on dark.
+
 | Token | Hex | Use |
 |-------|-----|-----|
-| **Brand Gold** | `#c89d2e` | The "Drone" half, the mark, all accent. Canonical brand colour. |
-| Gold (light-bg variant) | `#c08c10` | Slightly deeper gold used on the live site over off-white, for AA contrast. Optional. |
+| **Brand Gold** | `#c89d2e` | The "Drone" half, mark, and accent **on light backgrounds**. Canonical brand gold. |
+| **Gold Bright** | `#fdb600` | Gold **on dark / photographic backgrounds** — the physical product gold (motors). The "Drone" half in the on-dark lockups uses this. |
+| **PCB Green** | `#147a31` | Brand/PCB green — the physical product green (motors). Success/stock accent on the site. |
+| PCB Green Deep | `#327014` | Dark solder-mask PCB green for fills/borders. |
 | Ink | `#1a1a1e` | "Open" half on light backgrounds. |
 | Off-white | `#e5e5e5` | "Open" half on dark backgrounds. |
 | Surface — dark | `#0d0d10` | Brand dark background. |
 | Surface — light | `#f7f6f3` | Brand warm off-white background (not pure `#fff`). |
 
 Brand Gold `#c89d2e` → approx **CMYK 0 / 22 / 77 / 22**, **Pantone 111 C** (nearest;
-confirm on a physical guide before print).
+confirm on a physical guide before print). `#fdb600` and `#147a31` are the physical
+product colours (motors) — match to a physical guide before any coloured production run.
 
 ## Clear space & minimum size
 
@@ -61,7 +66,7 @@ confirm on a physical guide before print).
 
 ## Don't
 
-- Don't recolour "Drone" to anything but Brand Gold (or use a full mono variant).
+- Don't recolour "Drone" to anything but Brand Gold `#c89d2e` on light / Gold Bright `#fdb600` on dark (or use a full mono variant).
 - Don't stretch, condense, rotate, add effects/shadows, or re-space the letters.
 - Don't place the transparent full-colour wordmark on a mid-tone that kills
   contrast on either half — use a mono or `-bg` variant instead.
