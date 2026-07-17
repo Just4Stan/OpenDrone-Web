@@ -8,6 +8,8 @@ import {
   useState,
 } from 'react';
 import {useId} from 'react';
+import {trackEvent} from '~/lib/growth/plausible';
+import {attributionSource} from '~/lib/growth/attribution';
 
 type AsideType = 'search' | 'cart' | 'mobile' | 'closed';
 type AsideContextValue = {
@@ -226,6 +228,23 @@ Aside.Provider = function AsideProvider({children}: {children: ReactNode}) {
     type: 'closed',
     preview: false,
   });
+
+  // Funnel diagnostic: one `Cart Drawer Open` per DELIBERATE drawer open,
+  // meaning a full open (add-to-cart, click) or a hover preview the
+  // visitor pinned by interacting inside it. Graze previews (pointer
+  // passing the cart icon) never count, or hover noise would swamp the
+  // signal. Detected on the modal-cart state transition, with a ref
+  // guard, so StrictMode's double effect run cannot double-fire.
+  const prevStateRef = useRef(state);
+  useEffect(() => {
+    const was = prevStateRef.current;
+    prevStateRef.current = state;
+    const isModalCart = state.type === 'cart' && !state.preview;
+    const wasModalCart = was.type === 'cart' && !was.preview;
+    if (isModalCart && !wasModalCart) {
+      trackEvent('Cart Drawer Open', {props: {source: attributionSource()}});
+    }
+  }, [state]);
 
   const open = useCallback(
     (type: AsideType) => setState({type, preview: false}),

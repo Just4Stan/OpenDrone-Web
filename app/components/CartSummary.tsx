@@ -6,6 +6,7 @@ import {Link} from 'react-router';
 import {useAside} from '~/components/Aside';
 import {trackEvent} from '~/lib/growth/plausible';
 import {attributionSource} from '~/lib/growth/attribution';
+import {trackCheckoutClick} from '~/lib/growth/checkout-beacon';
 
 type CartSummaryProps = {
   cart: OptimisticCart<CartApiQueryFragment | null>;
@@ -161,6 +162,9 @@ function ShareCartButton({cart}: {cart: CartSummaryProps['cart']}) {
     .join(',')}?view=1${discountParam}`;
 
   function copy() {
+    // Share intent (fires even when the clipboard falls back to the
+    // prompt): a shared cart is our only word-of-mouth loop signal.
+    trackEvent('Share Cart', {props: {source: attributionSource()}});
     const url = `${window.location.origin}${path}`;
     // No Clipboard API at all (http, ancient browser): the call below would
     // throw a *synchronous* TypeError that bypasses the rejection handler —
@@ -209,16 +213,16 @@ function CartCheckoutActions({
 }) {
   if (!checkoutUrl) return null;
 
-  // Funnel event with the cart value as revenue. Plausible sends via
-  // fetch keepalive, so the beacon survives the navigation to checkout.
+  // Funnel event with the cart value as revenue, plus the chk:<day>
+  // beacon (buy-rate denominator). Shared helper so the ShopPay express
+  // path counts identically; see app/lib/growth/checkout-beacon.ts.
   const handleClick = () => {
     const amount = total?.amount ? parseFloat(total.amount) : NaN;
-    trackEvent('Checkout Click', {
-      props: {source: attributionSource()},
-      ...(Number.isFinite(amount) && total?.currencyCode
-        ? {revenue: {currency: total.currencyCode, amount}}
-        : {}),
-    });
+    trackCheckoutClick(
+      Number.isFinite(amount) && total?.currencyCode
+        ? {currency: total.currencyCode, amount}
+        : null,
+    );
   };
 
   return (

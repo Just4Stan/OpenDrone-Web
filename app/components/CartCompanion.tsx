@@ -11,6 +11,8 @@ import type {
 import {AddToCartButton} from '~/components/AddToCartButton';
 import {useAside} from '~/components/Aside';
 import {PRODUCT_CONTENT, isComingSoon} from '~/lib/product-content';
+import {trackEvent} from '~/lib/growth/plausible';
+import {attributionSource} from '~/lib/growth/attribution';
 
 /** The thin header-catalogue price ({amount, currencyCode} strings) cast to
  *  Money's expected shape — same pattern as the header pods. */
@@ -107,6 +109,18 @@ function CartCompanionRow({
           className="cart-companion-add"
           ariaLabel={`Add ${title} to cart`}
           flyImage={imageUrl}
+          onClick={() =>
+            // Stack completion from the cart. The board(s) already in the
+            // cart are not identified here (multi-line carts have no single
+            // "product"); the partner + surface props carry the signal.
+            trackEvent('Stack Toggle', {
+              props: {
+                partner: product.handle,
+                surface: 'cart',
+                source: attributionSource(),
+              },
+            })
+          }
           lines={[
             {
               merchandiseId: variant.id,
