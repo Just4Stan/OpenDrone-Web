@@ -111,6 +111,74 @@ export async function globalRateLimit(
 }
 
 /**
+ * Atomic counter increment (INCR), no TTL. Added for the growth ledger's
+ * per-day checkout-click counters (`chk:<day>`, app/lib/growth/ledger.ts);
+ * a GET/SET read-modify-write would race under concurrent beacons.
+ * Returns the post-increment value, or null when Upstash is unconfigured
+ * or the call failed (degrade-soft, caller decides whether to warn).
+ */
+export async function increment(
+  env: UpstashEnv,
+  key: string,
+): Promise<number | null> {
+  const url = env.UPSTASH_REDIS_REST_URL?.replace(/\/$/, '');
+  const token = env.UPSTASH_REDIS_REST_TOKEN;
+  if (!url || !token) return null;
+  try {
+    const r = await call(url, token, ['INCR', key]);
+    return typeof r === 'number' ? r : Number(r) || 0;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Atomic set-if-absent (SET ... NX), no TTL. Added for the growth
+ * ledger's one-shot Purchase-event claim (`pev:<order_id>`,
+ * app/lib/growth/ledger.ts): concurrent webhook deliveries in separate
+ * isolates need a single winner, and a GET-then-SET check races.
+ * Returns true when this call set the key (claim won), false when the
+ * key already existed (claim lost), null when Upstash is unconfigured
+ * or the call failed (degrade-soft, caller decides the fallback).
+ */
+export async function setIfAbsent(
+  env: UpstashEnv,
+  key: string,
+  value: string,
+): Promise<boolean | null> {
+  const url = env.UPSTASH_REDIS_REST_URL?.replace(/\/$/, '');
+  const token = env.UPSTASH_REDIS_REST_TOKEN;
+  if (!url || !token) return null;
+  try {
+    const r = await call(url, token, ['SET', key, value, 'NX']);
+    // Redis: "OK" when set, null bulk reply when the key already existed.
+    return r === 'OK';
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Delete a key (DEL). Counterpart to setIfAbsent for releasing a claim
+ * whose protected action failed. Best-effort: returns false when
+ * Upstash is unconfigured or the call failed.
+ */
+export async function deleteKey(
+  env: UpstashEnv,
+  key: string,
+): Promise<boolean> {
+  const url = env.UPSTASH_REDIS_REST_URL?.replace(/\/$/, '');
+  const token = env.UPSTASH_REDIS_REST_TOKEN;
+  if (!url || !token) return false;
+  try {
+    await call(url, token, ['DEL', key]);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/**
  * Atomic list append: LPUSH + LTRIM to `cap` entries (newest first).
  * Added for the growth ledger's append-only indexes (app/lib/growth/
  * ledger.ts) — the TicketStore shape above has no list primitive and a

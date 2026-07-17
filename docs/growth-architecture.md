@@ -39,8 +39,25 @@ notify signup -> Upstash ledger + Shopify customer (acceptsMarketing,
 
 ## Plausible events
 
-`Notify Signup` (props: product, channel), `Add to Cart`, `Checkout Click`,
-`Survey EU Premium`, `Survey Interview`.
+Client (via `trackEvent` in `app/lib/growth/plausible.ts`, all carrying the
+first-touch `source` prop, folded to the canonical vocabulary below plus
+`other`/`direct`): `PDP View` (product), `Variant Select` (product,
+variant), `Stack Toggle` (product, partner, surface), `Cart Drawer Open`,
+`Add to Cart` (product), `Share Cart`, `Checkout Click` (+ cart total as
+revenue), `Notify Signup` (product), `Survey EU Premium` / `Survey
+Interview` (answer).
+
+Server (`app/lib/growth/plausible-server.ts`): `Purchase` (source, campaign,
++ order total as revenue), sent by the webhook route on the orders/paid
+topic only (orders/create still records the ledger order but is never a
+Purchase; creation can precede payment). Deduped via an atomic
+`pev:<order_id>` claim plus the `purchaseEventAt` stamp on the `ord:`
+record; production host only.
+
+Checkout-abandonment counter without Plausible Business: the checkout CTA
+beacons `/api/track/checkout`, which increments the ledger's `chk:<day>`
+counter; buy-rate = `ord:` count / `chk:<day>`. Full model + Stan's
+Plausible UI goal/funnel checklist: `drafts/analytics-brief.md`.
 
 ## Constraints (decided, do not relitigate in code)
 

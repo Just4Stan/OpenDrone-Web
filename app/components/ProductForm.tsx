@@ -9,6 +9,9 @@ import {StackQuickAdd, type StackOffer} from './StackQuickAdd';
 import {useAside} from './Aside';
 import {useComingSoon} from '~/lib/coming-soon';
 import type {RootLoader} from '~/root';
+import {trackEvent} from '~/lib/growth/plausible';
+import {attributionSource} from '~/lib/growth/attribution';
+import {trackCheckoutClick} from '~/lib/growth/checkout-beacon';
 import type {ProductFragment} from 'storefrontapi.generated';
 
 export function ProductForm({
@@ -136,6 +139,17 @@ export function ProductForm({
                       aria-pressed={selected}
                       onClick={() => {
                         if (!selected) {
+                          // Same event as the PDP's tier ladder: any
+                          // user-initiated variant switch is one
+                          // `Variant Select`.
+                          trackEvent('Variant Select', {
+                            props: {
+                              product:
+                                selectedVariant?.product?.handle ?? 'unknown',
+                              variant: name,
+                              source: attributionSource(),
+                            },
+                          });
                           void navigate(`?${variantUriQuery}`, {
                             replace: true,
                             preventScrollReset: true,
@@ -190,12 +204,31 @@ export function ProductForm({
         </AddToCartButton>
       </StackQuickAdd>
       {!soon && buyable && storeDomain && shopPayVariants.length > 0 ? (
-        <ShopPayButton
-          className="product-buy-shoppay"
-          variantIdsAndQuantities={shopPayVariants}
-          storeDomain={storeDomain}
-          channel="hydrogen"
-        />
+        // Express checkout skips the cart CTA, so it must count as a
+        // Checkout Click (event + chk:<day> beacon) or ShopPay sales
+        // vanish from the buy-rate denominator while their orders still
+        // land in the numerator. The web component is nested shadow DOM
+        // (no iframe), so composed clicks reach this capture handler;
+        // verified in-browser during the #303 review.
+        <div
+          onClickCapture={() => {
+            const amount = Number.parseFloat(
+              selectedVariant?.price?.amount ?? '',
+            );
+            trackCheckoutClick(
+              Number.isFinite(amount) && selectedVariant?.price?.currencyCode
+                ? {currency: selectedVariant.price.currencyCode, amount}
+                : null,
+            );
+          }}
+        >
+          <ShopPayButton
+            className="product-buy-shoppay"
+            variantIdsAndQuantities={shopPayVariants}
+            storeDomain={storeDomain}
+            channel="hydrogen"
+          />
+        </div>
       ) : null}
     </div>
   );
