@@ -912,8 +912,8 @@ html {
 .hero-buy {
   position: absolute;
   /* 4rem, not 2.5rem: keeps the Shop button's corner clear of the fixed
-     PRE-LAUNCH pill (bottom/right 16px). Can drop back to 2.5rem at launch
-     when the pill goes away. */
+     OPENING SOON pill (bottom/right 16px). Can drop back to 2.5rem at
+     launch when the pill goes away. */
   bottom: 4rem;
   right: 2.5rem;
   z-index: 20;
@@ -13699,10 +13699,10 @@ button.reset {
 }
 
 /* --------------------------------------------------------------------- */
-/* Pre-launch placeholder badge — sitewide, fixed bottom-right pill.      */
-/* All copy/numbers on the site are AI-generated placeholders. Badge     */
-/* must remain until real copy lands. Removing it requires deleting the  */
-/* <PlaceholderBanner /> in PageLayout.tsx (intentional friction).       */
+/* Opening-soon pill: sitewide, fixed bottom-right.                       */
+/* Public coming-soon notice with a newsletter CTA. Shown while           */
+/* PUBLIC_PRELAUNCH is on (kill switch in root.tsx); rendered by          */
+/* <PlaceholderBanner /> in PageLayout.tsx.                               */
 /*                                                                        */
 /* Fixed positioning (not sticky) so it never pushes document flow,      */
 /* never overlaps the header, and never breaks the homepage hero.        */
@@ -13727,6 +13727,8 @@ button.reset {
     0 1px 2px rgba(185, 28, 28, 0.4);
   /* No backdrop-filter: the banner is 95% opaque so the blur was imperceptible,
      yet the pulsing dot inside it forced a perpetual per-frame re-blur. */
+  /* The pill shell stays click-through; only the __msg link re-enables
+     pointer events for itself. */
   pointer-events: none;
   user-select: none;
   max-width: calc(100vw - 32px);
@@ -13788,6 +13790,10 @@ button.reset {
   flex-shrink: 0;
 }
 
+/* The message is a real <Link> to /newsletter. The pill background is a
+   theme-independent literal, so the link inherits the pill's ink instead
+   of the global `a` color (which is near-black in light mode and would
+   vanish on the red). Underline via currentColor: no color literals. */
 .placeholder-banner__msg {
   font-weight: 500;
   font-size: 12px;
@@ -13795,6 +13801,18 @@ button.reset {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  pointer-events: auto;
+}
+
+/* Global `a:hover` swaps to the gold accent, which is illegible on the
+   red pill; keep the ink and just lift the opacity instead. Keyboard
+   focus comes from the global :focus-visible gold ring. */
+.placeholder-banner__msg:hover {
+  color: inherit;
+  opacity: 1;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -13811,9 +13829,8 @@ button.reset {
     padding: 0.35rem 0.6rem 0.35rem 0.5rem;
     font-size: 12px;
   }
-  .placeholder-banner__msg {
-    display: none;
-  }
+  /* The old explanatory sentence was hidden on phones for width; the CTA
+     link is short and is the pill's whole point, so it stays visible. */
   .placeholder-banner--left {
     left: 12px;
     /* The generic mobile rule above re-sets `right: 12px` later in the
@@ -14700,20 +14717,20 @@ html:not(.light) .cart-empty-chip {
   }
 }
 
-/* The fixed PRE-LAUNCH placeholder pill (z-index 80) floats over the cart/menu
-   drawer's lower rows when one is open. It's pointer-events:none so it never
-   blocks a tap, but hide it while any aside/overlay is expanded so the drawer
-   reads clean. (Temporary pre-launch artifact; removed at launch regardless.) */
+/* The fixed OPENING SOON pill (z-index 80) floats over the cart/menu
+   drawer's lower rows when one is open. Its CTA link is clickable, so hide
+   it while any aside/overlay is expanded: the drawer reads clean and the
+   link cannot steal a tap. (Pre-launch artifact; removed at launch.) */
 body:has(.overlay.expanded) .placeholder-banner {
   display: none;
 }
 
 /* On a phone the pinned buy rail is a fixed bottom bar, and the bottom-right
-   pill lands right on top of its "Add to cart" button. The pill is decorative
-   (pointer-events:none) so it never blocks the tap, but it must not obscure the
-   single most important control — hide it whenever the mobile buy rail is
-   pinned. (Both float over body; the rail is portaled to <body>, the pill lives
-   in the app shell, so this :has check on <body> sees both.) */
+   pill lands right on top of its "Add to cart" button. The pill's CTA link
+   is clickable and must not obscure or shadow the single most important
+   control, so hide it whenever the mobile buy rail is pinned. (Both float
+   over body; the rail is portaled to <body>, the pill lives in the app
+   shell, so this :has check on <body> sees both.) */
 body:has(.buy-rail.is-pinned.is-mobile) .placeholder-banner {
   display: none;
 }
