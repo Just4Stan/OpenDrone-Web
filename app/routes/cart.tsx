@@ -4,7 +4,6 @@ import type {CartQueryDataReturn} from '@shopify/hydrogen';
 import {CartForm} from '@shopify/hydrogen';
 import {CartMain} from '~/components/CartMain';
 import {buildSeoMeta} from '~/lib/seo';
-import {DONATION_PRODUCT_QUERY} from '~/lib/fragments';
 import {
   anyComingSoonLocks,
   comingSoonFlag,
@@ -201,25 +200,12 @@ export async function action({request, context}: Route.ActionArgs) {
 }
 
 export async function loader({context}: Route.LoaderArgs) {
-  const {cart, storefront} = context;
-
-  // Fetch both in parallel. Donation product is optional — if the store
-  // doesn't have a `firmware-donation` product yet the upsell just hides.
-  const [cartData, donationData] = await Promise.all([
-    cart.get(),
-    storefront
-      .query(DONATION_PRODUCT_QUERY, {
-        variables: {handle: 'firmware-donation'},
-        cache: storefront.CacheShort(),
-      })
-      .catch(() => null),
-  ]);
-
-  return {cart: cartData, donationProduct: donationData?.product ?? null};
+  const {cart} = context;
+  return {cart: await cart.get()};
 }
 
 export default function Cart() {
-  const {cart, donationProduct} = useLoaderData<typeof loader>();
+  const {cart} = useLoaderData<typeof loader>();
 
   return (
     <div className="cart page-shell">
@@ -230,7 +216,7 @@ export default function Cart() {
           Review your selected hardware before heading to Shopify checkout.
         </p>
       </header>
-      <CartMain layout="page" cart={cart} donationProduct={donationProduct} />
+      <CartMain layout="page" cart={cart} />
     </div>
   );
 }

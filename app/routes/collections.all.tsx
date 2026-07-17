@@ -532,7 +532,7 @@ const CATALOG_QUERY = `#graphql
       first: $first
       sortKey: CREATED_AT
       reverse: true
-      # The firmware-donation tip product is cart-only chrome, not catalog.
+      # The legacy firmware-donation tip product is not catalog.
       query: "-product_type:Donation"
     ) {
       nodes {
