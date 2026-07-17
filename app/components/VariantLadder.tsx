@@ -119,7 +119,12 @@ export function VariantLadder({
               {compact ? null : content.tagline ? (
                 <span className="variant-tier-tagline">{content.tagline}</span>
               ) : null}
-              {compact ? null : (
+              {/* Spec cells only on the selected tier: four cards each
+                  carrying a full mono table read as a wall ("too busy"
+                  feedback, 2026-07-17). The tagline keeps unselected tiers
+                  comparable in prose; the full matrix lives in the Datasheet
+                  chapter. */}
+              {compact || !selected ? null : (
                 <span className="variant-tier-cells">
                   {content.highlights.map(([k, v]) => (
                     <span className="variant-tier-cell" key={k}>

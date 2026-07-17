@@ -635,6 +635,13 @@ export function HeaderMenu({
           item.url.includes(primaryDomainUrl)
             ? new URL(item.url).pathname
             : item.url;
+        // The Storefront API returns menu URLs locale-prefixed
+        // ("/nl/collections/all") when the query runs @inContext with a
+        // non-default language. Only legal pages exist under locale
+        // prefixes in this app, so strip the prefix: it makes the skip
+        // rules below match in every locale and un-breaks the links
+        // themselves (a prefixed "/nl/collections/all" is a 404 here).
+        url = url.replace(/^\/(en|nl|fr)(?=\/|$)/, '') || '/';
         // Rewrite Shopify Pages handles to our local routes when one
         // exists. Shopify's main menu defaults Contact to /pages/contact
         // even though we own a local /contact route with the support
