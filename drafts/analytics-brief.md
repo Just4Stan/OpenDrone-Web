@@ -21,7 +21,13 @@ Session (Plausible visit, UTM-tagged entry)
 
 - `source` is the session's first-touch channel from
   `app/lib/growth/attribution.ts` (`utm_source`, `ref` fallback, else
-  `direct`). Canonical values live in `drafts/archive/utm-conventions.md`.
+  `direct`), folded into the bounded vocabulary: a canonical value
+  (`CANONICAL_SOURCES`, mirroring `docs/growth-architecture.md`), `other`
+  for anything non-canonical, `direct` when absent. A crafted
+  `?utm_source=` link cannot spray junk values across the dashboard; the
+  raw (capped, lowercased) value still reaches cart attributes and the
+  order ledger. Canonical values live in
+  `drafts/archive/utm-conventions.md`.
 - `product` is the Shopify handle, low-cardinality by construction.
 - Steps 1 to 3 are client events fired through the `trackEvent` helper
   (`app/lib/growth/plausible.ts`). Step 4 happens on Shopify's checkout
@@ -76,8 +82,11 @@ Plausible Business.
 | `Purchase` (NEW, server) | orders/paid webhook, Plausible Events API (`plausible-server.ts`) | `source`, `campaign` | order total |
 
 Design rules baked in: every event goes through the one `trackEvent` helper,
-props stay low-cardinality (handles and canonical channel values only), no
-free-form strings, no new events without touching this table.
+props stay low-cardinality (product handles, the folded source vocabulary,
+fixed surface/variant names), no free-form strings, no new events without
+touching this table. `campaign` on Purchase is the one open-ended prop
+(slug-based by convention, 64-char cap, only reachable through a real paid
+order).
 
 ### Server-side Purchase event
 
@@ -85,10 +94,20 @@ free-form strings, no new events without touching this table.
 revenue to `https://plausible.io/api/event` (no API key needed for event
 ingestion) from inside the existing waitUntil job. Details:
 
-- Channel from the order's `_utm_*` note_attributes; `direct` when absent.
-- Deduped by a `purchaseEventAt` latch on the `ord:` ledger record, so
-  webhook redeliveries and the orders/create + orders/paid topic pair count
-  once. A failed send leaves the latch unset, so a redelivery retries.
+- Channel from the order's `_utm_*` note_attributes, folded to the same
+  bounded source vocabulary as the client events; `direct` when absent.
+- Sent on the orders/paid topic ONLY. orders/create still records the
+  ledger order, but creation can precede payment (pending payment
+  methods), so it is never a Purchase.
+- The ledger `ord:` write happens BEFORE the Plausible send, and the send
+  carries a 5s timeout: a slow or down Plausible can never stall the
+  webhook job past its waitUntil budget and cost us the order record
+  (Shopify does not retry an ACKed delivery).
+- Deduped by an atomic `pev:<order_id>` claim (SETNX) taken before the
+  send, then a `purchaseEventAt` stamp on the `ord:` record. Concurrent
+  deliveries (redeliveries, the create + paid pair) elect one winner; a
+  GET-check latch alone would double-send. A failed send releases the
+  claim, so a redelivery retries.
 - Host-guarded to opendrone.be: local and preview webhook tests never write
   to the production dashboard.
 - All server events share one synthetic User-Agent and no client IP, so
