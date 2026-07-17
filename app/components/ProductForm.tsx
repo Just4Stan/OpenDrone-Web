@@ -9,6 +9,8 @@ import {StackQuickAdd, type StackOffer} from './StackQuickAdd';
 import {useAside} from './Aside';
 import {useComingSoon} from '~/lib/coming-soon';
 import type {RootLoader} from '~/root';
+import {trackEvent} from '~/lib/growth/plausible';
+import {attributionSource} from '~/lib/growth/attribution';
 import type {ProductFragment} from 'storefrontapi.generated';
 
 export function ProductForm({
@@ -136,6 +138,17 @@ export function ProductForm({
                       aria-pressed={selected}
                       onClick={() => {
                         if (!selected) {
+                          // Same event as the PDP's tier ladder: any
+                          // user-initiated variant switch is one
+                          // `Variant Select`.
+                          trackEvent('Variant Select', {
+                            props: {
+                              product:
+                                selectedVariant?.product?.handle ?? 'unknown',
+                              variant: name,
+                              source: attributionSource(),
+                            },
+                          });
                           void navigate(`?${variantUriQuery}`, {
                             replace: true,
                             preventScrollReset: true,

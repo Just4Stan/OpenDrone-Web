@@ -2,6 +2,8 @@ import {Link} from 'react-router';
 import {Money, type OptimisticCartLineInput} from '@shopify/hydrogen';
 import {ShoppingCart} from 'lucide-react';
 import {AddToCartButton} from './AddToCartButton';
+import {trackEvent} from '~/lib/growth/plausible';
+import {attributionSource} from '~/lib/growth/attribution';
 
 /** A stack companion for a pod row: one candidate partner board, size-matched,
  *  with BOTH cart lines prebuilt so a single click orders the pair. */
@@ -180,7 +182,24 @@ export function ProductPods({
                   lines={o.lines}
                   disabled={!o.available}
                   flyImage={o.imageUrl ?? it.buy?.flyImage}
-                  onClick={onAdd}
+                  onClick={() => {
+                    // Stack-builder engagement from the header/collection
+                    // pods. NOT it.key (a variant GID on tier rows): the
+                    // first line's product handle is the low-cardinality id.
+                    const v = it.buy?.lines[0]?.selectedVariant as
+                      | {product?: {handle?: string | null} | null}
+                      | null
+                      | undefined;
+                    trackEvent('Stack Toggle', {
+                      props: {
+                        product: v?.product?.handle ?? 'unknown',
+                        partner: o.key,
+                        surface: 'pod',
+                        source: attributionSource(),
+                      },
+                    });
+                    onAdd?.();
+                  }}
                   ariaLabel={`Add ${it.title} and ${o.title} as a stack${
                     o.pct && o.discountedShort
                       ? `, ${o.discountedShort} ${o.pct}% off at checkout`

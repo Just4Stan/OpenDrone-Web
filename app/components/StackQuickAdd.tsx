@@ -2,6 +2,8 @@ import {Money} from '@shopify/hydrogen';
 import type {OptimisticCartLineInput} from '@shopify/hydrogen';
 import type {MoneyV2} from '@shopify/hydrogen/storefront-api-types';
 import {AddToCartButton} from './AddToCartButton';
+import {trackEvent} from '~/lib/growth/plausible';
+import {attributionSource} from '~/lib/growth/attribution';
 
 /**
  * One "buy it as a stack" offer: the paired board resolved to the size that
@@ -53,6 +55,15 @@ export function StackQuickAdd({
   onAdd?: () => void;
 }) {
   if (!offers.length) return <>{children}</>;
+  // Low-cardinality product handle for the Stack Toggle event: the first
+  // line is always the board the visitor is looking at.
+  const offerProduct = (o: StackOffer): string => {
+    const v = o.lines[0]?.selectedVariant as
+      | {product?: {handle?: string | null} | null}
+      | null
+      | undefined;
+    return v?.product?.handle ?? 'unknown';
+  };
   return (
     <div className="cta-stack-group">
       {children}
@@ -64,7 +75,19 @@ export function StackQuickAdd({
             lines={o.lines}
             disabled={!o.available}
             flyImage={flyImage}
-            onClick={onAdd}
+            onClick={() => {
+              // Stack-builder engagement, distinct from the generic Add to
+              // Cart that also fires: which pairings sell, from where.
+              trackEvent('Stack Toggle', {
+                props: {
+                  product: offerProduct(o),
+                  partner: o.key,
+                  surface: 'pdp',
+                  source: attributionSource(),
+                },
+              });
+              onAdd?.();
+            }}
           >
             <span className="cta-stack-offer-plus" aria-hidden="true">
               +

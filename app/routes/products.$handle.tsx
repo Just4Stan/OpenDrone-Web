@@ -57,6 +57,8 @@ import {
 } from '~/lib/product-content';
 import {useComingSoon} from '~/lib/coming-soon';
 import {stackDiscountedPrice} from '~/lib/stack-discount';
+import {trackEvent} from '~/lib/growth/plausible';
+import {attributionSource} from '~/lib/growth/attribution';
 import {NewsletterSignup} from '~/components/NewsletterSignup';
 import type {
   ChapterPin,
@@ -591,6 +593,16 @@ export default function Product() {
     reviewsEnabled: reviewsOn,
   } = useLoaderData<typeof loader>();
   useChapterReveal(product.handle);
+
+  // Funnel step 1: one `PDP View` per product per navigation, carrying the
+  // product handle + first-touch channel props that aggregate pageviews
+  // lack (Plausible pageviews cannot join page path to a custom source
+  // prop, so the per-channel funnel needs its own event).
+  useEffect(() => {
+    trackEvent('PDP View', {
+      props: {product: product.handle, source: attributionSource()},
+    });
+  }, [product.handle]);
 
   // Resolve the selected variant client-side from the URL options. Paired with
   // `shouldRevalidate` (above), switching SKUs is instant — no Shopify
@@ -1509,6 +1521,19 @@ export default function Product() {
   // in-hero selector has scrolled under the header, again in a compact bar
   // pinned to the top so a variant switcher + add-to-cart is always reachable.
   // Both copies share `activeTier`, so switching in either keeps them in sync.
+  // Ladder clicks are the PDP's main variant switch: track them as
+  // `Variant Select` (user-initiated only; deep links and Shopify
+  // re-syncs go through setActiveTier directly and stay silent).
+  const selectTier = (value: string) => {
+    trackEvent('Variant Select', {
+      props: {
+        product: product.handle,
+        variant: value,
+        source: attributionSource(),
+      },
+    });
+    setActiveTier(value);
+  };
   const railLadder =
     hasLadder && content.optionAxis && content.variants ? (
       <VariantLadder
@@ -1516,7 +1541,7 @@ export default function Product() {
         variants={content.variants}
         productOptions={productOptions}
         activeValue={activeTier}
-        onSelect={setActiveTier}
+        onSelect={selectTier}
       />
     ) : null;
   // Compact (name-pill) variant switcher for the pinned MOBILE buy bar — keeps
@@ -1529,7 +1554,7 @@ export default function Product() {
         variants={content.variants}
         productOptions={productOptions}
         activeValue={activeTier}
-        onSelect={setActiveTier}
+        onSelect={selectTier}
       />
     ) : null;
   const isBundle = Boolean(content.bundle);
