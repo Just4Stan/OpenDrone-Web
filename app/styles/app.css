@@ -9993,6 +9993,122 @@ button.reset {
   margin: 0.35rem 0 0;
 }
 
+/* ── PDP reviews — provider data, own markup (no third-party widget).
+   Engineering-document voice: hairline rows, mono numerals/dates, gold
+   stars. Tokens only, so light/dark theme for free. ─────────────────── */
+
+/* Buy-area aggregate line: stars + average + count, links to #reviews. */
+.product-buy-reviews {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.55rem;
+  text-decoration: none;
+}
+
+.product-buy-reviews-count {
+  font-family: var(--font-mono);
+  font-weight: 500;
+  font-size: var(--fs-xs);
+  letter-spacing: 0.04em;
+  color: var(--color-text-dim);
+  font-variant-numeric: tabular-nums;
+  transition: color 0.2s ease;
+}
+
+.product-buy-reviews:hover .product-buy-reviews-count {
+  color: var(--color-text);
+}
+
+/* The compact pinned rail stays compact — price, stock, add-to-cart. */
+.buy-rail.is-pinned .product-buy-reviews {
+  display: none;
+}
+
+.review-stars {
+  font-family: var(--font-mono);
+  font-size: var(--fs-sm);
+  letter-spacing: 0.12em;
+  color: var(--color-gold);
+  line-height: 1;
+}
+
+/* Anchor lands below the fixed header, not underneath it. */
+#reviews {
+  scroll-margin-top: 96px;
+}
+
+.review-list {
+  list-style: none;
+  padding: 0;
+  margin: 1.25rem 0 0;
+  max-width: 46rem;
+}
+
+.review-item {
+  padding: 1rem 0;
+  border-bottom: 1px solid color-mix(in srgb, var(--color-border) 80%, transparent);
+}
+
+.review-item:last-child {
+  border-bottom: none;
+}
+
+.review-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.35rem 0.85rem;
+}
+
+.review-name {
+  font-weight: 600;
+  font-size: var(--fs-sm);
+  color: var(--color-text);
+}
+
+.review-verified {
+  font-family: var(--font-mono);
+  font-weight: 500;
+  font-size: var(--fs-xs);
+  letter-spacing: 0.04em;
+  color: var(--color-stock);
+  border: 1px solid color-mix(in srgb, var(--color-stock) 35%, var(--color-border));
+  border-radius: 2px;
+  padding: 0.1rem 0.4rem;
+}
+
+.review-date {
+  margin-left: auto;
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  color: var(--color-text-dim);
+  font-variant-numeric: tabular-nums;
+}
+
+.review-title {
+  margin: 0.5rem 0 0;
+  font-weight: 600;
+  font-size: var(--fs-sm);
+  color: var(--color-text);
+}
+
+.review-body {
+  margin: 0.35rem 0 0;
+  font-size: var(--fs-sm);
+  line-height: 1.65;
+  color: var(--color-text-muted);
+  white-space: pre-line;
+}
+
+.review-count-line {
+  margin: 1rem 0 0;
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  letter-spacing: 0.04em;
+  color: var(--color-text-dim);
+  font-variant-numeric: tabular-nums;
+}
+
 /* Trust-chip link state — chips can now be clickable. */
 .trust-chip-link {
   cursor: pointer;
