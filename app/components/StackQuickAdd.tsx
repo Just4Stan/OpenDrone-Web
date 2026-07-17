@@ -20,9 +20,9 @@ export type StackOffer = {
   label: string;
   /** Matched size value, e.g. "20×20". */
   size?: string;
-  /** Partner's displayed price (shown as "+€40,50"). When the partner is
-   *  the discounted board this is the discounted price: what checkout
-   *  actually charges for it once the pair is in the cart. */
+  /** Partner's displayed price. When the partner is the discounted board
+   *  this is the derived discounted price: what checkout actually charges
+   *  for it once the pair is in the cart. */
   price?: MoneyV2 | null;
   /** Partner's full price, struck through next to a discounted `price`. */
   compareAtPrice?: MoneyV2 | null;

@@ -6,9 +6,9 @@
  * OpenESC when it's bought together with an OpenFC Lite. It is NOT 10% off
  * the whole pair. Copy must name the discounted board (e.g. "OpenESC −10%"),
  * and any discounted price shown must be derived from the live price with
- * {@link stackDiscountedPrice} so it matches what checkout actually charges
- * (at current prices: FC 35 both sizes, ESC 35/45, so pairs 66,50 / 76,50).
- * Never hardcode the computed numbers in copy.
+ * {@link stackDiscountedPrice} so it matches what checkout actually charges.
+ * Never hardcode computed prices in code or copy, comments included: they
+ * rot the moment a price changes in Shopify.
  */
 
 /** The advertised percent of the Shopify automatic BXGY. Display only:
