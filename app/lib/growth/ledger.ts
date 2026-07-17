@@ -47,6 +47,16 @@
  *                  e.g. "ord:6234098751". Export/reconciliation scripts
  *                  walk this instead of SCANning the keyspace.
  *
+ * chk:<day>        Integer counter of Checkout Click beacons for one UTC
+ *                  day (`chk:2026-07-17`), INCR'd by /api/track/checkout
+ *                  (rate-limited, production host only). Site-wide
+ *                  buy-rate = count of ord: records that day / chk:<day>,
+ *                  and the delta IS the checkout-abandonment metric:
+ *                  Shopify-hosted checkout internals are unobservable on
+ *                  Basic, so clicks minus paid orders is all we get. No
+ *                  TTL (365 tiny keys/year); no PII, not indexed in
+ *                  att:idx (it is an aggregate, not an export record).
+ *
  * GDPR: never store IPs or user agents here. Attribution values are the
  * visitor's own session-scoped UTM tags, allowlisted + capped at 64
  * chars upstream (app/routes/cart.tsx). Retention: flag any new key
@@ -59,6 +69,7 @@
 
 import {
   getTicketStore,
+  increment,
   listPush,
   type UpstashEnv,
 } from '~/lib/support/upstash';
@@ -90,6 +101,14 @@ export type AttributedOrder = {
   createdAt: string;
   /** Webhook arrival, unix seconds. */
   receivedAt: number;
+  /**
+   * Unix seconds when the server-side Plausible `Purchase` event for this
+   * order was accepted (app/lib/growth/plausible-server.ts). Presence is
+   * the dedupe latch: webhook redeliveries and the orders/create +
+   * orders/paid topic pair must not double-count revenue in Plausible.
+   * Absent = not sent yet (or send failed, so a redelivery may retry).
+   */
+  purchaseEventAt?: number;
 };
 
 /**
@@ -287,6 +306,21 @@ export async function recordOrder(
   if (!indexed) {
     console.warn('[growth/ledger] att:idx append failed for', key);
   }
+}
+
+/**
+ * Bump today's checkout-click counter (`chk:<day>`, UTC day). Fired by
+ * the /api/track/checkout beacon on every Checkout Click, so
+ * orders-per-clicks buy-rate is computable from the ledger alone, with
+ * no Plausible Business subscription. Returns the new count, or null
+ * when Upstash is unconfigured / the write failed (degrade-soft; the
+ * caller decides whether to warn).
+ */
+export async function recordCheckoutClick(
+  env: UpstashEnv,
+): Promise<number | null> {
+  const day = new Date().toISOString().slice(0, 10);
+  return increment(env, `chk:${day}`);
 }
 
 /** Read one attributed order back, or null (missing / unconfigured). */

@@ -4,7 +4,11 @@ import {
   ORDER_TOPICS,
   verifyShopifyHmac,
 } from '~/lib/growth/shopify-webhook';
-import {recordOrder, type AttributedOrder} from '~/lib/growth/ledger';
+import {getOrder, recordOrder, type AttributedOrder} from '~/lib/growth/ledger';
+import {
+  PLAUSIBLE_DOMAIN,
+  sendPurchaseEvent,
+} from '~/lib/growth/plausible-server';
 
 // Shopify webhook receiver. Handles order topics:
 //
@@ -108,10 +112,34 @@ export async function action({request, context}: Route.ActionArgs) {
     receivedAt: Math.floor(Date.now() / 1000),
   };
 
-  // ACK fast; write in the background. recordOrder degrades to a no-op
-  // warn when Upstash is unconfigured.
-  const write = recordOrder(context.env, order).catch((err) =>
-    console.warn('[webhooks/shopify] ledger write failed', orderId, err),
+  // ACK fast; everything below runs in the background. recordOrder
+  // degrades to a no-op warn when Upstash is unconfigured.
+  //
+  // Server-side funnel close: the buyer paid on Shopify's domain where no
+  // client event can fire, so this is where the Plausible `Purchase`
+  // event (with revenue + first-touch channel) comes from. Dedupe: the
+  // ledger order record latches `purchaseEventAt` once Plausible accepts
+  // the event, so redeliveries and the orders/create + orders/paid topic
+  // pair send it exactly once. (If Upstash is unconfigured the latch is
+  // gone and a redelivery could re-send; prod has Upstash, accepted.)
+  // Host guard: only the production host reports, so local/preview
+  // webhook tests never pollute the live dashboard.
+  const isProdHost = new URL(request.url).hostname === PLAUSIBLE_DOMAIN;
+  const write = (async () => {
+    const existing = await getOrder(context.env, orderId);
+    let purchaseEventAt = existing?.purchaseEventAt;
+    if (!purchaseEventAt && isProdHost) {
+      const accepted = await sendPurchaseEvent({
+        total: order.total,
+        currency: order.currency,
+        source: attribution.utm_source,
+        campaign: attribution.utm_campaign,
+      });
+      if (accepted) purchaseEventAt = Math.floor(Date.now() / 1000);
+    }
+    await recordOrder(context.env, {...order, purchaseEventAt});
+  })().catch((err) =>
+    console.warn('[webhooks/shopify] order processing failed', orderId, err),
   );
   if (context.waitUntil) {
     context.waitUntil(write);

@@ -111,6 +111,28 @@ export async function globalRateLimit(
 }
 
 /**
+ * Atomic counter increment (INCR), no TTL. Added for the growth ledger's
+ * per-day checkout-click counters (`chk:<day>`, app/lib/growth/ledger.ts);
+ * a GET/SET read-modify-write would race under concurrent beacons.
+ * Returns the post-increment value, or null when Upstash is unconfigured
+ * or the call failed (degrade-soft, caller decides whether to warn).
+ */
+export async function increment(
+  env: UpstashEnv,
+  key: string,
+): Promise<number | null> {
+  const url = env.UPSTASH_REDIS_REST_URL?.replace(/\/$/, '');
+  const token = env.UPSTASH_REDIS_REST_TOKEN;
+  if (!url || !token) return null;
+  try {
+    const r = await call(url, token, ['INCR', key]);
+    return typeof r === 'number' ? r : Number(r) || 0;
+  } catch {
+    return null;
+  }
+}
+
+/**
  * Atomic list append: LPUSH + LTRIM to `cap` entries (newest first).
  * Added for the growth ledger's append-only indexes (app/lib/growth/
  * ledger.ts) — the TicketStore shape above has no list primitive and a
