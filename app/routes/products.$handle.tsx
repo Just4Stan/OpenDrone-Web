@@ -38,6 +38,16 @@ import {WatchCard} from '~/components/WatchCard';
 import {redirectIfHandleIsLocalized} from '~/lib/redirect';
 import {buildSeoMeta, buildProductJsonLd} from '~/lib/seo';
 import {fetchLatestCommits} from '~/lib/github';
+import {
+  fetchProductReviews,
+  parseReviewAggregate,
+  reviewsEnabled,
+} from '~/lib/reviews';
+import {
+  ReviewAggregateLine,
+  ReviewList,
+  ReviewListFallback,
+} from '~/components/ProductReviews';
 import {OshwaMark} from '~/components/OshwaMark';
 import {useNoHover, useIsMobile} from '~/lib/use-media-query';
 import {
@@ -147,6 +157,10 @@ async function loadCriticalData({context, params, request}: Route.LoaderArgs) {
     product,
     bundleProducts,
     stackProducts,
+    // Whether the review env vars are configured — the client can't see
+    // env, so the loader answers. False hides every review surface even
+    // when the synced metafields carry a count (feature fully dormant).
+    reviewsEnabled: reviewsEnabled(context.env),
   };
 }
 
@@ -163,6 +177,7 @@ function loadDeferredData({context, params}: Route.LoaderArgs) {
     return {
       recommendations: Promise.resolve(null),
       latestCommits: Promise.resolve([]),
+      reviews: Promise.resolve(null),
     };
   }
 
@@ -210,7 +225,13 @@ function loadDeferredData({context, params}: Route.LoaderArgs) {
     })
     .catch(() => null);
 
-  return {recommendations, latestCommits};
+  // Full review bodies from the Judge.me REST API — deferred so their
+  // latency never blocks the PDP. Resolves null when the env vars are
+  // unset or the API misbehaves; the chapter then falls back to the
+  // metafield aggregate (or, with no aggregate, renders nothing at all).
+  const reviews = fetchProductReviews(context.env, handle);
+
+  return {recommendations, latestCommits, reviews};
 }
 
 const DOWNLOAD_ICONS: Record<DownloadKind, string> = {
@@ -298,6 +319,7 @@ type ChapterNumbers = {
   specs?: string;
   downloads?: string;
   community?: string;
+  reviews?: string;
 };
 
 /** Compute chapter numbers that stay contiguous when any chapter is hidden. */
@@ -305,6 +327,7 @@ function computeChapterNumbers(
   content: ProductContent,
   includeOpenSource = true,
   includeFirmware = true,
+  includeReviews = false,
 ): ChapterNumbers {
   let n = 1;
   const pad = (x: number) => x.toString().padStart(2, '0');
@@ -337,6 +360,11 @@ function computeChapterNumbers(
   }
   if (content.communityChanges && content.communityChanges.length > 0) {
     out.community = pad(n++);
+  }
+  // Reviews render only when the feature is enabled AND the synced
+  // metafields carry at least one rating — the caller resolves that.
+  if (includeReviews) {
+    out.reviews = pad(n++);
   }
   return out;
 }
@@ -458,9 +486,12 @@ function Chapter({
   bigMedia,
   noMedia,
   textReveal,
+  id,
 }: {
   number: string;
   label: string;
+  /** Optional anchor id so in-page links (buy-area stars) can target it. */
+  id?: string;
   title: React.ReactNode;
   children: React.ReactNode;
   /** When defined, gate the body text's slide-in on this flag (false = held off
@@ -486,6 +517,7 @@ function Chapter({
 }) {
   return (
     <section
+      id={id}
       className="chapter"
       data-chapter={number}
       data-backdrop={backdrop ? '' : undefined}
@@ -548,8 +580,15 @@ function useChapterReveal(key: string) {
 }
 
 export default function Product() {
-  const {product, bundleProducts, stackProducts, recommendations, latestCommits} =
-    useLoaderData<typeof loader>();
+  const {
+    product,
+    bundleProducts,
+    stackProducts,
+    recommendations,
+    latestCommits,
+    reviews,
+    reviewsEnabled: reviewsOn,
+  } = useLoaderData<typeof loader>();
   useChapterReveal(product.handle);
 
   // Resolve the selected variant client-side from the URL options. Paired with
@@ -604,9 +643,24 @@ export default function Product() {
   const isEditorial = Boolean(PRODUCT_CONTENT[product.handle]);
   const content = PRODUCT_CONTENT[product.handle] ?? PRODUCT_CONTENT_FALLBACK;
   const hasHeroCopy = Boolean(content.hero.line1);
+  // Star aggregate from the review-synced metafields. Gated on the loader's
+  // env check so the whole feature stays invisible until the review
+  // provider is configured — and on count > 0, so a zero-review store
+  // (coming-soon today) renders no trace of it anywhere.
+  const reviewAggregate = reviewsOn
+    ? parseReviewAggregate(
+        product.reviewsRating?.value,
+        product.reviewsRatingCount?.value,
+      )
+    : null;
   // The "€1" firmware-split chapter is priceless copy without a price —
   // skip it (and its chapter number) while the product is coming soon.
-  const chapterNums = computeChapterNumbers(content, isEditorial, !soon);
+  const chapterNums = computeChapterNumbers(
+    content,
+    isEditorial,
+    !soon,
+    Boolean(reviewAggregate),
+  );
 
   // Comparison-ladder state for product lines (OpenRX/OpenESC). The
   // editorial `variants` map is the tier source of truth; the active tier
@@ -1430,6 +1484,10 @@ export default function Product() {
       ? bundleAvailable
       : (selectedVariant?.availableForSale ?? false),
     productHandle: product.handle,
+    // AggregateRating rides only when reviews are enabled and count > 0 —
+    // same gate as the visible stars, so the structured data never claims
+    // ratings the page doesn't show.
+    rating: reviewAggregate,
   });
 
   // The ladder + buy module. These two nodes are rendered twice: once in the
@@ -1516,6 +1574,9 @@ export default function Product() {
             ? 'In stock · ships from Belgium'
             : 'Sold out'}
       </span>
+      {/* Star aggregate + link to the reviews chapter. Renders nothing
+          without reviews; CSS hides it in the compact pinned rail. */}
+      <ReviewAggregateLine aggregate={reviewAggregate} />
       <ProductForm
         productOptions={productOptions}
         selectedVariant={selectedVariant}
@@ -2235,6 +2296,56 @@ export default function Product() {
         </Chapter>
       ) : null}
 
+      {/* === Chapter: Reviews — Judge.me data, own markup (no widget).
+             Appears only when the review env vars are set AND the synced
+             metafields carry at least one rating, so a zero-review store
+             shows no trace of it. Bodies stream in deferred; a fetch
+             failure degrades to the aggregate count line. === */}
+      {reviewAggregate && chapterNums.reviews ? (
+        <Chapter
+          id="reviews"
+          number={chapterNums.reviews}
+          label="Reviews"
+          title={
+            <>
+              Field reports, <em>order on file.</em>
+            </>
+          }
+          noMedia
+        >
+          {/* TODO(copy-stan): review-chapter framing line. */}
+          <p className="chapter-body">
+            Collected by email after delivery, published unedited.
+            &ldquo;Verified buyer&rdquo; means the reviewer&apos;s order is
+            on file. The average here is the same number search engines
+            get: {reviewAggregate.value.toFixed(1)} over{' '}
+            {reviewAggregate.count}{' '}
+            {reviewAggregate.count === 1 ? 'rating' : 'ratings'}.
+          </p>
+          <Suspense
+            fallback={<ReviewListFallback totalCount={reviewAggregate.count} />}
+          >
+            <Await
+              resolve={reviews}
+              errorElement={
+                <ReviewListFallback totalCount={reviewAggregate.count} />
+              }
+            >
+              {(list) =>
+                list && list.length > 0 ? (
+                  <ReviewList
+                    reviews={list}
+                    totalCount={reviewAggregate.count}
+                  />
+                ) : (
+                  <ReviewListFallback totalCount={reviewAggregate.count} />
+                )
+              }
+            </Await>
+          </Suspense>
+        </Chapter>
+      ) : null}
+
       {/* GPSR manufacturer identity — on every listing, coming-soon included. */}
       <ManufacturerBlock company={rootData?.company} />
 
@@ -2347,6 +2458,14 @@ const PRODUCT_FRAGMENT = `#graphql
     seo {
       description
       title
+    }
+    # Review aggregates synced into the standard product metafields by the
+    # review provider (see app/lib/reviews.ts). Null when no reviews exist.
+    reviewsRating: metafield(namespace: "reviews", key: "rating") {
+      value
+    }
+    reviewsRatingCount: metafield(namespace: "reviews", key: "rating_count") {
+      value
     }
   }
   ${PRODUCT_VARIANT_FRAGMENT}
