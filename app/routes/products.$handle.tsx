@@ -56,6 +56,7 @@ import {
   isComingSoon,
 } from '~/lib/product-content';
 import {useComingSoon} from '~/lib/coming-soon';
+import {stackDiscountedPrice} from '~/lib/stack-discount';
 import {NewsletterSignup} from '~/components/NewsletterSignup';
 import type {
   ChapterPin,
@@ -778,7 +779,10 @@ export default function Product() {
   // The offers surface as a hover flyout on the add-to-cart CTA, so ordering
   // the pair is one extra click; more partners later (an OpenFC Pro) just
   // become more rows. The 10% itself is the Shopify automatic BXGY at
-  // checkout.
+  // checkout, and it is off the discountedHandle board ONLY (the OpenESC),
+  // never the pair: when that board is the partner being added, its shown
+  // price is pre-discounted (with the full price struck) so it matches what
+  // checkout charges; when it is this product, the badge names it instead.
   const stackCfg = content.stack;
   const stackAxis = (stackCfg?.matchOption ?? 'Model').trim().toLowerCase();
   const stackMatchValue =
@@ -806,13 +810,23 @@ export default function Product() {
         ),
       );
       if (!match) return [];
+      const pct = stackCfg.discountPct;
+      const partnerDiscounted =
+        Boolean(pct) && stackCfg.discountedHandle === pc.handle;
+      const selfDiscounted =
+        Boolean(pct) && stackCfg.discountedHandle === product.handle;
       return [
         {
           key: pc.handle,
           label: pc.label ?? pp?.title ?? pc.handle,
           size: stackMatchValue,
-          price: match.price,
-          pct: stackCfg.discountPct,
+          price:
+            partnerDiscounted && pct
+              ? stackDiscountedPrice(match.price, pct)
+              : match.price,
+          compareAtPrice: partnerDiscounted ? match.price : null,
+          pct,
+          discountedLabel: selfDiscounted ? product.title : undefined,
           available:
             match.availableForSale &&
             Boolean(selectedVariant.availableForSale),
@@ -846,7 +860,7 @@ export default function Product() {
         },
       ];
     });
-  }, [stackCfg, stackProducts, selectedVariant, stackAxis, stackMatchValue, globalComingSoon]);
+  }, [stackCfg, stackProducts, selectedVariant, stackAxis, stackMatchValue, globalComingSoon, product.handle, product.title]);
 
   // The teardown board art follows the selected tier: a variant's own
   // `boardArt` wins, otherwise the shared `teardown.boardArt` (the default

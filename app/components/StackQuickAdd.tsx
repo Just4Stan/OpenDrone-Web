@@ -7,7 +7,12 @@ import {AddToCartButton} from './AddToCartButton';
  * One "buy it as a stack" offer: the paired board resolved to the size that
  * matches what the visitor is looking at, with BOTH cart lines prebuilt so a
  * single click orders the pair. The advertised percent is the Shopify
- * automatic Buy-X-Get-Y discount; checkout applies it.
+ * automatic Buy-X-Get-Y discount; checkout applies it, and it is off ONE
+ * board only (the BXGY's "get Y" side, today the OpenESC), never the pair.
+ * Callers say which side that is: when the discounted board is the partner
+ * being added, pass its derived discounted `price` plus the full price as
+ * `compareAtPrice`; when it's the board the visitor is already buying, pass
+ * its name as `discountedLabel` so the badge reads "OpenESC −10%".
  */
 export type StackOffer = {
   key: string;
@@ -15,9 +20,16 @@ export type StackOffer = {
   label: string;
   /** Matched size value, e.g. "20×20". */
   size?: string;
-  /** Partner's own price (shown as "+€45"). */
+  /** Partner's displayed price. When the partner is the discounted board
+   *  this is the derived discounted price: what checkout actually charges
+   *  for it once the pair is in the cart. */
   price?: MoneyV2 | null;
+  /** Partner's full price, struck through next to a discounted `price`. */
+  compareAtPrice?: MoneyV2 | null;
   pct?: number;
+  /** Name of the discounted board when it is NOT the partner (e.g. the
+   *  OpenESC the visitor is looking at); badges as "OpenESC −10%". */
+  discountedLabel?: string;
   lines: OptimisticCartLineInput[];
   available: boolean;
 };
@@ -63,11 +75,22 @@ export function StackQuickAdd({
             </span>
             {o.price ? (
               <span className="cta-stack-offer-price">
+                {o.compareAtPrice ? (
+                  <s className="cta-stack-offer-was">
+                    <Money data={o.compareAtPrice} />
+                  </s>
+                ) : null}
                 <Money data={o.price} />
               </span>
             ) : null}
-            {o.pct ? (
-              <span className="cta-stack-offer-pct">stack −{o.pct}%</span>
+            {/* The pct is off ONE board, never the pair: next to a struck
+                partner price it reads as that line's cut; otherwise it must
+                name the discounted board ("OpenESC −10%"). No side known →
+                no claim. */}
+            {o.pct && (o.discountedLabel || o.compareAtPrice) ? (
+              <span className="cta-stack-offer-pct">
+                {o.discountedLabel ? `${o.discountedLabel} ` : ''}−{o.pct}%
+              </span>
             ) : null}
           </AddToCartButton>
         ))}

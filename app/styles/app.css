@@ -4502,6 +4502,25 @@ button.reset {
   margin: 0;
 }
 
+/* Shop Pay accelerated checkout: secondary slot under the main add-to-cart.
+   The button UI itself is Shopify-rendered inside the <shop-pay-button> web
+   component (a third-party surface, same caveat as Turnstile: it can't take
+   our tokens and is identical in both themes); we only size the slot. */
+.product-buy-shoppay {
+  margin-top: 0.5rem;
+  --shop-pay-button-width: 100%;
+  --shop-pay-button-height: 44px;
+}
+.product-buy-shoppay shop-pay-button {
+  display: block;
+  width: 100%;
+}
+/* Pinned rails (compact top bar / mobile bottom bar) stay minimal; the
+   in-flow buy box still offers Shop Pay. */
+.buy-rail.is-pinned .product-buy-shoppay {
+  display: none;
+}
+
 .product-buy-civilian {
   margin: 0;
   font-family: var(--font-sans);
@@ -5233,6 +5252,17 @@ button.reset {
 }
 .cta-stack-offer-price {
   color: var(--color-text-muted);
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.35rem;
+}
+/* Struck full price next to a discounted partner price: the stack BXGY is
+   10% off the OpenESC only (never the pair), so when the added board is the
+   ESC its line shows full -> discounted, and the pct badge belongs to that
+   line, not to the stack total. */
+.cta-stack-offer-was {
+  color: var(--color-text-dim);
+  text-decoration: line-through;
 }
 .cta-stack-offer-pct {
   color: var(--color-gold);
