@@ -4502,6 +4502,25 @@ button.reset {
   margin: 0;
 }
 
+/* Shop Pay accelerated checkout: secondary slot under the main add-to-cart.
+   The button UI itself is Shopify-rendered inside the <shop-pay-button> web
+   component (a third-party surface, same caveat as Turnstile: it can't take
+   our tokens and is identical in both themes); we only size the slot. */
+.product-buy-shoppay {
+  margin-top: 0.5rem;
+  --shop-pay-button-width: 100%;
+  --shop-pay-button-height: 44px;
+}
+.product-buy-shoppay shop-pay-button {
+  display: block;
+  width: 100%;
+}
+/* Pinned rails (compact top bar / mobile bottom bar) stay minimal; the
+   in-flow buy box still offers Shop Pay. */
+.buy-rail.is-pinned .product-buy-shoppay {
+  display: none;
+}
+
 .product-buy-civilian {
   margin: 0;
   font-family: var(--font-sans);
