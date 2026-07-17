@@ -9,10 +9,9 @@ flow rules in CLAUDE.md.
 
 | Lane | Branch | Worktree | Port | State |
 |---|---|---|---|---|
-| overhaul-v2 | `feat/ui-overhaul-v2` | `~/OpenDrone-Web-wt/overhaul-v2` | 3006 | Draft PR #285 (TITLE BLOCK re-skin). Needs rebase onto main (post-#286 palette), then Stan's visual review on the preview deployment. |
-| wip-banner | `feat/wip-banner` | `~/OpenDrone-Web-wt/wip-banner` | 3008 | In flight: banner becomes "OPENING SOON / Get notified" linking to /newsletter. |
+| overhaul-v2 | `feat/ui-overhaul-v2` | `~/OpenDrone-Web-wt/overhaul-v2` | 3006 | Draft PR #285 (TITLE BLOCK re-skin), rebased onto main incl. #286 palette + #296 banner, typecheck/lint green. Awaiting Stan's visual review. Review note: the branch's homepage header shows a teal "incutec" wordmark with a "Who's incutec?" tag; confirm intentional. |
 
-Free ports: 3001-3005, 3007, 3009.
+Free ports: 3001-3005, 3007-3009. (wip-banner lane merged as #296 and closed.)
 
 ## Stan's tasks
 
@@ -53,6 +52,9 @@ Free ports: 3001-3005, 3007, 3009.
   fix or hide.
 - QA tail: re-verify the P2/P3 items of `drafts/archive/qa-audit-2026-07-06.md`
   against main (P1s and part of P2 fixed in #269).
+- Banner pill styling: the OPENING SOON pill still uses the red warning
+  styling from its placeholder days; decide whether a calmer brand treatment
+  fits better (or let #285's re-skinned pill answer this).
 
 ## Branch registry notes
 
