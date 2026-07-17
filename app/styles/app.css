@@ -8097,10 +8097,10 @@ button.reset {
   flex: 1;
   min-height: 0;
   gap: 1.25rem;
-  /* The drawer scrolls as ONE context (lines + donation upsell) with the
-     summary pinned below. The old split (lines scroll, donation+summary in
-     fixed flow) collapsed the line list to 0px whenever donation + summary
-     filled the drawer — the cart showed everything except its items. */
+  /* The drawer scrolls as ONE context (lines + companion row) with the
+     summary pinned below. The old split (lines scroll, rest in fixed flow)
+     collapsed the line list to 0px whenever the fixed part filled the
+     drawer — the cart showed everything except its items. */
   overflow-y: auto;
 }
 
@@ -8123,7 +8123,7 @@ button.reset {
 
 .cart-summary-aside {
   flex-shrink: 0;
-  /* Pin the subtotal/checkout to the drawer bottom while lines + donation
+  /* Pin the subtotal/checkout to the drawer bottom while the lines
      scroll behind it. Solid background so lines don't ghost through. */
   position: sticky;
   bottom: 0;
@@ -8422,8 +8422,8 @@ button.reset {
 }
 
 /* "Goes well with" companion row (drawer + page): one quiet suggestion of
-   the size-matched stack partner, a register below the cart lines and well
-   below the donation block. Tokens only — light mode comes for free. */
+   the size-matched stack partner, a register below the cart lines. Tokens
+   only — light mode comes for free. */
 .cart-companion {
   display: flex;
   flex-direction: column;
@@ -9991,113 +9991,6 @@ button.reset {
   line-height: 1.65;
   color: var(--color-text-muted);
   margin: 0.35rem 0 0;
-}
-
-/* ============================================
-   Donation upsell in the cart
-   ============================================ */
-
-/* De-boxed: bracketed by hairlines instead of a gold-tinted box. */
-.donation-upsell {
-  margin: var(--sp-5) 0;
-  padding: var(--sp-5) 0;
-  border-top: 1px solid var(--color-border);
-  border-bottom: 1px solid var(--color-border);
-}
-
-.donation-eyebrow {
-  font-family: var(--font-mono);
-  font-size: 11px;
-  letter-spacing: 0.22em;
-  text-transform: uppercase;
-  color: var(--color-gold);
-  margin: 0 0 0.6rem;
-}
-
-.donation-title {
-  font-family: var(--font-display);
-  font-weight: 700;
-  font-size: 1.15rem;
-  line-height: 1.3;
-  color: var(--color-text);
-  margin: 0 0 0.5rem;
-}
-
-.donation-body {
-  font-family: var(--font-mono);
-  font-size: 0.8rem;
-  line-height: 1.65;
-  color: var(--color-text-muted);
-  margin: 0 0 1rem;
-}
-
-.donation-tiers {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-  gap: 0.6rem;
-}
-
-.donation-tier {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 0.2rem;
-  padding: 0.9rem 0.75rem;
-  background: var(--color-bg-card);
-  border: 1px solid var(--color-border);
-  border-radius: var(--r-md);
-  color: var(--color-text);
-  cursor: pointer;
-  transition: border-color 0.2s ease, background 0.2s ease, color 0.2s ease;
-  width: 100%;
-}
-
-.donation-tier:hover {
-  border-color: var(--color-gold);
-  background: color-mix(in srgb, var(--color-gold) 8%, var(--color-bg-card));
-}
-
-.donation-tier:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.donation-tier-label {
-  font-family: var(--font-mono);
-  font-size: 11px;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-  color: var(--color-text-muted);
-}
-
-.donation-tier-price {
-  font-family: var(--font-display);
-  font-weight: 700;
-  font-size: 1.25rem;
-  color: var(--color-gold);
-}
-
-.donation-tier-active {
-  border-color: var(--color-gold);
-  background: color-mix(in srgb, var(--color-gold) 10%, var(--color-bg-card));
-}
-
-.donation-tier-active .donation-tier-label {
-  color: var(--color-gold);
-}
-
-.donation-tier-remove {
-  font-family: var(--font-mono);
-  font-size: 10px;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  color: var(--color-text-muted);
-  margin-top: 0.25rem;
-}
-
-.donation-tier-active:hover .donation-tier-remove {
-  color: var(--color-text);
 }
 
 /* Trust-chip link state — chips can now be clickable. */

@@ -1,5 +1,4 @@
 import {redirect} from 'react-router';
-import {DONATION_PRODUCT_QUERY} from '~/lib/fragments';
 import type {Route} from './+types/cart.$lines';
 import {
   anyComingSoonLocks,
@@ -36,7 +35,7 @@ import {
  * ```
  */
 export async function loader({request, context, params}: Route.LoaderArgs) {
-  const {cart, storefront} = context;
+  const {cart} = context;
   const {lines} = params;
   if (!lines) return redirect('/cart');
   let linesMap = lines.split(',').map((line) => {
@@ -80,25 +79,6 @@ export async function loader({request, context, params}: Route.LoaderArgs) {
     }
   }
 
-  // The firmware-donation product never enters through a cart link — a
-  // donation is the sender's deliberate choice, not something to forward.
-  // The share-link generator already excludes it client-side; this is the
-  // server-side backstop for handcrafted URLs. Best-effort: if the lookup
-  // fails we let the line through rather than break the link.
-  try {
-    const donation = await storefront.query(DONATION_PRODUCT_QUERY, {
-      variables: {handle: 'firmware-donation'},
-      cache: storefront.CacheLong(),
-    });
-    const donationVariantIds = new Set(
-      donation?.product?.variants?.nodes?.map((v) => v.id) ?? [],
-    );
-    if (donationVariantIds.size) {
-      linesMap = linesMap.filter((l) => !donationVariantIds.has(l.merchandiseId));
-    }
-  } catch {
-    // Lookup failed — proceed unfiltered.
-  }
   if (!linesMap.length) return redirect('/cart');
 
   const url = new URL(request.url);

@@ -256,7 +256,7 @@ async function regularSearch({
     throw new Error('No search data returned from Shopify API');
   }
 
-  // The firmware-donation tip product is cart-only chrome; keep it out of
+  // The legacy firmware-donation tip product is not catalog; keep it out of
   // search results (search() has no product_type filter argument).
   if (items.products?.nodes) {
     items.products.nodes = items.products.nodes.filter(
@@ -449,7 +449,7 @@ async function predictiveSearch({
     throw new Error('No predictive search data returned from Shopify API');
   }
 
-  // Same cart-only exclusion as the regular search above.
+  // Same legacy-product exclusion as the regular search above.
   if (items.products) {
     items.products = items.products.filter(
       (p) => p.handle !== 'firmware-donation',

@@ -8,7 +8,6 @@ import {useAside} from '~/components/Aside';
 import {CartLineItem, type CartLine} from '~/components/CartLineItem';
 import {CartCompanion} from '~/components/CartCompanion';
 import {CartSummary} from './CartSummary';
-import {DonationUpsell, type DonationProduct} from './DonationUpsell';
 
 /** Product families surfaced as chips on the empty-cart screen, so it reads as
  *  an exploration launchpad rather than a dead end. */
@@ -24,7 +23,6 @@ export type CartLayout = 'page' | 'aside';
 export type CartMainProps = {
   cart: CartApiQueryFragment | null;
   layout: CartLayout;
-  donationProduct?: DonationProduct | null;
 };
 
 export type LineItemChildrenMap = {[parentId: string]: CartLine[]};
@@ -51,11 +49,7 @@ function getLineItemChildrenMap(lines: CartLine[]): LineItemChildrenMap {
  * The main cart component that displays the cart items and summary.
  * It is used by both the /cart route and the cart aside dialog.
  */
-export function CartMain({
-  layout,
-  cart: originalCart,
-  donationProduct,
-}: CartMainProps) {
+export function CartMain({layout, cart: originalCart}: CartMainProps) {
   // The useOptimisticCart hook applies pending actions to the cart
   // so the user immediately sees feedback when they modify the cart.
   const cart = useOptimisticCart(originalCart);
@@ -119,12 +113,6 @@ export function CartMain({
         </div>
         {cartHasItems ? (
           <CartCompanion lines={cart?.lines?.nodes ?? []} layout={layout} />
-        ) : null}
-        {cartHasItems && donationProduct ? (
-          <DonationUpsell
-            product={donationProduct}
-            cartLines={cart?.lines?.nodes ?? []}
-          />
         ) : null}
         {cartHasItems && <CartSummary cart={cart} layout={layout} />}
       </div>

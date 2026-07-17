@@ -121,9 +121,8 @@ export function CartSummary({cart, layout}: CartSummaryProps) {
  * Copies a /cart/<variant>:<qty>,…?view=1 link reproducing the current cart,
  * including any applied discount codes (`&discount=CODE[,CODE]`). The
  * recipient lands on their own /cart for review (see cart.$lines.tsx),
- * not straight in checkout. The firmware-donation line is excluded — a
- * donation is the sender's choice, not something to forward — as are child
- * bundle components (Shopify re-expands those from the parent line).
+ * not straight in checkout. Child bundle components are excluded (Shopify
+ * re-expands those from the parent line).
  */
 function ShareCartButton({cart}: {cart: CartSummaryProps['cart']}) {
   const [copied, setCopied] = useState(false);
@@ -134,12 +133,10 @@ function ShareCartButton({cart}: {cart: CartSummaryProps['cart']}) {
   // component (navigating away right after copying).
   useEffect(() => () => clearTimeout(copiedTimer.current), []);
 
-  const shareable = (cart?.lines?.nodes ?? []).filter((line) => {
-    if ('parentRelationship' in line && line.parentRelationship?.parent) {
-      return false;
-    }
-    return line.merchandise?.product?.handle !== 'firmware-donation';
-  });
+  const shareable = (cart?.lines?.nodes ?? []).filter(
+    (line) =>
+      !('parentRelationship' in line && line.parentRelationship?.parent),
+  );
   if (!shareable.length) return null;
 
   // Carry the sender's applied discount codes so the recipient's cart

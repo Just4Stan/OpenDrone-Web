@@ -539,27 +539,6 @@ export type FooterQuery = {
   >;
 };
 
-export type DonationProductQueryVariables = StorefrontAPI.Exact<{
-  country?: StorefrontAPI.InputMaybe<StorefrontAPI.CountryCode>;
-  language?: StorefrontAPI.InputMaybe<StorefrontAPI.LanguageCode>;
-  handle: StorefrontAPI.Scalars['String']['input'];
-}>;
-
-export type DonationProductQuery = {
-  product?: StorefrontAPI.Maybe<
-    Pick<StorefrontAPI.Product, 'id' | 'title' | 'handle' | 'description'> & {
-      variants: {
-        nodes: Array<
-          Pick<
-            StorefrontAPI.ProductVariant,
-            'id' | 'title' | 'availableForSale'
-          > & {price: Pick<StorefrontAPI.MoneyV2, 'amount' | 'currencyCode'>}
-        >;
-      };
-    }
-  >;
-};
-
 export type LlmsCatalogQueryVariables = StorefrontAPI.Exact<{
   count: StorefrontAPI.Scalars['Int']['input'];
 }>;
@@ -579,17 +558,6 @@ export type LlmsCatalogQuery = {
       }
     >;
   };
-  donation?: StorefrontAPI.Maybe<
-    Pick<StorefrontAPI.Product, 'handle' | 'title'> & {
-      variants: {
-        nodes: Array<
-          Pick<StorefrontAPI.ProductVariant, 'id' | 'title'> & {
-            price: Pick<StorefrontAPI.MoneyV2, 'amount'>;
-          }
-        >;
-      };
-    }
-  >;
 };
 
 export type NewsletterFeedQueryVariables = StorefrontAPI.Exact<{
@@ -1707,11 +1675,7 @@ interface GeneratedQueryTypes {
     return: FooterQuery;
     variables: FooterQueryVariables;
   };
-  '#graphql\n  query DonationProduct(\n    $country: CountryCode\n    $language: LanguageCode\n    $handle: String!\n  ) @inContext(country: $country, language: $language) {\n    product(handle: $handle) {\n      id\n      title\n      handle\n      description\n      variants(first: 10) {\n        nodes {\n          id\n          title\n          availableForSale\n          price {\n            amount\n            currencyCode\n          }\n        }\n      }\n    }\n  }\n': {
-    return: DonationProductQuery;
-    variables: DonationProductQueryVariables;
-  };
-  '#graphql\n  query LlmsCatalog($count: Int!) {\n    products(first: $count, query: "-product_type:Donation") {\n      nodes {\n        handle\n        title\n        description\n        variants(first: 12) {\n          nodes {\n            id\n            sku\n            title\n            availableForSale\n            price {\n              amount\n              currencyCode\n            }\n          }\n        }\n      }\n    }\n    donation: product(handle: "firmware-donation") {\n      handle\n      title\n      variants(first: 10) {\n        nodes {\n          id\n          title\n          price {\n            amount\n          }\n        }\n      }\n    }\n  }\n': {
+  '#graphql\n  query LlmsCatalog($count: Int!) {\n    products(first: $count, query: "-product_type:Donation") {\n      nodes {\n        handle\n        title\n        description\n        variants(first: 12) {\n          nodes {\n            id\n            sku\n            title\n            availableForSale\n            price {\n              amount\n              currencyCode\n            }\n          }\n        }\n      }\n    }\n  }\n': {
     return: LlmsCatalogQuery;
     variables: LlmsCatalogQueryVariables;
   };
@@ -1735,7 +1699,7 @@ interface GeneratedQueryTypes {
     return: StoreCollectionsQuery;
     variables: StoreCollectionsQueryVariables;
   };
-  '#graphql\n  query Catalog(\n    $country: CountryCode\n    $language: LanguageCode\n    $first: Int\n  ) @inContext(country: $country, language: $language) {\n    products(\n      first: $first\n      sortKey: CREATED_AT\n      reverse: true\n      # The firmware-donation tip product is cart-only chrome, not catalog.\n      query: "-product_type:Donation"\n    ) {\n      nodes {\n        ...CollectionItem\n      }\n    }\n  }\n  #graphql\n  fragment MoneyCollectionItem on MoneyV2 {\n    amount\n    currencyCode\n  }\n  fragment CollectionItem on Product {\n    id\n    handle\n    title\n    productType\n    createdAt\n    featuredImage {\n      id\n      altText\n      url\n      width\n      height\n    }\n    priceRange {\n      minVariantPrice {\n        ...MoneyCollectionItem\n      }\n      maxVariantPrice {\n        ...MoneyCollectionItem\n      }\n    }\n    compareAtPriceRange {\n      minVariantPrice {\n        ...MoneyCollectionItem\n      }\n    }\n    variants(first: 50) {\n      nodes {\n        id\n        availableForSale\n        image {\n          id\n          altText\n          url\n          width\n          height\n        }\n        selectedOptions {\n          name\n          value\n        }\n        price {\n          ...MoneyCollectionItem\n        }\n        compareAtPrice {\n          ...MoneyCollectionItem\n        }\n      }\n    }\n  }\n\n': {
+  '#graphql\n  query Catalog(\n    $country: CountryCode\n    $language: LanguageCode\n    $first: Int\n  ) @inContext(country: $country, language: $language) {\n    products(\n      first: $first\n      sortKey: CREATED_AT\n      reverse: true\n      # The legacy firmware-donation tip product is not catalog.\n      query: "-product_type:Donation"\n    ) {\n      nodes {\n        ...CollectionItem\n      }\n    }\n  }\n  #graphql\n  fragment MoneyCollectionItem on MoneyV2 {\n    amount\n    currencyCode\n  }\n  fragment CollectionItem on Product {\n    id\n    handle\n    title\n    productType\n    createdAt\n    featuredImage {\n      id\n      altText\n      url\n      width\n      height\n    }\n    priceRange {\n      minVariantPrice {\n        ...MoneyCollectionItem\n      }\n      maxVariantPrice {\n        ...MoneyCollectionItem\n      }\n    }\n    compareAtPriceRange {\n      minVariantPrice {\n        ...MoneyCollectionItem\n      }\n    }\n    variants(first: 50) {\n      nodes {\n        id\n        availableForSale\n        image {\n          id\n          altText\n          url\n          width\n          height\n        }\n        selectedOptions {\n          name\n          value\n        }\n        price {\n          ...MoneyCollectionItem\n        }\n        compareAtPrice {\n          ...MoneyCollectionItem\n        }\n      }\n    }\n  }\n\n': {
     return: CatalogQuery;
     variables: CatalogQueryVariables;
   };
@@ -1763,7 +1727,7 @@ interface GeneratedQueryTypes {
     return: ProductRecommendationsQuery;
     variables: ProductRecommendationsQueryVariables;
   };
-  '#graphql\n  query FallbackProducts(\n    $country: CountryCode\n    $first: Int!\n    $language: LanguageCode\n  ) @inContext(country: $country, language: $language) {\n    # The firmware-donation tip product is cart-only chrome, not a related card.\n    products(\n      first: $first\n      sortKey: BEST_SELLING\n      query: "-product_type:Donation"\n    ) {\n      nodes {\n        ...RelatedProductCard\n      }\n    }\n  }\n  #graphql\n  fragment RelatedProductCard on Product {\n    id\n    handle\n    title\n    productType\n    featuredImage {\n      id\n      url\n      altText\n      width\n      height\n    }\n    priceRange {\n      minVariantPrice {\n        amount\n        currencyCode\n      }\n      maxVariantPrice {\n        amount\n        currencyCode\n      }\n    }\n    variants(first: 2) {\n      nodes {\n        id\n        availableForSale\n        price {\n          amount\n          currencyCode\n        }\n        image {\n          url\n          altText\n        }\n        selectedOptions {\n          name\n          value\n        }\n      }\n    }\n  }\n\n': {
+  '#graphql\n  query FallbackProducts(\n    $country: CountryCode\n    $first: Int!\n    $language: LanguageCode\n  ) @inContext(country: $country, language: $language) {\n    # The legacy firmware-donation tip product is not catalog; keep it out of related cards.\n    products(\n      first: $first\n      sortKey: BEST_SELLING\n      query: "-product_type:Donation"\n    ) {\n      nodes {\n        ...RelatedProductCard\n      }\n    }\n  }\n  #graphql\n  fragment RelatedProductCard on Product {\n    id\n    handle\n    title\n    productType\n    featuredImage {\n      id\n      url\n      altText\n      width\n      height\n    }\n    priceRange {\n      minVariantPrice {\n        amount\n        currencyCode\n      }\n      maxVariantPrice {\n        amount\n        currencyCode\n      }\n    }\n    variants(first: 2) {\n      nodes {\n        id\n        availableForSale\n        price {\n          amount\n          currencyCode\n        }\n        image {\n          url\n          altText\n        }\n        selectedOptions {\n          name\n          value\n        }\n      }\n    }\n  }\n\n': {
     return: FallbackProductsQuery;
     variables: FallbackProductsQueryVariables;
   };
