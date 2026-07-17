@@ -541,7 +541,6 @@ function Chapter({
 }) {
   return (
     <section
-      id={id}
       className="chapter"
       id={`chapter-${number}`}
       data-chapter={number}
@@ -551,6 +550,10 @@ function Chapter({
       data-no-media={noMedia ? '' : undefined}
       data-text-pending={textReveal === false ? '' : undefined}
     >
+      {/* Secondary anchor: the section's own id is `chapter-${number}` (the
+          TOC scrollspy keys on it), so an extra caller-supplied anchor (the
+          buy-area stars' #reviews target) lands as a zero-height span. */}
+      {id ? <span id={id} aria-hidden="true" /> : null}
       {backdrop ? <div className="chapter-backdrop">{backdrop}</div> : null}
       <div className="chapter-body-col">
         {/* Numbered mono prefix cell — "3 | TEARDOWN" — a hairline-separated
