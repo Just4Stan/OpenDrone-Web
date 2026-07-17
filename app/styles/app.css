@@ -447,6 +447,27 @@ html {
   pointer-events: none;
 }
 
+/* Uncached size toggle: the trio is still fetching/building, so the thumb
+   carries a small spinner next to its label. Purely additive — the control
+   keeps working and the label stays put. */
+.hero-size-slider__spinner {
+  position: absolute;
+  right: 0.55rem;
+  width: 0.7rem;
+  height: 0.7rem;
+  border-radius: 50%;
+  border: 2px solid color-mix(in srgb, var(--color-on-accent) 35%, transparent);
+  border-top-color: var(--color-on-accent);
+  animation: hero-size-spin 0.7s linear infinite;
+  pointer-events: none;
+}
+
+@keyframes hero-size-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 .hero-size-slider__opt {
   position: relative;
   z-index: 1;
@@ -953,11 +974,18 @@ html {
 }
 
 /* A single revealing product card. max-height / opacity / transform are driven
-   inline per scroll frame (scrubbed off scrollProgress), so they carry NO CSS
-   transition — only the hover affordances do — otherwise the transition would
-   fight the per-frame scrub and lag behind the scroll. overflow:hidden lets the
-   inline max-height clip the card as it grows out of the bubble. */
+   by the --hero-p custom property (written once per scroll frame on .homepage)
+   through the per-card --lo/--win reveal window — the same linearstep the route
+   used to compute inline, now in calc() so the scrub costs zero React renders.
+   They carry NO CSS transition — only the hover affordances do — otherwise the
+   transition would fight the per-frame scrub and lag behind the scroll.
+   overflow:hidden lets max-height clip the card as it grows out of the bubble. */
 .hero-reveal-card {
+  --r: clamp(0, calc((var(--hero-p, 0) - var(--lo, 1)) / var(--win, 1)), 1);
+  max-height: calc(var(--r) * 7.5rem);
+  margin-top: calc(var(--r) * 0.55rem);
+  opacity: var(--r);
+  transform: translateY(calc((1 - var(--r)) * 28px));
   display: flex;
   align-items: center;
   gap: 1rem;
@@ -976,6 +1004,12 @@ html {
 }
 .hero-reveal-card:hover {
   border-color: color-mix(in srgb, var(--color-gold) 50%, transparent);
+}
+
+/* Scroll hint under the hero — fades out over the first ~13% of scroll.
+   Driven by --hero-p so it needs no per-frame React render. */
+.hero-scroll-hint {
+  opacity: clamp(0, calc(0.4 - var(--hero-p, 0) * 3), 0.4);
 }
 .hero-reveal-media {
   flex: 0 0 auto;

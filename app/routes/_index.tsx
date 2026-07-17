@@ -73,6 +73,7 @@ const ClientHeroScene = memo(function ClientHeroScene({
   size,
   scrubRef,
   spotlightRef,
+  onBuildingChange,
 }: {
   onReady?: () => void;
   onProgress?: (progress: number) => void;
@@ -81,6 +82,7 @@ const ClientHeroScene = memo(function ClientHeroScene({
   size?: string;
   scrubRef?: React.RefObject<number | null>;
   spotlightRef?: React.RefObject<'fc' | 'esc' | 'frame' | null>;
+  onBuildingChange?: (building: boolean) => void;
 }) {
   const [Scene, setScene] = useState<React.ComponentType<{
     onReady?: () => void;
@@ -90,6 +92,7 @@ const ClientHeroScene = memo(function ClientHeroScene({
     size?: string;
     scrubRef?: React.RefObject<number | null>;
     spotlightRef?: React.RefObject<'fc' | 'esc' | 'frame' | null>;
+    onBuildingChange?: (building: boolean) => void;
   }> | null>(null);
   useEffect(() => {
     if (!shouldLoadHero()) {
@@ -120,6 +123,7 @@ const ClientHeroScene = memo(function ClientHeroScene({
       size={size}
       scrubRef={scrubRef}
       spotlightRef={spotlightRef}
+      onBuildingChange={onBuildingChange}
     />
   );
 });
@@ -378,7 +382,18 @@ function DesktopHome({
   const globalComingSoon = useComingSoon();
   const scrollRef = useRef(0);
   const rafId = useRef(0);
+  // Scroll progress reaches the DOM two ways:
+  //  - visuals (card reveal geometry, scroll-hint fade) read the `--hero-p`
+  //    custom property, written imperatively once per scroll frame below —
+  //    smooth, and NO React re-render per frame;
+  //  - `scrollProgress` state now updates ONLY when an interactivity gate
+  //    (stack aria-hidden at 0.1, per-card focus/pointer at r>0.6, hint
+  //    visibility) crosses its threshold — a handful of renders per scroll
+  //    instead of one per frame. Re-rendering the whole route at every
+  //    scroll frame was the single biggest CPU cost on slow machines.
+  const heroVarRef = useRef<HTMLDivElement | null>(null);
   const [scrollProgress, setScrollProgress] = useState(0);
+  const gateSigRef = useRef('');
   // Which airframe the hero shows — 5-inch or 3-inch. Toggling swaps the
   // GLB trio loaded by HeroScene.
   const [heroSize, setHeroSize] = useState<string>(DEFAULT_HERO_SIZE);
@@ -445,6 +460,13 @@ function DesktopHome({
     setSceneReady(true);
     setProgress(1);
   }, []);
+  // True while a size toggle is waiting on an uncached model build (the
+  // background preload usually wins this race, so it's rare). Drives the
+  // slider's busy cue so the toggle never looks dead on slow machines.
+  const [heroBuilding, setHeroBuilding] = useState(false);
+  const handleSceneBuilding = useCallback((building: boolean) => {
+    setHeroBuilding(building);
+  }, []);
   const handleSceneProgress = useCallback((p: number) => {
     // -1 = lengthComputable false on all 3 GLBs (cached, no
     //      Content-Length). The synthetic ramp keeps moving.
@@ -468,7 +490,19 @@ function DesktopHome({
   // selector's `top` below, which keys off this).
   const [headerIn, setHeaderIn] = useState(splashHasPlayedThisSession);
   const tick = useCallback(() => {
-    setScrollProgress(scrollRef.current);
+    const p = scrollRef.current;
+    // Smooth visuals: one style-property write, no reconciliation.
+    heroVarRef.current?.style.setProperty('--hero-p', p.toFixed(4));
+    // Discrete gates: stack visibility (0.1), scroll hint (0.4/3), and each
+    // card's interactive threshold (r > 0.6 within its reveal window).
+    let sig = `${p >= 0.1 ? 1 : 0}${p >= 0.4 / 3 ? 1 : 0}`;
+    for (const [lo, hi] of HERO_REVEAL_WINDOWS) {
+      sig += p >= lo + 0.6 * (hi - lo) ? 1 : 0;
+    }
+    if (sig !== gateSigRef.current) {
+      gateSigRef.current = sig;
+      setScrollProgress(p);
+    }
     rafId.current = 0;
   }, []);
 
@@ -896,7 +930,7 @@ function DesktopHome({
   const REVEAL_WINDOWS = HERO_REVEAL_WINDOWS;
 
   return (
-    <div className="homepage">
+    <div className="homepage" ref={heroVarRef}>
       {/*
         Warm the three flagship PDPs (the live handles the 3D part hotspots
         navigate to) so clicking a part is an instant SPA transition with its
@@ -945,6 +979,7 @@ function DesktopHome({
                 size={heroSize}
                 scrubRef={heroScrubRef}
                 spotlightRef={heroSpotlightRef}
+                onBuildingChange={handleSceneBuilding}
               />
             </SceneErrorBoundary>
             {/* Dim overlay — only covers the 3D scene, not the wordmark.
@@ -1076,7 +1111,12 @@ function DesktopHome({
                   >
                     {items.slice(0, HERO_SLOTS.length).map((card, i) => {
                       const [lo, hi] = REVEAL_WINDOWS[i] ?? [1, 1];
-                      const r = linearstep(lo, hi, scrollProgress);
+                      // Interactivity gate only — the reveal GEOMETRY
+                      // (max-height/opacity/transform) is CSS driven by
+                      // --hero-p + the per-card --lo/--win below, so it
+                      // stays per-frame smooth without React renders.
+                      const interactive =
+                        linearstep(lo, hi, scrollProgress) > 0.6;
                       const setSpot = (v: HeroBoardKey | null) => {
                         heroSpotlightRef.current = v;
                       };
@@ -1086,15 +1126,15 @@ function DesktopHome({
                           to={card.url}
                           prefetch="intent"
                           className="hero-reveal-card"
-                          style={{
-                            maxHeight: `${(r * 7.5).toFixed(3)}rem`,
-                            marginTop: `${(r * 0.55).toFixed(3)}rem`,
-                            opacity: r,
-                            transform: `translateY(${((1 - r) * 28).toFixed(1)}px)`,
-                            pointerEvents: r > 0.6 ? 'auto' : 'none',
-                          }}
-                          tabIndex={r > 0.6 ? undefined : -1}
-                          aria-hidden={r <= 0.6}
+                          style={
+                            {
+                              '--lo': lo,
+                              '--win': hi - lo,
+                              pointerEvents: interactive ? 'auto' : 'none',
+                            } as React.CSSProperties
+                          }
+                          tabIndex={interactive ? undefined : -1}
+                          aria-hidden={!interactive}
                           onMouseEnter={() => setSpot(card.boardKey)}
                           onMouseLeave={() => setSpot(null)}
                           onFocus={() => setSpot(card.boardKey)}
@@ -1166,14 +1206,13 @@ function DesktopHome({
             value={heroSize}
             onChange={changeHeroSize}
             scrubRef={heroScrubRef}
+            busy={heroBuilding}
           />
         </div>
 
-        {/* Scroll hint */}
-        <div
-          className="absolute bottom-3 left-1/2 -translate-x-1/2"
-          style={{opacity: Math.max(0, 0.4 - scrollProgress * 3)}}
-        >
+        {/* Scroll hint — fade driven by --hero-p in CSS (see .hero-scroll-hint)
+            so it tracks every scroll frame without a React render. */}
+        <div className="absolute bottom-3 left-1/2 -translate-x-1/2 hero-scroll-hint">
           <div className="w-px h-5 bg-gradient-to-b from-[var(--color-text-muted)] to-transparent animate-pulse" />
         </div>
 
