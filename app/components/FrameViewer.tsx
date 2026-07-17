@@ -431,7 +431,9 @@ export function FrameViewer({src, srcs}: FrameViewerProps) {
       (entries) => {
         for (const e of entries) setOnScreen(e.isIntersecting);
       },
-      {rootMargin: '300px 0px', threshold: 0},
+      // 900px pre-mount: WebGL context creation + GLB parse cost ~100ms on
+      // slow hardware; give it room to happen before the section is visible.
+      {rootMargin: '900px 0px', threshold: 0},
     );
     io.observe(target);
     return () => io.disconnect();

@@ -1,0 +1,31 @@
+import {chromium} from 'playwright';
+const b = await chromium.launch({args: ['--disable-background-timer-throttling', '--disable-renderer-backgrounding']});
+const ctx = await b.newContext({viewport: {width: 1440, height: 900}, deviceScaleFactor: 2});
+const p = await ctx.newPage();
+const cdp = await ctx.newCDPSession(p);
+await cdp.send('Emulation.setCPUThrottlingRate', {rate: 4});
+await p.goto('http://localhost:3002/products/openfc-lite', {waitUntil: 'domcontentloaded'});
+await p.waitForTimeout(2500);
+const res = await p.evaluate(() => new Promise(res => {
+  const frames = [];
+  let last = 0;
+  const tick = t => { if (last) frames.push({dt: +(t-last).toFixed(1), y: Math.round(scrollY)}); last = t;
+    if (!window.__stop) requestAnimationFrame(tick); };
+  requestAnimationFrame(tick);
+  const t0 = performance.now();
+  const H = document.documentElement.scrollHeight - innerHeight;
+  const step = () => { const t = Math.min(1, (performance.now() - t0) / 6000);
+    window.scrollTo(0, t * H);
+    if (t < 1) requestAnimationFrame(step);
+    else { window.__stop = 1;
+      const sections = {};
+      document.querySelectorAll('section, .board-art, .schematic-viewer, .frame-viewer, .teardown, [class*="commit"], [class*="related"], [class*="review"]').forEach(el => {
+        const key = (el.className && String(el.className).split(' ')[0]) || el.tagName;
+        if (!(key in sections)) sections[key] = Math.round(el.getBoundingClientRect().top + scrollY);
+      });
+      res({H, sections, worst: frames.filter(f => f.dt > 60).slice(0, 15)});
+    } };
+  requestAnimationFrame(step);
+}));
+console.error(JSON.stringify(res, null, 1));
+await b.close();

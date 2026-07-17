@@ -69,7 +69,10 @@ export function SchematicViewer({handle, handles, inspectUrl}: SchematicViewerPr
           }
         }
       },
-      {rootMargin: '500px 0px', threshold: 0.01},
+      // Generous pre-mount margin: the sheet images are ~1MB each and their
+      // first decode+raster caused a ~0.5s frame when mounted only 500px
+      // ahead of an active scroll (see the same fix in BoardArt).
+      {rootMargin: '1800px 0px', threshold: 0.01},
     );
     io.observe(el);
     return () => io.disconnect();
@@ -89,7 +92,9 @@ export function SchematicViewer({handle, handles, inspectUrl}: SchematicViewerPr
         // Keep the current sheet across a tier swap (clamped below if the new
         // board has fewer sheets) — mirrors BoardArt holding its active layer,
         // rather than snapping back to the first sheet on every variant switch.
-        for (const s of sheets) prefetchImage(sheetUrl(handle, s.file));
+        // These are the sheets that will actually paint: decode them now too.
+        for (const s of sheets)
+          prefetchImage(sheetUrl(handle, s.file), {decode: true});
       })
       .catch(() => {
         if (alive) setDisplay({handle, sheets: []});
@@ -271,8 +276,8 @@ export function SchematicViewer({handle, handles, inspectUrl}: SchematicViewerPr
                     className={i === active ? 'is-active' : undefined}
                     aria-pressed={i === active}
                     onClick={() => setActive(i)}
-                    onMouseEnter={() => prefetchImage(sheetUrl(dh, s.file))}
-                    onFocus={() => prefetchImage(sheetUrl(dh, s.file))}
+                    onMouseEnter={() => prefetchImage(sheetUrl(dh, s.file), {decode: true})}
+                    onFocus={() => prefetchImage(sheetUrl(dh, s.file), {decode: true})}
                   >
                     {s.label}
                   </button>

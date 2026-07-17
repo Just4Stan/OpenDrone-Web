@@ -181,7 +181,7 @@ const scenarios = {
       report.steps.push(await measure(page, 'filter-click', () => chip.click(), 1500));
     }
     // Hover a product card (spotlight/quick-add reveal)
-    const card = page.locator('main a[href*="/products/"]').first();
+    const card = page.locator('a.product-card:visible, .product-card-link:visible').first();
     if (await card.count()) {
       report.steps.push(await measure(page, 'card-hover', () => card.hover(), 1200));
     }
@@ -189,7 +189,7 @@ const scenarios = {
 
   /** PDP: gallery, variant pills, BoardArt layer rail, schematic, frame viewer. */
   async pdp(page, report) {
-    await page.goto(BASE + '/products/openfc', {waitUntil: 'domcontentloaded'});
+    await page.goto(BASE + '/products/openfc-lite', {waitUntil: 'domcontentloaded'});
     await page.evaluate(HARNESS);
     await idle(page, 1200);
     report.nav = await page.evaluate(() => window.__pa.nav());
@@ -238,7 +238,7 @@ const scenarios = {
     await idle(page, 600);
     report.nav = await page.evaluate(() => window.__pa.nav());
     report.steps = [];
-    const input = page.locator('main input[type="search"]').first();
+    const input = page.locator('input[type="search"]:visible').first();
     if (await input.count()) {
       // Count network requests fired while typing
       let fetches = 0;
@@ -263,7 +263,7 @@ const scenarios = {
     await idle(page, 600);
     report.nav = await page.evaluate(() => window.__pa.nav());
     report.steps = [];
-    const toggle = page.locator('button[aria-label*="theme" i], button[title*="theme" i]').first();
+    const toggle = page.locator('button.theme-toggle:visible').first();
     if (await toggle.count()) {
       report.steps.push(await measure(page, 'theme-toggle', () => toggle.click().catch(() => {}), 1800));
       await idle(page, 400);
@@ -274,6 +274,48 @@ const scenarios = {
     );
   },
 
+  /** Cart drawer open/close from a product page. */
+  async drawer(page, report) {
+    await page.goto(BASE + '/products/openesc', {waitUntil: 'domcontentloaded'});
+    await page.evaluate(HARNESS);
+    await idle(page, 1000);
+    report.nav = await page.evaluate(() => window.__pa.nav());
+    report.steps = [];
+    const cartBtn = page.locator('a[href="/cart"]:visible, button[aria-label*="cart" i]:visible').first();
+    if (await cartBtn.count()) {
+      report.steps.push(await measure(page, 'cart-hover-preview', () => cartBtn.hover(), 1200));
+    }
+    const themeBtn = page.locator('button.theme-toggle:visible').first();
+    if (await themeBtn.count()) {
+      report.steps.push(await measure(page, 'theme-toggle', () => themeBtn.click(), 1500));
+      await idle(page, 400);
+      report.steps.push(await measure(page, 'theme-toggle-back', () => themeBtn.click(), 1500));
+    }
+  },
+
+  /** Mobile viewport: MobileHome + touch-first surfaces. */
+  async mobile(page, report) {
+    await page.setViewportSize({width: 390, height: 844});
+    try {
+      await page.goto(BASE + '/', {waitUntil: 'domcontentloaded'});
+      await page.evaluate(HARNESS);
+      await idle(page, 2000);
+      report.nav = await page.evaluate(() => window.__pa.nav());
+      report.steps = [];
+      report.steps.push(
+        await measure(page, 'scroll-down', () => page.evaluate(() => window.__pa.sweep(document.documentElement.scrollHeight - innerHeight, 4000)), 4200),
+      );
+      await page.goto(BASE + '/products/openfc-lite', {waitUntil: 'domcontentloaded'});
+      await page.evaluate(HARNESS);
+      await idle(page, 1200);
+      report.steps.push(
+        await measure(page, 'pdp-scroll', () => page.evaluate(() => window.__pa.sweep(document.documentElement.scrollHeight - innerHeight, 5000)), 5200),
+      );
+    } finally {
+      await page.setViewportSize({width: 1440, height: 900});
+    }
+  },
+
   /** Client-side navigation between routes (SPA transitions). */
   async spanav(page, report) {
     await page.goto(BASE + '/collections/all', {waitUntil: 'domcontentloaded'});
@@ -281,7 +323,7 @@ const scenarios = {
     await idle(page, 900);
     report.nav = await page.evaluate(() => window.__pa.nav());
     report.steps = [];
-    const link = page.locator('main a[href*="/products/"]').first();
+    const link = page.locator('a.product-card:visible, .product-card-link:visible').first();
     if (await link.count()) {
       report.steps.push(
         await measure(page, 'spa-to-pdp', async () => {

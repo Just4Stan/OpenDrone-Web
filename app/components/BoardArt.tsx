@@ -418,7 +418,13 @@ export function BoardArt({
     return peeked ? parseManifest(peeked) : null;
   });
 
-  // Lazy gate: fetch nothing until the section nears the viewport.
+  // Lazy gate: fetch nothing until the section nears the viewport. The margin
+  // is generous (2 viewports-ish) and an idle fallback arms it a few seconds
+  // after load regardless: fetching + DOMParser-splitting a multi-MB SVG and
+  // laying out its ~30k paths lands as ONE huge frame if it happens while the
+  // user is actively scrolling into it (measured: a 1.1s frame at 4x CPU
+  // right at this section). Front-loading it into idle time keeps the scroll
+  // clean; the network/parse caches make the early work free to repeat.
   useEffect(() => {
     const el = ref.current;
     if (!el || typeof IntersectionObserver === 'undefined') {
@@ -435,10 +441,22 @@ export function BoardArt({
           }
         }
       },
-      {rootMargin: '400px 0px', threshold: 0.01},
+      {rootMargin: '1800px 0px', threshold: 0.01},
     );
     io.observe(el);
-    return () => io.disconnect();
+    // Idle fallback: a PDP visitor who parks above the fold still gets the
+    // board pre-built, so their eventual scroll never pays the build.
+    const ric = (window as any).requestIdleCallback;
+    const idleId =
+      typeof ric === 'function'
+        ? ric(() => setInView(true), {timeout: 6000})
+        : window.setTimeout(() => setInView(true), 4000);
+    return () => {
+      io.disconnect();
+      const cancel = (window as any).cancelIdleCallback;
+      if (typeof ric === 'function' && typeof cancel === 'function') cancel(idleId);
+      else window.clearTimeout(idleId as number);
+    };
   }, []);
 
   // Lazily fetch + parse the component manifest for the active board (reuses the

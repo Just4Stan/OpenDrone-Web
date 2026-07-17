@@ -72,10 +72,17 @@ export function peekJson<T>(url: string): T | undefined {
 const imgPrefetched = new Set<string>();
 
 /** Warm an image into the browser cache so a later <img src> paints instantly. */
-export function prefetchImage(url: string): void {
+export function prefetchImage(url: string, opts?: {decode?: boolean}): void {
   if (imgPrefetched.has(url) || typeof Image === 'undefined') return;
   imgPrefetched.add(url);
   const img = new Image();
   img.decoding = 'async';
   img.src = url;
+  // decode: true also decodes the bitmap now (off the main thread) so the
+  // browser caches the decoded pixels; without it the first paint of a
+  // warmed multi-megapixel sheet still paid its full decode during scroll.
+  // Only request it for images that will actually paint soon — decoding a
+  // whole sibling tier's sheaf just evicts the ones that matter from the
+  // decoded-image cache. Best-effort: decode() rejects for broken images.
+  if (opts?.decode) img.decode?.().catch(() => {});
 }
