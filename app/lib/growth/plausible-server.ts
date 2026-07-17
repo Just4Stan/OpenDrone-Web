@@ -16,14 +16,18 @@
  *   this is for; visitor counts on this event are meaningless.
  * - Channel comes from the order's `_utm_*` note_attributes (first-touch
  *   attribution promoted through cart attributes), not from a referrer.
- * - Dedupe is the caller's job: the webhook route latches
- *   `purchaseEventAt` on the ledger order record so redeliveries and the
- *   orders/create + orders/paid pair do not double-count revenue.
+ * - Dedupe is the caller's job: the webhook route sends only on the
+ *   orders/paid topic, claims `pev:<order_id>` atomically (SETNX) before
+ *   sending, and stamps `purchaseEventAt` on the ledger order record, so
+ *   redeliveries and the orders/create + orders/paid pair do not
+ *   double-count revenue.
  *
  * Degrade-soft like everything else in growth/: never throws, returns
  * false on any failure, and callers run it inside waitUntil so the
  * webhook 200 is never blocked.
  */
+
+import {foldSource} from '~/lib/growth/attribution';
 
 /** The Plausible site domain, matching data-domain in root.tsx. */
 export const PLAUSIBLE_DOMAIN = 'opendrone.be';
@@ -57,6 +61,10 @@ export async function sendPurchaseEvent(
   try {
     const res = await fetch(EVENT_ENDPOINT, {
       method: 'POST',
+      // Hard timeout: this runs inside the webhook's waitUntil budget,
+      // and a hanging Plausible endpoint must fail fast (the claim is
+      // released and a redelivery retries) instead of stalling the job.
+      signal: AbortSignal.timeout(5000),
       headers: {
         'content-type': 'application/json',
         'user-agent': USER_AGENT,
@@ -68,7 +76,9 @@ export async function sendPurchaseEvent(
         // constant so the event never fragments by URL in the dashboard.
         url: `https://${PLAUSIBLE_DOMAIN}/purchase`,
         props: {
-          source: event.source || 'direct',
+          // Same bounded vocabulary as the client events, so filtering a
+          // funnel by `source` matches end to end.
+          source: foldSource(event.source),
           ...(event.campaign ? {campaign: event.campaign} : {}),
         },
         ...(Number.isFinite(event.total) && event.total > 0

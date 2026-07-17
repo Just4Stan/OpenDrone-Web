@@ -4,7 +4,14 @@ import {
   ORDER_TOPICS,
   verifyShopifyHmac,
 } from '~/lib/growth/shopify-webhook';
-import {getOrder, recordOrder, type AttributedOrder} from '~/lib/growth/ledger';
+import {
+  claimPurchaseEvent,
+  getOrder,
+  latchPurchaseEvent,
+  recordOrder,
+  releasePurchaseEvent,
+  type AttributedOrder,
+} from '~/lib/growth/ledger';
 import {
   PLAUSIBLE_DOMAIN,
   sendPurchaseEvent,
@@ -117,27 +124,52 @@ export async function action({request, context}: Route.ActionArgs) {
   //
   // Server-side funnel close: the buyer paid on Shopify's domain where no
   // client event can fire, so this is where the Plausible `Purchase`
-  // event (with revenue + first-touch channel) comes from. Dedupe: the
-  // ledger order record latches `purchaseEventAt` once Plausible accepts
-  // the event, so redeliveries and the orders/create + orders/paid topic
-  // pair send it exactly once. (If Upstash is unconfigured the latch is
-  // gone and a redelivery could re-send; prod has Upstash, accepted.)
-  // Host guard: only the production host reports, so local/preview
-  // webhook tests never pollute the live dashboard.
+  // event (with revenue + first-touch channel) comes from. Rules:
+  //
+  // - Ledger write FIRST. The ord: record is the production-critical
+  //   part, and Shopify never retries a delivery we ACKed; it must not
+  //   sit behind a Plausible round-trip that could stall or exhaust the
+  //   waitUntil budget (the send also carries its own 5s timeout).
+  // - orders/paid ONLY. orders/create can precede payment (pending
+  //   payment methods); it still records the order above but is never a
+  //   Purchase.
+  // - Dedupe is an atomic SETNX claim (`pev:<order_id>`) plus the
+  //   `purchaseEventAt` field stamped on the ord: record once Plausible
+  //   accepts. A GET-check alone would double-send: redeliveries and the
+  //   topic pair run concurrently in separate isolates. A failed send
+  //   releases the claim so a redelivery retries. (If Upstash is
+  //   unconfigured there is no claim and a redelivery could re-send;
+  //   prod has Upstash, accepted.)
+  // - Host guard: only the production host reports, so local/preview
+  //   webhook tests never pollute the live dashboard.
   const isProdHost = new URL(request.url).hostname === PLAUSIBLE_DOMAIN;
   const write = (async () => {
     const existing = await getOrder(context.env, orderId);
-    let purchaseEventAt = existing?.purchaseEventAt;
-    if (!purchaseEventAt && isProdHost) {
-      const accepted = await sendPurchaseEvent({
-        total: order.total,
-        currency: order.currency,
-        source: attribution.utm_source,
-        campaign: attribution.utm_campaign,
-      });
-      if (accepted) purchaseEventAt = Math.floor(Date.now() / 1000);
+    await recordOrder(context.env, {
+      ...order,
+      purchaseEventAt: existing?.purchaseEventAt,
+    });
+
+    if (topic !== 'orders/paid' || !isProdHost || existing?.purchaseEventAt) {
+      return;
     }
-    await recordOrder(context.env, {...order, purchaseEventAt});
+    const claimed = await claimPurchaseEvent(context.env, orderId);
+    if (claimed === false) return; // another delivery owns the send
+    const accepted = await sendPurchaseEvent({
+      total: order.total,
+      currency: order.currency,
+      source: attribution.utm_source,
+      campaign: attribution.utm_campaign,
+    });
+    if (accepted) {
+      await latchPurchaseEvent(
+        context.env,
+        orderId,
+        Math.floor(Date.now() / 1000),
+      );
+    } else if (claimed) {
+      await releasePurchaseEvent(context.env, orderId);
+    }
   })().catch((err) =>
     console.warn('[webhooks/shopify] order processing failed', orderId, err),
   );

@@ -77,9 +77,34 @@ export function getAttribution(): Attribution | null {
   }
 }
 
-/** Low-cardinality event prop: first-touch utm_source, else 'direct'. */
+/**
+ * Canonical utm_source values (docs/growth-architecture.md, "Canonical
+ * UTM values", lowercase, exactly these). Everything else folds to
+ * 'other' in event props, so a crafted `?utm_source=` link cannot spray
+ * unbounded prop cardinality across the Plausible dashboard. The raw
+ * (capped, lowercased) value still flows into cart attributes and the
+ * order ledger, where full detail is wanted.
+ */
+export const CANONICAL_SOURCES: ReadonlySet<string> = new Set([
+  'youtube',
+  'discord',
+  'reddit',
+  'bardwell',
+  'newsletter',
+  'x',
+]);
+
+/** Fold a raw utm_source into the bounded event-prop vocabulary:
+ *  canonical value, 'other' (non-canonical), or 'direct' (absent). */
+export function foldSource(source: string | null | undefined): string {
+  if (!source) return 'direct';
+  return CANONICAL_SOURCES.has(source) ? source : 'other';
+}
+
+/** Low-cardinality event prop: first-touch utm_source folded to the
+ *  canonical vocabulary, else 'direct'. */
 export function attributionSource(): string {
-  return getAttribution()?.source ?? 'direct';
+  return foldSource(getAttribution()?.source);
 }
 
 /**
