@@ -148,7 +148,7 @@ export default function FirmwarePartnersRoute() {
           {/* TODO(copy-stan): placeholder framing line. */}
           <p>
             Money is one half; patches are the other. These are our changes
-            that upstream actually merged — every link goes to the real PR.
+            that upstream actually merged: every link goes to the real PR.
           </p>
           <ul className="upstream-list">
             {MERGED_PRS.map((pr) => (

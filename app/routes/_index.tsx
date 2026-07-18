@@ -7,7 +7,7 @@ import {useEffect, useRef, useState, useCallback, memo, Suspense} from 'react';
 import type {CollectionItemFragment} from 'storefrontapi.generated';
 import type {MoneyV2} from '@shopify/hydrogen/storefront-api-types';
 import {INCUTEC_HINT_SEEN_KEY} from '~/lib/incutec-hint';
-import {buildSeoMeta} from '~/lib/seo';
+import {buildSeoMeta, SITE_ORIGIN} from '~/lib/seo';
 import {useComingSoon} from '~/lib/coming-soon';
 import {isComingSoon} from '~/lib/product-content';
 import {HeroWordmark} from '~/components/HeroWordmark';
@@ -122,11 +122,13 @@ const ClientHeroScene = memo(function ClientHeroScene({
   );
 });
 
-export const meta: Route.MetaFunction = () =>
+export const meta: Route.MetaFunction = ({location}) =>
   buildSeoMeta({
-    title: 'OpenDrone · Open Source Drone Parts',
+    // buildSeoMeta appends "| OpenDrone"; don't repeat the brand here.
+    title: 'Open Source Drone Parts',
     description:
       'Open source flight controllers and ESCs. Designed in Belgium.',
+    url: `${SITE_ORIGIN}${location.pathname}`,
   });
 
 type HomeMoney = Pick<MoneyV2, 'amount' | 'currencyCode'>;

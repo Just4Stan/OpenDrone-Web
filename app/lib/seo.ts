@@ -2,6 +2,8 @@ import type {CompanyIdentity} from '~/lib/company';
 
 const STORE_NAME = 'OpenDrone';
 const DEFAULT_LOCALE = 'en_US';
+// Canonical production origin (Shopify primary domain; .be/.shop 301 here).
+export const SITE_ORIGIN = 'https://opendrone.store';
 
 export const DEFAULT_SEO_DESCRIPTION =
   'Open source drone electronics designed in Belgium.';
@@ -13,6 +15,12 @@ function stripHtml(value?: string | null) {
     .replace(/<[^>]*>/g, ' ')
     .replace(/\s+/g, ' ')
     .trim();
+}
+
+/** Resolve an origin-relative path against the canonical origin. */
+function absolutize(value?: string | null) {
+  if (!value) return value;
+  return value.startsWith('/') ? `${SITE_ORIGIN}${value}` : value;
 }
 
 function truncate(value: string, maxLength = 160) {
@@ -83,8 +91,12 @@ export function buildSeoMeta({
     {property: 'og:locale', content: locale},
     {name: 'twitter:card', content: 'summary_large_image'},
     // PNG, not SVG: Facebook, LinkedIn, iMessage, Slack, Discord and X all
-    // reject SVG OG images and render a blank preview.
-    {property: 'og:image', content: image || '/og-image.png'},
+    // reject SVG OG images and render a blank preview. og:image must be an
+    // absolute URL: scrapers don't resolve relative paths.
+    {
+      property: 'og:image',
+      content: absolutize(image) || `${SITE_ORIGIN}/og-image.png`,
+    },
     // Dimensions help crawlers lay out the card before the fetch finishes.
     // Only emitted for the known-size default; a custom product image has
     // unknown dimensions, so we let the crawler measure it.
@@ -141,7 +153,7 @@ export function buildSeoMeta({
  * JSON-LD as readily as from a mailto. Customers reach us via /support.
  */
 export function buildOrgJsonLd(company: CompanyIdentity, siteUrl?: string) {
-  const url = (siteUrl || 'https://opendrone.store').replace(/\/$/, '');
+  const url = (siteUrl || SITE_ORIGIN).replace(/\/$/, '');
   return {
     '@context': 'https://schema.org',
     '@type': 'Organization',

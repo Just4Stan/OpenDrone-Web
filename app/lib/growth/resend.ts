@@ -238,15 +238,38 @@ export async function sendWelcome(
 
 // --- welcome template -------------------------------------------------------
 // TODO(copy-stan): all subscriber-facing copy below is a factual draft —
-// rewrite in your own voice. The handle-based product line ("openfc-lite")
-// reads like a slug; swap in real titles when you do the pass.
+// rewrite in your own voice.
+
+// Display titles for the launch-list line. The signup form posts the Shopify
+// product handle; without this map the email reads "launch list: openfc-lite".
+const PRODUCT_TITLES: Record<string, string> = {
+  openrx: 'OpenRX',
+  openesc: 'OpenESC',
+  'openfc-lite': 'OpenFC Lite',
+  'openfc-lite-mini': 'OpenFC Lite Mini',
+  openframe: 'OpenFrame',
+};
+
+function productDisplayTitle(handle: string): string {
+  return (
+    PRODUCT_TITLES[handle] ??
+    // Unknown handle: de-slug so it at least reads as words.
+    handle
+      .split('-')
+      .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+      .join(' ')
+  );
+}
 
 function renderWelcome(opts: {product?: string; supportEmail: string}): {
   subject: string;
   text: string;
   html: string;
 } {
-  const {product, supportEmail} = opts;
+  const {product: productHandle, supportEmail} = opts;
+  const product = productHandle
+    ? productDisplayTitle(productHandle)
+    : undefined;
   const subject = product
     ? `You're on the launch list: ${product}`
     : 'Subscribed: Engineering Essentials';

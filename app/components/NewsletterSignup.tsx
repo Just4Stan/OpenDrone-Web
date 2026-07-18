@@ -504,7 +504,7 @@ function NotifySurvey({token}: {token: string}) {
     return (
       <p className="mt-2 pt-2 border-t border-[var(--color-border)] font-mono text-[11px] uppercase tracking-[0.1em] text-[var(--color-text-dim)]">
         {/* TODO(copy-stan) */}
-        Noted — thanks for the signal.
+        Noted. Thanks for the signal.
       </p>
     );
   }
