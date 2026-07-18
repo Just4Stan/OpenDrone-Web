@@ -2,7 +2,8 @@
 
 ## Commands
 - `npm run dev -- --port <port>`: dev server. Ports 3001-3009 for agent worktrees; 3000 is Stan's.
-- `npm run typecheck && npm run lint`: must pass before any PR merge. No test script yet.
+- `npm run typecheck && npm run lint && npm test`: must pass before any PR merge.
+  `npm test` runs the node:test suites in `app/**/*.test.ts` (no framework dep).
 - `npm run build`: production build (runs `sync:legal` first).
 
 ## Writing rules
