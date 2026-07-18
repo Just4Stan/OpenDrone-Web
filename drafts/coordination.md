@@ -9,7 +9,7 @@ flow rules in CLAUDE.md.
 
 | Lane | Branch | Worktree | Port | State |
 |---|---|---|---|---|
-| back-in-stock | `feat/back-in-stock` | `~/OpenDrone-Web-wt/back-in-stock` | 3003 | Claimed 2026-07-17, parked: code map done (reuse notify ledger path, add inventory_levels/update topic to the #303 webhook receiver, Resend segment notify-<handle> as audience). Build is dormant-safe; production needs SHOPIFY_ADMIN_API_TOKEN in Oxygen (Stan task 1). |
+| (none active) | | | | |
 
 Free ports: 3001-3002, 3004-3009.
 
@@ -109,12 +109,19 @@ sync.
     OpenRX repo releases, then fill the six TODO(downloads) blocks.
 15. Shopify admin image alt texts use em dashes ("OpenRX Gemini, front");
     swap for hyphens or middots in admin when convenient.
-16. No OpenFrame repo exists in incutec-hw, so the frame PDP's GitHub chip
+16. Back-in-stock notify shipped 2026-07-18 (took over the parked lane;
+    zero WIP existed). inventory_levels/update -> notify-<handle> Resend
+    broadcast, ACTIVE + not-coming-soon + 7-day cooldown latch guards,
+    dormant-safe without env. TO ACTIVATE: register the
+    inventory_levels/update webhook at Settings > Notifications >
+    Webhooks (same receiver URL), confirm the custom-app token has
+    read_products, and land SHOPIFY_ADMIN_API_TOKEN in Oxygen (task 1).
+17. No OpenFrame repo exists in incutec-hw, so the frame PDP's GitHub chip
     links to the org. Publish the frame CAD repo, then set `repoUrl` in
     product-content.ts. Task 14 is partially closed: the OpenRX PDP now
     links the published schematics/STEP/BOM; still missing upstream are
     STEP for Lite/Gemini, BOM for Lite-UFL/Mono, gerbers, manual.
-17. Video is live (youtu.be/ssmQkRkXE84). The published description links
+18. Video is live (youtu.be/ssmQkRkXE84). The published description links
     plain opendrone.be; edit in the UTM link from
     `drafts/archive/utm-conventions.md` (campaign `video-openrx`) so
     Plausible attributes the traffic.
@@ -124,8 +131,6 @@ sync.
 - DIY abandoned-checkout recovery: Admin API poll for abandoned checkouts
   (abandonedCheckoutUrl) + Resend email; blocked on SHOPIFY_ADMIN_API_TOKEN
   in Oxygen (task 1).
-- Back-in-stock notify: PDP form into the signup ledger +
-  inventory_levels/update webhook + Resend.
 - Post-purchase one-click "why did you buy / where from" email survey and
   optional exit-intent prompt: specced in `drafts/analytics-brief.md`;
   survey blocked on task 1.

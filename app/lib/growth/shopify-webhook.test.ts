@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {createHmac} from 'node:crypto';
 import {
   extractOrderAttribution,
+  extractRestock,
   ORDER_TOPICS,
   verifyShopifyHmac,
 } from './shopify-webhook.ts';
@@ -131,5 +132,39 @@ describe('extractOrderAttribution', () => {
     assert.deepEqual(extractOrderAttribution(undefined), {});
     assert.deepEqual(extractOrderAttribution(null), {});
     assert.deepEqual(extractOrderAttribution([]), {});
+  });
+});
+
+describe('extractRestock', () => {
+  it('accepts a positive restock with numeric id', () => {
+    assert.deepEqual(
+      extractRestock({inventory_item_id: 42, available: 3, location_id: 1}),
+      {inventoryItemId: '42', available: 3},
+    );
+  });
+
+  it('accepts a string item id', () => {
+    assert.deepEqual(
+      extractRestock({inventory_item_id: '99', available: 1}),
+      {inventoryItemId: '99', available: 1},
+    );
+  });
+
+  it('rejects zero and negative availability', () => {
+    assert.equal(extractRestock({inventory_item_id: 42, available: 0}), null);
+    assert.equal(extractRestock({inventory_item_id: 42, available: -2}), null);
+  });
+
+  it('rejects null availability (untracked inventory)', () => {
+    assert.equal(
+      extractRestock({inventory_item_id: 42, available: null}),
+      null,
+    );
+  });
+
+  it('rejects missing id and junk payloads', () => {
+    assert.equal(extractRestock({available: 5}), null);
+    assert.equal(extractRestock(null), null);
+    assert.equal(extractRestock('nope'), null);
   });
 });

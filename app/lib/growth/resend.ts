@@ -230,6 +230,77 @@ export async function unsubscribeContact(
 }
 
 /**
+ * Create-and-send a back-in-stock broadcast to the `notify-<handle>`
+ * segment (the same segment every notify signup lands in). Resend
+ * suppresses unsubscribed contacts at send time, and the body embeds
+ * the {{{RESEND_UNSUBSCRIBE_URL}}} footer variable, resolved per
+ * recipient. Best-effort: false on any miss, throws never — the caller
+ * (app/lib/growth/back-in-stock.ts) releases its cooldown latch on
+ * false so a webhook redelivery can retry.
+ */
+export async function sendBackInStockBroadcast(
+  env: MarketingEnv,
+  opts: {productHandle: string; productTitle: string},
+): Promise<boolean> {
+  if (!env.RESEND_API_KEY) {
+    console.warn(
+      '[growth/resend] RESEND_API_KEY not set — back-in-stock skipped',
+    );
+    return false;
+  }
+  try {
+    const segmentId = await ensureSegmentId(
+      env,
+      notifySegmentName(opts.productHandle),
+    );
+    if (!segmentId) return false;
+    const from = env.RESEND_MARKETING_FROM || 'hello@opendrone.be';
+    const productUrl = `https://opendrone.store/products/${opts.productHandle}`;
+    const subject = `Back in stock: ${opts.productTitle}`;
+    const text = [
+      'Hi,',
+      '',
+      `${opts.productTitle} is back in stock at opendrone.store.`,
+      '',
+      `Get it here: ${productUrl}`,
+      '',
+      'You get this because you asked to be notified about this product.',
+      'Unsubscribe: {{{RESEND_UNSUBSCRIBE_URL}}}',
+      '',
+      'OpenDrone',
+    ].join('\n');
+    const html = renderMarketingEmail({
+      heading: 'Back in stock',
+      body: `
+      <p>Hi,</p>
+      <p><strong>${escapeHtml(opts.productTitle)}</strong> is back in stock.</p>
+      <p style="margin:24px 0 32px">
+        <a href="${escapeAttr(productUrl)}" style="display:inline-block;background:#b8922e;color:#0a0a0a;text-decoration:none;font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:0.14em;text-transform:uppercase;font-weight:700;padding:12px 18px;border-radius:2px">View product →</a>
+      </p>
+      <p style="color:#737373;font-size:13px;line-height:1.6">You get this because you asked to be notified about this product. <a href="{{{RESEND_UNSUBSCRIBE_URL}}}" style="color:#b8922e">Unsubscribe</a>.</p>
+    `,
+    });
+    const res = await api(env, 'POST', '/broadcasts', {
+      name: `back-in-stock-${opts.productHandle}`,
+      segment_id: segmentId,
+      from: `OpenDrone <${from}>`,
+      subject,
+      html,
+      text,
+      send: true,
+    });
+    if (!res.ok) {
+      console.warn('[growth/resend] back-in-stock broadcast failed', res.status);
+      return false;
+    }
+    return true;
+  } catch (err) {
+    console.warn('[growth/resend] back-in-stock broadcast failed', err);
+    return false;
+  }
+}
+
+/**
  * One-time welcome email, fired on the FIRST signup for an address only
  * (the caller gates on the ledger's created flag). Transactional send —
  * a direct response to the form submit, so no List-Unsubscribe needed —
