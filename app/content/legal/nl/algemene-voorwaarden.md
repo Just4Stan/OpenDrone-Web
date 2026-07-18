@@ -118,7 +118,7 @@
 
 ### Artikel 12: Persoonsgegevens
 
-12.1. Incutec BV verwerkt persoonsgegevens in overeenstemming met de Algemene Verordening Gegevensbescherming (AVG/GDPR). Zie het Privacybeleid op opendrone.be/privacy.
+12.1. Incutec BV verwerkt persoonsgegevens in overeenstemming met de Algemene Verordening Gegevensbescherming (AVG/GDPR). Zie het Privacybeleid op opendrone.store/privacy.
 
 ### Artikel 13: Klachten
 

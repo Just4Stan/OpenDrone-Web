@@ -324,7 +324,7 @@ export function Layout({children}: {children?: React.ReactNode}) {
             otherwise flag as a hydration mismatch. */}
         <script
           defer
-          data-domain="opendrone.be"
+          data-domain="opendrone.store"
           src="https://plausible.io/js/script.tagged-events.revenue.js"
           nonce={nonce}
           suppressHydrationWarning

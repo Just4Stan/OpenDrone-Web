@@ -121,7 +121,7 @@ Bij een datalek dat een risico inhoudt voor uw rechten en vrijheden, zijn wij ve
 
 ### 11. Wijzigingen
 
-Incutec BV kan dit privacybeleid wijzigen. De meest recente versie is altijd beschikbaar op opendrone.be/privacy. Bij wezenlijke wijzigingen wordt u per e-mail op de hoogte gesteld.
+Incutec BV kan dit privacybeleid wijzigen. De meest recente versie is altijd beschikbaar op opendrone.store/privacy. Bij wezenlijke wijzigingen wordt u per e-mail op de hoogte gesteld.
 
 ---
 

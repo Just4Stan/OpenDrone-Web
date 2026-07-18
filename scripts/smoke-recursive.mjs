@@ -3,9 +3,9 @@
 // every same-host link's status + Content-Type. Asserts: no 4xx/5xx,
 // no broken images, all internal links resolvable.
 //
-//   BASE=https://opendrone.be node scripts/smoke-recursive.mjs
+//   BASE=https://opendrone.store node scripts/smoke-recursive.mjs
 
-const BASE_URL = (process.env.BASE || 'https://opendrone.be').replace(/\/$/, '');
+const BASE_URL = (process.env.BASE || 'https://opendrone.store').replace(/\/$/, '');
 const HOST = new URL(BASE_URL).host;
 const MAX_DEPTH = Number(process.env.MAX_DEPTH || 2);
 const CONCURRENCY = 4;

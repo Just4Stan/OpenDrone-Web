@@ -89,7 +89,7 @@ function authHeaders(env: DiscordEnv) {
   return {
     Authorization: `Bot ${env.DISCORD_BOT_TOKEN}`,
     'Content-Type': 'application/json',
-    'User-Agent': 'opendrone-support (https://opendrone.be, 0.1)',
+    'User-Agent': 'opendrone-support (https://opendrone.store, 0.1)',
   };
 }
 
@@ -98,7 +98,7 @@ function authHeadersMultipart(env: DiscordEnv) {
   // No Content-Type — fetch sets the multipart boundary automatically.
   return {
     Authorization: `Bot ${env.DISCORD_BOT_TOKEN}`,
-    'User-Agent': 'opendrone-support (https://opendrone.be, 0.1)',
+    'User-Agent': 'opendrone-support (https://opendrone.store, 0.1)',
   };
 }
 
