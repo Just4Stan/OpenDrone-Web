@@ -1,0 +1,180 @@
+import {data, useFetcher, useLoaderData} from 'react-router';
+import type {Route} from './+types/newsletter.unsubscribe';
+import {buildSeoMeta, SITE_ORIGIN} from '~/lib/seo';
+import {checkRateLimit, clientIp} from '~/lib/rate-limit';
+import {verifyUnsubscribeToken} from '~/lib/growth/unsubscribe-token';
+import {recordUnsubscribe} from '~/lib/growth/ledger';
+import {unsubscribeContact} from '~/lib/growth/resend';
+import {unsubscribeCustomerMarketing} from '~/lib/shopify-admin';
+
+// Newsletter opt-out — the URL every OpenDrone email footer points at.
+//
+// GET  → with a valid `t` token (minted at welcome-email time): a one-click
+//        confirm button bound to that email. Without/with an invalid token:
+//        a plain email form. GET never unsubscribes anything — inbox link
+//        scanners prefetch GETs.
+// POST → does the actual opt-out across all three stores: Resend contact
+//        suppression, `sig:` ledger record, Shopify email marketing consent
+//        (skipped without SHOPIFY_ADMIN_API_TOKEN — best-effort like all
+//        growth writers). Token-authenticated POSTs skip the rate limit;
+//        form POSTs get honeypot + per-IP limit. The response is the same
+//        generic confirmation either way, so the endpoint never confirms
+//        whether an address was subscribed.
+
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+export const meta: Route.MetaFunction = ({location}) =>
+  buildSeoMeta({
+    title: 'Unsubscribe',
+    description: 'Unsubscribe from OpenDrone emails.',
+    robots: 'noindex',
+    url: `${SITE_ORIGIN}${location.pathname}`,
+  });
+
+export async function loader({request, context}: Route.LoaderArgs) {
+  const url = new URL(request.url);
+  const verified = await verifyUnsubscribeToken(
+    context.env,
+    url.searchParams.get('t'),
+  );
+  return {
+    tokenEmail: verified?.email ?? null,
+    token: verified ? url.searchParams.get('t') : null,
+    prefill: url.searchParams.get('email') ?? '',
+  };
+}
+
+type UnsubscribeResult = {ok: boolean; message: string};
+
+export async function action({request, context}: Route.ActionArgs) {
+  if (request.method !== 'POST') {
+    return data<UnsubscribeResult>(
+      {ok: false, message: 'Method not allowed.'},
+      {status: 405},
+    );
+  }
+  const formData = await request.formData();
+  const token = String(formData.get('t') ?? '');
+  const verified = await verifyUnsubscribeToken(context.env, token);
+
+  let email: string;
+  if (verified) {
+    // Token binds the address — no further checks needed.
+    email = verified.email;
+  } else {
+    if (String(formData.get('website') ?? '')) {
+      // Honeypot filled — pretend success.
+      return data<UnsubscribeResult>({ok: true, message: DONE_MESSAGE});
+    }
+    const ip = clientIp(request);
+    const limit = checkRateLimit(`unsubscribe:ip:${ip}`, 5, 10 * 60 * 1000);
+    if (!limit.allowed) {
+      return data<UnsubscribeResult>(
+        {ok: false, message: 'Too many requests. Try again in a few minutes.'},
+        {status: 429, headers: {'Retry-After': String(limit.resetInSeconds)}},
+      );
+    }
+    email = String(formData.get('email') ?? '')
+      .trim()
+      .toLowerCase();
+    if (!email || !EMAIL_REGEX.test(email) || email.length > 254) {
+      return data<UnsubscribeResult>(
+        {ok: false, message: 'Enter a valid email address.'},
+        {status: 400},
+      );
+    }
+  }
+
+  // All three best-effort and awaited inline (three fast API calls): the
+  // user is told "done" only after the suppression writes actually ran.
+  await Promise.all([
+    unsubscribeContact(context.env, email),
+    recordUnsubscribe(context.env, email),
+    unsubscribeCustomerMarketing(context.env, email),
+  ]);
+
+  return data<UnsubscribeResult>({ok: true, message: DONE_MESSAGE});
+}
+
+const DONE_MESSAGE =
+  "Done. If this address was on any OpenDrone list, it isn't anymore.";
+
+export default function UnsubscribePage() {
+  const {tokenEmail, token, prefill} = useLoaderData<typeof loader>();
+  const fetcher = useFetcher<UnsubscribeResult>();
+  const result = fetcher.data;
+  const busy = fetcher.state !== 'idle';
+
+  return (
+    <div className="page-shell">
+      <header className="rn-archive-head">
+        <div>
+          <p className="rn-eyebrow">
+            <span>Newsletter · Unsubscribe</span>
+          </p>
+          <h1>Unsubscribe.</h1>
+        </div>
+      </header>
+
+      <div className="max-w-xl">
+        {result?.ok ? (
+          <p className="text-[var(--color-text)]">{result.message}</p>
+        ) : tokenEmail ? (
+          <fetcher.Form method="post">
+            <input type="hidden" name="t" value={token ?? ''} />
+            <p className="mb-4 text-[var(--color-text-dim)]">
+              Stop all OpenDrone newsletter and launch emails to{' '}
+              <strong className="text-[var(--color-text)]">{tokenEmail}</strong>
+              ?
+            </p>
+            <button
+              type="submit"
+              disabled={busy}
+              className="border border-[var(--color-border)] bg-[var(--color-accent)] px-5 py-2.5 font-mono text-[12px] uppercase tracking-[0.14em] text-[var(--color-on-accent)] disabled:opacity-60"
+            >
+              {busy ? 'Working…' : 'Unsubscribe'}
+            </button>
+          </fetcher.Form>
+        ) : (
+          <fetcher.Form method="post">
+            <p className="mb-4 text-[var(--color-text-dim)]">
+              Enter the address you want removed from all OpenDrone newsletter
+              and launch emails.
+            </p>
+            {/* Honeypot — same trick as the signup form. */}
+            <input
+              type="text"
+              name="website"
+              tabIndex={-1}
+              autoComplete="off"
+              aria-hidden="true"
+              className="hidden"
+            />
+            <div className="flex flex-wrap gap-3">
+              <input
+                type="email"
+                name="email"
+                required
+                defaultValue={prefill}
+                placeholder="you@domain.com"
+                className="min-w-64 flex-1 border border-[var(--color-border)] bg-transparent px-4 py-2.5 font-mono text-[13px] text-[var(--color-text)]"
+              />
+              <button
+                type="submit"
+                disabled={busy}
+                className="border border-[var(--color-border)] bg-[var(--color-accent)] px-5 py-2.5 font-mono text-[12px] uppercase tracking-[0.14em] text-[var(--color-on-accent)] disabled:opacity-60"
+              >
+                {busy ? 'Working…' : 'Unsubscribe'}
+              </button>
+            </div>
+          </fetcher.Form>
+        )}
+        {result && !result.ok ? (
+          <p className="mt-3 text-[13px] text-[var(--color-text-dim)]">
+            {result.message}
+          </p>
+        ) : null}
+      </div>
+    </div>
+  );
+}

@@ -197,6 +197,39 @@ export async function upsertContact(
 }
 
 /**
+ * Mark a contact unsubscribed (suppression, not deletion: a re-signup
+ * never silently resubscribes, matching upsertContact's merge rule).
+ * Best-effort: false on any miss, throws never.
+ */
+export async function unsubscribeContact(
+  env: MarketingEnv,
+  email: string,
+): Promise<boolean> {
+  if (!env.RESEND_API_KEY) {
+    console.warn(
+      '[growth/resend] RESEND_API_KEY not set — unsubscribe skipped',
+    );
+    return false;
+  }
+  try {
+    const res = await api(
+      env,
+      'PATCH',
+      `/contacts/${encodeURIComponent(email)}`,
+      {unsubscribed: true},
+    );
+    if (!res.ok) {
+      console.warn('[growth/resend] contact unsubscribe failed', res.status);
+      return false;
+    }
+    return true;
+  } catch (err) {
+    console.warn('[growth/resend] contact unsubscribe failed', err);
+    return false;
+  }
+}
+
+/**
  * One-time welcome email, fired on the FIRST signup for an address only
  * (the caller gates on the ledger's created flag). Transactional send —
  * a direct response to the form submit, so no List-Unsubscribe needed —
@@ -204,7 +237,7 @@ export async function upsertContact(
  */
 export async function sendWelcome(
   env: MarketingEnv,
-  opts: {email: string; product?: string},
+  opts: {email: string; product?: string; unsubscribeUrl?: string | null},
 ): Promise<boolean> {
   if (!env.RESEND_API_KEY) {
     console.warn('[growth/resend] RESEND_API_KEY not set — welcome skipped');
@@ -215,6 +248,7 @@ export async function sendWelcome(
   const {subject, text, html} = renderWelcome({
     product: opts.product,
     supportEmail,
+    unsubscribeUrl: opts.unsubscribeUrl,
   });
   try {
     const res = await api(env, 'POST', '/emails', {
@@ -261,12 +295,21 @@ function productDisplayTitle(handle: string): string {
   );
 }
 
-function renderWelcome(opts: {product?: string; supportEmail: string}): {
+// Fallback when no signed one-click link is available (SESSION_SECRET
+// unset): the page's manual form, same route.
+const UNSUBSCRIBE_PAGE = 'https://opendrone.store/newsletter/unsubscribe';
+
+function renderWelcome(opts: {
+  product?: string;
+  supportEmail: string;
+  unsubscribeUrl?: string | null;
+}): {
   subject: string;
   text: string;
   html: string;
 } {
   const {product: productHandle, supportEmail} = opts;
+  const unsubscribeUrl = opts.unsubscribeUrl || UNSUBSCRIBE_PAGE;
   const product = productHandle
     ? productDisplayTitle(productHandle)
     : undefined;
@@ -285,7 +328,7 @@ function renderWelcome(opts: {product?: string; supportEmail: string}): {
       ? `You're on the launch list for ${product}. One email when it goes on sale, plus the occasional build note. Nothing else.`
       : `You're subscribed to Engineering Essentials: build notes, hardware releases, and write-ups. Only when there's something to ship.`,
     '',
-    `${contextLine} Not you, or changed your mind? Reply to this email or write ${supportEmail} and we'll remove you.`,
+    `${contextLine} Not you, or changed your mind? Unsubscribe here: ${unsubscribeUrl}`,
     '',
     'OpenDrone',
   ].join('\n');
@@ -299,7 +342,7 @@ function renderWelcome(opts: {product?: string; supportEmail: string}): {
           ? `You're on the launch list for <strong>${escapeHtml(product)}</strong>. One email when it goes on sale, plus the occasional build note. Nothing else.`
           : `You're subscribed to Engineering Essentials: build notes, hardware releases, and write-ups. Only when there's something to ship.`
       }</p>
-      <p style="color:#737373;font-size:13px;line-height:1.6;margin-top:28px">${escapeHtml(contextLine)} Not you, or changed your mind? Reply to this email or write <a href="mailto:${escapeAttr(supportEmail)}" style="color:#b8922e">${escapeHtml(supportEmail)}</a> and we'll remove you.</p>
+      <p style="color:#737373;font-size:13px;line-height:1.6;margin-top:28px">${escapeHtml(contextLine)} Not you, or changed your mind? <a href="${escapeAttr(unsubscribeUrl)}" style="color:#b8922e">Unsubscribe</a> with one click, or write <a href="mailto:${escapeAttr(supportEmail)}" style="color:#b8922e">${escapeHtml(supportEmail)}</a>.</p>
     `,
   });
 

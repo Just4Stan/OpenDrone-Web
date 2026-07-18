@@ -9,6 +9,7 @@
       "title": "Welcome to OpenDrone",
       "badge": "Subscription confirmed",
       "preheader": "Thanks for signing up. Monthly product releases and build notes from the bench.",
+      "unsubscribeFooter": true,
       "phase": 1
     },
     {
@@ -19,6 +20,7 @@
       "title": "Confirm your subscription",
       "badge": "Confirm subscription",
       "preheader": "One click to confirm your Engineering Essentials subscription.",
+      "unsubscribeFooter": true,
       "phase": 1
     },
     {

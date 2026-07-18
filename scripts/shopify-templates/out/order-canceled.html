@@ -9,6 +9,7 @@
     <title>Order canceled</title>
   </head>
   <body
+    bgcolor="#0a0a0a"
     style="
       margin: 0;
       padding: 0;
@@ -32,12 +33,16 @@
       Your OpenDrone order was canceled. Any charge will be refunded.
     </div>
 
+    <!-- bgcolor attribute alongside the inline style: clients that strip
+         style sheets (or clip long styles) still get the dark canvas, so
+         the white-lettered wordmark never lands on a light background. -->
     <table
       role="presentation"
       width="100%"
       cellpadding="0"
       cellspacing="0"
       border="0"
+      bgcolor="#0a0a0a"
       style="background-color: #0a0a0a;"
     >
       <tr>
@@ -48,6 +53,7 @@
             cellpadding="0"
             cellspacing="0"
             border="0"
+            bgcolor="#101210"
             style="
               width: 100%;
               max-width: 600px;
@@ -102,7 +108,7 @@
                 <p style="margin: 0 0 16px 0; font-family: Helvetica, Arial, sans-serif; font-size: 16px; line-height: 1.6; color: #c5c5c5;">
                   Your order {{ name }} has been canceled.
                   {% if financial_status == 'refunded' or financial_status == 'partially_refunded' %}
-                  Any charges have been refunded &mdash; expect the funds to
+                  Any charges have been refunded. Expect the funds to
                   settle within 5&ndash;10 business days depending on your
                   bank.
                   {% else %}
@@ -142,7 +148,7 @@
                 "
               >
                 <p style="margin: 0 0 12px 0;">
-                  OpenDrone &mdash; open source drone electronics designed in
+                  OpenDrone &middot; open source drone electronics designed in
                   Belgium.
                 </p>
                 <p style="margin: 0 0 16px 0;">
