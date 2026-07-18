@@ -159,6 +159,36 @@ export async function setIfAbsent(
 }
 
 /**
+ * Atomic set-if-absent with expiry (SET ... NX EX). Same contract as
+ * setIfAbsent but the claim self-releases after `ttlSeconds` — used by
+ * the back-in-stock cooldown latch (`bis:<handle>`), where a restock
+ * that flaps in and out of stock must not re-blast the segment daily.
+ */
+export async function setIfAbsentTtl(
+  env: UpstashEnv,
+  key: string,
+  value: string,
+  ttlSeconds: number,
+): Promise<boolean | null> {
+  const url = env.UPSTASH_REDIS_REST_URL?.replace(/\/$/, '');
+  const token = env.UPSTASH_REDIS_REST_TOKEN;
+  if (!url || !token) return null;
+  try {
+    const r = await call(url, token, [
+      'SET',
+      key,
+      value,
+      'NX',
+      'EX',
+      String(ttlSeconds),
+    ]);
+    return r === 'OK';
+  } catch {
+    return null;
+  }
+}
+
+/**
  * Delete a key (DEL). Counterpart to setIfAbsent for releasing a claim
  * whose protected action failed. Best-effort: returns false when
  * Upstash is unconfigured or the call failed.

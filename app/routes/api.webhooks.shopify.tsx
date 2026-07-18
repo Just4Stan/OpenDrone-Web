@@ -1,9 +1,12 @@
 import type {Route} from './+types/api.webhooks.shopify';
 import {
   extractOrderAttribution,
+  extractRestock,
+  INVENTORY_LEVEL_TOPIC,
   ORDER_TOPICS,
   verifyShopifyHmac,
 } from '~/lib/growth/shopify-webhook';
+import {handleRestock} from '~/lib/growth/back-in-stock';
 import {
   claimPurchaseEvent,
   getOrder,
@@ -77,6 +80,29 @@ export async function action({request, context}: Route.ActionArgs) {
   }
 
   const topic = request.headers.get('X-Shopify-Topic') ?? '';
+
+  // Back-in-stock: inventory_levels/update → notify-<handle> broadcast.
+  // ACK fast, act in the background (app/lib/growth/back-in-stock.ts).
+  if (topic === INVENTORY_LEVEL_TOPIC) {
+    let inventoryPayload: unknown;
+    try {
+      inventoryPayload = JSON.parse(rawBody);
+    } catch {
+      console.warn('[webhooks/shopify] unparseable inventory body');
+      return new Response('OK (unparseable)', {status: 200});
+    }
+    const restock = extractRestock(inventoryPayload);
+    if (restock) {
+      const job = handleRestock(context.env, restock);
+      if (context.waitUntil) {
+        context.waitUntil(job);
+      } else {
+        await job;
+      }
+    }
+    return new Response('OK', {status: 200});
+  }
+
   // Unknown topics are ACKed: they're authenticated (HMAC passed) and a
   // non-2xx would only make Shopify retry a delivery we'll never handle.
   if (!ORDER_TOPICS.has(topic)) {
