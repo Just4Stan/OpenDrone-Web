@@ -218,8 +218,10 @@ function renderEmail({heading, body}: {heading: string; body: string}): string {
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#0a0a0a">
     <tr><td align="center" style="padding:32px 16px">
       <table role="presentation" width="560" cellpadding="0" cellspacing="0" style="max-width:560px;background:#141417;border:1px solid #1a241a;border-radius:3px">
-        <tr><td style="padding:28px 28px 0">
-          <img src="https://cdn.shopify.com/s/files/1/1032/6641/9033/files/opendrone-wordmark-1200.png?v=1776537979" alt="OpenDrone" width="160" height="29" style="display:block;border:0;height:29px;width:160px;margin:0 0 10px" />
+        <tr><td bgcolor="#ffffff" style="padding:16px 28px;background:#ffffff">
+          <img src="https://cdn.shopify.com/s/files/1/1032/6641/9033/files/opendrone-wordmark-email-blackgold.png?v=1784400536" alt="OpenDrone" width="160" height="30" style="display:block;border:0;height:30px;width:160px" />
+        </td></tr>
+        <tr><td style="padding:24px 28px 0">
           <h1 style="font-family:Helvetica,Arial,sans-serif;font-size:22px;letter-spacing:-0.01em;margin:0;color:#e5e5e5">${escapeHtml(heading)}</h1>
         </td></tr>
         <tr><td style="padding:18px 28px 28px;color:#e5e5e5;font-size:15px">${body}</td></tr>
