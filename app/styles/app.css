@@ -5833,9 +5833,6 @@ button.reset {
   animation: board-sheet-fly 1.2s cubic-bezier(0.16, 0.84, 0.3, 1)
     calc(var(--depth) * 0.11s) both;
   animation-play-state: paused;
-  /* Promote for the entrance: translate + the color-op-only grey (below) can
-     then run fully on the compositor. Dropped with .is-armed at flyDone. */
-  will-change: translate, filter;
 }
 /* Non-active layers grey out one-by-one as each lands — in fly order, so the
    first layer to fly in is the first to grey — instead of all snapping grey at
