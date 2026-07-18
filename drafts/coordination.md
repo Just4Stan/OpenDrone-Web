@@ -60,12 +60,17 @@ sync.
 0. Log into plausible.io in Chrome so the agent can change the site domain
    opendrone.be -> opendrone.store (Site settings > General). Until then the
    deployed data-domain=opendrone.store events are dropped by Plausible.
-1. Oxygen env vars (agent cannot enter secrets): `SHOPIFY_WEBHOOK_SECRET`
-   (shown at Settings > Notifications > Webhooks), `SHOPIFY_ADMIN_API_TOKEN`
-   (shpat_ from local .env), `JUDGEME_PRIVATE_TOKEN` (Apps > Judge.me >
-   Settings > Integrations > API), all secret, Production + Preview; plus
-   plain `PUBLIC_JUDGEME_SHOP_DOMAIN` = ktjqug-jw.myshopify.com. Also confirm
-   Judge.me's metafield sync is on.
+1. Oxygen env vars (agent cannot enter secrets; hydrogen env push is
+   unsafe here: env pull masks secret values, a push would blank them).
+   THE one remaining CRM blocker: `SHOPIFY_ADMIN_API_TOKEN` (shpat_ from
+   local .env) into Production + Preview at Hydrogen > Storefront
+   settings > Environments and variables. It activates the Shopify leg
+   of /newsletter/unsubscribe AND the back-in-stock notify (webhook
+   already registered 2026-07-18). Also still wanted there:
+   `SHOPIFY_WEBHOOK_SECRET` (Settings > Notifications > Webhooks),
+   `JUDGEME_PRIVATE_TOKEN` (Apps > Judge.me > Settings > Integrations >
+   API), plus plain `PUBLIC_JUDGEME_SHOP_DOMAIN` =
+   ktjqug-jw.myshopify.com, and confirm Judge.me metafield sync.
 2. Activate a payment provider (launch blocker #1). Then: Bancontact manual
    activation, add PayPal for the German market, iDEAL after the ~100-order
    eligibility gate.
@@ -84,10 +89,10 @@ sync.
    abandoned-checkout emailer in the backlog is the real fix.
 6. Launch discount: pick percentage/scope/dates, then create as an automatic
    discount (check combination rules against "OpenESC -10% with OpenFC").
-7. Email domain auth: sender is sales@incutec.eu but domain authentication
-   "Needs setup" (emails fall back to shopifyemail.com). Add the DKIM/DMARC
-   records at the DNS host, then customize notification templates (logo,
-   colors).
+7. Email domain auth: DONE 2026-07-18 (agent). The 6 Shopify CNAME
+   records live on incutec.eu at Gandi, verified on the authoritative
+   NS; Shopify status "Propagating", flips to Authenticated on its own
+   (up to 48 h). Notification templates were already customized.
 8. Plausible: Business tier, then add the goals/funnels listed in
    `drafts/analytics-brief.md` and PR #303.
 9. Prices still unreviewed in admin: OpenFrame 5"/3" (41/35) and accessories.
@@ -121,10 +126,9 @@ sync.
     product-content.ts. Task 14 is partially closed: the OpenRX PDP now
     links the published schematics/STEP/BOM; still missing upstream are
     STEP for Lite/Gemini, BOM for Lite-UFL/Mono, gerbers, manual.
-18. Video is live (youtu.be/ssmQkRkXE84). The published description links
-    plain opendrone.be; edit in the UTM link from
-    `drafts/archive/utm-conventions.md` (campaign `video-openrx`) so
-    Plausible attributes the traffic.
+18. DONE 2026-07-18 (agent): the video description's opendrone.be link
+    now carries utm_source=youtube&utm_medium=video&utm_campaign=video-openrx
+    (edited in Studio, verified on the public watch page).
 
 ## Agent-ready backlog (claim a lane, work top-down)
 
