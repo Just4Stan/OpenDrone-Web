@@ -113,3 +113,58 @@ export async function tagCustomerNotify(
     return false;
   }
 }
+
+const MARKETING_CONSENT_UPDATE_MUTATION = `
+  mutation UnsubscribeConsentUpdate($input: CustomerEmailMarketingConsentUpdateInput!) {
+    customerEmailMarketingConsentUpdate(input: $input) {
+      userErrors { message }
+    }
+  }
+`;
+
+/**
+ * Flip a customer's email marketing consent to UNSUBSCRIBED so Shopify
+ * Email sends (the monthly newsletter channel) stop targeting them.
+ * Called by /newsletter/unsubscribe. Best-effort like everything here:
+ * false on any miss (including missing admin token), throws never — the
+ * Resend suppression and ledger record still land regardless.
+ */
+export async function unsubscribeCustomerMarketing(
+  env: AdminEnv,
+  email: string,
+): Promise<boolean> {
+  try {
+    const found = await adminGraphql<{
+      customers: {nodes: Array<{id: string}>};
+    }>(env, CUSTOMER_BY_EMAIL_QUERY, {
+      query: `email:"${email.replace(/"/g, '')}"`,
+    });
+    const id = found?.customers?.nodes?.[0]?.id ?? null;
+    if (!id) return false;
+    const result = await adminGraphql<{
+      customerEmailMarketingConsentUpdate: {
+        userErrors: Array<{message: string}>;
+      };
+    }>(env, MARKETING_CONSENT_UPDATE_MUTATION, {
+      input: {
+        customerId: id,
+        emailMarketingConsent: {
+          marketingState: 'UNSUBSCRIBED',
+          consentUpdatedAt: new Date().toISOString(),
+        },
+      },
+    });
+    if (!result) return false;
+    if (result.customerEmailMarketingConsentUpdate?.userErrors?.length) {
+      console.error(
+        '[shopify-admin] consent update userErrors',
+        result.customerEmailMarketingConsentUpdate.userErrors.length,
+      );
+      return false;
+    }
+    return true;
+  } catch (err) {
+    console.error('[shopify-admin] unsubscribeCustomerMarketing failed', err);
+    return false;
+  }
+}

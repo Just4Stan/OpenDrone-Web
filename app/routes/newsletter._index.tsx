@@ -5,6 +5,7 @@ import {checkRateLimit, clientIp} from '~/lib/rate-limit';
 import {verifyTurnstile} from '~/lib/support/turnstile';
 import {tagCustomerNotify} from '~/lib/shopify-admin';
 import {signSurveyToken} from '~/lib/growth/survey-token';
+import {signUnsubscribeToken} from '~/lib/growth/unsubscribe-token';
 import {recordSignup} from '~/lib/growth/ledger';
 import {upsertContact, sendWelcome} from '~/lib/growth/resend';
 import {getLocaleFromRequest} from '~/lib/i18n';
@@ -283,7 +284,16 @@ export async function action({request, context}: Route.ActionArgs) {
       });
       const firstSignup = ledger ? ledger.created : freshCustomer;
       if (firstSignup) {
-        await sendWelcome(env, {email, product: notifyProduct ?? undefined});
+        // One-click opt-out link for the welcome footer; falls back to
+        // the plain /newsletter/unsubscribe form when no secret is set.
+        const unsubToken = await signUnsubscribeToken(env, email);
+        await sendWelcome(env, {
+          email,
+          product: notifyProduct ?? undefined,
+          unsubscribeUrl: unsubToken
+            ? `https://opendrone.store/newsletter/unsubscribe?t=${encodeURIComponent(unsubToken)}`
+            : null,
+        });
       }
     })().catch((err) => console.warn('[newsletter] growth job failed', err));
     if (context.waitUntil) {

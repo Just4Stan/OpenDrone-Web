@@ -9,6 +9,7 @@
     <title>Welcome to OpenDrone</title>
   </head>
   <body
+    bgcolor="#0a0a0a"
     style="
       margin: 0;
       padding: 0;
@@ -32,12 +33,16 @@
       Thanks for signing up. Monthly product releases and build notes from the bench.
     </div>
 
+    <!-- bgcolor attribute alongside the inline style: clients that strip
+         style sheets (or clip long styles) still get the dark canvas, so
+         the white-lettered wordmark never lands on a light background. -->
     <table
       role="presentation"
       width="100%"
       cellpadding="0"
       cellspacing="0"
       border="0"
+      bgcolor="#0a0a0a"
       style="background-color: #0a0a0a;"
     >
       <tr>
@@ -48,6 +53,7 @@
             cellpadding="0"
             cellspacing="0"
             border="0"
+            bgcolor="#101210"
             style="
               width: 100%;
               max-width: 600px;
@@ -128,7 +134,7 @@
                   "
                 >
                   Thanks for subscribing. You&rsquo;ll get an email from us
-                  when there&rsquo;s actually something to ship &mdash; new
+                  when there&rsquo;s actually something to ship: new
                   hardware, firmware releases, field notes from the bench.
                 </p>
                 <p
@@ -141,8 +147,8 @@
                   "
                 >
                   Expect roughly one email a month. No marketing fluff, no
-                  sponsored junk. Unsubscribe any time &mdash; the link is
-                  at the bottom of every send.
+                  sponsored junk. Unsubscribe any time: the link is at the
+                  bottom of every email, this one included.
                 </p>
               </td>
             </tr>
@@ -241,7 +247,7 @@
                 "
               >
                 <p style="margin: 0 0 12px 0;">
-                  OpenDrone &mdash; open source drone electronics designed in
+                  OpenDrone &middot; open source drone electronics designed in
                   Belgium.
                 </p>
                 <p style="margin: 0 0 16px 0;">
@@ -259,7 +265,8 @@
                     href="{{ shop.url }}"
                     style="color: #b8922e; text-decoration: none;"
                     >opendrone.store</a
-                  >
+                  > &middot;
+                  <a href="{{ shop.url }}/newsletter/unsubscribe?email={{ customer.email | url_encode }}" style="color: #a0a0a0; text-decoration: underline;">unsubscribe</a>
                 </p>
               </td>
             </tr>

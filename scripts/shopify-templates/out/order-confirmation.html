@@ -9,6 +9,7 @@
     <title>Order confirmation</title>
   </head>
   <body
+    bgcolor="#0a0a0a"
     style="
       margin: 0;
       padding: 0;
@@ -32,12 +33,16 @@
       We've received your order. Details inside.
     </div>
 
+    <!-- bgcolor attribute alongside the inline style: clients that strip
+         style sheets (or clip long styles) still get the dark canvas, so
+         the white-lettered wordmark never lands on a light background. -->
     <table
       role="presentation"
       width="100%"
       cellpadding="0"
       cellspacing="0"
       border="0"
+      bgcolor="#0a0a0a"
       style="background-color: #0a0a0a;"
     >
       <tr>
@@ -48,6 +53,7 @@
             cellpadding="0"
             cellspacing="0"
             border="0"
+            bgcolor="#101210"
             style="
               width: 100%;
               max-width: 600px;
@@ -225,7 +231,7 @@
                 "
               >
                 <p style="margin: 0 0 12px 0;">
-                  OpenDrone &mdash; open source drone electronics designed in
+                  OpenDrone &middot; open source drone electronics designed in
                   Belgium.
                 </p>
                 <p style="margin: 0 0 16px 0;">
