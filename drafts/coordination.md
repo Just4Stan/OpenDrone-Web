@@ -10,9 +10,17 @@ flow rules in CLAUDE.md.
 | Lane | Branch | Worktree | Port | State |
 |---|---|---|---|---|
 | back-in-stock | `feat/back-in-stock` | `~/OpenDrone-Web-wt/back-in-stock` | 3003 | Claimed 2026-07-17, parked: code map done (reuse notify ledger path, add inventory_levels/update topic to the #303 webhook receiver, Resend segment notify-<handle> as audience). Build is dormant-safe; production needs SHOPIFY_ADMIN_API_TOKEN in Oxygen (Stan task 1). |
-| launch-prep | `feat/launch-prep` | `~/OpenDrone-Web-wt/launch-prep` | 3001 | Claimed 2026-07-18 for the OpenRX video release: SEO share-preview fixes (absolute og:image, canonicals, home title), copy audit fixes (visible em dashes, OpenFrame lead, welcome-email display titles, frame taglines), npm test wiring. |
 
-Free ports: 3002, 3004-3009.
+Free ports: 3001-3002, 3004-3009.
+
+Merged 2026-07-18: #313 launch-prep for the OpenRX video (SEO share
+previews: absolute og:image + canonicals + home title; copy audit fixes:
+visible em dashes out, OpenFrame lead de-hyped, welcome-email display
+titles, frame variant taglines; `npm test` now runs the 8 existing
+node:test files, 125 tests green, and is part of the merge gate).
+Notify flow verified end-to-end on production 2026-07-18 in a real
+browser: Turnstile passes, signup succeeds, survey renders. The welcome
+email does NOT arrive (see Stan task 13).
 
 Dropped 2026-07-17: the ui-overhaul-v2 lane (draft PR #285, TITLE BLOCK
 re-skin). Stan rejected the re-skin on visual review; main's current UI is
@@ -87,6 +95,20 @@ sync.
 11. Copy pass on TODO(copy-stan) markers + banner wording.
 12. End-to-end test order once payments live (also validates the Purchase
     event path end-to-end and webhook field redaction).
+13. VIDEO BLOCKER: notify signups get no welcome email. Verified 2026-07-18
+    with a real production signup (stan.coene+openrx-launchtest@gmail.com,
+    still absent after 30+ min incl. spam). RESEND_API_KEY is empty even in
+    the local .env, so it was never provisioned. Create the Resend API key,
+    verify the sending domain in Resend (pairs with task 7 DKIM), set
+    RESEND_API_KEY in Oxygen (Production + Preview), then delete the test
+    signup or leave it, it is Stan's own alias. Signups are not lost
+    meanwhile: they land as Shopify customers with the notify tag.
+14. VIDEO BLOCKER: OpenRX PDP has zero downloads (every card 404'd, so the
+    chapter is hidden; TODO(downloads) at product-content.ts). Video viewers
+    will want schematic.pdf / BOM / STEP. Publish the artifacts to the
+    OpenRX repo releases, then fill the six TODO(downloads) blocks.
+15. Shopify admin image alt texts use em dashes ("OpenRX Gemini — front");
+    swap for hyphens or middots in admin when convenient.
 
 ## Agent-ready backlog (claim a lane, work top-down)
 
