@@ -10,8 +10,9 @@ flow rules in CLAUDE.md.
 | Lane | Branch | Worktree | Port | State |
 |---|---|---|---|---|
 | back-in-stock | `feat/back-in-stock` | `~/OpenDrone-Web-wt/back-in-stock` | 3003 | Claimed 2026-07-17, parked: code map done (reuse notify ledger path, add inventory_levels/update topic to the #303 webhook receiver, Resend segment notify-<handle> as audience). Build is dormant-safe; production needs SHOPIFY_ADMIN_API_TOKEN in Oxygen (Stan task 1). |
+| launch-prep | `feat/launch-prep` | `~/OpenDrone-Web-wt/launch-prep` | 3001 | Claimed 2026-07-18 for the OpenRX video release: SEO share-preview fixes (absolute og:image, canonicals, home title), copy audit fixes (visible em dashes, OpenFrame lead, welcome-email display titles, frame taglines), npm test wiring. |
 
-Free ports: 3001-3002, 3004-3009.
+Free ports: 3002, 3004-3009.
 
 Dropped 2026-07-17: the ui-overhaul-v2 lane (draft PR #285, TITLE BLOCK
 re-skin). Stan rejected the re-skin on visual review; main's current UI is
