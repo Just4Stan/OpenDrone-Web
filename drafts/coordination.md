@@ -107,7 +107,7 @@ sync.
     chapter is hidden; TODO(downloads) at product-content.ts). Video viewers
     will want schematic.pdf / BOM / STEP. Publish the artifacts to the
     OpenRX repo releases, then fill the six TODO(downloads) blocks.
-15. Shopify admin image alt texts use em dashes ("OpenRX Gemini — front");
+15. Shopify admin image alt texts use em dashes ("OpenRX Gemini, front");
     swap for hyphens or middots in admin when convenient.
 16. No OpenFrame repo exists in incutec-hw, so the frame PDP's GitHub chip
     links to the org. Publish the frame CAD repo, then set `repoUrl` in
