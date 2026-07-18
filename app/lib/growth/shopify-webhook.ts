@@ -24,6 +24,31 @@ export const ORDER_TOPICS: ReadonlySet<string> = new Set([
   'orders/create',
 ]);
 
+/** Inventory topic handled by the same receiver (back-in-stock notify). */
+export const INVENTORY_LEVEL_TOPIC = 'inventory_levels/update';
+
+/**
+ * Parse an inventory_levels/update payload down to what back-in-stock
+ * acts on. Returns null for payloads to ignore: missing item id, or not
+ * a restock (`available` zero, negative, or absent — Shopify sends null
+ * for untracked inventory).
+ */
+export function extractRestock(payload: unknown): {
+  inventoryItemId: string;
+  available: number;
+} | null {
+  if (typeof payload !== 'object' || payload === null) return null;
+  const p = payload as {inventory_item_id?: unknown; available?: unknown};
+  const id =
+    typeof p.inventory_item_id === 'number' ||
+    typeof p.inventory_item_id === 'string'
+      ? String(p.inventory_item_id)
+      : '';
+  const available = typeof p.available === 'number' ? p.available : NaN;
+  if (!id || !Number.isFinite(available) || available <= 0) return null;
+  return {inventoryItemId: id, available};
+}
+
 /** Un-prefixed attribution shape stored in the ledger (matches
  *  OrderAttribution in app/lib/growth/ledger.ts; kept structural here so
  *  this module stays dependency-free for `node --test`). */

@@ -114,6 +114,42 @@ export async function tagCustomerNotify(
   }
 }
 
+const INVENTORY_ITEM_PRODUCT_QUERY = `
+  query BisInventoryItemProduct($id: ID!) {
+    inventoryItem(id: $id) {
+      variant {
+        product { handle title status }
+      }
+    }
+  }
+`;
+
+/**
+ * Resolve an inventory_levels/update webhook's inventory_item_id to the
+ * owning product. Needs read_products on the custom-app token.
+ * Best-effort like everything here: null on any miss.
+ */
+export async function resolveInventoryItemProduct(
+  env: AdminEnv,
+  inventoryItemId: string,
+): Promise<{handle: string; title: string; status: string} | null> {
+  try {
+    const found = await adminGraphql<{
+      inventoryItem: {
+        variant: {
+          product: {handle: string; title: string; status: string} | null;
+        } | null;
+      } | null;
+    }>(env, INVENTORY_ITEM_PRODUCT_QUERY, {
+      id: `gid://shopify/InventoryItem/${inventoryItemId}`,
+    });
+    return found?.inventoryItem?.variant?.product ?? null;
+  } catch (err) {
+    console.error('[shopify-admin] inventory item resolve failed', err);
+    return null;
+  }
+}
+
 const MARKETING_CONSENT_UPDATE_MUTATION = `
   mutation UnsubscribeConsentUpdate($input: CustomerEmailMarketingConsentUpdateInput!) {
     customerEmailMarketingConsentUpdate(input: $input) {
