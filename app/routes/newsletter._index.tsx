@@ -349,7 +349,7 @@ export async function action({request, context}: Route.ActionArgs) {
       scheduleGrowth(false);
       return data<NewsletterResult>({
         ok: true,
-        message: "You're on the list — we'll email you at launch.",
+        message: "You're on the list. We'll email you at launch.",
         alreadySubscribed: true,
         ...(surveyToken ? {surveyToken} : {}),
       });
@@ -396,7 +396,7 @@ export async function action({request, context}: Route.ActionArgs) {
         });
         return data<NewsletterResult>({
           ok: true,
-          message: "You're on the list — we'll email you at launch.",
+          message: "You're on the list. We'll email you at launch.",
           alreadySubscribed: true,
         });
       }
@@ -440,7 +440,7 @@ export async function action({request, context}: Route.ActionArgs) {
       });
       return data<NewsletterResult>({
         ok: true,
-        message: "You're on the list — we'll email you at launch.",
+        message: "You're on the list. We'll email you at launch.",
         ...(surveyToken ? {surveyToken} : {}),
       });
     }
