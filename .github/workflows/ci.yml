@@ -37,6 +37,18 @@ jobs:
       - run: npm ci
       - run: npm run typecheck
 
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "22"
+          cache: npm
+      - run: npm ci
+      - run: npm test
+
   # The registry's data invariants are dev-import-gated (they must never 500
   # the production worker), and lint/tsc/build never evaluate module bodies —
   # this job is the ONLY automated place the asserts actually execute.
