@@ -1,6 +1,6 @@
 # OpenDrone Web
 
-The storefront at **[opendrone.be](https://opendrone.be)** — open-source FPV drone
+The storefront at **[opendrone.be](https://opendrone.be)**: open-source FPV drone
 hardware, designed and sold in Belgium: flight controllers (OpenFC), 4-in-1 ESCs
 (OpenESC), ExpressLRS receivers (OpenRX), and frames (OpenFrame), plus the OpenStack
 bundle.
@@ -15,7 +15,7 @@ repo owns everything the buyer actually looks at.
 Selling entity is **Incutec BV**; OpenDrone is the product brand. Storefront code is MIT;
 the hardware repos are CERN-OHL-S.
 
-This README is the single source of truth for the project — architecture, every
+This README is the single source of truth for the project: architecture, every
 subsystem, the rules, environment, operations, security, and the content-editing
 workflows. There are no other docs to chase.
 
@@ -53,7 +53,7 @@ workflows. There are no other docs to chase.
 
 - **[Shopify Hydrogen](https://hydrogen.shopify.dev/)** on **Oxygen** (Cloudflare Workers)
 - **React 19** + **React Router 7** + **TypeScript**
-- **Tailwind CSS v4** — one CSS file (`app/styles/app.css`, ~8600 lines), self-hosted Inter + JetBrains Mono
+- **Tailwind CSS v4**: one CSS file (`app/styles/app.css`, ~8600 lines), self-hosted Inter + JetBrains Mono
 - **[react-three-fiber](https://r3f.docs.pmnd.rs/)** for the 3D homepage hero
 - **Resend** for transactional email, **Upstash Redis** for the support ticket index, **Plausible** for cookieless analytics
 
@@ -65,12 +65,12 @@ Node 22 or 24, npm 10+ (pinned in `package.json`).
 git clone https://github.com/incutec-hw/OpenDrone-Web.git
 cd OpenDrone-Web
 npm install
-cp .env.example .env       # fill in your Shopify tokens — see Environment variables below
+cp .env.example .env       # fill in your Shopify tokens, see Environment variables below
 npm run dev                # http://localhost:3000
 ```
 
 Sign-in runs through a Hydrogen-managed `*.tryhydrogen.dev` tunnel (set up
-automatically). Plain `localhost` won't complete the customer-account OAuth callback —
+automatically). Plain `localhost` won't complete the customer-account OAuth callback -
 use the tunnel URL the dev server prints.
 
 To run a contributor copy without real credentials, leave the Storefront tokens stubbed
@@ -107,29 +107,29 @@ artefacts.
 
 68 file-based routes under `app/routes/`, by family:
 
-**Storefront** — `_index` (3D hero homepage), `collections._index` / `.$handle` / `.all`,
+**Storefront**: `_index` (3D hero homepage), `collections._index` / `.$handle` / `.all`,
 `products.$handle` (editorial PDP), `cart` / `cart.$lines`, `search` (Aside drawer +
 predictive results), `contact`, `firmware-partners`, `open-source`, `newsletter` /
 `newsletter.$handle`.
 
-**Customer account** (signed-in) — `account` layout + `._index`, `.profile`,
+**Customer account** (signed-in): `account` layout + `._index`, `.profile`,
 `.addresses`, `.orders._index` / `.$id`, `.support` (ticket history + read-only thread),
 `.welcome`, and the OAuth trio `account_.login` / `.logout` / `.authorize`.
 
-**Support bridge** — `support` (intake / active-ticket view), `support.resume`
+**Support bridge**: `support` (intake / active-ticket view), `support.resume`
 (magic-link entry), `api.support.{start,send,poll,close,status,list,feedback,lookup,cleanup}`,
 and `api.support.thread.$pid` (read-only thread by public ticket id).
 
-**Legal / i18n** — `algemene-voorwaarden`, `privacy`, `cookies`, `cookie-settings`,
+**Legal / i18n**: `algemene-voorwaarden`, `privacy`, `cookies`, `cookie-settings`,
 `herroepingsrecht`, `shipping`, `warranty`, `security`, `export-compliance`, `end-use`,
 `terms`, `legal`. Each serves at `/<slug>` (locale-cookie redirect) and at the canonical
 `/{en,nl,fr}/<slug>`.
 
-**Newsletter** — `newsletter` (post archive reading the Shopify `news` blog + signup
+**Newsletter**: `newsletter` (post archive reading the Shopify `news` blog + signup
 action) and `newsletter.$handle` (single post). The old `/blog*`, `/releases*`, and
 `/blogs*` URLs are 301 redirect stubs into `/newsletter`.
 
-**Infra** — `healthz`, `[robots.txt]`, `[sitemap.xml]` + `sitemap.$type.$page[.xml]`,
+**Infra**: `healthz`, `[robots.txt]`, `[sitemap.xml]` + `sitemap.$type.$page[.xml]`,
 `[newsletter.rss]`, `[.well-known].security[.txt]`, `api.$version.[graphql.json]`
 (Storefront API proxy), `discount.$code`, `pages.$handle`, `policies.$handle` /
 `policies._index`, and `$` (404 catch-all).
@@ -151,7 +151,7 @@ vuln_contact_email, battery_wh, battery_un_number
 
 The PDP is **editorial**, not a generic template: hero copy + gallery + chapters
 (teardown, open-source, in-the-box, firmware, specs, downloads). Editorial copy is keyed
-by handle in `app/lib/product-content.ts` — the source of truth for chapters, specs, and
+by handle in `app/lib/product-content.ts`: the source of truth for chapters, specs, and
 the box list. `LatestCommit` cards fetch the `repoUrl` HEAD from GitHub (best-effort,
 fail-quiet). `FirmwareSplit` adds an optional firmware-contribution variant on PDPs that
 configure it. `ProductCompliance` renders the metafields but is currently queried, not
@@ -174,7 +174,7 @@ Two product-line features hang off `product-content.ts`:
 ### Cart
 
 `cart.tsx` uses Hydrogen `CartForm` actions. `BuyerIdentityUpdate` is allowlisted to
-`email` and `phone`; `countryCode` is hard-locked to `BE` regardless of client input —
+`email` and `phone`; `countryCode` is hard-locked to `BE` regardless of client input -
 this prevents an attacker from switching the cart's market between SSR render and
 checkout.
 
@@ -186,7 +186,7 @@ redirect URI). Account routes use the Customer Account API queries in
 
 ### Support bridge
 
-A **stateless web↔Discord chat bridge** running entirely inside the Hydrogen Worker — no
+A **stateless web↔Discord chat bridge** running entirely inside the Hydrogen Worker: no
 gateway bot, no WebSocket, no application database. A customer opens a ticket on
 `/support` (signed-in) or via the CTA on `/contact`; the Worker creates a thread in a
 Discord **forum channel**; staff reply in that thread; the browser sees replies through
@@ -195,7 +195,7 @@ Redis index for cross-device lookup.
 
 **What the customer sees.** `/support` has three states: signed-out (sign-in prompt + a
 "use Discord instead" path), intake (form: product, firmware, subject, message,
-attachments, behind Turnstile), and active thread (live chat — sticky header, scrollable
+attachments, behind Turnstile), and active thread (live chat, sticky header, scrollable
 log, sticky composer). Intake submit → `POST /api/support/start` → creates the Discord
 thread → sets the cookie → redirects back to `/support` rendering the active thread, no
 interstitial. `/account/support` is a two-pane history (ticket list + read-only thread);
@@ -213,29 +213,29 @@ themselves. The poll endpoint projects each message with a role: `self` (custome
 **Staff workflow, in Discord:**
 
 - Watch the support forum channel. Every web ticket opens a thread there
-  (`#<id> [<FirstName>] <subject>`). Type in the thread — the customer sees it within 4 s.
+  (`#<id> [<FirstName>] <subject>`). Type in the thread: the customer sees it within 4 s.
 - **React with 📧 on your final answer to email the customer.** That reaction is the
   *only* push-style signal; every other message stays web-only. The email carries
   `Re: <subject>`, a ~240-char preview, and a magic-link "Continue chat →" button.
   Debounced to one email per ticket per 5 minutes.
 - Sensitive identifiers (email, order number, Shopify customer GID, anonymised IP, UA)
-  are posted to a **private staff channel** per ticket — pull them from there, never ask
+  are posted to a **private staff channel** per ticket: pull them from there, never ask
   the customer to retype, never paste them into the public thread.
 
 **Five staged moderation/AI layers**, each toggleable via env:
 
-1. **Outbound scrubber** — strips Unicode bidi/control chars; redacts emails, IBANs,
+1. **Outbound scrubber**: strips Unicode bidi/control chars; redacts emails, IBANs,
    phones, cards, JWTs, long hex secrets, and Discord mentions before any Discord message
    reaches the browser. Author identity flattened to first name only.
-2. **Moderation gate** — staff messages reach the customer only when a `SUPPORT_MOD_ROLE_ID`
+2. **Moderation gate**: staff messages reach the customer only when a `SUPPORT_MOD_ROLE_ID`
    member reacts with `SUPPORT_APPROVE_EMOJI` (default ✅). Modes `enforce` / `log` /
    `off`; mod allowlist cached per-isolate for 1h.
-3. **Inbound scrubber** — narrower; strips credentials/cards/bidi but lets the user's own
+3. **Inbound scrubber**: narrower; strips credentials/cards/bidi but lets the user's own
    contact info through (they need it for context).
-4. **AI first-responder** *(off by default)* — with `SUPPORT_AI_DRAFTS_ENABLED=1` +
+4. **AI first-responder** *(off by default)*: with `SUPPORT_AI_DRAFTS_ENABLED=1` +
    `ANTHROPIC_API_KEY`, every new ticket gets a Claude-drafted reply posted into the
    thread, gated by the same moderation gate.
-5. **Thread summariser** *(same flag)* — once a thread has ≥8 non-bot messages since the
+5. **Thread summariser** *(same flag)*, once a thread has ≥8 non-bot messages since the
    last recap, the bot drafts a tagged summary that surfaces to the widget on approval.
 
 **Two-channel privacy model.** Discord can't hide parts of one message from some viewers,
@@ -249,9 +249,9 @@ scrubber → a projection that drops everything except `id`, `firstName`, `role`
 `content`, `createdAt`, and sanitized `attachments`. No author IDs, avatars, embeds,
 roles, or guild metadata reach the wire.
 
-**Cross-device resume.** Tier 1 — a Resend email with `/support/resume?t=<token>`; the
+**Cross-device resume.** Tier 1: a Resend email with `/support/resume?t=<token>`; the
 token is HMAC-signed with audience `aud:support-resume-v1`, 1-year TTL, and is not
-replayable as a session cookie. Tier 2 — the user enters their email;
+replayable as a session cookie. Tier 2: the user enters their email;
 `/api/support/lookup` checks the Upstash index plus active and archived Discord threads
 and emails one resume link per match. It always returns a generic success, never
 confirming whether an email has tickets.
@@ -261,7 +261,7 @@ HttpOnly, Secure, SameSite=Strict, 30-day) carries the thread id, a random ticke
 public reference, name, email, and the last-seen cursor. Upstash keys: `tk:{tid}` (ticket
 meta), `idx:cust:{customerId}` and `idx:email:{sha256}` (recent-ticket lists, capped 200),
 `fb:{tid}` (feedback). When the index is unbound, lists return empty and Discord remains
-the source of truth — nothing breaks, you just lose the cross-device index. Discord forum
+the source of truth, nothing breaks, you just lose the cross-device index. Discord forum
 threads auto-archive after 24h of inactivity.
 
 **Daily sweep.** `.github/workflows/support-cleanup.yml` POSTs `/api/support/cleanup` at
@@ -274,17 +274,17 @@ and `app/routes/api.support.*.tsx`.
 
 ### Newsletter
 
-A single, manual flow — no third-party ESP, no auto-dispatch. Three parts:
+A single, manual flow: no third-party ESP, no auto-dispatch. Three parts:
 
-1. **Subscribe** — the footer `NewsletterSignup` (on every page; there is no in-body form,
+1. **Subscribe**: the footer `NewsletterSignup` (on every page; there is no in-body form,
    to avoid duplicating it) POSTs to the `newsletter.tsx` action, which calls Storefront
    API `customerCreate` with `acceptsMarketing=true` and tag `newsletter`. Abuse controls:
    honeypot + Cloudflare Turnstile + per-IP/per-email rate limits.
-2. **Author** — posts are written locally as Markdown in `content/posts/` and pushed to
+2. **Author**: posts are written locally as Markdown in `content/posts/` and pushed to
    the Shopify `news` blog with `npm run publish:post` (Admin API
    `articleCreate`/`articleUpdate` + Files upload for images, idempotent by slug). They
    render at `/newsletter/<slug>`. See [Editing content](#editing-content).
-3. **Send** — **manual, no auto-send.** Publishing never emails anyone. You send by hand
+3. **Send**: **manual, no auto-send.** Publishing never emails anyone. You send by hand
    in Shopify admin: Marketing → Shopify Email → blog-post template → "Subscribed"
    segment → Send (free to 10k emails/mo). Shopify owns delivery and unsubscribes.
    `npm run compose:newsletter <handle>` optionally renders a branded custom-HTML email
@@ -297,7 +297,7 @@ A single, manual flow — no third-party ESP, no auto-dispatch. Three parts:
 
 The site UI is **English-only**. Legal documents are translated **NL/FR/EN** and served at
 `/{en,nl,fr}/<slug>`; unprefixed `/<slug>` redirects to the visitor's cached locale. One
-route file per slug handles all three locales — its loader calls `resolveLegalLoader`
+route file per slug handles all three locales, its loader calls `resolveLegalLoader`
 (`app/lib/i18n.ts`), which reads the URL prefix to pick the markdown snapshot from
 `app/content/legal/{en,nl,fr}/`. `LangToggle` renders only on legal paths; `<html lang>`
 tracks the URL locale; each legal route emits `hreflang` for EN/NL/FR + `x-default=en` and
@@ -329,15 +329,15 @@ writes `public/boards/<handle>/board.svg`. `BoardArt` fetches the file lazily on
 and inlines it so CSS can address each `<g id="layer-…">` and animate the reveal.
 
 `boards.config.json` maps handles to absolute `.kicad_pcb` paths that live outside this
-(public) repo, so it's gitignored — copy `boards.config.example.json` and fill it in. The
+(public) repo, so it's gitignored, copy `boards.config.example.json` and fill it in. The
 export tool is build-time / maintainer-only; rerun it whenever a hardware rev ships.
 
 ### SEO & static
 
-- `[sitemap.xml]` + `sitemap.$type.$page[.xml]` — product/collection/article/page sitemap.
-- `[robots.txt]` — disallows `/cart`, `/account`, `/api/`, `/support`, `/policies/`, and
+- `[sitemap.xml]` + `sitemap.$type.$page[.xml]`: product/collection/article/page sitemap.
+- `[robots.txt]`: disallows `/cart`, `/account`, `/api/`, `/support`, `/policies/`, and
   sort-faceted collection variants; sitemap pointer at the end.
-- `[.well-known].security[.txt]` — RFC 9116 contact record, rolling 1-year `Expires`.
+- `[.well-known].security[.txt]`: RFC 9116 contact record, rolling 1-year `Expires`.
 - Organization JSON-LD emitted globally from `root.tsx` (`buildOrgJsonLd`); Product JSON-LD
   from the PDP (`buildProductJsonLd`, with price + availability + brand + sku).
 - `buildSeoMeta` (`app/lib/seo.ts`) returns the meta array every route loader uses.
@@ -363,21 +363,21 @@ the pattern and new UI gets both themes for free.
   `html.light .your-selector { … }` twin in the light-mode section. Grep `html.light` in
   `app.css` for examples.
 - **Switching mechanics** (`app/lib/theme.ts`): an inline `<head>` script
-  (`THEME_INIT_SCRIPT`, injected in `root.tsx`) resolves the theme before first paint —
+  (`THEME_INIT_SCRIPT`, injected in `root.tsx`) resolves the theme before first paint -
   no flash. Order: `localStorage['od-theme']` → OS `prefers-color-scheme` → dark.
   `ThemeToggle` writes the explicit choice and live-follows the OS until the visitor
   toggles.
 - **Third-party embeds** (Discord widget, Turnstile) can't be CSS-themed. Turnstile gets
   `getActiveTheme()`; the Discord widget panel is intentionally dark in both modes.
 - Don't reintroduce `class="dark"`-only assumptions or `prefers-color-scheme` media
-  queries for color — the class on `<html>` is the single source of truth.
+  queries for color, the class on `<html>` is the single source of truth.
 
 ---
 
 ## Environment variables
 
 The full list with inline comments and source pointers is in
-[`.env.example`](.env.example) — copy it to `.env`. This is the grouped summary.
+[`.env.example`](.env.example): copy it to `.env`. This is the grouped summary.
 
 **Required** (storefront won't boot without these):
 `SESSION_SECRET` (`openssl rand -hex 32`), `PUBLIC_STORE_DOMAIN`,
@@ -410,7 +410,7 @@ The full list with inline comments and source pointers is in
 (`scripts/publish-post.mjs`, reads `.env` directly) needs `SHOPIFY_ADMIN_API_TOKEN`
 (scopes `read_content` + `write_content` + `write_files` on the "OpenDrone Infra" custom
 app) and `SHOPIFY_ADMIN_API_VERSION` (defaults to `2026-01`). Sends are manual in Shopify
-admin — no dispatch secrets needed.
+admin, no dispatch secrets needed.
 
 **Ops:** `SUPPORT_CLEANUP_SECRET` (bearer for the daily cleanup workflow), `COMPLIANCE_SRC`
 (override path for `sync:legal`).
@@ -463,13 +463,13 @@ and delete are blocked. Dependabot runs weekly (Monday), grouped by `@shopify/*`
 
 Oxygen auto-deploys from this repo: every push to `main` → ~2 min build + deploy; every PR
 → a preview URL as a status check (`oxygen-deployment-*.yml` is the Shopify-managed
-workflow). **Always `git push` after committing** — local-only commits never reach
+workflow). **Always `git push` after committing**: local-only commits never reach
 opendrone.be. Monitor in Shopify admin → Hydrogen → storefront → Deployments. Emergency
 manual deploy (bypasses CI + git history; use only when CD is broken):
 `npx shopify hydrogen deploy`.
 
 **DNS.** Web: `A @ → 23.227.38.65`, `CNAME www → shops.myshopify.com.` (trailing dot
-matters). Mail (MX/DKIM/DMARC/SPF) lives on the email provider — don't replace those when
+matters). Mail (MX/DKIM/DMARC/SPF) lives on the email provider, don't replace those when
 Shopify asks for an SPF change; merge into a single TXT instead.
 
 ---
@@ -491,7 +491,7 @@ windows.
 
 **Rate limits.** A per-isolate sliding-window limiter (`app/lib/rate-limit.ts`) guards
 every public POST: `/api/support/{start,send,poll,close,feedback,lookup,thread}`,
-`/newsletter`, `/support/resume`. Best-effort — pair with Cloudflare-edge rules for serious
+`/newsletter`, `/support/resume`. Best-effort, pair with Cloudflare-edge rules for serious
 flood protection.
 
 **Input caps.** `support.start`: subject 256, product/firmware 80. `support.send`: content
@@ -502,7 +502,7 @@ extension allowlist.
 
 **Board art.** `BoardArt` inlines a layered SVG via `dangerouslySetInnerHTML`, but the
 source is a first-party static asset under `public/boards/`, generated at build time from
-the maintainer's own KiCad files — never user input. The path is a hardcoded constant in
+the maintainer's own KiCad files, never user input. The path is a hardcoded constant in
 `product-content.ts`, so there's no attacker-controlled URL or traversal vector, and the
 nonce-based CSP would block any inline script/handler regardless.
 
@@ -524,35 +524,35 @@ Content splits into three editing surfaces, each with a clear runtime contract.
 ### Site copy library (`content/site/`)
 
 An editable plain-text mirror of every production page's copy. It is the **editing
-surface, not the runtime** — the live values live in the `.tsx` / `.ts` source. Each file
+surface, not the runtime**: the live values live in the `.tsx` / `.ts` source. Each file
 mirrors one page or component and holds two kinds of content:
 
-- **Keyed strings** — short UI copy, e.g. `- **cta_primary:** Shop Now`. Edit only the
+- **Keyed strings**: short UI copy, e.g. `- **cta_primary:** Shop Now`. Edit only the
   text after the colon; the key is a stable ID. Keep it on one line.
-- **Prose blocks** — longer copy under a `### prose: <id>` heading; edit freely as
+- **Prose blocks**: longer copy under a `### prose: <id>` heading; edit freely as
   Markdown.
 
-Anything in a `> source:` line or a `do-not-edit` fence is metadata — leave it. The folder
+Anything in a `> source:` line or a `do-not-edit` fence is metadata, leave it. The folder
 is committed as a snapshot of the *current* live copy; you edit it, `git diff
 content/site/` shows exactly which values changed, and those changed strings get rewritten
 back into source. Untouched keys are never touched; a brand-new key is flagged rather than
 guessed.
 
-Not in here: **legal pages** (edit `app/content/legal/{en,nl,fr}/` directly — but NL is
+Not in here: **legal pages** (edit `app/content/legal/{en,nl,fr}/` directly, but NL is
 overwritten by `sync:legal`, so edit NL in the external compliance repo; legal page
 *chrome* is in `content/site/legal-chrome.md`) and **Shopify-managed copy** (product
-titles, prices, collection descriptions — edited in Shopify admin).
+titles, prices, collection descriptions, edited in Shopify admin).
 
 ### Blog posts (`content/posts/`)
 
 Local Markdown is the source of truth for post content; the Shopify copy is generated from
-it — never hand-edit in the admin (it's overwritten on the next push).
+it, never hand-edit in the admin (it's overwritten on the next push).
 
 1. **Write** `content/posts/<slug>.md` with front-matter (`title` required; `summary`,
    `date`, `tags`, `image` + `imageAlt`, `author`, `slug`, `published` optional) and a
    Markdown body. Keep referenced images next to the post (e.g. `content/posts/images/`);
    they upload to Shopify Files on publish and their URLs are rewritten to the CDN.
-2. **Preview** (no API calls): `npm run publish:post -- content/posts/<slug>.md --dry` —
+2. **Preview** (no API calls): `npm run publish:post -- content/posts/<slug>.md --dry` -
    renders HTML to `scripts/out/` and lists images it would upload.
 3. **Publish**: `npm run publish:post -- content/posts/<slug>.md` (`--draft` to stage).
    Idempotent by slug; prints the live URL.
@@ -599,18 +599,18 @@ The implication: the storefront can be perfect and **no order completes until pa
 shipping, and taxes are configured in Shopify admin.** Those three are the launch
 blockers:
 
-1. **Payments** — activate a provider (Shopify Payments or Mollie), complete KYC, connect
+1. **Payments**: activate a provider (Shopify Payments or Mollie), complete KYC, connect
    the bank. **Bancontact is essential** for a Belgian storefront.
-2. **Shipping** — define zones + rates on the OpenDrone Leuven location profile (Basic plan
+2. **Shipping**: define zones + rates on the OpenDrone Leuven location profile (Basic plan
    = flat / weight rates only; set product weights so weight tiers work).
-3. **Taxes** — VAT-inclusive pricing is already on (`taxesIncluded=true`). Register for OSS
+3. **Taxes**: VAT-inclusive pricing is already on (`taxesIncluded=true`). Register for OSS
    if EU cross-border sales exceed €10k/yr; confirm the SME exemption with the accountant.
 
 Also before launch: point the Customer Account API callback / JS-origin / logout URLs at
 the production domain (not the `*.tryhydrogen.dev` preview); make the custom domain
 primary; finalise the two missing SKUs (OpenFrame 5″ Freestyle, OpenStack) and real
 prices; and customise the order / shipping / refund notification emails (this repo
-generates branded HTML via `gen:shopify-templates` — there's no Admin API for notification
+generates branded HTML via `gen:shopify-templates`: there's no Admin API for notification
 templates, so paste it in by hand). Then place one real low-value order end-to-end and
 verify capture → fulfilment → refund.
 
@@ -624,7 +624,7 @@ KiCanvas is (it serves frame-busting headers and has no public embed URL), so th
 PDP integration mirrors the board-art pattern: a **build-time GLB export** rendered in-page
 with `<model-viewer>`, plus a STEP download.
 
-The OnShape document is deliberately kept **private** — a free-plan *public* document
+The OnShape document is deliberately kept **private**: a free-plan *public* document
 auto-grants third parties an irrevocable license to use/modify/**sell** the IP, and a
 public doc also lets anyone export the DXF flat-pattern cutting files. The export script
 must target only Part Studio / Assembly STEP + glTF endpoints (never the drawings/DXF
@@ -635,14 +635,14 @@ CERN-OHL-S. This keeps the storefront a pure static-asset consumer with no runti
 
 ## Contributing
 
-1. Branch from a fresh `main`: `<type>/<topic>` — `feat`, `fix`, `chore`, `refactor`,
+1. Branch from a fresh `main`: `<type>/<topic>`: `feat`, `fix`, `chore`, `refactor`,
    `docs`.
 2. Commit with DCO sign-off: `git commit -s`. Subject ≤60 chars, imperative,
    Conventional Commits. (Forgot `-s`? `git commit --amend -s --no-edit && git push
    --force-with-lease`.)
-3. Run `npm run lint && npm run typecheck && npm run build` locally — CI rejects if any
+3. Run `npm run lint && npm run typecheck && npm run build` locally, CI rejects if any
    fails.
-4. `gh pr create --web` — CI + an Oxygen preview run automatically.
+4. `gh pr create --web`: CI + an Oxygen preview run automatically.
 5. Address feedback with new commits; maintainers squash-merge.
 
 **Rules**
@@ -652,7 +652,7 @@ CERN-OHL-S. This keeps the storefront a pure static-asset consumer with no runti
 - Mobile-first: design at 375px, enhance at 768px and 1440px.
 - WCAG 2.1 AA baseline.
 - Bundle additions >50 KB gzipped need justification.
-- No `console.log` in prod — strip it or guard with `if (import.meta.env.DEV)`.
+- No `console.log` in prod, strip it or guard with `if (import.meta.env.DEV)`.
 - Don't duplicate Dependabot's PRs.
 
 ## License
