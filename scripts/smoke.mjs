@@ -4,7 +4,7 @@
 // few content invariants. Default base URL: http://localhost:3000.
 //
 //   node scripts/smoke.mjs               # local dev
-//   BASE=https://opendrone.be node scripts/smoke.mjs
+//   BASE=https://opendrone.store node scripts/smoke.mjs
 //
 // Exits non-zero on the first failure. Designed to run in CI or before
 // a deploy without spinning up a test framework.

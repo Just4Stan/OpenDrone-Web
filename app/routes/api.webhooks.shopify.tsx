@@ -30,7 +30,7 @@ import {
 //
 // Registration is manual, via a Dev Dashboard custom app (legacy admin
 // custom apps closed 2026-01):
-//   POST https://opendrone.be/api/webhooks/shopify
+//   POST https://opendrone.store/api/webhooks/shopify
 //   topic: orders/paid, format: JSON
 //   The custom app needs the read_orders scope.
 //

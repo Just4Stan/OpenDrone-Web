@@ -118,7 +118,7 @@
 
 ### Article 12 : Données personnelles
 
-12.1. Incutec BV traite les données personnelles conformément au Règlement Général sur la Protection des Données (RGPD). Voir la Politique de confidentialité sur opendrone.be/privacy.
+12.1. Incutec BV traite les données personnelles conformément au Règlement Général sur la Protection des Données (RGPD). Voir la Politique de confidentialité sur opendrone.store/privacy.
 
 ### Article 13 : Plaintes
 

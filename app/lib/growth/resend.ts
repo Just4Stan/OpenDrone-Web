@@ -252,8 +252,8 @@ function renderWelcome(opts: {product?: string; supportEmail: string}): {
     : 'Subscribed: Engineering Essentials';
 
   const contextLine = product
-    ? `You signed up for launch updates for ${product} at opendrone.be.`
-    : `You signed up for the Engineering Essentials newsletter at opendrone.be.`;
+    ? `You signed up for launch updates for ${product} at opendrone.store.`
+    : `You signed up for the Engineering Essentials newsletter at opendrone.store.`;
 
   const text = [
     'Hi,',
