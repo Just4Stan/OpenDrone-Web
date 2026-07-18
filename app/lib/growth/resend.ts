@@ -367,7 +367,7 @@ function renderMarketingEmail({
     <tr><td align="center" style="padding:32px 16px">
       <table role="presentation" width="560" cellpadding="0" cellspacing="0" style="max-width:560px;background:#141417;border:1px solid #1a241a;border-radius:3px">
         <tr><td style="padding:28px 28px 0">
-          <p style="font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:0.22em;text-transform:uppercase;color:#b8922e;margin:0 0 6px">OpenDrone</p>
+          <img src="https://cdn.shopify.com/s/files/1/1032/6641/9033/files/opendrone-wordmark-1200.png?v=1776537979" alt="OpenDrone" width="160" height="29" style="display:block;border:0;height:29px;width:160px;margin:0 0 10px" />
           <h1 style="font-family:Helvetica,Arial,sans-serif;font-size:22px;letter-spacing:-0.01em;margin:0;color:#e5e5e5">${escapeHtml(heading)}</h1>
         </td></tr>
         <tr><td style="padding:18px 28px 28px;color:#e5e5e5;font-size:15px">${body}</td></tr>
