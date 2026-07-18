@@ -42,11 +42,20 @@ async function main() {
       continue;
     }
 
+    // Footer unsubscribe link for the marketing-flavored templates
+    // (mappings.json `unsubscribeFooter: true`). Notification Liquid has
+    // no unsubscribe variable, so the link goes to the site's manual
+    // form with the address prefilled. Transactional templates get ''.
+    const unsubscribe = tpl.unsubscribeFooter
+      ? ' &middot;\n                  <a href="{{ shop.url }}/newsletter/unsubscribe?email={{ customer.email | url_encode }}" style="color: #a0a0a0; text-decoration: underline;">unsubscribe</a>'
+      : '';
+
     let html = baseRaw.replaceAll('{{BODY_SLOT}}', body);
     html = html
       .replaceAll('{{TITLE}}', tpl.title)
       .replaceAll('{{BADGE}}', tpl.badge)
-      .replaceAll('{{PREHEADER}}', tpl.preheader);
+      .replaceAll('{{PREHEADER}}', tpl.preheader)
+      .replaceAll('{{UNSUBSCRIBE}}', unsubscribe);
 
     const outPath = path.join(OUT_DIR, `${tpl.key}.html`);
     await fs.writeFile(outPath, html, 'utf8');

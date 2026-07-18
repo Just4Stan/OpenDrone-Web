@@ -156,6 +156,12 @@ export type SignupRecord = {
   /** Micro-survey answers (Lane C writes these; preserved on merge). */
   euPremium?: EuPremiumAnswer;
   interviewOptIn?: boolean;
+  /**
+   * Opt-out timestamp, unix seconds. Set by /newsletter/unsubscribe and
+   * never cleared by a merge — any send tooling reading sig: records
+   * MUST exclude records where this is set.
+   */
+  unsubscribedAt?: number;
   /** Last write, unix seconds. */
   updatedAt: number;
 };
@@ -297,6 +303,58 @@ export async function recordSurveyAnswers(
     }
   } catch (err) {
     console.warn('[growth/ledger] recordSurveyAnswers failed', err);
+  }
+}
+
+/**
+ * Record an opt-out on the `sig:<email>` record. Merge-don't-clobber
+ * like the other writers; creates a suppression-only record (empty
+ * consentAt) when none exists, so an address that unsubscribes before
+ * its signup record landed is still excluded by send tooling.
+ *
+ * Degrade-soft: no-op + warn when Upstash is unconfigured.
+ */
+export async function recordUnsubscribe(
+  env: UpstashEnv,
+  email: string,
+): Promise<void> {
+  const store = getTicketStore(env);
+  if (!store) {
+    console.warn(
+      '[growth/ledger] Upstash not configured — unsubscribe record dropped',
+    );
+    return;
+  }
+  const key = `sig:${email}`;
+  try {
+    let existing: SignupRecord | null = null;
+    const raw = await store.get(key);
+    if (raw) {
+      try {
+        existing = JSON.parse(raw) as SignupRecord;
+      } catch {
+        existing = null; // corrupt record — rebuild it
+      }
+    }
+    const now = Math.floor(Date.now() / 1000);
+    const record: SignupRecord = {
+      ...existing,
+      email,
+      consentAt: existing?.consentAt ?? '',
+      products: existing?.products ?? [],
+      unsubscribedAt: existing?.unsubscribedAt ?? now,
+      updatedAt: now,
+    };
+    await store.put(key, JSON.stringify(record));
+
+    if (!existing) {
+      const indexed = await listPush(env, INDEX_KEY, key, INDEX_CAP);
+      if (!indexed) {
+        console.warn('[growth/ledger] att:idx append failed for', key);
+      }
+    }
+  } catch (err) {
+    console.warn('[growth/ledger] recordUnsubscribe failed', err);
   }
 }
 
