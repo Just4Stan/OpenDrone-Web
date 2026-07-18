@@ -37,7 +37,7 @@ export default function ProductionRoute() {
             BE000026–BE000033); keep the facts, fix the voice. */}
         <p>
           Every board is designed in-house in Leuven, Belgium, in KiCad. The
-          full project — schematic, layout, BOM, 3D STEP — is public on GitHub
+          full project (schematic, layout, BOM, 3D STEP) is public on GitHub
           under CERN-OHL-S v2 before you can buy the board, and the boards are
           OSHWA-certified (BE000026–BE000033). What we send to the factory and
           what you can download are the same files.
@@ -49,7 +49,7 @@ export default function ProductionRoute() {
         {/* TODO(copy-stan): placeholder — no certifications or QC claims
             beyond what actually happens; adjust when the process changes. */}
         <p>
-          Fabrication and assembly currently happen at JLCPCB in China — the
+          Fabrication and assembly currently happen at JLCPCB in China, the
           same fab anyone can send the public Gerbers and BOM to. The BOM is
           written around parts you can actually order, so a self-build is a
           real option, not a theoretical one.
@@ -69,13 +69,13 @@ export default function ProductionRoute() {
         <p>
           We want assembly closer to home. The honest obstacle is cost:
           EU assembly today adds real money per board, and pretending
-          otherwise helps nobody. So the plan is a proof-of-concept run —
+          otherwise helps nobody. So the plan is a proof-of-concept run:
           assemble a batch in the EU, publish what it actually cost, and let
           the numbers decide how fast we move.
         </p>
         <p>
           No timeline on this page, on purpose. When an EU-assembled batch
-          exists, it will say so on the product page and here — with the cost
+          exists, it will say so on the product page and here, with the cost
           breakdown, because that is the interesting part.
         </p>
       </section>

@@ -42,13 +42,13 @@ const ROADMAP: RoadmapItem[] = [
   {
     item: 'OpenESC · 20×20',
     status: 'in-revision',
-    note: '4-in-1 AM32 ESC, 30 A/channel preliminary — bench characterization pending.',
+    note: '4-in-1 AM32 ESC, 30 A/channel preliminary: bench characterization pending.',
     link: 'https://github.com/incutec-hw/OpenESC_20X20',
   },
   {
     item: 'OpenESC · 30×30',
     status: 'in-revision',
-    note: '4-in-1 AM32 ESC, 50 A/channel preliminary — bench characterization pending.',
+    note: '4-in-1 AM32 ESC, 50 A/channel preliminary: bench characterization pending.',
     link: 'https://github.com/incutec-hw/OpenESC-30x30',
   },
   {
@@ -135,7 +135,7 @@ export default function RoadmapRoute() {
         <p className="editorial-lead">
           Same rule as the hardware: if it&apos;s not public, it&apos;s not on
           this page. Every line below is backed by a public repo, a product
-          page, or it says so. No dates — we&apos;d only be guessing.
+          page, or it says so. No dates: we&apos;d only be guessing.
         </p>
       </header>
 

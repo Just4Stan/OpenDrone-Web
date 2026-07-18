@@ -167,7 +167,7 @@ export function MobileHome({
           right-aligned values) with count-ups on the numerals. Reuses the
           PDP's .spec-table so the band IS the house datasheet language. */}
       <section className="home-mobile-ledger" aria-label="Open hardware index">
-        <p className="section-label">Open hardware — index</p>
+        <p className="section-label">Open hardware · index</p>
         <dl className="spec-table">
           {HOME_LEDGER.map(([k, v, countUp]) => (
             <div key={k}>
