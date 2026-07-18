@@ -30,13 +30,13 @@
 import {foldSource} from '~/lib/growth/attribution';
 
 /** The Plausible site domain, matching data-domain in root.tsx. */
-export const PLAUSIBLE_DOMAIN = 'opendrone.be';
+export const PLAUSIBLE_DOMAIN = 'opendrone.store';
 
 const EVENT_ENDPOINT = 'https://plausible.io/api/event';
 
 // A stable, honest UA: Plausible requires the header, and an identifiable
 // value keeps our server events distinguishable in any debugging.
-const USER_AGENT = 'OpenDroneStorefront-OrderWebhook/1.0 (+https://opendrone.be)';
+const USER_AGENT = 'OpenDroneStorefront-OrderWebhook/1.0 (+https://opendrone.store)';
 
 export type PurchaseEvent = {
   /** Order total in major units (e.g. euros). */

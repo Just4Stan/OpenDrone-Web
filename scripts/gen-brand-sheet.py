@@ -110,7 +110,7 @@ e.append(f'<rect x="80" y="1084" width="{W-160}" height="2" fill="#e5e2dc"/>')
 e.append(txt(80, 1128, 18, INK, "Editable vector: open the PDF or SVG in Illustrator, Affinity Designer, or Inkscape.", weight=600))
 e.append(txt(80, 1158, 16, "#57575c", "SF Pro Display Bold, outlined paths. Gold is background-aware: Brand Gold #C89D2E on light, Gold Bright #FDB600 on dark surfaces."))
 e.append(txt(80, 1184, 16, "#57575c", "#FDB600 gold and #147A31 green are the physical product colours (motors); deep PCB green #327014 for fills. Brand Gold ≈ Pantone 111 C · CMYK 0/22/77/22 — verify on press."))
-e.append(txt(80, 1210, 16, "#57575c", "opendrone.be"))
+e.append(txt(80, 1210, 16, "#57575c", "opendrone.store"))
 e.append("</svg>")
 
 sheet = "\n".join(e)

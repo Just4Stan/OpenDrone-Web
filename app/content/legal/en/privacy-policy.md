@@ -122,4 +122,4 @@ In the event of a data breach presenting a risk to your rights and freedoms, we 
 
 ### 11. Amendments
 
-Incutec BV may amend this privacy policy. The most recent version is always available at opendrone.be/privacy. In the event of material changes, you will be notified by email.
+Incutec BV may amend this privacy policy. The most recent version is always available at opendrone.store/privacy. In the event of material changes, you will be notified by email.

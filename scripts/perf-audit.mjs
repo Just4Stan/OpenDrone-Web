@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Quantitative performance audit for opendrone.be surfaces.
+ * Quantitative performance audit for opendrone.store surfaces.
  *
  * Drives a real Chromium via Playwright + CDP, optionally CPU-throttled to
  * emulate slow hardware, walks every user-facing surface, and measures:

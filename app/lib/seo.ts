@@ -141,7 +141,7 @@ export function buildSeoMeta({
  * JSON-LD as readily as from a mailto. Customers reach us via /support.
  */
 export function buildOrgJsonLd(company: CompanyIdentity, siteUrl?: string) {
-  const url = (siteUrl || 'https://opendrone.be').replace(/\/$/, '');
+  const url = (siteUrl || 'https://opendrone.store').replace(/\/$/, '');
   return {
     '@context': 'https://schema.org',
     '@type': 'Organization',
