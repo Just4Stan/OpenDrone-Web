@@ -109,6 +109,15 @@ sync.
     OpenRX repo releases, then fill the six TODO(downloads) blocks.
 15. Shopify admin image alt texts use em dashes ("OpenRX Gemini — front");
     swap for hyphens or middots in admin when convenient.
+16. No OpenFrame repo exists in incutec-hw, so the frame PDP's GitHub chip
+    links to the org. Publish the frame CAD repo, then set `repoUrl` in
+    product-content.ts. Task 14 is partially closed: the OpenRX PDP now
+    links the published schematics/STEP/BOM; still missing upstream are
+    STEP for Lite/Gemini, BOM for Lite-UFL/Mono, gerbers, manual.
+17. Video is live (youtu.be/ssmQkRkXE84). The published description links
+    plain opendrone.be; edit in the UTM link from
+    `drafts/archive/utm-conventions.md` (campaign `video-openrx`) so
+    Plausible attributes the traffic.
 
 ## Agent-ready backlog (claim a lane, work top-down)
 

@@ -762,6 +762,10 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
       projectUrl: 'https://github.com/ExpressLRS/ExpressLRS',
     },
     repoUrl: 'https://github.com/incutec-hw/OpenRX',
+    video: {
+      id: 'ssmQkRkXE84',
+      title: 'How LoRa (ExpressLRS) Receivers Work',
+    },
     teardown: {
       // Fallback set (matches the Lite tier); each variant overrides with its
       // own refs keyed to that board's components.json. NOTE the Wi-Fi antenna
@@ -784,10 +788,61 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
       {qty: '1×', item: 'Heat-shrink sleeve + double-sided tape'},
       {qty: '1×', item: 'Build card', note: 'batch ID, QC initials, ExpressLRS flash target, GitHub rev'},
     ],
-    // TODO(downloads): every previous card 404'd — the artifacts were never
-    // published to the OpenRX repo. Publish schematic.pdf / boards.step /
-    // bom.csv / gerbers.zip / manual.pdf / flashing.md, then re-add the cards.
-    downloads: [],
+    // Links point at what the OpenRX repo actually publishes today (verified
+    // 200 on raw.githubusercontent 2026-07-18). Still unpublished, add when
+    // they land: STEP for Lite/Gemini, BOM for Lite-UFL/Mono, gerbers, manual.
+    downloads: [
+      {
+        kind: 'schematic',
+        label: 'Schematic · Lite',
+        href: 'https://raw.githubusercontent.com/incutec-hw/OpenRX/main/exports/schematics/OpenRX-Lite.pdf',
+        size: '103 KB',
+      },
+      {
+        kind: 'schematic',
+        label: 'Schematic · Lite-UFL',
+        href: 'https://raw.githubusercontent.com/incutec-hw/OpenRX/main/exports/schematics/OpenRX-Lite-UFL.pdf',
+        size: '106 KB',
+      },
+      {
+        kind: 'schematic',
+        label: 'Schematic · Mono',
+        href: 'https://raw.githubusercontent.com/incutec-hw/OpenRX/main/exports/schematics/OpenRX-Mono.pdf',
+        size: '128 KB',
+      },
+      {
+        kind: 'schematic',
+        label: 'Schematic · Gemini',
+        href: 'https://raw.githubusercontent.com/incutec-hw/OpenRX/main/exports/schematics/OpenRX-Gemini.pdf',
+        size: '174 KB',
+      },
+      {
+        kind: 'step',
+        label: '3D STEP · Lite-UFL',
+        href: 'https://raw.githubusercontent.com/incutec-hw/OpenRX/main/OpenRX-Lite-UFL/export/lite-ufl.step',
+        size: '5.7 MB',
+      },
+      {
+        kind: 'step',
+        label: '3D STEP · Mono',
+        href: 'https://raw.githubusercontent.com/incutec-hw/OpenRX/main/OpenRX-Mono/export/mono.step',
+        size: '6.8 MB',
+      },
+      {
+        kind: 'bom',
+        label: 'BOM · Lite',
+        href: 'https://raw.githubusercontent.com/incutec-hw/OpenRX/main/OpenRX-Lite/export/OpenRX-Lite.csv',
+        note: 'CSV',
+        size: '2.9 KB',
+      },
+      {
+        kind: 'bom',
+        label: 'BOM · Gemini',
+        href: 'https://raw.githubusercontent.com/incutec-hw/OpenRX/main/OpenRX-Gemini/export/OpenRX-Gemini.csv',
+        note: 'CSV',
+        size: '4.1 KB',
+      },
+    ],
     specs: [
       ['Firmware', 'ExpressLRS (3.5.0+)'],
       ['Telemetry', 'CRSF'],
