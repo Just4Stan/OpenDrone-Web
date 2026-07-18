@@ -63,7 +63,7 @@ export default function WholesaleRoute({loaderData}: Route.ComponentProps) {
           <li>
             <strong>Open source, for real</strong>: every board&apos;s full
             design source is public under CERN-OHL-S v2. Your customers can
-            audit what you sell them — that is the pitch.
+            audit what you sell them: that is the pitch.
           </li>
           <li>
             <strong>Standard firmware</strong>: Betaflight, AM32 and
@@ -72,7 +72,7 @@ export default function WholesaleRoute({loaderData}: Route.ComponentProps) {
           </li>
           <li>
             <strong>Dealer terms</strong>: B2B pricing and terms exist and are
-            shared on request — not on a public page.
+            shared on request, not on a public page.
           </li>
         </ul>
       </section>
@@ -82,7 +82,7 @@ export default function WholesaleRoute({loaderData}: Route.ComponentProps) {
         {/* TODO(copy-stan): placeholder. */}
         <p>
           Tell us who you are, where you sell, and roughly what volume you
-          think makes sense. A human answers — the same people who design the
+          think makes sense. A human answers: the same people who design the
           boards.
         </p>
         <p>

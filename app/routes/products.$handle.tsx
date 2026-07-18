@@ -36,7 +36,7 @@ import {CommitHistoryCard, LatestCommitCard} from '~/components/LatestCommit';
 import {AnimatedNumber} from '~/components/AnimatedNumber';
 import {WatchCard} from '~/components/WatchCard';
 import {redirectIfHandleIsLocalized} from '~/lib/redirect';
-import {buildSeoMeta, buildProductJsonLd} from '~/lib/seo';
+import {buildSeoMeta, buildProductJsonLd, SITE_ORIGIN} from '~/lib/seo';
 import {fetchLatestCommits} from '~/lib/github';
 import {
   fetchProductReviews,
@@ -67,13 +67,15 @@ import type {
   ProductContent,
 } from '~/lib/product-content';
 
-export const meta: Route.MetaFunction = ({data}) =>
+export const meta: Route.MetaFunction = ({data, location}) =>
   buildSeoMeta({
     title: data?.product?.seo?.title || data?.product?.title || 'Product',
     description:
       data?.product?.seo?.description || data?.product?.description || undefined,
     image: data?.product?.selectedOrFirstAvailableVariant?.image?.url,
     type: 'product',
+    // Canonical without the ?Model= query so variant links don't splinter.
+    url: `${SITE_ORIGIN}${location.pathname}`,
   });
 
 /**

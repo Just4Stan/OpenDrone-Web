@@ -545,7 +545,7 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
         url: 'https://github.com/incutec-hw/OpenESC_20X20/pull/1',
         who: 'Vishal01Mehra',
         asked:
-          'The FC connector and pinout didn’t follow the Betaflight connector standard — and he sent the fix as a PR, not just a complaint.',
+          'The FC connector and pinout didn’t follow the Betaflight connector standard. He sent the fix as a PR, not just a complaint.',
         changed:
           'Merged. The board switched to the JST-SH connector with the corrected Betaflight-standard pinout; that’s the connector on every OpenESC since.',
       },
@@ -949,7 +949,7 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
       line2Italic: 'everything else',
       line3: 'mounts to.',
       lead:
-        'Fast, strong and optimized. CNC carbon-fibre freestyle frame on a 30.5×30.5 stack pattern. Designed in-house, OEM-machined. OpenFC Lite and OpenESC drop in without spacers.',
+        'CNC carbon-fibre freestyle frame on a 30.5×30.5 stack pattern. Designed in-house, OEM-machined. OpenFC Lite and OpenESC drop in without spacers.',
     },
     firmware: {
       project: '—',
@@ -999,7 +999,7 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
     optionAxis: 'Model',
     variants: {
       '5" Freestyle': {
-        tagline: '',
+        tagline: 'The standard freestyle size: 20×20 through 30×30 stacks, M3 motors.',
         highlights: [
           ['Stack mounts', '20×20 · 25×25 · 30×30'],
           ['Motor mount', '16×16 · 19×19 (M3)'],
@@ -1007,7 +1007,7 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
         frameViewer: {src: '/models/frame5.glb'},
       },
       '3" Freestyle': {
-        tagline: '',
+        tagline: 'The compact build: 20×20 or 25×25 stacks, M2 motors.',
         highlights: [
           ['Stack mounts', '20×20 · 25×25'],
           ['Motor mount', '9×9 · 12×12 (M2)'],

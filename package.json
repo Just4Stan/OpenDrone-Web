@@ -20,6 +20,7 @@
     "preview": "shopify hydrogen preview --build",
     "lint": "eslint --no-error-on-unmatched-pattern .",
     "typecheck": "react-router typegen && tsc --noEmit",
+    "test": "node --experimental-strip-types --test \"app/**/*.test.ts\"",
     "codegen": "shopify hydrogen codegen && react-router typegen",
     "check:registry": "node --experimental-strip-types scripts/check-registry.mjs",
     "sync:legal": "node scripts/sync-legal.mjs",
