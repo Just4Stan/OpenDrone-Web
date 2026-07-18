@@ -31,8 +31,26 @@ affordances; measured with the new scripts/perf-audit.mjs harness at 1x and
 4x CPU against the production preview: home first scroll 46→120fps at 1x,
 24→~120fps at 4x, PDP worst scroll frame 359→25ms, no visual changes).
 
+Done 2026-07-18 (browser/infra session, no lane): domain migration to
+**opendrone.store** as canonical. opendrone.store + opendrone.shop bought at
+Gandi (Stan), DNS mirrors opendrone.be (A 23.227.38.65, www CNAME
+shops.myshopify.com). All five hostnames sit on the Hydrogen storefront;
+opendrone.store is primary, the rest 301 to it. Turnstile was re-keyed: the
+old widget's Cloudflare account is lost; a new widget "OpenDrone storefront"
+lives in Stan's new Cloudflare account (stan.coene@gmail.com), hostnames
+opendrone.{store,shop,be}; new site/secret keys are in Oxygen (Prod+Preview)
+and local .env; production redeployed and the notify form verified on
+opendrone.store. The admin "Order payment" webhook URL was updated to
+https://opendrone.store/api/webhooks/shopify. PR #(this) swaps every site
+URL in the repo to opendrone.store (emails stay @opendrone.be); the
+compliance repo still says opendrone.be and needs the same swap at next
+sync.
+
 ## Stan's tasks
 
+0. Log into plausible.io in Chrome so the agent can change the site domain
+   opendrone.be -> opendrone.store (Site settings > General). Until then the
+   deployed data-domain=opendrone.store events are dropped by Plausible.
 1. Oxygen env vars (agent cannot enter secrets): `SHOPIFY_WEBHOOK_SECRET`
    (shown at Settings > Notifications > Webhooks), `SHOPIFY_ADMIN_API_TOKEN`
    (shpat_ from local .env), `JUDGEME_PRIVATE_TOKEN` (Apps > Judge.me >
