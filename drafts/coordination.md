@@ -62,12 +62,12 @@ sync.
    deployed data-domain=opendrone.store events are dropped by Plausible.
 1. Oxygen env vars (agent cannot enter secrets; hydrogen env push is
    unsafe here: env pull masks secret values, a push would blank them).
-   THE one remaining CRM blocker: `SHOPIFY_ADMIN_API_TOKEN` (shpat_ from
-   local .env) into Production + Preview at Hydrogen > Storefront
-   settings > Environments and variables. It activates the Shopify leg
-   of /newsletter/unsubscribe AND the back-in-stock notify (webhook
-   already registered 2026-07-18). Also still wanted there:
-   `SHOPIFY_WEBHOOK_SECRET` (Settings > Notifications > Webhooks),
+   `SHOPIFY_ADMIN_API_TOKEN` LANDED 2026-07-19 (Stan): activates the
+   Shopify leg of /newsletter/unsubscribe + back-in-stock notify on the
+   next deploy (env vars apply at deploy time; this commit triggers it).
+   Still wanted: `SHOPIFY_WEBHOOK_SECRET` (shown at Settings >
+   Notifications > Webhooks; without it the receiver 503s all webhook
+   deliveries incl. orders/paid attribution and inventory restocks),
    `JUDGEME_PRIVATE_TOKEN` (Apps > Judge.me > Settings > Integrations >
    API), plus plain `PUBLIC_JUDGEME_SHOP_DOMAIN` =
    ktjqug-jw.myshopify.com, and confirm Judge.me metafield sync.
