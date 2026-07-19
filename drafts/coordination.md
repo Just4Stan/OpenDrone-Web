@@ -60,17 +60,21 @@ sync.
 0. Log into plausible.io in Chrome so the agent can change the site domain
    opendrone.be -> opendrone.store (Site settings > General). Until then the
    deployed data-domain=opendrone.store events are dropped by Plausible.
-1. Oxygen env vars (agent cannot enter secrets; hydrogen env push is
-   unsafe here: env pull masks secret values, a push would blank them).
-   `SHOPIFY_ADMIN_API_TOKEN` LANDED 2026-07-19 (Stan): activates the
-   Shopify leg of /newsletter/unsubscribe + back-in-stock notify on the
-   next deploy (env vars apply at deploy time; this commit triggers it).
-   Still wanted: `SHOPIFY_WEBHOOK_SECRET` (shown at Settings >
-   Notifications > Webhooks; without it the receiver 503s all webhook
-   deliveries incl. orders/paid attribution and inventory restocks),
-   `JUDGEME_PRIVATE_TOKEN` (Apps > Judge.me > Settings > Integrations >
-   API), plus plain `PUBLIC_JUDGEME_SHOP_DOMAIN` =
-   ktjqug-jw.myshopify.com, and confirm Judge.me metafield sync.
+1. Oxygen env vars: DONE except Judge.me private token.
+   `SHOPIFY_ADMIN_API_TOKEN` + `SHOPIFY_WEBHOOK_SECRET` landed
+   2026-07-19 (Stan pasted; agent staged, redeployed, verified).
+   Verified in production: /newsletter/unsubscribe flips Shopify
+   emailMarketingConsent (test alias UNSUBSCRIBED, fresh
+   consentUpdatedAt), webhook receiver authenticates (unsigned 401,
+   HMAC-signed synthetic inventory_levels/update 200 through the
+   back-in-stock handler; real sends stay blocked by the coming-soon
+   guard until launch, by design). orders/paid attribution deliveries
+   are authenticated from now on too. `PUBLIC_JUDGEME_SHOP_DOMAIN` =
+   ktjqug-jw.myshopify.com added (plain value, agent). Remaining, Stan
+   only: `JUDGEME_PRIVATE_TOKEN` (Apps > Judge.me > Settings >
+   Integrations > API) + confirm Judge.me metafield sync. NOTE: Stan
+   pasted the shpat_ admin token into an agent chat 2026-07-19; rotate
+   it when convenient (Dev Dashboard) and update .env + Oxygen.
 2. Activate a payment provider (launch blocker #1). Then: Bancontact manual
    activation, add PayPal for the German market, iDEAL after the ~100-order
    eligibility gate.
