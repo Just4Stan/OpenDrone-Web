@@ -53,7 +53,7 @@ function FileTypeIcon({ext}: {ext: string}) {
 
 export type ThreadMessage = {
   id: string;
-  role: 'helper' | 'ai' | 'self';
+  role: 'helper' | 'self';
   firstName: string;
   content: string;
   createdAt: string;
@@ -676,11 +676,7 @@ function ThreadMessageView({
   const sideCls = message.isSelf ? 'is-user' : 'is-staff';
   const initial = (message.firstName?.[0] ?? '?').toUpperCase();
   const time = formatTime(message.createdAt);
-  const role = message.isSelf
-    ? 'You'
-    : message.role === 'ai'
-      ? 'Assistant'
-      : 'Staff';
+  const role = message.isSelf ? 'You' : 'Staff';
   return (
     <article
       className={`support-msg ${sideCls} ${message.pending ? 'support-msg-pending' : ''}`}
