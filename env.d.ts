@@ -106,11 +106,6 @@ declare global {
     // Default: 📧 when unset.
     SUPPORT_EMAIL_EMOJI?: string;
 
-    // Stage 4 AI first-responder
-    ANTHROPIC_API_KEY?: string;
-    SUPPORT_AI_DRAFTS_ENABLED?: string;
-    SUPPORT_AI_MODEL?: string;
-
     // Stage 6 ticket index — Upstash Redis REST credentials. Oxygen
     // does not expose Cloudflare KV bindings, so we hit Upstash over
     // HTTPS instead. When unset, list operations degrade to a Discord

@@ -222,7 +222,7 @@ themselves. The poll endpoint projects each message with a role: `self` (custome
   are posted to a **private staff channel** per ticket: pull them from there, never ask
   the customer to retype, never paste them into the public thread.
 
-**Five staged moderation/AI layers**, each toggleable via env:
+**Three staged moderation layers**, each toggleable via env:
 
 1. **Outbound scrubber**: strips Unicode bidi/control chars; redacts emails, IBANs,
    phones, cards, JWTs, long hex secrets, and Discord mentions before any Discord message
@@ -232,11 +232,6 @@ themselves. The poll endpoint projects each message with a role: `self` (custome
    `off`; mod allowlist cached per-isolate for 1h.
 3. **Inbound scrubber**: narrower; strips credentials/cards/bidi but lets the user's own
    contact info through (they need it for context).
-4. **AI first-responder** *(off by default)*: with `SUPPORT_AI_DRAFTS_ENABLED=1` +
-   `ANTHROPIC_API_KEY`, every new ticket gets a Claude-drafted reply posted into the
-   thread, gated by the same moderation gate.
-5. **Thread summariser** *(same flag)*, once a thread has ≥8 non-bot messages since the
-   last recap, the bot drafts a tagged summary that surfaces to the widget on approval.
 
 **Two-channel privacy model.** Discord can't hide parts of one message from some viewers,
 so the bridge splits: the public forum thread shows first name + scrubbed body, while a
@@ -269,7 +264,7 @@ threads auto-archive after 24h of inactivity.
 are closed or idle 7 days (closed threads get a 1-day grace period).
 
 **Files.** UI: `app/components/{SupportWidget,SupportThread,FeedbackModal}.tsx`. Server:
-`app/lib/support/{discord,session,resume-token,scrubber,moderation,ai-draft,email,uploads,turnstile,ticket-index,upstash}.ts`
+`app/lib/support/{discord,session,resume-token,scrubber,moderation,email,uploads,turnstile,ticket-index,upstash}.ts`
 and `app/routes/api.support.*.tsx`.
 
 ### Newsletter
@@ -400,8 +395,7 @@ The full list with inline comments and source pointers is in
 `SUPPORT_MODERATION_MODE` (`off`), `SUPPORT_SESSION_SECRET` (falls back to
 `SESSION_SECRET`), `TURNSTILE_SITE_KEY` / `TURNSTILE_SECRET_KEY` (fail-closed in prod),
 `SUPPORT_TURNSTILE_DEV_SKIP=1` (local-dev only; gated behind
-`NODE_ENV !== 'production'`), `RESEND_API_KEY`, `SUPPORT_FROM_EMAIL`, `ANTHROPIC_API_KEY`,
-`SUPPORT_AI_DRAFTS_ENABLED`, `SUPPORT_AI_MODEL`.
+`NODE_ENV !== 'production'`), `RESEND_API_KEY`, `SUPPORT_FROM_EMAIL`.
 
 **Ticket index (Upstash Redis REST):** `UPSTASH_REDIS_REST_URL`,
 `UPSTASH_REDIS_REST_TOKEN`.

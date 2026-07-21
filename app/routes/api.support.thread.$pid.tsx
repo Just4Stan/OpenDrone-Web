@@ -10,7 +10,6 @@ import {
   type PublicMessage,
 } from '~/lib/support/scrubber';
 import {filterByApproval} from '~/lib/support/moderation';
-import {AI_DRAFT_PREFIX, AI_SUMMARY_PREFIX} from '~/lib/support/ai-draft';
 
 type ThreadResult =
   | {
@@ -103,36 +102,24 @@ export async function loader({request, context, params}: Route.LoaderArgs) {
   }
 
   // Same projection rules as /api/support/poll. Customer-relayed
-  // bot messages surface as role:'self'. Staff/AI surface as helper/ai.
+  // bot messages surface as role:'self'; staff surface as helper.
   // Self-relayed bot messages (the customer's own posts) bypass the
   // moderation gate — same reasoning as in /api/support/poll.
   const selfRelayed = messages.filter(
     (m) => m.author.bot && SELF_PREFIX_RE.test(m.content),
   );
-  const candidates = messages.filter(
-    (m) =>
-      !m.author.bot ||
-      m.content.startsWith(AI_DRAFT_PREFIX) ||
-      m.content.startsWith(AI_SUMMARY_PREFIX),
-  );
+  const candidates = messages.filter((m) => !m.author.bot);
   const filtered = await filterByApproval(env, candidates, indexEntry.tid);
   filtered.approved = [...filtered.approved, ...selfRelayed].sort((a, b) =>
     a.id.localeCompare(b.id),
   );
   const projected: PublicMessage[] = [];
   for (const m of filtered.approved) {
-    const isAiDraft = m.author.bot && m.content.startsWith(AI_DRAFT_PREFIX);
-    const isAiSummary = m.author.bot && m.content.startsWith(AI_SUMMARY_PREFIX);
-    const isSelf =
-      m.author.bot && !isAiDraft && !isAiSummary && SELF_PREFIX_RE.test(m.content);
-    if (m.author.bot && !isAiDraft && !isAiSummary && !isSelf) continue;
+    const isSelf = m.author.bot && SELF_PREFIX_RE.test(m.content);
+    if (m.author.bot && !isSelf) continue;
     let raw = m.content;
     let firstName = extractFirstName([m.author.globalName, m.author.username]);
-    if (isAiDraft) raw = m.content.slice(AI_DRAFT_PREFIX.length).trim();
-    else if (isAiSummary) {
-      const nl = m.content.indexOf('\n');
-      raw = nl >= 0 ? m.content.slice(nl + 1).trim() : '';
-    } else if (isSelf) {
+    if (isSelf) {
       const match = SELF_PREFIX_RE.exec(m.content);
       raw = (match?.[2] ?? '').trim();
       firstName = match?.[1]?.trim() || meta?.name || 'You';
@@ -142,8 +129,8 @@ export async function loader({request, context, params}: Route.LoaderArgs) {
     if (!scrubbed.content && !m.attachments.length) continue;
     projected.push({
       id: m.id,
-      role: isAiDraft || isAiSummary ? 'ai' : isSelf ? 'self' : 'helper',
-      firstName: isAiDraft || isAiSummary ? 'OpenDrone' : firstName,
+      role: isSelf ? 'self' : 'helper',
+      firstName,
       content: scrubbed.content,
       createdAt: m.createdAt,
       attachments: m.attachments.map((a) => ({
