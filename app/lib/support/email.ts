@@ -117,18 +117,30 @@ export async function sendReplyNotification(
     name: string;
     subject: string;
     resumeUrl: string;
-    preview: string;
-    staffFirstName: string;
+    // One entry per staff reply, oldest first. The sweep batches every
+    // unseen reply into a single email; previews are capped below.
+    replies: Array<{staffFirstName: string; preview: string}>;
   },
 ): Promise<boolean> {
-  const previewLine = opts.preview.slice(0, 240);
+  if (!opts.replies.length) return false;
+  const shown = opts.replies.slice(0, 5);
+  const extra = opts.replies.length - shown.length;
+  const single = opts.replies.length === 1;
+  const intro = single
+    ? `${shown[0].staffFirstName} replied to your OpenDrone support ticket.`
+    : `You have ${opts.replies.length} new replies on your OpenDrone support ticket.`;
+
   const text = [
     `Hi ${opts.name || 'there'},`,
     '',
-    `${opts.staffFirstName} replied to your OpenDrone support ticket.`,
+    intro,
     '',
     `Ticket: ${opts.subject}`,
-    previewLine ? `> ${previewLine}` : null,
+    ...shown.map((r) => {
+      const preview = r.preview.slice(0, 240);
+      return single ? `> ${preview}` : `> ${r.staffFirstName}: ${preview}`;
+    }),
+    extra > 0 ? `(+${extra} more in the chat)` : null,
     '',
     `Continue here: ${opts.resumeUrl}`,
     '',
@@ -137,15 +149,28 @@ export async function sendReplyNotification(
     .filter((line) => line !== null)
     .join('\n');
 
+  const blockquotes = shown
+    .map((r) => {
+      const preview = escapeHtml(r.preview.slice(0, 240));
+      const label = single
+        ? ''
+        : `<strong style="color:#e5e5e5">${escapeHtml(r.staffFirstName)}</strong><br>`;
+      return `<blockquote style="margin:12px 0 0;padding:10px 14px;border-left:2px solid #b8922e;background:#141417;color:#cfcfcf;font-size:13px;line-height:1.6">${label}${preview}</blockquote>`;
+    })
+    .join('');
+
   const html = renderEmail({
-    heading: `${escapeHtml(opts.staffFirstName)} replied to your ticket`,
+    heading: single
+      ? `${escapeHtml(shown[0].staffFirstName)} replied to your ticket`
+      : 'New replies on your ticket',
     body: `
       <p>Hi ${escapeHtml(opts.name || 'there')},</p>
-      <p>${escapeHtml(opts.staffFirstName)} just replied to your support ticket.</p>
+      <p>${escapeHtml(intro)}</p>
       <p style="margin-top:18px"><strong>${escapeHtml(opts.subject)}</strong></p>
+      ${blockquotes}
       ${
-        previewLine
-          ? `<blockquote style="margin:12px 0 0;padding:10px 14px;border-left:2px solid #b8922e;background:#141417;color:#cfcfcf;font-size:13px;line-height:1.6">${escapeHtml(previewLine)}</blockquote>`
+        extra > 0
+          ? `<p style="color:#737373;font-size:13px">+${extra} more in the chat.</p>`
           : ''
       }
       <p style="margin:24px 0 32px">

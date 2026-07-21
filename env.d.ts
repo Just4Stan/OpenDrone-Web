@@ -99,13 +99,6 @@ declare global {
     SUPPORT_APPROVE_EMOJI?: string;
     SUPPORT_MODERATION_MODE?: string;
 
-    // Email-on-final-answer marker. Staff reacts to a Discord message
-    // with this emoji to flag it as the conclusive reply that should
-    // notify the customer via email. Without this reaction, no email
-    // is sent — every message still surfaces in the live web widget.
-    // Default: 📧 when unset.
-    SUPPORT_EMAIL_EMOJI?: string;
-
     // Stage 6 ticket index — Upstash Redis REST credentials. Oxygen
     // does not expose Cloudflare KV bindings, so we hit Upstash over
     // HTTPS instead. When unset, list operations degrade to a Discord
