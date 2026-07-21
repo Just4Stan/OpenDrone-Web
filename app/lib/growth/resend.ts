@@ -7,18 +7,19 @@
  * different audience, different failure story). This module never sends
  * on behalf of the support bridge.
  *
- * Resend model (post-Nov-2025, verified against resend.com/docs
- * 2026-07-06): contacts are GLOBAL (Audiences are gone) with custom
- * `properties`, plus static Segments (created by name, members added
- * explicitly) and Topics. Broadcasts target a `segment_id` — hence the
- * per-SKU strategy: every notify signup for <handle> is added to a
- * segment named `notify-<handle>` (mirroring the Shopify customer tag),
- * so "email everyone interested in <handle>" is one Broadcast at that
- * segment (scripts/launch-blast.mjs). Endpoints used:
+ * Resend model (verified LIVE against the production account
+ * 2026-07-21, which still exposes the audiences-era API): contacts are
+ * global, Segments alias Audiences 1:1, and Broadcasts target a
+ * `segment_id` — hence the per-SKU strategy: every notify signup for
+ * <handle> is added to a segment named `notify-<handle>` (mirroring the
+ * Shopify customer tag), so "email everyone interested in <handle>" is
+ * one Broadcast at that segment (scripts/launch-blast.mjs). Custom
+ * contact `properties` are NOT usable on this account (422 unless
+ * declared first; no API to declare them). Endpoints used:
  *
- *   POST   /contacts                                   create (props + segments)
- *   PATCH  /contacts/{email}                           merge properties
+ *   POST   /contacts                                   create (segments: [{id}])
  *   POST   /contacts/{email}/segments/{segment_id}     add membership
+ *   PATCH  /contacts/{email}                           unsubscribe flag
  *   GET    /segments?limit=100[&after=]                find by name
  *   POST   /segments                                   create by name
  *   POST   /emails                                     welcome (transactional)
@@ -127,13 +128,16 @@ async function ensureSegmentId(
 
 /**
  * Create-or-merge a marketing contact. `product` additionally files the
- * contact into the `notify-<product>` segment. On an EXISTING contact
- * only `properties` are merged — `unsubscribed` is never touched, so an
- * opt-out always survives a re-signup.
+ * contact into the `notify-<product>` segment. `unsubscribed` is never
+ * touched, so an opt-out always survives a re-signup.
  *
- * The Upstash ledger (sig:<email>) is the source of truth for
- * first-touch locale/channel; the Resend properties are a convenience
- * copy for dashboard filtering and may reflect the latest signup.
+ * API shapes verified live against the production account 2026-07-21:
+ * POST /contacts requires `segments` as an array of OBJECTS
+ * (`[{id}]`, not `[id]` — strings 422), and custom `properties` 422
+ * unless declared account-side first, which this plan cannot do via
+ * API. locale/channel therefore stay ledger-only (sig:<email> is the
+ * source of truth anyway) and are accepted here only for call-site
+ * compatibility.
  */
 export async function upsertContact(
   env: MarketingEnv,
@@ -150,35 +154,15 @@ export async function upsertContact(
       ? await ensureSegmentId(env, notifySegmentName(opts.product))
       : null;
 
-    const properties: Record<string, string> = {};
-    if (opts.locale) properties.locale = opts.locale;
-    if (opts.channel) properties.channel = opts.channel;
-    const hasProps = Object.keys(properties).length > 0;
-
     const created = await api(env, 'POST', '/contacts', {
       email: opts.email,
-      ...(hasProps ? {properties} : {}),
-      ...(segmentId ? {segments: [segmentId]} : {}),
+      ...(segmentId ? {segments: [{id: segmentId}]} : {}),
     });
     if (created.ok) return true;
 
-    // Existing contact (or transient create failure) → merge path. PATCH
-    // supports properties only (no segments field), so membership is a
-    // separate call. Deliberately no `unsubscribed` field here.
-    const patched = await api(
-      env,
-      'PATCH',
-      `/contacts/${encodeURIComponent(opts.email)}`,
-      hasProps ? {properties} : {},
-    );
-    if (!patched.ok) {
-      console.warn(
-        '[growth/resend] contact upsert failed',
-        created.status,
-        patched.status,
-      );
-      return false;
-    }
+    // Existing contact (or transient create failure) → membership add is
+    // the only remaining write. Deliberately no `unsubscribed` field
+    // anywhere in this path.
     if (segmentId) {
       const seg = await api(
         env,
@@ -186,10 +170,17 @@ export async function upsertContact(
         `/contacts/${encodeURIComponent(opts.email)}/segments/${segmentId}`,
       );
       if (!seg.ok) {
-        console.warn('[growth/resend] segment add failed', seg.status);
+        console.warn(
+          '[growth/resend] contact upsert failed',
+          created.status,
+          seg.status,
+        );
+        return false;
       }
+      return true;
     }
-    return true;
+    console.warn('[growth/resend] contact create failed', created.status);
+    return false;
   } catch (err) {
     console.warn('[growth/resend] upsertContact failed', err);
     return false;

@@ -78,6 +78,19 @@ URL in the repo to opendrone.store (emails stay @opendrone.be); the
 compliance repo still says opendrone.be and needs the same swap at next
 sync.
 
+Done 2026-07-21 (browser/infra session + feat/resend-contacts-fix lane):
+newsletter plumbing audited end to end after the subscriber influx. Resend
+key story untangled (see task 13), Oxygen re-keyed + redeployed, welcome
+email verified delivered in production. Found and fixed a launch-day bug:
+upsertContact had never worked (wrong POST /contacts payload shape, 422
+swallowed by design), so Resend had ZERO contacts while Shopify had 409
+subscribed customers. Fixed the payload in app/lib/growth/resend.ts and
+scripts/launch-blast.mjs (segments must be [{id}] objects; custom
+properties unusable on this plan), added scripts/resend-backfill.mjs, and
+ran it: Shopify -> Resend backfill of all consented subscribers
+(notify-openrx 65, notify-openfc-lite 17, rest as plain contacts due to
+the 3-segment free-plan cap, see task 13b).
+
 ## Stan's tasks
 
 0. Log into plausible.io in Chrome so the agent can change the site domain
@@ -127,22 +140,40 @@ sync.
 11. Copy pass on TODO(copy-stan) markers + banner wording.
 12. End-to-end test order once payments live (also validates the Purchase
     event path end-to-end and webhook field redaction).
-13. VIDEO BLOCKER, one step left: DNS. Systems check 2026-07-21 (agent):
-    RESEND_API_KEY created and verified working (test send accepted +
-    Resend reports delivered; key in local .env). BUT the opendrone.be
-    domain in Resend is status FAILED: three DNS records are missing at
-    Gandi (zone opendrone.be), so every production send from
-    @opendrone.be will 403 until they exist:
-      - TXT resend._domainkey = the p=MIGf... DKIM value shown in
-        Resend > Domains > opendrone.be
-      - MX  send -> feedback-smtp.eu-west-1.amazonses.com, priority 10
-      - TXT send = "v=spf1 include:amazonses.com ~all"
-    After adding: hit Verify in Resend, confirm RESEND_API_KEY is in
-    Oxygen (Production + Preview), and if it was pasted there after the
-    07:50 deploy of #331, redeploy (env vars apply at deploy time).
-    Then welcome/resume/reply emails all go live at once. Signups are
-    not lost meanwhile: they land as Shopify customers with the notify
-    tag.
+13. RESOLVED 2026-07-21 (agent, browser session): production email was
+    never broken and is verified live end to end (real opendrone.store
+    signup -> "Subscribed: Engineering Essentials" welcome, Resend
+    reports delivered, 08:05 UTC). The confusion: there are TWO Resend
+    accounts. The ORIGINAL (Google login stan.coene@gmail.com, team
+    "stan.coene") has opendrone.be verified since 2026-04-25, its DKIM/
+    SPF records are the ones live at Gandi, and its key had been in
+    Oxygen as a secret-flagged (unreadable) variable, which is why every
+    audit read it as "never provisioned". A SECOND account (team
+    "incutec", login stan@incutec.eu, created the morning of
+    2026-07-21) holds a duplicate opendrone.be entry, status failed:
+    that is the entry the earlier "systems check" note described. DO
+    NOT add the DNS records from the failed entry: they would put a
+    second conflicting DKIM key at resend._domainkey and can break the
+    live sender. Done today: fresh key `opendrone-web-oxygen-2` created
+    in the ORIGINAL account, set in Oxygen Production + Preview (plain
+    value now, so env pull/push work) and local .env, production
+    redeployed, end-to-end verified. No deploy ever ran with a bad key,
+    so no sends were lost. Remaining, Stan only, three decisions:
+    (a) Account consolidation. Either stay on the gmail-login account
+        (then delete the failed opendrone.be entry + the unused
+        `opendrone-web-oxygen` key in the incutec account), or migrate
+        to the incutec account later: delete the domain in the old
+        account, claim it in the new one (verification TXT already
+        live at Gandi), re-key Oxygen, re-run
+        scripts/resend-backfill.mjs. Do NOT migrate during launch
+        traffic; sends 403 between domain deletion and claim.
+    (b) Resend free plan caps segments at 3 (General, notify-openrx,
+        notify-openfc-lite, all in use). Subscribers for openesc,
+        openframe, hardware-kit, elrs-antenna-24 exist as plain
+        contacts only and cannot be broadcast-targeted per SKU until
+        the plan is upgraded or segments are freed.
+    (c) Rotate the two Resend keys pasted through agent chat when
+        convenient (same hygiene note as the shpat_ token in task 1).
 14. VIDEO BLOCKER: OpenRX PDP has zero downloads (every card 404'd, so the
     chapter is hidden; TODO(downloads) at product-content.ts). Video viewers
     will want schematic.pdf / BOM / STEP. Publish the artifacts to the
@@ -152,10 +183,11 @@ sync.
 16. Back-in-stock notify shipped 2026-07-18 (took over the parked lane;
     zero WIP existed). inventory_levels/update -> notify-<handle> Resend
     broadcast, ACTIVE + not-coming-soon + 7-day cooldown latch guards,
-    dormant-safe without env. TO ACTIVATE: register the
-    inventory_levels/update webhook at Settings > Notifications >
-    Webhooks (same receiver URL), confirm the custom-app token has
-    read_products, and land SHOPIFY_ADMIN_API_TOKEN in Oxygen (task 1).
+    dormant-safe without env. ACTIVATED: the inventory_levels/update
+    webhook is registered at Settings > Notifications > Webhooks
+    (confirmed live in admin 2026-07-21), SHOPIFY_ADMIN_API_TOKEN is in
+    Oxygen (task 1). Real sends stay blocked by the coming-soon guard
+    until launch, by design.
 17. No OpenFrame repo exists in incutec-hw, so the frame PDP's GitHub chip
     links to the org. Publish the frame CAD repo, then set `repoUrl` in
     product-content.ts. Task 14 is partially closed: the OpenRX PDP now
