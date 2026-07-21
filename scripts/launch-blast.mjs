@@ -304,9 +304,10 @@ async function main() {
     // Create with membership; on "already exists" fall back to a plain
     // segment add. Never touches `unsubscribed` — Resend suppresses
     // opted-out contacts at send time anyway.
+    // segments must be objects ([{id}], not [id]) — strings 422.
     const created = await resend('POST', '/contacts', {
       email,
-      segments: [segmentId],
+      segments: [{id: segmentId}],
     });
     if (!created.ok) {
       const added = await resend(
