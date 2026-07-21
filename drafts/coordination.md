@@ -13,6 +13,13 @@ flow rules in CLAUDE.md.
 
 Free ports: 3001-3002, 3004-3009.
 
+Merged 2026-07-21: support AI first-responder + thread summariser
+removed (Stan's call: never provisioned, no ANTHROPIC_API_KEY was ever
+set, so it only added dead code paths). The support bridge is now
+purely human: staff type in the Discord forum thread, ✅ publishes a
+reply to the widget (enforce mode), 📧 flags it for the email
+notification. Test count drops 125 -> 110 (ai-draft suite deleted).
+
 Merged 2026-07-18: #313 launch-prep for the OpenRX video (SEO share
 previews: absolute og:image + canonicals + home title; copy audit fixes:
 visible em dashes out, OpenFrame lead de-hyped, welcome-email display
