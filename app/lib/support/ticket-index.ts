@@ -44,6 +44,12 @@ export type TicketMeta = TicketIndexEntry & {
   customerId?: string;
   email: string;
   name: string;
+  // Newest Discord message id the customer's widget delivered while the
+  // tab was visible. Written by /api/support/poll (best-effort).
+  seenCursor?: string;
+  // Discord message id up to which the reply-notification sweep has
+  // settled its email decisions. Written by /api/support/notify.
+  notifyCursor?: string;
 };
 
 const MAX_INDEX_ENTRIES = 200;
@@ -186,6 +192,23 @@ export async function markFeedback(env: Env, tid: string): Promise<void> {
       e.feedbackSubmitted = true;
     }),
   ]);
+}
+
+// Merge cursor fields into a ticket's meta record. Cursor-only patch:
+// index entries don't carry these fields, so no index write is needed.
+export async function patchMeta(
+  env: Env,
+  tid: string,
+  patch: Partial<Pick<TicketMeta, 'seenCursor' | 'notifyCursor'>>,
+): Promise<void> {
+  const kv = getTicketStore(env);
+  if (!kv) return;
+  const meta = await getMeta(env, tid);
+  if (!meta) return;
+  Object.assign(meta, patch);
+  await kv.put(`tk:${tid}`, JSON.stringify(meta), {
+    expirationTtl: META_TTL_SECONDS,
+  });
 }
 
 export async function getMeta(

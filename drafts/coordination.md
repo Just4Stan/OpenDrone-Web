@@ -13,6 +13,22 @@ flow rules in CLAUDE.md.
 
 Free ports: 3001-3002, 3004-3009.
 
+Merged 2026-07-21 (second PR): automatic reply-notification emails for
+support tickets. A 15-min cron (support-notify.yml -> POST
+/api/support/notify, same SUPPORT_CLEANUP_SECRET bearer) emails the
+customer any staff replies they did not watch arrive in the widget:
+one batched email per ticket, 10-min quiet period so reply bursts
+collapse into a single mail, suppressed when the customer replied
+after staff. The bot posts "📧 Emailed <name> ..." into the thread
+after each send. Replaces the manual 📧-reaction mechanism (removed;
+SUPPORT_EMAIL_EMOJI is gone). Poll route now records a per-ticket
+seenCursor on visible-tab deliveries. ALSO FIXED: the daily cleanup
+cron still POSTed opendrone.be, whose 301 curl treats as failure, so
+the stale-ticket sweep had been failing since the 07-18 domain move;
+now opendrone.store. Emails stay dead until RESEND_API_KEY lands
+(task 13); the sweep retries the same batch each run until then, by
+design. Tests 110 -> 122 (notify-decision suite).
+
 Merged 2026-07-21: support AI first-responder + thread summariser
 removed (Stan's call: never provisioned, no ANTHROPIC_API_KEY was ever
 set, so it only added dead code paths). The support bridge is now

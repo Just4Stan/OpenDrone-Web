@@ -193,7 +193,14 @@ export function SupportThread({
     const tick = async () => {
       if (stopped) return;
       try {
-        const url = firstTick ? '/api/support/poll?initial=1' : '/api/support/poll';
+        // `visible` tells the server whether this delivery counts as
+        // "seen": hidden-tab polls must stay eligible for the reply
+        // notification email sweep.
+        const vis =
+          typeof document !== 'undefined' && document.hidden ? '0' : '1';
+        const url = firstTick
+          ? `/api/support/poll?initial=1&visible=${vis}`
+          : `/api/support/poll?visible=${vis}`;
         firstTick = false;
         const res = await fetch(url, {credentials: 'same-origin'});
         if (res.status === 401) {

@@ -207,17 +207,20 @@ the cookie.
 when hidden; the first poll after load uses `?initial=1` to backfill the full thread
 (refresh-safe). The bot authors the thread starter and every customer reply (prefixed
 `**<First>:**` so the projection knows it's customer-relayed); staff humans appear as
-themselves. The poll endpoint projects each message with a role: `self` (customer),
-`helper` (staff), or `ai` (draft/summary, only if approved).
+themselves. The poll endpoint projects each message with a role: `self` (customer) or
+`helper` (staff).
 
 **Staff workflow, in Discord:**
 
 - Watch the support forum channel. Every web ticket opens a thread there
   (`#<id> [<FirstName>] <subject>`). Type in the thread: the customer sees it within 4 s.
-- **React with 📧 on your final answer to email the customer.** That reaction is the
-  *only* push-style signal; every other message stays web-only. The email carries
-  `Re: <subject>`, a ~240-char preview, and a magic-link "Continue chat →" button.
-  Debounced to one email per ticket per 5 minutes.
+- **Email notifications are automatic.** A 15-minute cron
+  (`.github/workflows/support-notify.yml` → `/api/support/notify`) emails the customer
+  every staff reply they didn't watch arrive in the widget, batched into one email per
+  ticket (`Re: <subject>`, ~240-char previews, magic-link "Continue chat →" button). A
+  10-minute quiet period lets a burst of replies settle into a single email, and a
+  customer reply after yours suppresses it entirely. After each send the bot posts
+  "📧 Emailed <name> ..." into the thread as confirmation.
 - Sensitive identifiers (email, order number, Shopify customer GID, anonymised IP, UA)
   are posted to a **private staff channel** per ticket: pull them from there, never ask
   the customer to retype, never paste them into the public thread.
@@ -259,12 +262,19 @@ meta), `idx:cust:{customerId}` and `idx:email:{sha256}` (recent-ticket lists, ca
 the source of truth, nothing breaks, you just lose the cross-device index. Discord forum
 threads auto-archive after 24h of inactivity.
 
-**Daily sweep.** `.github/workflows/support-cleanup.yml` POSTs `/api/support/cleanup` at
-03:17 UTC with a bearer token, deleting Discord threads + index entries for tickets that
-are closed or idle 7 days (closed threads get a 1-day grace period).
+**Cron sweeps.** Both authenticate with the `SUPPORT_CLEANUP_SECRET` bearer token
+(repo secret, must match the Oxygen env var):
+
+- `.github/workflows/support-notify.yml` POSTs `/api/support/notify` every 15 minutes:
+  the reply-notification emails described above. Tracks per-ticket `seenCursor` (written
+  by the poll route on visible-tab deliveries) and `notifyCursor` (advanced after each
+  send) in the ticket meta; decision logic in `app/lib/support/notify-decision.ts`.
+- `.github/workflows/support-cleanup.yml` POSTs `/api/support/cleanup` at 03:17 UTC,
+  deleting Discord threads + index entries for tickets that are closed or idle 7 days
+  (closed threads get a 1-day grace period).
 
 **Files.** UI: `app/components/{SupportWidget,SupportThread,FeedbackModal}.tsx`. Server:
-`app/lib/support/{discord,session,resume-token,scrubber,moderation,email,uploads,turnstile,ticket-index,upstash}.ts`
+`app/lib/support/{discord,session,resume-token,scrubber,moderation,notify-decision,email,uploads,turnstile,ticket-index,upstash}.ts`
 and `app/routes/api.support.*.tsx`.
 
 ### Newsletter
@@ -391,7 +401,7 @@ The full list with inline comments and source pointers is in
 `DISCORD_BOT_TOKEN`, `DISCORD_SUPPORT_CHANNEL_ID` (a **Forum** channel),
 `DISCORD_GUILD_ID`, `DISCORD_STAFF_METADATA_CHANNEL_ID`, `DISCORD_FEEDBACK_CHANNEL_ID`,
 `DISCORD_SUPPORT_INVITE`, `PUBLIC_DISCORD_GUILD_ID`, `PUBLIC_DISCORD_INVITE`,
-`SUPPORT_MOD_ROLE_ID`, `SUPPORT_APPROVE_EMOJI` (✅), `SUPPORT_EMAIL_EMOJI` (📧),
+`SUPPORT_MOD_ROLE_ID`, `SUPPORT_APPROVE_EMOJI` (✅),
 `SUPPORT_MODERATION_MODE` (`off`), `SUPPORT_SESSION_SECRET` (falls back to
 `SESSION_SECRET`), `TURNSTILE_SITE_KEY` / `TURNSTILE_SECRET_KEY` (fail-closed in prod),
 `SUPPORT_TURNSTILE_DEV_SKIP=1` (local-dev only; gated behind

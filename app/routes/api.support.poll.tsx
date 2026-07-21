@@ -7,9 +7,8 @@ import {
   signTicket,
   verifyTicket,
 } from '~/lib/support/session';
-import {sendReplyNotification} from '~/lib/support/email';
-import {buildResumeUrl, signResumeToken} from '~/lib/support/resume-token';
 import {checkRateLimit} from '~/lib/rate-limit';
+import {patchMeta} from '~/lib/support/ticket-index';
 import {
   extractFirstName,
   scrubForPublic,
@@ -91,6 +90,12 @@ export async function loader({request, context}: Route.LoaderArgs) {
   // older messages (e.g. contents they hoped were ephemeral) and replay
   // staff replies, so the cursor stays server-side.
   const initial = url.searchParams.get('initial') === '1';
+  // `visible=0` marks a poll from a hidden/backgrounded tab. Delivering
+  // to a hidden tab must not count as the customer having SEEN the
+  // reply, or the notify sweep would skip its email. Client-controlled,
+  // but the stakes are one redundant (or one missing) courtesy email.
+  // Absent param (older cached widget bundles) counts as visible.
+  const visible = url.searchParams.get('visible') !== '0';
   const after = initial ? undefined : ticket.lastCursor || undefined;
 
   const {messages, thread} = await fetchThreadMessages(env, ticket.tid, {
@@ -204,79 +209,27 @@ export async function loader({request, context}: Route.LoaderArgs) {
     'Cache-Control': 'no-store',
   };
 
-  // Reply notification email. Fires only when staff has explicitly
-  // marked a message as the final/conclusive answer by reacting with
-  // SUPPORT_EMAIL_EMOJI (default 📧). This avoids spamming the
-  // customer's inbox on every back-and-forth — the live web widget
-  // surfaces every message regardless. The 5-min debounce is a
-  // belt-and-braces guard against double-sends if the same message
-  // gets toggled on/off, or if multiple tabs poll at once.
-  const REPLY_EMAIL_DEBOUNCE_S = 5 * 60;
-  const EMAIL_EMOJI = env.SUPPORT_EMAIL_EMOJI?.trim() || '📧';
-  const nowSec = Math.floor(Date.now() / 1000);
-  // The new-helper match works against the raw filtered set rather
-  // than the projected one because we need the original `reactions`
-  // array, which the public scrubber strips.
-  const flaggedHelper = filtered.approved.find(
-    (m) =>
-      !m.author.bot &&
-      m.reactions.some(
-        (r) => r.emoji === EMAIL_EMOJI && r.count > (r.me ? 1 : 0),
-      ),
-  );
-  // Match the flagged Discord message back to its public projection so
-  // the email contains the scrubbed body, not the raw Discord content.
-  const newHelper = flaggedHelper
-    ? projected.find((p) => p.id === flaggedHelper.id) ?? null
-    : null;
-  let cookieReplyEmailAt = ticket.lastReplyEmailAt ?? 0;
-  if (
-    newHelper &&
-    ticket.email &&
-    nowSec - cookieReplyEmailAt > REPLY_EMAIL_DEBOUNCE_S
-  ) {
-    cookieReplyEmailAt = nowSec;
-    const job = (async () => {
-      try {
-        const token = await signResumeToken(env, {
-          tid: ticket.tid,
-          uid: ticket.uid,
-          email: ticket.email,
-          name: ticket.name,
-          pid: ticket.pid,
-        });
-        const baseUrl = new URL(request.url).origin;
-        const resumeUrl = buildResumeUrl(baseUrl, token);
-        await sendReplyNotification(env, {
-          to: ticket.email,
-          name: ticket.name,
-          subject:
-            thread.name?.replace(/^#\d+\s*\[[^\]]+\]\s*/, '') ||
-            'Your support ticket',
-          resumeUrl,
-          preview: newHelper.content,
-          staffFirstName: newHelper.firstName || 'OpenDrone',
-        });
-      } catch (err) {
-        console.warn('[support/poll] reply-email failed', err);
-      }
-    })();
-    if (context.waitUntil) context.waitUntil(job);
-    else void job;
-  }
-
   // Roll the cursor forward into the signed cookie so the next poll asks
   // only for what's newer than what we just delivered — but never past a
   // message still awaiting moderation (see cursorTarget above).
   const cursorChanged = cursorTarget && cursorTarget !== ticket.lastCursor;
-  const replyAtChanged = cookieReplyEmailAt !== (ticket.lastReplyEmailAt ?? 0);
-  if (cursorChanged || replyAtChanged) {
-    const rolled = {
-      ...ticket,
-      lastCursor: cursorChanged ? cursorTarget : ticket.lastCursor,
-      lastReplyEmailAt: cookieReplyEmailAt,
-    };
+  if (cursorChanged) {
+    const rolled = {...ticket, lastCursor: cursorTarget};
     headers['Set-Cookie'] = buildSupportSetCookie(await signTicket(env, rolled));
+  }
+
+  // Record what the customer has seen so the notify sweep
+  // (/api/support/notify) doesn't email them about replies they already
+  // watched arrive live. Only polls from a visible tab count, and only
+  // when the cursor actually moved: a hidden tab keeps polling at 15s
+  // but its deliveries stay email-eligible. Best-effort, never blocks
+  // the response.
+  if (visible && cursorChanged && cursorTarget) {
+    const job = patchMeta(env, ticket.tid, {seenCursor: cursorTarget}).catch(
+      (err) => console.warn('[support/poll] seenCursor write failed', err),
+    );
+    if (context.waitUntil) context.waitUntil(job);
+    else void job;
   }
 
   // Stats for the sidebar.
