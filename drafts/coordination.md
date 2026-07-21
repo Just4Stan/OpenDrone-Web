@@ -127,14 +127,22 @@ sync.
 11. Copy pass on TODO(copy-stan) markers + banner wording.
 12. End-to-end test order once payments live (also validates the Purchase
     event path end-to-end and webhook field redaction).
-13. VIDEO BLOCKER: notify signups get no welcome email. Verified 2026-07-18
-    with a real production signup (stan.coene+openrx-launchtest@gmail.com,
-    still absent after 30+ min incl. spam). RESEND_API_KEY is empty even in
-    the local .env, so it was never provisioned. Create the Resend API key,
-    verify the sending domain in Resend (pairs with task 7 DKIM), set
-    RESEND_API_KEY in Oxygen (Production + Preview), then delete the test
-    signup or leave it, it is Stan's own alias. Signups are not lost
-    meanwhile: they land as Shopify customers with the notify tag.
+13. VIDEO BLOCKER, one step left: DNS. Systems check 2026-07-21 (agent):
+    RESEND_API_KEY created and verified working (test send accepted +
+    Resend reports delivered; key in local .env). BUT the opendrone.be
+    domain in Resend is status FAILED: three DNS records are missing at
+    Gandi (zone opendrone.be), so every production send from
+    @opendrone.be will 403 until they exist:
+      - TXT resend._domainkey = the p=MIGf... DKIM value shown in
+        Resend > Domains > opendrone.be
+      - MX  send -> feedback-smtp.eu-west-1.amazonses.com, priority 10
+      - TXT send = "v=spf1 include:amazonses.com ~all"
+    After adding: hit Verify in Resend, confirm RESEND_API_KEY is in
+    Oxygen (Production + Preview), and if it was pasted there after the
+    07:50 deploy of #331, redeploy (env vars apply at deploy time).
+    Then welcome/resume/reply emails all go live at once. Signups are
+    not lost meanwhile: they land as Shopify customers with the notify
+    tag.
 14. VIDEO BLOCKER: OpenRX PDP has zero downloads (every card 404'd, so the
     chapter is hidden; TODO(downloads) at product-content.ts). Video viewers
     will want schematic.pdf / BOM / STEP. Publish the artifacts to the
