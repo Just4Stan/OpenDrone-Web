@@ -19,6 +19,7 @@
 import {redirect} from 'react-router';
 import {loadLegal, type LegalSlug} from '~/lib/legal';
 import {LEGAL_SLUGS, type LegalPathSlug} from '~/lib/legal-slugs';
+import {SITE_ORIGIN} from '~/lib/seo';
 
 export const LOCALES = ['en', 'nl', 'fr'] as const;
 export type Locale = (typeof LOCALES)[number];
@@ -400,12 +401,14 @@ export async function resolveLegalLoader(
   if (isLocale(first)) {
     // Already locale-prefixed; render directly.
     const html = loadLegal(legalSlug, first);
-    const canonicalUrl = `${url.origin}/${first}/${urlSlug}`;
+    // SEO URLs derive from SITE_ORIGIN, not the serving origin: Google must
+    // index opendrone.be. The locale redirect below stays request-relative.
+    const canonicalUrl = `${SITE_ORIGIN}/${first}/${urlSlug}`;
     const hreflang = [
-      {lang: 'en', href: `${url.origin}/en/${urlSlug}`},
-      {lang: 'nl', href: `${url.origin}/nl/${urlSlug}`},
-      {lang: 'fr', href: `${url.origin}/fr/${urlSlug}`},
-      {lang: 'x-default', href: `${url.origin}/en/${urlSlug}`},
+      {lang: 'en', href: `${SITE_ORIGIN}/en/${urlSlug}`},
+      {lang: 'nl', href: `${SITE_ORIGIN}/nl/${urlSlug}`},
+      {lang: 'fr', href: `${SITE_ORIGIN}/fr/${urlSlug}`},
+      {lang: 'x-default', href: `${SITE_ORIGIN}/en/${urlSlug}`},
     ];
     return {html, locale: first, canonicalUrl, hreflang};
   }
