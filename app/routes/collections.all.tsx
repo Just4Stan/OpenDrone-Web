@@ -5,18 +5,20 @@ import type {MoneyV2} from '@shopify/hydrogen/storefront-api-types';
 import {ProductItem, type ProductQuickAdd} from '~/components/ProductItem';
 import type {StackOffer} from '~/components/StackQuickAdd';
 import type {CollectionItemFragment} from 'storefrontapi.generated';
-import {buildSeoMeta} from '~/lib/seo';
+import {buildSeoMeta, SITE_ORIGIN} from '~/lib/seo';
 import {EmptyState} from '~/components/EmptyState';
 import {PRODUCT_CONTENT, isComingSoon} from '~/lib/product-content';
 import {useComingSoon} from '~/lib/coming-soon';
 import {stackDiscountedPrice} from '~/lib/stack-discount';
 
-export const meta: Route.MetaFunction = () =>
+export const meta: Route.MetaFunction = ({location}) =>
   buildSeoMeta({
     title: 'All Products',
     description:
       'Browse every OpenDrone product in one place: open source flight controllers, ESCs, receivers, frames, bundles, and accessories. Filter by category and sort by price or newest.',
     type: 'product',
+    // Canonical without filter/sort queries so variants don't splinter.
+    url: `${SITE_ORIGIN}${location.pathname}`,
   });
 
 /**

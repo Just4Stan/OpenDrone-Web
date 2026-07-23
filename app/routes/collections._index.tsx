@@ -3,13 +3,14 @@ import type {Route} from './+types/collections._index';
 import {getPaginationVariables, Image} from '@shopify/hydrogen';
 import type {CollectionFragment} from 'storefrontapi.generated';
 import {PaginatedResourceSection} from '~/components/PaginatedResourceSection';
-import {buildSeoMeta} from '~/lib/seo';
+import {buildSeoMeta, SITE_ORIGIN} from '~/lib/seo';
 
-export const meta: Route.MetaFunction = () =>
+export const meta: Route.MetaFunction = ({location}) =>
   buildSeoMeta({
     title: 'Collections',
     description:
       'Browse OpenDrone collections for flight controllers, ESCs, frames, and open hardware builds.',
+    url: `${SITE_ORIGIN}${location.pathname}`,
   });
 
 export async function loader(args: Route.LoaderArgs) {

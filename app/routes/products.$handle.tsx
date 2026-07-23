@@ -1514,7 +1514,7 @@ export default function Product() {
     title: product.title,
     description: product.description,
     imageUrl: selectedVariant?.image?.url ?? galleryImages[0]?.url ?? null,
-    url: `https://opendrone.store/products/${product.handle}`,
+    url: `${SITE_ORIGIN}/products/${product.handle}`,
     vendor: product.vendor,
     sku: selectedVariant?.sku ?? null,
     price: jsonLdPrice
