@@ -2,8 +2,11 @@ import type {CompanyIdentity} from '~/lib/company';
 
 const STORE_NAME = 'OpenDrone';
 const DEFAULT_LOCALE = 'en_US';
-// Canonical production origin (Shopify primary domain; .be/.shop 301 here).
-export const SITE_ORIGIN = 'https://opendrone.store';
+// Canonical SEO origin: what rel=canonical, og:url and JSON-LD point at.
+// Google must index opendrone.be even while pages serve on other hosts
+// (www.opendrone.store stays the checkout host), so canonicals must never
+// be derived from the request origin.
+export const SITE_ORIGIN = 'https://opendrone.be';
 
 export const DEFAULT_SEO_DESCRIPTION =
   'Open source drone electronics designed in Belgium.';

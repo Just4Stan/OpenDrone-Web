@@ -5,12 +5,12 @@ import {PaginatedResourceSection} from '~/components/PaginatedResourceSection';
 import {redirectIfHandleIsLocalized} from '~/lib/redirect';
 import {ProductItem} from '~/components/ProductItem';
 import type {ProductItemFragment} from 'storefrontapi.generated';
-import {buildSeoMeta} from '~/lib/seo';
+import {buildSeoMeta, SITE_ORIGIN} from '~/lib/seo';
 import {Breadcrumb} from '~/components/Breadcrumb';
 import {CollectionSort, resolveSort} from '~/components/CollectionSort';
 import {EmptyState} from '~/components/EmptyState';
 
-export const meta: Route.MetaFunction = ({data}) =>
+export const meta: Route.MetaFunction = ({data, location}) =>
   buildSeoMeta({
     title: data?.collection?.title
       ? `${data.collection.title} Collection`
@@ -19,6 +19,8 @@ export const meta: Route.MetaFunction = ({data}) =>
       data?.collection?.description ||
       'Explore curated OpenDrone hardware collections and product families.',
     type: 'product',
+    // Canonical without pagination/sort queries so variants don't splinter.
+    url: `${SITE_ORIGIN}${location.pathname}`,
   });
 
 export async function loader(args: Route.LoaderArgs) {
