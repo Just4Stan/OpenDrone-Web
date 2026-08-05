@@ -10,7 +10,7 @@ Les commandes sont normalement expédiées dans les 2 jours ouvrables suivant la
 
 ### Tarifs et pays d’expédition
 
-Les frais d’expédition dépendent de la destination et du poids du colis. Certains pays sont exclus en raison de sanctions à l’exportation — voir notre [page de conformité à l’exportation](/export-compliance).
+Les frais d’expédition dépendent de la destination et du poids du colis. Certains pays sont exclus en raison de sanctions à l’exportation : voir notre [politique d’usage final](/end-use).
 
 ### Risque pendant l’expédition
 

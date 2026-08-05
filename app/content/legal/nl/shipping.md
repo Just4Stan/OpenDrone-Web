@@ -8,7 +8,7 @@ Bestellingen worden in principe verzonden binnen 2 werkdagen na ontvangst van de
 
 ### Verzendkosten en landen
 
-Het verzendtarief is afhankelijk van bestemming en pakketgewicht. Bepaalde landen zijn uitgesloten wegens export-sancties — zie onze [export compliance pagina](/export-compliance).
+Het verzendtarief is afhankelijk van bestemming en pakketgewicht. Bepaalde landen zijn uitgesloten wegens export-sancties: zie ons [end-use beleid](/end-use).
 
 ### Risico bij verzending
 

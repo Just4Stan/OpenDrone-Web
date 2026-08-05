@@ -65,7 +65,6 @@ This policy:
 - EU Regulation 765/2006 (Belarus): https://eur-lex.europa.eu/eli/reg/2006/765/oj
 - ACLED: https://acleddata.com/
 - UCDP: https://ucdp.uu.se/
-- `compliance/export-sanctions/export-control-memo.md`
 - `compliance/export-sanctions/sanctions-screening.md`
 - `compliance/webshop/algemene-voorwaarden.md`
 

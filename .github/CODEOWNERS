@@ -12,7 +12,6 @@
 /app/routes/terms.tsx                   @Just4Stan
 /app/routes/shipping.tsx                @Just4Stan
 /app/routes/warranty.tsx                @Just4Stan
-/app/routes/export-compliance.tsx       @Just4Stan
 /app/routes/legal.tsx                   @Just4Stan
 /app/routes/security.tsx                @Just4Stan
 /app/routes/cookie-settings.tsx         @Just4Stan

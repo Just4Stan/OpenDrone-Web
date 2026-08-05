@@ -108,29 +108,6 @@ Sources:
 
 ---
 
-## Implementation plan for Incutec (pre-launch)
-
-### Phase 1: At BV incorporation (Apr 2026)
-- [ ] Confirm BTW number activation via Acerta
-- [ ] Open Billit basic account for receive-only Peppol access until Exact Online is live
-- [ ] Route Peppol to stan@incutec.eu for now (split to invoices@ once infra is set up)
-- [ ] Test-receive a Peppol invoice from Polar or Billit
-
-### Phase 2: Pre-launch (Jun-Jul 2026)
-- [ ] Install Sufio on the Shopify dev store
-- [ ] Connect Sufio to Exact Online (via Polar) so B2B invoices flow into the Peppol path
-- [ ] Configure VAT number field on Shopify B2B checkout with VIES validation
-- [ ] Test: place B2B test order → verify Peppol XML generated → verify delivered to test recipient
-- [ ] Test: place B2C test order → verify PDF invoice only (no Peppol)
-- [ ] Archive: ensure Peppol invoices stored 10 years (Belgian bewaarplicht)
-
-### Phase 3: Go-live (Q3 2026)
-- [ ] Monitor first 10 B2B invoices for Peppol delivery confirmation
-- [ ] Reconcile Shopify orders ↔ Peppol invoices sent ↔ Polar monthly books
-- [ ] Review Sufio + Billit + Exact Online pricing annually
-
----
-
 ## Cost summary for Incutec
 
 Pricing changes faster than the legal requirement. Budget for:
@@ -139,11 +116,3 @@ Pricing changes faster than the legal requirement. Budget for:
 - testing and annual retention/review
 
 Pick the stack based on accountant fit, invoice retention, Belgian B2B support, and low-friction B2C fallback, not on transient promo pricing.
-
----
-
-## Selection checklist
-- [ ] Confirm with the accountant which structured-invoicing platform or access point they prefer
-- [ ] Verify the chosen stack can route Belgian B2B as structured invoices and keep B2C on PDF/email
-- [ ] Verify VIES validation, invoice numbering, retention, and export for bookkeeping
-- [ ] Check whether Telraam NV or other key B2B customers impose additional invoicing requirements

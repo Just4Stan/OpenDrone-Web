@@ -121,7 +121,7 @@ predictive results), `contact`, `firmware-partners`, `open-source`, `newsletter`
 and `api.support.thread.$pid` (read-only thread by public ticket id).
 
 **Legal / i18n**: `algemene-voorwaarden`, `privacy`, `cookies`, `cookie-settings`,
-`herroepingsrecht`, `shipping`, `warranty`, `security`, `export-compliance`, `end-use`,
+`herroepingsrecht`, `shipping`, `warranty`, `security`, `end-use`,
 `terms`, `legal`. Each serves at `/<slug>` (locale-cookie redirect) and at the canonical
 `/{en,nl,fr}/<slug>`.
 
