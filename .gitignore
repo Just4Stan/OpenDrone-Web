@@ -1,4 +1,9 @@
 node_modules/
+
+# Internal working notes and agent context: never commit
+CLAUDE.md
+drafts/
+
 .env
 .env.local
 .env.*.local

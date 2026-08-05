@@ -119,15 +119,6 @@ const PAGES: PageEntry[] = [
     },
   },
   {
-    slug: 'export-compliance',
-    label: {en: 'Export Compliance', nl: 'Exportnaleving', fr: 'Conformité à l’Exportation'},
-    desc: {
-      en: 'Export control and sanctions policy.',
-      nl: 'Exportcontrole en sanctiebeleid.',
-      fr: 'Contrôle des exportations et politique de sanctions.',
-    },
-  },
-  {
     slug: 'end-use',
     label: {en: 'End-Use Policy', nl: 'End-Use Beleid', fr: 'Politique d’Usage Final'},
     desc: {

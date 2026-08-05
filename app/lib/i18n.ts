@@ -176,23 +176,6 @@ export const LEGAL_LABELS: Record<
       description: 'Comment signaler une vulnérabilité dans le matériel, le firmware ou la boutique OpenDrone.',
     },
   },
-  'export-compliance': {
-    en: {
-      title: 'Export Compliance',
-      eyebrow: 'Legal',
-      description: 'Export control self-classification and sanctioned-country policy.',
-    },
-    nl: {
-      title: 'Exportnaleving',
-      eyebrow: 'Juridisch',
-      description: 'Zelfclassificatie exportcontrole en beleid rond gesanctioneerde landen.',
-    },
-    fr: {
-      title: 'Conformité à l’Exportation',
-      eyebrow: 'Juridique',
-      description: 'Auto-classification du contrôle des exportations et politique sur les pays sous sanction.',
-    },
-  },
   'end-use': {
     en: {
       title: 'End-Use Policy',

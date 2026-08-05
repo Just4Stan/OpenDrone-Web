@@ -46,7 +46,6 @@ const LEGAL_LINKS: Array<{to: string; label: string}> = [
   {to: '/herroepingsrecht', label: 'Right of withdrawal'},
   {to: '/shipping', label: 'Shipping'},
   {to: '/warranty', label: 'Warranty'},
-  {to: '/export-compliance', label: 'Export compliance'},
   {to: '/cookie-settings', label: 'Cookie settings'},
 ];
 

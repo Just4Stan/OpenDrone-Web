@@ -116,15 +116,6 @@ label and description text after the colon.
 - **desc_nl:** 2-jarige wettelijke conformiteitsgarantie.
 - **desc_fr:** Garantie légale de conformité de 2 ans.
 
-### export-compliance
-
-- **label_en:** Export Compliance
-- **label_nl:** Exportnaleving
-- **label_fr:** Conformité à l’Exportation
-- **desc_en:** Export control and sanctions policy.
-- **desc_nl:** Exportcontrole en sanctiebeleid.
-- **desc_fr:** Contrôle des exportations et politique de sanctions.
-
 ### end-use
 
 - **label_en:** End-Use Policy
@@ -154,7 +145,7 @@ label and description text after the colon.
 
 ```do-not-edit
 Slugs / routes (order = grid order): algemene-voorwaarden, privacy,
-cookies, herroepingsrecht, shipping, warranty, export-compliance, end-use,
+cookies, herroepingsrecht, shipping, warranty, end-use,
 security, cookie-settings. Card link → /{locale}/{slug}. Page itself at
 /{locale}/legal ; bare /legal 302-redirects to the visitor locale.
 ```

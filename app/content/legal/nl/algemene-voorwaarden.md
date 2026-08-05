@@ -197,18 +197,18 @@ Exception that MAY apply: Art. VI.53, 5°: "goederen die na levering door hun aa
 - Cannot be shortened contractually for consumers
 - does not apply to B2B sales (different regime under Burgerlijk Wetboek: commercial guarantee clauses allowed)
 
-**Fix Art. 9.2 of draft AV:** Change "Bij gebrek aan overeenstemming dat zich manifesteert binnen 1 jaar na levering" to **"binnen 2 jaar na levering"** (Belgian implementation went further than EU minimum). Source: https://www.eccbelgium.be/themes/guarantee-and-warranty
+Source: https://www.eccbelgium.be/themes/guarantee-and-warranty
 
 ### GPSR (Reg 2023/988): applicable since 13 Dec 2024
 Incutec is "manufacturer" under GPSR. For every product listing the webshop must display:
 
-**GPSR Pre-Sale Listing Checklist (Art. 19 GPSR):**
-- [ ] Manufacturer name + registered trade name + postal address + electronic contact (per product page OR global "manufacturer info" link)
-- [ ] For Incutec products: "Manufacturer: Incutec BV, Stapelhuisstraat 15, 3000 Leuven, Belgium: contact@opendrone.be"
-- [ ] If selling 3rd-party products where Incutec is importer: also show "Importer: Incutec BV, [address]"
-- [ ] Product identification elements: type, batch, serial or model number (AND product image)
-- [ ] Warnings and safety information in the language of the Member State where offered (NL/FR for BE, DE for DE, etc.)
-- [ ] For LiPo chargers: battery chemistry warnings, charge-current limits, fire-safety warnings, supervision requirement
+**GPSR pre-sale listing requirements (Art. 19 GPSR):**
+- Manufacturer name + registered trade name + postal address + electronic contact (per product page OR global "manufacturer info" link)
+- For Incutec products: "Manufacturer: Incutec BV, Stapelhuisstraat 15, 3000 Leuven, Belgium: contact@opendrone.be"
+- If selling 3rd-party products where Incutec is importer: also show "Importer: Incutec BV, [address]"
+- Product identification elements: type, batch, serial or model number (AND product image)
+- Warnings and safety information in the language of the Member State where offered (NL/FR for BE, DE for DE, etc.)
+- For LiPo chargers: battery chemistry warnings, charge-current limits, fire-safety warnings, supervision requirement
 
 Post-sale: Register accidents/incidents on Safety Business Gateway (https://ec.europa.eu/safety-business-gateway). Maintain complaints register. Recall procedure documented.
 
@@ -220,7 +220,7 @@ Don't link to ec.europa.eu/consumers/odr anymore. The ODR link requirement under
 **Replacement in Art. 14 AV:** Keep Consumentenombudsdienst reference (https://consumentenombudsdienst.be). Remove any ODR-platform link if present. Belgian consumers can also contact ECC Belgium (https://www.eccbelgium.be) for cross-border disputes. Source: https://eur-lex.europa.eu/eli/reg/2024/3228/oj
 
 ### NACEBEL 2025 codes for Incutec BV (declare at KBO via boekhouder/Acerta)
-Based on Incutec's activities (designing + manufacturing + selling FPV electronics, webshop, R&D and engineering consulting, education). Verified against the official NACE-BEL 2025 classification 2026-06-09 — the earlier draft used obsolete 2008-format codes (`XX.XX.XX`); 2025 uses 5-digit subclasses (`XX.XXX`) and retail is classified by product, not sales channel.
+Based on Incutec's activities (designing + manufacturing + selling FPV electronics, webshop, R&D and engineering consulting, education). NACE-BEL 2025 uses 5-digit subclasses (`XX.XXX`) and retail is classified by product, not sales channel.
 
 **Primary:**
 - **26.300**: Vervaardiging van communicatieapparatuur (radio TX/RX: VTX/VRX, ELRS receivers) — 7-digit detail: 26.30002
