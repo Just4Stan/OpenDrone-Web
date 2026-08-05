@@ -108,7 +108,7 @@ Company: How we open source → /open-source ; Firmware partners →
 Legal: Terms & Conditions → /algemene-voorwaarden ; Privacy → /privacy ;
   Cookies → /cookies ; Right of withdrawal → /herroepingsrecht ;
   Shipping → /shipping ; Warranty → /warranty ;
-  Export compliance → /export-compliance ; Cookie settings → /cookie-settings
+  Cookie settings → /cookie-settings
 Bottom bar GitHub → https://github.com/incutec-hw
 Newsletter form posts to /newsletter ; Privacy link → /privacy
 ```

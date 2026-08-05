@@ -10,7 +10,7 @@ Orders are normally shipped within 2 business days of payment receipt. The final
 
 ### Shipping rates and countries
 
-Shipping costs depend on the destination and parcel weight. Some countries are excluded due to export sanctions — see our [export compliance page](/export-compliance).
+Shipping costs depend on the destination and parcel weight. Some countries are excluded due to export sanctions: see our [end-use policy](/end-use).
 
 ### Risk during shipping
 
