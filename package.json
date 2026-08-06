@@ -93,7 +93,7 @@
   },
   "optionalDependencies": {
     "@emnapi/core": "^1.11.2",
-    "@emnapi/runtime": "^1.11.2"
+    "@emnapi/runtime": "^1.11.3"
   },
   "overrides": {
     "lodash": "^4.18.1",
