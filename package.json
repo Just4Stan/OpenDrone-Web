@@ -38,7 +38,7 @@
     "@react-three/fiber": "^9.6.1",
     "@react-three/postprocessing": "^3.0.4",
     "@shopify/hydrogen": "^2026.4.1",
-    "@tailwindcss/vite": "^4.3.1",
+    "@tailwindcss/vite": "^4.3.3",
     "graphql": "^16.14.2",
     "isbot": "^5.2.1",
     "lucide-react": "^1.25.0",
