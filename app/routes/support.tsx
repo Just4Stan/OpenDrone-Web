@@ -11,7 +11,7 @@ import {buildSeoMeta} from '~/lib/seo';
 export const meta: Route.MetaFunction = () =>
   buildSeoMeta({
     title: 'Support',
-    description: 'Open a support ticket. Replies come from the engineers who design the boards.',
+    description: 'OpenDrone runs on Discord. Open a ticket here and a bot relays it into the server; replies come from the engineers who design the boards.',
     robots: 'noindex,nofollow',
   });
 
@@ -133,9 +133,10 @@ function SignedOutView({discordInvite}: {discordInvite: string}) {
           <br />a <em>support ticket</em>.
         </h1>
         <p>
-          We tie tickets to your account so we can pull your order, see what
-          board rev you&rsquo;re on, and so you can pick the thread back up
-          from any device.
+          OpenDrone is maintained on Discord: development, community and
+          support all happen there. This page is a terminal into that
+          server. A bot relays your ticket into a private thread and
+          carries the replies back here.
         </p>
       </header>
 
@@ -166,11 +167,12 @@ function SignedOutView({discordInvite}: {discordInvite: string}) {
           </div>
         </div>
         <div className="od-tile">
-          <p className="od-tile-eyebrow">↗ ALT PATH</p>
-          <h3>Or join us on Discord</h3>
+          <p className="od-tile-eyebrow">↗ DIRECT PATH</p>
+          <h3>Or talk on Discord directly</h3>
           <p>
-            Discord doesn&rsquo;t need an account on our side. It&rsquo;s the
-            fastest path for general build questions, tuning, or show-and-tell.
+            The ticket form is just a relay into the same server. If you have
+            a Discord account, skip the terminal: build questions, tuning and
+            contributions all run in the open channels.
           </p>
           <a
             href={discordInvite}
@@ -294,8 +296,10 @@ function IntakeView({
           Describe the <em>problem</em>.
         </h1>
         <p>
-          One thread per issue. We&rsquo;ll reply in the same window, usually
-          within a few hours during CET business time.
+          One thread per issue. Your ticket opens a private thread in the
+          OpenDrone Discord and a bot relays messages both ways. We reply in
+          the same window, usually within a few hours during CET business
+          time.
         </p>
       </header>
 
