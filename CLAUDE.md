@@ -31,6 +31,10 @@ commit**; local-only commits never reach opendrone.be.
 - **Commit small; PR early, merge fast**: `gh pr create` once the lane is
   coherent; `gh pr merge --squash --delete-branch` after typecheck + lint pass
   and the change is verified on your own port.
+- **Verify UI changes visually, always, before merging**: load every affected
+  view on your dev port in the browser, light and dark theme, iterate on the
+  design, and show Stan screenshots of the result. Checks passing is not
+  verification for anything a user can see.
 - **Never squash-merge a branch that redid work already on `main`**: it
   silently reverts main's newer version to the branch's older one.
 - **After any merge, every live lane rebases** (`git fetch && git rebase

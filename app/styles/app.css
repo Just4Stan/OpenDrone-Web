@@ -11783,6 +11783,34 @@ button.reset {
 }
 .support-signin-actions-row {display: flex; gap: 10px; flex-wrap: wrap;}
 
+.support-relay-trace {
+  list-style: none;
+  padding: 14px 16px;
+  margin: 4px 0 20px;
+  border: 1.5px dashed var(--od-line-strong);
+  border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+.support-relay-trace li {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--od-ink-dim);
+}
+.support-relay-trace li > span {
+  flex-shrink: 0;
+  letter-spacing: 0.08em;
+  color: var(--od-pcb-gold-2);
+}
+.support-relay-trace li[data-dir='rx'] > span {
+  color: var(--od-pcb-green-2);
+}
+
 .support-intake-shell {max-width: 720px; margin: 0 auto;}
 .support-intake-shell .od-tile {padding: 28px 32px;}
 .support-intake-form .od-field-row {

@@ -174,6 +174,20 @@ function SignedOutView({discordInvite}: {discordInvite: string}) {
             a Discord account, skip the terminal: build questions, tuning and
             contributions all run in the open channels.
           </p>
+          <ul className="support-relay-trace" aria-label="How the relay works">
+            <li data-dir="tx">
+              <span>TX →</span> you type a message on this page
+            </li>
+            <li data-dir="tx">
+              <span>TX →</span> the bot posts it as a thread in Discord
+            </li>
+            <li data-dir="rx">
+              <span>RX ←</span> an engineer answers in that thread
+            </li>
+            <li data-dir="rx">
+              <span>RX ←</span> the bot relays the reply back to you
+            </li>
+          </ul>
           <a
             href={discordInvite}
             target="_blank"
