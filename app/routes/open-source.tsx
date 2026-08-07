@@ -7,7 +7,7 @@ export const meta: Route.MetaFunction = () =>
   buildSeoMeta({
     title: 'Open source · OpenDrone and Incutec',
     description:
-      'OpenDrone is a community-designed project; Incutec is the Belgian company that manufactures the boards, sells them here, and carries the warranty. Why everything is open source, and how the bills get paid.',
+      'OpenDrone is a community project, Incutec is a Belgian startup that started the initiative and hosts this website, sells the products here, and does what the community can\'t do on their own. Why everything is open source, and how the bills get paid.',
   });
 
 export async function loader(_args: Route.LoaderArgs) {
@@ -20,15 +20,16 @@ export default function OpenSourceRoute() {
       <header className="editorial-hero">
         <p className="editorial-eyebrow">Open source · CERN-OHL-S-2.0</p>
         <h1 className="editorial-title">
-          We sell hardware. <em>The designs are yours.</em>
+          We sell hardware. The designs are yours.
         </h1>
         <p className="editorial-lead">
           Every OpenDrone board ships with its full source on GitHub: schematic,
           PCB, BOM and 3D STEP, under CERN-OHL-S v2. Read them, fork them, order
           your own copies, ship a variant. That isn&apos;t a marketing promise,
-          it&apos;s the licence. OpenDrone is the community project that designs
-          the boards; Incutec is the company that sells them here. What you pay
-          for is the production run, done properly.
+          it&apos;s the licence. OpenDrone is a community project; Incutec is
+          the Belgian startup that started the initiative, hosts this website,
+          sells the products here, and does what the community can&apos;t do on
+          their own. What you pay for is the production run, done properly.
         </p>
       </header>
 
