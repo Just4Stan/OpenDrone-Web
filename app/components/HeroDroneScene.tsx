@@ -91,6 +91,8 @@ export function HeroDroneScene({
     let disposed = false;
     const cleanup: Array<() => void> = [];
 
+    const TEST = typeof location !== 'undefined' && new URLSearchParams(location.search).has('herotest');
+
     (async () => {
       const cfg = (await fetch(`/models/${model}/studio.json`).then((r) => {
         if (!r.ok) throw new Error(`studio.json ${r.status}`);
@@ -154,23 +156,127 @@ export function HeroDroneScene({
       const S = cfg.spotlight;
       const spotL = new THREE.SpotLight(0xffffff, S.power, 0, 0.5, S.softness, 2);
       scene.add(spotL, spotL.target);
-      const beamMat = new THREE.MeshBasicMaterial({
-        color: 0xbcd8ff,
+      // A flat additive cone reads as a hard grey wedge. This fakes a real
+      // light shaft: alpha falls off toward the cone's silhouette (a fresnel
+      // term, so the rim is feathered rather than a visible edge), fades along
+      // its length, and is dithered slightly so it does not band on a dark
+      // background. No texture, so nothing to download.
+      const beamMat = new THREE.ShaderMaterial({
         transparent: true,
-        opacity: 0,
         depthWrite: false,
         blending: THREE.AdditiveBlending,
         side: THREE.DoubleSide,
+        uniforms: {
+          uOpacity: {value: 0},
+          uColor: {value: new THREE.Color(0xbcd8ff)},
+        },
+        vertexShader: `
+          varying vec3 vNormalW;
+          varying vec3 vViewDir;
+          varying float vAlong;
+          void main() {
+            vec4 wp = modelMatrix * vec4(position, 1.0);
+            vNormalW = normalize(mat3(modelMatrix) * normal);
+            vViewDir = normalize(cameraPosition - wp.xyz);
+            vAlong = uv.y;                 // 0 at the base, 1 at the apex
+            gl_Position = projectionMatrix * viewMatrix * wp;
+          }
+        `,
+        fragmentShader: `
+          uniform float uOpacity;
+          uniform vec3 uColor;
+          varying vec3 vNormalW;
+          varying vec3 vViewDir;
+          varying float vAlong;
+          void main() {
+            // Grazing angles are where a real shaft is densest, so feather the
+            // silhouette instead of leaving a hard rim.
+            float rim = 1.0 - abs(dot(normalize(vNormalW), normalize(vViewDir)));
+            rim = pow(clamp(rim, 0.0, 1.0), 4.0);
+            // vAlong is 1 at the apex (the lamp). Bright there, gone well
+            // before the open end so the shaft has no visible termination.
+            float along = pow(clamp(vAlong, 0.0, 1.0), 2.5);
+            float a = uOpacity * rim * along;
+            // Cheap dither: additive blending on near-black bands badly.
+            a += (fract(sin(dot(gl_FragCoord.xy, vec2(12.9898, 78.233))) * 43758.5453) - 0.5) * 0.004;
+            gl_FragColor = vec4(uColor, max(a, 0.0));
+          }
+        `,
       });
+      // openEnded, and long enough that its rim falls outside the viewport, so
+      // the geometry never terminates in a visible circle.
       const beamGeo = new THREE.ConeGeometry(1, 1, 64, 1, true);
       const beam = new THREE.Mesh(beamGeo, beamMat);
+      beam.frustumCulled = false;
+      beam.visible = false;
+      scene.add(beam);
       cleanup.push(() => {
         beamGeo.dispose();
         beamMat.dispose();
       });
-      beam.frustumCulled = false;
-      beam.visible = false;
-      scene.add(beam);
+
+      // Motes drifting in the beam. A shaft of light is only visible because of
+      // what is floating in it, so a handful of additive points sell it far
+      // better than making the cone brighter. Positioned inside the cone each
+      // frame in the loop, in the cone's own space.
+      const MOTES = 220;
+      const moteGeo = new THREE.BufferGeometry();
+      const motePos = new Float32Array(MOTES * 3);
+      const moteSeed = new Float32Array(MOTES);
+      for (let i = 0; i < MOTES; i++) {
+        // Uniform in a cone of unit height: bias radius by sqrt for area, and
+        // by height so the wide end is not overpopulated.
+        const h = Math.cbrt(Math.random());
+        const r = Math.sqrt(Math.random()) * h;
+        const th = Math.random() * Math.PI * 2;
+        motePos[i * 3] = Math.cos(th) * r;
+        motePos[i * 3 + 1] = h;
+        motePos[i * 3 + 2] = Math.sin(th) * r;
+        moteSeed[i] = Math.random();
+      }
+      moteGeo.setAttribute('position', new THREE.BufferAttribute(motePos, 3));
+      moteGeo.setAttribute('aSeed', new THREE.BufferAttribute(moteSeed, 1));
+      const moteMat = new THREE.ShaderMaterial({
+        transparent: true,
+        depthWrite: false,
+        blending: THREE.AdditiveBlending,
+        uniforms: {uOpacity: {value: 0}, uTime: {value: 0}, uSize: {value: 1}},
+        vertexShader: `
+          attribute float aSeed;
+          uniform float uTime;
+          uniform float uSize;
+          varying float vFade;
+          void main() {
+            vec3 p = position;
+            // Slow drift, seeded per mote so they do not move as a block.
+            p.x += sin(uTime * 0.25 + aSeed * 31.4) * 0.06;
+            p.z += cos(uTime * 0.21 + aSeed * 17.7) * 0.06;
+            p.y = fract(p.y + uTime * 0.012 + aSeed);
+            vec4 mv = modelViewMatrix * vec4(p, 1.0);
+            // Densest mid-shaft, gone at both ends.
+            vFade = smoothstep(0.0, 0.2, p.y) * (1.0 - smoothstep(0.6, 1.0, p.y));
+            gl_PointSize = uSize * (300.0 / max(-mv.z, 0.001));
+            gl_Position = projectionMatrix * mv;
+          }
+        `,
+        fragmentShader: `
+          uniform float uOpacity;
+          varying float vFade;
+          void main() {
+            vec2 d = gl_PointCoord - 0.5;
+            float a = smoothstep(0.5, 0.0, length(d));   // soft round mote
+            gl_FragColor = vec4(vec3(0.85, 0.92, 1.0), a * a * vFade * uOpacity);
+          }
+        `,
+      });
+      const motes = new THREE.Points(moteGeo, moteMat);
+      motes.frustumCulled = false;
+      motes.visible = false;
+      scene.add(motes);
+      cleanup.push(() => {
+        moteGeo.dispose();
+        moteMat.dispose();
+      });
 
       // Onshape is Z-up, three is Y-up. `pivot` scales the drone about its own
       // centre so the airframe can recede without dragging the shown part.
@@ -535,7 +641,12 @@ export function HeroDroneScene({
         let t = twin.get(m);
         if (!t) {
           t = m.clone();
-          (t as any).userData = {normal: m, baseColor: m.color.clone(), baseEnv: m.envMapIntensity ?? 1};
+          (t as any).userData = {
+            normal: m,
+            baseColor: m.color.clone(),
+            baseEnv: m.envMapIntensity ?? 1,
+            baseMetal: m.metalness,
+          };
           twin.set(m, t!);
           twin.set(t!, t!);
         }
@@ -588,12 +699,14 @@ export function HeroDroneScene({
         if (!b.nodes.length) {
           spotL.intensity = 0;
           beam.visible = false;
+          motes.visible = false;
           return;
         }
         restore(b);
         if (k <= 0.0001) {
           spotL.intensity = 0;
           beam.visible = false;
+          motes.visible = false;
           return;
         }
         const fwd = camera.getWorldDirection(new THREE.Vector3());
@@ -632,13 +745,23 @@ export function HeroDroneScene({
         spotL.penumbra = S.softness;
         spotL.intensity = S.power * shoot * ignite * droneRadius * droneRadius;
         const dirv = anchor.clone().sub(lampPos).normalize();
-        const span = lampPos.distanceTo(anchor) * 6 * shoot;
-        const rad = Math.tan(THREE.MathUtils.degToRad(S.coneAngle)) * span * 0.55 * shoot;
+        const span = lampPos.distanceTo(anchor) * 3.2 * shoot;
+        const rad = Math.tan(THREE.MathUtils.degToRad(S.coneAngle)) * span * 0.22 * shoot;
         beam.visible = strike > 0.01;
-        beamMat.opacity = 0.085 * S.beam * shoot * ignite;
+        beamMat.uniforms.uOpacity.value = 0.20 * S.beam * shoot * ignite;
         beam.scale.set(rad, Math.max(span, 1e-5), rad);
         beam.position.copy(lampPos).addScaledVector(dirv, span * 0.5);
         beam.quaternion.setFromUnitVectors(new THREE.Vector3(0, -1, 0), dirv);
+        motes.visible = beam.visible;
+        motes.position.copy(beam.position);
+        motes.quaternion.copy(beam.quaternion);
+        // The mote cloud is authored in a unit cone with y from 0 to 1, and the
+        // beam mesh is a unit cone centred on its own origin, so shift by half.
+        motes.scale.set(rad, span, rad);
+        motes.position.addScaledVector(dirv, -span * 0.5);
+        moteMat.uniforms.uOpacity.value = 0.30 * S.beam * shoot;
+        moteMat.uniforms.uTime.value = elapsed;
+        moteMat.uniforms.uSize.value = Math.max(0.6, droneRadius * 6);
 
         const holdT = THREE.MathUtils.clamp((elapsed - TRAVEL) / Math.max(HOLD, 1e-3), 0, 1);
         const open = holdT < 0.45 ? ease(holdT / 0.45) : holdT < 0.7 ? 1 : 1 - ease((holdT - 0.7) / 0.3);
@@ -691,8 +814,11 @@ export function HeroDroneScene({
         }
         return best;
       };
-      let target = 0;
-      let pos = 0;
+      // Start AT the first stop, not at zero. Zero is not a stop, so the
+      // "absorb input until the current beat has been seen" guard could never
+      // be satisfied and the hero ignored scrolling entirely.
+      let target = stopFor(0);
+      let pos = stopFor(0);
       let vel = 0;
       let lastWheel = 0;
       let everScrolled = false;
@@ -700,6 +826,13 @@ export function HeroDroneScene({
       let gestureDir = 0;
       let committed: number | null = null;
       const GESTURE_GAP_MS = 220;
+      const MIN_DWELL_S = 0.9;    // seconds a part must be presented before you can move on
+      // A beat is unskippable. Once committed, input is absorbed until the part
+      // has arrived AND its hold has run, so nobody can flick past a product
+      // without its spotlight moment. This is the "plays at its own pace" rule:
+      // scrolling chooses WHICH beat, the animation owns HOW it gets there.
+      let settledAt = 0;       // beat index the sequence has finished playing
+      let dwell = 0;           // seconds the current part has been presented
       // Only render, and only take keys, when the hero is actually on screen.
       let onScreen = true;
       const io = new IntersectionObserver(
@@ -733,9 +866,19 @@ export function HeroDroneScene({
         if (atLast || atFirst) return;   // do not preventDefault: page scrolls on
 
         e.preventDefault();
+        everScrolled = true;
+
+        // Absorb everything until the current beat has been seen. Without this,
+        // repeated flicks (or one long momentum tail broken into several
+        // gestures) walk straight through the sequence.
+        const cur = committed ?? nearestIdx(pos);
+        if (settledAt !== cur) {
+          lastWheel = now;
+          return;
+        }
+
         if (e.deltaY !== 0) gestureDir = Math.sign(e.deltaY);
         lastWheel = now;
-        everScrolled = true;
 
         // Firefox reports lines, not pixels; Chrome reports pixels; some mice
         // report pages. Normalise before scaling or Firefox scrolls ~20x slower.
@@ -832,11 +975,13 @@ export function HeroDroneScene({
       resizeIfNeeded();
 
       let loopErrors = 0;
-      renderer.setAnimationLoop(() => {
+      let testDt: number | null = null;
+      const frame = () => {
        try {
-        if (!onScreen || document.hidden) return;
+        if (!TEST && (!onScreen || document.hidden)) return;
         resizeIfNeeded();
-        const dt = Math.min(clock.getDelta(), 0.05);
+        const dt = testDt ?? Math.min(clock.getDelta(), 0.05);
+        if (testDt !== null) clock.getDelta();   // keep the clock in step
 
         const idle = performance.now() - lastWheel;
         if (everScrolled && idle > 120) {
@@ -880,6 +1025,19 @@ export function HeroDroneScene({
         const p1 = stopFor(BEATS.length - 1);
         onProgress?.(THREE.MathUtils.clamp((pos - p0) / Math.max(p1 - p0, 1e-6), 0, 1));
 
+        // The hold is "seen" once the part has arrived and its hold has run
+        // long enough for the spotlight to strike and settle.
+        {
+          const cur = committed ?? beatIdx;
+          const atStop = Math.abs(pos - stopFor(cur)) < dur() * 0.06;
+          if (atStop) {
+            dwell += dt;
+            if (dwell > MIN_DWELL_S) settledAt = cur;
+          } else if (settledAt !== cur) {
+            dwell = 0;
+          }
+        }
+
         const kRaw = envelope(t);
         const k = b.nodes.length ? kRaw : 0;
 
@@ -894,6 +1052,11 @@ export function HeroDroneScene({
           if (!u?.baseColor) continue;
           m.color.copy(u.baseColor).multiplyScalar(bright);
           m.envMapIntensity = u.baseEnv * bright;
+          // Albedo alone is not enough: a metal with a black base colour still
+          // returns a full specular highlight, so the spotlight was blowing the
+          // backgrounded drone out to white. Fade metalness out with it.
+          if (u.baseMetal === undefined) u.baseMetal = m.metalness;
+          m.metalness = u.baseMetal * bright;
         }
         const d = THREE.MathUtils.lerp(1, 1 - S.dimLights, k);
         hemi.intensity = BASE.hemi * d;
@@ -923,10 +1086,42 @@ export function HeroDroneScene({
           setError('animation stopped');
         }
        }
-      });
+      };
+      renderer.setAnimationLoop(frame);
       cleanup.push(() => renderer.setAnimationLoop(null));
 
+      // requestAnimationFrame is suspended in a backgrounded tab, so an
+      // automated check cannot integrate the scroll spring at all. In test mode
+      // only, keep a timer ticking so the sequence is drivable headlessly.
+      if (TEST) {
+        const t = setInterval(() => {
+          if (document.hidden) frame();
+        }, 16);
+        cleanup.push(() => clearInterval(t));
+      }
+
       onSeeker?.(goTo);
+      if (TEST) {
+        (window as Window & {__hero?: unknown}).__hero = {
+          goTo,
+          // Advance n frames at a fixed 16 ms, ignoring wall clock.
+          step: (n = 60) => {
+            for (let i = 0; i < n; i++) {
+              testDt = 1 / 60;
+              frame();
+            }
+            testDt = null;
+          },
+          state: () => ({pos, target, beat: beatIdx, committed, settledAt, stops: BEATS.map((_, i) => stopFor(i))}),
+          wheel: (deltaY: number, deltaMode = 0) =>
+            renderer.domElement.dispatchEvent(
+              new WheelEvent('wheel', {deltaY, deltaMode, bubbles: true, cancelable: true}),
+            ),
+          scene,
+          beats: BEATS.map((b) => b.id),
+          dur: dur(),
+        };
+      }
       onReady?.();
     })().catch((e: unknown) => {
       console.error('[hero]', e);
