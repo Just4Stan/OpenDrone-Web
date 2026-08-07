@@ -30,8 +30,10 @@ const OPEN_SOURCE_LINKS: Array<{href: string; label: string}> = [
 const COMPANY_LINKS: Array<{to: string; label: string}> = [
   {to: '/incutec', label: 'Who’s Incutec'},
   {to: '/open-source', label: 'How we open source'},
+  {to: '/contribute', label: 'Contribute'},
   {to: '/firmware-partners', label: 'Firmware partners'},
   {to: '/roadmap', label: 'Roadmap'},
+  {to: '/timeline', label: 'Timeline'},
   {to: '/production', label: 'Production'},
   {to: '/wholesale', label: 'Wholesale'},
   {to: '/legal', label: 'Legal / Imprint'},
