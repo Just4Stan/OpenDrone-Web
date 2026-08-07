@@ -1276,10 +1276,10 @@ export function HeroDroneScene({
         // The copy panel follows the SPOTLIGHT, not the timeline: it shows a
         // part while that part is out (k high) and clears during travel and
         // rests, so a rest reads as the whole drone with no caption racing
-        // ahead to the next part. Whole-drone beats keep their copy the whole
-        // beat; there is no spotlight to key off.
+        // ahead to the next part. Whole-drone beats get no caption at all:
+        // the size tab already names what is on screen.
         {
-          const display = !b.nodes.length || kRaw > 0.3 ? beatIdx : -1;
+          const display = b.nodes.length && kRaw > 0.3 ? beatIdx : -1;
           if (display !== lastBeat) {
             lastBeat = display;
             onBeat?.(display >= 0 ? {id: b.id, title: b.title, note: b.note} : null, display);

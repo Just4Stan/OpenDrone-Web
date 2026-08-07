@@ -15255,14 +15255,6 @@ body:has(.buy-rail.is-pinned.is-mobile) .placeholder-banner {
   from { opacity: 0; transform: translateY(14px); }
   to   { opacity: 1; transform: none; }
 }
-.hp-step {
-  font-family: var(--font-mono, ui-monospace, monospace);
-  font-size: 0.7rem;
-  letter-spacing: 0.18em;
-  color: var(--color-accent);
-  margin: 0 0 0.9rem;
-}
-.hp-step span { color: var(--color-text-dim); }
 .hp-title {
   font-size: clamp(1.6rem, 3.4vw, 2.7rem);
   line-height: 1.08;

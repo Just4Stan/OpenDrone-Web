@@ -84,7 +84,9 @@ export function HeroDroneStage({
   const [active, setActive] = useState(0);
   // True while the drone rests whole between parts (the scene reports beat
   // null). The copy panel clears; the rail keeps the last part's dot lit.
-  const [resting, setResting] = useState(false);
+  // Starts true: the sequence opens on the whole drone, which carries no
+  // caption, and the scene only reports once a part is presented.
+  const [resting, setResting] = useState(true);
   const seek = useRef<((i: number) => void) | null>(null);
   const fillRef = useRef<HTMLDivElement>(null);
 
@@ -154,12 +156,9 @@ export function HeroDroneStage({
           content, and a caption would race ahead of the next part. */}
       {use3D && !resting ? (
         <div className="hp-copy" key={beat?.id} aria-live="polite">
+          {/* No step counter: the rail's dots already say where you are. */}
           {beat ? (
             <>
-              <p className="hp-step">
-                {String(active + 1).padStart(2, '0')}{' '}
-                <span>/ {String(beats.length).padStart(2, '0')}</span>
-              </p>
               <h2 className="hp-title">{beat.title}</h2>
               <p className="hp-note">{beat.note}</p>
             </>
