@@ -15158,3 +15158,121 @@ body:has(.buy-rail.is-pinned.is-mobile) .placeholder-banner {
     transition: none;
   }
 }
+
+/* ---------------------------------------------------------------------------
+   Hero prototype (/hero-preview). Scoped under .hp so it cannot leak into the
+   live homepage while the two are being compared.
+   --------------------------------------------------------------------------- */
+.hp-stage {
+  position: relative;
+  height: 100svh;
+  width: 100%;
+  overflow: hidden;
+  background: var(--color-bg);
+}
+.hp-loading {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 0.7rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--color-text-dim);
+  pointer-events: none;
+}
+.hp-rail {
+  position: absolute;
+  left: clamp(14px, 3vw, 40px);
+  top: 50%;
+  transform: translateY(-50%);
+  width: 2px;
+  height: min(46vh, 300px);
+  background: color-mix(in srgb, var(--color-text-dim) 30%, transparent);
+  border-radius: 2px;
+}
+.hp-rail-fill {
+  position: absolute;
+  inset-inline: 0;
+  top: 0;
+  height: 0;
+  background: var(--color-accent);
+  border-radius: 2px;
+}
+.hp-dot {
+  position: absolute;
+  left: -3px;
+  width: 8px;
+  height: 8px;
+  margin-top: -4px;
+  border-radius: 50%;
+  background: var(--color-bg);
+  border: 1px solid color-mix(in srgb, var(--color-text-dim) 50%, transparent);
+  transition: background 0.25s ease, border-color 0.25s ease, transform 0.25s ease;
+}
+.hp-dot.done { background: color-mix(in srgb, var(--color-accent) 45%, transparent); }
+.hp-dot.on {
+  background: var(--color-accent);
+  border-color: var(--color-accent);
+  transform: scale(1.4);
+}
+.hp-copy {
+  position: absolute;
+  right: clamp(20px, 7vw, 110px);
+  top: 50%;
+  transform: translateY(-50%);
+  max-width: min(38ch, 40vw);
+  animation: hp-in 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+@keyframes hp-in {
+  from { opacity: 0; transform: translateY(calc(-50% + 14px)); }
+  to   { opacity: 1; transform: translateY(-50%); }
+}
+.hp-step {
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 0.7rem;
+  letter-spacing: 0.18em;
+  color: var(--color-accent);
+  margin: 0 0 0.9rem;
+}
+.hp-step span { color: var(--color-text-dim); }
+.hp-title {
+  font-size: clamp(1.6rem, 3.4vw, 2.7rem);
+  line-height: 1.08;
+  margin: 0 0 0.7rem;
+  color: var(--color-text);
+}
+.hp-note {
+  font-size: 0.95rem;
+  line-height: 1.55;
+  color: var(--color-text-muted);
+  margin: 0;
+}
+.hp-hint {
+  position: absolute;
+  left: 50%;
+  bottom: 26px;
+  transform: translateX(-50%);
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 0.6rem;
+  letter-spacing: 0.26em;
+  text-transform: uppercase;
+  color: var(--color-text-dim);
+  animation: hp-bob 2.4s ease-in-out infinite;
+}
+@keyframes hp-bob { 0%,100% {opacity:.4; transform:translate(-50%,0);} 50% {opacity:.9; transform:translate(-50%,4px);} }
+.hp-after {
+  min-height: 60vh;
+  display: grid;
+  place-items: center;
+  color: var(--color-text-muted);
+  padding: 4rem 1rem;
+}
+@media (prefers-reduced-motion: reduce) {
+  .hp-copy, .hp-hint { animation: none; }
+}
+@media (max-width: 720px) {
+  .hp-copy { right: 16px; left: 16px; max-width: none; top: auto; bottom: 84px; transform: none; }
+  @keyframes hp-in { from {opacity:0; transform:translateY(14px);} to {opacity:1; transform:none;} }
+}

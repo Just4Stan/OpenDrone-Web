@@ -326,9 +326,9 @@
   "camera": {
     "distance": 2.15,
     "height": 0.5,
-    "dollyOnShow": 0.92,
-    "freeLook": false
+    "heightOnBoard": 0.72,
+    "dollyOnShow": 0.92
   },
   "_saved": "2026-08-07, captured from the live studio panel",
-  "_status": "NOT YET WIRED UP. _studio.html does not read this file; it currently hardcodes the same values. This is the intended schema and a record of the tuned settings, not a live config."
+  "_status": "PARTIALLY WIRED. app/components/HeroDroneScene.tsx reads this file for lighting, spotlight, sequence, camera, materials, boards and beats. public/models/od3/_studio.html (the tuning studio) still hardcodes the same values and does NOT read this file: tune there, then copy the numbers here."
 }
