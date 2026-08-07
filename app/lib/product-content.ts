@@ -412,7 +412,7 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
       ['Continuous', '40 A / channel'],
       ['Firmware', 'AM32'],
       ['ESC protocol', 'DShot, bidirectional'],
-      ['Telemetry', 'RPM and current'],
+      ['Telemetry', 'Extended DShot'],
       ['Input', '2–6S LiPo'],
       ['BEC', 'None'],
       ['MCU', 'One per motor'],
@@ -423,7 +423,6 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
       ['Mounting', '20 × 20 mm, Ø3.0 mm holes'],
       ['Dimensions', '31.2 × 33.0 mm'],
       ['PCB', '6-layer, 2 oz copper'],
-      ['License', 'CERN-OHL-S-2.0'],
     ],
     // Launching with the 20×20 and 30×30 models. Pro (higher-current)
     // variants land later as additional values on the same "Model" axis.
@@ -655,7 +654,6 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
       ['Mounting', '30.5 × 30.5 mm, Ø4.0 mm holes'],
       ['Dimensions', '37.9 × 37.9 mm'],
       ['PCB', '6-layer, 1.0 mm'],
-      ['License', 'CERN-OHL-S-2.0'],
     ],
     optionAxis: 'Model',
     variants: {
@@ -872,7 +870,6 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
       ['Wi-Fi antenna', 'Separate on-board ceramic'],
       ['Dimensions', '10.0 × 11.5 mm'],
       ['PCB', '6-layer, 1.0 mm'],
-      ['License', 'CERN-OHL-S-2.0'],
     ],
     optionAxis: 'Model',
     variants: {
@@ -1065,7 +1062,6 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
       ['Camera width', 'Up to 20 mm'],
       ['Video systems', 'Analog · DJI · Walksnail · HDZero'],
       ['Material', 'T700 carbon, aluminium camera mounts'],
-      ['License', 'CERN-OHL-S-2.0'],
     ],
     // TODO(copy): placeholder variant editorial — wires the "Model" axis +
     // ladder. Shared specs above still read 5-inch; reconcile once the 3"

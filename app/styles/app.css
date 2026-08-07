@@ -3004,6 +3004,12 @@ a.product-card-model:hover {
   clip-path: inset(50%);
   white-space: nowrap;
   border-width: 0;
+  /* Keep visually-hidden text out of the clipboard. AnimatedNumber renders
+     the settled value in an .sr-only span next to the animated one, so
+     without this, selecting a spec row copies the value twice
+     ("AM32AM32"). Selection is a visual affordance; screen readers do not
+     use it, so hiding it here costs nothing. */
+  user-select: none;
 }
 
 /* Button reset */
