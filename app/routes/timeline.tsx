@@ -245,7 +245,7 @@ export default function TimelineRoute() {
         </Link>
         <Link
           prefetch="viewport"
-          to="/contribute"
+          to="/roadmap"
           className="editorial-cta-secondary"
         >
           Put yourself on this timeline →

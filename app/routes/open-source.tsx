@@ -1,12 +1,13 @@
 import type {Route} from './+types/open-source';
 import {Link} from 'react-router';
 import {buildSeoMeta} from '~/lib/seo';
+import {DISCORD_INVITE_URL} from '~/lib/company';
 
 export const meta: Route.MetaFunction = () =>
   buildSeoMeta({
-    title: 'Open source · How OpenDrone makes money',
+    title: 'Open source · OpenDrone and Incutec',
     description:
-      'OpenDrone is a community-designed project; Incutec sells the finished boards. Why everything is open source, and how the bills get paid without closing the hardware.',
+      'OpenDrone is a community-designed project; Incutec is the Belgian company that manufactures the boards, sells them here, and carries the warranty. Why everything is open source, and how the bills get paid.',
   });
 
 export async function loader(_args: Route.LoaderArgs) {
@@ -32,7 +33,44 @@ export default function OpenSourceRoute() {
       </header>
 
       <section className="editorial-section">
-        <h2 className="editorial-section-title">01 · What you buy</h2>
+        <h2 className="editorial-section-title">01 · Two jobs, two sets of hands</h2>
+        <p>
+          OpenDrone was started by people from Incutec, but it is not ours. The
+          designs are developed in the open and the direction belongs to the
+          people who fly them. The community designs, reviews, tests and
+          decides. Incutec does what a community cannot do alone: production,
+          quality control, certification, distribution, warranty and legal
+          responsibility for what is sold. When you buy a board on this
+          website, Incutec BV is the seller, and the warranty and support are
+          our job. That does not change because the design is open.
+        </p>
+        <p>
+          Today Incutec still draws most of the hardware, because the first
+          boards had to exist before anything else could. The intent is to move
+          from designer to maintainer as contributors arrive. There is no date
+          on that handover; it depends on who shows up. Anybody can help:{' '}
+          <Link prefetch="viewport" to="/roadmap">
+            here is how
+          </Link>
+          , and the conversation runs on{' '}
+          <a href={DISCORD_INVITE_URL} target="_blank" rel="noreferrer">
+            Discord
+          </a>
+          .
+        </p>
+        <p>
+          Incutec itself is a young hardware company from Leuven, Belgium.
+          Think of it as a record label for hardware: a maker brings a working
+          design with real demand, and we handle certification, manufacturing,
+          sales and support, publish everything, and share the revenue. That
+          infrastructure is built once and reused, so good hardware that would
+          otherwise die between prototype and shop actually ships. OpenDrone is
+          the first release.
+        </p>
+      </section>
+
+      <section className="editorial-section">
+        <h2 className="editorial-section-title">02 · What you buy</h2>
         <p>
           A finished, tested, packaged board, sold by Incutec. Fabricated and
           assembled at JLCPCB today, then inspected, flashed, and shipped from
@@ -44,7 +82,7 @@ export default function OpenSourceRoute() {
       </section>
 
       <section className="editorial-section">
-        <h2 className="editorial-section-title">02 · What stays open</h2>
+        <h2 className="editorial-section-title">03 · What stays open</h2>
         <ul className="editorial-list">
           <li>
             <strong>Schematic</strong>: the KiCad 10 project files, not just a
@@ -71,7 +109,7 @@ export default function OpenSourceRoute() {
       </section>
 
       <section className="editorial-section">
-        <h2 className="editorial-section-title">03 · Why CERN-OHL-S and not MIT</h2>
+        <h2 className="editorial-section-title">04 · Why CERN-OHL-S and not MIT</h2>
         <p>
           CERN-OHL-S v2 is a reciprocal, copyleft open-hardware licence. It keeps
           the design open: modify an OpenDrone board, ship your own version, and
@@ -88,7 +126,7 @@ export default function OpenSourceRoute() {
       </section>
 
       <section className="editorial-section">
-        <h2 className="editorial-section-title">04 · How Incutec stays solvent</h2>
+        <h2 className="editorial-section-title">05 · How Incutec stays solvent</h2>
         <p>
           The community project needs no revenue; the company manufacturing and
           supporting the boards does. Four revenue lines, roughly in order of
@@ -108,7 +146,7 @@ export default function OpenSourceRoute() {
       </section>
 
       <section className="editorial-section">
-        <h2 className="editorial-section-title">05 · What this means for you</h2>
+        <h2 className="editorial-section-title">06 · What this means for you</h2>
         <ul className="editorial-list">
           <li>
             If Incutec disappears tomorrow, you still have the files, and the
@@ -127,8 +165,8 @@ export default function OpenSourceRoute() {
       </section>
 
       <section className="editorial-cta">
-        <Link prefetch="viewport" to="/firmware-partners" className="editorial-cta-primary">
-          See who the €1 goes to →
+        <Link prefetch="viewport" to="/roadmap" className="editorial-cta-primary">
+          Help design the hardware →
         </Link>
         <a
           href="https://github.com/incutec-hw"

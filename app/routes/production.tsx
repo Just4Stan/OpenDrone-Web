@@ -37,7 +37,7 @@ export default function ProductionRoute() {
           current boards were drawn by Incutec people in Leuven, because the
           first boards had to exist; some are already held by community
           maintainers, and the design work is open to{' '}
-          <Link prefetch="viewport" to="/contribute">
+          <Link prefetch="viewport" to="/roadmap">
             anyone who shows up
           </Link>
           .

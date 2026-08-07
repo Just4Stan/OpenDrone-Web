@@ -31,10 +31,12 @@ export default function WholesaleRoute({loaderData}: Route.ComponentProps) {
           Put open hardware <em>on your shelf.</em>
         </h1>
         <p className="editorial-lead">
-          Incutec, the company that manufactures and sells the OpenDrone line,
-          is building a dealer channel. If you run an FPV shop in the EU and
-          want boards whose designs your customers can actually read, this page
-          is for you.
+          OpenDrone sells direct first: this webshop is the primary channel.
+          Dealers are welcome all the same. If you run an FPV shop in the EU
+          and want boards whose designs your customers can actually read, talk
+          to Incutec, the company that manufactures and sells the line.
+          Wholesale is a conversation with the company, not with the community
+          project.
         </p>
       </header>
 
