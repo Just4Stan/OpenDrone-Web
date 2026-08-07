@@ -28,20 +28,22 @@ commit**; local-only commits never reach opendrone.be.
   hand off, or finish a lane.
 - **Hands off other lanes.** Never stash, clean, branch-switch over, or delete
   someone else's WIP; note blockers in coordination.md instead.
-- **Commit small; PR early, merge fast**: `gh pr create` once the lane is
-  coherent; `gh pr merge --squash --delete-branch` after typecheck + lint pass
-  and the change is verified on your own port.
-- **Verify UI changes visually, always, before merging**: load every affected
-  view on your dev port in the browser, light and dark theme, iterate on the
-  design, and show Stan screenshots of the result. Checks passing is not
-  verification for anything a user can see.
+- **Commit small; PR early; NEVER merge**: `gh pr create` once the lane is
+  coherent and verified on your own port (typecheck + lint + test green).
+  Merging is Stan's move, always: main auto-deploys to opendrone.be, so an
+  agent merging a PR is an agent deploying to production. Leave the PR open
+  and say it's ready.
+- **Verify UI changes visually, always, before marking a PR ready**: load
+  every affected view on your dev port in the browser, light and dark theme,
+  iterate on the design, and show Stan screenshots of the result. Checks
+  passing is not verification for anything a user can see.
 - **Never squash-merge a branch that redid work already on `main`**: it
   silently reverts main's newer version to the branch's older one.
 - **After any merge, every live lane rebases** (`git fetch && git rebase
   origin/main`). Build only against origin/main, never against another lane's
   unmerged branch.
-- **Lane done**: merge the PR, `git worktree remove ~/OpenDrone-Web-wt/<lane>`,
-  delete the branch.
+- **Lane done**: Stan merges the PR; then `git worktree remove
+  ~/OpenDrone-Web-wt/<lane>` and delete the branch.
 - Commit trailer: `Co-Authored-By: Claude <your model name> <noreply@anthropic.com>`.
 
 ## Project docs: read before starting a lane
