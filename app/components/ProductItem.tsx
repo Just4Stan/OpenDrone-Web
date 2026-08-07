@@ -9,7 +9,7 @@ import type {
   CollectionItemFragment,
 } from 'storefrontapi.generated';
 import {useVariantUrl} from '~/lib/variants';
-import {useComingSoon} from '~/lib/coming-soon';
+import {useProductStatus} from '~/lib/coming-soon';
 import {AddToCartButton} from './AddToCartButton';
 import {StackQuickAdd, type StackOffer} from './StackQuickAdd';
 import {useAside} from './Aside';
@@ -108,7 +108,8 @@ export function ProductItem({
   // unlike the `comingSoon` prop (unreleased tier, non-clickable tile) the
   // card stays clickable — the PDP hosts the notify-at-launch signup — but
   // shows no price and no quick-add.
-  const launchPending = useComingSoon(product.handle);
+  const status = useProductStatus(product.handle);
+  const launchPending = status !== 'live';
   const showPrice = !launchPending;
 
   // Quick-add overlay: revealed on card hover (always visible on touch).
@@ -136,7 +137,9 @@ export function ProductItem({
     ) : null;
 
   const badge = comingSoon || launchPending ? (
-    <span className="product-card-badge is-soon">Coming soon</span>
+    <span className="product-card-badge is-soon">
+      {status === 'idea' ? 'Concept' : 'Coming soon'}
+    </span>
   ) : onSale ? (
     <span className="product-card-badge is-sale">Sale</span>
   ) : isNew ? (

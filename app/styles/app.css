@@ -4782,6 +4782,32 @@ button.reset {
   gap: var(--sp-2);
 }
 
+/* Idea-stage buy module: the concept pitch + repo CTA that replace the
+   price. Same mono/dim idiom as the SKU line. */
+.product-buy-idea-pitch {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  line-height: 1.6;
+  color: var(--color-text-dim);
+}
+.product-buy-idea-repo {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-gold);
+  text-decoration: none;
+  border-bottom: 1px solid color-mix(in srgb, var(--color-gold) 45%, transparent);
+  width: fit-content;
+}
+.product-buy-idea-repo:hover {
+  border-bottom-color: var(--color-gold);
+}
+
 /* Morphing buy rail — wraps the ladder + buy module. At rest it's a
    transparent passthrough; pinned (desktop, scrolled into the chapters) it
    floats over the page in its own column lane and CSS collapses it to a row
