@@ -55,13 +55,10 @@ commit**; local-only commits never reach opendrone.be.
 
 ## Project docs: read before starting a lane
 - `drafts/coordination.md`: live lane registry + task board. Always check first.
-- `drafts/ui-overhaul-brief.md`: design rules, anti-patterns, library verdicts. Before UI work.
-- `drafts/theming.md`: full light/dark token contract + gold/green rules. Before touching colors.
+- `drafts/hero-narrative.md`: hero concept and narrative. Before hero work.
 - `docs/store-compliance.md`: GPSR, withdrawal, VAT, sanctions, battery-free shipping.
   Before checkout, legal pages, product templates, or shipping/tax config.
 - `docs/growth-architecture.md`: analytics/attribution/email/ledger facts + canonical UTM values.
-- `drafts/drone-builder-scope.md`: 3D builder phase plan.
-- `drafts/archive/`: frozen point-in-time documents. Reference only; never update them.
 
 ## Theming (summary)
 Light + dark via CSS-custom-property token swap. Semantic tokens only, never
