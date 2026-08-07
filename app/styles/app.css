@@ -5680,13 +5680,6 @@ button.reset {
   .chapter[data-wide-media] {
     row-gap: var(--sp-8);
   }
-  /* This head is a two-sentence line that belongs on one line. Its column is
-     the full chapter width here, and the sentence needs ~1070px, so only the
-     shared 24ch cap was breaking it. Below this breakpoint, or on a narrow
-     window, it wraps as normal. */
-  .chapter[data-wide-media] .chapter-title {
-    max-width: none;
-  }
   .chapter[data-wide-media] .open-source-card,
   .chapter[data-wide-media] .latest-commit-card {
     border-top: 2px solid transparent;
@@ -6663,7 +6656,13 @@ button.reset {
   color: var(--color-text);
   /* 15px under a 41px head read as one block with the body. */
   margin: 0 0 var(--sp-6);
-  max-width: 24ch;
+  /* No measure cap: chapter heads are one-line statements and should stay on
+     one line wherever the column allows. The old 24ch (~630px) broke a
+     39-character head across two lines inside a 975px column, which is why
+     the firmware and schematic chapters had each grown their own
+     max-width: none override. The column is the constraint now, so narrow
+     viewports still wrap naturally. */
+  max-width: none;
 }
 
 .chapter-title em {
@@ -6676,10 +6675,6 @@ button.reset {
  * column so they stay on a single line, wrapping only when the column genuinely
  * runs out of room (narrow viewports). The 24ch cap above suits shorter heads. */
 .chapter:has(.teardown-sides) .chapter-title,
-.chapter:has(.firmware-split) .chapter-title {
-  max-width: none;
-}
-
 .chapter-body {
   font-family: var(--font-sans);
   font-size: var(--fs-base);
