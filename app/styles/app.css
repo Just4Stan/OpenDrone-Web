@@ -4283,8 +4283,15 @@ button.reset {
 /* Product page uses the same container width as the rest of the site
    for a consistent gutter. Top padding kept small — the breadcrumb
    was dropped and the hero is the opening statement. */
+/* Product pages run a tighter rail than the shared 1520px one. At full rail
+   width the chapters reach nearly edge to edge on a large display and the
+   page reads as a wall; pulling the cap in gives roughly 180px of margin
+   either side at 1728px. Scoped here on purpose: --rail-width is shared with
+   the footer and the other routes, and narrowing it globally is the site
+   lane's call, not this one's. Below the cap the shared responsive gutter
+   still governs, so nothing changes on a laptop or a phone. */
 .product-page {
-  width: var(--rail-width);
+  width: min(var(--rail-width), 1360px);
   margin: 0 auto;
   padding: var(--sp-5) 0 var(--sp-7);
 }
