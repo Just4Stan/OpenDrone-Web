@@ -403,28 +403,26 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
     // production BOMs, 2026-08-07). Field order follows FPV retail
     // convention: firmware, current, input, protocol, silicon, sensing,
     // connector, physical. Weight rows land once boards are weighed.
+    // Buyer-facing summary, deliberately not a BOM: no part numbers, no
+    // build targets. The teardown viewer and the repo carry that detail.
     // Rows the tiers replace by key (Continuous, MOSFETs, Current sense,
-    // TVS, AM32 target, Mounting, Dimensions) carry the 20×20 default here
-    // purely so the merged table keeps this order; the active tier's value
-    // always wins on the PDP.
+    // TVS, Mounting, Dimensions) carry the 20×20 default here purely so the
+    // merged table keeps this order; the active tier's value always wins.
     specs: [
       ['Continuous', '40 A / channel'],
-      ['Firmware', 'AM32, bootloader pre-loaded'],
-      ['AM32 target', 'OpenESC_20'],
-      ['ESC protocol', 'DShot, bidirectional DShot telemetry'],
-      ['Telemetry', 'Over the motor signal lines; analog current on the FC harness'],
-      ['Input', '3–6S LiPo'],
-      ['BEC', 'None; the FC harness carries VBAT'],
-      ['MCU', '4× AT32F421G8U7, one per motor, 120 MHz'],
-      ['Gate driver', '4× NSG2065Q'],
-      ['MOSFETs', '24×, 6 per motor'],
-      ['Current sense', 'INA186A3 high-side, board-level'],
+      ['Firmware', 'AM32'],
+      ['ESC protocol', 'DShot, bidirectional'],
+      ['Telemetry', 'RPM and current'],
+      ['Input', '2–6S LiPo'],
+      ['BEC', 'None'],
+      ['MCU', 'One per motor'],
+      ['MOSFETs', '6 per motor'],
+      ['Current sense', 'On-board'],
       ['TVS protection', 'None'],
-      ['Power rails', 'LMR54406DBVR buck + TLV76733 LDO'],
-      ['FC connector', 'JST-SH 8-pin (SM08B-SRSS-TB), Betaflight pinout'],
+      ['FC connector', 'JST-SH 8-pin'],
       ['Mounting', '20 × 20 mm, Ø3.0 mm holes'],
       ['Dimensions', '31.2 × 33.0 mm'],
-      ['PCB', '6-layer, 1.7 mm, 2 oz outer copper, ENIG'],
+      ['PCB', '6-layer, 2 oz copper'],
       ['License', 'CERN-OHL-S-2.0'],
     ],
     // Launching with the 20×20 and 30×30 models. Pro (higher-current)
@@ -435,14 +433,13 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
         oshwaUid: 'BE000028',
         highlights: [
           ['Mount', '20×20'],
-          ['MOSFET', 'DOY180N03T'],
           ['Continuous', '40 A / channel'],
+          ['Input', '2–6S'],
         ],
         specs: [
           ['Continuous', '40 A / channel'],
-          ['MOSFETs', '24× DOY180N03T, 6 per motor'],
-          ['Input', '3–6S LiPo, 6S hard maximum'],
-          ['Current sense', 'INA186A3 + 0.2 mΩ shunt · 20 mV/A, 165 A full-scale'],
+          ['Input', '2–6S LiPo'],
+          ['Current sense', 'On-board, 165 A'],
         ],
       },
       '30×30': {
@@ -451,17 +448,14 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
         repoUrl: 'https://github.com/incutec-hw/OpenESC-30x30',
         highlights: [
           ['Mount', '30×30'],
-          ['MOSFET', 'SP40N01GHNK'],
           ['Continuous', '60 A / channel'],
+          ['Input', '2–8S'],
         ],
         specs: [
           ['Continuous', '60 A / channel'],
-          // No AM32 target is defined for the 30×30 yet; hide the row rather
-          // than guess a name.
-          ['AM32 target', null],
-          ['MOSFETs', '24× SP40N01GHNK, 6 per motor, 40 V / 1.2 mΩ'],
-          ['Current sense', 'INA186A3 + 2× 0.2 mΩ shunt · 10 mV/A, 330 A full-scale'],
-          ['TVS protection', '3× SMBJ24A on the battery rail'],
+          ['Input', '2–8S LiPo'],
+          ['Current sense', 'On-board, 330 A'],
+          ['TVS protection', 'On the battery rail'],
           ['Mounting', '30.5 × 30.5 mm, Ø4.0 mm holes (M3)'],
           // The 30×30 outline is an open item in its repo; no dimensions
           // until it is confirmed.
@@ -635,27 +629,29 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
     // to the OpenFC-Lite repos and wire the cards here.
     downloads: [],
     // Spec values verified against the OpenFC-Lite / OpenFC-Lite-Mini repos
-    // (KiCad files + Rev3 BOMs, 2026-08-07). The IMU is a per-batch
-    // production decision: schematics carry BMI270, the validated rev2 build
-    // shipped LSM6DSV16X, and the LGA-14 footprint takes both.
-    // Rows the tiers replace by key (MCU, Betaflight target, UARTs,
-    // Mounting, Dimensions) carry the 30×30 default here so the merged
-    // table keeps this order; the active tier's value wins on the PDP.
+    // (KiCad files + Rev3 BOMs, 2026-08-07). IMU: every shipping OpenFC is
+    // BMI270 (Stan, 2026-08-08). The LGA-14 footprint also takes the
+    // LSM6DSV16X the rev2 build used, which is why the KiCad value and so
+    // the teardown viewer still read LSM6DSV16X on the 30×30.
+    // Buyer-facing summary, deliberately not a BOM: no part numbers, no
+    // build targets. The teardown viewer and the repo carry that detail.
+    // Rows the tiers replace by key (MCU, UARTs, Mounting, Dimensions)
+    // carry the 30×30 default here so the merged table keeps this order;
+    // the active tier's value wins on the PDP.
     specs: [
-      ['Firmware', 'Betaflight (RP2350 platform)'],
-      ['Betaflight target', 'OPENFC_LITE_RP2350B'],
-      ['MCU', 'RP2354, 2× Cortex-M33 @ 150 MHz, 2 MB flash'],
-      ['IMU', 'LSM6DSV16X or BMI270 on SPI, shared LGA-14 footprint'],
+      ['Firmware', 'Betaflight'],
+      ['MCU', 'RP2354B'],
+      ['IMU', 'BMI270'],
       ['Barometer', 'None'],
-      ['Blackbox', 'microSD slot (SPI)'],
-      ['OSD', 'Analog, PIO-driven (in development); digital OSD via MSP DisplayPort'],
-      ['UARTs', '4: 2 hardware + 2 PIO'],
-      ['Motor outputs', '4× DShot, bidirectional telemetry'],
-      ['RX', 'External, over UART (CRSF/SBUS)'],
-      ['Input', '3S–6S LiPo, reverse-polarity protected'],
-      ['BEC', '10 V switchable (VTX) + 5 V always-on, 3 A bucks'],
-      ['Current sense', 'ADC input for the ESC-side sensor, no onboard shunt'],
-      ['USB', 'USB-C (config + UF2 flash)'],
+      ['Blackbox', 'microSD'],
+      ['OSD', 'Analog (in development), digital via MSP DisplayPort'],
+      ['UARTs', '4'],
+      ['Motor outputs', '4× DShot, bidirectional'],
+      ['RX', 'External, CRSF or SBUS'],
+      ['Input', '3–6S LiPo, reverse-polarity protected'],
+      ['BEC', '10 V switchable + 5 V always-on, 3 A'],
+      ['Current sense', 'ESC-side, no on-board shunt'],
+      ['USB', 'USB-C'],
       ['Mounting', '30.5 × 30.5 mm, Ø4.0 mm holes'],
       ['Dimensions', '37.9 × 37.9 mm'],
       ['PCB', '6-layer, 1.0 mm'],
@@ -667,15 +663,14 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
         oshwaUid: 'BE000027',
         // The 20×20 (Mini) is its own repo; the 30×30 uses the product default.
         repoUrl: 'https://github.com/incutec-hw/OpenFC-Lite-Mini',
-        tagline: 'The 20×20 mount: RP2354A, QFN-60. The compact stack size.',
+        tagline: 'The 20×20 mount: the compact stack size.',
         highlights: [
           ['Mount', '20×20'],
           ['Size', '26.9 × 26.9 mm'],
         ],
         specs: [
-          ['MCU', 'RP2354A, 2× Cortex-M33 @ 150 MHz, QFN-60 (30 GPIO)'],
-          ['Betaflight target', 'OPENFC_LITE_MINI_RP2350A'],
-          ['UARTs', '3: 2 hardware + 1 PIO'],
+          ['MCU', 'RP2354A'],
+          ['UARTs', '3'],
           ['Mounting', '20 × 20 mm, Ø3.0 mm holes'],
           ['Dimensions', '26.9 × 26.9 mm'],
         ],
@@ -739,9 +734,8 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
           ['Size', '37.9 × 37.9 mm'],
         ],
         specs: [
-          ['MCU', 'RP2354B, 2× Cortex-M33 @ 150 MHz, QFN-80 (48 GPIO)'],
-          ['Betaflight target', 'OPENFC_LITE_RP2350B'],
-          ['UARTs', '4: 2 hardware + 2 PIO'],
+          ['MCU', 'RP2354B'],
+          ['UARTs', '4'],
           ['Mounting', '30.5 × 30.5 mm, Ø4.0 mm holes'],
           ['Dimensions', '37.9 × 37.9 mm'],
         ],
@@ -861,22 +855,21 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
       },
     ],
     // Spec values verified against the OpenRX repo (KiCad boards, fab BOMs,
-    // shared/elrs-targets JSON, 2026-08-07). Rows the tiers replace by key
-    // (Radio, Antenna, Telemetry power, TCXO, Flash target, Flashing,
-    // Dimensions) carry the Lite default so the merged table keeps this
-    // order; the active tier's value wins on the PDP.
+    // shared/elrs-targets JSON, 2026-08-07). Buyer-facing summary, not a
+    // BOM: bands rather than radio part numbers, no flash targets. The
+    // teardown viewer and the repo carry that detail. Rows the tiers
+    // replace by key (Band, Antenna, Telemetry power, Flashing, Dimensions)
+    // carry the Lite default so the merged table keeps this order.
     specs: [
-      ['Radio', 'Semtech SX1281, 2.4 GHz'],
-      ['Antenna', 'On-board ceramic chip'],
-      ['Telemetry power', '13 dBm (~20 mW)'],
+      ['Band', '2.4 GHz'],
+      ['Antenna', 'On-board ceramic'],
+      ['Telemetry power', '13 dBm (20 mW)'],
       ['Protocol', 'CRSF'],
-      ['MCU', 'ESP32-C3, 4 MB flash'],
-      ['TCXO', '52 MHz'],
+      ['MCU', 'ESP32-C3'],
       ['Input', '5 V pad'],
-      ['Firmware', 'ExpressLRS (3.5.0+)'],
-      ['Flash target', 'Unified_ESP32C3_2400_RX'],
-      ['Flashing', 'UART first, then Wi-Fi OTA / BF passthrough'],
-      ['Wi-Fi antenna', 'Dedicated on-board ceramic, separate from the link antenna'],
+      ['Firmware', 'ExpressLRS'],
+      ['Flashing', 'Betaflight passthrough or Wi-Fi'],
+      ['Wi-Fi antenna', 'Separate on-board ceramic'],
       ['Dimensions', '10.0 × 11.5 mm'],
       ['PCB', '6-layer, 1.0 mm'],
       ['License', 'CERN-OHL-S-2.0'],
@@ -885,14 +878,13 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
     variants: {
       Lite: {
         oshwaUid: 'BE000030',
-        tagline: 'SX1281 on 2.4 GHz with an on-board ceramic antenna: the low-cost default.',
+        tagline: '2.4 GHz with an on-board ceramic antenna: the low-cost default.',
         highlights: [
-          ['Radio', 'Semtech SX1281'],
           ['Band', '2.4 GHz'],
           ['Antenna', 'Ceramic, on-board'],
         ],
         specs: [
-          ['Antenna', 'On-board ceramic chip, no antenna wire to tear off'],
+          ['Antenna', 'On-board ceramic, no wire to tear off'],
           ['Dimensions', '10.0 × 11.5 mm'],
         ],
         pins: [
@@ -915,9 +907,8 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
       },
       'Lite-UFL': {
         oshwaUid: 'BE000031',
-        tagline: 'Same SX1281 radio, swapped to a U.FL pigtail for an external antenna.',
+        tagline: 'Same radio, swapped to a U.FL pigtail for an external antenna.',
         highlights: [
-          ['Radio', 'Semtech SX1281'],
           ['Band', '2.4 GHz'],
           ['Antenna', 'U.FL × 1'],
         ],
@@ -946,19 +937,15 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
       },
       Mono: {
         oshwaUid: 'BE000032',
-        tagline: 'Single LR1121 for multi-band links, with the RF front-end.',
+        tagline: 'One radio covering both bands, with the RF front-end.',
         highlights: [
-          ['Radio', 'Semtech LR1121'],
           ['Band', '2.4 GHz + sub-GHz'],
-          ['Front-end', 'RFX2401C + SKY13373'],
           ['Antenna', 'U.FL × 1'],
         ],
         specs: [
-          ['Radio', 'Semtech LR1121, dual-band from one antenna'],
+          ['Band', '2.4 GHz + sub-GHz, one antenna'],
           ['Antenna', 'U.FL, both bands through one RF switch'],
-          ['Telemetry power', '12–22 dBm selectable (~158 mW max), 12 dB RX LNA'],
-          ['TCXO', '32 MHz'],
-          ['Flash target', 'Unified_ESP32C3_LR1121_RX'],
+          ['Telemetry power', '12–22 dBm selectable (158 mW max)'],
           ['Dimensions', '10.0 × 17.3 mm'],
         ],
         inTheBox: [{qty: '1×', item: 'U.FL dipole antenna'}],
@@ -982,20 +969,15 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
       },
       Gemini: {
         oshwaUid: 'BE000033',
-        tagline: 'Dual LR1121 in ExpressLRS Xrossband mode for frequency-diverse links.',
+        tagline: 'Two radios in ExpressLRS Xrossband mode for frequency-diverse links.',
         highlights: [
-          ['Radio', 'Semtech LR1121 × 2'],
           ['Band', '2.4 GHz + sub-GHz, diversity'],
-          ['Front-end', 'RFX2401C + SKY13373'],
           ['Antenna', 'U.FL × 2'],
         ],
         specs: [
-          ['Radio', '2× Semtech LR1121, two complete radio chains'],
+          ['Band', '2.4 GHz + sub-GHz, two radio chains'],
           ['Antenna', '2× U.FL, one per radio'],
-          ['Telemetry power', '12–22 dBm per radio (~158 mW), 12 dB RX LNA per chain'],
-          ['TCXO', '32 MHz, shared by both radios'],
-          ['Flash target', 'Unified_ESP32C3_LR1121_RX'],
-          ['Flashing', 'UART with on-board BOOT button, Wi-Fi OTA, BF passthrough'],
+          ['Telemetry power', '12–22 dBm per radio (158 mW)'],
           ['Dimensions', '17.0 × 15.7 mm'],
         ],
         inTheBox: [
@@ -1076,13 +1058,13 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
       ['Wheelbase', '226 mm'],
       ['Prop size', '5"'],
       ['Arm thickness', '6 mm carbon'],
-      ['Plate thickness', 'Top 2.5 · mid 3.0 · bottom 3.0 mm'],
+      ['Plate thickness', '2.5 · 3.0 · 3.0 mm'],
       ['Stack mounting', '30.5 × 30.5 (M3) + 20 × 20'],
       ['Motor mounting', '16 × 16 (M3)'],
       ['Max stack height', '20 mm'],
-      ['Camera width', 'Up to 20 mm between the mounts'],
-      ['Video systems', 'Analog · DJI O3/O4 · Walksnail · HDZero'],
-      ['Material', 'T700 carbon, 3K twill; 6061/7075-T6 camera mounts'],
+      ['Camera width', 'Up to 20 mm'],
+      ['Video systems', 'Analog · DJI · Walksnail · HDZero'],
+      ['Material', 'T700 carbon, aluminium camera mounts'],
       ['License', 'CERN-OHL-S-2.0'],
     ],
     // TODO(copy): placeholder variant editorial — wires the "Model" axis +
@@ -1110,9 +1092,9 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
           ['Wheelbase', '141 mm'],
           ['Prop size', '3"'],
           ['Arm thickness', '4 mm carbon'],
-          ['Plate thickness', 'Top 2.0 · mid 2.5 · bottom 2.5 mm'],
+          ['Plate thickness', '2.0 · 2.5 · 2.5 mm'],
           ['Stack mounting', '25.5 × 25.5 + 20 × 20 (M2)'],
-          ['Motor mounting', '9 × 9 and 12 × 12 (M2)'],
+          ['Motor mounting', '9 × 9 · 12 × 12 (M2)'],
         ],
         frameViewer: {src: '/models/frame3.glb'},
       },
