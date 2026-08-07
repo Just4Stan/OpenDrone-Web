@@ -20,12 +20,19 @@ commit**; local-only commits never reach opendrone.be.
 
 - **One agent = one worktree = one branch = one dev port.** Claim a lane first:
   `git worktree add ~/OpenDrone-Web-wt/<lane> -b feat/<lane> origin/main`, then
-  work ONLY there (`npm ci` once). The main checkout `~/OpenDrone-Web` belongs
-  to Stan and the oversight session; don't edit files there if `git status`
-  shows work that isn't yours.
+  work ONLY there. Setup, once per lane: `npm ci`, copy `.env` from the main
+  checkout, and symlink the shared drafts dir (it is gitignored, so your
+  worktree starts without it):
+  `ln -s ~/OpenDrone/software/OpenDrone-Web/drafts drafts`.
+  The main checkout at `~/OpenDrone/software/OpenDrone-Web` belongs to Stan
+  and the oversight session; don't edit files there if `git status` shows
+  work that isn't yours.
 - **Check `drafts/coordination.md` before claiming files.** It is the live
-  lane registry, file-ownership map, and task board. Update it when you claim,
-  hand off, or finish a lane.
+  lane registry, port assignments, file-ownership map, and task board. Update
+  it when you claim, hand off, or finish a lane.
+- **Keep your dev server running on your claimed port** (`npm run dev -- --port
+  <port>`, ports from coordination.md). Stan reviews lanes side by side in the
+  browser; a lane without a live server can't be reviewed.
 - **Hands off other lanes.** Never stash, clean, branch-switch over, or delete
   someone else's WIP; note blockers in coordination.md instead.
 - **Commit small; PR early; NEVER merge**: `gh pr create` once the lane is
