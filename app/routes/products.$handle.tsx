@@ -206,7 +206,10 @@ function loadDeferredData({context, params}: Route.LoaderArgs) {
       repoUrls.push(content.repoUrl);
     }
   }
-  const latestCommits = fetchLatestCommits(repoUrls).catch(() => []);
+  // Optional GITHUB_TOKEN lifts the API ceiling from 60 to 5000 calls an
+  // hour; unset, both fetches degrade to their empty states.
+  const ghToken = context.env.GITHUB_TOKEN;
+  const latestCommits = fetchLatestCommits(repoUrls, ghToken).catch(() => []);
 
   // Contributor grid: every repo in the line (tier repos included) so the
   // section credits people whichever mount they worked on. Same
@@ -227,7 +230,9 @@ function loadDeferredData({context, params}: Route.LoaderArgs) {
       }
     }
   }
-  const contributors = fetchContributors(contributorRepoUrls).catch(() => []);
+  const contributors = fetchContributors(contributorRepoUrls, 12, ghToken).catch(
+    () => [],
+  );
 
   // Shopify's productRecommendations returns [] for new stores with no
   // purchase history. Fall back to "other products from the catalog" so
@@ -313,6 +318,31 @@ type ChapterNumbers = {
   contributors?: string;
   reviews?: string;
 };
+
+/**
+ * Intro line for the contributors chapter. It streams with the grid rather
+ * than above it, because it can only promise avatars when there are avatars:
+ * GitHub's unauthenticated API is 60 calls an hour per IP, so an empty list
+ * is a normal outcome, not an error. The empty wording still says the work is
+ * public and still invites, it just doesn't point at people who aren't there.
+ */
+function ContributorsIntro({empty, title}: {empty?: boolean; title?: string}) {
+  return (
+    <p className="chapter-body">
+      {empty || !title ? (
+        <>
+          Every commit on this design is public: the history, the issues and
+          the pull requests all live on GitHub. The next tile is yours.
+        </>
+      ) : (
+        <>
+          Every commit on this design is public. These are the GitHub accounts
+          behind {title}; the next tile is reserved.
+        </>
+      )}
+    </p>
+  );
+}
 
 /** Compute chapter numbers that stay contiguous when any chapter is hidden. */
 function computeChapterNumbers(
@@ -2125,6 +2155,9 @@ export default function Product() {
           }
           media={
             content.firmware.logo ? (
+              /* Not loading="lazy": same reason as the contributor avatars,
+                 a lazy image inside a content-visibility: auto chapter is
+                 treated as far offscreen and never fetched. */
               <img
                 className={
                   content.firmware.logoDark
@@ -2133,7 +2166,7 @@ export default function Product() {
                 }
                 src={content.firmware.logo}
                 alt={`${content.firmware.project} logo`}
-                loading="lazy"
+                decoding="async"
               />
             ) : undefined
           }
@@ -2162,25 +2195,38 @@ export default function Product() {
           }
           noMedia
         >
-          <p className="chapter-body">
-            Every commit on this design is public. These are the GitHub
-            accounts behind {title}; the next tile is reserved.
-          </p>
-          <Suspense fallback={<ContributorGridSkeleton />}>
+          {/* The intro has to stream with the grid, not ahead of it. GitHub's
+              unauthenticated API allows 60 calls an hour per IP, so an empty
+              list is routine, and "these are the accounts behind X" above a
+              lone "+ you?" tile reads as nobody having built the thing. */}
+          <Suspense
+            fallback={
+              <>
+                <ContributorsIntro empty />
+                <ContributorGridSkeleton />
+              </>
+            }
+          >
             <Await
               resolve={contributors}
               errorElement={
-                <ContributorGrid
-                  contributors={[]}
-                  issuesUrl={`${activeRepoUrl}/issues`}
-                />
+                <>
+                  <ContributorsIntro empty />
+                  <ContributorGrid
+                    contributors={[]}
+                    issuesUrl={`${activeRepoUrl}/issues`}
+                  />
+                </>
               }
             >
               {(list) => (
-                <ContributorGrid
-                  contributors={list ?? []}
-                  issuesUrl={`${activeRepoUrl}/issues`}
-                />
+                <>
+                  <ContributorsIntro empty={!list?.length} title={title} />
+                  <ContributorGrid
+                    contributors={list ?? []}
+                    issuesUrl={`${activeRepoUrl}/issues`}
+                  />
+                </>
               )}
             </Await>
           </Suspense>

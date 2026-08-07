@@ -42,6 +42,13 @@ declare global {
     // Pre-launch banner kill switch: unset/anything ≠ '0' keeps the banner.
     PUBLIC_PRELAUNCH?: string;
 
+    // Lifts the GitHub API ceiling from 60 to 5000 calls an hour for the
+    // PDP's latest-commit card and contributor grid. Unauthenticated, a
+    // handful of page loads exhausts the budget and the contributor grid
+    // empties out. A fine-grained token with public read access is enough;
+    // public repos need no scopes. Optional: unset, both degrade quietly.
+    GITHUB_TOKEN?: string;
+
     // Coming-soon kill switch: unset/anything ≠ '0' renders every product
     // as coming soon (no prices, notify-me signup instead of add-to-cart).
     // Set PUBLIC_COMING_SOON=0 in Oxygen the day orders open. Per-product

@@ -1,9 +1,24 @@
 /**
- * Fetches the latest commit on a public GitHub repo so a PDP can show
- * "last pushed X ago — commit title — by Y" inline. No auth — the
- * unauthenticated API is capped at 60 req / hour per IP, so we rely
- * on Oxygen's edge cache (cf.cacheTtl) to keep the origin calls low.
+ * Fetches the latest commit and the contributor list for a PDP's repos.
+ *
+ * Auth is optional but strongly wanted. Unauthenticated, GitHub allows 60
+ * calls an hour per IP, shared across every repo and every visitor behind
+ * that IP, and a PDP asks for several. Exhausting it is routine, not an
+ * edge case, and it silently empties the contributor grid. Set GITHUB_TOKEN
+ * (a fine-grained token with public read access, no scopes needed for
+ * public repos) and the ceiling becomes 5000/hour. Without it everything
+ * still works and simply degrades to the empty state.
  */
+
+/** Shared request headers; adds Authorization only when a token exists. */
+function ghHeaders(token?: string): HeadersInit {
+  const headers: Record<string, string> = {
+    'User-Agent': 'opendrone-web',
+    Accept: 'application/vnd.github+json',
+  };
+  if (token) headers.Authorization = `Bearer ${token}`;
+  return headers;
+}
 
 export type LatestCommit = {
   sha: string;
@@ -26,16 +41,14 @@ export function parseRepoUrl(
 
 export async function fetchLatestCommit(
   repoUrl: string,
+  token?: string,
 ): Promise<LatestCommit | null> {
   const parsed = parseRepoUrl(repoUrl);
   if (!parsed) return null;
   try {
     const url = `https://api.github.com/repos/${parsed.owner}/${parsed.repo}/commits?per_page=1`;
     const res = await fetch(url, {
-      headers: {
-        'User-Agent': 'opendrone-web',
-        Accept: 'application/vnd.github+json',
-      },
+      headers: ghHeaders(token),
       signal: AbortSignal.timeout(4000),
       // Cloudflare / Oxygen edge-cache hint — keep GitHub origin hits
       // to roughly once every 5 minutes per PoP. Safe cast because
@@ -75,9 +88,14 @@ export async function fetchLatestCommit(
 
 export async function fetchLatestCommits(
   repoUrls: string[],
+  token?: string,
 ): Promise<LatestCommit[]> {
   const unique = Array.from(new Set(repoUrls));
-  const results = await Promise.all(unique.map(fetchLatestCommit));
+  // Arrow, not a bare reference: map passes (value, index, array), so
+  // `map(fetchLatestCommit)` would hand the array index to `token`.
+  const results = await Promise.all(
+    unique.map((repoUrl) => fetchLatestCommit(repoUrl, token)),
+  );
   return results.filter((c): c is LatestCommit => c !== null);
 }
 
@@ -98,6 +116,7 @@ export type Contributor = {
 export async function fetchContributors(
   repoUrls: string[],
   limit = 12,
+  token?: string,
 ): Promise<Contributor[]> {
   const unique = Array.from(new Set(repoUrls));
   const perRepo = await Promise.all(
@@ -107,10 +126,7 @@ export async function fetchContributors(
       try {
         const url = `https://api.github.com/repos/${parsed.owner}/${parsed.repo}/contributors?per_page=30`;
         const res = await fetch(url, {
-          headers: {
-            'User-Agent': 'opendrone-web',
-            Accept: 'application/vnd.github+json',
-          },
+          headers: ghHeaders(token),
           signal: AbortSignal.timeout(4000),
           ...({cf: {cacheTtl: 3600, cacheEverything: true}} as RequestInit),
         });
