@@ -20,6 +20,25 @@ import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 
 export type HeroBeat = {id: string; title: string; note: string};
 
+/** One streamed piece of the assembly, as written by build-hero.mjs --split. */
+type Chunk = {id: string; label: string; file: string; bytes: number};
+type ChunkManifest = {chunks?: Chunk[]};
+
+/** Progress of the model download, for the splash. */
+export type HeroLoadState = {
+  /** Human-readable name of the piece currently arriving. */
+  label: string;
+  /** 0..1 across the whole assembly, weighted by real byte counts. */
+  frac: number;
+  /** Chunk id, so a caller can react to a specific piece landing. */
+  chunk: string;
+  /** True on the event that fires once this chunk is in the scene. */
+  done: boolean;
+};
+
+/** The one design that is always present. */
+const FALLBACK_MODEL = 'od3';
+
 export type HeroDroneSceneProps = {
   /** Folder under /public/models holding drone.glb + studio.json. */
   model?: string;
@@ -29,6 +48,8 @@ export type HeroDroneSceneProps = {
   onBeat?: (beat: HeroBeat, index: number) => void;
   /** The list of beats, once known. */
   onBeats?: (beats: HeroBeat[]) => void;
+  /** Fires as the model streams in, for the splash progress. */
+  onLoad?: (state: HeroLoadState) => void;
   /** Fires once the model is on screen. */
   onReady?: () => void;
   /** Handed a jump function once ready, so the rail dots can seek. */
@@ -66,6 +87,13 @@ type StudioConfig = {
   spotlight: any;
   sequence: any;
   camera?: any;
+  scroll?: {
+    springHz?: number;
+    gain?: number;
+    magnet?: number;
+    commitAt?: number;
+    minDwellS?: number;
+  };
   materials: MatProfile[];
   boards: Array<{id: string; title: string; note: string}>;
   boardExclude: string;
@@ -79,6 +107,7 @@ export function HeroDroneScene({
   onProgress,
   onBeat,
   onBeats,
+  onLoad,
   onReady,
   onSeeker,
 }: HeroDroneSceneProps) {
@@ -94,10 +123,17 @@ export function HeroDroneScene({
     const TEST = typeof location !== 'undefined' && new URLSearchParams(location.search).has('herotest');
 
     (async () => {
-      const cfg = (await fetch(`/models/${model}/studio.json`).then((r) => {
-        if (!r.ok) throw new Error(`studio.json ${r.status}`);
-        return r.json();
-      })) as StudioConfig;
+      // Only some sizes have an assembly built. Fall back rather than 404ing,
+      // so the size selector keeps working before the other models exist.
+      let folder = model;
+      let res = await fetch(`/models/${folder}/studio.json`);
+      if (!res.ok && folder !== FALLBACK_MODEL) {
+        console.warn(`[hero] no assembly for "${folder}", showing ${FALLBACK_MODEL}`);
+        folder = FALLBACK_MODEL;
+        res = await fetch(`/models/${folder}/studio.json`);
+      }
+      if (!res.ok) throw new Error(`studio.json ${res.status}`);
+      const cfg = (await res.json()) as StudioConfig;
 
       if (disposed) return;
       const renderer = new THREE.WebGLRenderer({antialias: true, alpha: true});
@@ -154,7 +190,11 @@ export function HeroDroneScene({
       };
 
       const S = cfg.spotlight;
-      const spotL = new THREE.SpotLight(0xffffff, S.power, 0, 0.5, S.softness, 2);
+      // The feathered shader multiplies alpha by a fresnel and a length falloff,
+      // so at the studio's opacity it reads far dimmer. Gain compensates so the
+      // same studio.json number means the same apparent brightness.
+      const BEAM_GAIN = S.beamGain ?? 4.0;
+      const spotL = new THREE.SpotLight(S.colour ?? 0xffd7a0, S.power, 0, 0.5, S.softness, 2);
       scene.add(spotL, spotL.target);
       // A flat additive cone reads as a hard grey wedge. This fakes a real
       // light shaft: alpha falls off toward the cone's silhouette (a fresnel
@@ -168,7 +208,7 @@ export function HeroDroneScene({
         side: THREE.DoubleSide,
         uniforms: {
           uOpacity: {value: 0},
-          uColor: {value: new THREE.Color(0xbcd8ff)},
+          uColor: {value: new THREE.Color(S.beamColour ?? 0xffcf96)},
         },
         vertexShader: `
           varying vec3 vNormalW;
@@ -265,7 +305,7 @@ export function HeroDroneScene({
           void main() {
             vec2 d = gl_PointCoord - 0.5;
             float a = smoothstep(0.5, 0.0, length(d));   // soft round mote
-            gl_FragColor = vec4(vec3(0.85, 0.92, 1.0), a * a * vFade * uOpacity);
+            gl_FragColor = vec4(vec3(1.0, 0.88, 0.72), a * a * vFade * uOpacity);
           }
         `,
       });
@@ -322,34 +362,44 @@ export function HeroDroneScene({
         classMats.set(key, list);
       }
 
-      /* ------------------------------------------------------------ load */
+      /* ------------------------------------------------------------ load
+       * The assembly ships as several GLBs (build-hero.mjs --split) so the
+       * browser streams it instead of stalling on one 6 MB file, and the reader
+       * watches the drone build up while it arrives. They are reassembled here
+       * into exactly the tree a single-file load produced -- one root, one
+       * assembly node, every occurrence under it -- so nothing below this point
+       * knows or cares which file a part came from.
+       */
       const loader = new GLTFLoader().setMeshoptDecoder(MeshoptDecoder as any);
-      const gltf = await loader.loadAsync(`/models/${model}/${cfg.model ?? 'drone.glb'}`);
-      if (disposed) return;   // torn down while the 6 MB model was in flight
-      const droneRoot = gltf.scene;
       const cache = new Map<string, THREE.MeshStandardMaterial>();
-      droneRoot.traverse((o: any) => {
-        if (!o.isMesh) return;
-        o.frustumCulled = false;
-        let name = '';
-        let n: THREE.Object3D | null = o;
-        while (n && n !== droneRoot) {
-          if (n.name && !/^mesh/i.test(n.name)) {
-            name = n.name;
-            break;
+      const paint = (sub: THREE.Object3D, root: THREE.Object3D) => {
+        sub.traverse((o: any) => {
+          if (!o.isMesh || o.userData.painted) return;
+          o.userData.painted = true;
+          o.frustumCulled = false;
+          let name = '';
+          let n: THREE.Object3D | null = o;
+          while (n && n !== root) {
+            if (n.name && !/^mesh/i.test(n.name)) {
+              name = n.name;
+              break;
+            }
+            n = n.parent;
           }
-          n = n.parent;
-        }
-        const key = classOf(name || o.name || '');
-        const ck = `${o.material.uuid}|${key}`;
-        let m = cache.get(ck);
-        if (!m) {
-          m = o.material.clone();
-          applyProfile(m as THREE.MeshStandardMaterial, key);
-          cache.set(ck, m as THREE.MeshStandardMaterial);
-        }
-        o.material = m;
-      });
+          const key = classOf(name || o.name || '');
+          const ck = `${o.material.uuid}|${key}`;
+          let m = cache.get(ck);
+          if (!m) {
+            m = o.material.clone();
+            applyProfile(m as THREE.MeshStandardMaterial, key);
+            cache.set(ck, m as THREE.MeshStandardMaterial);
+          }
+          o.material = m;
+        });
+      };
+
+      const droneRoot = new THREE.Group();
+      droneRoot.name = 'assembly-root';
       rig.add(droneRoot);
       cleanup.push(() => {
         for (const m of cache.values()) m.dispose();
@@ -358,8 +408,111 @@ export function HeroDroneScene({
         });
       });
 
-      const occRoot: THREE.Object3D =
-        droneRoot.children.length === 1 ? droneRoot.children[0] : droneRoot;
+      /* --------------------------------------------------- assembling view
+       * The real loop cannot start until the rigging is done, and the rigging
+       * cannot start until every chunk has landed. Without something here the
+       * whole download is a blank canvas. So run a minimal loop that frames
+       * whatever has arrived and turns it slowly: each chunk visibly drops into
+       * place, which is the honest progress indicator.
+       */
+      let previewOn = true;
+      const previewClock = new THREE.Clock();
+      let previewAngle = 0.9;
+      // Framed on the finished drone from the first frame, not on the airframe
+      // alone, so the camera does not lurch outward as the heavy chunks land.
+      // 0.075 m is a 3 inch airframe's bounding radius; refined once measured.
+      let previewRadius = 0.075;
+      const previewCentre = new THREE.Vector3();
+      const previewFit = () => {
+        const b = new THREE.Box3().setFromObject(rig);
+        if (b.isEmpty()) return;
+        b.getCenter(previewCentre);
+        previewRadius = Math.max(previewRadius, b.getBoundingSphere(new THREE.Sphere()).radius);
+      };
+      const previewFrame = () => {
+        if (!previewOn) return;
+        const w = Math.round(el.clientWidth);
+        const h = Math.round(el.clientHeight);
+        if (w && h) {
+          renderer.setSize(w, h, true);
+          camera.aspect = w / h;
+          camera.near = previewRadius / 300;
+          camera.far = previewRadius * 60;
+          camera.updateProjectionMatrix();
+        }
+        previewAngle += Math.min(previewClock.getDelta(), 0.05) * 0.24;
+        const off = new THREE.Vector3(Math.cos(previewAngle), 0.5, Math.sin(previewAngle))
+          .normalize()
+          .multiplyScalar(previewRadius * (cfg.camera?.distance ?? 2.15));
+        camera.position.copy(previewCentre.clone().add(off));
+        camera.lookAt(previewCentre);
+        renderer.render(scene, camera);
+      };
+      renderer.setAnimationLoop(previewFrame);
+
+      const manifest = await fetch(`/models/${folder}/chunks.json`)
+        .then((r) => (r.ok ? (r.json() as Promise<ChunkManifest>) : null))
+        .catch(() => null);
+      // No manifest means an older single-file build. Still supported.
+      const chunks: Chunk[] = manifest?.chunks?.length
+        ? manifest.chunks
+        : [{id: 'drone', label: 'drone', file: cfg.model ?? 'drone.glb', bytes: 1}];
+      const totalBytes = chunks.reduce((s, c) => s + (c.bytes || 1), 0);
+      let bytesDone = 0;
+      let asm: THREE.Group | null = null;
+      for (const c of chunks) {
+        onLoad?.({label: c.label, frac: bytesDone / totalBytes, chunk: c.id, done: false});
+        const g = await new Promise<{scene: THREE.Group}>((resolve, reject) =>
+          loader.load(
+            `/models/${folder}/${c.file}`,
+            resolve as any,
+            (e) => {
+              if (!e.total) return;
+              const frac = (bytesDone + (c.bytes || 1) * (e.loaded / e.total)) / totalBytes;
+              onLoad?.({label: c.label, frac, chunk: c.id, done: false});
+            },
+            reject,
+          ),
+        );
+        if (disposed) return;   // torn down mid-download
+        const src = g.scene.children.length === 1 ? g.scene.children[0] : g.scene;
+        if (!asm) {
+          // Every chunk is a clone of one source document, so they all carry the
+          // same assembly transform. Take it from the first, verify the rest.
+          asm = new THREE.Group();
+          asm.name = src.name || 'assembly';
+          asm.position.copy(src.position);
+          asm.quaternion.copy(src.quaternion);
+          asm.scale.copy(src.scale);
+          droneRoot.add(asm);
+        } else if (!asm.position.equals(src.position) || !asm.quaternion.equals(src.quaternion)) {
+          console.warn(`[hero] chunk "${c.id}" assembly transform differs from the first chunk`);
+        }
+        for (const child of [...src.children]) asm.add(child);
+        paint(asm, droneRoot);
+        previewFit();
+        bytesDone += c.bytes || 1;
+        onLoad?.({label: c.label, frac: bytesDone / totalBytes, chunk: c.id, done: true});
+        // Hand the main thread back so the preview loop paints the part that
+        // just landed. Without this the whole sequence of chunks decodes in one
+        // unbroken task and the drone appears complete in a single jump.
+        //
+        // Raced against a timer on purpose: requestAnimationFrame does not fire
+        // in a backgrounded tab, so awaiting it alone hangs the rest of the
+        // download until the reader comes back to the page.
+        await new Promise((r) => {
+          const t = setTimeout(r, 50);
+          requestAnimationFrame(() => {
+            clearTimeout(t);
+            r(undefined);
+          });
+        });
+        if (disposed) return;
+      }
+      if (!asm) throw new Error('no geometry loaded');
+      previewOn = false;
+
+      const occRoot: THREE.Object3D = asm;
       const pick = (re: RegExp) => {
         const out: THREE.Object3D[] = [];
         droneRoot.traverse((o) => {
@@ -716,7 +869,7 @@ export function HeroDroneScene({
           .clone()
           .addScaledVector(fwd, dist)
           .addScaledVector(rightv, -dist * S.stageLeft)
-          .addScaledVector(camera.up, dist * 0.03);
+          .addScaledVector(camera.up, dist * (S.stageLift ?? 0));
         if (b.faceOn) anchor.addScaledVector(camera.up, dist * (S.boardTilt ?? 0));
         const halfH = Math.tan(THREE.MathUtils.degToRad(camera.fov) / 2) * dist;
         const wantScale =
@@ -745,10 +898,10 @@ export function HeroDroneScene({
         spotL.penumbra = S.softness;
         spotL.intensity = S.power * shoot * ignite * droneRadius * droneRadius;
         const dirv = anchor.clone().sub(lampPos).normalize();
-        const span = lampPos.distanceTo(anchor) * 3.2 * shoot;
-        const rad = Math.tan(THREE.MathUtils.degToRad(S.coneAngle)) * span * 0.22 * shoot;
+        const span = lampPos.distanceTo(anchor) * 6.0 * shoot;
+        const rad = Math.tan(THREE.MathUtils.degToRad(S.coneAngle)) * span * 0.55 * shoot;
         beam.visible = strike > 0.01;
-        beamMat.uniforms.uOpacity.value = 0.20 * S.beam * shoot * ignite;
+        beamMat.uniforms.uOpacity.value = 0.085 * S.beam * shoot * ignite * BEAM_GAIN;
         beam.scale.set(rad, Math.max(span, 1e-5), rad);
         beam.position.copy(lampPos).addScaledVector(dirv, span * 0.5);
         beam.quaternion.setFromUnitVectors(new THREE.Vector3(0, -1, 0), dirv);
@@ -759,7 +912,7 @@ export function HeroDroneScene({
         // beam mesh is a unit cone centred on its own origin, so shift by half.
         motes.scale.set(rad, span, rad);
         motes.position.addScaledVector(dirv, -span * 0.5);
-        moteMat.uniforms.uOpacity.value = 0.30 * S.beam * shoot;
+        moteMat.uniforms.uOpacity.value = 0.22 * S.beam * shoot;
         moteMat.uniforms.uTime.value = elapsed;
         moteMat.uniforms.uSize.value = Math.max(0.6, droneRadius * 6);
 
@@ -826,7 +979,7 @@ export function HeroDroneScene({
       let gestureDir = 0;
       let committed: number | null = null;
       const GESTURE_GAP_MS = 220;
-      const MIN_DWELL_S = 0.9;    // seconds a part must be presented before you can move on
+      const MIN_DWELL_S = cfg.scroll?.minDwellS ?? 1.4;    // seconds a part must be presented before you can move on
       // A beat is unskippable. Once committed, input is absorbed until the part
       // has arrived AND its hold has run, so nobody can flick past a product
       // without its spotlight moment. This is the "plays at its own pace" rule:
@@ -884,7 +1037,7 @@ export function HeroDroneScene({
         // report pages. Normalise before scaling or Firefox scrolls ~20x slower.
         const unit = e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? el.clientHeight : 1;
         const px = e.deltaY * unit;
-        const step = Math.sign(px) * Math.min(Math.abs(px), 60) * 0.0016 * dur();
+        const step = Math.sign(px) * Math.min(Math.abs(px), 60) * (cfg.scroll?.gain ?? 0.0016) * dur();
 
         // THE important bound. A trackpad's momentum tail fires at frame rate
         // for a second or more after the finger lifts, and no time-based
@@ -898,6 +1051,54 @@ export function HeroDroneScene({
       };
       el.addEventListener('wheel', onWheel, {passive: false});
       cleanup.push(() => el.removeEventListener('wheel', onWheel));
+
+      /* ---------------------------------------------------- drag to rotate
+       * Matches the old hero: 0.004 rad per pixel, horizontal drag turns the
+       * drone and KEEPS the new heading (the auto-orbit simply resumes from
+       * there), vertical drag tilts and springs back on release.
+       *
+       * The old scene rotated the model; this one orbits the camera, so a
+       * horizontal drag goes straight into orbitAngle -- which is what makes the
+       * heading persist for free. The tilt needs its own offset because camH is
+       * lerped toward a per-beat target every frame and would fight a direct
+       * write. Vertical page scrolling is untouched: this is pointer input, the
+       * wheel handler above is separate.
+       */
+      let dragging = false;
+      let dragTilt = 0;
+      let lastPtr = {x: 0, y: 0};
+      const onPtrDown = (e: PointerEvent) => {
+        // Left button / touch / pen only, and never on the rail's buttons.
+        if (e.button !== 0) return;
+        dragging = true;
+        lastPtr = {x: e.clientX, y: e.clientY};
+        el.setPointerCapture?.(e.pointerId);
+      };
+      const onPtrMove = (e: PointerEvent) => {
+        if (!dragging) return;
+        const dx = e.clientX - lastPtr.x;
+        const dy = e.clientY - lastPtr.y;
+        lastPtr = {x: e.clientX, y: e.clientY};
+        // Negative so the drone follows the hand rather than running from it.
+        orbitAngle -= dx * 0.004;
+        // Clamped: past about +-0.9 the camera crosses over the drone and the
+        // lookAt flips, which reads as the scene snapping upside down.
+        dragTilt = THREE.MathUtils.clamp(dragTilt + dy * 0.004, -0.9, 0.9);
+      };
+      const onPtrUp = () => {
+        dragging = false;
+      };
+      el.addEventListener('pointerdown', onPtrDown);
+      window.addEventListener('pointermove', onPtrMove);
+      window.addEventListener('pointerup', onPtrUp);
+      window.addEventListener('pointercancel', onPtrUp);
+      el.style.cursor = 'grab';
+      cleanup.push(() => {
+        el.removeEventListener('pointerdown', onPtrDown);
+        window.removeEventListener('pointermove', onPtrMove);
+        window.removeEventListener('pointerup', onPtrUp);
+        window.removeEventListener('pointercancel', onPtrUp);
+      });
 
       // Keyboard: arrows, PageUp/Down, Home/End step between stops. Without
       // this a keyboard user simply scrolls past and never sees five of the six
@@ -988,14 +1189,14 @@ export function HeroDroneScene({
           if (committed === null) {
             const fromPos = stopFor(gestureFrom);
             const moved = (target - fromPos) * (gestureDir || 1);
-            const advance = moved > dur() * 0.28 || Math.abs(vel) > dur() * 0.6;
+            const advance = moved > dur() * (cfg.scroll?.commitAt ?? 0.28) || Math.abs(vel) > dur() * 0.6;
             committed = Math.max(0, Math.min(BEATS.length - 1, gestureFrom + (advance ? gestureDir || 1 : 0)));
           }
           const snap = stopFor(committed);
           const settle = Math.min(1, (idle - 120) / 260);
-          target += (snap - target) * (1 - (1 - 0.14 * settle) ** (dt * 60));
+          target += (snap - target) * (1 - (1 - (cfg.scroll?.magnet ?? 0.14) * settle) ** (dt * 60));
         }
-        const omega = 2 * Math.PI * 1.1;
+        const omega = 2 * Math.PI * (cfg.scroll?.springHz ?? 0.55);
         const f = 1 + 2 * dt * omega;
         const oo = omega * omega;
         const hoo = dt * oo;
@@ -1068,12 +1269,23 @@ export function HeroDroneScene({
         scene.updateMatrixWorld(true);
         present(b, k, t);
 
-        orbitAngle += dt * Q.autoOrbit;
+        // Auto-orbit pauses while the hand is on the drone, and the tilt springs
+        // back once it lets go.
+        if (!dragging) {
+          orbitAngle += dt * Q.autoOrbit;
+          dragTilt *= (1 - Math.min(1, 3 * dt));
+          if (Math.abs(dragTilt) < 0.0005) dragTilt = 0;
+        }
+        el.style.cursor = dragging ? 'grabbing' : 'grab';
         const wantH = b.faceOn ? (cfg.camera?.heightOnBoard ?? 0.72) : (cfg.camera?.height ?? 0.5);
         camH += (THREE.MathUtils.lerp(cfg.camera?.height ?? 0.5, wantH, k) - camH) * (1 - 0.35 ** dt);
         const back = droneRadius * ((cfg.camera?.distance ?? 2.15) + (cfg.camera?.dollyOnShow ?? 0.92) * k);
-        const off = new THREE.Vector3(Math.cos(orbitAngle), camH, Math.sin(orbitAngle)).normalize().multiplyScalar(back);
-        camera.position.lerp(droneCentre.clone().add(off), 1 - 0.004 ** dt);
+        const off = new THREE.Vector3(Math.cos(orbitAngle), camH + dragTilt, Math.sin(orbitAngle)).normalize().multiplyScalar(back);
+        // A drag has to track the hand 1:1, so it writes the position directly.
+        // The eased lerp is for the auto-orbit and the per-beat dolly, where the
+        // smoothing is the point.
+        if (dragging) camera.position.copy(droneCentre.clone().add(off));
+        else camera.position.lerp(droneCentre.clone().add(off), 1 - 0.004 ** dt);
         camera.lookAt(droneCentre);
 
         renderer.render(scene, camera);
@@ -1118,6 +1330,8 @@ export function HeroDroneScene({
               new WheelEvent('wheel', {deltaY, deltaMode, bubbles: true, cancelable: true}),
             ),
           scene,
+          camera,
+          THREE,
           beats: BEATS.map((b) => b.id),
           dur: dur(),
         };
@@ -1138,7 +1352,7 @@ export function HeroDroneScene({
       // not leave a dead canvas stacked over the live one.
       for (const c of Array.from(el.querySelectorAll('canvas'))) c.remove();
     };
-  }, [model, onBeat, onBeats, onProgress, onReady, onSeeker]);
+  }, [model, onBeat, onBeats, onLoad, onProgress, onReady, onSeeker]);
 
   return (
     // Decorative: every beat's copy is in the DOM in .hp-fallback, and

@@ -333,10 +333,14 @@ html {
    of the Canvas (not the wordmark), so the wordmark always reads
    bright. Fades out once the scene reports ready and the minimum
    splash beat has elapsed. */
+/* Holds the scene back while the wordmark reads, then clears. Was 0.9 opaque,
+   which hid the whole load: the drone now assembles behind this as its six GLBs
+   land, and that is the progress indicator, so it has to be visible through it.
+   0.55 keeps the wordmark dominant and still shows the build-up. */
 .scene-dim {
   position: absolute;
   inset: 0;
-  background-color: rgba(13, 13, 16, 0.9);
+  background-color: rgba(13, 13, 16, 0.55);
   pointer-events: none;
   opacity: 1;
   transition: opacity 0.7s ease-out 0.1s;
@@ -15163,12 +15167,14 @@ body:has(.buy-rail.is-pinned.is-mobile) .placeholder-banner {
    Hero prototype (/hero-preview). Scoped under .hp so it cannot leak into the
    live homepage while the two are being compared.
    --------------------------------------------------------------------------- */
+/* The walkthrough is a layer inside the hero's sticky pane, not a section of
+   its own: the wordmark, size selector and buy bubble sit over the same drone.
+   Pointer events are re-enabled here because the pane itself sets none. */
 .hp-stage {
-  position: relative;
-  height: 100svh;
-  width: 100%;
+  position: absolute;
+  inset: 0;
   overflow: hidden;
-  background: var(--color-bg);
+  pointer-events: auto;
 }
 .hp-loading {
   position: absolute;
@@ -15182,52 +15188,82 @@ body:has(.buy-rail.is-pinned.is-mobile) .placeholder-banner {
   color: var(--color-text-dim);
   pointer-events: none;
 }
+/* Chapter rail, horizontal along the bottom centre. It was vertical on the left
+   originally, which put it straight on top of the hero's centred GitHub mark.
+   Horizontal also survives short viewports, where a 46vh vertical rail collides
+   with both the size selector above it and the wordmark below. */
 .hp-rail {
   position: absolute;
-  left: clamp(14px, 3vw, 40px);
-  top: 50%;
-  transform: translateY(-50%);
-  width: 2px;
-  height: min(46vh, 300px);
+  left: 50%;
+  bottom: 92px;
+  transform: translateX(-50%);
+  width: min(440px, 42vw);
+  height: 2px;
   background: color-mix(in srgb, var(--color-text-dim) 30%, transparent);
   border-radius: 2px;
+  z-index: 22;
 }
 .hp-rail-fill {
   position: absolute;
-  inset-inline: 0;
-  top: 0;
-  height: 0;
+  inset-block: 0;
+  left: 0;
+  width: 0;
+  height: 100%;
   background: var(--color-accent);
   border-radius: 2px;
+  transition: none;
 }
 .hp-dot {
   position: absolute;
-  left: -3px;
-  width: 8px;
-  height: 8px;
-  margin-top: -4px;
+  top: -4px;
+  margin-left: -5px;
+  width: 10px;
+  height: 10px;
   border-radius: 50%;
   background: var(--color-bg);
   border: 1px solid color-mix(in srgb, var(--color-text-dim) 50%, transparent);
   transition: background 0.25s ease, border-color 0.25s ease, transform 0.25s ease;
 }
+/* Beat name, shown on the active dot and on hover, so the rail says WHERE you
+   are and not only how far. */
+.hp-dot-label {
+  position: absolute;
+  bottom: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 0.58rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--color-text-dim);
+  opacity: 0;
+  transition: opacity 0.25s ease, color 0.25s ease;
+  pointer-events: none;
+}
+.hp-dot.on .hp-dot-label { opacity: 1; color: var(--color-accent); }
+.hp-dot:hover .hp-dot-label,
+.hp-dot:focus-visible .hp-dot-label { opacity: 1; }
 .hp-dot.done { background: color-mix(in srgb, var(--color-accent) 45%, transparent); }
 .hp-dot.on {
   background: var(--color-accent);
   border-color: var(--color-accent);
   transform: scale(1.4);
 }
+/* Per-beat copy, upper right. NOT vertically centred: the buy bubble occupies
+   the bottom right and grew tall enough to bury this entirely once all three
+   product cards revealed. Top-anchored also keeps the title in the same place
+   as the note length changes between beats. */
 .hp-copy {
   position: absolute;
-  right: clamp(20px, 7vw, 110px);
-  top: 50%;
-  transform: translateY(-50%);
-  max-width: min(38ch, 40vw);
+  right: clamp(20px, 5vw, 96px);
+  top: clamp(120px, 19vh, 210px);
+  max-width: min(34ch, 32vw);
   animation: hp-in 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 @keyframes hp-in {
-  from { opacity: 0; transform: translateY(calc(-50% + 14px)); }
-  to   { opacity: 1; transform: translateY(-50%); }
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: none; }
 }
 .hp-step {
   font-family: var(--font-mono, ui-monospace, monospace);
@@ -15273,8 +15309,7 @@ body:has(.buy-rail.is-pinned.is-mobile) .placeholder-banner {
   .hp-copy, .hp-hint { animation: none; }
 }
 @media (max-width: 720px) {
-  .hp-copy { right: 16px; left: 16px; max-width: none; top: auto; bottom: 84px; transform: none; }
-  @keyframes hp-in { from {opacity:0; transform:translateY(14px);} to {opacity:1; transform:none;} }
+  .hp-copy { right: 16px; left: 16px; max-width: none; top: auto; bottom: 130px; }
 }
 
 /* Every beat's copy lives in the DOM for crawlers and assistive tech. It is
@@ -15311,3 +15346,35 @@ body:has(.buy-rail.is-pinned.is-mobile) .placeholder-banner {
 .hp-fallback p { margin: 0; color: var(--color-text-muted); }
 .hp-dot { padding: 0; cursor: pointer; }
 .hp-dot:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 3px; }
+
+/* Named load stage under the splash wordmark. The assembly arrives as several
+   files and the drone visibly builds up behind this, so it reads as "the
+   airframe is here, the boards are coming" instead of an anonymous spinner. */
+.hero-load-stage {
+  position: absolute;
+  left: 50%;
+  top: calc(50% + 5.5rem);
+  transform: translateX(-50%);
+  z-index: 26;
+  display: flex;
+  align-items: baseline;
+  gap: 0.7rem;
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 0.62rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--color-text-dim);
+  pointer-events: none;
+  animation: hero-load-stage-in 0.5s ease both;
+}
+@keyframes hero-load-stage-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.hero-load-stage__pct {
+  color: var(--color-accent);
+  font-variant-numeric: tabular-nums;
+}
+@media (prefers-reduced-motion: reduce) {
+  .hero-load-stage { animation: none; }
+}

@@ -137,7 +137,58 @@ const inBoard = (c) => {
 // AND placement, and nothing is substituted from KiCad. Only the strays with
 // broken 3D-model offsets are still removed, because they sit a metre away.
 const KEEP_ALL = process.argv.includes('--all');
-const groups = KEEP_ALL ? {drone: []} : {frame: [], payload: []};
+
+// --split emits the same complete assembly as --all, but as several files the
+// runtime can stream in order instead of one 6 MB stall. Nothing is dropped:
+// every occurrence lands in exactly one chunk, and the runtime reparents them
+// all under one occurrence root, so the scene sees the same tree either way.
+//
+// Order is chosen so the silhouette appears first and the reader watches the
+// drone assemble while the rest arrives. The airframe is the cheapest and the
+// most recognisable; the DJI air-unit shell is 28% of the assembly's vertices
+// on its own, so it goes last.
+const SPLIT = process.argv.includes('--split');
+// Matched against the occurrence name with the "occurrence of " prefix already
+// stripped. Kept in sync with public/models/<design>/studio.json by hand: these
+// decide which file a part ships in, that file decides how it is lit.
+const CHUNK_MATCH = {
+  video: /^(Top Casing|Bottom Casing|DJI|VTX-Mount|USB C|Body|Lens|BM6B)/i,
+  drive: /^(Admi|softmount|[0-9]+$)/i,
+};
+// Each PCB is its own chunk. Together they are ~70% of the download (2048
+// occurrences of SMD parts), so one "electronics" chunk would be a single long
+// stall with nothing happening; one per board lets each appear as it lands, and
+// it lines up with the three board beats the walkthrough opens on.
+const chunkOf = (o) => {
+  if (CHUNK_MATCH.video.test(o.name)) return 'video';
+  if (CHUNK_MATCH.drive.test(o.name)) return 'drive';
+  const sub = SUBSTRATE.exec(o.name);
+  if (sub) return `board-${sub[1]}`;
+  // SMD parts carry footprint names, not a board prefix, so they are found by
+  // position instead. Hardware is excluded: a stack screw passes through the
+  // board plane but belongs to the airframe.
+  if (!HARDWARE.test(o.name)) {
+    const b = inBoard(o.c);
+    if (b) return `board-${b}`;
+  }
+  return 'frame';
+};
+const CHUNK_LABEL = {
+  frame: 'airframe',
+  drive: 'motors and props',
+  video: 'video system',
+};
+// Cheap and recognisable first: the airframe alone reads as a drone, so the
+// reader watches it fill in rather than watching a spinner. The DJI air-unit
+// shell is 20% of the bytes by itself and goes last.
+const chunkRank = (id) =>
+  id === 'frame' ? 0 : id === 'drive' ? 1 : id.startsWith('board-') ? 2 : 3;
+
+const groups = SPLIT
+  ? {}   // filled below, once every occurrence has been classified
+  : KEEP_ALL
+    ? {drone: []}
+    : {frame: [], payload: []};
 const culled = {board: 0, hardware: 0, far: 0};
 const culledVerts = {board: 0, hardware: 0, far: 0};
 // The Onshape export carries its own outliers (construction geometry, stray
@@ -151,10 +202,25 @@ for (const o of info) {
     console.log(`  far: "${o.name}" at ${Math.hypot(o.c[0],o.c[1],o.c[2]).toFixed(2)} m -> culled`);
     continue;
   }
+  if (SPLIT) {
+    const k = chunkOf(o);
+    (groups[k] ??= []).push(o);
+    continue;
+  }
   if (KEEP_ALL) { groups.drone.push(o); continue; }
   if (SUBSTRATE.test(o.name) || inBoard(o.c)) { culled.board++; culledVerts.board += o.verts; continue; }
   if (HARDWARE.test(o.name)) { culled.hardware++; culledVerts.hardware += o.verts; continue; }
   groups[FRAME.test(o.name) ? 'frame' : 'payload'].push(o);
+}
+
+// Emit in load order, so chunks.json needs no sort of its own and the build log
+// reads the way the browser will fetch them.
+if (SPLIT) {
+  const sorted = Object.keys(groups).sort((a, b) => chunkRank(a) - chunkRank(b) || a.localeCompare(b));
+  const reordered = {};
+  for (const k of sorted) reordered[k] = groups[k];
+  for (const k of Object.keys(groups)) delete groups[k];
+  Object.assign(groups, reordered);
 }
 
 const totalV = info.reduce((s,o)=>s+o.verts, 0);
@@ -192,6 +258,7 @@ const keepIds = new Map();
 for (const [gname, members] of Object.entries(groups))
   for (const o of members) keepIds.set(o.occ, gname);
 
+const emitted = [];
 for (const [gname, members] of Object.entries(groups)) {
   if (!members.length) continue;
   const clone = cloneDocument(doc);
@@ -211,7 +278,9 @@ for (const [gname, members] of Object.entries(groups)) {
   // tiny. The whole-assembly 'drone' group must be decimated (2.5M verts) but
   // gently: silkscreen legend and pad edges are the first thing to smear, and
   // those are exactly what the boards are here to show.
-  const isFrameLike = gname === 'frame';
+  // In --split mode 'frame' is one chunk of the whole assembly, not the old
+  // slimmed-down frame group, so it gets decimated like everything else.
+  const isFrameLike = !SPLIT && gname === 'frame';
   // No floor here. An earlier guard clamped the whole-assembly ratio to 0.5,
   // which silently ignored anything lower passed on the command line.
   const ratio = RATIO;
@@ -248,6 +317,31 @@ for (const [gname, members] of Object.entries(groups)) {
   const countNodes = (n) => { nodes++; n.listChildren().forEach(countNodes); };
   cRoot.listScenes().forEach((s) => s.listChildren().forEach(countNodes));
   console.log(`  -> ${out.split('/').pop().padEnd(16)} ${(statSync(out).size/1024).toFixed(0).padStart(6)} KB  ${verts.toLocaleString().padStart(9)} verts  ${meshes} meshes / ${nodes} nodes`);
+  emitted.push({id: gname, file: out.split('/').pop(), bytes: statSync(out).size, verts});
+}
+
+// The runtime needs the byte weights to show honest progress across several
+// files: without them a four-chunk load reports 25% steps, and the last chunk
+// (the DJI shell) is half the download on its own. Written only for --split,
+// and its absence is what tells the scene to load the single-file model.
+if (SPLIT) {
+  const manifest = {
+    _note: 'Written by build-hero.mjs --split. Array order is load order: the runtime shows each chunk as it lands.',
+    chunks: emitted.map((e) => ({
+      id: e.id,
+      // Board chunks are labelled from the KiCad board name in the occurrence
+      // prefix, which is what studio.json's `boards` list uses too.
+      label: CHUNK_LABEL[e.id] ?? e.id.replace(/^board-/, ''),
+      file: e.file,
+      bytes: e.bytes,
+      verts: e.verts,
+    })),
+  };
+  writeFileSync(pjoin(OUT, 'chunks.json'), JSON.stringify(manifest, null, 2));
+  const total = manifest.chunks.reduce((s, c) => s + c.bytes, 0);
+  console.log(`\nwrote chunks.json  ${manifest.chunks.length} chunks, ${(total / 1024 / 1024).toFixed(2)} MB total`);
+  for (const c of manifest.chunks)
+    console.log(`  ${c.id.padEnd(8)} ${(c.bytes / 1024).toFixed(0).padStart(6)} KB  ${((100 * c.bytes) / total).toFixed(0).padStart(3)}%  ${c.label}`);
 }
 
 // Onshape emits one primitive per B-rep face: a single payload mesh arrived

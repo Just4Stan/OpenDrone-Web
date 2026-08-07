@@ -363,10 +363,16 @@ const bar = document.querySelector('#bar > i');
 // The HTML carries a cache-buster but the GLB did not, so a rebuilt asset kept
 // being served from cache. Pass the page's ?v= through to the model request.
 const ASSET_V = new URLSearchParams(location.search).get('v') ?? Date.now();
-loader.load(`drone.glb?v=${ASSET_V}`, (g) => {
-  droneRoot = g.scene;
-  const cache = new Map();
-  droneRoot.traverse((o) => {
+
+// The assembly ships as several GLBs (build-hero.mjs --split) so the browser can
+// stream it and show the drone building up instead of one long stall. They are
+// reassembled here into the same shape a single-file load produced: one root
+// with one assembly node under it holding every occurrence. Every rule below
+// this line addresses parts by name and knows nothing about which file they
+// arrived in. No chunks.json means an older single-file build, so fall back.
+const matCache = new Map();
+function paint(subtree) {
+  subtree.traverse((o) => {
     if (!o.isMesh) return;
     o.frustumCulled = false;
     let name = '', n = o;
@@ -374,15 +380,49 @@ loader.load(`drone.glb?v=${ASSET_V}`, (g) => {
     const key = classOf(name || o.name || '');
     DIAG.hit[key] = (DIAG.hit[key] ?? 0) + 1;
     const ck = `${o.material.uuid}|${key}`;
-    let m = cache.get(ck);
-    if (!m) { m = o.material.clone(); applyProfile(m, key); cache.set(ck, m); }
+    let m = matCache.get(ck);
+    if (!m) { m = o.material.clone(); applyProfile(m, key); matCache.set(ck, m); }
     o.material = m;
   });
+}
+
+(async () => {
+  const man = await fetch(`chunks.json?v=${ASSET_V}`)
+    .then((r) => (r.ok ? r.json() : null))
+    .catch(() => null);
+  const chunks = man?.chunks ?? [{id: 'drone', label: 'drone', file: 'drone.glb', bytes: 1}];
+  const total = chunks.reduce((s, c) => s + (c.bytes || 1), 0);
+  droneRoot = new THREE.Group();
+  droneRoot.name = 'assembly-root';
   rig.add(droneRoot);
-  bar.style.width = '100%';
+  let asm = null;
+  let loaded = 0;
+  for (const c of chunks) {
+    document.querySelector('#load').firstChild.textContent = `loading ${c.label} `;
+    const g = await new Promise((res, rej) =>
+      loader.load(`${c.file}?v=${ASSET_V}`, res,
+        (e) => { if (e.total) bar.style.width = `${((loaded + (c.bytes || 1) * (e.loaded / e.total)) / total) * 100}%`; },
+        rej));
+    const src = g.scene.children.length === 1 ? g.scene.children[0] : g.scene;
+    if (!asm) {
+      // Every chunk is a clone of the same source document, so they share this
+      // node's transform. Take it from the first and check the rest agree.
+      asm = new THREE.Group();
+      asm.name = src.name || 'assembly';
+      asm.position.copy(src.position);
+      asm.quaternion.copy(src.quaternion);
+      asm.scale.copy(src.scale);
+      droneRoot.add(asm);
+    } else if (!asm.position.equals(src.position) || !asm.quaternion.equals(src.quaternion)) {
+      say(`chunk ${c.id}: assembly transform differs from the first chunk`);
+    }
+    for (const child of [...src.children]) asm.add(child);
+    paint(asm);
+    loaded += c.bytes || 1;
+    bar.style.width = `${(loaded / total) * 100}%`;
+  }
   ready();
-}, (e) => { if (e.total) bar.style.width = `${(e.loaded / e.total) * 100}%`; },
-   (e) => say(`drone.glb: ${e?.message ?? e}`));
+})().catch((e) => say(`model: ${e?.message ?? e}`));
 
 // Darken, do not dissolve. Non-highlighted parts should read as unlit, still
 // solid and still occluding, so this scales their albedo and their environment

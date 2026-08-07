@@ -60,17 +60,22 @@
     "dimLights": 0.28,
     "shrinkDrone": 0.55,
     "stageLeft": 0.28,
-    "boardTilt": 0.16
+    "boardTilt": 0.04,
+    "stageLift": -0.06,
+    "colour": "#ffd7a0",
+    "beamColour": "#ffcf96",
+    "beamGain": 4.0
   },
   "sequence": {
-    "speed": 1.5,
-    "hold": 8.8,
-    "travel": 2.65,
+    "speed": 0.85,
+    "hold": 8.4,
+    "travel": 4.6,
     "partSize": 0.6,
     "inspectSpin": 0.06,
     "autoOrbit": 0.195,
     "propRate": 1.25,
-    "propHanded": -1
+    "propHanded": -1,
+    "_note": "travel and hold are timeline units, not seconds: they set the SHAPE of a transition (how much of it the part spends flying versus held under the spotlight). scroll.springHz sets the SPEED. speed/autoOrbit/inspectSpin are read by the studio's autoplay; the hero drives position from the scroll spring instead and ignores speed."
   },
   "_materialNote": "match is a regex tried against the normalised occurrence name. Order matters; the last entry should be a catch-all. Board substrate is matched by suffix before any of these.",
   "materials": [
@@ -330,5 +335,13 @@
     "dollyOnShow": 0.92
   },
   "_saved": "2026-08-07, captured from the live studio panel",
-  "_status": "PARTIALLY WIRED. app/components/HeroDroneScene.tsx reads this file for lighting, spotlight, sequence, camera, materials, boards and beats. public/models/od3/_studio.html (the tuning studio) still hardcodes the same values and does NOT read this file: tune there, then copy the numbers here."
+  "_status": "PARTIALLY WIRED. app/components/HeroDroneScene.tsx reads this file for lighting, spotlight, sequence, camera, materials, boards and beats. public/models/od3/_studio.html (the tuning studio) still hardcodes the same values and does NOT read this file: tune there, then copy the numbers here.",
+  "scroll": {
+    "_note": "Weight comes from springHz: it is a critically damped spring, so a lower frequency reads as more mass. gain sets how far one notch of wheel pushes the target, commitAt how much of a stop-to-stop move a gesture must cover before it counts as intent to advance.",
+    "springHz": 0.38,
+    "gain": 0.0013,
+    "magnet": 0.11,
+    "commitAt": 0.24,
+    "minDwellS": 1.6
+  }
 }
