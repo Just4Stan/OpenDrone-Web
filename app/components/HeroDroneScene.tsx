@@ -34,6 +34,8 @@ export type HeroLoadState = {
   chunk: string;
   /** True on the event that fires once this chunk is in the scene. */
   done: boolean;
+  /** Every piece in load order, so the splash can show the full manifest. */
+  pieces: Array<{id: string; label: string}>;
 };
 
 /** The one design that is always present. */
@@ -44,8 +46,8 @@ export type HeroDroneSceneProps = {
   model?: string;
   /** Fires as the reader moves through the sequence, 0..1. */
   onProgress?: (frac: number) => void;
-  /** Fires when the active beat changes, so the copy panel can follow. */
-  onBeat?: (beat: HeroBeat, index: number) => void;
+  /** Fires when the presented beat changes; null while the drone rests whole. */
+  onBeat?: (beat: HeroBeat | null, index: number) => void;
   /** The list of beats, once known. */
   onBeats?: (beats: HeroBeat[]) => void;
   /** Fires as the model streams in, for the splash progress. */
@@ -454,14 +456,18 @@ export function HeroDroneScene({
         .then((r) => (r.ok ? (r.json() as Promise<ChunkManifest>) : null))
         .catch(() => null);
       // No manifest means an older single-file build. Still supported.
+      // Smallest chunks first: the whole download happens behind the splash,
+      // so the order's only job is to get the first pieces in fast and keep
+      // the pipe busy, not to tell a story.
       const chunks: Chunk[] = manifest?.chunks?.length
-        ? manifest.chunks
+        ? [...manifest.chunks].sort((a, b) => (a.bytes || 1) - (b.bytes || 1))
         : [{id: 'drone', label: 'drone', file: cfg.model ?? 'drone.glb', bytes: 1}];
       const totalBytes = chunks.reduce((s, c) => s + (c.bytes || 1), 0);
+      const pieces = chunks.map((c) => ({id: c.id, label: c.label}));
       let bytesDone = 0;
       let asm: THREE.Group | null = null;
       for (const c of chunks) {
-        onLoad?.({label: c.label, frac: bytesDone / totalBytes, chunk: c.id, done: false});
+        onLoad?.({label: c.label, frac: bytesDone / totalBytes, chunk: c.id, done: false, pieces});
         const g = await new Promise<{scene: THREE.Group}>((resolve, reject) =>
           loader.load(
             `/models/${folder}/${c.file}`,
@@ -469,7 +475,7 @@ export function HeroDroneScene({
             (e) => {
               if (!e.total) return;
               const frac = (bytesDone + (c.bytes || 1) * (e.loaded / e.total)) / totalBytes;
-              onLoad?.({label: c.label, frac, chunk: c.id, done: false});
+              onLoad?.({label: c.label, frac, chunk: c.id, done: false, pieces});
             },
             reject,
           ),
@@ -492,7 +498,7 @@ export function HeroDroneScene({
         paint(asm, droneRoot);
         previewFit();
         bytesDone += c.bytes || 1;
-        onLoad?.({label: c.label, frac: bytesDone / totalBytes, chunk: c.id, done: true});
+        onLoad?.({label: c.label, frac: bytesDone / totalBytes, chunk: c.id, done: true, pieces});
         // Hand the main thread back so the preview loop paints the part that
         // just landed. Without this the whole sequence of chunks decodes in one
         // unbroken task and the drone appears complete in a single jump.
@@ -952,14 +958,31 @@ export function HeroDroneScene({
        * The reader's wheel moves a TARGET; a critically damped spring moves the
        * position. No velocity clamp: throttling input feels broken. On release
        * the destination is committed ONCE in the direction of travel, so the
-       * timeline can never reverse under someone mid-transition. */
-      const span = () => BEATS.length * dur();
-      const stopFor = (i: number) => i * dur() + TRAVEL + HOLD * 0.5;
+       * timeline can never reverse under someone mid-transition.
+       *
+       * Stops come in two kinds. A PART stop is the middle of a beat's hold,
+       * part under the spotlight. Between two part stops sits a REST stop at
+       * the beat boundary, where the envelope is exactly zero: the part has
+       * flown home and the whole drone reads for a breath before the next
+       * scroll pulls the next part out. Without these the sequence chains
+       * spotlight into spotlight and the return-home never gets seen. */
+      const stopForBeat = (i: number) => i * dur() + TRAVEL + HOLD * 0.5;
+      type Stop = {pos: number; beat: number; part: boolean};
+      const STOPS: Stop[] = [];
+      for (let i = 0; i < BEATS.length; i++) {
+        STOPS.push({pos: stopForBeat(i), beat: i, part: true});
+        // A rest only earns its place between two beats that both pull a part
+        // out; next to a whole-drone beat it would be the same shot twice.
+        if (i < BEATS.length - 1 && BEATS[i].nodes.length && BEATS[i + 1].nodes.length)
+          STOPS.push({pos: (i + 1) * dur(), beat: i + 1, part: false});
+      }
+      const stopPos = (si: number) => STOPS[si].pos;
+      const partStopIdx = (beat: number) => STOPS.findIndex((s) => s.part && s.beat === beat);
       const nearestIdx = (x: number) => {
         let best = 0;
         let bd = Infinity;
-        for (let i = 0; i < BEATS.length; i++) {
-          const d = Math.abs(stopFor(i) - x);
+        for (let i = 0; i < STOPS.length; i++) {
+          const d = Math.abs(STOPS[i].pos - x);
           if (d < bd) {
             bd = d;
             best = i;
@@ -970,8 +993,8 @@ export function HeroDroneScene({
       // Start AT the first stop, not at zero. Zero is not a stop, so the
       // "absorb input until the current beat has been seen" guard could never
       // be satisfied and the hero ignored scrolling entirely.
-      let target = stopFor(0);
-      let pos = stopFor(0);
+      let target = stopPos(0);
+      let pos = stopPos(0);
       let vel = 0;
       let lastWheel = 0;
       let everScrolled = false;
@@ -980,12 +1003,13 @@ export function HeroDroneScene({
       let committed: number | null = null;
       const GESTURE_GAP_MS = 220;
       const MIN_DWELL_S = cfg.scroll?.minDwellS ?? 1.4;    // seconds a part must be presented before you can move on
+      const REST_DWELL_S = 0.45;                           // a rest is a breath, not a chapter
       // A beat is unskippable. Once committed, input is absorbed until the part
       // has arrived AND its hold has run, so nobody can flick past a product
       // without its spotlight moment. This is the "plays at its own pace" rule:
       // scrolling chooses WHICH beat, the animation owns HOW it gets there.
-      let settledAt = 0;       // beat index the sequence has finished playing
-      let dwell = 0;           // seconds the current part has been presented
+      let settledAt = 0;       // stop index the sequence has finished playing
+      let dwell = 0;           // seconds the current stop has been presented
       // Only render, and only take keys, when the hero is actually on screen.
       let onScreen = true;
       const io = new IntersectionObserver(
@@ -1012,10 +1036,10 @@ export function HeroDroneScene({
         // gesture began at rather than a raw position threshold, so the exit is
         // not sensitive to exactly where the spring settles.
         const first = 0;
-        const last = BEATS.length - 1;
+        const last = STOPS.length - 1;
         const eps = dur() * 0.08;
-        const atLast = gestureFrom >= last && pos >= stopFor(last) - eps && e.deltaY > 0;
-        const atFirst = gestureFrom <= first && pos <= stopFor(first) + eps && e.deltaY < 0;
+        const atLast = gestureFrom >= last && pos >= stopPos(last) - eps && e.deltaY > 0;
+        const atFirst = gestureFrom <= first && pos <= stopPos(first) + eps && e.deltaY < 0;
         if (atLast || atFirst) return;   // do not preventDefault: page scrolls on
 
         e.preventDefault();
@@ -1044,9 +1068,10 @@ export function HeroDroneScene({
         // "gesture ended" test can distinguish it from real input. So do not
         // try: bound the DISTANCE instead. Within one gesture the target can
         // never travel more than one stop from where it began, which makes one
-        // flick equal exactly one beat no matter how long the tail runs.
-        const lo = stopFor(Math.max(first, gestureFrom - 1));
-        const hi = stopFor(Math.min(last, gestureFrom + 1));
+        // flick equal exactly one stop (part or rest) no matter how long the
+        // tail runs.
+        const lo = stopPos(Math.max(first, gestureFrom - 1));
+        const hi = stopPos(Math.min(last, gestureFrom + 1));
         target = Math.max(lo, Math.min(hi, target + step));
       };
       el.addEventListener('wheel', onWheel, {passive: false});
@@ -1079,8 +1104,9 @@ export function HeroDroneScene({
         const dx = e.clientX - lastPtr.x;
         const dy = e.clientY - lastPtr.y;
         lastPtr = {x: e.clientX, y: e.clientY};
-        // Negative so the drone follows the hand rather than running from it.
-        orbitAngle -= dx * 0.004;
+        // Sign chosen so the drone reads as GRABBED: drag right pulls the face
+        // under the cursor to the right (the camera orbits the other way).
+        orbitAngle += dx * 0.004;
         // Clamped: past about +-0.9 the camera crosses over the drone and the
         // lookAt flips, which reads as the scene snapping upside down.
         dragTilt = THREE.MathUtils.clamp(dragTilt + dy * 0.004, -0.9, 0.9);
@@ -1102,28 +1128,31 @@ export function HeroDroneScene({
 
       // Keyboard: arrows, PageUp/Down, Home/End step between stops. Without
       // this a keyboard user simply scrolls past and never sees five of the six
-      // beats. goTo is also what the rail dots call.
-      const goTo = (i: number) => {
-        const idx = Math.max(0, Math.min(BEATS.length - 1, i));
+      // beats. The rail dots call goTo with a BEAT index; the keyboard walks
+      // the stop list itself so it gets the rests too.
+      const goToStop = (si: number) => {
+        const idx = Math.max(0, Math.min(STOPS.length - 1, si));
         gestureFrom = idx;
         gestureDir = 0;
         committed = idx;
         everScrolled = true;
         lastWheel = performance.now() - 2000;
-        target = stopFor(idx);
+        target = stopPos(idx);
       };
+      const goTo = (i: number) =>
+        goToStop(partStopIdx(Math.max(0, Math.min(BEATS.length - 1, i))));
       const onKey = (e: KeyboardEvent) => {
         const cur = nearestIdx(target);
         let next: number | null = null;
         if (e.key === 'ArrowDown' || e.key === 'ArrowRight' || e.key === 'PageDown') next = cur + 1;
         else if (e.key === 'ArrowUp' || e.key === 'ArrowLeft' || e.key === 'PageUp') next = cur - 1;
         else if (e.key === 'Home') next = 0;
-        else if (e.key === 'End') next = BEATS.length - 1;
+        else if (e.key === 'End') next = STOPS.length - 1;
         if (next === null) return;
         // At the ends, let the key do its normal thing and leave the hero.
-        if (next < 0 || next > BEATS.length - 1) return;
+        if (next < 0 || next > STOPS.length - 1) return;
         e.preventDefault();
-        goTo(next);
+        goToStop(next);
       };
       // Listen on the document, gated on the hero being on screen: the canvas
       // is not focusable, and a reader using the rail should still be able to
@@ -1187,12 +1216,17 @@ export function HeroDroneScene({
         const idle = performance.now() - lastWheel;
         if (everScrolled && idle > 120) {
           if (committed === null) {
-            const fromPos = stopFor(gestureFrom);
+            const fromPos = stopPos(gestureFrom);
             const moved = (target - fromPos) * (gestureDir || 1);
-            const advance = moved > dur() * (cfg.scroll?.commitAt ?? 0.28) || Math.abs(vel) > dur() * 0.6;
-            committed = Math.max(0, Math.min(BEATS.length - 1, gestureFrom + (advance ? gestureDir || 1 : 0)));
+            // Stops are no longer evenly spaced (rest-to-part is closer than
+            // part-to-part), so the intent threshold is a fraction of THIS
+            // gap, not of a beat length.
+            const nextIdx = Math.max(0, Math.min(STOPS.length - 1, gestureFrom + (gestureDir || 1)));
+            const gap = Math.abs(stopPos(nextIdx) - fromPos) || dur();
+            const advance = moved > gap * (cfg.scroll?.commitAt ?? 0.28) || Math.abs(vel) > dur() * 0.6;
+            committed = Math.max(0, Math.min(STOPS.length - 1, gestureFrom + (advance ? gestureDir || 1 : 0)));
           }
-          const snap = stopFor(committed);
+          const snap = stopPos(committed);
           const settle = Math.min(1, (idle - 120) / 260);
           target += (snap - target) * (1 - (1 - (cfg.scroll?.magnet ?? 0.14) * settle) ** (dt * 60));
         }
@@ -1215,25 +1249,22 @@ export function HeroDroneScene({
           lastDimBeat = beatIdx;
           setDim(b);
         }
-        if (beatIdx !== lastBeat) {
-          lastBeat = beatIdx;
-          onBeat?.({id: b.id, title: b.title, note: b.note}, beatIdx);
-        }
         // Report progress across the STOPS, not the raw timeline: the first
         // stop sits at 8% and the last at 92% of the span, so pos/span never
         // reaches either end and the rail never lines up with its own dots.
-        const p0 = stopFor(0);
-        const p1 = stopFor(BEATS.length - 1);
+        const p0 = stopPos(0);
+        const p1 = stopPos(STOPS.length - 1);
         onProgress?.(THREE.MathUtils.clamp((pos - p0) / Math.max(p1 - p0, 1e-6), 0, 1));
 
         // The hold is "seen" once the part has arrived and its hold has run
-        // long enough for the spotlight to strike and settle.
+        // long enough for the spotlight to strike and settle. A rest just has
+        // to read as the whole drone for a moment.
         {
-          const cur = committed ?? beatIdx;
-          const atStop = Math.abs(pos - stopFor(cur)) < dur() * 0.06;
+          const cur = committed ?? nearestIdx(pos);
+          const atStop = Math.abs(pos - stopPos(cur)) < dur() * 0.06;
           if (atStop) {
             dwell += dt;
-            if (dwell > MIN_DWELL_S) settledAt = cur;
+            if (dwell > (STOPS[cur].part ? MIN_DWELL_S : REST_DWELL_S)) settledAt = cur;
           } else if (settledAt !== cur) {
             dwell = 0;
           }
@@ -1241,6 +1272,19 @@ export function HeroDroneScene({
 
         const kRaw = envelope(t);
         const k = b.nodes.length ? kRaw : 0;
+
+        // The copy panel follows the SPOTLIGHT, not the timeline: it shows a
+        // part while that part is out (k high) and clears during travel and
+        // rests, so a rest reads as the whole drone with no caption racing
+        // ahead to the next part. Whole-drone beats keep their copy the whole
+        // beat; there is no spotlight to key off.
+        {
+          const display = !b.nodes.length || kRaw > 0.3 ? beatIdx : -1;
+          if (display !== lastBeat) {
+            lastBeat = display;
+            onBeat?.(display >= 0 ? {id: b.id, title: b.title, note: b.note} : null, display);
+          }
+        }
 
         for (const g of propPivots)
           (g as any).userData.spin.rotation.z += dt * Q.propRate * (1 - k) * (g as any).userData.dir * Q.propHanded;
@@ -1281,12 +1325,18 @@ export function HeroDroneScene({
         camH += (THREE.MathUtils.lerp(cfg.camera?.height ?? 0.5, wantH, k) - camH) * (1 - 0.35 ** dt);
         const back = droneRadius * ((cfg.camera?.distance ?? 2.15) + (cfg.camera?.dollyOnShow ?? 0.92) * k);
         const off = new THREE.Vector3(Math.cos(orbitAngle), camH + dragTilt, Math.sin(orbitAngle)).normalize().multiplyScalar(back);
+        // The framing point sits a little below the drone's centre (camera and
+        // lookAt shift together), which lifts the drone up the viewport: the
+        // bottom strip (wordmark, rail, Shop) eats into the lower frame, so
+        // dead centre reads as sitting too low.
+        const focus = droneCentre.clone();
+        focus.y -= droneRadius * (cfg.camera?.lift ?? 0.12);
         // A drag has to track the hand 1:1, so it writes the position directly.
         // The eased lerp is for the auto-orbit and the per-beat dolly, where the
         // smoothing is the point.
-        if (dragging) camera.position.copy(droneCentre.clone().add(off));
-        else camera.position.lerp(droneCentre.clone().add(off), 1 - 0.004 ** dt);
-        camera.lookAt(droneCentre);
+        if (dragging) camera.position.copy(focus.clone().add(off));
+        else camera.position.lerp(focus.clone().add(off), 1 - 0.004 ** dt);
+        camera.lookAt(focus);
 
         renderer.render(scene, camera);
        } catch (err) {
@@ -1324,7 +1374,15 @@ export function HeroDroneScene({
             }
             testDt = null;
           },
-          state: () => ({pos, target, beat: beatIdx, committed, settledAt, stops: BEATS.map((_, i) => stopFor(i))}),
+          state: () => ({
+            pos,
+            target,
+            beat: beatIdx,
+            committed,
+            settledAt,
+            stops: STOPS.map((s) => s.pos),
+            partStops: STOPS.map((s) => s.part),
+          }),
           wheel: (deltaY: number, deltaMode = 0) =>
             renderer.domElement.dispatchEvent(
               new WheelEvent('wheel', {deltaY, deltaMode, bubbles: true, cancelable: true}),

@@ -387,12 +387,23 @@ function DesktopHome({heroStacks}: {heroStacks: Promise<HeroStacks>}) {
     // hit 100% before the models are actually parsed.
     setProgress((prev) => Math.max(prev, Math.min(p, 0.95)));
   }, []);
-  // Which piece of the drone is arriving right now, e.g. "airframe". Shown under
-  // the wordmark so the wait names what it is doing instead of saying "loading".
-  const [loadLabel, setLoadLabel] = useState<string | null>(null);
+  // The splash's manifest board: every piece of the assembly in load order,
+  // ticked off as each file lands in the scene. Watching the drone's parts
+  // check in one by one is the progress indicator, and on a slow network it
+  // says exactly what is still arriving instead of a bare "loading".
+  const [loadPieces, setLoadPieces] = useState<
+    ReadonlyArray<{id: string; label: string}>
+  >([]);
+  const [loadDone, setLoadDone] = useState<ReadonlySet<string>>(new Set());
+  const [loadActive, setLoadActive] = useState<string | null>(null);
   const handleModelLoad = useCallback(
     (s: HeroLoadState) => {
-      setLoadLabel(s.label);
+      setLoadPieces((prev) => (prev.length ? prev : s.pieces));
+      setLoadActive(s.chunk);
+      if (s.done)
+        setLoadDone((prev) =>
+          prev.has(s.chunk) ? prev : new Set(prev).add(s.chunk),
+        );
       handleSceneProgress(s.frac);
     },
     [handleSceneProgress],
@@ -489,8 +500,10 @@ function DesktopHome({heroStacks}: {heroStacks: Promise<HeroStacks>}) {
     const minT = window.setTimeout(() => setMinWaitElapsed(true), 600);
     // Safety cap — if the 3D scene never reports ready (failed fetch,
     // slow device, etc.), release the splash anyway so the UI isn't
-    // stuck behind a dim layer forever.
-    const maxT = window.setTimeout(() => setSplashSettled(true), 3500);
+    // stuck behind a dim layer forever. Long on purpose: the splash owns
+    // the whole load (the manifest board narrates it), so it should only
+    // fire when something is actually wrong, not on a slow connection.
+    const maxT = window.setTimeout(() => setSplashSettled(true), 12000);
     return () => {
       window.clearTimeout(minT);
       window.clearTimeout(maxT);
@@ -823,18 +836,28 @@ function DesktopHome({heroStacks}: {heroStacks: Promise<HeroStacks>}) {
             );
           })()}
 
-          {/* What the wait is actually doing. The assembly streams as six files
-              (airframe, motors, each board, video system) and the drone builds
-              up on screen as they land, so naming the piece that is arriving
-              turns the wordmark fill into a real progress read rather than a
-              decorative one. Sits under the centred wordmark and leaves with it. */}
-          {!splashSettled && loadLabel ? (
-            <div className="hero-load-stage" role="status" aria-live="polite">
-              <span className="hero-load-stage__name">{loadLabel}</span>
-              <span className="hero-load-stage__pct">
-                {Math.round(displayedProgress * 100)}%
-              </span>
-            </div>
+          {/* The manifest board. The assembly streams smallest-file-first and
+              each piece gets its line: pending is dim, arriving pulses, landed
+              ticks off. Part of the splash and leaves with it; on a slow
+              network it stays up and names exactly what is still coming. */}
+          {!splashSettled && loadPieces.length ? (
+            <ul className="hero-load-manifest" role="status" aria-live="polite">
+              {loadPieces.map((p) => {
+                const state = loadDone.has(p.id)
+                  ? 'done'
+                  : p.id === loadActive
+                    ? 'active'
+                    : 'pending';
+                return (
+                  <li key={p.id} className={`hero-load-piece is-${state}`}>
+                    <span className="hero-load-piece__mark" aria-hidden="true">
+                      {state === 'done' ? '✓' : state === 'active' ? '▸' : '·'}
+                    </span>
+                    {p.label}
+                  </li>
+                );
+              })}
+            </ul>
           ) : null}
 
           {/* Overflow UI — only renders when the scene takes longer than
@@ -869,8 +892,9 @@ function DesktopHome({heroStacks}: {heroStacks: Promise<HeroStacks>}) {
             </div>
           ) : null}
 
-          {/* GitHub logo — bare mark (no circle), vertically centred on the
-              left of the screen. Persists through the scroll. */}
+          {/* GitHub logo — bare mark (no circle), sitting to the right of the
+              settled wordmark in the bottom-left corner, centred on the
+              wordmark's height. Persists through the scroll. */}
           <a
             href="https://github.com/incutec-hw"
             target="_blank"

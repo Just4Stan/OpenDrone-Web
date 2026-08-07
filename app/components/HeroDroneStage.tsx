@@ -51,8 +51,8 @@ export function HeroDroneStage({
   onReady?: () => void;
   /** Walkthrough position 0..1, every frame. */
   onProgress?: (f: number) => void;
-  /** Active beat, so the route can follow it (product cards, links). */
-  onBeat?: (beat: HeroBeat, index: number) => void;
+  /** Presented beat, or null while the drone rests whole between parts. */
+  onBeat?: (beat: HeroBeat | null, index: number) => void;
   /** The whole beat list once known, in order. */
   onBeats?: (beats: HeroBeat[]) => void;
 }) {
@@ -82,12 +82,16 @@ export function HeroDroneStage({
 
   const [beats, setBeats] = useState<HeroBeat[]>([]);
   const [active, setActive] = useState(0);
+  // True while the drone rests whole between parts (the scene reports beat
+  // null). The copy panel clears; the rail keeps the last part's dot lit.
+  const [resting, setResting] = useState(false);
   const seek = useRef<((i: number) => void) | null>(null);
   const fillRef = useRef<HTMLDivElement>(null);
 
   const handleBeat = useCallback(
-    (b: HeroBeat, i: number) => {
-      setActive(i);
+    (b: HeroBeat | null, i: number) => {
+      setResting(!b);
+      if (b && i >= 0) setActive(i);
       onBeat?.(b, i);
     },
     [onBeat],
@@ -140,15 +144,15 @@ export function HeroDroneStage({
               aria-label={b.title}
               aria-current={i === active ? 'true' : undefined}
               onClick={() => seek.current?.(i)}
-            >
-              <span className="hp-dot-label">{b.title}</span>
-            </button>
+            />
           ))}
         </nav>
       ) : null}
 
-      {/* The spotlight cuts as a part leaves; that is the cue for this. */}
-      {use3D ? (
+      {/* The spotlight cuts as a part leaves; that is the cue for this.
+          During a rest the panel clears entirely: the whole drone is the
+          content, and a caption would race ahead of the next part. */}
+      {use3D && !resting ? (
         <div className="hp-copy" key={beat?.id} aria-live="polite">
           {beat ? (
             <>
