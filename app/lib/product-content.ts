@@ -408,15 +408,22 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
     // The KiCanvas viewer above + the GitHub link cover "study the design"
     // until the release artifacts ship.
     downloads: [],
+    // Spec values verified against the OpenESC repos (KiCad files + Rev3
+    // production BOMs, 2026-08-07). Field order follows FPV retail
+    // convention: firmware, current, input, protocol, silicon, sensing,
+    // connector, physical. Weight rows land once boards are weighed.
     specs: [
-      ['Firmware', 'AM32'],
-      ['Protocol', 'DShot · bidirectional DShot telemetry · PWM'],
-      ['Input', '3–6S LiPo (11.1–25.2 V)'],
-      ['MCU', 'AT32F421G8U7, 120 MHz'],
-      ['Gate driver', 'NSG2065Q (QFN-24)'],
+      ['Firmware', 'AM32, bootloader pre-loaded'],
+      ['ESC protocol', 'DShot, bidirectional DShot telemetry'],
+      ['Telemetry', 'Over the motor signal lines; analog current on the FC harness'],
+      ['Input', '3–6S LiPo'],
+      ['BEC', 'None; the FC harness carries VBAT'],
+      ['MCU', '4× AT32F421G8U7, one per motor, 120 MHz'],
+      ['Gate driver', '4× NSG2065Q'],
       ['Current sense', 'INA186A3 high-side, board-level'],
       ['Power rails', 'LMR54406DBVR buck + TLV76733 LDO'],
-      ['Connector', 'JST SM08B-SRSS-TB (8-pin BF)'],
+      ['FC connector', 'JST-SH 8-pin (SM08B-SRSS-TB), Betaflight pinout'],
+      ['PCB', '6-layer, 1.7 mm, 2 oz outer copper, ENIG'],
       ['License', 'CERN-OHL-S-2.0'],
     ],
     // Launching with the 20×20 and 30×30 models. Pro (higher-current)
@@ -432,10 +439,12 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
         ],
         specs: [
           ['Continuous', '30 A / channel (preliminary, bench characterization pending)'],
-          ['MOSFETs', 'DOY180N03T, 30 V / 1.0 mΩ'],
-          ['Input', '3–6S LiPo, 6S hard maximum (30 V FETs, TVS-clamped)'],
+          ['MOSFETs', '24× DOY180N03T, 6 per motor'],
+          ['Input', '3–6S LiPo, 6S hard maximum'],
           ['Current sense', 'INA186A3 + 0.2 mΩ shunt · 20 mV/A, 165 A full-scale'],
-          ['PCB', '6-layer, 2 oz outer copper, 20×20 mount'],
+          ['AM32 target', 'OpenESC_20'],
+          ['Mounting', '20 × 20 mm, Ø3.0 mm holes'],
+          ['Dimensions', '31.2 × 33.0 mm'],
         ],
       },
       '30×30': {
@@ -449,9 +458,10 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
         ],
         specs: [
           ['Continuous', '50 A / channel (preliminary, bench characterization pending)'],
-          ['MOSFETs', 'SP40N01GHNK, 40 V / 1.2 mΩ'],
+          ['MOSFETs', '24× SP40N01GHNK, 6 per motor, 40 V / 1.2 mΩ'],
           ['Current sense', 'INA186A3 + 2× 0.2 mΩ shunt · 10 mV/A, 330 A full-scale'],
-          ['PCB', '6-layer, 30×30 mount'],
+          ['TVS protection', '3× SMBJ24A on the battery rail'],
+          ['Mounting', '30.5 × 30.5 mm, Ø4.0 mm holes (M3)'],
         ],
         // refs keyed to /boards/openesc-30x30/components.json.
         pins: [
@@ -582,7 +592,7 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
       // the real footprint(s) on the board (case-sensitive refdes).
       pins: [
         {ref: '①', part: 'RP2354B · dual M33 @ 150 MHz', refs: ['U2']},
-        {ref: '②', part: 'LSM6DSV16X · 6-axis IMU', refs: ['U9']},
+        {ref: '②', part: '6-axis IMU (SPI)', refs: ['U9']},
         {ref: '③', part: 'microSD blackbox (SPI)', refs: ['Card1']},
         {
           ref: '④',
@@ -635,17 +645,24 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
     // TODO(downloads): publish schematic.pdf / bom.csv / gerbers.zip / manual.pdf
     // to the OpenFC-Lite repos and wire the cards here.
     downloads: [],
+    // Spec values verified against the OpenFC-Lite / OpenFC-Lite-Mini repos
+    // (KiCad files + Rev3 BOMs, 2026-08-07). The IMU is a per-batch
+    // production decision: schematics carry BMI270, the validated rev2 build
+    // shipped LSM6DSV16X, and the LGA-14 footprint takes both.
     specs: [
-      ['Firmware', 'Betaflight, custom RP2350 target (upstreaming in progress)'],
-      ['MCU', 'RP2354, dual M33 @ 150 MHz, 2 MB flash'],
-      ['IMU', 'ST LSM6DSV16X on SPI; LGA-14 footprint also takes TDK ICM-426xx'],
-      ['Blackbox', 'microSD card (TF-021B)'],
+      ['Firmware', 'Betaflight (RP2350 platform)'],
+      ['MCU', 'RP2354, 2× Cortex-M33 @ 150 MHz, 2 MB flash'],
+      ['IMU', 'LSM6DSV16X or BMI270 on SPI, shared LGA-14 footprint'],
+      ['Barometer', 'None'],
+      ['Blackbox', 'microSD slot (SPI)'],
       ['OSD', 'Analog, PIO-driven (in development); digital OSD via MSP DisplayPort'],
       ['Motor outputs', '4× DShot, bidirectional telemetry'],
       ['RX', 'External, over UART (CRSF/SBUS)'],
-      ['Power', '3S–6S; switchable 10 V + always-on 5 V (3 A-rated bucks)'],
+      ['Input', '3S–6S LiPo, reverse-polarity protected'],
+      ['BEC', '10 V switchable (VTX) + 5 V always-on, 3 A bucks'],
+      ['Current sense', 'ADC input for the ESC-side sensor, no onboard shunt'],
       ['USB', 'USB-C (config + UF2 flash)'],
-      ['Layers', '6'],
+      ['PCB', '6-layer, 1.0 mm'],
       ['License', 'CERN-OHL-S-2.0'],
     ],
     optionAxis: 'Model',
@@ -657,19 +674,20 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
         tagline: 'The 20×20 mount: RP2354A, QFN-60. The compact stack size.',
         highlights: [
           ['Mount', '20×20'],
-          ['Size', '20×20 mm'],
+          ['Size', '26.9 × 26.9 mm'],
         ],
         specs: [
-          ['MCU', 'RP2354A, dual M33 @ 150 MHz, QFN-60 (30 GPIO)'],
+          ['MCU', 'RP2354A, 2× Cortex-M33 @ 150 MHz, QFN-60 (30 GPIO)'],
           ['Betaflight target', 'OPENFC_LITE_MINI_RP2350A'],
           ['UARTs', '3: 2 hardware + 1 PIO'],
-          ['Size', '20×20 mm, 6-layer'],
+          ['Mounting', '20 × 20 mm, Ø3.0 mm holes'],
+          ['Dimensions', '26.9 × 26.9 mm'],
         ],
         // The mini has its own refdes layout (RP2354A QFN-60, no op-amp in the
         // OSD front end). refs keyed to /boards/openfc-lite-mini/components.json.
         pins: [
           {ref: '①', part: 'RP2354A · dual M33 @ 150 MHz', refs: ['U10']},
-          {ref: '②', part: 'LSM6DSV16X · 6-axis IMU', refs: ['U9']},
+          {ref: '②', part: '6-axis IMU (SPI)', refs: ['U9']},
           {ref: '③', part: 'microSD blackbox (SPI)', refs: ['Card1']},
           {
             ref: '④',
@@ -721,12 +739,15 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
         oshwaUid: 'BE000026',
         tagline: 'The 30×30 mount: bigger pads and more I/O.',
         highlights: [
-          ['Mount', '30×30'],
-          ['Size', '30.5×30.5 mm'],
+          ['Mount', '30.5×30.5'],
+          ['Size', '37.9 × 37.9 mm'],
         ],
         specs: [
+          ['MCU', 'RP2354B, 2× Cortex-M33 @ 150 MHz, QFN-80 (48 GPIO)'],
+          ['Betaflight target', 'OPENFC_LITE_RP2350B'],
           ['UARTs', '4: 2 hardware + 2 PIO'],
-          ['Size', '30.5×30.5 mm, 6-layer'],
+          ['Mounting', '30.5 × 30.5 mm, Ø4.0 mm holes'],
+          ['Dimensions', '37.9 × 37.9 mm'],
         ],
         boardArt: {
           src: '/boards/openfc-lite/board.svg',
