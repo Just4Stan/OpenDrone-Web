@@ -5660,7 +5660,12 @@ button.reset {
    * a gold edge + lift on hover gives them a bit of life. */
   .chapter[data-wide-media] .open-source-cards {
     grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 0.85rem;
+    gap: var(--sp-5);
+  }
+  /* Four cards and a dense schematic in one chapter: let the row finish
+     before the sheet starts, instead of the 22px the default rhythm gives. */
+  .chapter[data-wide-media] {
+    row-gap: var(--sp-7);
   }
   .chapter[data-wide-media] .open-source-card,
   .chapter[data-wide-media] .latest-commit-card {
@@ -6926,8 +6931,11 @@ button.reset {
   align-items: stretch;
 }
 
+/* This chapter stacks a two-line title, a four-card row and the full-width
+   schematic. At the old 1rem the title and the cards read as one dense block;
+   the row needs to land clearly after the head, not under it. */
 .open-source-cards {
-  margin-top: var(--sp-4);
+  margin-top: var(--sp-7);
 }
 
 
@@ -6941,7 +6949,7 @@ button.reset {
   /* 16:9 bubble — uniform across the resource row. */
   aspect-ratio: 16 / 9;
   overflow: hidden;
-  padding: 0.9rem 1.05rem;
+  padding: 1.15rem 1.35rem;
   background: var(--color-bg-card);
   border: 1px solid var(--color-border);
   border-radius: var(--r-md);

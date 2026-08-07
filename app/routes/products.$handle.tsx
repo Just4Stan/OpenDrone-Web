@@ -325,21 +325,22 @@ function computeChapterNumbers(
   const pad = (x: number) => x.toString().padStart(2, '0');
   const out: ChapterNumbers = {openSource: ''};
 
-  // Numbering follows the render order in the route: what the board IS, then
-  // what ships, then what it means that it's open. Keep the two in step.
+  // Numbering follows the render order in the route: how the board is built
+  // (layout, then the schematics behind it), then what it measures, then
+  // what ships. Keep the two in step.
   if (content.teardown) {
     out.teardown = pad(n++);
+  }
+  // Accessories (fallback content) aren't open-hardware products — they get
+  // no "Open for learning" chapter, so don't burn a chapter number on it.
+  if (includeOpenSource) {
+    out.openSource = pad(n++);
   }
   if (content.specs.length > 0) {
     out.specs = pad(n++);
   }
   if (content.inTheBox.length > 0 || content.bundle) {
     out.inTheBox = pad(n++);
-  }
-  // Accessories (fallback content) aren't open-hardware products — they get
-  // no "Open for learning" chapter, so don't burn a chapter number on it.
-  if (includeOpenSource) {
-    out.openSource = pad(n++);
   }
   if (content.downloads.length > 0) {
     out.downloads = pad(n++);
@@ -1817,109 +1818,6 @@ export default function Product() {
         </Chapter>
       ) : null}
 
-      {/* === Chapter: Specs === */}
-      {content.specs.length > 0 && chapterNums.specs ? (
-        <Chapter
-          number={chapterNums.specs}
-          label="Datasheet"
-          title="Every spec, one table"
-          noMedia
-        >
-          <dl className="spec-table">
-            {mergedSpecs.map(([k, v]) => (
-              <div key={k}>
-                <dt>{k}</dt>
-                {/* Count-up on the numeric runs the first time the table
-                    scrolls into view. spec-table already sets tabular-nums,
-                    so digits don't jitter mid-count; reduced-motion and
-                    variant-switch re-renders are handled inside. */}
-                <dd>
-                  <AnimatedNumber value={v} />
-                </dd>
-              </div>
-            ))}
-          </dl>
-          {content.footnote ? (
-            <p className="chapter-footnote">{content.footnote}</p>
-          ) : null}
-        </Chapter>
-      ) : null}
-
-      {/* === Chapter: In the box (always) === */}
-      {(content.inTheBox.length > 0 || content.bundle) &&
-      chapterNums.inTheBox ? (
-        <Chapter
-          number={chapterNums.inTheBox}
-          label="In the box"
-          title={
-            content.bundle ? (
-              <>
-                Two boards, two firmwares,{' '}
-                <em>two maintainers paid.</em>
-              </>
-            ) : (
-              'In the box'
-            )
-          }
-        >
-          {content.bundle ? (
-            <p className="chapter-body">
-              The bundle is just OpenFC-Lite and OpenESC shipped together. No
-              combined SKU, no tied hardware: each board is the same one
-              you can buy on its own. What you save is courier-and-handling.
-              What you don&apos;t lose is the €1 split: each firmware
-              project still gets paid from this order.
-            </p>
-          ) : null}
-          {mergedBox.length > 0 ? (
-            <ul className="in-the-box">
-              {mergedBox.map((it) => (
-                <li key={`${it.qty ?? ''}${it.item}`}>
-                  {it.qty ? (
-                    <span className="in-the-box-qty">{it.qty}</span>
-                  ) : null}
-                  <span className="in-the-box-item">{it.item}</span>
-                  {it.note ? (
-                    <span className="in-the-box-note">{it.note}</span>
-                  ) : null}
-                </li>
-              ))}
-            </ul>
-          ) : null}
-          {content.bundle ? (
-            <div className="bundle-components">
-              {content.bundle.components.map((c) => (
-                <Link
-                  key={c.handle}
-                  to={`/products/${c.handle}`}
-                  prefetch="viewport"
-                  className="bundle-component-card"
-                >
-                  <p className="bundle-component-title">{c.title}</p>
-                  <p className="bundle-component-blurb">{c.blurb}</p>
-                  <p className="bundle-component-firmware">
-                    Firmware ·{' '}
-                    <span>{c.firmware}</span>
-                  </p>
-                  <span className="bundle-component-more" aria-hidden="true">
-                    View the board →
-                  </span>
-                </Link>
-              ))}
-            </div>
-          ) : null}
-          <ProvenanceCard
-            designNote={
-              // The frame is a CAD product — "schematic, PCB, BOM" is PCB
-              // wording that doesn't apply to carbon plates.
-              content.teardown?.frameViewer
-                ? 'CAD, materials, hardware kit'
-                : undefined
-            }
-          />
-        </Chapter>
-      ) : null}
-
       {/* === Chapter: Open for learning === */}
       {!isEditorial ? null : (
       <Chapter
@@ -2086,6 +1984,109 @@ export default function Product() {
         </div>
       </Chapter>
       )}
+
+      {/* === Chapter: Specs === */}
+      {content.specs.length > 0 && chapterNums.specs ? (
+        <Chapter
+          number={chapterNums.specs}
+          label="Datasheet"
+          title="Every spec, one table"
+          noMedia
+        >
+          <dl className="spec-table">
+            {mergedSpecs.map(([k, v]) => (
+              <div key={k}>
+                <dt>{k}</dt>
+                {/* Count-up on the numeric runs the first time the table
+                    scrolls into view. spec-table already sets tabular-nums,
+                    so digits don't jitter mid-count; reduced-motion and
+                    variant-switch re-renders are handled inside. */}
+                <dd>
+                  <AnimatedNumber value={v} />
+                </dd>
+              </div>
+            ))}
+          </dl>
+          {content.footnote ? (
+            <p className="chapter-footnote">{content.footnote}</p>
+          ) : null}
+        </Chapter>
+      ) : null}
+
+      {/* === Chapter: In the box (always) === */}
+      {(content.inTheBox.length > 0 || content.bundle) &&
+      chapterNums.inTheBox ? (
+        <Chapter
+          number={chapterNums.inTheBox}
+          label="In the box"
+          title={
+            content.bundle ? (
+              <>
+                Two boards, two firmwares,{' '}
+                <em>two maintainers paid.</em>
+              </>
+            ) : (
+              'In the box'
+            )
+          }
+        >
+          {content.bundle ? (
+            <p className="chapter-body">
+              The bundle is just OpenFC-Lite and OpenESC shipped together. No
+              combined SKU, no tied hardware: each board is the same one
+              you can buy on its own. What you save is courier-and-handling.
+              What you don&apos;t lose is the €1 split: each firmware
+              project still gets paid from this order.
+            </p>
+          ) : null}
+          {mergedBox.length > 0 ? (
+            <ul className="in-the-box">
+              {mergedBox.map((it) => (
+                <li key={`${it.qty ?? ''}${it.item}`}>
+                  {it.qty ? (
+                    <span className="in-the-box-qty">{it.qty}</span>
+                  ) : null}
+                  <span className="in-the-box-item">{it.item}</span>
+                  {it.note ? (
+                    <span className="in-the-box-note">{it.note}</span>
+                  ) : null}
+                </li>
+              ))}
+            </ul>
+          ) : null}
+          {content.bundle ? (
+            <div className="bundle-components">
+              {content.bundle.components.map((c) => (
+                <Link
+                  key={c.handle}
+                  to={`/products/${c.handle}`}
+                  prefetch="viewport"
+                  className="bundle-component-card"
+                >
+                  <p className="bundle-component-title">{c.title}</p>
+                  <p className="bundle-component-blurb">{c.blurb}</p>
+                  <p className="bundle-component-firmware">
+                    Firmware ·{' '}
+                    <span>{c.firmware}</span>
+                  </p>
+                  <span className="bundle-component-more" aria-hidden="true">
+                    View the board →
+                  </span>
+                </Link>
+              ))}
+            </div>
+          ) : null}
+          <ProvenanceCard
+            designNote={
+              // The frame is a CAD product — "schematic, PCB, BOM" is PCB
+              // wording that doesn't apply to carbon plates.
+              content.teardown?.frameViewer
+                ? 'CAD, materials, hardware kit'
+                : undefined
+            }
+          />
+        </Chapter>
+      ) : null}
 
       {/* === Chapter: Downloads — schematic, STEP, BOM, manuals === */}
       {content.downloads.length > 0 && chapterNums.downloads ? (
