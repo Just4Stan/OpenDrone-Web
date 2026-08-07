@@ -60,46 +60,6 @@ function extentAfter(sizeYUp, deg) {
   return deg % 180 === 0 ? zUp : [zUp[1], zUp[0], zUp[2]];
 }
 
-// ---- column-major mat4, matching build-hero.mjs ----
-function compose(t, r, sc) {
-  const [x, y, z, w] = r;
-  const x2=x+x, y2=y+y, z2=z+z, xx=x*x2, xy=x*y2, xz=x*z2, yy=y*y2, yz=y*z2, zz=z*z2, wx=w*x2, wy=w*y2, wz=w*z2;
-  const [sx, sy, sz] = sc;
-  return [(1-(yy+zz))*sx, (xy+wz)*sx, (xz-wy)*sx, 0,
-          (xy-wz)*sy, (1-(xx+zz))*sy, (yz+wx)*sy, 0,
-          (xz+wy)*sz, (yz-wx)*sz, (1-(xx+yy))*sz, 0,
-          t[0], t[1], t[2], 1];
-}
-const I4 = [1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1];
-function mul(a, b) {
-  const o = new Array(16);
-  for (let c = 0; c < 4; c++) for (let r = 0; r < 4; r++) {
-    let v = 0; for (let k = 0; k < 4; k++) v += a[k*4+r] * b[c*4+k]; o[c*4+r] = v;
-  }
-  return o;
-}
-const tp = (m, [x, y, z]) => [
-  m[0]*x + m[4]*y + m[8]*z + m[12],
-  m[1]*x + m[5]*y + m[9]*z + m[13],
-  m[2]*x + m[6]*y + m[10]*z + m[14],
-];
-
-// Non-destructive world-space bbox over a subtree.
-function subtreeBbox(node, M, acc) {
-  const W = mul(M, compose(node.getTranslation(), node.getRotation(), node.getScale()));
-  const mesh = node.getMesh();
-  if (mesh) for (const p of mesh.listPrimitives()) {
-    const pos = p.getAttribute('POSITION');
-    if (!pos) continue;
-    const lo = pos.getMin([]), hi = pos.getMax([]);
-    for (let xi = 0; xi < 2; xi++) for (let yi = 0; yi < 2; yi++) for (let zi = 0; zi < 2; zi++) {
-      const q = tp(W, [xi?hi[0]:lo[0], yi?hi[1]:lo[1], zi?hi[2]:lo[2]]);
-      for (let i = 0; i < 3; i++) { acc.min[i] = Math.min(acc.min[i], q[i]); acc.max[i] = Math.max(acc.max[i], q[i]); }
-    }
-  }
-  for (const c of node.listChildren()) subtreeBbox(c, W, acc);
-  return acc;
-}
 
 let failures = 0;
 

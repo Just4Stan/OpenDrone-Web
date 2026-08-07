@@ -33,7 +33,6 @@ function compose(t, r, s) {
   return [(1-(yy+zz))*sx,(xy+wz)*sx,(xz-wy)*sx,0, (xy-wz)*sy,(1-(xx+zz))*sy,(yz+wx)*sy,0,
           (xz+wy)*sz,(yz-wx)*sz,(1-(xx+yy))*sz,0, t[0],t[1],t[2],1];
 }
-const I4 = [1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1];
 function mul(a,b){const o=new Array(16);for(let c=0;c<4;c++)for(let r=0;r<4;r++){let v=0;for(let k=0;k<4;k++)v+=a[k*4+r]*b[c*4+k];o[c*4+r]=v;}return o;}
 const tp=(m,[x,y,z])=>[m[0]*x+m[4]*y+m[8]*z+m[12], m[1]*x+m[5]*y+m[9]*z+m[13], m[2]*x+m[6]*y+m[10]*z+m[14]];
 const local = (n) => compose(n.getTranslation(), n.getRotation(), n.getScale());
@@ -253,7 +252,6 @@ const argNum = (flag, dflt) => {
 };
 const RATIO = argNum('--ratio', 0.4);
 const ERROR = argNum('--error', 0.005);
-const asmT = assembly.getTranslation(), asmR = assembly.getRotation(), asmS = assembly.getScale();
 const keepIds = new Map();
 for (const [gname, members] of Object.entries(groups))
   for (const o of members) keepIds.set(o.occ, gname);
