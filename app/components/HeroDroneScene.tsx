@@ -1330,7 +1330,7 @@ export function HeroDroneScene({
         // bottom strip (wordmark, rail, Shop) eats into the lower frame, so
         // dead centre reads as sitting too low.
         const focus = droneCentre.clone();
-        focus.y -= droneRadius * (cfg.camera?.lift ?? 0.12);
+        focus.y -= droneRadius * (cfg.camera?.lift ?? 0.24);
         // A drag has to track the hand 1:1, so it writes the position directly.
         // The eased lerp is for the auto-orbit and the per-beat dolly, where the
         // smoothing is the point.
