@@ -412,17 +412,27 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
     // production BOMs, 2026-08-07). Field order follows FPV retail
     // convention: firmware, current, input, protocol, silicon, sensing,
     // connector, physical. Weight rows land once boards are weighed.
+    // Rows the tiers replace by key (Continuous, MOSFETs, Current sense,
+    // TVS, AM32 target, Mounting, Dimensions) carry the 20×20 default here
+    // purely so the merged table keeps this order; the active tier's value
+    // always wins on the PDP.
     specs: [
+      ['Continuous', '30 A / channel'],
       ['Firmware', 'AM32, bootloader pre-loaded'],
+      ['AM32 target', 'OpenESC_20'],
       ['ESC protocol', 'DShot, bidirectional DShot telemetry'],
       ['Telemetry', 'Over the motor signal lines; analog current on the FC harness'],
       ['Input', '3–6S LiPo'],
       ['BEC', 'None; the FC harness carries VBAT'],
       ['MCU', '4× AT32F421G8U7, one per motor, 120 MHz'],
       ['Gate driver', '4× NSG2065Q'],
+      ['MOSFETs', '24×, 6 per motor'],
       ['Current sense', 'INA186A3 high-side, board-level'],
+      ['TVS protection', 'None'],
       ['Power rails', 'LMR54406DBVR buck + TLV76733 LDO'],
       ['FC connector', 'JST-SH 8-pin (SM08B-SRSS-TB), Betaflight pinout'],
+      ['Mounting', '20 × 20 mm, Ø3.0 mm holes'],
+      ['Dimensions', '31.2 × 33.0 mm'],
       ['PCB', '6-layer, 1.7 mm, 2 oz outer copper, ENIG'],
       ['License', 'CERN-OHL-S-2.0'],
     ],
@@ -442,9 +452,6 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
           ['MOSFETs', '24× DOY180N03T, 6 per motor'],
           ['Input', '3–6S LiPo, 6S hard maximum'],
           ['Current sense', 'INA186A3 + 0.2 mΩ shunt · 20 mV/A, 165 A full-scale'],
-          ['AM32 target', 'OpenESC_20'],
-          ['Mounting', '20 × 20 mm, Ø3.0 mm holes'],
-          ['Dimensions', '31.2 × 33.0 mm'],
         ],
       },
       '30×30': {
@@ -458,10 +465,16 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
         ],
         specs: [
           ['Continuous', '50 A / channel (preliminary, bench characterization pending)'],
+          // No AM32 target is defined for the 30×30 yet; hide the row rather
+          // than guess a name.
+          ['AM32 target', null],
           ['MOSFETs', '24× SP40N01GHNK, 6 per motor, 40 V / 1.2 mΩ'],
           ['Current sense', 'INA186A3 + 2× 0.2 mΩ shunt · 10 mV/A, 330 A full-scale'],
           ['TVS protection', '3× SMBJ24A on the battery rail'],
           ['Mounting', '30.5 × 30.5 mm, Ø4.0 mm holes (M3)'],
+          // The 30×30 outline is an open item in its repo; no dimensions
+          // until it is confirmed.
+          ['Dimensions', null],
         ],
         // refs keyed to /boards/openesc-30x30/components.json.
         pins: [
@@ -649,19 +662,26 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
     // (KiCad files + Rev3 BOMs, 2026-08-07). The IMU is a per-batch
     // production decision: schematics carry BMI270, the validated rev2 build
     // shipped LSM6DSV16X, and the LGA-14 footprint takes both.
+    // Rows the tiers replace by key (MCU, Betaflight target, UARTs,
+    // Mounting, Dimensions) carry the 30×30 default here so the merged
+    // table keeps this order; the active tier's value wins on the PDP.
     specs: [
       ['Firmware', 'Betaflight (RP2350 platform)'],
+      ['Betaflight target', 'OPENFC_LITE_RP2350B'],
       ['MCU', 'RP2354, 2× Cortex-M33 @ 150 MHz, 2 MB flash'],
       ['IMU', 'LSM6DSV16X or BMI270 on SPI, shared LGA-14 footprint'],
       ['Barometer', 'None'],
       ['Blackbox', 'microSD slot (SPI)'],
       ['OSD', 'Analog, PIO-driven (in development); digital OSD via MSP DisplayPort'],
+      ['UARTs', '4: 2 hardware + 2 PIO'],
       ['Motor outputs', '4× DShot, bidirectional telemetry'],
       ['RX', 'External, over UART (CRSF/SBUS)'],
       ['Input', '3S–6S LiPo, reverse-polarity protected'],
       ['BEC', '10 V switchable (VTX) + 5 V always-on, 3 A bucks'],
       ['Current sense', 'ADC input for the ESC-side sensor, no onboard shunt'],
       ['USB', 'USB-C (config + UF2 flash)'],
+      ['Mounting', '30.5 × 30.5 mm, Ø4.0 mm holes'],
+      ['Dimensions', '37.9 × 37.9 mm'],
       ['PCB', '6-layer, 1.0 mm'],
       ['License', 'CERN-OHL-S-2.0'],
     ],
