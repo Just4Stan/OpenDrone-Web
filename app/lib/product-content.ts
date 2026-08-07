@@ -884,12 +884,25 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
         size: '4.1 KB',
       },
     ],
+    // Spec values verified against the OpenRX repo (KiCad boards, fab BOMs,
+    // shared/elrs-targets JSON, 2026-08-07). Rows the tiers replace by key
+    // (Radio, Antenna, Telemetry power, TCXO, Flash target, Flashing,
+    // Dimensions) carry the Lite default so the merged table keeps this
+    // order; the active tier's value wins on the PDP.
     specs: [
-      ['Firmware', 'ExpressLRS (3.5.0+)'],
-      ['Telemetry', 'CRSF'],
+      ['Radio', 'Semtech SX1281, 2.4 GHz'],
+      ['Antenna', 'On-board ceramic chip'],
+      ['Telemetry power', '13 dBm (~20 mW)'],
+      ['Protocol', 'CRSF'],
       ['MCU', 'ESP32-C3, 4 MB flash'],
-      ['Wi-Fi antenna', 'Dedicated on-board ceramic, separate from the link antenna'],
+      ['TCXO', '52 MHz'],
+      ['Input', '5 V pad'],
+      ['Firmware', 'ExpressLRS (3.5.0+)'],
+      ['Flash target', 'Unified_ESP32C3_2400_RX'],
       ['Flashing', 'UART first, then Wi-Fi OTA / BF passthrough'],
+      ['Wi-Fi antenna', 'Dedicated on-board ceramic, separate from the link antenna'],
+      ['Dimensions', '10.0 × 11.5 mm'],
+      ['PCB', '6-layer, 1.0 mm'],
       ['License', 'CERN-OHL-S-2.0'],
     ],
     optionAxis: 'Model',
@@ -903,11 +916,8 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
           ['Antenna', 'Ceramic, on-board'],
         ],
         specs: [
-          ['Radio', 'Semtech SX1281, 2.4 GHz'],
-          ['Flash target', 'Unified_ESP32C3_2400_RX'],
-          ['Telemetry power', '13 dBm (~20 mW)'],
           ['Antenna', 'On-board ceramic chip, no antenna wire to tear off'],
-          ['Size', '10.05 × 10.55 mm, 6-layer'],
+          ['Dimensions', '10.0 × 11.5 mm'],
         ],
         pins: [
           {ref: '①', part: 'SX1281 · 2.4 GHz LoRa radio', refs: ['U3']},
@@ -936,11 +946,8 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
           ['Antenna', 'U.FL × 1'],
         ],
         specs: [
-          ['Radio', 'Semtech SX1281, 2.4 GHz'],
-          ['Flash target', 'Unified_ESP32C3_2400_RX'],
-          ['Telemetry power', '13 dBm (~20 mW)'],
           ['Antenna', 'U.FL, run the dipole of your choice'],
-          ['Size', '10.05 × 10.55 mm, 6-layer'],
+          ['Dimensions', '10.0 × 11.5 mm'],
         ],
         inTheBox: [{qty: '1×', item: 'U.FL dipole antenna'}],
         pins: [
@@ -972,10 +979,11 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
         ],
         specs: [
           ['Radio', 'Semtech LR1121, dual-band from one antenna'],
-          ['Flash target', 'Unified_ESP32C3_LR1121_RX'],
-          ['Telemetry power', '12–22 dBm selectable (~158 mW max), 12 dB RX LNA'],
           ['Antenna', 'U.FL, both bands through one RF switch'],
-          ['Size', '10.05 × 16.35 mm, 6-layer'],
+          ['Telemetry power', '12–22 dBm selectable (~158 mW max), 12 dB RX LNA'],
+          ['TCXO', '32 MHz'],
+          ['Flash target', 'Unified_ESP32C3_LR1121_RX'],
+          ['Dimensions', '10.0 × 17.3 mm'],
         ],
         inTheBox: [{qty: '1×', item: 'U.FL dipole antenna'}],
         pins: [
@@ -1007,11 +1015,12 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
         ],
         specs: [
           ['Radio', '2× Semtech LR1121, two complete radio chains'],
-          ['Flash target', 'Unified_ESP32C3_LR1121_RX'],
-          ['Telemetry power', '12–22 dBm per radio (~158 mW), 12 dB RX LNA per chain'],
           ['Antenna', '2× U.FL, one per radio'],
+          ['Telemetry power', '12–22 dBm per radio (~158 mW), 12 dB RX LNA per chain'],
+          ['TCXO', '32 MHz, shared by both radios'],
+          ['Flash target', 'Unified_ESP32C3_LR1121_RX'],
           ['Flashing', 'UART with on-board BOOT button, Wi-Fi OTA, BF passthrough'],
-          ['Size', '17.05 × 15.75 mm, 6-layer'],
+          ['Dimensions', '17.0 × 15.7 mm'],
         ],
         inTheBox: [
           {qty: '2×', item: 'U.FL dipole antenna', note: 'diversity pair'},
@@ -1058,8 +1067,8 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
     teardown: {
       pins: [
         {ref: '①', part: 'Top plate: carbon, carries the camera + VTX bay'},
-        {ref: '②', part: 'Arms: 5 mm carbon, replaced individually', cost: '×4'},
-        {ref: '③', part: 'Bottom plate: 30.5 × 30.5 stack pattern'},
+        {ref: '②', part: 'Arms: replaced individually', cost: '×4'},
+        {ref: '③', part: 'Bottom plate: dual stack pattern'},
         {ref: '④', part: 'M3 aluminium standoffs + hardware kit'},
       ],
       // Fallback model when a tier defines none. Both tiers (3"/5") override
@@ -1083,11 +1092,22 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
     // viewer + STEP export) once the OnShape integration lands. We do not
     // release DXF cutting files.
     downloads: [],
+    // Geometry parsed from the released STEP files (2026-08-07); wheelbase
+    // and stack clearance are derived from the CAD, they appear in no doc.
+    // Rows the tiers replace carry the 5" values so the merged table keeps
+    // this order. Weights land once the first CNC batch is measured.
     specs: [
-      ['Arm thickness', '5 mm carbon'],
-      ['Camera', '19 mm micro'],
-      ['VTX bay', '20 × 20'],
+      ['Wheelbase', '226 mm'],
+      ['Prop size', '5"'],
+      ['Arm thickness', '6 mm carbon'],
+      ['Plate thickness', 'Top 2.5 · mid 3.0 · bottom 3.0 mm'],
+      ['Stack mounting', '30.5 × 30.5 (M3) + 20 × 20'],
+      ['Motor mounting', '16 × 16 (M3)'],
+      ['Max stack height', '20 mm'],
+      ['Camera width', 'Up to 20 mm between the mounts'],
       ['Video systems', 'Analog · DJI O3/O4 · Walksnail · HDZero'],
+      ['Material', 'T700 carbon, 3K twill; 6061/7075-T6 camera mounts'],
+      ['License', 'CERN-OHL-S-2.0'],
     ],
     // TODO(copy): placeholder variant editorial — wires the "Model" axis +
     // ladder. Shared specs above still read 5-inch; reconcile once the 3"
@@ -1095,18 +1115,28 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
     optionAxis: 'Model',
     variants: {
       '5" Freestyle': {
-        tagline: 'The standard freestyle size: 20×20 through 30×30 stacks, M3 motors.',
+        tagline: 'The standard freestyle size: 30.5 or 20 mm stacks, M3 motors.',
         highlights: [
-          ['Stack mounts', '20×20 · 25×25 · 30×30'],
-          ['Motor mount', '16×16 · 19×19 (M3)'],
+          ['Wheelbase', '226 mm'],
+          ['Stack mounts', '30.5×30.5 · 20×20'],
+          ['Motor mount', '16×16 (M3)'],
         ],
         frameViewer: {src: '/models/frame5.glb'},
       },
       '3" Freestyle': {
-        tagline: 'The compact build: 20×20 or 25×25 stacks, M2 motors.',
+        tagline: 'The compact build: 25.5 or 20 mm stacks, M2 motors.',
         highlights: [
-          ['Stack mounts', '20×20 · 25×25'],
+          ['Wheelbase', '141 mm'],
+          ['Stack mounts', '25.5×25.5 · 20×20'],
           ['Motor mount', '9×9 · 12×12 (M2)'],
+        ],
+        specs: [
+          ['Wheelbase', '141 mm'],
+          ['Prop size', '3"'],
+          ['Arm thickness', '4 mm carbon'],
+          ['Plate thickness', 'Top 2.0 · mid 2.5 · bottom 2.5 mm'],
+          ['Stack mounting', '25.5 × 25.5 + 20 × 20 (M2)'],
+          ['Motor mounting', '9 × 9 and 12 × 12 (M2)'],
         ],
         frameViewer: {src: '/models/frame3.glb'},
       },
