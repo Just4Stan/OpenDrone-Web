@@ -2335,7 +2335,7 @@ export default function Product() {
           <p className="chapter-body">
             Open hardware means the feedback loop is public too. These are
             design changes that started as an issue or a PR from someone who
-            isn&apos;t us — receipts linked.
+            isn&apos;t us, receipts linked.
           </p>
           <ul className="community-changes">
             {content.communityChanges.map((c) => (
