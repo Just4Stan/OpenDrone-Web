@@ -5527,11 +5527,17 @@ button.reset {
 /* Chapters — two-column grid on wide viewports: content left,
    media placeholder right (real images later). Single column on
    narrower screens; media slot drops out of layout below 880px. */
+/* Vertical rhythm: the root font is 15px, so the small tokens are smaller than
+   they read on paper. At --sp-6 a chapter had 30px of air above and below and
+   no gap to its neighbour, which put a 41px title 30px from the previous
+   chapter's last line. Chapters are the page's big structural break, so give
+   them one: --sp-8 a side is ~135px between one chapter's content and the
+   next. */
 .chapter {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  gap: var(--sp-5);
-  padding: var(--sp-6) 0;
+  gap: var(--sp-7);
+  padding: var(--sp-8) 0;
   border-top: 1px solid var(--color-border);
   opacity: 1;
   transform: translateY(0);
@@ -5662,10 +5668,10 @@ button.reset {
     grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: var(--sp-5);
   }
-  /* Four cards and a dense schematic in one chapter: let the row finish
-     before the sheet starts, instead of the 22px the default rhythm gives. */
+  /* Four cards and a dense schematic in one chapter: the densest block on the
+     page, so it gets more than the default chapter rhythm, not less. */
   .chapter[data-wide-media] {
-    row-gap: var(--sp-7);
+    row-gap: var(--sp-8);
   }
   .chapter[data-wide-media] .open-source-card,
   .chapter[data-wide-media] .latest-commit-card {
@@ -6641,7 +6647,8 @@ button.reset {
   line-height: 1.1;
   letter-spacing: -0.025em;
   color: var(--color-text);
-  margin: 0 0 var(--sp-4);
+  /* 15px under a 41px head read as one block with the body. */
+  margin: 0 0 var(--sp-6);
   max-width: 24ch;
 }
 
@@ -6935,7 +6942,7 @@ button.reset {
    schematic. At the old 1rem the title and the cards read as one dense block;
    the row needs to land clearly after the head, not under it. */
 .open-source-cards {
-  margin-top: var(--sp-7);
+  margin-top: var(--sp-8);
 }
 
 
