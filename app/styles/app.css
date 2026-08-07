@@ -5552,20 +5552,10 @@ button.reset {
     column-gap: clamp(var(--sp-5), 4vw, var(--sp-7));
     align-items: start;
   }
-  /* Even split — media takes half the chapter width, text column narrows to
-   * match (in-the-box parts shot). */
-  .chapter[data-big-media] {
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-  }
-  /* No media column — body spans the full chapter width (e.g. spec table).
-     The body col is width-capped for readability, so centre it in the row
-     rather than leaving all the leftover space as a dead right gutter. */
-  .chapter[data-no-media] {
-    grid-template-columns: minmax(0, 1fr);
-  }
-  .chapter[data-no-media] .chapter-body-col {
-    margin-inline: auto;
-  }
+  /* Every chapter keeps the same two tracks, whether or not it fills the
+     media slot. A chapter without media leaves the right track empty rather
+     than reflowing, so the body column is the same width and starts on the
+     same left edge in every chapter down the page. */
   .chapter-index {
     grid-column: 1 / -1;
   }
@@ -5648,28 +5638,21 @@ button.reset {
   }
 }
 
-/* Header for the schematic chapter: a slim band — title on the left, the three
- * resource cards in a 3-across row to its right — and the full-width schematic
- * drops below (the chapter is single-column, so .chapter-media spans the row). */
+/* Header for the schematic chapter: the title reads at the same width as every
+ * other chapter title, the resource cards run as a full-width row beneath it,
+ * and the full-width schematic drops below that. Squeezing the title into a
+ * narrow side column made it the only head on the page that wrapped to four
+ * lines, which is what broke the page's vertical rhythm. */
 @media (min-width: 880px) {
   .chapter[data-wide-media] .chapter-body-col {
     /* Span the whole chapter width so the card row reaches the right edge,
      * flush with the full-width schematic below. */
     grid-column: 1 / -1;
     max-width: none;
-    display: grid;
-    /* The card row takes the bulk of the width to fit four abreast. */
-    grid-template-columns: minmax(0, 0.5fr) minmax(0, 1.5fr);
-    column-gap: clamp(var(--sp-5), 4vw, var(--sp-7));
-    align-items: center;
   }
-  .chapter[data-wide-media] .chapter-title {
-    grid-column: 1;
-  }
-  /* Resource cards + the latest-commit card abreast, filling the right column;
+  /* Resource cards + the latest-commit card abreast, filling the row;
    * a gold edge + lift on hover gives them a bit of life. */
   .chapter[data-wide-media] .open-source-cards {
-    grid-column: 2;
     grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: 0.85rem;
   }
@@ -6683,78 +6666,6 @@ button.reset {
   margin: var(--sp-4) 0 0;
 }
 
-/* Teardown pins list — wraps into 2–3 columns so short part names don't
-   each own a full-width row. */
-/* A single narrow column so the callouts stack vertically instead of spreading
-   a wide grid across the chapter — the freed horizontal space goes to the
-   board + its (now richer) layer rail. */
-/* Subtle connector lines from each pin bubble to its layer-rail face box (drawn
-   on a fixed full-viewport SVG, positioned imperatively in the PDP). */
-.teardown-links {
-  /* position/size set imperatively to the lines' bounding box (gutter only) —
-     NOT full-viewport, so it isn't a screen-sized compositing layer. */
-  position: fixed;
-  left: 0;
-  top: 0;
-  display: none;
-  pointer-events: none;
-  z-index: 2;
-  overflow: visible;
-}
-.teardown-links path {
-  fill: none;
-  stroke: var(--color-gold);
-  stroke-width: 1.5;
-  opacity: 0.28;
-  stroke-linecap: round;
-  /* Hidden until the entrance is done: pathLength=100 (set in JSX) lets us hide
-     via a full dash offset, then draw the line in left→right by easing it to 0. */
-  stroke-dasharray: 100;
-  stroke-dashoffset: 100;
-  /* Default (un-drawn) transition so REMOVING .is-drawn retracts the wire instead
-     of snapping it away — used on a tier swap, where the lines pull back, the
-     board + part list fly, then the lines redraw to the new bubbles. The draw-IN
-     overrides this with its own slower ease below. */
-  transition: stroke-dashoffset 0.45s ease;
-}
-.teardown-links circle {
-  fill: var(--color-gold);
-  opacity: 0;
-  /* Fade dots out with the retracting wire (the draw-in re-times these below). */
-  transition: opacity 0.3s ease;
-}
-/* The lines are the last thing in: stroke-draw from the bubble (left) to the rail
-   (right), then light the end dots as the line reaches each side. */
-.teardown-links.is-drawn path {
-  stroke-dashoffset: 0;
-  transition: stroke-dashoffset 1.1s ease;
-}
-.teardown-links.is-drawn circle {
-  opacity: 0.5;
-  transition: opacity 0.35s ease;
-}
-/* bubble-end dots (left) appear as the draw starts; rail-end dots (right) as it
-   arrives. draw() writes them in pairs: odd = bubble, even = rail. */
-.teardown-links.is-drawn circle:nth-of-type(odd) {
-  transition-delay: 0.08s;
-}
-.teardown-links.is-drawn circle:nth-of-type(even) {
-  transition-delay: 0.95s;
-}
-@media (prefers-reduced-motion: reduce) {
-  .teardown-links path {
-    transition: none;
-  }
-  .teardown-links.is-drawn path {
-    stroke-dashoffset: 0;
-  }
-}
-@media (max-width: 879px) {
-  .teardown-links {
-    display: none;
-  }
-}
-
 /* Two side "bubbles" (Top / Bottom), each a mini-table of component rows. The
    gradient + inset top-light give the card some depth instead of a flat slab. */
 .teardown-sides {
@@ -7009,13 +6920,8 @@ button.reset {
   align-items: stretch;
 }
 
-/* Desktop only: pull the row up so the bubbles sit higher against the chapter
-   heading. Skipped on mobile, where the cards stack under the heading and a
-   negative margin would collide with it. */
-@media (min-width: 769px) {
-  .open-source-cards {
-    margin-top: -3rem;
-  }
+.open-source-cards {
+  margin-top: var(--sp-4);
 }
 
 
@@ -7537,60 +7443,6 @@ button.reset {
   font-size: 12px;
   letter-spacing: 0.12em;
   color: var(--color-gold);
-}
-
-/* GPSR manufacturer block — compact legal identity strip under the chapters
-   (EU 2023/988 requires it on every product listing). Hairline top rule,
-   mono labels, same de-boxed spec-table grammar as the rest of the PDP.
-   Tokens only, so light mode needs no twin. */
-.pdp-manufacturer {
-  padding: var(--sp-4) 0 var(--sp-5);
-  border-top: 1px solid var(--color-border);
-}
-
-.pdp-manufacturer-label {
-  margin: 0 0 var(--sp-3);
-  font-family: var(--font-mono);
-  font-size: 11px;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-  color: var(--color-text-muted);
-}
-
-.pdp-manufacturer-rows {
-  margin: 0;
-  display: grid;
-  gap: 0.45rem;
-  max-width: 44rem;
-}
-
-.pdp-manufacturer-rows > div {
-  display: grid;
-  grid-template-columns: 7.5rem 1fr;
-  column-gap: 1rem;
-  align-items: baseline;
-}
-
-.pdp-manufacturer-rows dt {
-  font-family: var(--font-mono);
-  font-size: 11px;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  color: var(--color-text-muted);
-}
-
-.pdp-manufacturer-rows dd {
-  margin: 0;
-  font-size: 0.9rem;
-  line-height: 1.5;
-  color: var(--color-text);
-}
-
-@media (max-width: 480px) {
-  .pdp-manufacturer-rows > div {
-    grid-template-columns: 1fr;
-    row-gap: 0.1rem;
-  }
 }
 
 /* Bundle components — richer cards than the generic open-source cards
@@ -10150,49 +10002,6 @@ button.reset {
   line-height: 1.65;
   color: var(--color-text-muted);
   margin: 0.3rem 0 0;
-}
-
-/* "You asked, we changed" PDP chapter — community-driven revisions with
-   linked receipts. Hairline rows, matches the chapter-body mono voice. */
-.community-changes {
-  list-style: none;
-  padding: 0;
-  margin: 1.25rem 0 0;
-  max-width: 46rem;
-}
-
-.community-change {
-  padding: 0.9rem 0;
-  border-bottom: 1px solid color-mix(in srgb, var(--color-border) 80%, transparent);
-}
-
-.community-change:last-child {
-  border-bottom: none;
-}
-
-.community-change-asked {
-  font-family: var(--font-mono);
-  font-size: 0.9rem;
-  line-height: 1.65;
-  color: var(--color-text);
-  margin: 0;
-}
-
-.community-change-asked a {
-  color: var(--color-gold);
-  transition: color 0.2s ease;
-}
-
-.community-change-asked a:hover {
-  color: var(--color-gold-hover);
-}
-
-.community-change-changed {
-  font-family: var(--font-mono);
-  font-size: 0.85rem;
-  line-height: 1.65;
-  color: var(--color-text-muted);
-  margin: 0.35rem 0 0;
 }
 
 /* ── PDP reviews — provider data, own markup (no third-party widget).

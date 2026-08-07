@@ -70,24 +70,6 @@ export type DownloadAsset = {
 };
 
 /**
- * "You asked, we changed" — a community-driven design change, rendered as
- * its own PDP chapter. HARD RULE: only entries backed by a real, public
- * GitHub issue or merged PR on the product's hardware repo. Verify the URL
- * resolves and the change actually landed on the board before adding one.
- * Never invent examples; an empty array renders nothing.
- */
-export type CommunityChange = {
-  /** The real GitHub issue/PR URL where the change was raised. */
-  url: string;
-  /** GitHub login of who raised or contributed it. */
-  who: string;
-  /** One line: what was asked / reported / contributed. */
-  asked: string;
-  /** One line: what changed on the board as a result (name the rev if known). */
-  changed: string;
-};
-
-/**
  * "Complete the stack" cross-sell rendered inside the buy module. The buyer
  * toggles it on and the partner board is added to the cart in the same
  * add-to-cart submit; the stack discount itself is a Shopify automatic
@@ -309,10 +291,6 @@ export type ProductContent = {
    *  expected late August", "First prototypes at the mill". Free text,
    *  keep it current fact only. */
   statusNote?: string;
-  /** Community-driven design changes with receipts — see
-   *  {@link CommunityChange} for the verification rule. Renders as a
-   *  "You asked, we changed" PDP chapter; empty/unset renders nothing. */
-  communityChanges?: CommunityChange[];
 };
 
 export const PRODUCT_CONTENT: Record<string, ProductContent> = {
@@ -571,21 +549,6 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
       // The BXGY discounts the ESC itself (this product) when the FC joins.
       discountedHandle: 'openesc',
     },
-    // Verified 2026-07-06: PR #1 on OpenESC_20X20 by Vishal01Mehra, merged
-    // 2026-03-11 — the shipping design's JST-SH FC connector (SM08B-SRSS-TB,
-    // see specs above) traces back to this community PR.
-    // TODO(copy-stan): placeholder wording on both lines — facts are right,
-    // voice is yours.
-    communityChanges: [
-      {
-        url: 'https://github.com/incutec-hw/OpenESC_20X20/pull/1',
-        who: 'Vishal01Mehra',
-        asked:
-          'The FC connector and pinout didn’t follow the Betaflight connector standard. He sent the fix as a PR, not just a complaint.',
-        changed:
-          'Merged. The board switched to the JST-SH connector with the corrected Betaflight-standard pinout; that’s the connector on every OpenESC since.',
-      },
-    ],
   },
 
   // The shipping cost-down flight controller. One design, two mount sizes
