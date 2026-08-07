@@ -20,39 +20,45 @@ commit**; local-only commits never reach opendrone.be.
 
 - **One agent = one worktree = one branch = one dev port.** Claim a lane first:
   `git worktree add ~/OpenDrone-Web-wt/<lane> -b feat/<lane> origin/main`, then
-  work ONLY there (`npm ci` once). The main checkout `~/OpenDrone-Web` belongs
-  to Stan and the oversight session; don't edit files there if `git status`
-  shows work that isn't yours.
+  work ONLY there. Setup, once per lane: `npm ci`, copy `.env` from the main
+  checkout, and symlink the shared drafts dir (it is gitignored, so your
+  worktree starts without it):
+  `ln -s ~/OpenDrone/software/OpenDrone-Web/drafts drafts`.
+  The main checkout at `~/OpenDrone/software/OpenDrone-Web` belongs to Stan
+  and the oversight session; don't edit files there if `git status` shows
+  work that isn't yours.
 - **Check `drafts/coordination.md` before claiming files.** It is the live
-  lane registry, file-ownership map, and task board. Update it when you claim,
-  hand off, or finish a lane.
+  lane registry, port assignments, file-ownership map, and task board. Update
+  it when you claim, hand off, or finish a lane.
+- **Keep your dev server running on your claimed port** (`npm run dev -- --port
+  <port>`, ports from coordination.md). Stan reviews lanes side by side in the
+  browser; a lane without a live server can't be reviewed.
 - **Hands off other lanes.** Never stash, clean, branch-switch over, or delete
   someone else's WIP; note blockers in coordination.md instead.
-- **Commit small; PR early, merge fast**: `gh pr create` once the lane is
-  coherent; `gh pr merge --squash --delete-branch` after typecheck + lint pass
-  and the change is verified on your own port.
-- **Verify UI changes visually, always, before merging**: load every affected
-  view on your dev port in the browser, light and dark theme, iterate on the
-  design, and show Stan screenshots of the result. Checks passing is not
-  verification for anything a user can see.
+- **Commit small; PR early; NEVER merge**: `gh pr create` once the lane is
+  coherent and verified on your own port (typecheck + lint + test green).
+  Merging is Stan's move, always: main auto-deploys to opendrone.be, so an
+  agent merging a PR is an agent deploying to production. Leave the PR open
+  and say it's ready.
+- **Verify UI changes visually, always, before marking a PR ready**: load
+  every affected view on your dev port in the browser, light and dark theme,
+  iterate on the design, and show Stan screenshots of the result. Checks
+  passing is not verification for anything a user can see.
 - **Never squash-merge a branch that redid work already on `main`**: it
   silently reverts main's newer version to the branch's older one.
 - **After any merge, every live lane rebases** (`git fetch && git rebase
   origin/main`). Build only against origin/main, never against another lane's
   unmerged branch.
-- **Lane done**: merge the PR, `git worktree remove ~/OpenDrone-Web-wt/<lane>`,
-  delete the branch.
+- **Lane done**: Stan merges the PR; then `git worktree remove
+  ~/OpenDrone-Web-wt/<lane>` and delete the branch.
 - Commit trailer: `Co-Authored-By: Claude <your model name> <noreply@anthropic.com>`.
 
 ## Project docs: read before starting a lane
 - `drafts/coordination.md`: live lane registry + task board. Always check first.
-- `drafts/ui-overhaul-brief.md`: design rules, anti-patterns, library verdicts. Before UI work.
-- `drafts/theming.md`: full light/dark token contract + gold/green rules. Before touching colors.
+- `drafts/hero-narrative.md`: hero concept and narrative. Before hero work.
 - `docs/store-compliance.md`: GPSR, withdrawal, VAT, sanctions, battery-free shipping.
   Before checkout, legal pages, product templates, or shipping/tax config.
 - `docs/growth-architecture.md`: analytics/attribution/email/ledger facts + canonical UTM values.
-- `drafts/drone-builder-scope.md`: 3D builder phase plan.
-- `drafts/archive/`: frozen point-in-time documents. Reference only; never update them.
 
 ## Theming (summary)
 Light + dark via CSS-custom-property token swap. Semantic tokens only, never
