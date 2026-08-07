@@ -31,8 +31,8 @@ export type HeroDroneSceneProps = {
   onBeats?: (beats: HeroBeat[]) => void;
   /** Fires once the model is on screen. */
   onReady?: () => void;
-  /** Set by the parent to hand scroll control over; see the pinning comment. */
-  scrollRef?: React.RefObject<number>;
+  /** Handed a jump function once ready, so the rail dots can seek. */
+  onSeeker?: (goTo: (i: number) => void) => void;
 };
 
 /* three.js mangles imported names three ways: it appends _1/_2 to duplicates,
@@ -80,6 +80,7 @@ export function HeroDroneScene({
   onBeat,
   onBeats,
   onReady,
+  onSeeker,
 }: HeroDroneSceneProps) {
   const host = useRef<HTMLDivElement>(null);
   const [error, setError] = useState<string | null>(null);
@@ -104,13 +105,23 @@ export function HeroDroneScene({
       el.append(renderer.domElement);
       renderer.domElement.style.display = 'block';
       cleanup.push(() => {
+        // dispose() alone does not release the WebGL context, and browsers cap
+        // them at around 16 per page. Without forceContextLoss a few remounts
+        // take out every canvas on the page.
+        renderer.setAnimationLoop(null);
         renderer.dispose();
+        renderer.forceContextLoss();
         renderer.domElement.remove();
       });
 
       const scene = new THREE.Scene();
       const pmrem = new THREE.PMREMGenerator(renderer);
-      scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+      const envRT = pmrem.fromScene(new RoomEnvironment(), 0.04);
+      scene.environment = envRT.texture;
+      cleanup.push(() => {
+        envRT.dispose();
+        pmrem.dispose();
+      });
       scene.environmentIntensity = cfg.lighting.environment;
 
       const camera = new THREE.PerspectiveCamera(34, 1, 0.002, 60);
@@ -151,7 +162,12 @@ export function HeroDroneScene({
         blending: THREE.AdditiveBlending,
         side: THREE.DoubleSide,
       });
-      const beam = new THREE.Mesh(new THREE.ConeGeometry(1, 1, 64, 1, true), beamMat);
+      const beamGeo = new THREE.ConeGeometry(1, 1, 64, 1, true);
+      const beam = new THREE.Mesh(beamGeo, beamMat);
+      cleanup.push(() => {
+        beamGeo.dispose();
+        beamMat.dispose();
+      });
       beam.frustumCulled = false;
       beam.visible = false;
       scene.add(beam);
@@ -229,6 +245,12 @@ export function HeroDroneScene({
         o.material = m;
       });
       rig.add(droneRoot);
+      cleanup.push(() => {
+        for (const m of cache.values()) m.dispose();
+        droneRoot.traverse((o: any) => {
+          if (o.isMesh) o.geometry?.dispose?.();
+        });
+      });
 
       const occRoot: THREE.Object3D =
         droneRoot.children.length === 1 ? droneRoot.children[0] : droneRoot;
@@ -307,8 +329,19 @@ export function HeroDroneScene({
           group.add(mesh);
         }
         occRoot.add(group);
-        for (const node of members) node.removeFromParent();
+        // removeFromParent leaves the source buffers referenced by detached
+        // nodes, so ~1900 occurrences' worth of geometry per board would never
+        // free. Dispose them explicitly.
+        for (const node of members) {
+          node.traverse((o: any) => {
+            if (o.isMesh) o.geometry?.dispose?.();
+          });
+          node.removeFromParent();
+        }
         merged.set(b.id, group);
+        cleanup.push(() => {
+          for (const m of group.children as THREE.Mesh[]) m.geometry?.dispose?.();
+        });
       }
 
       /* --------------------------------------------------------- geometry */
@@ -347,6 +380,10 @@ export function HeroDroneScene({
           }
           const hub = axis ? new THREE.Vector3(axis.x, pc.y, axis.z) : pc;
           const g = new THREE.Group();
+          // Named because `notFrame` in the config excludes "prop-pivot": an
+          // unnamed group falls through and the props get swept into the
+          // airframe teardown.
+          g.name = 'prop-pivot';
           occRoot.add(g);
           g.position.copy(occRoot.worldToLocal(hub.clone()));
           g.updateMatrixWorld(true);
@@ -505,6 +542,9 @@ export function HeroDroneScene({
         return t!;
       };
       let dimmed: any[] = [];
+      cleanup.push(() => {
+        for (const t of twin.values()) t.dispose();
+      });
       const dimSetFor = (b: Beat) => {
         if (b.dim) return b.dim;
         const keep = new Set<THREE.Object3D>();
@@ -655,30 +695,119 @@ export function HeroDroneScene({
       let pos = 0;
       let vel = 0;
       let lastWheel = 0;
+      let everScrolled = false;
       let gestureFrom = 0;
       let gestureDir = 0;
       let committed: number | null = null;
+      const GESTURE_GAP_MS = 220;
+      // Only render, and only take keys, when the hero is actually on screen.
+      let onScreen = true;
+      const io = new IntersectionObserver(
+        (es) => {
+          onScreen = es[0]?.isIntersecting ?? true;
+        },
+        {threshold: 0},
+      );
+      io.observe(el);
+      cleanup.push(() => io.disconnect());
+
       const onWheel = (e: WheelEvent) => {
+        // ctrl+wheel is pinch-zoom and browser zoom. Never swallow it.
+        if (e.ctrlKey) return;
+
         const now = performance.now();
-        // Let the page scroll away once the sequence is finished at either end.
-        const atEnd = pos >= span() - dur() * 0.5 && e.deltaY > 0;
-        const atStart = pos <= dur() * 0.2 && e.deltaY < 0;
-        if (atEnd || atStart) return;
-        e.preventDefault();
-        if (now - lastWheel > 220) {
+        if (now - lastWheel > GESTURE_GAP_MS) {
           gestureFrom = nearestIdx(pos);
           gestureDir = 0;
           committed = null;
         }
+
+        // Release the page at the ends, with a margin. Keyed off which stop the
+        // gesture began at rather than a raw position threshold, so the exit is
+        // not sensitive to exactly where the spring settles.
+        const first = 0;
+        const last = BEATS.length - 1;
+        const eps = dur() * 0.08;
+        const atLast = gestureFrom >= last && pos >= stopFor(last) - eps && e.deltaY > 0;
+        const atFirst = gestureFrom <= first && pos <= stopFor(first) + eps && e.deltaY < 0;
+        if (atLast || atFirst) return;   // do not preventDefault: page scrolls on
+
+        e.preventDefault();
         if (e.deltaY !== 0) gestureDir = Math.sign(e.deltaY);
         lastWheel = now;
-        const step = Math.sign(e.deltaY) * Math.min(Math.abs(e.deltaY), 60) * 0.0016 * dur();
-        target = Math.max(0, Math.min(span() - 0.001, target + step));
+        everScrolled = true;
+
+        // Firefox reports lines, not pixels; Chrome reports pixels; some mice
+        // report pages. Normalise before scaling or Firefox scrolls ~20x slower.
+        const unit = e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? el.clientHeight : 1;
+        const px = e.deltaY * unit;
+        const step = Math.sign(px) * Math.min(Math.abs(px), 60) * 0.0016 * dur();
+
+        // THE important bound. A trackpad's momentum tail fires at frame rate
+        // for a second or more after the finger lifts, and no time-based
+        // "gesture ended" test can distinguish it from real input. So do not
+        // try: bound the DISTANCE instead. Within one gesture the target can
+        // never travel more than one stop from where it began, which makes one
+        // flick equal exactly one beat no matter how long the tail runs.
+        const lo = stopFor(Math.max(first, gestureFrom - 1));
+        const hi = stopFor(Math.min(last, gestureFrom + 1));
+        target = Math.max(lo, Math.min(hi, target + step));
       };
       el.addEventListener('wheel', onWheel, {passive: false});
       cleanup.push(() => el.removeEventListener('wheel', onWheel));
 
+      // Keyboard: arrows, PageUp/Down, Home/End step between stops. Without
+      // this a keyboard user simply scrolls past and never sees five of the six
+      // beats. goTo is also what the rail dots call.
+      const goTo = (i: number) => {
+        const idx = Math.max(0, Math.min(BEATS.length - 1, i));
+        gestureFrom = idx;
+        gestureDir = 0;
+        committed = idx;
+        everScrolled = true;
+        lastWheel = performance.now() - 2000;
+        target = stopFor(idx);
+      };
+      const onKey = (e: KeyboardEvent) => {
+        const cur = nearestIdx(target);
+        let next: number | null = null;
+        if (e.key === 'ArrowDown' || e.key === 'ArrowRight' || e.key === 'PageDown') next = cur + 1;
+        else if (e.key === 'ArrowUp' || e.key === 'ArrowLeft' || e.key === 'PageUp') next = cur - 1;
+        else if (e.key === 'Home') next = 0;
+        else if (e.key === 'End') next = BEATS.length - 1;
+        if (next === null) return;
+        // At the ends, let the key do its normal thing and leave the hero.
+        if (next < 0 || next > BEATS.length - 1) return;
+        e.preventDefault();
+        goTo(next);
+      };
+      // Listen on the document, gated on the hero being on screen: the canvas
+      // is not focusable, and a reader using the rail should still be able to
+      // arrow between stops.
+      const onDocKey = (e: KeyboardEvent) => {
+        if (!onScreen) return;
+        const t = e.target as HTMLElement | null;
+        if (t && /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName)) return;
+        onKey(e);
+      };
+      document.addEventListener('keydown', onDocKey);
+      cleanup.push(() => document.removeEventListener('keydown', onDocKey));
+
       /* ------------------------------------------------------------- loop */
+      // A GPU reset or a backgrounded mobile tab kills the context. Without
+      // this the hero is permanently blank with no signal.
+      const onLost = (ev: Event) => {
+        ev.preventDefault();
+        setError('graphics context lost, reloading the view');
+      };
+      const onRestored = () => setError(null);
+      renderer.domElement.addEventListener('webglcontextlost', onLost);
+      renderer.domElement.addEventListener('webglcontextrestored', onRestored);
+      cleanup.push(() => {
+        renderer.domElement.removeEventListener('webglcontextlost', onLost);
+        renderer.domElement.removeEventListener('webglcontextrestored', onRestored);
+      });
+
       const clock = new THREE.Clock();
       let lastBeat = -1;
       let lastDimBeat = -1;
@@ -695,7 +824,6 @@ export function HeroDroneScene({
         renderer.setSize(w, h, true);
         camera.aspect = w / h;
         camera.updateProjectionMatrix();
-        (window as any).__heroSize = key;
       };
 
       camera.position.copy(droneCentre).add(new THREE.Vector3(1, 0.5, 1).normalize().multiplyScalar(droneRadius * 2.15));
@@ -703,12 +831,15 @@ export function HeroDroneScene({
       camera.far = droneRadius * 60;
       resizeIfNeeded();
 
+      let loopErrors = 0;
       renderer.setAnimationLoop(() => {
+       try {
+        if (!onScreen || document.hidden) return;
         resizeIfNeeded();
         const dt = Math.min(clock.getDelta(), 0.05);
 
         const idle = performance.now() - lastWheel;
-        if (idle > 120) {
+        if (everScrolled && idle > 120) {
           if (committed === null) {
             const fromPos = stopFor(gestureFrom);
             const moved = (target - fromPos) * (gestureDir || 1);
@@ -742,7 +873,12 @@ export function HeroDroneScene({
           lastBeat = beatIdx;
           onBeat?.({id: b.id, title: b.title, note: b.note}, beatIdx);
         }
-        onProgress?.(pos / span());
+        // Report progress across the STOPS, not the raw timeline: the first
+        // stop sits at 8% and the last at 92% of the span, so pos/span never
+        // reaches either end and the rail never lines up with its own dots.
+        const p0 = stopFor(0);
+        const p1 = stopFor(BEATS.length - 1);
+        onProgress?.(THREE.MathUtils.clamp((pos - p0) / Math.max(p1 - p0, 1e-6), 0, 1));
 
         const kRaw = envelope(t);
         const k = b.nodes.length ? kRaw : 0;
@@ -778,13 +914,26 @@ export function HeroDroneScene({
         camera.lookAt(droneCentre);
 
         renderer.render(scene, camera);
+       } catch (err) {
+        // One throw in here would otherwise repeat 60 times a second forever
+        // with nothing visible to the reader.
+        if (loopErrors++ < 3) console.error('[hero] render loop:', err);
+        if (loopErrors === 3) {
+          renderer.setAnimationLoop(null);
+          setError('animation stopped');
+        }
+       }
       });
       cleanup.push(() => renderer.setAnimationLoop(null));
 
+      onSeeker?.(goTo);
       onReady?.();
     })().catch((e: unknown) => {
       console.error('[hero]', e);
       setError(e instanceof Error ? e.message : String(e));
+      // Always release the splash, or a 404 leaves the page reading LOADING
+      // forever behind a dim layer.
+      onReady?.();
     });
 
     return () => {
@@ -794,10 +943,13 @@ export function HeroDroneScene({
       // not leave a dead canvas stacked over the live one.
       for (const c of Array.from(el.querySelectorAll('canvas'))) c.remove();
     };
-  }, [model, onBeat, onBeats, onProgress, onReady]);
+  }, [model, onBeat, onBeats, onProgress, onReady, onSeeker]);
 
   return (
-    <div ref={host} style={{position: 'absolute', inset: 0}}>
+    // Decorative: every beat's copy is in the DOM in .hp-fallback, and
+    // keyboard control is the rail's real buttons, so the canvas itself carries
+    // no semantics and is not a tab stop.
+    <div ref={host} aria-hidden="true" style={{position: 'absolute', inset: 0}}>
       {error ? (
         <div style={{position: 'absolute', left: 16, bottom: 16, color: '#ff8574', font: '12px ui-monospace'}}>
           hero: {error}

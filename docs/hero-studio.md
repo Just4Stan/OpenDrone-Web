@@ -216,3 +216,63 @@ Kept here rather than in commit messages so it stays visible.
 - `tidy()` does not undo three.js's character deletion.
 - `build-hero.mjs` still contains a dead non-`--all` code path that is the
   default, and produces GLBs the studio cannot load.
+
+## Review findings
+
+An adversarial review of the hero component produced the list below. Fixed
+items are struck through in intent; open ones are real and unaddressed.
+
+### Fixed
+
+- **One trackpad flick played the whole sequence.** A momentum tail fires at
+  frame rate for a second or more after the finger lifts, and a time-based
+  "gesture ended" test cannot tell it from real input. The fix is to bound the
+  distance instead: within one gesture the target can never travel more than one
+  stop from where it began. Verified: 45 events including a decaying tail now
+  land exactly on `stopFor(gestureFrom + 1)`.
+- **Scroll trapped the reader at both ends.** Release is now keyed off which
+  stop the gesture began at, with a margin, rather than a raw position that
+  happened to coincide with the last snap point.
+- **ctrl+wheel was swallowed**, blocking pinch and browser zoom.
+- **Firefox scrolled about 20x slower**: `deltaMode` was assumed to be pixels.
+- **An unguarded render loop** would throw 60 times a second forever with
+  nothing visible. Now caught, with the loop stopped after three errors.
+- **A leaked WebGL context per remount.** `dispose()` does not release the
+  context; `forceContextLoss()` is now called, and the PMREM generator, its
+  render target, all cloned materials, the dim twins and the merged and source
+  board geometries are disposed.
+- **The loop ran off screen and in background tabs.** Gated on an
+  IntersectionObserver and `document.hidden`.
+- **Prop pivots leaked into the airframe teardown** because the group was never
+  named, so the `notFrame` exclusion could not match it.
+- **Progress never reached 0 or 1**, so the rail fill never lined up with its
+  own dots. Progress is now measured across the stops, not the raw timeline.
+- **Every failure path left a permanent LOADING overlay.** `onReady` now fires
+  from the catch too.
+- **No context-loss recovery.**
+- **Five of six beats existed only in JS state**, invisible to crawlers and
+  screen readers. All beat copy is now in the DOM, visually hidden while the 3D
+  drives presentation and becoming the actual content when it does not.
+- **No keyboard path.** Arrows, PageUp/Down and Home/End step between stops, and
+  the rail dots are real buttons with `aria-current`.
+- **No reduced-motion or small-screen gate.** Now matches the policy the rest of
+  the site already uses: no 3D under 768px or under `prefers-reduced-motion`.
+
+### Still open
+
+- **No touch support.** The gate above means phones get the DOM copy rather than
+  a broken scene, but tablets over 768px will load the 3D and be unable to drive
+  it. A `touchmove` path is the missing piece.
+- **The 3D is hardcoded dark** and does not follow the site's light/dark toggle.
+  Hemisphere and beam colours are literals, and `darkenRest: 1.0` would drive
+  non-focused parts to black on a white page.
+- **`stops` is parsed and never used**, so the second caption of the airframe
+  beat ("Video module") never appears even though the choreography runs.
+- **No tiered loading.** The 6 MB GLB blocks the first frame.
+- **The shader warm-up was not carried over** from the studio, so the first
+  spotlight compiles shaders during the reader's first scroll.
+- **`mergeGeometries` is one unchunked call**, where `HeroScene.tsx` deliberately
+  chunks it.
+- **About half the component is copy-pasted from `_studio.html` and has already
+  drifted**: staging distance, the fastener regex, motor clustering, and
+  `boardTilt`. This is the main structural debt.
