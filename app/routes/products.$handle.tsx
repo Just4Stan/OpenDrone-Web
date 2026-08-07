@@ -55,7 +55,7 @@ import {
   PRODUCT_CONTENT_FALLBACK,
   isComingSoon,
 } from '~/lib/product-content';
-import {useComingSoon} from '~/lib/coming-soon';
+import {useProductStatus} from '~/lib/coming-soon';
 import {stackDiscountedPrice} from '~/lib/stack-discount';
 import {trackEvent} from '~/lib/growth/plausible';
 import {attributionSource} from '~/lib/growth/attribution';
@@ -644,7 +644,10 @@ export default function Product() {
   // notify-at-launch signup. Root data feeds the global flag + Turnstile key.
   const rootData = useRouteLoaderData<RootLoader>('root');
   const globalComingSoon = rootData?.comingSoon ?? true;
-  const soon = useComingSoon(product.handle);
+  // Lifecycle status drives the buy module: 'idea' and 'development' are
+  // both not-purchasable (`soon`), but render different plates.
+  const status = useProductStatus(product.handle);
+  const soon = status !== 'live';
 
   // Get the product options array
   const productOptions = getProductOptions({
@@ -1587,20 +1590,45 @@ export default function Product() {
   // COMING SOON plate + notify-at-launch signup (same newsletter action,
   // tagged with this product's handle). Everything else on the PDP stays.
   const railBuyModule = soon ? (
-    <div className="product-buy is-comingsoon" data-buy-module>
+    <div
+      className={`product-buy is-comingsoon${status === 'idea' ? ' is-idea' : ''}`}
+      data-buy-module
+    >
       <div className="product-buy-price">
-        <span className="product-buy-soon" aria-label="Coming soon">
-          Coming soon
+        <span
+          className="product-buy-soon"
+          aria-label={status === 'idea' ? 'Concept' : 'Coming soon'}
+        >
+          {status === 'idea' ? 'Concept' : 'Coming soon'}
         </span>
-        {selectedVariant?.sku ? (
+        {content.statusNote ? (
+          <span className="product-buy-sku">{content.statusNote}</span>
+        ) : selectedVariant?.sku ? (
           <span className="product-buy-sku">SKU {selectedVariant.sku}</span>
         ) : null}
       </div>
+      {status === 'idea' ? (
+        <p className="product-buy-idea-pitch">
+          No hardware exists yet: this page is the idea, published so the
+          design can happen in public. Open an issue, sketch a schematic,
+          or leave your email and watch it become real.
+        </p>
+      ) : null}
       <NewsletterSignup
         notify={{productHandle: product.handle, productTitle: product.title}}
         turnstileSiteKey={rootData?.turnstileSiteKey ?? null}
         className="product-buy-notify"
       />
+      {status === 'idea' ? (
+        <a
+          className="product-buy-idea-repo"
+          href={content.repoUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          Help design it on GitHub ↗
+        </a>
+      ) : null}
     </div>
   ) : (
     <div className="product-buy" data-buy-module>
@@ -1632,8 +1660,17 @@ export default function Product() {
             : 'One or both boards unavailable'
           : selectedVariant?.availableForSale
             ? 'In stock · ships from Belgium'
-            : 'Sold out'}
+            : content.statusNote
+              ? `Sold out · ${content.statusNote}`
+              : 'Sold out'}
       </span>
+      {!isBundle && selectedVariant && !selectedVariant.availableForSale ? (
+        <NewsletterSignup
+          notify={{productHandle: product.handle, productTitle: product.title}}
+          turnstileSiteKey={rootData?.turnstileSiteKey ?? null}
+          className="product-buy-notify"
+        />
+      ) : null}
       {/* Star aggregate + link to the reviews chapter. Renders nothing
           without reviews; CSS hides it in the compact pinned rail. */}
       <ReviewAggregateLine aggregate={reviewAggregate} />

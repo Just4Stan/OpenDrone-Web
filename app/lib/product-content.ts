@@ -294,8 +294,21 @@ export type ProductContent = {
   };
   /** Per-product coming-soon override. Unset = follow the global
    *  PUBLIC_COMING_SOON flag. `false` unlocks this SKU for sale while the
-   *  global flag is still on; `true` keeps teasing it after the flag drops. */
+   *  global flag is still on; `true` keeps teasing it after the flag drops.
+   *  Superseded by `status`; kept while existing callers migrate. */
   comingSoon?: boolean;
+  /** Lifecycle status. 'idea': a published concept with no hardware yet —
+   *  not purchasable, the PDP invites people to help design it. 
+   *  'development': designed, launch pending — notify-at-launch signup
+   *  (the classic coming-soon UX). 'live': purchasable; Shopify
+   *  availableForSale decides in stock vs sold out. Unset = follow the
+   *  global PUBLIC_COMING_SOON flag ('development' while set, 'live'
+   *  once cleared), or the legacy `comingSoon` boolean when present. */
+  status?: ProductStatus;
+  /** One line shown next to the status on the PDP buy module: "Restock
+   *  expected late August", "First prototypes at the mill". Free text,
+   *  keep it current fact only. */
+  statusNote?: string;
   /** Community-driven design changes with receipts — see
    *  {@link CommunityChange} for the verification rule. Renders as a
    *  "You asked, we changed" PDP chapter; empty/unset renders nothing. */
@@ -417,7 +430,7 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
     // purely so the merged table keeps this order; the active tier's value
     // always wins on the PDP.
     specs: [
-      ['Continuous', '30 A / channel'],
+      ['Continuous', '40 A / channel'],
       ['Firmware', 'AM32, bootloader pre-loaded'],
       ['AM32 target', 'OpenESC_20'],
       ['ESC protocol', 'DShot, bidirectional DShot telemetry'],
@@ -445,10 +458,10 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
         highlights: [
           ['Mount', '20×20'],
           ['MOSFET', 'DOY180N03T'],
-          ['Continuous', '30 A / channel*'],
+          ['Continuous', '40 A / channel'],
         ],
         specs: [
-          ['Continuous', '30 A / channel (preliminary, bench characterization pending)'],
+          ['Continuous', '40 A / channel'],
           ['MOSFETs', '24× DOY180N03T, 6 per motor'],
           ['Input', '3–6S LiPo, 6S hard maximum'],
           ['Current sense', 'INA186A3 + 0.2 mΩ shunt · 20 mV/A, 165 A full-scale'],
@@ -461,10 +474,10 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
         highlights: [
           ['Mount', '30×30'],
           ['MOSFET', 'SP40N01GHNK'],
-          ['Continuous', '50 A / channel*'],
+          ['Continuous', '60 A / channel'],
         ],
         specs: [
-          ['Continuous', '50 A / channel (preliminary, bench characterization pending)'],
+          ['Continuous', '60 A / channel'],
           // No AM32 target is defined for the 30×30 yet; hide the row rather
           // than guess a name.
           ['AM32 target', null],
@@ -1145,19 +1158,38 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
 
 };
 
+/** Product lifecycle. See {@link ProductContent.status}. */
+export type ProductStatus = 'idea' | 'development' | 'live';
+
 /**
- * Resolve whether a product renders as coming soon (no prices, notify-me
- * signup instead of add-to-cart). Per-product `comingSoon` in
- * {@link PRODUCT_CONTENT} wins; otherwise the global PUBLIC_COMING_SOON
- * flag (root loader `comingSoon`) decides. Callers without a handle
- * (e.g. a generic surface) pass only the flag.
+ * Resolve a product's lifecycle status. Explicit `status` wins; the
+ * legacy per-product `comingSoon` boolean maps to development/live;
+ * otherwise the global PUBLIC_COMING_SOON flag decides (set =
+ * 'development', cleared = 'live'). Callers without a handle pass only
+ * the flag.
+ */
+export function resolveStatus(
+  handle: string | null | undefined,
+  globalFlag: boolean,
+): ProductStatus {
+  const content = handle ? PRODUCT_CONTENT[handle] : undefined;
+  if (content?.status) return content.status;
+  if (content?.comingSoon !== undefined) {
+    return content.comingSoon ? 'development' : 'live';
+  }
+  return globalFlag ? 'development' : 'live';
+}
+
+/**
+ * Whether a product renders as not-yet-purchasable (no prices, no
+ * add-to-cart). True for both 'idea' and 'development'; the buy module
+ * differentiates the two via {@link resolveStatus}.
  */
 export function isComingSoon(
   handle: string | null | undefined,
   globalFlag: boolean,
 ): boolean {
-  const override = handle ? PRODUCT_CONTENT[handle]?.comingSoon : undefined;
-  return override ?? globalFlag;
+  return resolveStatus(handle, globalFlag) !== 'live';
 }
 
 /** Fallback when a handle has no editorial content yet. */

@@ -1,7 +1,12 @@
 import {useRouteLoaderData} from 'react-router';
 import type {Storefront} from '@shopify/hydrogen';
 import type {RootLoader} from '~/root';
-import {isComingSoon, PRODUCT_CONTENT} from '~/lib/product-content';
+import {
+  isComingSoon,
+  resolveStatus,
+  PRODUCT_CONTENT,
+  type ProductStatus,
+} from '~/lib/product-content';
 
 /**
  * Coming-soon state for a product, resolved from the root loader's
@@ -13,6 +18,16 @@ import {isComingSoon, PRODUCT_CONTENT} from '~/lib/product-content';
 export function useComingSoon(handle?: string | null): boolean {
   const data = useRouteLoaderData<RootLoader>('root');
   return isComingSoon(handle, data?.comingSoon ?? true);
+}
+
+/**
+ * Lifecycle status for a product, same resolution + fail-closed default
+ * as {@link useComingSoon} (missing root data = 'development', never a
+ * buyable state by accident).
+ */
+export function useProductStatus(handle?: string | null): ProductStatus {
+  const data = useRouteLoaderData<RootLoader>('root');
+  return resolveStatus(handle, data?.comingSoon ?? true);
 }
 
 /**
@@ -34,7 +49,9 @@ export function comingSoonFlag(env: {PUBLIC_COMING_SOON?: string}): boolean {
  */
 export function anyComingSoonLocks(globalFlag: boolean): boolean {
   if (globalFlag) return true;
-  return Object.values(PRODUCT_CONTENT).some((c) => c.comingSoon === true);
+  return Object.values(PRODUCT_CONTENT).some(
+    (c) => c.comingSoon === true || c.status === 'idea' || c.status === 'development',
+  );
 }
 
 // Server-side purchase gate: resolve variant gids → product handles in one
