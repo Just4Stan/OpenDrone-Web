@@ -410,11 +410,12 @@ export function SupportThread({
             <div className="od-icon-big" aria-hidden="true">
               ⌗
             </div>
-            <h3>Posted to our support channel.</h3>
+            <h3>Relayed to the OpenDrone Discord.</h3>
             <p>
-              Your message was posted as a private thread. Replies usually
-              land within a few hours (CET). We&rsquo;ll email you the
-              moment a moderator confirms an answer, so you don&rsquo;t
+              A bot posted your message as a private thread in our Discord
+              server, where all project communication happens. Replies
+              usually land within a few hours (CET). We&rsquo;ll email you
+              the moment a moderator confirms an answer, so you don&rsquo;t
               need to keep this tab open.
             </p>
           </div>
@@ -601,6 +602,10 @@ function SupportThreadSidebar({
             </span>
           </div>
         </div>
+        <p className="support-sidebar-help">
+          Replies are typed in the OpenDrone Discord and relayed here by
+          the bot.
+        </p>
         {pendingReplies > 0 ? (
           <p className="support-sidebar-help">
             A moderator reviews replies before they appear here.
