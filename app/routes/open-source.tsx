@@ -6,7 +6,7 @@ export const meta: Route.MetaFunction = () =>
   buildSeoMeta({
     title: 'Open source · How OpenDrone makes money',
     description:
-      'Why every OpenDrone board is fully open source, and how we pay the bills without closing the hardware.',
+      'OpenDrone is a community-designed project; Incutec sells the finished boards. Why everything is open source, and how the bills get paid without closing the hardware.',
   });
 
 export async function loader(_args: Route.LoaderArgs) {
@@ -25,17 +25,19 @@ export default function OpenSourceRoute() {
           Every OpenDrone board ships with its full source on GitHub: schematic,
           PCB, BOM and 3D STEP, under CERN-OHL-S v2. Read them, fork them, order
           your own copies, ship a variant. That isn&apos;t a marketing promise,
-          it&apos;s the licence. What you pay for here is the production run, done
-          properly.
+          it&apos;s the licence. OpenDrone is the community project that designs
+          the boards; Incutec is the company that sells them here. What you pay
+          for is the production run, done properly.
         </p>
       </header>
 
       <section className="editorial-section">
         <h2 className="editorial-section-title">01 · What you buy</h2>
         <p>
-          A finished, tested, packaged board. Built in the EU where we can,
-          produced in Asia where we can&apos;t, inspected, flashed, and shipped
-          from Belgium. The price covers the PCB, the components, the assembly,
+          A finished, tested, packaged board, sold by Incutec. Fabricated and
+          assembled at JLCPCB today, then inspected, flashed, and shipped from
+          Belgium; EU assembly is an ambition we cost openly on the{' '}
+          <Link to="/production">production page</Link>. The price covers the PCB, the components, the assembly,
           the QC time, the packaging, the courier, VAT, support, and the
           engineering for the next revision. Nothing hidden in it.
         </p>
@@ -45,7 +47,7 @@ export default function OpenSourceRoute() {
         <h2 className="editorial-section-title">02 · What stays open</h2>
         <ul className="editorial-list">
           <li>
-            <strong>Schematic</strong>: the KiCad 9 project files, not just a
+            <strong>Schematic</strong>: the KiCad 10 project files, not just a
             PDF export. Every net and value is rebuildable from source.
           </li>
           <li>
@@ -86,14 +88,16 @@ export default function OpenSourceRoute() {
       </section>
 
       <section className="editorial-section">
-        <h2 className="editorial-section-title">04 · How the business stays solvent</h2>
+        <h2 className="editorial-section-title">04 · How Incutec stays solvent</h2>
         <p>
-          Four revenue lines, roughly in order of expected size: retail margin on
-          the boards we make, volume orders from schools and teams, paid
-          consulting on custom variants, and a firmware split of €1 per unit
-          forwarded to the upstream project the board runs. That last line exists
-          because we build on decades of other people&apos;s open source. Paying a
-          little of it back is the cheap, honest thing to do.
+          The community project needs no revenue; the company manufacturing and
+          supporting the boards does. Four revenue lines, roughly in order of
+          expected size: retail margin on the boards, volume orders from schools
+          and teams, paid consulting on custom variants, and a firmware split of
+          €1 of every board sold forwarded to the upstream project the board
+          runs. That last line exists because all of this is built on decades of
+          other people&apos;s open source. Paying a little of it back is the
+          cheap, honest thing to do.
         </p>
         <p>
           We don&apos;t make money from ads, affiliate trackers, resold
@@ -107,8 +111,9 @@ export default function OpenSourceRoute() {
         <h2 className="editorial-section-title">05 · What this means for you</h2>
         <ul className="editorial-list">
           <li>
-            If OpenDrone disappears tomorrow, you still have the files. Anyone,
-            including you, can order a revision and keep it alive.
+            If Incutec disappears tomorrow, you still have the files, and the
+            community still owns the project. Anyone, including you, can order a
+            revision and keep it alive.
           </li>
           <li>
             Want a 4&quot; version, a 3S-only build, a heavier-copper variant?

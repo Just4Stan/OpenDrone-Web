@@ -126,8 +126,10 @@ export async function loader({context, request}: Route.LoaderArgs) {
 > Open-source FPV drone hardware, sold as assembled boards. Every product's full
 > design source (schematic, PCB, BOM, 3D STEP) is public on GitHub under
 > CERN-OHL-S v2; firmware is upstream open source (Betaflight, AM32, ExpressLRS).
-> OpenDrone is a brand of Incutec BV, Stapelhuisstraat 15, 3000 Leuven, Belgium
-> (VAT BE 1038.934.039). Prices in EUR, VAT included, ship from Belgium.
+> OpenDrone is a community-run open hardware project. The shop and the boards
+> are manufactured, sold and supported by Incutec BV, Stapelhuisstraat 15,
+> 3000 Leuven, Belgium (VAT BE 1038.934.039). Prices in EUR, VAT included,
+> ship from Belgium.
 
 IMPORTANT, OPENING SOON: the webshop is not yet taking orders. Visitors can
 subscribe on /newsletter to be notified when it opens. Treat all prices as
@@ -172,7 +174,7 @@ ${catalog}
 
 Everything is buildable from source (CERN-OHL-S v2). Per-product repos are
 listed in the catalog above; the full set lives at
-https://github.com/incutec-hw. Boards are OSHWA-certified (BE000026–BE000033).
+https://github.com/incutec-hw. Boards are OSHWA self-certified (BE000026–BE000033).
 €1 of every board sale is forwarded to the upstream firmware project.
 
 ## Learn more
@@ -182,7 +184,8 @@ https://github.com/incutec-hw. Boards are OSHWA-certified (BE000026–BE000033).
 - [Product roadmap](${origin}/roadmap)
 - [Where the boards are made](${origin}/production)
 - [Wholesale / dealer inquiries](${origin}/wholesale)
-- [The company, Incutec BV](${origin}/incutec)
+- [The company behind the shop, Incutec BV](${origin}/incutec)
+- [How to contribute](${origin}/contribute)
 - [All products](${origin}/collections/all)
 - [Newsletter / release notes](${origin}/newsletter)
 

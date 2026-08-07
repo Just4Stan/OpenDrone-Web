@@ -30,37 +30,43 @@ type RoadmapItem = {
  * repo, a product page on this site, or nothing. Nothing aspirational,
  * no dates, no unannounced SKUs. 'exploring' entries are designs that
  * have been named publicly but have no public files yet.
- * Verified against github.com/incutec-hw on 2026-07-06.
+ * Verified against github.com/incutec-hw on 2026-08-08.
  */
 const ROADMAP: RoadmapItem[] = [
   {
-    item: 'OpenFC Lite · 20×20 + 30×30',
+    item: 'OpenFC Lite · 30×30',
     status: 'in-revision',
-    note: 'Betaflight flight controller, RP2354. Rev 2 design is on main; production bring-up in progress.',
+    note: 'Betaflight flight controller, RP2354, 30.5×30.5 mounting. Rev 2 bench-validated; first production batch in preparation.',
     link: 'https://github.com/incutec-hw/OpenFC-Lite',
+  },
+  {
+    item: 'OpenFC Lite Mini · 20×20',
+    status: 'in-revision',
+    note: 'The 20×20 version of the same RP2354 flight controller. Bench-validated; first production batch in preparation.',
+    link: 'https://github.com/incutec-hw/OpenFC-Lite-Mini',
   },
   {
     item: 'OpenESC · 20×20',
     status: 'in-revision',
-    note: '4-in-1 AM32 ESC, 30 A/channel preliminary: bench characterization pending.',
-    link: 'https://github.com/incutec-hw/OpenESC_20X20',
+    note: '4-in-1 AM32 ESC, 30 A/channel. Bench validation passed; characterization data to be published.',
+    link: 'https://github.com/incutec-hw/OpenESC-20x20',
   },
   {
     item: 'OpenESC · 30×30',
     status: 'in-revision',
-    note: '4-in-1 AM32 ESC, 50 A/channel preliminary: bench characterization pending.',
+    note: '4-in-1 AM32 ESC, 50 A/channel. Bench validation passed; characterization data to be published.',
     link: 'https://github.com/incutec-hw/OpenESC-30x30',
   },
   {
     item: 'OpenRX · Lite / Lite-UFL / Mono / Gemini',
     status: 'in-revision',
-    note: 'ExpressLRS receiver family: SX1281 2.4 GHz and single/dual LR1121 multi-band.',
+    note: 'ExpressLRS receiver family: SX1281 2.4 GHz and single/dual LR1121 multi-band. All four variants bench-validated.',
     link: 'https://github.com/incutec-hw/OpenRX',
   },
   {
     item: 'OpenFrame · 5" + 3"',
     status: 'in-revision',
-    note: 'CNC carbon freestyle frames. CAD lives in OnShape; public link pending.',
+    note: 'CNC carbon freestyle frames. First sample sets ordered; CAD lives in Onshape, public link pending.',
   },
   {
     item: 'OpenVTX',
@@ -77,12 +83,14 @@ const ROADMAP: RoadmapItem[] = [
   {
     item: 'OpenAIO + OpenAIO-Whoop',
     status: 'exploring',
-    note: 'All-in-one boards. Designs not public yet.',
+    note: 'All-in-one boards. Early designs are public; no prototype ordered yet.',
+    link: 'https://github.com/incutec-hw/OpenAIO',
   },
   {
     item: 'Charger',
     status: 'exploring',
-    note: 'LiPo charger. Design not public yet.',
+    note: 'LiPo charger. Early design is public; no prototype ordered yet.',
+    link: 'https://github.com/incutec-hw/Charger',
   },
   {
     item: 'Motors',
@@ -107,7 +115,8 @@ const STATUS_META: Record<RoadmapStatus, {label: string; blurb: string}> = {
   },
   exploring: {
     label: 'Exploring',
-    blurb: 'Publicly named, nothing published. May change or die quietly.',
+    blurb:
+      'Early ideas, some with public files, none with hardware ordered. May change or die quietly.',
   },
 };
 
@@ -128,14 +137,18 @@ export default function RoadmapRoute() {
     <div className="editorial-page">
       <header className="editorial-hero">
         <p className="editorial-eyebrow">Roadmap · public</p>
-        {/* TODO(copy-stan): placeholder hero copy — rewrite in your voice. */}
         <h1 className="editorial-title">
           What we&apos;re building, <em>in the open.</em>
         </h1>
         <p className="editorial-lead">
           Same rule as the hardware: if it&apos;s not public, it&apos;s not on
           this page. Every line below is backed by a public repo, a product
-          page, or it says so. No dates: we&apos;d only be guessing.
+          page, or it says so. No dates: we&apos;d only be guessing. And
+          because OpenDrone is a community project, this list is not closed:{' '}
+          <Link prefetch="viewport" to="/contribute">
+            anyone can propose a board
+          </Link>
+          , including one that competes with what is already here.
         </p>
       </header>
 
@@ -145,7 +158,6 @@ export default function RoadmapRoute() {
             {String(gi + 1).padStart(2, '0')} ·{' '}
             {STATUS_META[group.status].label}
           </h2>
-          {/* TODO(copy-stan): placeholder status blurbs (STATUS_META). */}
           <p>{STATUS_META[group.status].blurb}</p>
           <ul className="roadmap-list">
             {group.items.map((r) => (

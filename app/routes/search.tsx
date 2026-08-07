@@ -52,7 +52,7 @@ export default function SearchPage() {
         <p className="page-eyebrow">Search</p>
         <h1 className="page-title">Search the catalog</h1>
         <p className="page-description">
-          Find products, technical pages, and journal entries across the
+          Find products, technical pages, and build notes across the
           OpenDrone storefront.
         </p>
       </header>

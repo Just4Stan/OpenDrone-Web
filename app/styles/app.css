@@ -9868,8 +9868,8 @@ button.reset {
 }
 
 .editorial-title em {
-  font-style: italic;
-  color: var(--color-gold);
+  font-style: normal;
+  color: inherit;
 }
 
 .editorial-lead {

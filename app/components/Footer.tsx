@@ -2,7 +2,7 @@ import {Suspense} from 'react';
 import {Await} from 'react-router';
 import {NavLink} from '~/components/nav';
 import type {HeaderQuery} from 'storefrontapi.generated';
-import type {CompanyIdentity} from '~/lib/company';
+import {DISCORD_INVITE_URL, type CompanyIdentity} from '~/lib/company';
 import type {NewsletterAccount} from '~/components/PageLayout';
 import {CompanyFooterBlock} from '~/components/CompanyFooterBlock';
 import {NewsletterSignup} from '~/components/NewsletterSignup';
@@ -22,9 +22,10 @@ const SHOP_LINKS: Array<{to: string; label: string}> = [
 ];
 
 const OPEN_SOURCE_LINKS: Array<{href: string; label: string}> = [
+  {href: DISCORD_INVITE_URL, label: 'Discord'},
   {href: 'https://github.com/incutec-hw', label: 'GitHub'},
-  {href: 'https://github.com/incutec-hw/OpenFC', label: 'OpenFC'},
-  {href: 'https://github.com/incutec-hw/OpenESC_20X20', label: 'OpenESC'},
+  {href: 'https://github.com/incutec-hw/OpenFC-Lite', label: 'OpenFC'},
+  {href: 'https://github.com/incutec-hw/OpenESC-20x20', label: 'OpenESC'},
 ];
 
 const COMPANY_LINKS: Array<{to: string; label: string}> = [
@@ -125,7 +126,7 @@ export function Footer({
               OpenDrone
             </h3>
             <p className="text-[12px] text-[var(--color-text-muted)] mb-3 leading-relaxed">
-              OpenDrone is a product brand of
+              OpenDrone is a community project. This shop is run by
             </p>
             <CompanyFooterBlock company={company} />
           </div>
