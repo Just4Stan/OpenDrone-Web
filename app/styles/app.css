@@ -5673,6 +5673,13 @@ button.reset {
   .chapter[data-wide-media] {
     row-gap: var(--sp-8);
   }
+  /* This head is a two-sentence line that belongs on one line. Its column is
+     the full chapter width here, and the sentence needs ~1070px, so only the
+     shared 24ch cap was breaking it. Below this breakpoint, or on a narrow
+     window, it wraps as normal. */
+  .chapter[data-wide-media] .chapter-title {
+    max-width: none;
+  }
   .chapter[data-wide-media] .open-source-card,
   .chapter[data-wide-media] .latest-commit-card {
     border-top: 2px solid transparent;
