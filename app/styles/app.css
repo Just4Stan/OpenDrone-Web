@@ -7404,6 +7404,70 @@ button.reset {
 }
 
 /* Downloads grid — schematic / STEP / BOM / manual chapter. */
+/* Contributor grid: gold-ruled tiles in the downloads-card idiom.
+   Avatars stay square with a hairline border — technical file, not
+   social feed. The "+ you" tile is the standing invitation. */
+.contributor-grid {
+  list-style: none;
+  margin: var(--sp-4) 0 0;
+  padding: 0;
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+}
+.contributor-tile {
+  display: grid;
+  grid-template-columns: 60px 1fr;
+  grid-template-rows: auto auto;
+  column-gap: 0.75rem;
+  align-items: center;
+  padding: var(--sp-3) 0 0;
+  border-top: 2px solid color-mix(in srgb, var(--color-gold) 45%, var(--color-border));
+  color: var(--color-text);
+  text-decoration: none;
+  transition: border-color 0.2s ease;
+}
+.contributor-tile:hover {
+  border-top-color: var(--color-gold);
+}
+.contributor-avatar {
+  grid-row: 1 / span 2;
+  width: 60px;
+  height: 60px;
+  border-radius: var(--r-sm);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  object-fit: cover;
+}
+.contributor-avatar--you {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-mono);
+  font-size: 1.6rem;
+  color: var(--color-gold);
+  border-style: dashed;
+}
+.contributor-login {
+  align-self: end;
+  font-family: var(--font-mono);
+  font-weight: 600;
+  font-size: var(--fs-sm);
+  overflow-wrap: anywhere;
+}
+.contributor-count {
+  align-self: start;
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  color: var(--color-text-dim);
+}
+.contributor-tile.is-skeleton {
+  pointer-events: none;
+}
+.contributor-tile.is-skeleton .contributor-avatar {
+  background: var(--color-border);
+}
+
 .downloads-grid {
   display: grid;
   gap: 0.75rem;

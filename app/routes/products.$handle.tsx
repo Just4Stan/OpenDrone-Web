@@ -37,7 +37,8 @@ import {AnimatedNumber} from '~/components/AnimatedNumber';
 import {WatchCard} from '~/components/WatchCard';
 import {redirectIfHandleIsLocalized} from '~/lib/redirect';
 import {buildSeoMeta, buildProductJsonLd, SITE_ORIGIN} from '~/lib/seo';
-import {fetchLatestCommits} from '~/lib/github';
+import {fetchContributors, fetchLatestCommits} from '~/lib/github';
+import {ContributorGrid, ContributorGridSkeleton} from '~/components/Contributors';
 import {
   fetchProductReviews,
   parseReviewAggregate,
@@ -182,6 +183,7 @@ function loadDeferredData({context, params}: Route.LoaderArgs) {
     return {
       recommendations: Promise.resolve(null),
       latestCommits: Promise.resolve([]),
+      contributors: Promise.resolve([]),
       reviews: Promise.resolve(null),
     };
   }
@@ -206,6 +208,27 @@ function loadDeferredData({context, params}: Route.LoaderArgs) {
     }
   }
   const latestCommits = fetchLatestCommits(repoUrls).catch(() => []);
+
+  // Contributor grid: every repo in the line (tier repos included) so the
+  // section credits people whichever mount they worked on. Same
+  // unauthenticated GitHub budget as the commit fetch; edge-cached 1 h in
+  // fetchContributors, and the chapter renders its invitation state when
+  // the list comes back empty.
+  const contributorRepoUrls: string[] = [];
+  if (content) {
+    if (content.bundle) {
+      for (const c of content.bundle.components) {
+        const sub = PRODUCT_CONTENT[c.handle];
+        if (sub?.repoUrl) contributorRepoUrls.push(sub.repoUrl);
+      }
+    } else {
+      if (content.repoUrl) contributorRepoUrls.push(content.repoUrl);
+      for (const v of Object.values(content.variants ?? {})) {
+        if (v.repoUrl) contributorRepoUrls.push(v.repoUrl);
+      }
+    }
+  }
+  const contributors = fetchContributors(contributorRepoUrls).catch(() => []);
 
   // Shopify's productRecommendations returns [] for new stores with no
   // purchase history. Fall back to "other products from the catalog" so
@@ -236,7 +259,7 @@ function loadDeferredData({context, params}: Route.LoaderArgs) {
   // metafield aggregate (or, with no aggregate, renders nothing at all).
   const reviews = fetchProductReviews(context.env, handle);
 
-  return {recommendations, latestCommits, reviews};
+  return {recommendations, latestCommits, contributors, reviews};
 }
 
 const DOWNLOAD_ICONS: Record<DownloadKind, string> = {
@@ -324,6 +347,7 @@ type ChapterNumbers = {
   specs?: string;
   downloads?: string;
   community?: string;
+  contributors?: string;
   reviews?: string;
 };
 
@@ -365,6 +389,12 @@ function computeChapterNumbers(
   }
   if (content.communityChanges && content.communityChanges.length > 0) {
     out.community = pad(n++);
+  }
+  // Contributor grid: every editorial product has a public repo, so the
+  // chapter always exists for them — the grid degrades to the "+ you"
+  // invitation when the GitHub API is rate-limited.
+  if (includeOpenSource) {
+    out.contributors = pad(n++);
   }
   // Reviews render only when the feature is enabled AND the synced
   // metafields carry at least one rating — the caller resolves that.
@@ -591,6 +621,7 @@ export default function Product() {
     stackProducts,
     recommendations,
     latestCommits,
+    contributors,
     reviews,
     reviewsEnabled: reviewsOn,
   } = useLoaderData<typeof loader>();
@@ -2391,6 +2422,47 @@ export default function Product() {
               </li>
             ))}
           </ul>
+        </Chapter>
+      ) : null}
+
+      {/* === Chapter: Contributors — GitHub accounts with commits on the
+             product's repos, streamed in deferred. The grid always closes
+             with a "+ you" tile pointing at the issues page; when GitHub
+             rate-limits the fetch the chapter still renders with just that
+             invitation. === */}
+      {isEditorial && chapterNums.contributors ? (
+        <Chapter
+          number={chapterNums.contributors}
+          label="Contributors"
+          title={
+            <>
+              Built in the open, <em>by whoever shows up.</em>
+            </>
+          }
+          noMedia
+        >
+          <p className="chapter-body">
+            Every commit on this design is public. These are the GitHub
+            accounts behind {title}; the next tile is reserved.
+          </p>
+          <Suspense fallback={<ContributorGridSkeleton />}>
+            <Await
+              resolve={contributors}
+              errorElement={
+                <ContributorGrid
+                  contributors={[]}
+                  issuesUrl={`${activeRepoUrl}/issues`}
+                />
+              }
+            >
+              {(list) => (
+                <ContributorGrid
+                  contributors={list ?? []}
+                  issuesUrl={`${activeRepoUrl}/issues`}
+                />
+              )}
+            </Await>
+          </Suspense>
         </Chapter>
       ) : null}
 

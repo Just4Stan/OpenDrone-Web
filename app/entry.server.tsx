@@ -87,6 +87,8 @@ export default async function handleRequest(
       'https://media.discordapp.net',
       // YouTube thumbnail shown in the WatchCard build-video bubble.
       'https://i.ytimg.com',
+      // Contributor avatars in the PDP contributors chapter.
+      'https://avatars.githubusercontent.com',
     ],
     mediaSrc: [
       "'self'",
