@@ -313,6 +313,7 @@
         "plus": "videoModule"
       },
       "fade": 0.99,
+      "partSize": 1.05,
       "choreo": "frame-teardown",
       "stops": [
         {

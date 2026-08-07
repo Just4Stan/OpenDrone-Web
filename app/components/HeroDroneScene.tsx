@@ -689,6 +689,10 @@ export function HeroDroneScene({
         note: string;
         faceOn?: boolean;
         fade?: number;
+        /** Per-beat override of sequence.partSize: how much of the viewport
+         *  height the part fills under the spotlight. >0.9 deliberately
+         *  crops (the airframe reads better close, top plate off screen). */
+        partSize?: number;
         stops?: Array<{at: number; title: string; note: string}>;
         choreo?: string;
         nodes: Node[];
@@ -748,6 +752,7 @@ export function HeroDroneScene({
           title: b.title,
           note: b.note,
           fade: b.fade,
+          partSize: b.partSize,
           stops: b.stops,
           choreo: b.choreo,
           faceOn: !!b.select?.board,
@@ -879,7 +884,7 @@ export function HeroDroneScene({
         if (b.faceOn) anchor.addScaledVector(camera.up, dist * (S.boardTilt ?? 0));
         const halfH = Math.tan(THREE.MathUtils.degToRad(camera.fov) / 2) * dist;
         const wantScale =
-          THREE.MathUtils.clamp((halfH * Q.partSize) / (b.radius as number), 0.2, 80) / pivot.scale.x;
+          THREE.MathUtils.clamp((halfH * (b.partSize ?? Q.partSize)) / (b.radius as number), 0.2, 80) / pivot.scale.x;
         const spin = new THREE.Quaternion().setFromAxisAngle(camera.up, elapsed * Q.inspectSpin);
         const SS = wantScale * pivot.scale.x;
 
