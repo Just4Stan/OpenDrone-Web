@@ -26,6 +26,7 @@ import {useIsMobile} from '~/lib/use-media-query';
 import {useLayerSwipe} from '~/lib/use-layer-swipe';
 import {
   SWAP_TIMING,
+  layerSweepDelays,
   swapInDelayS,
   swapSettleBackstopMs,
 } from '~/lib/board-swap-timing';
@@ -891,14 +892,9 @@ export function BoardArt({
   // Each step retriggers the sheets' 0.6s transform transition, so the steps
   // overlap into one continuous sweep rather than eight discrete hops.
   //
-  // The sweep is eased, not linear. Per-step budget sets the total (steps ×
-  // this), and the easing only redistributes that time across the steps, so
-  // the whole traverse still scales with distance: a full 8-layer board sweeps
-  // in ~530ms, a three-layer hop in ~230ms.
-  const LAYER_SWEEP_PER_STEP_MS = 76;
-  // Ease-out exponent. 3 (cubic) is a hard launch and a long settle; 2 is
-  // gentler. Raising it makes the first layers pass faster still.
-  const LAYER_SWEEP_EASE = 3;
+  // The sweep is eased, not linear, and the curve lives in board-swap-timing.ts
+  // (`layerSweepDelays`) so it is unit-testable without a browser: this file can
+  // only be exercised through rAF, which a backgrounded tab suspends.
   const travelRef = useRef<number | null>(null);
   const cancelTravel = useCallback(() => {
     if (travelRef.current != null) {
@@ -922,33 +918,21 @@ export function BoardArt({
       return;
     }
     const dir = target > from ? 1 : -1;
-    const steps = Math.abs(target - from);
-    const total = steps * LAYER_SWEEP_PER_STEP_MS;
-    // When step k lands, as the INVERSE of an ease-out. Position over time is
-    // eased, so solving it for time gives the step delays: the first few layers
-    // go by in a few frames and the last one takes roughly half the sweep. A
-    // flat interval read as a mechanical flick-through; this reads as the stack
-    // being thrown open and settling.
-    const landAt = (k: number) =>
-      total * (1 - Math.pow(1 - k / steps, 1 / LAYER_SWEEP_EASE));
+    const delays = layerSweepDelays(Math.abs(target - from));
     let done = 0;
-    let prevAt = 0;
     const schedule = () => {
-      const at = landAt(done + 1);
-      const delay = Math.max(0, at - prevAt);
-      prevAt = at;
       travelRef.current = window.setTimeout(() => {
         done += 1;
         // Writing the ref here as well as in render keeps the walk correct even
         // though the next render has not happened yet when the timer re-arms.
         activeRef.current += dir;
         setActive(activeRef.current);
-        if (done >= steps) {
+        if (done >= delays.length) {
           travelRef.current = null;
           return;
         }
         schedule();
-      }, delay);
+      }, delays[done]);
     };
     schedule();
   }, [cancelTravel]);
