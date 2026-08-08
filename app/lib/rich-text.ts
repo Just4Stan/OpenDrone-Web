@@ -4,7 +4,7 @@
  * Most body copy on this site contains a link or an emphasised word. Splitting
  * those paragraphs into three editable fragments so the markup can live in JSX
  * would be the worst of both worlds: the studio would show meaningless
- * half-sentences, and Stan could not rewrite a sentence that happens to contain
+ * half-sentences, and the editor could not rewrite a sentence that happens to contain
  * a link without an agent rebuilding the JSX.
  *
  * So the markup goes in the string:

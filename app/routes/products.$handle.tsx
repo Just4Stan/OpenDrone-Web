@@ -2259,7 +2259,7 @@ export default function Product() {
       );
     },
     /**
-     * The generic type. Everything it says comes from the copy store, so Stan
+     * The generic type. Everything it says comes from the copy store, so the maintainer
      * can add as many as he likes without a code change.
      */
     prose: (n, title, id) => {

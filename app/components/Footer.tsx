@@ -21,7 +21,7 @@ interface FooterProps {
  * The link lists are structure: which link exists, in what order, and where it
  * points. Only the visible label is data — `copy` names its key in
  * `content/copy/chrome.json`, so the same label can be shared with the header
- * (Newsletter, Contact, All Products, GitHub) and Stan edits it once.
+ * (Newsletter, Contact, All Products, GitHub) and the maintainer edits it once.
  */
 const SHOP_LINKS: Array<{to: string; copy: string}> = [
   {to: '/collections/all', copy: 'nav_all_products'},

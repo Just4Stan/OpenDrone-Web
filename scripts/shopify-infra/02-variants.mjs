@@ -20,7 +20,7 @@
  *                                                    until then it previews and
  *                                                    cart uses the default)
  *
- * Prices/SKUs are placeholders for Stan to replace. Idempotent: skips option
+ * Prices/SKUs are placeholders for the maintainer to replace. Idempotent: skips option
  * creation if the option already exists, and always re-applies price/sku/stock.
  */
 import {admin} from './_client.mjs';

@@ -1,7 +1,7 @@
 ---
 type: compliance
 status: draft
-owner: stan
+owner: incutec
 last_updated: 2026-04-28
 tags: [policy, end-use, export-control]
 ---
@@ -71,4 +71,4 @@ This policy:
 ---
 
 **Signed for Incutec BV:**
-Stan Coene, Bestuurder
+De bestuurder

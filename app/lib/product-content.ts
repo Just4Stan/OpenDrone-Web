@@ -353,7 +353,7 @@ export type ProductContent = {
  *   QFN-60, no op-amp in the OSD front end.
  * - Specs verified against the OpenFC-Lite / OpenFC-Lite-Mini repos (KiCad
  *   files + Rev3 BOMs, 2026-08-07). IMU: every shipping OpenFC is BMI270
- *   (Stan, 2026-08-08). The LGA-14 footprint also takes the LSM6DSV16X the
+ *   (maintainer, 2026-08-08). The LGA-14 footprint also takes the LSM6DSV16X the
  *   rev2 build used, which is why the KiCad value, and so the teardown
  *   viewer, still reads LSM6DSV16X on the 30x30.
  * - The stack BXGY discounts the added ESC, not this FC and not the pair.

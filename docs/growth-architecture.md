@@ -56,12 +56,12 @@ record; production host only.
 
 Checkout-abandonment counter without Plausible Business: the checkout CTA
 beacons `/api/track/checkout`, which increments the ledger's `chk:<day>`
-counter; buy-rate = `ord:` count / `chk:<day>`. Full model + Stan's
+counter; buy-rate = `ord:` count / `chk:<day>`. Full model + the maintainer's
 Plausible UI goal/funnel checklist: `drafts/analytics-brief.md`.
 
 ## Constraints (decided, do not relitigate in code)
 
-- No pre-orders, no reserve/deposit flows (Stan, 2026-07-06). Notify-at-launch
+- No pre-orders, no reserve/deposit flows (maintainer, 2026-07-06). Notify-at-launch
   signup, then normal sale.
 - Shopify Basic webhook payloads redact customer name/email/address (Level-2
   protected data). Email joins come from our own `sig:` records, never the

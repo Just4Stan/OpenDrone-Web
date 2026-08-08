@@ -12,7 +12,7 @@
  *      "frontpage" collection, which leaked a lone "Home page" card on
  *      /collections) + delete "frontpage".
  *
- * Deliberately NOT touched: prices other than openstack (Stan: current prices
+ * Deliberately NOT touched: prices other than openstack (maintainer: current prices
  * are correct), inventory quantities (stocktake pending), weights (need a
  * scale), store password (orders stay disabled).
  *
@@ -261,7 +261,7 @@ async function main() {
   }
 
   console.log(
-    `\n${DRY ? 'DRY RUN — nothing applied.' : 'Applied.'}\nStill manual (need Stan): weights (scale), real inventory counts (stocktake), accessory images, openframe/openstack renders, primary domain, payments. Orders stay disabled.`,
+    `\n${DRY ? 'DRY RUN — nothing applied.' : 'Applied.'}\nStill manual (need maintainer): weights (scale), real inventory counts (stocktake), accessory images, openframe/openstack renders, primary domain, payments. Orders stay disabled.`,
   );
 }
 

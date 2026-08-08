@@ -3,7 +3,7 @@ title: This site is still being built
 summary: OpenDrone's web shop is under active development. Here's what's live, what's coming, and why we're building it in the open.
 date: 2026-05-22
 tags: [milestone]
-author: Stan
+author: OpenDrone
 published: true
 ---
 

@@ -19,7 +19,7 @@ function msg(over: Partial<SweepMessage> & {id: string}): SweepMessage {
     customer: false,
     held: false,
     createdAtMs: OLD,
-    firstName: 'Stan',
+    firstName: 'Sam',
     content: 'hello',
     ...over,
   };

@@ -17,7 +17,7 @@
 import fs from 'node:fs';
 import {admin, assertNoUserErrors} from './_client.mjs';
 
-const REPOS = '/Users/stan/OpenDrone';
+const REPOS = process.env.OPENDRONE_REPOS ?? `${process.env.HOME}/OpenDrone`;
 
 // handle -> {replace, images:[{file, name, alt, variant}]}
 const PLAN = {

@@ -281,11 +281,11 @@ function bakeNodeTransforms(clone) {
   for (const n of scene.listChildren()) reset(n);
 }
 
-const OUT = '/Users/stan/OpenDrone-Web/public/models';
+const OUT = new URL('../../public/models', import.meta.url).pathname;
 // Source .gltf paths — override on the CLI:
 //   node build.mjs <5inch.gltf> <3inch.gltf>
-const SRC5 = process.argv[2] || '/Users/stan/Downloads/OpenDrone5.gltf';
-const SRC3 = process.argv[3] || '/Users/stan/Downloads/OpenDrone3 (1).gltf';
+const SRC5 = process.argv[2] || `${process.env.HOME}/Downloads/OpenDrone5.gltf`;
+const SRC3 = process.argv[3] || `${process.env.HOME}/Downloads/OpenDrone3 (1).gltf`;
 const {existsSync} = await import('node:fs');
 const centers = {};
 for (const [src, label, key] of [[SRC5, '5in', 'c5'], [SRC3, '3in', 'c3']]) {

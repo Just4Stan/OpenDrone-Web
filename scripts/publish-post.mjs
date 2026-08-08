@@ -31,7 +31,7 @@ const CACHE_PATH = path.join(__dirname, '.post-uploads.json');
 const SITE_ORIGIN = 'https://opendrone.store';
 const POST_PATH = 'newsletter'; // public URL is `${SITE_ORIGIN}/${POST_PATH}/<slug>`
 const DEFAULT_BLOG_HANDLE = 'news';
-const DEFAULT_AUTHOR = 'Stan';
+const DEFAULT_AUTHOR = 'OpenDrone';
 
 // --- args ------------------------------------------------------------------
 

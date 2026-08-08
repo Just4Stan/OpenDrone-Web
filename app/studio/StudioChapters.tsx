@@ -25,7 +25,7 @@ import {
 
 const FILE = 'chapters.json';
 
-/** Human labels. The type name is an implementation detail Stan should not read. */
+/** Human labels. The type name is an implementation detail the editor should not read. */
 const LABELS: Record<ChapterType, string> = {
   openSource: 'Open for learning',
   teardown: 'Teardown',

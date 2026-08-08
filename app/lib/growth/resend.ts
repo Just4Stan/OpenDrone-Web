@@ -333,7 +333,7 @@ export async function sendWelcome(
 }
 
 // --- welcome template -------------------------------------------------------
-// TODO(copy-stan): all subscriber-facing copy below is a factual draft —
+// TODO(copy): all subscriber-facing copy below is a factual draft —
 // rewrite in your own voice.
 
 // Display titles for the launch-list line. The signup form posts the Shopify

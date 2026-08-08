@@ -183,7 +183,7 @@ html.light {
   --color-text: #1a1a1e;
   --color-text-muted: #57575c;
   --color-text-dim: #86868c;
-  /* Light-mode gold (Stan 2026-07-12): gold text sits DIRECTLY on the
+  /* Light-mode gold (maintainer 2026-07-12): gold text sits DIRECTLY on the
      light background now — the old "gold is always on a black chip" rule
      is gone (it scattered near-black boxes across light pages and read as
      broken). A true gold can't reach AA on white without turning brown,
@@ -236,7 +236,7 @@ html.light .schematic-sheet {
   filter: contrast(1.15);
 }
 
-/* ── Gold tags — REMOVED (Stan 2026-07-12) ──────────────────────────────
+/* ── Gold tags — REMOVED (maintainer 2026-07-12) ──────────────────────────────
    The old "gold text is always on a near-black chip" rule lived here: in
    light mode every gold label/eyebrow/badge got a --color-tag-bg chip so
    gold never touched white. It scattered black boxes across light pages
@@ -4367,7 +4367,7 @@ button.reset {
 /* The buy column scrolls with the page like any other content. It used
    to be sticky with a hidden inner scrollbar (max-height + overflow-y),
    which made the wheel scroll an invisible inner container before the
-   page moved: Stan flagged that as unacceptable (2026-07-17). The pinned
+   page moved: flagged as unacceptable (maintainer, 2026-07-17). The pinned
    compact rail already keeps add-to-cart reachable once the column
    scrolls away, so stickiness bought nothing. align-self: start stays so
    the column doesn't stretch to the gallery's height. */
@@ -5151,7 +5151,7 @@ button.reset {
   display: grid;
   /* Always two columns: a 4-tier line reads as a stable 2×2 at any column
      width (auto-fit produced 3+1 orphan rows on some widths and oversized
-     cards on wide monitors, "make these smaller" — Stan, 2026-07-17). */
+     cards on wide monitors, "make these smaller", maintainer, 2026-07-17). */
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: var(--sp-2);
 }
