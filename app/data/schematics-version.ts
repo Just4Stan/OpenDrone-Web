@@ -2,4 +2,4 @@
 // Content hash of every exported schematic SVG + manifest. The viewer
 // appends it as ?v= to bust Oxygen's 1-year immutable asset cache when
 // schematics are regenerated in place.
-export const SCHEMATICS_VERSION = '560effdc7213';
+export const SCHEMATICS_VERSION = 'c6882c39381f';
