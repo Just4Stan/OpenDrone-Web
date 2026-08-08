@@ -23,6 +23,7 @@ import {StudioTokens} from '~/studio/StudioTokens';
 import {StudioChapters} from '~/studio/StudioChapters';
 import {StudioHero} from '~/studio/StudioHero';
 import {StudioMedia} from '~/studio/StudioMedia';
+import {flattenLeaves, leafLabel, setLeaf} from '~/studio/leaves';
 import {PRODUCT_CONTENT} from '~/lib/product-content';
 
 export const meta: MetaFunction = () => [
@@ -37,9 +38,6 @@ type Tab = 'words' | 'chapters' | 'design' | 'media' | 'hero';
 
 /** Handles that have editorial content, so a chapter list means something. */
 const PRODUCT_HANDLES = Object.keys(PRODUCT_CONTENT).sort();
-
-/** Reserved keys carry configuration, not copy. They are not editable text. */
-const isMeta = (k: string) => k.startsWith('$');
 
 async function api<T>(path: string, body?: unknown): Promise<T> {
   const res = await fetch(`/__studio${path}`, {
@@ -63,32 +61,48 @@ export default function Studio() {
   const [route, setRoute] = useState('/');
   const frame = useRef<HTMLIFrameElement>(null);
 
-  // Load the list of copy files once. `content/copy/*.json` is the whole
-  // editable surface, so the file list IS the page list.
+  /**
+   * Everything editable, in two groups.
+   *
+   * `content/copy/*.json` is one file per page. `content/products/*.json` is
+   * one file per product, holding the editorial content the product route
+   * renders. They live in different directories because they are read by
+   * different modules, but from the editor's point of view they are the same
+   * thing: a named bag of strings attached to a URL, so they share this tab.
+   *
+   * `page` is the repo-relative path without the extension, e.g. `copy/home`
+   * or `products/openfc-lite`, so the two groups cannot collide on a name.
+   */
   useEffect(() => {
     api<{files: string[]}>('/list')
       .then((r) => {
-        const copyFiles = r.files
-          .filter((f) => f.startsWith('copy/'))
-          .map((f) => f.slice('copy/'.length, -'.json'.length));
-        setFiles(copyFiles);
-        if (copyFiles.length && !page) setPage(copyFiles[0]);
+        const editable = r.files
+          .filter((f) => f.startsWith('copy/') || f.startsWith('products/'))
+          // The fallback record is not a page and has no URL to preview.
+          .filter((f) => !f.endsWith('/_fallback.json'))
+          .map((f) => f.slice(0, -'.json'.length));
+        setFiles(editable);
+        if (editable.length && !page) setPage(editable[0]);
       })
       .catch((e: unknown) => setStatus(`Could not list content: ${(e as Error).message}`));
     // Run once on mount; `page` is seeded here and owned by the user after.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Read the selected page's file. Read from disk rather than the bundled copy
-  // module so the studio always shows what is actually saved, even if HMR has
-  // not caught up.
+  // Read from disk rather than from the bundled module so the studio always
+  // shows what is actually saved, even if HMR has not caught up.
   const loadPage = useCallback((name: string) => {
-    api<{data: CopyFile}>('/read', {file: `copy/${name}.json`})
+    api<{data: CopyFile}>('/read', {file: `${name}.json`})
       .then((r) => {
         setData(r.data);
         setDirty({});
-        const r2 = r.data.$route;
-        if (typeof r2 === 'string') setRoute(r2);
+        const declared = r.data.$route;
+        if (typeof declared === 'string') setRoute(declared);
+        // A product file carries no `$route`: its URL is derived from the
+        // handle, so the preview can still follow the selection.
+        else if (name.startsWith('products/')) {
+          setRoute(`/products/${name.slice('products/'.length)}`);
+        }
       })
       .catch((e: unknown) => setStatus(`Could not read ${name}: ${(e as Error).message}`));
   }, []);
@@ -135,13 +149,17 @@ export default function Studio() {
           ev.stopPropagation();
           const id = el.getAttribute('data-edit');
           if (!id) return;
-          // `data-edit` is `<page>.<key>`; the studio edits one file at a time,
-          // so selecting a node on another page switches the file too.
+          // `data-edit` is `<page>.<key>`, where `<page>` is the copy file's
+          // basename. `page` here is the repo-relative path (`copy/home`), since
+          // products live in a second directory, so the two are matched by
+          // suffix rather than compared directly. Getting this wrong silently
+          // selected a file that does not exist and blanked the inspector.
           const dot = id.indexOf('.');
-          const p = id.slice(0, dot);
-          const k = id.slice(dot + 1);
-          if (p !== page) setPage(p);
-          setSelected(k);
+          const name = id.slice(0, dot);
+          const key = id.slice(dot + 1);
+          const target = files.find((f) => f === name || f.endsWith(`/${name}`));
+          if (target && target !== page) setPage(target);
+          setSelected(key);
         });
       });
       setStatus(
@@ -152,18 +170,27 @@ export default function Studio() {
     } catch (e) {
       setStatus(`Preview not reachable: ${(e as Error).message}`);
     }
-  }, [page]);
+  }, [page, files]);
 
-  const editableKeys = useMemo(
-    () => Object.keys(data).filter((k) => !isMeta(k)).sort(),
-    [data],
+  /**
+   * Every editable string in the file, addressed by path.
+   *
+   * Page copy is mostly flat, but product content is not: a spec is a pair
+   * inside an array, an in-the-box row is an object, variants nest a whole
+   * record per option. Walking to the leaves means one editor handles every
+   * shape, instead of a bespoke panel per field that goes stale the day
+   * someone adds one.
+   */
+  const leaves = useMemo(() => flattenLeaves(data), [data]);
+  const editableKeys = useMemo(() => leaves.map((l) => l.path), [leaves]);
+  const leafDepth = useMemo(
+    () => Object.fromEntries(leaves.map((l) => [l.path, l.depth])),
+    [leaves],
   );
 
   const valueOf = (key: string): string => {
     if (key in dirty) return dirty[key];
-    const v = data[key];
-    if (Array.isArray(v)) return v.join('\n\n');
-    return typeof v === 'string' ? v : '';
+    return leaves.find((l) => l.path === key)?.value ?? '';
   };
 
   const isDirty = Object.keys(dirty).length > 0;
@@ -174,12 +201,14 @@ export default function Studio() {
     // Rebuild the record rather than mutating: an array-valued key stays an
     // array (paragraph runs), a string stays a string. Splitting on a blank
     // line is the inverse of the join above.
-    const next: CopyFile = {...data};
-    for (const [k, text] of Object.entries(dirty)) {
-      next[k] = Array.isArray(data[k]) ? text.split(/\n{2,}/) : text;
+    // Write each edited leaf back in place. `setLeaf` can only replace a string
+    // that already exists, so a save can never add or remove structure.
+    let next = data;
+    for (const [path, text] of Object.entries(dirty)) {
+      next = setLeaf(next, path, text);
     }
     try {
-      await api('/write', {file: `copy/${page}.json`, data: next});
+      await api('/write', {file: `${page}.json`, data: next});
       setData(next);
       setDirty({});
       setStatus('Saved. The preview reloads on its own.');
@@ -288,22 +317,48 @@ export default function Studio() {
               </p>
             ) : (
               <ul className="studio-pages">
-                {files.map((f) => (
-                  <li key={f}>
-                    <button
-                      type="button"
-                      className={f === page ? 'is-on' : undefined}
-                      onClick={() => {
-                        setPage(f);
-                        setSelected(null);
-                      }}
-                    >
-                      {f}
-                    </button>
-                  </li>
-                ))}
+                {files
+                  .filter((f) => f.startsWith('copy/'))
+                  .map((f) => (
+                    <li key={f}>
+                      <button
+                        type="button"
+                        className={f === page ? 'is-on' : undefined}
+                        onClick={() => {
+                          setPage(f);
+                          setSelected(null);
+                        }}
+                      >
+                        {f.slice('copy/'.length)}
+                      </button>
+                    </li>
+                  ))}
               </ul>
             )}
+
+            {files.some((f) => f.startsWith('products/')) ? (
+              <>
+                <h2>Products</h2>
+                <ul className="studio-pages">
+                  {files
+                    .filter((f) => f.startsWith('products/'))
+                    .map((f) => (
+                      <li key={f}>
+                        <button
+                          type="button"
+                          className={f === page ? 'is-on' : undefined}
+                          onClick={() => {
+                            setPage(f);
+                            setSelected(null);
+                          }}
+                        >
+                          {f.slice('products/'.length)}
+                        </button>
+                      </li>
+                    ))}
+                </ul>
+              </>
+            ) : null}
 
             <h2>Strings on this page</h2>
             <ul className="studio-keys">
@@ -311,6 +366,7 @@ export default function Studio() {
                 <li key={k}>
                   <button
                     type="button"
+                    style={{paddingLeft: 8 + Math.max(0, (leafDepth[k] ?? 1) - 1) * 10}}
                     className={[
                       k === selected ? 'is-on' : '',
                       k in dirty ? 'is-dirty' : '',
@@ -319,7 +375,7 @@ export default function Studio() {
                       .join(' ')}
                     onClick={() => setSelected(k)}
                   >
-                    <span className="studio-key">{k}</span>
+                    <span className="studio-key">{leafLabel(k)}</span>
                     <span className="studio-peek">{valueOf(k).slice(0, 60)}</span>
                   </button>
                 </li>
@@ -361,10 +417,7 @@ export default function Studio() {
               <>
                 <h2>{selected}</h2>
                 <p className="studio-hint">
-                  {page}.json
-                  {Array.isArray(data[selected])
-                    ? ' · paragraphs, separated by a blank line'
-                    : null}
+                  content/{page}.json · {selected}
                 </p>
                 <textarea
                   value={valueOf(selected)}

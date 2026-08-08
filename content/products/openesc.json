@@ -1,0 +1,656 @@
+{
+  "fileNumber": "01",
+  "family": "4-in-1 ESC",
+  "hero": {
+    "line1": "An ESC (or 4)",
+    "line2Italic": "",
+    "line3": "",
+    "lead": "6 mosfets per motor, 2 for each phase. Driven by a gate driver, controlled by a microcontroller. Duplicate that 4 times et voila, 'An ESC'."
+  },
+  "firmware": {
+    "project": "AM32",
+    "projectUrl": "https://github.com/am32-firmware/AM32",
+    "logo": "/logos/am32.svg",
+    "logoDark": true
+  },
+  "repoUrl": "https://github.com/OpenDrone-hw/OpenESC-20x20",
+  "video": {
+    "id": "TwAmmPxOpTM",
+    "title": "How Drone ESCs Work (so I built my own)"
+  },
+  "teardown": {
+    "pins": [
+      {
+        "ref": "①",
+        "part": "AT32F421 motor MCU",
+        "cost": "×4",
+        "refs": [
+          "U2",
+          "U6",
+          "U8",
+          "U10"
+        ]
+      },
+      {
+        "ref": "②",
+        "part": "NSG2065Q gate driver",
+        "cost": "×4",
+        "refs": [
+          "U3",
+          "U7",
+          "U9",
+          "U11"
+        ]
+      },
+      {
+        "ref": "③",
+        "part": "DOY180N03 power MOSFET",
+        "cost": "×24",
+        "refs": [
+          "Q1",
+          "Q2",
+          "Q3",
+          "Q4",
+          "Q5",
+          "Q6",
+          "Q7",
+          "Q8",
+          "Q9",
+          "Q10",
+          "Q11",
+          "Q12",
+          "Q13",
+          "Q14",
+          "Q15",
+          "Q16",
+          "Q17",
+          "Q18",
+          "Q19",
+          "Q20",
+          "Q21",
+          "Q22",
+          "Q23",
+          "Q24"
+        ]
+      },
+      {
+        "ref": "④",
+        "part": "INA186A3 current sense",
+        "refs": [
+          "U12"
+        ]
+      },
+      {
+        "ref": "⑤",
+        "part": "0.2 mΩ sense shunt",
+        "refs": [
+          "Rsense1"
+        ]
+      },
+      {
+        "ref": "⑥",
+        "part": "TLV767 3.3 V LDO",
+        "refs": [
+          "U1"
+        ]
+      },
+      {
+        "ref": "⑦",
+        "part": "LMR54406 buck",
+        "refs": [
+          "U13"
+        ]
+      },
+      {
+        "ref": "⑧",
+        "part": "JST-SH FC connector",
+        "refs": [
+          "J1"
+        ]
+      },
+      {
+        "ref": "⑨",
+        "part": "Motor solder pads",
+        "refs": [
+          "U4~ESC1_MotorA_1",
+          "U4~ESC1_MotorA_2",
+          "U4~ESC1_MotorB_1",
+          "U4~ESC1_MotorB_2",
+          "U4~ESC1_MotorC_1",
+          "U4~ESC1_MotorC_2",
+          "U4~ESC2_MotorA_1",
+          "U4~ESC2_MotorA_2",
+          "U4~ESC2_MotorB_1",
+          "U4~ESC2_MotorB_2",
+          "U4~ESC2_MotorC_1",
+          "U4~ESC2_MotorC_2",
+          "U4~ESC3_MotorA_1",
+          "U4~ESC3_MotorA_2",
+          "U4~ESC3_MotorB_1",
+          "U4~ESC3_MotorB_2",
+          "U4~ESC3_MotorC_1",
+          "U4~ESC3_MotorC_2",
+          "U4~ESC4_MotorA_1",
+          "U4~ESC4_MotorA_2",
+          "U4~ESC4_MotorB_1",
+          "U4~ESC4_MotorB_2",
+          "U4~ESC4_MotorC_1",
+          "U4~ESC4_MotorC_2"
+        ],
+        "boxGroups": [
+          [
+            "U4~ESC1_MotorA_1",
+            "U4~ESC1_MotorA_2",
+            "U4~ESC1_MotorB_1",
+            "U4~ESC1_MotorB_2",
+            "U4~ESC1_MotorC_1",
+            "U4~ESC1_MotorC_2"
+          ],
+          [
+            "U4~ESC2_MotorA_1",
+            "U4~ESC2_MotorA_2",
+            "U4~ESC2_MotorB_1",
+            "U4~ESC2_MotorB_2",
+            "U4~ESC2_MotorC_1",
+            "U4~ESC2_MotorC_2"
+          ],
+          [
+            "U4~ESC3_MotorA_1",
+            "U4~ESC3_MotorA_2",
+            "U4~ESC3_MotorB_1",
+            "U4~ESC3_MotorB_2",
+            "U4~ESC3_MotorC_1",
+            "U4~ESC3_MotorC_2"
+          ],
+          [
+            "U4~ESC4_MotorA_1",
+            "U4~ESC4_MotorA_2",
+            "U4~ESC4_MotorB_1",
+            "U4~ESC4_MotorB_2",
+            "U4~ESC4_MotorC_1",
+            "U4~ESC4_MotorC_2"
+          ]
+        ]
+      },
+      {
+        "ref": "⑩",
+        "part": "Battery pads",
+        "refs": [
+          "U4~CSA+",
+          "U4~+BATT",
+          "U4~GND_1"
+        ]
+      },
+      {
+        "ref": "⑪",
+        "part": "Signal pads",
+        "refs": [
+          "U4~CURR",
+          "U4~M1",
+          "U4~M2",
+          "U4~M3",
+          "U4~M4",
+          "U4~GND_2"
+        ]
+      },
+      {
+        "ref": "⑫",
+        "part": "Bulk ceramic capacitor array",
+        "cost": "×20",
+        "box": "union",
+        "refs": [
+          "CL32",
+          "CL33",
+          "CL34",
+          "CL35",
+          "CL36",
+          "CL38",
+          "CL39",
+          "CL40",
+          "CL42",
+          "CL43",
+          "CL44",
+          "CL45",
+          "CL46",
+          "CL47",
+          "CL48",
+          "CL49",
+          "CL50",
+          "CL51",
+          "CL54",
+          "CL55"
+        ]
+      }
+    ],
+    "boardArt": {
+      "src": "/boards/openesc/board.svg",
+      "inspectUrl": "https://kicanvas.org/?github=https://github.com/OpenDrone-hw/OpenESC-20x20/blob/main/hardware/4in1-mini.kicad_pcb",
+      "schematicUrl": "https://kicanvas.org/?github=https://github.com/OpenDrone-hw/OpenESC-20x20/blob/main/hardware/4in1-mini.kicad_sch",
+      "layers": {
+        "f": "Signal + components",
+        "in1": "Ground plane",
+        "in2": "Signal · 10V · 3V3",
+        "in3": "Signal",
+        "in4": "Ground plane",
+        "b": "Signal + components"
+      }
+    }
+  },
+  "inTheBox": [
+    {
+      "qty": "1×",
+      "item": "OpenESC"
+    },
+    {
+      "qty": "2×",
+      "item": "8-pin JST cable"
+    },
+    {
+      "qty": "1×",
+      "item": "XT battery pigtail"
+    },
+    {
+      "qty": "4×",
+      "item": "M3 grommets"
+    },
+    {
+      "qty": "1×",
+      "item": "Low-ESR Electrolytic Capacitor"
+    }
+  ],
+  "downloads": [],
+  "specs": [
+    [
+      "Continuous",
+      "40 A / channel"
+    ],
+    [
+      "Firmware",
+      "AM32"
+    ],
+    [
+      "ESC protocol",
+      "DShot, bidirectional"
+    ],
+    [
+      "Telemetry",
+      "Extended DShot"
+    ],
+    [
+      "Input",
+      "2–6S LiPo"
+    ],
+    [
+      "BEC",
+      "None"
+    ],
+    [
+      "MCU",
+      "One per motor"
+    ],
+    [
+      "MOSFETs",
+      "6 per motor"
+    ],
+    [
+      "Current sense",
+      "On-board"
+    ],
+    [
+      "TVS protection",
+      "None"
+    ],
+    [
+      "FC connector",
+      "JST-SH 8-pin"
+    ],
+    [
+      "Mounting",
+      "20 × 20 mm, Ø3.0 mm holes"
+    ],
+    [
+      "Dimensions",
+      "31.2 × 33.0 mm"
+    ],
+    [
+      "PCB",
+      "6-layer, 1.6 mm, 2 oz copper"
+    ]
+  ],
+  "optionAxis": "Model",
+  "variants": {
+    "20×20": {
+      "oshwaUid": "BE000028",
+      "highlights": [
+        [
+          "Mount",
+          "20×20"
+        ],
+        [
+          "Continuous",
+          "40 A / channel"
+        ],
+        [
+          "Input",
+          "2–6S"
+        ]
+      ],
+      "specs": [
+        [
+          "Continuous",
+          "40 A / channel"
+        ],
+        [
+          "Input",
+          "2–6S LiPo"
+        ],
+        [
+          "Current sense",
+          "On-board, 165 A"
+        ]
+      ]
+    },
+    "30×30": {
+      "oshwaUid": "BE000029",
+      "repoUrl": "https://github.com/OpenDrone-hw/OpenESC-30x30",
+      "highlights": [
+        [
+          "Mount",
+          "30×30"
+        ],
+        [
+          "Continuous",
+          "60 A / channel"
+        ],
+        [
+          "Input",
+          "2–8S"
+        ]
+      ],
+      "specs": [
+        [
+          "Continuous",
+          "60 A / channel"
+        ],
+        [
+          "Input",
+          "2–8S LiPo"
+        ],
+        [
+          "Current sense",
+          "On-board, 330 A"
+        ],
+        [
+          "TVS protection",
+          "On the battery rail"
+        ],
+        [
+          "Mounting",
+          "30.5 × 30.5 mm, Ø4.0 mm holes (M3)"
+        ],
+        [
+          "Dimensions",
+          null
+        ]
+      ],
+      "pins": [
+        {
+          "ref": "①",
+          "part": "AT32F421 motor MCU",
+          "cost": "×4",
+          "refs": [
+            "U2",
+            "U5",
+            "U7",
+            "U9"
+          ]
+        },
+        {
+          "ref": "②",
+          "part": "NSG2065Q gate driver",
+          "cost": "×4",
+          "refs": [
+            "U4",
+            "U6",
+            "U8",
+            "U10"
+          ]
+        },
+        {
+          "ref": "③",
+          "part": "SP40N01 power MOSFET (both sides)",
+          "cost": "×24",
+          "refs": [
+            "Q1",
+            "Q2",
+            "Q3",
+            "Q4",
+            "Q5",
+            "Q6",
+            "Q7",
+            "Q8",
+            "Q9",
+            "Q10",
+            "Q11",
+            "Q12",
+            "Q13",
+            "Q14",
+            "Q15",
+            "Q16",
+            "Q17",
+            "Q18",
+            "Q19",
+            "Q20",
+            "Q21",
+            "Q22",
+            "Q23",
+            "Q24"
+          ]
+        },
+        {
+          "ref": "④",
+          "part": "INA186A3 current sense",
+          "refs": [
+            "U12"
+          ]
+        },
+        {
+          "ref": "⑤",
+          "part": "0.2 mΩ sense shunt",
+          "cost": "×2",
+          "refs": [
+            "Rsense1",
+            "Rsense2"
+          ]
+        },
+        {
+          "ref": "⑥",
+          "part": "TLV767 3.3 V LDO",
+          "refs": [
+            "U15"
+          ]
+        },
+        {
+          "ref": "⑦",
+          "part": "LMR54406 buck",
+          "refs": [
+            "U13"
+          ]
+        },
+        {
+          "ref": "⑧",
+          "part": "JST-SH FC connector",
+          "refs": [
+            "J1"
+          ]
+        },
+        {
+          "ref": "⑨",
+          "part": "Motor solder pads",
+          "refs": [
+            "U3~ESC1_MotorA_1",
+            "U3~ESC1_MotorA_2",
+            "U3~ESC1_MotorB_1",
+            "U3~ESC1_MotorB_2",
+            "U3~ESC1_MotorC_1",
+            "U3~ESC1_MotorC_2",
+            "U3~ESC2_MotorA_1",
+            "U3~ESC2_MotorA_2",
+            "U3~ESC2_MotorB_1",
+            "U3~ESC2_MotorB_2",
+            "U3~ESC2_MotorC_1",
+            "U3~ESC2_MotorC_2",
+            "U3~ESC3_MotorA_1",
+            "U3~ESC3_MotorA_2",
+            "U3~ESC3_MotorB_1",
+            "U3~ESC3_MotorB_2",
+            "U3~ESC3_MotorC_1",
+            "U3~ESC3_MotorC_2",
+            "U3~ESC4_MotorA_1",
+            "U3~ESC4_MotorA_2",
+            "U3~ESC4_MotorB_1",
+            "U3~ESC4_MotorB_2",
+            "U3~ESC4_MotorC_1",
+            "U3~ESC4_MotorC_2"
+          ],
+          "boxGroups": [
+            [
+              "U3~ESC1_MotorA_1",
+              "U3~ESC1_MotorA_2",
+              "U3~ESC1_MotorB_1",
+              "U3~ESC1_MotorB_2",
+              "U3~ESC1_MotorC_1",
+              "U3~ESC1_MotorC_2"
+            ],
+            [
+              "U3~ESC2_MotorA_1",
+              "U3~ESC2_MotorA_2",
+              "U3~ESC2_MotorB_1",
+              "U3~ESC2_MotorB_2",
+              "U3~ESC2_MotorC_1",
+              "U3~ESC2_MotorC_2"
+            ],
+            [
+              "U3~ESC3_MotorA_1",
+              "U3~ESC3_MotorA_2",
+              "U3~ESC3_MotorB_1",
+              "U3~ESC3_MotorB_2",
+              "U3~ESC3_MotorC_1",
+              "U3~ESC3_MotorC_2"
+            ],
+            [
+              "U3~ESC4_MotorA_1",
+              "U3~ESC4_MotorA_2",
+              "U3~ESC4_MotorB_1",
+              "U3~ESC4_MotorB_2",
+              "U3~ESC4_MotorC_1",
+              "U3~ESC4_MotorC_2"
+            ]
+          ]
+        },
+        {
+          "ref": "⑩",
+          "part": "Battery pads",
+          "refs": [
+            "U3~CSA+",
+            "U3~+BATT",
+            "U3~GND_1"
+          ]
+        },
+        {
+          "ref": "⑪",
+          "part": "Signal pads",
+          "refs": [
+            "U3~CURR",
+            "U3~M1",
+            "U3~M2",
+            "U3~M3",
+            "U3~M4",
+            "U3~GND_2"
+          ]
+        },
+        {
+          "ref": "⑫",
+          "part": "Bulk ceramic capacitor array",
+          "cost": "×48",
+          "box": "union",
+          "refs": [
+            "C2",
+            "C3",
+            "C6",
+            "C7",
+            "C8",
+            "C9",
+            "C13",
+            "C14",
+            "C15",
+            "C16",
+            "C17",
+            "C18",
+            "C19",
+            "C20",
+            "C24",
+            "C25",
+            "C26",
+            "C27",
+            "C28",
+            "C29",
+            "C30",
+            "C31",
+            "C43",
+            "C44",
+            "C45",
+            "C69",
+            "C70",
+            "C71",
+            "C72",
+            "C79",
+            "C80",
+            "C82",
+            "C83",
+            "C84",
+            "C85",
+            "C87",
+            "C88",
+            "C95",
+            "C96",
+            "C97",
+            "C98",
+            "C99",
+            "C100",
+            "C101",
+            "C105",
+            "C106",
+            "C107",
+            "C108"
+          ]
+        }
+      ],
+      "boardArt": {
+        "src": "/boards/openesc-30x30/board.svg",
+        "inspectUrl": "https://kicanvas.org/?github=https://github.com/OpenDrone-hw/OpenESC-30x30/blob/main/hardware/4in1.kicad_pcb",
+        "schematicUrl": "https://kicanvas.org/?github=https://github.com/OpenDrone-hw/OpenESC-30x30/blob/main/hardware/4in1.kicad_sch",
+        "layers": {
+          "f": "Signal + components",
+          "in1": "Ground plane",
+          "in2": "Signal · 10V · 3V3",
+          "in3": "Signal",
+          "in4": "Ground plane",
+          "b": "Signal + components"
+        }
+      }
+    }
+  },
+  "stack": {
+    "adds": "flight controller",
+    "partners": [
+      {
+        "handle": "openfc-lite",
+        "label": "OpenFC Lite"
+      }
+    ],
+    "matchOption": "Model",
+    "discountPct": 10,
+    "discountedHandle": "openesc"
+  }
+}
