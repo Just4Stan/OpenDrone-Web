@@ -11,6 +11,8 @@ import {
 import type {Route} from './+types/account.profile';
 import type {HeadersFunction} from 'react-router';
 import {buildSeoMeta} from '~/lib/seo';
+import {Txt} from '~/components/Txt';
+import {copyText} from '~/lib/copy';
 
 // Customer PII rendered into HTML — never let an intermediate cache or
 // bfcache hold this. React Router v7 only honours leaf-route headers on
@@ -27,8 +29,10 @@ export type ActionResponse = {
 
 export const meta: Route.MetaFunction = () =>
   buildSeoMeta({
-    title: 'Profile',
-    description: 'Update your OpenDrone account profile details.',
+    title: copyText('account.profile.meta_title') ?? 'Profile',
+    description:
+      copyText('account.profile.meta_description') ??
+      'Update your OpenDrone account profile details.',
     robots: 'noindex,nofollow',
   });
 
@@ -42,7 +46,10 @@ export async function action({request, context}: Route.ActionArgs) {
   const {customerAccount} = context;
 
   if (request.method !== 'PUT') {
-    return data({error: 'Method not allowed'}, {status: 405});
+    return data(
+      {error: copyText('account.profile.error_method') ?? 'Method not allowed'},
+      {status: 405},
+    );
   }
 
   const form = await request.formData();
@@ -75,7 +82,10 @@ export async function action({request, context}: Route.ActionArgs) {
     }
 
     if (!data?.customerUpdate?.customer) {
-      throw new Error('Customer profile update failed.');
+      throw new Error(
+        copyText('account.profile.error_update') ??
+          'Customer profile update failed.',
+      );
     }
 
     return {
@@ -101,31 +111,39 @@ export default function AccountProfile() {
   return (
     <div className="account-profile">
       <header className="account-section-header">
-        <h2>My profile</h2>
-        <p>Keep your customer details up to date for future orders.</p>
+        <Txt id="account.profile.title" as="h2" />
+        <Txt id="account.profile.lede" as="p" />
       </header>
       <Form className="account-form" method="PUT">
         <fieldset className="account-form-grid">
-          <legend>Personal information</legend>
-          <label htmlFor="firstName">First name</label>
+          <Txt id="account.profile.legend" as="legend" />
+          <Txt
+            id="account.profile.first_name_label"
+            as="label"
+            htmlFor="firstName"
+          />
           <input
             id="firstName"
             name="firstName"
             type="text"
             autoComplete="given-name"
-            placeholder="First name"
-            aria-label="First name"
+            placeholder={copyText('account.profile.first_name_placeholder')}
+            aria-label={copyText('account.profile.first_name_aria')}
             defaultValue={customer.firstName ?? ''}
             minLength={2}
           />
-          <label htmlFor="lastName">Last name</label>
+          <Txt
+            id="account.profile.last_name_label"
+            as="label"
+            htmlFor="lastName"
+          />
           <input
             id="lastName"
             name="lastName"
             type="text"
             autoComplete="family-name"
-            placeholder="Last name"
-            aria-label="Last name"
+            placeholder={copyText('account.profile.last_name_placeholder')}
+            aria-label={copyText('account.profile.last_name_aria')}
             defaultValue={customer.lastName ?? ''}
             minLength={2}
           />
@@ -140,7 +158,13 @@ export default function AccountProfile() {
           <br />
         )}
         <button className="account-button" type="submit" disabled={state !== 'idle'}>
-          {state !== 'idle' ? 'Updating' : 'Update'}
+          <Txt
+            id={
+              state !== 'idle'
+                ? 'account.profile.submit_busy'
+                : 'account.profile.submit'
+            }
+          />
         </button>
       </Form>
     </div>

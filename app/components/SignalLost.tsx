@@ -2,6 +2,8 @@ import {useEffect, useRef, useState} from 'react';
 import {useLocation} from 'react-router';
 import {TriangleAlert} from 'lucide-react';
 import {ScrambleText} from '~/components/ScrambleText';
+import {Txt} from '~/components/Txt';
+import {copyText, editAttrs} from '~/lib/copy';
 
 /**
  * The 404 easter egg. An FPV "lost signal / failsafe" screen — the quad has
@@ -37,6 +39,7 @@ export function SignalLost() {
   }, []);
 
   const bars = [0.2, 0.45, 0.7, 1.0];
+  const status = copyText('not-found.status') ?? '404';
 
   return (
     <div className="signal-lost" role="alert">
@@ -47,7 +50,8 @@ export function SignalLost() {
             BATT <b>0.0</b>V
           </span>
           <span className="osd-rec">
-            <i />REC 00:00
+            <i />
+            <Txt id="not-found.osd_rec" />
           </span>
           <span className="osd-stat osd-rssi">
             RSSI{' '}
@@ -62,23 +66,34 @@ export function SignalLost() {
 
         {/* center stage */}
         <div className="osd-stage">
-          <p className="signal-lost-status" data-glitch="404">
-            404
+          {/* The glitch layers are ::before/::after reading data-glitch, so
+              the status has to be a plain string in two places. */}
+          <p
+            className="signal-lost-status"
+            data-glitch={status}
+            {...editAttrs('not-found.status')}
+          >
+            {status}
           </p>
-          <p className="signal-lost-title">
+          <p className="signal-lost-title" {...editAttrs('not-found.title')}>
             {/* Decode-in on the failsafe banner — corrupted-link flavor for
                 the OSD scene, and the one deliberate scramble easter egg the
                 design brief allows. */}
-            <ScrambleText text="SIGNAL LOST" duration={900} delay={200} />
+            <ScrambleText
+              text={copyText('not-found.title') ?? 'SIGNAL LOST'}
+              duration={900}
+              delay={200}
+            />
           </p>
           <p className="signal-lost-sub">
-            no link to <code>{path}</code>. Failsafe engaged
+            <Txt id="not-found.sub_prefix" /> <code>{path}</code>
+            <Txt id="not-found.sub_suffix" />
           </p>
         </div>
 
         {/* bottom telemetry rail */}
         <div className="osd-rail osd-rail-bottom">
-          <span className="osd-stat">GPS 0 SATS</span>
+          <Txt id="not-found.osd_gps" className="osd-stat" />
           <span className="osd-stat osd-warn">
             <TriangleAlert
               size={12}
@@ -86,18 +101,19 @@ export function SignalLost() {
               aria-hidden="true"
               style={{display: 'inline', verticalAlign: '-1px', marginRight: '0.4em'}}
             />
-            FAILSAFE
+            <Txt id="not-found.osd_failsafe" />
           </span>
-          <span className="osd-stat">ALT 0.0m</span>
+          <Txt id="not-found.osd_alt" className="osd-stat" />
         </div>
       </div>
 
       <div className="signal-lost-actions">
         <a href="/" className="hero-cta-primary">
-          Return to Home <span className="rth-tag">RTH</span>
+          <Txt id="not-found.cta_home" />{' '}
+          <Txt id="not-found.cta_home_tag" className="rth-tag" />
         </a>
         <a href="/collections/all" className="hero-cta-secondary">
-          Shop
+          <Txt id="not-found.cta_shop" />
         </a>
       </div>
     </div>

@@ -3,6 +3,8 @@ import {fetchJsonCached, peekJson, prefetchImage} from '~/lib/asset-prefetch';
 import {SCHEMATICS_VERSION} from '~/data/schematics-version';
 import {useIsMobile} from '~/lib/use-media-query';
 import {useLayerSwipe} from '~/lib/use-layer-swipe';
+import {Txt} from './Txt';
+import {copyText} from '~/lib/copy';
 
 export type SchematicViewerProps = {
   /** Board handle whose schematic lives at /schematics/<handle>/manifest.json */
@@ -259,7 +261,11 @@ export function SchematicViewer({
       {inView && sheets === null ? (
         <div className="schematic-skeleton" aria-hidden="true">
           <span className="board-art-skeleton-spinner" />
-          <span className="board-art-skeleton-label">Loading schematic…</span>
+          <Txt
+            id="product-chrome.schematic_loading"
+            as="span"
+            className="board-art-skeleton-label"
+          />
         </div>
       ) : null}
       {sheets && sheets.length ? (
@@ -271,7 +277,7 @@ export function SchematicViewer({
             <div
               className="schematic-rail"
               role="group"
-              aria-label="Schematic sheet"
+              aria-label={copyText('product-chrome.schematic_sheet_aria')}
               tabIndex={0}
               onKeyDown={(e) => {
                 if (e.key === 'ArrowDown' || e.key === 'ArrowRight') {
@@ -288,7 +294,7 @@ export function SchematicViewer({
               }}
             >
               <span className="schematic-rail-head">
-                Sheet
+                {copyText('product-chrome.schematic_sheet_label')}
                 <span className="schematic-rail-count">
                   {active + 1}/{sheets.length}
                 </span>
@@ -349,7 +355,7 @@ export function SchematicViewer({
                       {['--rel' as string]: i - active} as React.CSSProperties
                     }
                     src={sheetUrl(dh, s.file)}
-                    alt={`${s.label} schematic sheet`}
+                    alt={`${s.label} ${copyText('product-chrome.schematic_sheet_alt_suffix') ?? ''}`}
                     loading="lazy"
                     decoding="async"
                     aria-hidden={i === active ? undefined : true}
@@ -368,7 +374,10 @@ export function SchematicViewer({
               board explorer — a tick per sheet (tap to jump) + which sheet is up
               + a swipe hint. Hidden on desktop, where the rail is shown. */}
           <div className="schematic-deck">
-            <div className="board-deck-dots" aria-label="Schematic sheet">
+            <div
+              className="board-deck-dots"
+              aria-label={copyText('product-chrome.schematic_sheet_aria')}
+            >
               {sheets.map((s, i) => (
                 <button
                   type="button"
@@ -387,7 +396,11 @@ export function SchematicViewer({
                 {active + 1}/{sheets.length}
               </span>
               <span className="board-deck-name">{current?.label}</span>
-              <span className="board-deck-hint">Swipe ←/→</span>
+              <Txt
+                id="product-chrome.swipe_hint"
+                as="span"
+                className="board-deck-hint"
+              />
             </p>
           </div>
           {inspectUrl ? (
@@ -398,7 +411,7 @@ export function SchematicViewer({
                 target="_blank"
                 rel="noopener noreferrer"
               >
-                Open schematic ↗
+                {copyText('product-chrome.schematic_open_cta')}
               </a>
             </div>
           ) : null}

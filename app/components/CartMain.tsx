@@ -8,14 +8,17 @@ import {useAside} from '~/components/Aside';
 import {CartLineItem, type CartLine} from '~/components/CartLineItem';
 import {CartCompanion} from '~/components/CartCompanion';
 import {CartSummary} from './CartSummary';
+import {Txt} from '~/components/Txt';
+import {copyText, editAttrs} from '~/lib/copy';
 
 /** Product families surfaced as chips on the empty-cart screen, so it reads as
- *  an exploration launchpad rather than a dead end. */
-const CART_EMPTY_FAMILIES: Array<{label: string; to: string}> = [
-  {label: 'Flight Controllers', to: '/products/openfc-lite'},
-  {label: 'ESCs', to: '/products/openesc'},
-  {label: 'Receivers', to: '/products/openrx'},
-  {label: 'Frames', to: '/products/openframe'},
+ *  an exploration launchpad rather than a dead end. The destinations are
+ *  structure; the chip words come from content/copy/cart.json. */
+const CART_EMPTY_FAMILIES: Array<{copyId: string; to: string}> = [
+  {copyId: 'cart.empty_family_flight_controllers', to: '/products/openfc-lite'},
+  {copyId: 'cart.empty_family_escs', to: '/products/openesc'},
+  {copyId: 'cart.empty_family_receivers', to: '/products/openrx'},
+  {copyId: 'cart.empty_family_frames', to: '/products/openframe'},
 ];
 
 export type CartLayout = 'page' | 'aside';
@@ -72,22 +75,28 @@ export function CartMain({layout, cart: originalCart}: CartMainProps) {
   return (
     <section
       className={className}
-      aria-label={layout === 'page' ? 'Cart page' : 'Cart drawer'}
+      aria-label={
+        layout === 'page'
+          ? (copyText('cart.aria_page') ?? 'Cart page')
+          : (copyText('cart.aria_drawer') ?? 'Cart drawer')
+      }
     >
       <CartActionNotice />
       <CartEmpty hidden={linesCount} layout={layout} />
       <div className="cart-details">
-        <p id="cart-lines" className="sr-only">
-          Line items
+        {/* Needs a real DOM id for the list's aria-labelledby, and <Txt>'s
+            `id` prop is the copy id — so read the string directly. */}
+        <p id="cart-lines" className="sr-only" {...editAttrs('cart.sr_line_items')}>
+          {copyText('cart.sr_line_items') ?? 'Line items'}
         </p>
         {/* Build-sheet column captions (/cart page only) — the hairline-ruled
             header the sheet rows line up under. Decorative for AT (each row
             already labels itself), hence aria-hidden. */}
         {layout === 'page' && cartHasItems ? (
           <div className="cart-sheet-head" aria-hidden="true">
-            <span className="cart-sheet-head-item">Item</span>
-            <span className="cart-sheet-head-qty">Qty</span>
-            <span className="cart-sheet-head-total">Total</span>
+            <Txt id="cart.sheet_head_item" className="cart-sheet-head-item" />
+            <Txt id="cart.sheet_head_qty" className="cart-sheet-head-qty" />
+            <Txt id="cart.sheet_head_total" className="cart-sheet-head-total" />
           </div>
         ) : null}
         <div className="cart-lines-scroll">
@@ -191,17 +200,15 @@ function CartEmpty({
           <path d="M16 10a4 4 0 01-8 0" />
         </svg>
       </div>
-      <h2 className="cart-empty-title">Your cart is empty</h2>
-      <p className="cart-empty-body">
-        Start with the full catalog: open-source hardware ready to fly.
-      </p>
+      <Txt id="cart.empty_title" as="h2" className="cart-empty-title" />
+      <Txt id="cart.empty_body" as="p" className="cart-empty-body" />
       <Link
         to="/collections/all"
         onClick={close}
         prefetch="viewport"
         className="hero-cta-primary"
       >
-        Shop all
+        <Txt id="cart.empty_cta" />
       </Link>
       {/* Turn the dead empty-cart screen into an exploration launchpad — jump
           straight into a product family instead of a single CTA. */}
@@ -214,7 +221,7 @@ function CartEmpty({
             prefetch="viewport"
             className="cart-empty-chip"
           >
-            {f.label}
+            <Txt id={f.copyId} />
           </Link>
         ))}
       </div>

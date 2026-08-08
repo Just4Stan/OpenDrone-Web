@@ -83,7 +83,13 @@ export default function Studio() {
           .filter((f) => !f.endsWith('/_fallback.json'))
           .map((f) => f.slice(0, -'.json'.length));
         setFiles(editable);
-        if (editable.length && !page) setPage(editable[0]);
+        // Open on the homepage rather than whatever sorts first. `account`
+        // used to win alphabetically, and its preview is a 400 because the
+        // page needs a signed-in session, so the studio greeted you with an
+        // error page it had no way to explain.
+        if (editable.length && !page) {
+          setPage(editable.find((f) => f === 'copy/home') ?? editable[0]);
+        }
       })
       .catch((e: unknown) => setStatus(`Could not list content: ${(e as Error).message}`));
     // Run once on mount; `page` is seeded here and owned by the user after.

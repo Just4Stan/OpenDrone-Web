@@ -5,7 +5,10 @@ import {reactRouter} from '@react-router/dev/vite';
 import tsconfigPaths from 'vite-tsconfig-paths';
 import tailwindcss from '@tailwindcss/vite';
 import path from 'path';
-import {studioPlugin} from './studio/vite-plugin-studio';
+import {
+  heroStudioExcludePlugin,
+  studioPlugin,
+} from './studio/vite-plugin-studio';
 
 export default defineConfig({
   plugins: [
@@ -15,6 +18,9 @@ export default defineConfig({
     // instead of being proxied into the filesystem-less Workerd sandbox.
     // It is `apply: 'serve'`, so it does not exist in a production build.
     studioPlugin(),
+    // Strips the hero tuning tool out of the production client build; it sits
+    // in publicDir, so Vite would otherwise serve it at a public URL.
+    heroStudioExcludePlugin(),
     tailwindcss(),
     hydrogen(),
     oxygen(),

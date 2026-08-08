@@ -13,6 +13,7 @@ import {useProductStatus} from '~/lib/coming-soon';
 import {AddToCartButton} from './AddToCartButton';
 import {StackQuickAdd, type StackOffer} from './StackQuickAdd';
 import {useAside} from './Aside';
+import {copyText} from '~/lib/copy';
 
 /** Hover quick-add for catalog cards: the card's own variant prewired as a
  *  cart line, so ordering never requires opening the PDP. */
@@ -130,7 +131,7 @@ export function ProductItem({
             flyImage={quickAdd.flyImage}
             onClick={() => openAside('cart')}
           >
-            Add to cart
+            {copyText('product-chrome.card_add_to_cart')}
           </AddToCartButton>
         </StackQuickAdd>
       </div>
@@ -138,12 +139,20 @@ export function ProductItem({
 
   const badge = comingSoon || launchPending ? (
     <span className="product-card-badge is-soon">
-      {status === 'idea' ? 'Concept' : 'Coming soon'}
+      {copyText(
+        status === 'idea'
+          ? 'product-chrome.card_badge_concept'
+          : 'product-chrome.card_badge_coming_soon',
+      )}
     </span>
   ) : onSale ? (
-    <span className="product-card-badge is-sale">Sale</span>
+    <span className="product-card-badge is-sale">
+      {copyText('product-chrome.card_badge_sale')}
+    </span>
   ) : isNew ? (
-    <span className="product-card-badge is-new">New</span>
+    <span className="product-card-badge is-new">
+      {copyText('product-chrome.card_badge_new')}
+    </span>
   ) : null;
 
   const modelStrip = hasModels ? (
@@ -153,7 +162,7 @@ export function ProductItem({
           <span
             key={m.value}
             className="product-card-model is-comingsoon"
-            title="Coming soon"
+            title={copyText('product-chrome.card_model_soon_title')}
           >
             {m.value}
           </span>

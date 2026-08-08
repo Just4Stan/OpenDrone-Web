@@ -89,7 +89,8 @@ python3 -m http.server 8731     # from the repo root
 ```
 
 The right-hand panel is grouped: look presets, the three lights plus bounce, the
-spotlight, sequence timing, materials, and export. Two panels matter most:
+spotlight, sequence timing, the beat timeline, the camera, materials, and save.
+Three panels matter most:
 
 **Inspect (click a part).** Click anything in the view. It reports the
 normalised name, which material class matched it, **which beats claim it** (or
@@ -100,6 +101,12 @@ wrong colour" or "why did that screw fly off with the wrong thing".
 **Parts audit.** Every part family with its class, claiming beats and triangle
 cost, filterable, with anything unclaimed flagged in red. Check this reads
 0 orphans before you call a design done.
+
+**Beats.** Pick a beat and the view jumps to it and holds, so you edit what you
+are looking at. Its caption, its stop captions, and the numbers (`fade`,
+`partSize`, each stop's `at`) are editable. `fade` and `partSize` each have a
+tick box: unticked means the key is absent and the beat inherits
+`spotlight.darkenRest` and `sequence.partSize`.
 
 When it looks right, press **save to studio.json**. The file is written
 directly, so there is no copy-paste step: the panel loads `studio.json` on
@@ -191,20 +198,16 @@ deliberately vanilla three.js in a ref container rather than react-three-fiber,
 because the studio version is the one that has been debugged against the real
 assembly.
 
-They are **not** one source of truth yet:
+Both read `studio.json` for every value in it: lighting, spotlight, sequence,
+camera, scroll, materials, boards and the beat timeline. The studio also writes
+it back, so the loop is tune, save, reload. Neither one hardcodes a value the
+other reads; each keeps a fallback copy of the file's contents only for the case
+where the fetch fails.
 
-| | reads `studio.json` |
-|---|---|
-| `HeroDroneScene.tsx` | yes: lighting, spotlight, sequence, camera, materials, boards, beats |
-| `_studio.html` | **no**, it hardcodes the same values |
-
-So the loop today is: tune in the studio, copy the numbers into `studio.json`,
-and the hero picks them up. Making the studio read the file is the obvious next
-step and would remove the copy step entirely.
-
-Structure is duplicated in both: the teardown choreography, prop rigging, board
-merging and beat selection exist twice. Changing one without the other will
-cause drift. That duplication is the main known debt.
+Code is still duplicated: the teardown choreography, prop rigging, board merging
+and the four `select` shapes exist in both files. They agree today, but nothing
+enforces that. Changing one without the other will cause drift, and that
+duplication is the main known debt.
 
 ## Known debt
 
@@ -212,13 +215,13 @@ Kept here rather than in commit messages so it stays visible.
 
 - The choreography, prop rigging and group membership rules are code, not
   config, so a new design with a different structure still needs edits.
-- The studio does not control the beat timeline. `beats[]` is still a hardcoded
-  array inside `_studio.html` rather than read from the file, so the two can
-  drift, and one value already has: `beats.frame.partSize` is set in
-  `studio.json` and ignored by the panel.
+- The panel edits what a beat says and how it is presented, not the shape of the
+  timeline. Adding, deleting and reordering beats, and every `select` and
+  `choreo`, are file edits: a `select` has four valid shapes and a text box that
+  can produce a fifth is worse than no box.
 - Not exposed as controls, though carried through a save unchanged:
-  `spotlight.stageLift/colour/beamColour/beamGain`, `camera.lift` (which
-  `HeroDroneScene` reads but is absent from the file), `scroll.minDwellS`, each
+  `spotlight.beamGain` (the panel's beam is a plain additive cone, not the
+  hero's shader, so the gain has nothing to act on), `scroll.minDwellS`, each
   material's `id`/`label`/`match`, and `boards`/`boardExclude`/`videoModule`/
   `notFrame`.
 - The studio and the site do not render materials identically: side by side at
@@ -282,7 +285,9 @@ items are struck through in intent; open ones are real and unaddressed.
   Hemisphere and beam colours are literals, and `darkenRest: 1.0` would drive
   non-focused parts to black on a white page.
 - **`stops` is parsed and never used**, so the second caption of the airframe
-  beat ("Video module") never appears even though the choreography runs.
+  beat ("Video module") never appears even though the choreography runs. The
+  studio both honours and edits stops, so a caption tuned there will look right
+  in the panel and never show on the site until this is fixed.
 - **No tiered loading.** The 6 MB GLB blocks the first frame.
 - **The shader warm-up was not carried over** from the studio, so the first
   spotlight compiles shaders during the reader's first scroll.

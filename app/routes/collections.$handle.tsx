@@ -9,14 +9,17 @@ import {buildSeoMeta, SITE_ORIGIN} from '~/lib/seo';
 import {Breadcrumb} from '~/components/Breadcrumb';
 import {CollectionSort, resolveSort} from '~/components/CollectionSort';
 import {EmptyState} from '~/components/EmptyState';
+import {Txt} from '~/components/Txt';
+import {copyText} from '~/lib/copy';
 
 export const meta: Route.MetaFunction = ({data, location}) =>
   buildSeoMeta({
     title: data?.collection?.title
-      ? `${data.collection.title} Collection`
-      : 'Collection',
+      ? `${data.collection.title} ${copyText('collections-handle.meta_title_suffix') ?? 'Collection'}`
+      : (copyText('collections-handle.meta_title_fallback') ?? 'Collection'),
     description:
       data?.collection?.description ||
+      copyText('collections-handle.meta_description') ||
       'Explore curated OpenDrone hardware collections and product families.',
     type: 'product',
     // Canonical without pagination/sort queries so variants don't splinter.
@@ -94,13 +97,16 @@ export default function Collection() {
     <div className="collection page-shell">
       <Breadcrumb
         items={[
-          {label: 'Shop', to: '/collections/all'},
+          {
+            label: <Txt id="collections-handle.breadcrumb_shop" />,
+            to: '/collections/all',
+          },
           {label: collection.title},
         ]}
       />
       <header className="page-header collection-header">
         <div>
-          <p className="page-eyebrow">Collection</p>
+          <Txt id="collections-handle.eyebrow" as="p" className="page-eyebrow" />
           <h1 className="page-title">{collection.title}</h1>
           {collection.description ? (
             <p className="page-description">{collection.description}</p>
@@ -123,9 +129,9 @@ export default function Collection() {
         </PaginatedResourceSection>
       ) : (
         <EmptyState
-          title="No products yet"
-          description="This collection is empty. Check back soon or browse the full catalog."
-          ctaLabel="Shop all"
+          title={<Txt id="collections-handle.empty_title" />}
+          description={<Txt id="collections-handle.empty_body" />}
+          ctaLabel={<Txt id="collections-handle.empty_cta" />}
           ctaTo="/collections/all"
         />
       )}

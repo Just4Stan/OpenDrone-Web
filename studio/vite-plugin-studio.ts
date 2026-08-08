@@ -233,6 +233,38 @@ async function writeAtomic(abs: string, text: string) {
   await next;
 }
 
+/**
+ * Keep the hero tuning tool out of the deployed site.
+ *
+ * `public/models/<design>/_studio.html` sits in `publicDir`, so Vite copies it
+ * verbatim into `dist/client` and it would be served at
+ * `opendrone.be/models/od3/_studio.html`. That predates the studio, but it is
+ * still a developer tool on a public URL, and it now carries a save button
+ * pointing at an endpoint that only exists in dev. The save would just 404, so
+ * this is not a hole; it is a tool nobody outside the workshop should be handed.
+ *
+ * Deleting from the output rather than moving the file keeps the dev URL, the
+ * asset pipeline that drops it beside its GLB, and `docs/hero-studio.md` all
+ * working unchanged.
+ */
+export function heroStudioExcludePlugin(): Plugin {
+  return {
+    name: 'opendrone-studio-exclude-hero-tool',
+    apply: 'build',
+    async closeBundle() {
+      const dir = path.resolve(process.cwd(), 'dist/client/models');
+      const designs = await fs.readdir(dir).catch(() => [] as string[]);
+      for (const d of designs) {
+        const target = path.join(dir, d, '_studio.html');
+        await fs
+          .rm(target, {force: true})
+          .then(() => undefined)
+          .catch(() => undefined);
+      }
+    },
+  };
+}
+
 export function studioPlugin(): Plugin {
   let repoRoot = process.cwd();
 

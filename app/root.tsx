@@ -20,6 +20,8 @@ import resetStyles from '~/styles/reset.css?url';
 import appStyles from '~/styles/app.css?url';
 import {PageLayout} from './components/PageLayout';
 import {SignalLost} from './components/SignalLost';
+import {Txt} from './components/Txt';
+import {copyText} from '~/lib/copy';
 import {getCompanyIdentity} from '~/lib/company';
 import {localeFromPathname, seoLocaleTag} from '~/lib/i18n';
 import {buildOrgJsonLd, buildSeoMeta} from '~/lib/seo';
@@ -41,11 +43,16 @@ export const meta: Route.MetaFunction = ({error}) => {
   if (!error) return buildSeoMeta({});
   const status = isRouteErrorResponse(error) ? error.status : 500;
   return buildSeoMeta({
-    title: status === 404 ? 'Signal lost' : 'Something went wrong',
+    title:
+      status === 404
+        ? (copyText('not-found.meta_title') ?? 'Signal lost')
+        : (copyText('not-found.error_meta_title') ?? 'Something went wrong'),
     description:
       status === 404
-        ? 'This page does not exist. Return to home.'
-        : 'An unexpected error occurred.',
+        ? (copyText('not-found.meta_description') ??
+          'This page does not exist. Return to home.')
+        : (copyText('not-found.error_meta_description') ??
+          'An unexpected error occurred.'),
     robots: 'noindex,nofollow',
   });
 };
@@ -410,27 +417,25 @@ export function ErrorBoundary() {
     return <SignalLost />;
   }
 
-  const title = 'Something went wrong';
-  const description =
-    'An unexpected error occurred. Try again, or head back to the catalog.';
-
   return (
     <div className="route-error page-shell">
       <p className="route-error-status">{errorStatus}</p>
-      <h1 className="route-error-title">{title}</h1>
-      <p className="route-error-body">{description}</p>
+      <Txt id="not-found.error_title" as="h1" className="route-error-title" />
+      <Txt id="not-found.error_body" as="p" className="route-error-body" />
       {errorMessage ? (
         <details className="route-error-details">
-          <summary>Technical details</summary>
+          <summary>
+            <Txt id="not-found.error_details" />
+          </summary>
           <pre>{errorMessage}</pre>
         </details>
       ) : null}
       <div className="route-error-actions">
         <a href="/" className="hero-cta-primary">
-          Home
+          <Txt id="not-found.error_cta_home" />
         </a>
         <a href="/collections/all" className="hero-cta-secondary">
-          Shop
+          <Txt id="not-found.error_cta_shop" />
         </a>
       </div>
     </div>

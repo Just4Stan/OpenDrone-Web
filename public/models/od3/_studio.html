@@ -25,6 +25,10 @@
   .row input[type=range]{flex:1;min-width:0;accent-color:var(--gold)}
   .row .val{flex:0 0 36px;text-align:right;font-variant-numeric:tabular-nums;font-size:11px}
   .row input[type=color]{width:32px;height:20px;border:1px solid var(--line);background:none;padding:0}
+  .row input[type=text]{flex:1;min-width:0;background:#1b2027;color:var(--ink);border:1px solid var(--line);
+    border-radius:4px;padding:3px 6px;font:inherit}
+  .row input[type=checkbox]{flex:0 0 auto;margin:0;accent-color:var(--gold)}
+  .row input[type=range]:disabled{opacity:.35}
   select,button{background:#1b2027;color:var(--ink);border:1px solid var(--line);
     border-radius:4px;padding:5px 8px;font:inherit;cursor:pointer}
   select{width:100%}
@@ -110,6 +114,7 @@
   <details><summary>Spotlight on the shown part</summary>
     <div class="row"><label>power</label><input type="range" id="spot" min="0" max="80" step="0.5" value="22.5"><span class="val" id="spotv"></span></div>
     <div class="row"><label>beam</label><input type="range" id="beam" min="0" max="2" step="0.02" value="0.44"><span class="val" id="beamv"></span></div>
+    <div class="row"><label>lamp colour</label><input type="color" id="spotC" value="#ffd7a0"><label style="flex:0 0 62px">beam</label><input type="color" id="beamC" value="#ffcf96"></div>
     <div class="row"><label>cone angle</label><input type="range" id="spotang" min="6" max="60" step="1" value="26"><span class="val" id="spotangv"></span></div>
     <div class="row"><label>softness</label><input type="range" id="spotsoft" min="0" max="1" step="0.02" value="0.6"><span class="val" id="spotsoftv"></span></div>
     <div class="row"><label>side angle</label><input type="range" id="spotside" min="-90" max="90" step="1" value="35"><span class="val" id="spotsidev"></span></div>
@@ -122,6 +127,8 @@
     <div class="row"><label>shrink drone</label><input type="range" id="shrink" min="0.2" max="1" step="0.01" value="0.55"><span class="val" id="shrinkv"></span></div>
     <div class="row"><label>board tilt</label><input type="range" id="btilt" min="-0.4" max="0.6" step="0.01" value="0.16"><span class="val" id="btiltv"></span></div>
     <div class="row"><label>stage left</label><input type="range" id="stagex" min="0" max="0.6" step="0.01" value="0.28"><span class="val" id="stagexv"></span></div>
+    <div class="row"><label>stage lift</label><input type="range" id="stagelift" min="-0.4" max="0.4" step="0.01" value="0"><span class="val" id="stageliftv"></span></div>
+    <div class="hint">board tilt raises the flat parts only; stage lift raises every presented part</div>
   </details>
 
   <details><summary>Sequence</summary>
@@ -142,6 +149,13 @@
     <div class="row"><label>prop handed</label><input type="range" id="hand" min="-1" max="1" step="2" value="-1"><span class="val" id="handv"></span></div>
   </details>
 
+  <details><summary>Beats (the timeline)</summary>
+    <div class="btns"><select id="beatsel"></select></div>
+    <div class="hint" id="beatwhat"></div>
+    <div id="beatedit"></div>
+    <div class="hint">picking a beat jumps the view to it. What a beat selects is structure, so it is shown but not editable; ids are referenced by the site and by choreo, so they are fixed too.</div>
+  </details>
+
   <details open><summary>Inspect (click a part)</summary>
     <div class="hint" id="pickinfo">click any part in the view</div>
   </details>
@@ -155,6 +169,8 @@
     <div class="hint">the camera rises during a board beat so a flat PCB reads frontally instead of edge-on; eases in and out with the part</div>
     <div class="row"><label>dolly on show</label><input type="range" id="camdolly" min="0" max="1.5" step="0.01" value="0.92"><span class="val" id="camdollyv"></span></div>
     <div class="hint">dolly was 0.25 and never settled; 0 keeps the framing still</div>
+    <div class="row"><label>frame lift</label><input type="range" id="camlift" min="-0.5" max="1" step="0.01" value="0.24"><span class="val" id="camliftv"></span></div>
+    <div class="hint">drops the point the camera looks at, which lifts the drone up the viewport; on the site the wordmark and rail eat the bottom strip</div>
   </details>
 
   <details><summary>Parts audit</summary>
@@ -580,64 +596,104 @@ function frameGroup() {
   });
 }
 
-/* -------------------------------------------------------------------- BEATS */
-const BEATS = [
+/* -------------------------------------------------------------------- BEATS
+ * The timeline comes from studio.json, the same array the site reads, so the
+ * two cannot disagree about what the animation is. Only the two things that
+ * are genuinely code live here: how a `select` spec resolves to nodes, and the
+ * named choreographies a beat can ask for.
+ */
+
+// `choreo` names a behaviour rather than describing one, because a teardown is
+// motion logic, not data. Same key the hero looks up.
+const CHOREO = {
+  'frame-teardown': {
+    // One continuous move rather than two beats: the frame comes in and opens,
+    // then the frame itself returns home while the video stack stays in the
+    // spotlight and becomes the subject. Going back to the assembled drone in
+    // between and flying out again would just be a stutter.
+    nodeK: (p, k, holdT) => {
+      const isVideo = p.withVideo || VIDEO_RE.test(tidy(p.node.name));
+      if (isVideo) return k;
+      // Frame parts hold until 55% of the hold, then withdraw by 80%.
+      if (holdT <= 0.55) return k;
+      const back = 1 - Math.min(1, (holdT - 0.55) / 0.25);
+      return k * (back * back * (3 - 2 * back));
+    },
+    // What actually sells this frame is that the video stack is swappable: undo
+    // the top plate and the 3D-printed cradle carrying the air unit, antennas
+    // and camera slides straight off the standoffs. So the beat performs that,
+    // rather than just holding the frame up.
+    extra: (p, ctx) => {
+      const d = new THREE.Vector3();
+      // Everything lifts straight up: that is how the stack actually comes
+      // apart, off the standoffs. The plate travels furthest so it clears the
+      // video stack rather than sitting on top of it.
+      if (p.withTop) d.addScaledVector(ctx.up, ctx.ref * 1.15 * ctx.open);
+      else if (p.withVideo || VIDEO_RE.test(tidy(p.node.name)))
+        d.addScaledVector(ctx.up, ctx.ref * 0.55 * ctx.open);
+      return d;
+    },
+  },
+};
+
+// The four shapes a beat's `select` can take. Structure, not taste, which is
+// why the panel shows it and does not let you type into it.
+function selectFor(spec) {
+  if (!spec || spec.none) return [];
+  if (spec.board) return mergedBoard(spec.board);
+  if (spec.cluster) {
+    const c = oneCluster(topLevel(pick(new RegExp(spec.cluster, 'i'))));
+    return spec.withProp ? [...c, ...propForCluster(c)] : c;
+  }
+  if (spec.complement) {
+    const out = frameGroup();
+    if (spec.plus === 'videoModule') out.push(...topLevel(pick(VIDEO_RE)));
+    return out;
+  }
+  return [];
+}
+
+// Fallback only, for opening this file without the dev server. Kept in the
+// file's own shape so both paths build the same objects.
+const FALLBACK_BEATS = [
   // Establishing hold: nothing presents, nothing dims, the props just turn.
-  {id:'whole',  title:'OpenDrone 3"',      note:'complete airframe', get:()=>[]},
-  {id:'fc',     title:'OpenFC-Lite-Mini',  note:'RP2354B flight controller',
-   get:()=>mergedBoard('OpenFC'), faceOn:true},
-  {id:'esc',    title:'OpenESC-20x20',     note:'4-in-1 AM32 ESC',
-   get:()=>mergedBoard('4in1-mini'), faceOn:true},
-  {id:'rx',     title:'OpenRX-Mono',       note:'ELRS receiver',
-   get:()=>mergedBoard('OpenRX-Mono'), faceOn:true},
-  {id:'motor',  title:'Motor and propeller', note:'1604 class, 3in tri-blade',
-   get:()=>{ const c = oneCluster(topLevel(pick(/^Admi/i))); return [...c, ...propForCluster(c)]; }},
-  {id:'frame',  title:'Airframe',
+  {id:'whole', title:'OpenDrone 3"', note:'complete airframe', select:{none:true}},
+  {id:'fc',    title:'OpenFC-Lite-Mini', note:'RP2354B flight controller', select:{board:'OpenFC'}},
+  {id:'esc',   title:'OpenESC-20x20', note:'4-in-1 AM32 ESC', select:{board:'4in1-mini'}},
+  {id:'rx',    title:'OpenRX-Mono', note:'ELRS receiver', select:{board:'OpenRX-Mono'}},
+  {id:'motor', title:'Motor and propeller', note:'1604 class, 3in tri-blade',
+   select:{cluster:'^Admi', withProp:true}},
+  {id:'frame', title:'Airframe',
    note:'top plate off, then the video stack lifts out and stays',
-   fade: 0.99,
-   get:()=>[...frameGroup(), ...topLevel(pick(VIDEO_RE))],
-   // One continuous move rather than two beats: the frame comes in and opens,
-   // then the frame itself returns home while the video stack stays in the
-   // spotlight and becomes the subject. Going back to the assembled drone in
-   // between and flying out again would just be a stutter.
+   select:{complement:true, plus:'videoModule'},
+   fade:0.99, partSize:1.05, choreo:'frame-teardown',
    // Two stops inside one continuous move, so the video stack reads as its own
    // subject rather than a tail on the frame animation: the caption changes and
    // the spotlight re-strikes when the frame withdraws.
-   stops: [
-     {at: 0.00, title: 'Airframe', note: 'T700 carbon, standoffs, hardware, camera cage'},
-     {at: 0.62, title: 'Video module', note: 'air unit, antennas and camera lift out as one'},
-   ],
-   nodeK: (p, k, holdT) => {
-     const isVideo = p.withVideo || VIDEO_RE.test(tidy(p.node.name));
-     if (isVideo) return k;
-     // Frame parts hold until 55% of the hold, then withdraw by 80%.
-     if (holdT <= 0.55) return k;
-     const back = 1 - Math.min(1, (holdT - 0.55) / 0.25);
-     return k * (back * back * (3 - 2 * back));
-   },
-   // What actually sells this frame is that the video stack is swappable: undo
-   // the top plate and the 3D-printed cradle carrying the air unit, antennas
-   // and camera slides straight off the standoffs. So the beat performs that,
-   // rather than just holding the frame up.
-   extra: (p, ctx) => {
-     const d = new THREE.Vector3();
-     // Everything lifts straight up: that is how the stack actually comes
-     // apart, off the standoffs. The plate travels furthest so it clears the
-     // video stack rather than sitting on top of it.
-     if (p.withTop) d.addScaledVector(ctx.up, ctx.ref * 1.15 * ctx.open);
-     else if (p.withVideo || VIDEO_RE.test(tidy(p.node.name)))
-       d.addScaledVector(ctx.up, ctx.ref * 0.55 * ctx.open);
-     return d;
-   }},
+   stops:[
+     {at:0.0,  title:'Airframe', note:'T700 carbon, standoffs, hardware, camera cage'},
+     {at:0.62, title:'Video module', note:'air unit, antennas and camera lift out as one'},
+   ]},
 ];
+const BEAT_SRC = CFG?.beats?.length ? CFG.beats : FALLBACK_BEATS;
+const BEATS = BEAT_SRC.map((src) => ({
+  ...src,
+  // Copied, not shared: the panel edits these and the loaded file stays as the
+  // baseline a save is rebuilt on top of.
+  stops: src.stops ? src.stops.map((s) => ({...s})) : undefined,
+  faceOn: !!src.select?.board,
+  get: () => selectFor(src.select),
+  nodeK: CHOREO[src.choreo]?.nodeK,
+  extra: CHOREO[src.choreo]?.extra,
+}));
 
 let droneCentre, droneRadius, centreLocal;
 let beat = 0, t = 0, playing = true;
 let speed=1.5, HOLD=8.8, TRAVEL=2.65, FILL=0.6, SPIN=0.06, orbitRate=0.195, PROP_W=1.25;
 let SHRINK=0.55, DIM=0.28, SPOT=22.5, STAGE_X=0.28, BEAM=0.44, FADE=1.0, HAND=-1, STRIKE=0.27;
-let CAM_DIST=2.15, CAM_DOLLY=0.92, CAM_HEIGHT=0.5, CAM_FREE=false;
+let CAM_DIST=2.15, CAM_DOLLY=0.92, CAM_HEIGHT=0.5, CAM_LIFT=0.24, CAM_FREE=false;
 let SCROLL_FREQ=1.1, SCROLL_GAIN=0.0016, MAGNET=0.14, COMMIT_FRAC=0.28;
-let BOARD_TILT=0.16, BOARD_CAM_H=0.72, camHeightNow=0.5;
+let BOARD_TILT=0.16, BOARD_CAM_H=0.72, camHeightNow=0.5, STAGE_LIFT=0;
 let SPOT_ANGLE=26, SPOT_SOFT=0.6, SPOT_SIDE=35, SPOT_HEIGHT=0.48;
 const dur = () => TRAVEL*2 + HOLD;
 const ease = (x) => x*x*(3-2*x);
@@ -887,10 +943,15 @@ function present(b, k, elapsed) {
   // Screen-right in world space; the frame beat slides the video stack along it.
   const rightv = new THREE.Vector3().crossVectors(fwd, camera.up).normalize();
   anchor.addScaledVector(rightv, -dist * STAGE_X);
+  // Vertical staging: STAGE_LIFT moves every presented part, BOARD_TILT only
+  // the flat ones, which come in face on and read better raised a little.
+  anchor.addScaledVector(camera.up, dist * STAGE_LIFT);
+  if (b.faceOn) anchor.addScaledVector(camera.up, dist * BOARD_TILT);
   const halfH = Math.tan(THREE.MathUtils.degToRad(camera.fov)/2) * dist;
   // pivot is shrinking, and these nodes live under it, so divide it back out to
-  // hold a constant on-screen size.
-  const wantScale = THREE.MathUtils.clamp((halfH*FILL)/b.radius, 0.2, 80) / pivot.scale.x;
+  // hold a constant on-screen size. A beat may override how much of the frame
+  // it fills: over 0.9 deliberately crops, which is how the airframe reads.
+  const wantScale = THREE.MathUtils.clamp((halfH*(b.partSize ?? FILL))/b.radius, 0.2, 80) / pivot.scale.x;
   const spin = new THREE.Quaternion().setFromAxisAngle(camera.up, elapsed*SPIN);
   const S = wantScale * pivot.scale.x;
 
@@ -1004,8 +1065,13 @@ function frame() {
                     * (1 - Math.pow(0.35, dt));
       const off = new THREE.Vector3(Math.cos(orbitAngle), camHeightNow, Math.sin(orbitAngle))
         .normalize().multiplyScalar(back);
-      camera.position.lerp(droneCentre.clone().add(off), 1 - Math.pow(0.004, dt));
-      controls.target.lerp(droneCentre, 1 - Math.pow(0.02, dt));
+      // The framing point sits below the drone's centre, which lifts the drone
+      // up the viewport. On the site the bottom strip (wordmark, rail, Shop)
+      // eats into the lower frame, so dead centre reads as sitting too low.
+      const focus = droneCentre.clone();
+      focus.y -= droneRadius * CAM_LIFT;
+      camera.position.lerp(focus.clone().add(off), 1 - Math.pow(0.004, dt));
+      controls.target.lerp(focus, 1 - Math.pow(0.02, dt));
     }
     if (playing) updateRail((beat * dur() + t) / (BEATS.length * dur()));
     window.__now = {beat:BEATS[beat].id, t:+t.toFixed(2), k:+k.toFixed(3), n:BEATS[beat].nodes?.length??0};
@@ -1174,7 +1240,11 @@ bind('strike',v=>STRIKE=v);
 bind('btilt',v=>BOARD_TILT=v);
 bind('spotang',v=>SPOT_ANGLE=v); bind('spotsoft',v=>SPOT_SOFT=v);
 bind('spotside',v=>SPOT_SIDE=v); bind('spoth',v=>SPOT_HEIGHT=v);
+bind('stagelift',v=>STAGE_LIFT=v);
 bind('camdist',v=>CAM_DIST=v); bind('camheight',v=>{CAM_HEIGHT=v;}); bind('camheightb',v=>BOARD_CAM_H=v); bind('camdolly',v=>CAM_DOLLY=v);
+bind('camlift',v=>CAM_LIFT=v);
+document.getElementById('spotC').addEventListener('input',e=>spotL.color.set(e.target.value));
+document.getElementById('beamC').addEventListener('input',e=>beamMat.color.set(e.target.value));
 bind('camfree',v=>{CAM_FREE=!!v; controls.enabled=true;});
 document.getElementById('pfilter').addEventListener('input',(e)=>renderAudit(e.target.value));
 bind('bncI',v=>{BASE.bounce=v;});
@@ -1335,6 +1405,114 @@ document.getElementById('colreset').onclick=()=>{const k=matSel.value; PROFILES[
   loadMat();};
 loadMat();
 
+/* ------------------------------------------------------------- BEAT EDITOR
+ * The timeline is the animation, so it is edited here rather than by hand in
+ * the JSON. What a beat SELECTS is structure and stays read-only: the four
+ * select shapes are not free text, and a box that can produce an invalid one
+ * is worse than no box. Adding, deleting and reordering beats is deliberately
+ * not offered either; edit the file for that.
+ */
+const beatSel = document.getElementById('beatsel');
+for (const b of BEATS) {
+  const o = document.createElement('option');
+  o.value = b.id; o.textContent = b.title; beatSel.append(o);
+}
+function describeSelect(s) {
+  if (!s || s.none) return 'nothing: an establishing hold';
+  if (s.board) return `board ${s.board}`;
+  if (s.cluster) return `one cluster matching /${s.cluster}/${s.withProp ? ', plus its prop' : ''}`;
+  if (s.complement) return `everything no other beat claims${s.plus ? `, plus ${s.plus}` : ''}`;
+  return 'unrecognised select, the beat will resolve to nothing';
+}
+// A beat's caption appears in three places at once. Keep them together.
+function refreshBeatLabels() {
+  BEATS.forEach((b, i) => {
+    beatSel.options[i].textContent = b.title;
+    const jo = document.getElementById('jump').options[i];
+    if (jo) jo.textContent = b.title;
+    const dot = document.querySelector(`#rail .dot[data-i="${i}"]`);
+    if (dot) dot.title = b.title;
+  });
+  lastCaption = '';   // force syncUI to redraw the on-screen caption
+  syncUI();
+}
+function renderBeatEditor() {
+  const b = BEATS.find((x) => x.id === beatSel.value) ?? BEATS[0];
+  if (!b) return;
+  beatSel.value = b.id;
+  document.getElementById('beatwhat').textContent =
+    `id ${b.id}, selects ${describeSelect(b.select)}` + (b.choreo ? `, choreo ${b.choreo}` : '');
+  const host = document.getElementById('beatedit');
+  const stops = b.stops ?? [];
+  host.innerHTML =
+    `<div class="row"><label>title</label><input type="text" id="b_title"></div>` +
+    `<div class="row"><label>note</label><input type="text" id="b_note"></div>` +
+    `<div class="row"><label>fade</label><input type="checkbox" id="b_fadeon">` +
+      `<input type="range" id="b_fade" min="0" max="1" step="0.005"><span class="val" id="b_fadev"></span></div>` +
+    `<div class="row"><label>part size</label><input type="checkbox" id="b_pson">` +
+      `<input type="range" id="b_ps" min="0.15" max="1.6" step="0.01"><span class="val" id="b_psv"></span></div>` +
+    `<div class="hint">untick to inherit the values in Sequence and Spotlight; tick to override them for this beat only</div>` +
+    stops.map((s, j) =>
+      `<div class="grp">stop ${j + 1}</div>` +
+      `<div class="row"><label>at</label><input type="range" id="b_s${j}_at" min="0" max="1" step="0.01">` +
+        `<span class="val" id="b_s${j}_atv"></span></div>` +
+      `<div class="row"><label>title</label><input type="text" id="b_s${j}_title"></div>` +
+      `<div class="row"><label>note</label><input type="text" id="b_s${j}_note"></div>`).join('') +
+    (stops.length ? `<div class="hint">a stop is a caption change partway through the hold, at that fraction of it</div>` : '');
+
+  const el = (id) => document.getElementById(id);
+  const show = (id, v) => { el(id).textContent = (+v).toFixed(2); };
+
+  el('b_title').value = b.title ?? '';
+  el('b_title').oninput = (e) => { b.title = e.target.value; refreshBeatLabels(); };
+  el('b_note').value = b.note ?? '';
+  el('b_note').oninput = (e) => { b.note = e.target.value; refreshBeatLabels(); };
+
+  // An optional per-beat override is two controls: present or not, and the
+  // value. Unticked means the key is absent from the file, not zero.
+  const pair = (onId, slId, valId, get, set, fallback) => {
+    const on = el(onId), sl = el(slId);
+    on.checked = get() !== undefined;
+    sl.value = String(get() ?? fallback());
+    sl.disabled = !on.checked;
+    show(valId, sl.value);
+    // Unticking leaves the slider where it was, greyed: the value is simply not
+    // written, so ticking it again restores the same override rather than
+    // silently replacing it with the inherited one.
+    on.onchange = () => {
+      sl.disabled = !on.checked;
+      set(on.checked ? +sl.value : undefined);
+    };
+    sl.oninput = () => { set(+sl.value); show(valId, sl.value); };
+  };
+  pair('b_fadeon', 'b_fade', 'b_fadev', () => b.fade, (v) => { b.fade = v; }, () => FADE);
+  pair('b_pson', 'b_ps', 'b_psv', () => b.partSize, (v) => { b.partSize = v; }, () => FILL);
+
+  stops.forEach((s, j) => {
+    const at = el(`b_s${j}_at`);
+    at.value = String(s.at ?? 0);
+    show(`b_s${j}_atv`, at.value);
+    at.oninput = () => { s.at = +at.value; show(`b_s${j}_atv`, at.value); refreshBeatLabels(); };
+    el(`b_s${j}_title`).value = s.title ?? '';
+    el(`b_s${j}_title`).oninput = (e) => { s.title = e.target.value; refreshBeatLabels(); };
+    el(`b_s${j}_note`).value = s.note ?? '';
+    el(`b_s${j}_note`).oninput = (e) => { s.note = e.target.value; refreshBeatLabels(); };
+  });
+}
+beatSel.onchange = () => {
+  const i = BEATS.findIndex((x) => x.id === beatSel.value);
+  // Jump to it and hold there: an edit you cannot see is an edit you cannot
+  // judge, and autoplay would carry the beat away mid-edit.
+  if (i >= 0) {
+    beat = i; t = TRAVEL + HOLD * 0.5; scrollActive = false;
+    playing = false;
+    const btn = document.getElementById('play');
+    btn.textContent = 'play'; btn.classList.remove('on');
+    syncUI();
+  }
+  renderBeatEditor();
+};
+
 /* ------------------------------------------------------------ LOAD AND SAVE
  * One schema, both directions. Every control's start value comes from
  * studio.json and the save writes the same keys back, so the panel and the site
@@ -1383,11 +1561,8 @@ function applyConfig(cfg) {
   setCtl('spotside', S.sideAngle); setCtl('spoth', S.height);
   setCtl('fade', S.darkenRest); setCtl('dim', S.dimLights);
   setCtl('shrink', S.shrinkDrone); setCtl('stagex', S.stageLeft);
-  setCtl('btilt', S.boardTilt);
-  // No control for these two, but applying them keeps the studio's beam the
-  // same colour as the site's.
-  if (S.colour) spotL.color.set(S.colour);
-  if (S.beamColour) beamMat.color.set(S.beamColour);
+  setCtl('btilt', S.boardTilt); setCtl('stagelift', S.stageLift);
+  setCtl('spotC', S.colour); setCtl('beamC', S.beamColour);
 
   const Q = cfg.sequence ?? {};
   setCtl('speed', Q.speed); setCtl('hold', Q.hold); setCtl('travel', Q.travel);
@@ -1397,6 +1572,7 @@ function applyConfig(cfg) {
   const C = cfg.camera ?? {};
   setCtl('camdist', C.distance); setCtl('camheight', C.height);
   setCtl('camheightb', C.heightOnBoard); setCtl('camdolly', C.dollyOnShow);
+  setCtl('camlift', C.lift);
 
   const R = cfg.scroll ?? {};
   setCtl('sfreq', R.springHz); setCtl('sgain', R.gain);
@@ -1405,6 +1581,9 @@ function applyConfig(cfg) {
   loadMat();
 }
 applyConfig(CFG);
+// Outside applyConfig so the editor is built even when the fetch failed and
+// the panel is running on its fallbacks.
+renderBeatEditor();
 
 // Slider arithmetic leaves the odd 0.30000000000000004. Six decimals is well
 // past any meaningful precision here and kills the noise.
@@ -1433,7 +1612,8 @@ function collect() {
     coneAngle: num(SPOT_ANGLE), softness: num(SPOT_SOFT),
     sideAngle: num(SPOT_SIDE), height: num(SPOT_HEIGHT),
     darkenRest: num(FADE), dimLights: num(DIM), shrinkDrone: num(SHRINK),
-    stageLeft: num(STAGE_X), boardTilt: num(BOARD_TILT),
+    stageLeft: num(STAGE_X), boardTilt: num(BOARD_TILT), stageLift: num(STAGE_LIFT),
+    colour: hex('spotC'), beamColour: hex('beamC'),
   };
   out.sequence = {
     ...out.sequence,
@@ -1445,12 +1625,28 @@ function collect() {
     ...out.camera,
     distance: num(CAM_DIST), height: num(CAM_HEIGHT),
     heightOnBoard: num(BOARD_CAM_H), dollyOnShow: num(CAM_DOLLY),
+    lift: num(CAM_LIFT),
   };
   out.scroll = {
     ...out.scroll,
     springHz: num(SCROLL_FREQ), gain: num(SCROLL_GAIN),
     magnet: num(MAGNET), commitAt: num(COMMIT_FRAC),
   };
+  // Beats: captions and the numbers, written back onto the loaded entry so
+  // `select`, `choreo`, `id` and anything else in the file survive. An
+  // override the panel has unticked is deleted rather than written as a value.
+  out.beats = BEAT_SRC.map((src, i) => {
+    const b = BEATS[i];
+    if (!b) return src;
+    const o = {...src, title: b.title, note: b.note};
+    if (b.fade === undefined) delete o.fade; else o.fade = num(b.fade);
+    if (b.partSize === undefined) delete o.partSize; else o.partSize = num(b.partSize);
+    if (b.stops) {
+      o.stops = b.stops.map((s, j) =>
+        ({...(src.stops?.[j] ?? {}), at: num(s.at), title: s.title, note: s.note}));
+    }
+    return o;
+  });
   out.materials = MAT_SRC.map((m) => {
     const p = PROFILES[m.id];
     if (!p) return m;
@@ -1459,14 +1655,20 @@ function collect() {
   });
   out._saved = `${new Date().toISOString().slice(0, 10)}, saved from the studio panel`;
   out._status = 'WIRED BOTH WAYS. app/components/HeroDroneScene.tsx reads this file at runtime. '
-    + 'public/models/od3/_studio.html loads it on open, so every control starts on the value the site '
-    + 'renders, and its save button POSTs the whole file back through the dev-only /__studio/write '
-    + 'endpoint. Settings the panel has no control for are carried through untouched on save: name, '
-    + 'model, beats, boards, boardExclude, videoModule, notFrame, scroll.minDwellS, '
-    + 'spotlight.stageLift, spotlight.colour, spotlight.beamColour, spotlight.beamGain, and each '
-    + 'material id, label and match.';
+    + 'public/models/od3/_studio.html loads it on open, including the beat timeline, so every '
+    + 'control starts on the value the site renders, and its save button POSTs the whole file back '
+    + 'through the dev-only /__studio/write endpoint. The panel edits beat titles, notes, fade, '
+    + 'partSize and stops, but not the shape of the timeline: adding, deleting and reordering beats, '
+    + 'and every `select` and `choreo`, are file edits. Also carried through untouched on save: '
+    + 'name, model, boards, boardExclude, videoModule, notFrame, scroll.minDwellS, '
+    + 'spotlight.beamGain (which the panel renderer has no equivalent for), and each material id, '
+    + 'label and match.';
   return out;
 }
+
+// Same debug surface as __beats and __seek: lets a test read exactly what a
+// save would write without writing it.
+window.__collect = collect;
 
 const msg = document.getElementById('dumpmsg');
 document.getElementById('save').onclick = async () => {

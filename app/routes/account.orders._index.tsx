@@ -30,6 +30,8 @@ import type {
 } from 'customer-accountapi.generated';
 import {PaginatedResourceSection} from '~/components/PaginatedResourceSection';
 import {buildSeoMeta} from '~/lib/seo';
+import {Txt} from '~/components/Txt';
+import {copyText} from '~/lib/copy';
 
 type OrdersLoaderData = {
   customer: CustomerOrdersFragment;
@@ -38,8 +40,10 @@ type OrdersLoaderData = {
 
 export const meta: Route.MetaFunction = () =>
   buildSeoMeta({
-    title: 'Orders',
-    description: 'View and filter your OpenDrone order history.',
+    title: copyText('account.orders.meta_title') ?? 'Orders',
+    description:
+      copyText('account.orders.meta_description') ??
+      'View and filter your OpenDrone order history.',
     robots: 'noindex,nofollow',
   });
 
@@ -108,18 +112,22 @@ function EmptyOrders({hasFilters = false}: {hasFilters?: boolean}) {
     <div>
       {hasFilters ? (
         <>
-          <p>No orders found matching your search.</p>
+          <Txt id="account.orders.empty_filtered" as="p" />
           <br />
           <p>
-            <Link prefetch="viewport" to="/account/orders">Clear filters →</Link>
+            <Link prefetch="viewport" to="/account/orders">
+              <Txt id="account.orders.empty_filtered_cta" />
+            </Link>
           </p>
         </>
       ) : (
         <>
-          <p>You haven&apos;t placed any orders yet.</p>
+          <Txt id="account.orders.empty" as="p" />
           <br />
           <p>
-            <Link prefetch="viewport" to="/collections/all">Start Shopping →</Link>
+            <Link prefetch="viewport" to="/collections/all">
+              <Txt id="account.orders.empty_cta" />
+            </Link>
           </p>
         </>
       )}
@@ -164,25 +172,36 @@ function OrderSearchForm({
       ref={formRef}
       onSubmit={handleSubmit}
       className="order-search-form"
-      aria-label="Search orders"
+      aria-label={copyText('account.orders.search_aria') ?? 'Search orders'}
     >
       <fieldset className="order-search-fieldset">
-        <legend className="order-search-legend">Filter Orders</legend>
+        <Txt
+          id="account.orders.filter_legend"
+          as="legend"
+          className="order-search-legend"
+        />
 
         <div className="order-search-inputs">
           <input
             type="search"
             name={ORDER_FILTER_FIELDS.NAME}
-            placeholder="Order #"
-            aria-label="Order number"
+            placeholder={copyText('account.orders.filter_number_placeholder')}
+            aria-label={
+              copyText('account.orders.filter_number_aria') ?? 'Order number'
+            }
             defaultValue={currentFilters.name || ''}
             className="order-search-input"
           />
           <input
             type="search"
             name={ORDER_FILTER_FIELDS.CONFIRMATION_NUMBER}
-            placeholder="Confirmation #"
-            aria-label="Confirmation number"
+            placeholder={copyText(
+              'account.orders.filter_confirmation_placeholder',
+            )}
+            aria-label={
+              copyText('account.orders.filter_confirmation_aria') ??
+              'Confirmation number'
+            }
             defaultValue={currentFilters.confirmationNumber || ''}
             className="order-search-input"
           />
@@ -190,7 +209,13 @@ function OrderSearchForm({
 
         <div className="order-search-buttons">
           <button type="submit" disabled={isSearching}>
-            {isSearching ? 'Searching' : 'Search'}
+            <Txt
+              id={
+                isSearching
+                  ? 'account.orders.search_busy'
+                  : 'account.orders.search'
+              }
+            />
           </button>
           {hasFilters && (
             <button
@@ -201,7 +226,7 @@ function OrderSearchForm({
                 formRef.current?.reset();
               }}
             >
-              Clear
+              <Txt id="account.orders.clear" />
             </button>
           )}
         </div>
@@ -220,12 +245,18 @@ function OrderItem({order}: {order: OrderItemFragment}) {
         </Link>
         <p>{new Date(order.processedAt).toDateString()}</p>
         {order.confirmationNumber && (
-          <p>Confirmation: {order.confirmationNumber}</p>
+          <p>
+            {(
+              copyText('account.orders.confirmation') ?? 'Confirmation: {number}'
+            ).replace('{number}', order.confirmationNumber)}
+          </p>
         )}
         <p>{order.financialStatus}</p>
         {fulfillmentStatus && <p>{fulfillmentStatus}</p>}
         <Money data={order.totalPrice} />
-        <Link prefetch="viewport" to={`/account/orders/${btoa(order.id)}`}>View Order →</Link>
+        <Link prefetch="viewport" to={`/account/orders/${btoa(order.id)}`}>
+          <Txt id="account.orders.view_order" />
+        </Link>
       </div>
     </article>
   );

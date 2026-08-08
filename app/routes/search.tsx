@@ -9,17 +9,36 @@ import {
   getEmptyPredictiveSearchResult,
 } from '~/lib/search';
 import {buildSeoMeta} from '~/lib/seo';
+import {Txt} from '~/components/Txt';
+import {copyText, editAttrs} from '~/lib/copy';
 import type {
   RegularSearchQuery,
   PredictiveSearchQuery,
 } from 'storefrontapi.generated';
 
+/**
+ * The two term-bearing meta strings carry a `{term}` token rather than being
+ * assembled from fragments. A copy file cannot interpolate, but splitting
+ * `Search results for "esc"` into a prefix and a quote would leave two
+ * half-sentences in the studio and no way to reorder them. The token keeps the
+ * whole sentence editable; the value it stands for stays in code.
+ */
+function withTerm(id: string, fallback: string, term: string): string {
+  return (copyText(id) ?? fallback).replace('{term}', term);
+}
+
 export const meta: Route.MetaFunction = ({data}) =>
   buildSeoMeta({
-    title: data?.term ? `Search results for "${data.term}"` : 'Search',
+    title: data?.term
+      ? withTerm('search.meta_title_term', 'Search results for "{term}"', data.term)
+      : copyText('search.meta_title') ?? 'Search',
     description: data?.term
-      ? `Search OpenDrone for ${data.term}.`
-      : 'Search OpenDrone products, articles, and pages.',
+      ? withTerm(
+          'search.meta_description_term',
+          'Search OpenDrone for {term}.',
+          data.term,
+        )
+      : copyText('search.meta_description') ?? '',
     robots: 'noindex,follow',
   });
 
@@ -49,12 +68,9 @@ export default function SearchPage() {
   return (
     <div className="search-page page-shell">
       <header className="page-header">
-        <p className="page-eyebrow">Search</p>
-        <h1 className="page-title">Search the catalog</h1>
-        <p className="page-description">
-          Find products, technical pages, and build notes across the
-          OpenDrone storefront.
-        </p>
+        <Txt id="search.eyebrow" as="p" className="page-eyebrow" />
+        <Txt id="search.title" as="h1" className="page-title" />
+        <Txt id="search.description" as="p" className="page-description" />
       </header>
       <SearchForm>
         {({inputRef}) => (
@@ -63,13 +79,17 @@ export default function SearchPage() {
               className="search-input"
               defaultValue={term}
               name="q"
-              placeholder="Search..."
+              placeholder={copyText('search.input_placeholder')}
               ref={inputRef}
               type="search"
+              {...editAttrs('search.input_placeholder')}
             />
-            <button className="search-submit" type="submit">
-              Search
-            </button>
+            <Txt
+              id="search.submit"
+              as="button"
+              className="search-submit"
+              type="submit"
+            />
           </div>
         )}
       </SearchForm>

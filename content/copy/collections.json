@@ -1,0 +1,9 @@
+{
+  "$route": "/collections",
+  "$title": "Collections index",
+  "meta_title": "Collections",
+  "meta_description": "Browse OpenDrone collections for flight controllers, ESCs, frames, and open hardware builds.",
+  "eyebrow": "Catalog",
+  "title": "Collections",
+  "description": "Browse the catalog by product family and jump straight into the hardware stack you care about."
+}

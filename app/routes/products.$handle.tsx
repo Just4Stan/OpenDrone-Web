@@ -36,7 +36,7 @@ import {CommitHistoryCard, LatestCommitCard} from '~/components/LatestCommit';
 import {AnimatedNumber} from '~/components/AnimatedNumber';
 import {WatchCard} from '~/components/WatchCard';
 import {redirectIfHandleIsLocalized} from '~/lib/redirect';
-import {copy} from '~/lib/copy';
+import {copy, copyText, editAttrs} from '~/lib/copy';
 import {
   resolveChapters,
   type ChapterEntry,
@@ -305,9 +305,12 @@ function DownloadsGrid({downloads}: {downloads: DownloadAsset[]}) {
           <span className="download-label">{d.label}</span>
           {d.note ? <span className="download-note">{d.note}</span> : null}
           {d.size ? <span className="download-size">{d.size}</span> : null}
-          <span className="download-cta" aria-hidden="true">
-            Download ↗
-          </span>
+          <Txt
+            id="product-chrome.download_cta"
+            as="span"
+            className="download-cta"
+            aria-hidden="true"
+          />
         </a>
       ))}
     </div>
@@ -322,19 +325,26 @@ function DownloadsGrid({downloads}: {downloads: DownloadAsset[]}) {
  * public and still invites, it just doesn't point at people who aren't there.
  */
 function ContributorsIntro({empty, title}: {empty?: boolean; title?: string}) {
+  if (empty || !title) {
+    return (
+      <Txt
+        id="product-chrome.contributors_intro_empty"
+        as="p"
+        className="chapter-body"
+      />
+    );
+  }
+  // The product's name is Shopify data, so the sentence marks its slot with
+  // `{product}` and is split around it here. One editable sentence beats
+  // shipping "These are the GitHub accounts behind" and "; the next tile is
+  // reserved." to the studio as two fragments nobody can read.
+  const id = 'product-chrome.contributors_intro';
+  const [before, after] = (copyText(id) ?? '').split('{product}');
   return (
-    <p className="chapter-body">
-      {empty || !title ? (
-        <>
-          Every commit on this design is public: the history, the issues and
-          the pull requests all live on GitHub. The next tile is yours.
-        </>
-      ) : (
-        <>
-          Every commit on this design is public. These are the GitHub accounts
-          behind {title}; the next tile is reserved.
-        </>
-      )}
+    <p className="chapter-body" {...editAttrs(id)}>
+      {before}
+      {title}
+      {after}
     </p>
   );
 }
@@ -449,6 +459,7 @@ function ChapterMediaPlaceholder({kind}: {kind: string}) {
 function Chapter({
   number,
   title,
+  titleId,
   children,
   media,
   backdrop,
@@ -461,7 +472,14 @@ function Chapter({
   label: string;
   /** Optional anchor id so in-page links (buy-area stars) can target it. */
   id?: string;
-  title: React.ReactNode;
+  /**
+   * The designed title, as a copy id. Rendered straight into the `<h2>` so the
+   * heading carries its own studio annotation and its inline `*emphasis*`
+   * without an extra wrapper element. `title` (the per-product override from
+   * `content/chapters.json`) wins when set.
+   */
+  titleId?: string;
+  title?: React.ReactNode;
   children: React.ReactNode;
   /** When defined, gate the body text's slide-in on this flag (false = held off
    *  to the left, hidden). Used by the teardown so the copy slides in only after
@@ -494,7 +512,11 @@ function Chapter({
     >
       {backdrop ? <div className="chapter-backdrop">{backdrop}</div> : null}
       <div className="chapter-body-col">
-        {title ? <h2 className="chapter-title">{title}</h2> : null}
+        {title ? (
+          <h2 className="chapter-title">{title}</h2>
+        ) : titleId ? (
+          <Txt id={titleId} as="h2" className="chapter-title" />
+        ) : null}
         {children}
       </div>
       {backdrop || noMedia ? null : (
@@ -971,7 +993,12 @@ export default function Product() {
         if (pin.chips?.length) {
           for (const chip of pin.chips)
             if (chip.refs?.length)
-              out.push({refs: chip.refs, union: false, name: chip.label, cost: 'I/O'});
+              out.push({
+                refs: chip.refs,
+                union: false,
+                name: chip.label,
+                cost: copyText('product-chrome.teardown_io_tag'),
+              });
         } else if (pin.refs?.length) {
           out.push({
             refs: pin.refs,
@@ -1140,7 +1167,11 @@ export default function Product() {
     if (pin.chips?.length) {
       return (
         <li key={pin.ref} className="teardown-pin teardown-io-row">
-          <span className="teardown-io-tag">I/O</span>
+          <Txt
+            id="product-chrome.teardown_io_tag"
+            as="span"
+            className="teardown-io-tag"
+          />
           <div className="teardown-io-chips">
             {pin.chips.map((chip) => {
               const chipActive =
@@ -1362,6 +1393,16 @@ export default function Product() {
         onSelect={selectTier}
       />
     ) : null;
+  // The two firmware trust chips stay ONE editable sentence each: the firmware
+  // project's name and the component count are data, so the copy marks their
+  // slots with `{project}` / `{count}` / `{firmwares}` and the sentence is split
+  // around them here.
+  const firmwareChipParts = (
+    copyText('product-chrome.trust_chip_firmware') ?? ''
+  ).split('{project}');
+  const bundleChipParts = (
+    copyText('product-chrome.trust_chip_firmware_bundle') ?? ''
+  ).split(/\{count\}|\{firmwares\}/);
   const isBundle = Boolean(content.bundle);
   const buyPrice = isBundle ? bundlePrice : selectedVariant?.price;
   const buyAvailable = isBundle
@@ -1376,24 +1417,35 @@ export default function Product() {
       data-buy-module
     >
       <div className="product-buy-price">
-        <span
+        <Txt
+          id={
+            status === 'idea'
+              ? 'product-chrome.buy_status_concept'
+              : 'product-chrome.buy_status_soon'
+          }
+          as="span"
           className="product-buy-soon"
-          aria-label={status === 'idea' ? 'Concept' : 'Coming soon'}
-        >
-          {status === 'idea' ? 'Concept' : 'Coming soon'}
-        </span>
+          aria-label={copyText(
+            status === 'idea'
+              ? 'product-chrome.buy_status_concept'
+              : 'product-chrome.buy_status_soon',
+          )}
+        />
         {content.statusNote ? (
           <span className="product-buy-sku">{content.statusNote}</span>
         ) : selectedVariant?.sku ? (
-          <span className="product-buy-sku">SKU {selectedVariant.sku}</span>
+          <span className="product-buy-sku">
+            {copyText('product-chrome.buy_sku_prefix')}{' '}
+            {selectedVariant.sku}
+          </span>
         ) : null}
       </div>
       {status === 'idea' ? (
-        <p className="product-buy-idea-pitch">
-          No hardware exists yet: this page is the idea, published so the
-          design can happen in public. Open an issue, sketch a schematic,
-          or leave your email and watch it become real.
-        </p>
+        <Txt
+          id="product-chrome.buy_idea_pitch"
+          as="p"
+          className="product-buy-idea-pitch"
+        />
       ) : null}
       <NewsletterSignup
         notify={{productHandle: product.handle, productTitle: product.title}}
@@ -1407,7 +1459,7 @@ export default function Product() {
           target="_blank"
           rel="noopener noreferrer"
         >
-          Help design it on GitHub ↗
+          {copyText('product-chrome.buy_idea_repo_cta')}
         </a>
       ) : null}
     </div>
@@ -1421,7 +1473,11 @@ export default function Product() {
             price={buyPrice}
             compareAtPrice={isBundle ? undefined : selectedVariant?.compareAtPrice}
           />
-          <span className="product-buy-vat">incl.&nbsp;VAT</span>
+          <Txt
+            id="product-chrome.buy_vat_note"
+            as="span"
+            className="product-buy-vat"
+          />
         </span>
         {isBundle ? (
           <span className="product-buy-sku">
@@ -1431,19 +1487,24 @@ export default function Product() {
             )?.[1] ?? `OpenFC-Lite + OpenESC · ${activeTier}`}
           </span>
         ) : selectedVariant?.sku ? (
-          <span className="product-buy-sku">SKU {selectedVariant.sku}</span>
+          <span className="product-buy-sku">
+            {copyText('product-chrome.buy_sku_prefix')}{' '}
+            {selectedVariant.sku}
+          </span>
         ) : null}
       </div>
       <span className={`product-buy-stock${buyAvailable ? '' : ' is-out'}`}>
         {isBundle
-          ? buyAvailable
-            ? 'Both boards in stock · ships from Belgium'
-            : 'One or both boards unavailable'
+          ? copyText(
+              buyAvailable
+                ? 'product-chrome.buy_stock_bundle_in'
+                : 'product-chrome.buy_stock_bundle_out',
+            )
           : selectedVariant?.availableForSale
-            ? 'In stock · ships from Belgium'
+            ? copyText('product-chrome.buy_stock_in')
             : content.statusNote
-              ? `Sold out · ${content.statusNote}`
-              : 'Sold out'}
+              ? `${copyText('product-chrome.buy_stock_out') ?? ''} · ${content.statusNote}`
+              : copyText('product-chrome.buy_stock_out')}
       </span>
       {!isBundle && selectedVariant && !selectedVariant.availableForSale ? (
         <NewsletterSignup
@@ -1461,7 +1522,9 @@ export default function Product() {
         hideOptionNames={content.optionAxis ? [content.optionAxis] : undefined}
         bundleLines={isBundle ? bundleLines : undefined}
         bundleDisabled={isBundle ? !bundleAvailable : undefined}
-        bundleCtaLabel={isBundle ? 'Add the stack: both boards' : undefined}
+        bundleCtaLabel={
+          isBundle ? copyText('product-chrome.buy_bundle_cta') : undefined
+        }
         stackOffers={stackOffers}
       />
     </div>
@@ -1561,9 +1624,8 @@ export default function Product() {
       <Chapter
         number={n}
         label="Open for learning"
-        title={
-          title ?? "Published so you can study it. Produced so you don't have to."
-        }
+        title={title}
+        titleId="product-chrome.ch_open_source_title"
         wideMedia={!!schematicHandle}
         media={
           schematicHandle ? (
@@ -1594,10 +1656,16 @@ export default function Product() {
                   className="open-source-card open-source-card--github"
                 >
                   <p className="open-source-card-label">{c.title}</p>
-                  <p className="open-source-card-title">GitHub repo ↗</p>
-                  <p className="open-source-card-sub">
-                    Schematic · PCB · BOM · 3D STEP
-                  </p>
+                  <Txt
+                    id="product-chrome.os_card_repo_title"
+                    as="p"
+                    className="open-source-card-title"
+                  />
+                  <Txt
+                    id="product-chrome.os_card_repo_sub_bundle"
+                    as="p"
+                    className="open-source-card-sub"
+                  />
                 </a>
               );
             })
@@ -1618,14 +1686,26 @@ export default function Product() {
                 rel="noopener noreferrer"
                 className="open-source-card open-source-card--github"
               >
-                <p className="open-source-card-label">Study</p>
-                <p className="open-source-card-title">GitHub repo ↗</p>
-                <p className="open-source-card-sub">
-                  {/* CAD products (the frame) have no schematic/PCB. */}
-                  {content.teardown?.frameViewer
-                    ? '3D CAD · STEP · hardware BOM'
-                    : 'Schematic · PCB · BOM · 3D STEP · design notes'}
-                </p>
+                <Txt
+                  id="product-chrome.os_card_study_label"
+                  as="p"
+                  className="open-source-card-label"
+                />
+                <Txt
+                  id="product-chrome.os_card_repo_title"
+                  as="p"
+                  className="open-source-card-title"
+                />
+                {/* CAD products (the frame) have no schematic/PCB. */}
+                <Txt
+                  id={
+                    content.teardown?.frameViewer
+                      ? 'product-chrome.os_card_repo_sub_cad'
+                      : 'product-chrome.os_card_repo_sub'
+                  }
+                  as="p"
+                  className="open-source-card-sub"
+                />
               </a>
               {content.video ? null : (
                 <a
@@ -1634,11 +1714,21 @@ export default function Product() {
                   rel="noopener noreferrer"
                   className="open-source-card"
                 >
-                  <p className="open-source-card-label">Iterate</p>
-                  <p className="open-source-card-title">Open issues ↗</p>
-                  <p className="open-source-card-sub">
-                    Rev candidates · bugs · community discussion
-                  </p>
+                  <Txt
+                    id="product-chrome.os_card_issues_label"
+                    as="p"
+                    className="open-source-card-label"
+                  />
+                  <Txt
+                    id="product-chrome.os_card_issues_title"
+                    as="p"
+                    className="open-source-card-title"
+                  />
+                  <Txt
+                    id="product-chrome.os_card_issues_sub"
+                    as="p"
+                    className="open-source-card-sub"
+                  />
                 </a>
               )}
             </>
@@ -1656,12 +1746,14 @@ export default function Product() {
             >
               <OshwaMark
                 uid={activeOshwaUid}
-                title={`OSHWA-certified open source hardware · ${activeOshwaUid}`}
+                title={`${copyText('product-chrome.oshwa_mark_title') ?? ''} · ${activeOshwaUid}`}
                 className="open-source-card-oshwa-mark"
               />
-              <p className="open-source-card-sub open-source-card-sub--oshwa">
-                CERN-OHL-S v2 ↗
-              </p>
+              <Txt
+                id="product-chrome.os_card_oshwa_sub"
+                as="p"
+                className="open-source-card-sub open-source-card-sub--oshwa"
+              />
             </a>
           ) : (
             <a
@@ -1670,11 +1762,21 @@ export default function Product() {
               rel="noopener noreferrer"
               className="open-source-card open-source-card--cern"
             >
-              <p className="open-source-card-label">License</p>
-              <p className="open-source-card-title">CERN-OHL-S v2 ↗</p>
-              <p className="open-source-card-sub">
-                Strong reciprocal: share your changes
-              </p>
+              <Txt
+                id="product-chrome.os_card_license_label"
+                as="p"
+                className="open-source-card-label"
+              />
+              <Txt
+                id="product-chrome.os_card_license_title"
+                as="p"
+                className="open-source-card-title"
+              />
+              <Txt
+                id="product-chrome.os_card_license_sub"
+                as="p"
+                className="open-source-card-sub"
+              />
             </a>
           )}
           {/* The latest commit rides in the same row as the resource cards —
@@ -1729,9 +1831,11 @@ export default function Product() {
         <Chapter
           number={n}
           label="Teardown"
-          title={
-            title ??
-            (frameViewer ? 'Every arm, plate and standoff, exploded' : 'Teardown')
+          title={title}
+          titleId={
+            frameViewer
+              ? 'product-chrome.ch_teardown_title_frame'
+              : 'product-chrome.ch_teardown_title'
           }
           textReveal={frameViewer ? undefined : textIn}
           backdrop={
@@ -1781,25 +1885,43 @@ export default function Product() {
                 {isMobile && orderedParts.length ? (
                   <div className="board-part-tour">
                     <p className="board-part-tour-head" aria-live="polite">
-                      <span className="board-deck-name">Components</span>
-                      <span className="board-deck-hint">
-                        Tap one to find it on the board
-                      </span>
+                      <Txt
+                        id="product-chrome.teardown_tour_heading"
+                        as="span"
+                        className="board-deck-name"
+                      />
+                      <Txt
+                        id="product-chrome.teardown_tour_hint"
+                        as="span"
+                        className="board-deck-hint"
+                      />
                     </p>
                     {/* Real, labelled, thumb-sized chips split into a top-side and
                         a bottom-side row — not one long scroller. Tap one to
                         spotlight that part on the board; each row scrolls for the
                         rest. */}
                     {[
-                      {label: 'Top', parts: partRows.top},
-                      {label: 'Bottom', parts: partRows.bottom},
+                      {
+                        key: 'top',
+                        label: copyText('product-chrome.teardown_side_top'),
+                        aria: copyText('product-chrome.teardown_side_top_aria'),
+                        parts: partRows.top,
+                      },
+                      {
+                        key: 'bottom',
+                        label: copyText('product-chrome.teardown_side_bottom'),
+                        aria: copyText(
+                          'product-chrome.teardown_side_bottom_aria',
+                        ),
+                        parts: partRows.bottom,
+                      },
                     ]
                       .filter((row) => row.parts.length)
                       .map((row) => (
                         <div
-                          key={row.label}
+                          key={row.key}
                           className="board-part-chips"
-                          aria-label={`${row.label}-side components`}
+                          aria-label={row.aria}
                         >
                           <span className="board-part-chips-side">{row.label}</span>
                           {row.parts.map((p, i) => {
@@ -1877,7 +1999,7 @@ export default function Product() {
               target="_blank"
               rel="noopener noreferrer"
             >
-              Inspect interactively ↗
+              {copyText('product-chrome.teardown_inspect_cta')}
             </a>
           ) : null}
         </Chapter>
@@ -1887,7 +2009,8 @@ export default function Product() {
         <Chapter
           number={n}
           label="Datasheet"
-          title={title ?? 'Every spec, one table'}
+          title={title}
+          titleId="product-chrome.ch_specs_title"
           noMedia
         >
           <dl className="spec-table">
@@ -1914,26 +2037,19 @@ export default function Product() {
         <Chapter
           number={n}
           label="In the box"
-          title={
-            title ??
-            (content.bundle ? (
-              <>
-                Two boards, two firmwares,{' '}
-                <em>two maintainers paid.</em>
-              </>
-            ) : (
-              'In the box'
-            ))
+          title={title}
+          titleId={
+            content.bundle
+              ? 'product-chrome.ch_in_the_box_title_bundle'
+              : 'product-chrome.ch_in_the_box_title'
           }
         >
           {content.bundle ? (
-            <p className="chapter-body">
-              The bundle is just OpenFC-Lite and OpenESC shipped together. No
-              combined SKU, no tied hardware: each board is the same one
-              you can buy on its own. What you save is courier-and-handling.
-              What you don&apos;t lose is the €1 split: each firmware
-              project still gets paid from this order.
-            </p>
+            <Txt
+              id="product-chrome.in_the_box_bundle_body"
+              as="p"
+              className="chapter-body"
+            />
           ) : null}
           {mergedBox.length > 0 ? (
             <ul className="in-the-box">
@@ -1962,12 +2078,15 @@ export default function Product() {
                   <p className="bundle-component-title">{c.title}</p>
                   <p className="bundle-component-blurb">{c.blurb}</p>
                   <p className="bundle-component-firmware">
-                    Firmware ·{' '}
+                    {copyText('product-chrome.bundle_component_firmware_label')}{' '}
                     <span>{c.firmware}</span>
                   </p>
-                  <span className="bundle-component-more" aria-hidden="true">
-                    View the board →
-                  </span>
+                  <Txt
+                    id="product-chrome.bundle_component_more"
+                    as="span"
+                    className="bundle-component-more"
+                    aria-hidden="true"
+                  />
                 </Link>
               ))}
             </div>
@@ -1977,7 +2096,7 @@ export default function Product() {
               // The frame is a CAD product — "schematic, PCB, BOM" is PCB
               // wording that doesn't apply to carbon plates.
               content.teardown?.frameViewer
-                ? 'CAD, materials, hardware kit'
+                ? copyText('product-chrome.provenance_design_note_cad')
                 : undefined
             }
           />
@@ -1988,20 +2107,14 @@ export default function Product() {
         <Chapter
           number={n}
           label="Downloads"
-          title={
-            title ?? (
-              <>
-                Files you can fork,{' '}
-                <em>build on, or audit.</em>
-              </>
-            )
-          }
+          title={title}
+          titleId="product-chrome.ch_downloads_title"
         >
-          <p className="chapter-body">
-            Straight from the repo. If a link 404s, the file moved; open
-            an issue on the matching GitHub repo and we&apos;ll point it
-            back.
-          </p>
+          <Txt
+            id="product-chrome.downloads_intro"
+            as="p"
+            className="chapter-body"
+          />
           <DownloadsGrid downloads={content.downloads} />
         </Chapter>
     ),
@@ -2010,13 +2123,8 @@ export default function Product() {
         <Chapter
           number={n}
           label="The €1"
-          title={
-            title ?? (
-              <>
-                What <em>you</em> pay, what the <em>developers</em> get.
-              </>
-            )
-          }
+          title={title}
+          titleId="product-chrome.ch_firmware_title"
           media={
             content.firmware.logo ? (
               /* Not loading="lazy": same reason as the contributor avatars,
@@ -2029,7 +2137,7 @@ export default function Product() {
                     : 'firmware-logo'
                 }
                 src={content.firmware.logo}
-                alt={`${content.firmware.project} logo`}
+                alt={`${content.firmware.project} ${copyText('product-chrome.firmware_logo_alt_suffix') ?? ''}`}
                 decoding="async"
               />
             ) : undefined
@@ -2052,13 +2160,8 @@ export default function Product() {
         <Chapter
           number={n}
           label="Contributors"
-          title={
-            title ?? (
-              <>
-                Built in the open, <em>by whoever shows up.</em>
-              </>
-            )
-          }
+          title={title}
+          titleId="product-chrome.ch_contributors_title"
           noMedia
         >
           {/* The intro has to stream with the grid, not ahead of it. GitHub's
@@ -2111,23 +2214,25 @@ export default function Product() {
           id="reviews"
           number={n}
           label="Reviews"
-          title={
-            title ?? (
-              <>
-                Field reports, <em>order on file.</em>
-              </>
-            )
-          }
+          title={title}
+          titleId="product-chrome.ch_reviews_title"
           noMedia
         >
-          {/* TODO(copy-stan): review-chapter framing line. */}
-          <p className="chapter-body">
-            Collected by email after delivery, published unedited.
-            &ldquo;Verified buyer&rdquo; means the reviewer&apos;s order is
-            on file. The average here is the same number search engines
-            get: {reviewAggregate.value.toFixed(1)} over{' '}
-            {reviewAggregate.count}{' '}
-            {reviewAggregate.count === 1 ? 'rating' : 'ratings'}.
+          {/* The aggregate is Shopify data, so the framing sentence marks its
+              slots with `{average}`, `{count}` and `{ratings}` and stays one
+              editable string. */}
+          <p className="chapter-body" {...editAttrs('product-chrome.reviews_intro')}>
+            {(copyText('product-chrome.reviews_intro') ?? '')
+              .replace('{average}', reviewAggregate.value.toFixed(1))
+              .replace('{count}', String(reviewAggregate.count))
+              .replace(
+                '{ratings}',
+                copyText(
+                  reviewAggregate.count === 1
+                    ? 'product-chrome.reviews_rating_one'
+                    : 'product-chrome.reviews_rating_many',
+                ) ?? '',
+              )}
           </p>
           <Suspense
             fallback={<ReviewListFallback totalCount={reviewAggregate.count} />}
@@ -2193,7 +2298,8 @@ export default function Product() {
 
         <div className="product-hero-copy">
           <p className="product-hero-eyebrow">
-            File {content.fileNumber} · {content.family}
+            {copyText('product-chrome.hero_eyebrow_file')} {content.fileNumber} ·{' '}
+            {content.family}
           </p>
           {hasHeroCopy ? (
             <h1 className="product-hero-headline">
@@ -2226,7 +2332,10 @@ export default function Product() {
             <p className="product-hero-lead">{content.hero.lead}</p>
           ) : null}
 
-          <ul className="trust-chips" aria-label="Certifications">
+          <ul
+            className="trust-chips"
+            aria-label={copyText('product-chrome.trust_chips_aria')}
+          >
             {isEditorial ? (
               <li>
                 <Link
@@ -2234,7 +2343,7 @@ export default function Product() {
                   prefetch="viewport"
                   className="trust-chip trust-chip-green trust-chip-link"
                 >
-                  Open source
+                  {copyText('product-chrome.trust_chip_open_source')}
                 </Link>
               </li>
             ) : null}
@@ -2245,7 +2354,7 @@ export default function Product() {
                   target="_blank"
                   rel="noopener noreferrer"
                   className="trust-chip trust-chip-oshwa trust-chip-link"
-                  title={`OSHWA-certified open source hardware · ${activeOshwaUid}`}
+                  title={`${copyText('product-chrome.oshwa_mark_title') ?? ''} · ${activeOshwaUid}`}
                 >
                   <img
                     src="/logos/oshwa.svg"
@@ -2253,7 +2362,8 @@ export default function Product() {
                     aria-hidden="true"
                     className="trust-chip-oshwa-mark"
                   />
-                  OSHWA certified · {activeOshwaUid}
+                  {copyText('product-chrome.trust_chip_oshwa')} ·{' '}
+                  {activeOshwaUid}
                 </a>
               </li>
             ) : null}
@@ -2264,8 +2374,11 @@ export default function Product() {
                   prefetch="viewport"
                   className="trust-chip trust-chip-gold trust-chip-link"
                 >
-                  €1 × {content.bundle.components.length} →{' '}
+                  {bundleChipParts[0]}
+                  {content.bundle.components.length}
+                  {bundleChipParts[1]}
                   {content.bundle.components.map((c) => c.firmware).join(' + ')}
+                  {bundleChipParts[2]}
                 </Link>
               </li>
             ) : content.firmware.project && content.firmware.project !== '—' ? (
@@ -2275,7 +2388,9 @@ export default function Product() {
                   prefetch="viewport"
                   className="trust-chip trust-chip-gold trust-chip-link"
                 >
-                  €1 → {content.firmware.project} devs
+                  {firmwareChipParts[0]}
+                  {content.firmware.project}
+                  {firmwareChipParts[1]}
                 </Link>
               </li>
             ) : null}

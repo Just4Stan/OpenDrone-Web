@@ -334,10 +334,11 @@
     "distance": 2.15,
     "height": 0.5,
     "heightOnBoard": 0.72,
-    "dollyOnShow": 0.92
+    "dollyOnShow": 0.92,
+    "lift": 0.24
   },
   "_saved": "2026-08-08, saved from the studio panel",
-  "_status": "WIRED BOTH WAYS. app/components/HeroDroneScene.tsx reads this file at runtime. public/models/od3/_studio.html loads it on open, so every control starts on the value the site renders, and its save button POSTs the whole file back through the dev-only /__studio/write endpoint. Settings the panel has no control for are carried through untouched on save: name, model, beats, boards, boardExclude, videoModule, notFrame, scroll.minDwellS, spotlight.stageLift, spotlight.colour, spotlight.beamColour, spotlight.beamGain, and each material id, label and match.",
+  "_status": "WIRED BOTH WAYS. app/components/HeroDroneScene.tsx reads this file at runtime. public/models/od3/_studio.html loads it on open, including the beat timeline, so every control starts on the value the site renders, and its save button POSTs the whole file back through the dev-only /__studio/write endpoint. The panel edits beat titles, notes, fade, partSize and stops, but not the shape of the timeline: adding, deleting and reordering beats, and every `select` and `choreo`, are file edits. Also carried through untouched on save: name, model, boards, boardExclude, videoModule, notFrame, scroll.minDwellS, spotlight.beamGain (which the panel renderer has no equivalent for), and each material id, label and match.",
   "scroll": {
     "_note": "Weight comes from springHz: it is a critically damped spring, so a lower frequency reads as more mass. gain sets how far one notch of wheel pushes the target, commitAt how much of a stop-to-stop move a gesture must cover before it counts as intent to advance.",
     "springHz": 0.38,

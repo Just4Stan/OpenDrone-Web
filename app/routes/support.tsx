@@ -7,11 +7,25 @@ import {getMeta} from '~/lib/support/ticket-index';
 import {SupportThread} from '~/components/SupportThread';
 import {FeedbackModal} from '~/components/FeedbackModal';
 import {buildSeoMeta} from '~/lib/seo';
+import {Txt} from '~/components/Txt';
+import {copy, copyText, editAttrs} from '~/lib/copy';
 
+/**
+ * Words come from `content/copy/support.json`; everything that makes the widget
+ * work does not. Sessions, polling, the Discord relay, Turnstile, the file
+ * limits and every endpoint stay in this file, and the error strings the
+ * `/api/support/*` routes send back are their copy, not this page's — they are
+ * rendered verbatim.
+ *
+ * Where a string sits next to a glyph or a dynamic value the text is read with
+ * `copyText` and the annotation is put on the element that owns it, rather than
+ * wrapping it in a `<Txt>` span. `.support-relay-trace li > span` colours the
+ * TX/RX tag, so an extra span there would paint the sentence gold.
+ */
 export const meta: Route.MetaFunction = () =>
   buildSeoMeta({
-    title: 'Support',
-    description: 'OpenDrone runs on Discord. Open a ticket here and a bot relays it into the server; replies come from the engineers who design the boards.',
+    title: copyText('support.meta_title') ?? 'Support',
+    description: copyText('support.meta_description') ?? '',
     robots: 'noindex,nofollow',
   });
 
@@ -57,7 +71,8 @@ export async function loader({request, context}: Route.LoaderArgs) {
       phase: 'active' as const,
       ticket: {
         pid: cookieTicket.pid ?? '',
-        subject: meta?.subject ?? 'Support ticket',
+        subject:
+          meta?.subject ?? copyText('support.subject_fallback') ?? 'Support ticket',
         status: (meta?.status === 'closed'
           ? 'resolved'
           : 'open') as LoaderData extends {phase: 'active'; ticket: {status: infer S}}
@@ -121,72 +136,89 @@ export default function SupportRoute() {
   return <ActiveView ticket={data.ticket} />;
 }
 
+/** Which way each relay step runs. The words are copy; the direction is not. */
+const RELAY: Array<{id: string; dir: 'tx' | 'rx'}> = [
+  {id: 'you-type', dir: 'tx'},
+  {id: 'bot-posts', dir: 'tx'},
+  {id: 'engineer-answers', dir: 'rx'},
+  {id: 'bot-relays', dir: 'rx'},
+];
+
+/**
+ * The product picker. `value` is what the Discord relay files the ticket under,
+ * so it is structure and stays here; only the label a human reads is copy.
+ * `<option>` can hold text and nothing else, so these are read with `copyText`
+ * rather than rendered through `<Txt>`.
+ */
+const PRODUCT_OPTIONS: Array<{value: string; key: string}> = [
+  {value: '', key: 'placeholder'},
+  {value: 'OpenESC', key: 'openesc'},
+  {value: 'OpenFC', key: 'openfc'},
+  {value: 'OpenRX', key: 'openrx'},
+  {value: 'OpenMotor', key: 'openmotor'},
+  {value: 'OpenFrame', key: 'openframe'},
+  {value: 'Other', key: 'other'},
+];
+
 function SignedOutView({discordInvite}: {discordInvite: string}) {
   const returnTo =
     typeof window !== 'undefined' ? encodeURIComponent('/support') : '%2Fsupport';
+  // Read as one array so the id and the value cannot drift; the `.i` suffix on
+  // the annotation is the same path the studio's leaf walker produces.
+  const relaySteps = copy('support.relay_steps');
+  const steps = Array.isArray(relaySteps) ? relaySteps : [];
   return (
     <article className="od-page-frame support-page-frame">
       <header className="od-page-head">
-        <p className="od-eyebrow">File 09.A · Support</p>
+        <Txt id="support.signed_out_eyebrow" as="p" className="od-eyebrow" />
         <h1>
-          Sign in to open
-          <br />a <em>support ticket</em>.
+          <Txt id="support.signed_out_title_line1" />
+          <br />
+          <Txt id="support.signed_out_title_line2" />
         </h1>
-        <p>
-          OpenDrone is maintained on Discord: development, community and
-          support all happen there. This page is a terminal into that
-          server. A bot relays your ticket into a private thread and
-          carries the replies back here.
-        </p>
+        <Txt id="support.signed_out_intro" as="p" />
       </header>
 
       <div className="support-signed-out">
         <div className="od-tile od-tile-gold support-signin">
-          <p className="od-tile-eyebrow">→ SIGN IN REQUIRED</p>
-          <h2>Continue with your OpenDrone account</h2>
-          <p>
-            One ticket, one thread. Resume from desktop or phone.
-          </p>
+          <Txt id="support.signin_eyebrow" as="p" className="od-tile-eyebrow" />
+          <Txt id="support.signin_title" as="h2" />
+          <Txt id="support.signin_body" as="p" />
           <ul className="support-signin-reasons">
-            <li>We see exactly which SKU and firmware rev you have.</li>
-            <li>You can attach order files without typing the order number.</li>
+            <Txt id="support.signin_reasons" as="li" />
           </ul>
           <div className="support-signin-actions-row">
             <a
               href={`/account/login?return_to=${returnTo}`}
               className="od-btn od-btn-primary"
             >
-              Sign in →
+              <Txt id="support.signin_cta" />
             </a>
             <a
               href={`/account/login?return_to=${returnTo}`}
               className="od-btn od-btn-secondary"
             >
-              Create account
+              <Txt id="support.signin_cta_create" />
             </a>
           </div>
         </div>
         <div className="od-tile">
-          <p className="od-tile-eyebrow">↗ DIRECT PATH</p>
-          <h3>Or talk on Discord directly</h3>
-          <p>
-            The ticket form is just a relay into the same server. If you have
-            a Discord account, skip the terminal: build questions, tuning and
-            contributions all run in the open channels.
-          </p>
-          <ul className="support-relay-trace" aria-label="How the relay works">
-            <li data-dir="tx">
-              <span>TX →</span> you type a message on this page
-            </li>
-            <li data-dir="tx">
-              <span>TX →</span> the bot posts it as a thread in Discord
-            </li>
-            <li data-dir="rx">
-              <span>RX ←</span> an engineer answers in that thread
-            </li>
-            <li data-dir="rx">
-              <span>RX ←</span> the bot relays the reply back to you
-            </li>
+          <Txt id="support.discord_eyebrow" as="p" className="od-tile-eyebrow" />
+          <Txt id="support.discord_title" as="h3" />
+          <Txt id="support.discord_body" as="p" />
+          <ul
+            className="support-relay-trace"
+            aria-label={copyText('support.relay_aria')}
+          >
+            {RELAY.map(({id, dir}, i) => (
+              <li
+                key={id}
+                data-dir={dir}
+                {...editAttrs(`support.relay_steps.${i}`)}
+              >
+                <Txt id={`support.relay_tag_${dir}`} /> {steps[i]}
+              </li>
+            ))}
           </ul>
           <a
             href={discordInvite}
@@ -194,7 +226,7 @@ function SignedOutView({discordInvite}: {discordInvite: string}) {
             rel="noreferrer noopener"
             className="od-btn od-btn-secondary"
           >
-            Open Discord →
+            <Txt id="support.discord_cta" />
           </a>
         </div>
       </div>
@@ -254,10 +286,19 @@ function IntakeView({
     if (!incoming?.length) return null;
     const next = [...files];
     for (const f of Array.from(incoming)) {
-      if (next.length >= 5) return 'Max 5 files.';
-      if (f.size > 8 * 1024 * 1024) return `${f.name}: over 8 MB.`;
+      if (next.length >= 5) return copyText('support.err_max_files') ?? 'Max 5 files.';
+      if (f.size > 8 * 1024 * 1024) {
+        // `{name}` rather than a prefix plus a fragment: the sentence stays one
+        // editable string, the filename stays a runtime value.
+        return (copyText('support.err_file_too_big') ?? '{name}: over 8 MB.').replace(
+          '{name}',
+          f.name,
+        );
+      }
       const total = next.reduce((s, x) => s + x.size, 0) + f.size;
-      if (total > 24 * 1024 * 1024) return 'Total over 24 MB.';
+      if (total > 24 * 1024 * 1024) {
+        return copyText('support.err_total_too_big') ?? 'Total over 24 MB.';
+      }
       if (next.some((x) => x.name === f.name && x.size === f.size)) continue;
       next.push(f);
     }
@@ -290,13 +331,17 @@ function IntakeView({
           window.location.href = `/account/login?return_to=${encodeURIComponent('/support')}`;
           return;
         }
+        // Server copy, rendered verbatim: `/api/support/start` owns these.
         setError(json.message);
         const cf = (window as unknown as {turnstile?: Turnstile}).turnstile;
         if (cf && turnstileWidgetId.current) cf.reset(turnstileWidgetId.current);
       }
     } catch (err) {
       console.error('[support] start failed', err);
-      setError('Could not reach the server. Try again in a moment.');
+      setError(
+        copyText('support.err_unreachable') ??
+          'Could not reach the server. Try again in a moment.',
+      );
     } finally {
       setBusy(false);
     }
@@ -305,16 +350,9 @@ function IntakeView({
   return (
     <article className="od-page-frame od-page-narrow">
       <header className="od-page-head">
-        <p className="od-eyebrow">File 09.A · Open a ticket</p>
-        <h1>
-          Describe the <em>problem</em>.
-        </h1>
-        <p>
-          One thread per issue. Your ticket opens a private thread in the
-          OpenDrone Discord and a bot relays messages both ways. We reply in
-          the same window, usually within a few hours during CET business
-          time.
-        </p>
+        <Txt id="support.intake_eyebrow" as="p" className="od-eyebrow" />
+        <Txt id="support.intake_title" as="h1" />
+        <Txt id="support.intake_intro" as="p" />
       </header>
 
       <div className="support-intake-shell">
@@ -329,8 +367,12 @@ function IntakeView({
           >
             <div className="od-field-row">
               <div className="od-field">
-                <label htmlFor="sup-product">
-                  Product <span className="od-opt">· optional</span>
+                <label
+                  htmlFor="sup-product"
+                  {...editAttrs('support.field_product_label')}
+                >
+                  {copyText('support.field_product_label')}{' '}
+                  <Txt id="support.field_product_optional" className="od-opt" />
                 </label>
                 <select
                   id="sup-product"
@@ -339,18 +381,20 @@ function IntakeView({
                   defaultValue=""
                   disabled={busy}
                 >
-                  <option value="">Pick one</option>
-                  <option value="OpenESC">OpenESC (Electronic Speed Controller)</option>
-                  <option value="OpenFC">OpenFC (Flight Controller)</option>
-                  <option value="OpenRX">OpenRX (Receiver)</option>
-                  <option value="OpenMotor">OpenMotor</option>
-                  <option value="OpenFrame">OpenFrame</option>
-                  <option value="Other">Other / not sure</option>
+                  {PRODUCT_OPTIONS.map(({value, key}) => (
+                    <option key={key} value={value}>
+                      {copyText(`support.product_option_${key}`)}
+                    </option>
+                  ))}
                 </select>
               </div>
               <div className="od-field">
-                <label htmlFor="sup-fw">
-                  Firmware version <span className="od-opt">· if known</span>
+                <label
+                  htmlFor="sup-fw"
+                  {...editAttrs('support.field_firmware_label')}
+                >
+                  {copyText('support.field_firmware_label')}{' '}
+                  <Txt id="support.field_firmware_optional" className="od-opt" />
                 </label>
                 <input
                   id="sup-fw"
@@ -358,16 +402,23 @@ function IntakeView({
                   type="text"
                   className="od-input"
                   maxLength={80}
-                  placeholder="e.g. AM32 2.18 / Betaflight 4.5"
+                  placeholder={copyText('support.field_firmware_placeholder')}
                   disabled={busy}
+                  {...editAttrs('support.field_firmware_placeholder')}
                 />
               </div>
             </div>
 
             <div className="od-field">
-              <label htmlFor="sup-subj">
-                Subject{' '}
-                <span className="od-req" aria-label="required">
+              <label
+                htmlFor="sup-subj"
+                {...editAttrs('support.field_subject_label')}
+              >
+                {copyText('support.field_subject_label')}{' '}
+                <span
+                  className="od-req"
+                  aria-label={copyText('support.field_required_aria')}
+                >
                   *
                 </span>
               </label>
@@ -379,14 +430,24 @@ function IntakeView({
                 required
                 minLength={4}
                 maxLength={120}
-                placeholder="A short title: the issue in 5 words"
+                placeholder={copyText('support.field_subject_placeholder')}
                 disabled={busy}
+                {...editAttrs('support.field_subject_placeholder')}
               />
             </div>
 
             <div className="od-field">
-              <label htmlFor="sup-msg">
-                What&rsquo;s happening <span className="od-req" aria-label="required">*</span>
+              <label
+                htmlFor="sup-msg"
+                {...editAttrs('support.field_message_label')}
+              >
+                {copyText('support.field_message_label')}{' '}
+                <span
+                  className="od-req"
+                  aria-label={copyText('support.field_required_aria')}
+                >
+                  *
+                </span>
               </label>
               <textarea
                 id="sup-msg"
@@ -395,17 +456,21 @@ function IntakeView({
                 rows={6}
                 required
                 maxLength={4000}
-                placeholder="Describe what you tried, what you saw, and what you expected. Logs and a short clip help a lot."
+                placeholder={copyText('support.field_message_placeholder')}
                 disabled={busy}
+                {...editAttrs('support.field_message_placeholder')}
               />
             </div>
 
             <div className="od-field">
-              <label>
-                Attachments{' '}
-                <span className="od-opt">· images, logs, video up to 24 MB</span>
+              <label {...editAttrs('support.field_attachments_label')}>
+                {copyText('support.field_attachments_label')}{' '}
+                <Txt id="support.field_attachments_hint" className="od-opt" />
               </label>
-              <div className="support-attach-strip" aria-label="Attached files">
+              <div
+                className="support-attach-strip"
+                aria-label={copyText('support.attachments_strip_aria')}
+              >
                 {files.map((f, i) => (
                   <IntakeChip
                     key={`${f.name}-${i}`}
@@ -432,12 +497,13 @@ function IntakeView({
                   disabled={busy || files.length >= 5}
                   onClick={() => fileInputRef.current?.click()}
                 >
-                  + Add file
+                  <Txt id="support.attachments_add" />
                 </button>
               </div>
             </div>
 
-            {/* Honeypot */}
+            {/* Honeypot. The label is bait for bots, never shown or read out,
+                so it is machinery rather than copy and stays here. */}
             <label className="sr-only" aria-hidden="true">
               Website
               <input type="text" name="website" tabIndex={-1} autoComplete="off" />
@@ -445,11 +511,14 @@ function IntakeView({
 
             <div className="support-intake-form-actions">
               {turnstileSiteKey ? (
-                <div ref={turnstileContainerRef} aria-label="Bot check" />
+                <div
+                  ref={turnstileContainerRef}
+                  aria-label={copyText('support.turnstile_aria')}
+                />
               ) : (
                 <span className="od-turnstile" aria-hidden="true">
                   <span className="od-turnstile-box" />
-                  Verifying you&rsquo;re human · Cloudflare Turnstile
+                  <Txt id="support.turnstile_placeholder" />
                 </span>
               )}
               <button
@@ -457,7 +526,9 @@ function IntakeView({
                 className="od-btn od-btn-primary"
                 disabled={busy}
               >
-                {busy ? 'Opening ticket…' : 'Open ticket →'}
+                <Txt
+                  id={busy ? 'support.submit_busy' : 'support.submit_idle'}
+                />
               </button>
             </div>
 
@@ -468,17 +539,22 @@ function IntakeView({
             ) : null}
           </form>
         </div>
-        <p className="od-help" style={{marginTop: 12, textAlign: 'center'}}>
-          One open ticket at a time keeps things tidy on both sides.
-        </p>
+        <Txt
+          id="support.help_one_ticket"
+          as="p"
+          className="od-help"
+          style={{marginTop: 12, textAlign: 'center'}}
+        />
         <p className="od-help" style={{marginTop: 8, textAlign: 'center'}}>
-          Prefer Discord?{' '}
+          <Txt id="support.help_prefer_discord" />{' '}
           <a href={discordInvite} target="_blank" rel="noreferrer noopener">
-            Open the server →
+            <Txt id="support.help_prefer_discord_link" />
           </a>
         </p>
         <p className="od-help" style={{marginTop: 8, textAlign: 'center'}}>
-          Signed in as <strong>{prefill.email}</strong>.
+          {/* The address is account data and the full stop is punctuation
+              around it; only the lead-in is copy. */}
+          <Txt id="support.help_signed_in_as" /> <strong>{prefill.email}</strong>.
         </p>
       </div>
     </article>
@@ -510,6 +586,8 @@ function IntakeChip({file, onRemove}: {file: File; onRemove: () => void}) {
       <span className="od-help" style={{fontSize: 10}}>
         {formatBytes(file.size)}
       </span>
+      {/* The accessible name of a control, not prose: it is the filename plus
+          the verb for the action, and it has no visible counterpart. Stays. */}
       <button
         type="button"
         className="od-x"

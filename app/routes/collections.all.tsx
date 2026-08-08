@@ -1,5 +1,6 @@
 import type {Route} from './+types/collections.all';
 import {useMemo} from 'react';
+import type {ReactNode} from 'react';
 import {useLoaderData, useSearchParams} from 'react-router';
 import type {MoneyV2} from '@shopify/hydrogen/storefront-api-types';
 import {ProductItem, type ProductQuickAdd} from '~/components/ProductItem';
@@ -10,11 +11,14 @@ import {EmptyState} from '~/components/EmptyState';
 import {PRODUCT_CONTENT, isComingSoon} from '~/lib/product-content';
 import {useComingSoon} from '~/lib/coming-soon';
 import {stackDiscountedPrice} from '~/lib/stack-discount';
+import {Txt} from '~/components/Txt';
+import {copyText, editAttrs} from '~/lib/copy';
 
 export const meta: Route.MetaFunction = ({location}) =>
   buildSeoMeta({
-    title: 'All Products',
+    title: copyText('collections-all.meta_title') ?? 'All Products',
     description:
+      copyText('collections-all.meta_description') ??
       'Browse every OpenDrone product in one place: open source flight controllers, ESCs, receivers, frames, bundles, and accessories. Filter by category and sort by price or newest.',
     type: 'product',
     // Canonical without filter/sort queries so variants don't splinter.
@@ -22,27 +26,30 @@ export const meta: Route.MetaFunction = ({location}) =>
   });
 
 /**
- * Display heading + sidebar order for each Shopify `productType` (set by
- * scripts/shopify-infra/04 + 05). Types not listed fall into a trailing
- * "Other" bucket so nothing is silently dropped from the filter rail.
+ * Sidebar order for each Shopify `productType` (set by
+ * scripts/shopify-infra/04 + 05), and the copy id of the heading each one
+ * shows. Types not listed fall into a trailing "Other" bucket so nothing is
+ * silently dropped from the filter rail. The `type` is Shopify data; only the
+ * heading is copy, so only the heading lives in content/copy.
  */
-const CATEGORY_ORDER: Array<{type: string; heading: string}> = [
-  {type: 'Flight Controller', heading: 'Flight Controllers'},
-  {type: 'ESC', heading: 'ESCs'},
-  {type: 'Receiver', heading: 'Receivers'},
-  {type: 'Frame', heading: 'Frames'},
-  {type: 'Bundle', heading: 'Bundles'},
-  {type: 'Accessory', heading: 'Accessories'},
+const CATEGORY_ORDER: Array<{type: string; copyId: string}> = [
+  {type: 'Flight Controller', copyId: 'collections-all.category_flight_controller'},
+  {type: 'ESC', copyId: 'collections-all.category_esc'},
+  {type: 'Receiver', copyId: 'collections-all.category_receiver'},
+  {type: 'Frame', copyId: 'collections-all.category_frame'},
+  {type: 'Bundle', copyId: 'collections-all.category_bundle'},
+  {type: 'Accessory', copyId: 'collections-all.category_accessory'},
 ];
 
 /** Sort options for the toolbar dropdown. `newest` is the default and matches
- *  the loader's CREATED_AT-desc fetch order, so it needs no client re-sort. */
-const SORT_OPTIONS: Array<{value: string; label: string}> = [
-  {value: 'newest', label: 'Newest'},
-  {value: 'price-asc', label: 'Price: low to high'},
-  {value: 'price-desc', label: 'Price: high to low'},
-  {value: 'name-asc', label: 'Name: A–Z'},
-  {value: 'name-desc', label: 'Name: Z–A'},
+ *  the loader's CREATED_AT-desc fetch order, so it needs no client re-sort.
+ *  `label` is the fallback for a missing copy key. */
+const SORT_OPTIONS: Array<{value: string; copyId: string; label: string}> = [
+  {value: 'newest', copyId: 'collections-all.sort_newest', label: 'Newest'},
+  {value: 'price-asc', copyId: 'collections-all.sort_price_asc', label: 'Price: low to high'},
+  {value: 'price-desc', copyId: 'collections-all.sort_price_desc', label: 'Price: high to low'},
+  {value: 'name-asc', copyId: 'collections-all.sort_name_asc', label: 'Name: A–Z'},
+  {value: 'name-desc', copyId: 'collections-all.sort_name_desc', label: 'Name: Z–A'},
 ];
 
 /** Products created within this window get a "NEW" badge. */
@@ -307,13 +314,21 @@ export default function Collection() {
   // Categories present in the catalog, in editorial order then any leftovers.
   const categories = useMemo(() => {
     const present = new Set(products.map((p) => p.productType || 'Other'));
-    const out = CATEGORY_ORDER.filter((c) => present.has(c.type)).map((c) => ({
+    const out: Array<{value: string; label: ReactNode}> = CATEGORY_ORDER.filter(
+      (c) => present.has(c.type),
+    ).map((c) => ({
       value: c.type,
-      label: c.heading,
+      label: <Txt id={c.copyId} />,
     }));
     for (const type of present) {
       if (!CATEGORY_ORDER.some((c) => c.type === type)) {
-        out.push({value: type, label: type === 'Other' ? 'Other' : type});
+        // An unlisted Shopify productType labels itself; only the "Other"
+        // catch-all is our own word.
+        out.push({
+          value: type,
+          label:
+            type === 'Other' ? <Txt id="collections-all.category_other" /> : type,
+        });
       }
     }
     return out;
@@ -357,7 +372,7 @@ export default function Collection() {
 
   const filterLink = (
     key: string,
-    label: string,
+    label: ReactNode,
     active: boolean,
     onClick: () => void,
   ) => (
@@ -380,26 +395,41 @@ export default function Collection() {
   return (
     <div className="collection page-shell">
       <header className="page-header collection-header">
-        <p className="page-eyebrow">Shop</p>
-        <h1 className="page-title">All Products</h1>
+        <Txt id="collections-all.eyebrow" as="p" className="page-eyebrow" />
+        <Txt id="collections-all.title" as="h1" className="page-title" />
       </header>
 
       {hasProducts ? (
         <div className="catalog-layout">
           {/* Left filter rail — category single-select + an on-sale toggle. */}
-          <aside className="catalog-sidebar" aria-label="Filter products">
+          <aside
+            className="catalog-sidebar"
+            aria-label={copyText('collections-all.filter_aria') ?? 'Filter products'}
+          >
             <div className="catalog-filter-group">
-              <h2 className="catalog-filter-head">Categories</h2>
+              <Txt
+                id="collections-all.filter_heading"
+                as="h2"
+                className="catalog-filter-head"
+              />
               <ul className="catalog-filter-list">
-                {filterLink('all', 'All products', !activeType && !onlySale, () => {
-                  const next = new URLSearchParams(searchParams);
-                  next.delete('type');
-                  next.delete('sale');
-                  setSearchParams(next, {preventScrollReset: true});
-                })}
+                {filterLink(
+                  'all',
+                  <Txt id="collections-all.filter_all" />,
+                  !activeType && !onlySale,
+                  () => {
+                    const next = new URLSearchParams(searchParams);
+                    next.delete('type');
+                    next.delete('sale');
+                    setSearchParams(next, {preventScrollReset: true});
+                  },
+                )}
                 {anyOnSale &&
-                  filterLink('on-sale', 'On sale', onlySale, () =>
-                    setParam('sale', onlySale ? null : '1'),
+                  filterLink(
+                    'on-sale',
+                    <Txt id="collections-all.filter_on_sale" />,
+                    onlySale,
+                    () => setParam('sale', onlySale ? null : '1'),
                   )}
                 {categories.map((c) =>
                   filterLink(c.value, c.label, activeType === c.value, () =>
@@ -414,10 +444,22 @@ export default function Collection() {
           <div className="catalog-main">
             <div className="catalog-toolbar">
               <p className="catalog-count">
-                {visible.length} {visible.length === 1 ? 'product' : 'products'}
+                {visible.length}{' '}
+                <Txt
+                  id={
+                    visible.length === 1
+                      ? 'collections-all.count_one'
+                      : 'collections-all.count_other'
+                  }
+                />
               </p>
               <label className="collection-sort catalog-sort">
-                <span className="collection-sort-label">Sort</span>
+                <span
+                  className="collection-sort-label"
+                  {...editAttrs('collections-all.sort_label')}
+                >
+                  {copyText('collections-all.sort_label') ?? 'Sort'}
+                </span>
                 <select
                   value={sort}
                   onChange={(e) =>
@@ -425,8 +467,14 @@ export default function Collection() {
                   }
                 >
                   {SORT_OPTIONS.map((o) => (
-                    <option key={o.value} value={o.value}>
-                      {o.label}
+                    // A <select> may only contain text in its options, so
+                    // these read the string instead of rendering <Txt>.
+                    <option
+                      key={o.value}
+                      value={o.value}
+                      {...editAttrs(o.copyId)}
+                    >
+                      {copyText(o.copyId) ?? o.label}
                     </option>
                   ))}
                 </select>
@@ -454,9 +502,9 @@ export default function Collection() {
               </div>
             ) : (
               <EmptyState
-                title="Nothing matches those filters"
-                description="Try another category or clear the filters."
-                ctaLabel="Show all"
+                title={<Txt id="collections-all.empty_filters_title" />}
+                description={<Txt id="collections-all.empty_filters_body" />}
+                ctaLabel={<Txt id="collections-all.empty_filters_cta" />}
                 ctaTo="/collections/all"
               />
             )}
@@ -464,8 +512,8 @@ export default function Collection() {
         </div>
       ) : (
         <EmptyState
-          title="Catalog is being stocked"
-          description="Products are not yet listed. Follow along on GitHub for hardware progress."
+          title={<Txt id="collections-all.empty_catalog_title" />}
+          description={<Txt id="collections-all.empty_catalog_body" />}
           secondary={
             <a
               href="https://github.com/OpenDrone-hw"
@@ -473,7 +521,7 @@ export default function Collection() {
               rel="noopener noreferrer"
               className="hero-cta-secondary"
             >
-              GitHub
+              <Txt id="collections-all.empty_catalog_secondary" />
             </a>
           }
         />

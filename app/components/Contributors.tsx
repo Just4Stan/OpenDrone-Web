@@ -1,4 +1,6 @@
 import type {Contributor} from '~/lib/github';
+import {Txt} from './Txt';
+import {copyText} from '~/lib/copy';
 
 /**
  * Contributor grid for the PDP "Built in the open" chapter: one tile per
@@ -40,7 +42,12 @@ export function ContributorGrid({
             />
             <span className="contributor-login">{c.login}</span>
             <span className="contributor-count">
-              {c.contributions} commit{c.contributions === 1 ? '' : 's'}
+              {c.contributions}{' '}
+              {copyText(
+                c.contributions === 1
+                  ? 'product-chrome.contributor_commits_one'
+                  : 'product-chrome.contributor_commits_many',
+              )}
             </span>
           </a>
         </li>
@@ -55,8 +62,16 @@ export function ContributorGrid({
           <span className="contributor-avatar contributor-avatar--you" aria-hidden="true">
             +
           </span>
-          <span className="contributor-login">you?</span>
-          <span className="contributor-count">open an issue</span>
+          <Txt
+            id="product-chrome.contributor_you"
+            as="span"
+            className="contributor-login"
+          />
+          <Txt
+            id="product-chrome.contributor_you_cta"
+            as="span"
+            className="contributor-count"
+          />
         </a>
       </li>
     </ul>

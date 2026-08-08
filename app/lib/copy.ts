@@ -8,9 +8,10 @@
  * file in the studio invalidates the module and hot-reloads the page. Live
  * preview is a side effect of doing the boring thing correctly.
  *
- * This supersedes `content/site/*.md`, which was a hand-synced mirror: a human
- * edited the markdown and then had to copy the change back into the source by
- * hand. Nothing read it. Here, the file IS the source.
+ * This replaced a hand-synced markdown mirror in which a human edited a file
+ * and an agent copied the change back into the source. Nothing read that
+ * mirror, and it had drifted badly by the time it was deleted. Here the file
+ * IS the source.
  */
 
 /** One page's strings. Values are plain text, or an array of paragraphs. */
