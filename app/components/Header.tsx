@@ -20,6 +20,8 @@ import {
   type ProductPodItem,
   type PodCompanionOption,
 } from '~/components/ProductPods';
+import {Txt} from '~/components/Txt';
+import {copyText} from '~/lib/copy';
 import {INCUTEC_HINT_SEEN_KEY} from '~/lib/incutec-hint';
 import {useComingSoon} from '~/lib/coming-soon';
 import {isComingSoon, PRODUCT_CONTENT} from '~/lib/product-content';
@@ -68,6 +70,13 @@ interface HeaderProps {
 
 type Viewport = 'desktop' | 'mobile';
 
+// The header's own words live in `content/copy/chrome.json` and are rendered
+// through <Txt>. Three sets of strings deliberately do NOT: the Shopify menu
+// titles (edited in Shopify admin, including FALLBACK_HEADER_MENU which mirrors
+// it), anything derived from product data, and the family labels below — those
+// double as dropdown state keys and as the short names on the buy buttons, so
+// they are structure, not copy.
+//
 // Category links jump straight to the current PDP for each family.
 // Accessories no longer get a dedicated link here — they live (with
 // everything else) on the aggregated All Products page, reachable via the
@@ -161,7 +170,10 @@ export function Header({
               prefetch="intent"
               to="/incutec"
               className="site-header-logo site-header-logo--incutec"
-              aria-label="Incutec, the company behind OpenDrone"
+              aria-label={
+                copyText('chrome.incutec_logo_aria') ??
+                'Incutec, the company behind OpenDrone'
+              }
               style={{viewTransitionName: 'site-logo'}}
               onClick={dismissIncutecHint}
             >
@@ -175,7 +187,7 @@ export function Header({
               aria-hidden="true"
               onClick={dismissIncutecHint}
             >
-              Who&apos;s incutec?
+              <Txt id="chrome.incutec_hint" />
             </NavLink>
           </span>
         ) : (
@@ -538,7 +550,7 @@ function FamilyNav({
         to="/collections/all"
         className="site-header-cat-all"
       >
-        All Products
+        <Txt id="chrome.nav_all_products" />
       </NavLink>
     </nav>
   );
@@ -588,14 +600,22 @@ export function HeaderMenu({
                   ref={inputRef}
                   type="search"
                   name="q"
-                  placeholder="Search products"
-                  aria-label="Search products"
+                  placeholder={
+                    copyText('chrome.search_placeholder') ?? 'Search products'
+                  }
+                  aria-label={
+                    copyText('chrome.search_placeholder') ?? 'Search products'
+                  }
                   enterKeyHint="search"
                 />
               </>
             )}
           </SearchForm>
-          <p className="site-mobile-nav-label">Shop</p>
+          <Txt
+            id="chrome.heading_shop"
+            as="p"
+            className="site-mobile-nav-label"
+          />
           {CATEGORY_LINKS.map((c) => (
             <NavLink
               key={c.to}
@@ -613,9 +633,13 @@ export function HeaderMenu({
             to="/collections/all"
             className="text-sm font-mono uppercase tracking-wider text-[var(--color-text-muted)] hover:text-[var(--color-text)] transition-colors"
           >
-            All products
+            <Txt id="chrome.nav_all_products_mobile" />
           </NavLink>
-          <p className="site-mobile-nav-label">More</p>
+          <Txt
+            id="chrome.heading_more"
+            as="p"
+            className="site-mobile-nav-label"
+          />
           <NavLink
             end
             onClick={close}
@@ -623,7 +647,7 @@ export function HeaderMenu({
             to="/"
             className="text-sm font-mono uppercase tracking-wider text-[var(--color-text-muted)] hover:text-[var(--color-text)] transition-colors"
           >
-            Home
+            <Txt id="chrome.nav_home" />
           </NavLink>
         </>
       )}
@@ -715,12 +739,16 @@ export function HeaderMenu({
             }`
           }
         >
-          Newsletter
+          <Txt id="chrome.nav_newsletter" />
         </NavLink>
       ) : null}
       {isMobile ? (
         <>
-          <p className="site-mobile-nav-label">Account</p>
+          <Txt
+            id="chrome.heading_account"
+            as="p"
+            className="site-mobile-nav-label"
+          />
           {/* No prefetch — auth-gated route, see the desktop account link. */}
           <NavLink
             onClick={close}
@@ -728,7 +756,7 @@ export function HeaderMenu({
             to="/account"
             className="text-sm font-mono uppercase tracking-wider text-[var(--color-text-muted)] hover:text-[var(--color-text)] transition-colors"
           >
-            Account / Sign in
+            <Txt id="chrome.nav_account_signin" />
           </NavLink>
         </>
       ) : null}
@@ -756,7 +784,7 @@ function HeaderCtas({
           }`
         }
       >
-        Newsletter
+        <Txt id="chrome.nav_newsletter" />
       </NavLink>
       <NavLink
         prefetch="viewport"
@@ -769,7 +797,7 @@ function HeaderCtas({
           }`
         }
       >
-        Contact
+        <Txt id="chrome.nav_contact" />
       </NavLink>
       {/* No prefetch: /account is auth-gated, so a viewport prefetch fired a
           wasted 400 /account.data request (+ console error) on every single
@@ -779,9 +807,14 @@ function HeaderCtas({
         to="/account"
         className="font-mono text-[12px] uppercase tracking-[0.15em] text-[var(--color-text-muted)] hover:text-[var(--color-text)] transition-colors hidden md:block"
       >
-        <Suspense fallback="Sign in">
-          <Await resolve={isLoggedIn} errorElement="Sign in">
-            {(isLoggedIn) => (isLoggedIn ? 'Account' : 'Sign in')}
+        <Suspense fallback={<Txt id="chrome.nav_sign_in" />}>
+          <Await
+            resolve={isLoggedIn}
+            errorElement={<Txt id="chrome.nav_sign_in" />}
+          >
+            {(isLoggedIn) => (
+              <Txt id={isLoggedIn ? 'chrome.nav_account' : 'chrome.nav_sign_in'} />
+            )}
           </Await>
         </Suspense>
       </NavLink>
@@ -798,7 +831,7 @@ function HeaderMenuMobileToggle() {
     <button
       className="site-header-icon site-header-menu-toggle text-[var(--color-text-muted)] hover:text-[var(--color-text)] transition-colors"
       onClick={() => open('mobile')}
-      aria-label="Menu"
+      aria-label={copyText('chrome.menu_toggle_aria') ?? 'Menu'}
     >
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
         <line x1="4" y1="7" x2="20" y2="7" />
