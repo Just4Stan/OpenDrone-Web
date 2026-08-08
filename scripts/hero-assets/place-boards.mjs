@@ -27,9 +27,19 @@ import {join as pjoin} from 'node:path';
 
 await MeshoptEncoder.ready;
 
-const [placementPath, outDir, ...pairs] = process.argv.slice(2);
+// Strip "--yaw <key>=<deg>" pairs out of the positional args first; the yaw
+// override lookup below reads them from process.argv directly. Without this
+// the flag and its value were parsed as board pairs and place-boards tried to
+// io.read("0").
+const positional = [];
+const rest = process.argv.slice(2);
+for (let i = 0; i < rest.length; i++) {
+  if (rest[i].startsWith('--yaw')) { i++; continue; }
+  positional.push(rest[i]);
+}
+const [placementPath, outDir, ...pairs] = positional;
 if (!placementPath || !outDir || !pairs.length) {
-  console.error('usage: place-boards.mjs <placement.json> <outdir> <key>=<board.glb> [...]');
+  console.error('usage: place-boards.mjs <placement.json> <outdir> <key>=<board.glb> [--yaw <key>=<deg>] [...]');
   process.exit(1);
 }
 mkdirSync(outDir, {recursive: true});
@@ -134,7 +144,14 @@ for (const pair of pairs) {
     scene.removeChild(child);
     recentre.addChild(child);
   }
-  scene.addChild(wrap);
+  // The hero runtime reassembles chunks by taking each file's single root
+  // child and reparenting ITS children under the first chunk's root, dropping
+  // the root's own transform. Every build-hero chunk ships an identity
+  // "Assembly 1" root, so this file must too or the placement wrapper's
+  // transform is silently discarded at load.
+  const asmRoot = doc.createNode('Assembly 1');
+  asmRoot.addChild(wrap);
+  scene.addChild(asmRoot);
 
   await doc.transform(prune({keepAttributes: false}), dedup());
   await doc.transform(meshopt({encoder: MeshoptEncoder, level: 'high'}));

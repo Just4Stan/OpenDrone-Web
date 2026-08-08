@@ -95,6 +95,8 @@ type StudioConfig = {
     magnet?: number;
     commitAt?: number;
     minDwellS?: number;
+    /** Pixels of wheel intent that commit a one-stop move. */
+    stepPx?: number;
   };
   materials: MatProfile[];
   boards: Array<{id: string; title: string; note: string}>;
@@ -1007,10 +1009,10 @@ export function HeroDroneScene({
       }
 
       /* ----------------------------------------------------------- scroll
-       * The reader's wheel moves a TARGET; a critically damped spring moves the
-       * position. No velocity clamp: throttling input feels broken. On release
-       * the destination is committed ONCE in the direction of travel, so the
-       * timeline can never reverse under someone mid-transition.
+       * One confident wheel gesture commits a one-stop TARGET move; a
+       * critically damped spring moves the position there. The timeline can
+       * never reverse under someone mid-transition: a gesture commits once,
+       * in its own direction, and further input inside the gesture is inert.
        *
        * Stops come in two kinds. A PART stop is the middle of a beat's hold,
        * part under the spotlight. Between two part stops sits a REST stop at
@@ -1052,6 +1054,7 @@ export function HeroDroneScene({
       let everScrolled = false;
       let gestureFrom = 0;
       let gestureDir = 0;
+      let gestureAccum = 0;
       let committed: number | null = null;
       const GESTURE_GAP_MS = 220;
       const MIN_DWELL_S = cfg.scroll?.minDwellS ?? 1.4;    // seconds a part must be presented before you can move on
@@ -1062,6 +1065,10 @@ export function HeroDroneScene({
       // scrolling chooses WHICH beat, the animation owns HOW it gets there.
       let settledAt = 0;       // stop index the sequence has finished playing
       let dwell = 0;           // seconds the current stop has been presented
+      // Stops whose full dwell has run once. Revisiting one (scrolling back)
+      // only needs the short rest dwell: the pacing rule exists so nobody
+      // skips an unseen beat, not to slow down going back over seen ground.
+      const seenStops = new Set<number>();
       // Only render, and only take keys, when the hero is actually on screen.
       let onScreen = true;
       const io = new IntersectionObserver(
@@ -1081,6 +1088,7 @@ export function HeroDroneScene({
         if (now - lastWheel > GESTURE_GAP_MS) {
           gestureFrom = nearestIdx(pos);
           gestureDir = 0;
+          gestureAccum = 0;
           committed = null;
         }
 
@@ -1112,19 +1120,23 @@ export function HeroDroneScene({
         // Firefox reports lines, not pixels; Chrome reports pixels; some mice
         // report pages. Normalise before scaling or Firefox scrolls ~20x slower.
         const unit = e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? el.clientHeight : 1;
-        const px = e.deltaY * unit;
-        const step = Math.sign(px) * Math.min(Math.abs(px), 60) * (cfg.scroll?.gain ?? 0.0016) * dur();
+        gestureAccum += e.deltaY * unit;
 
-        // THE important bound. A trackpad's momentum tail fires at frame rate
-        // for a second or more after the finger lifts, and no time-based
-        // "gesture ended" test can distinguish it from real input. So do not
-        // try: bound the DISTANCE instead. Within one gesture the target can
-        // never travel more than one stop from where it began, which makes one
-        // flick equal exactly one stop (part or rest) no matter how long the
-        // tail runs.
-        const lo = stopPos(Math.max(first, gestureFrom - 1));
-        const hi = stopPos(Math.min(last, gestureFrom + 1));
-        target = Math.max(lo, Math.min(hi, target + step));
+        // One confident gesture is one stop. The old model scaled the target
+        // by scroll distance, which took five to ten wheel notches per stop;
+        // now a single decisive notch or flick, crossing stepPx of intent,
+        // commits the whole move and the spring plays it out. Momentum tails
+        // and extra notches inside the same gesture cannot chain: committed is
+        // already set, and a new gesture only opens after GESTURE_GAP_MS of
+        // silence, by which point the dwell rule absorbs input anyway until
+        // the beat has been seen. One wheel notch is ~100 px in Chrome and
+        // ~48 px (3 lines) in Firefox, so 45 catches a single notch on both.
+        const THRESH = cfg.scroll?.stepPx ?? 45;
+        if (committed === null && Math.abs(gestureAccum) >= THRESH) {
+          const next = Math.max(first, Math.min(last, gestureFrom + Math.sign(gestureAccum)));
+          committed = next;
+          target = stopPos(next);
+        }
       };
       el.addEventListener('wheel', onWheel, {passive: false});
       cleanup.push(() => el.removeEventListener('wheel', onWheel));
@@ -1320,7 +1332,12 @@ export function HeroDroneScene({
           const atStop = Math.abs(pos - stopPos(cur)) < dur() * 0.06;
           if (atStop) {
             dwell += dt;
-            if (dwell > (STOPS[cur].part ? MIN_DWELL_S : REST_DWELL_S)) settledAt = cur;
+            const need =
+              STOPS[cur].part && !seenStops.has(cur) ? MIN_DWELL_S : REST_DWELL_S;
+            if (dwell > need) {
+              settledAt = cur;
+              seenStops.add(cur);
+            }
           } else if (settledAt !== cur) {
             dwell = 0;
           }
