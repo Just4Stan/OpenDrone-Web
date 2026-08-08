@@ -890,7 +890,15 @@ export function BoardArt({
   // sees the board is eight layers deep rather than watching two faces swap.
   // Each step retriggers the sheets' 0.6s transform transition, so the steps
   // overlap into one continuous sweep rather than eight discrete hops.
-  const LAYER_STEP_MS = 95;
+  //
+  // The sweep is eased, not linear. Per-step budget sets the total (steps ×
+  // this), and the easing only redistributes that time across the steps, so
+  // the whole traverse still scales with distance: a full 8-layer board sweeps
+  // in ~530ms, a three-layer hop in ~230ms.
+  const LAYER_SWEEP_PER_STEP_MS = 76;
+  // Ease-out exponent. 3 (cubic) is a hard launch and a long settle; 2 is
+  // gentler. Raising it makes the first layers pass faster still.
+  const LAYER_SWEEP_EASE = 3;
   const travelRef = useRef<number | null>(null);
   const cancelTravel = useCallback(() => {
     if (travelRef.current != null) {
@@ -914,19 +922,35 @@ export function BoardArt({
       return;
     }
     const dir = target > from ? 1 : -1;
-    const stepOnce = () => {
-      const next = activeRef.current + dir;
-      // Writing the ref here as well as in render keeps the walk correct even
-      // though the next render has not happened yet when the timer re-arms.
-      activeRef.current = next;
-      setActive(next);
-      if (next === target) {
-        travelRef.current = null;
-        return;
-      }
-      travelRef.current = window.setTimeout(stepOnce, LAYER_STEP_MS);
+    const steps = Math.abs(target - from);
+    const total = steps * LAYER_SWEEP_PER_STEP_MS;
+    // When step k lands, as the INVERSE of an ease-out. Position over time is
+    // eased, so solving it for time gives the step delays: the first few layers
+    // go by in a few frames and the last one takes roughly half the sweep. A
+    // flat interval read as a mechanical flick-through; this reads as the stack
+    // being thrown open and settling.
+    const landAt = (k: number) =>
+      total * (1 - Math.pow(1 - k / steps, 1 / LAYER_SWEEP_EASE));
+    let done = 0;
+    let prevAt = 0;
+    const schedule = () => {
+      const at = landAt(done + 1);
+      const delay = Math.max(0, at - prevAt);
+      prevAt = at;
+      travelRef.current = window.setTimeout(() => {
+        done += 1;
+        // Writing the ref here as well as in render keeps the walk correct even
+        // though the next render has not happened yet when the timer re-arms.
+        activeRef.current += dir;
+        setActive(activeRef.current);
+        if (done >= steps) {
+          travelRef.current = null;
+          return;
+        }
+        schedule();
+      }, delay);
     };
-    travelRef.current = window.setTimeout(stepOnce, 0);
+    schedule();
   }, [cancelTravel]);
 
   // Deliberate layer pick: stop any hover-driven walk, and move the anchor so
