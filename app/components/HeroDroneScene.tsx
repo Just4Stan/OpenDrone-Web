@@ -1065,6 +1065,10 @@ export function HeroDroneScene({
       // scrolling chooses WHICH beat, the animation owns HOW it gets there.
       let settledAt = 0;       // stop index the sequence has finished playing
       let dwell = 0;           // seconds the current stop has been presented
+      // Stops whose full dwell has run once. Revisiting one (scrolling back)
+      // only needs the short rest dwell: the pacing rule exists so nobody
+      // skips an unseen beat, not to slow down going back over seen ground.
+      const seenStops = new Set<number>();
       // Only render, and only take keys, when the hero is actually on screen.
       let onScreen = true;
       const io = new IntersectionObserver(
@@ -1328,7 +1332,12 @@ export function HeroDroneScene({
           const atStop = Math.abs(pos - stopPos(cur)) < dur() * 0.06;
           if (atStop) {
             dwell += dt;
-            if (dwell > (STOPS[cur].part ? MIN_DWELL_S : REST_DWELL_S)) settledAt = cur;
+            const need =
+              STOPS[cur].part && !seenStops.has(cur) ? MIN_DWELL_S : REST_DWELL_S;
+            if (dwell > need) {
+              settledAt = cur;
+              seenStops.add(cur);
+            }
           } else if (settledAt !== cur) {
             dwell = 0;
           }
