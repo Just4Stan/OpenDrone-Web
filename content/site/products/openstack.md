@@ -12,7 +12,7 @@ handle: openstack
 fileNumber: 05
 firmware.project: ""  (empty — single-project chapter suppressed; the
                        bundle chapter shows the per-component breakdown)
-repoUrl: https://github.com/incutec-hw
+repoUrl: https://github.com/OpenDrone-hw
 bundle: renders the PDP as a bundle of openfc + openesc
 ```
 
@@ -52,10 +52,10 @@ qty (in order): 1×, 1×, 1×, 1×, 1×, 4×, 1×
 Edit the `label` and `note` text. `kind` and `href` shown for context.
 
 ```do-not-edit
-download_1: kind=schematic href=https://github.com/incutec-hw/OpenFC/raw/main/hardware/schematic.pdf
-download_2: kind=step      href=https://github.com/incutec-hw/OpenStack/raw/main/hardware/stack.step
-download_3: kind=manual    href=https://github.com/incutec-hw/OpenStack/raw/main/docs/guide.pdf
-download_4: kind=flash     href=https://github.com/incutec-hw/OpenStack/blob/main/docs/flashing.md
+download_1: kind=schematic href=https://github.com/OpenDrone-hw/OpenFC/raw/main/hardware/schematic.pdf
+download_2: kind=step      href=https://github.com/OpenDrone-hw/OpenStack/raw/main/hardware/stack.step
+download_3: kind=manual    href=https://github.com/OpenDrone-hw/OpenStack/raw/main/docs/guide.pdf
+download_4: kind=flash     href=https://github.com/OpenDrone-hw/OpenStack/blob/main/docs/flashing.md
 ```
 
 - **download_1_label:** Schematics — FC + ESC

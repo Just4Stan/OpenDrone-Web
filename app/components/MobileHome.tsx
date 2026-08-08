@@ -128,7 +128,7 @@ export function MobileHome({
             </svg>
           </Link>
           <a
-            href="https://github.com/incutec-hw"
+            href="https://github.com/OpenDrone-hw"
             target="_blank"
             rel="noopener noreferrer"
             className="home-mobile-cta-btn home-mobile-cta-github"

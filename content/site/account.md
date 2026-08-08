@@ -107,7 +107,7 @@ Open-source build card:
 Order rows link to /account/orders/{base64(order.id)}; "View all" →
 /account/orders; address "Manage"/"Add" → /account/addresses; support CTA →
 /account/support (active) or /support (idle); Discord → https://discord.gg/ABajnacUsS;
-GitHub → https://github.com/incutec-hw; orders-empty CTA → /collections/all.
+GitHub → https://github.com/OpenDrone-hw; orders-empty CTA → /collections/all.
 Order number (#…), Money totals, processed date, and fulfillment status are
 dynamic Customer Account data. The default-address card prints the API's
 pre-formatted address lines.

@@ -164,7 +164,7 @@ export default function OpenSourceRoute() {
           Help design the hardware →
         </Link>
         <a
-          href="https://github.com/incutec-hw"
+          href="https://github.com/OpenDrone-hw"
           target="_blank"
           rel="noopener noreferrer"
           className="editorial-cta-secondary"

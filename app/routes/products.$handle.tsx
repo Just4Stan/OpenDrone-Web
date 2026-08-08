@@ -777,7 +777,7 @@ export default function Product() {
   }, [product.images, selectedVariant?.image, content.variants, activeTier]);
 
   // GitHub links (repo card / issues / latest commit) follow the selected tier:
-  // split-repo lines (OpenFC-Lite ↔ OpenFC-Lite-Mini, OpenESC_20X20 ↔
+  // split-repo lines (OpenFC-Lite ↔ OpenFC-Lite-Mini, OpenESC-20x20 ↔
   // OpenESC-30x30) point at the tier's repo, others at the product default.
   const activeRepoUrl = activeVariant?.repoUrl ?? content.repoUrl;
   // OSHWA certification follows the selected tier — each certified board has its

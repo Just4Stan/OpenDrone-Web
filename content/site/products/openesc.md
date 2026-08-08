@@ -12,9 +12,9 @@ handle: openesc
 fileNumber: 01
 firmware.project: AM32
 firmware.projectUrl: https://github.com/AlkaMotors/AM32-MultiRotor-ESC-firmware
-repoUrl: https://github.com/incutec-hw/OpenESC_20X20
+repoUrl: https://github.com/OpenDrone-hw/OpenESC-20x20
 teardown.boardArt.src: /boards/openesc/board.svg
-teardown.boardArt.inspectUrl: https://kicanvas.org/?github=https://github.com/incutec-hw/OpenESC_20X20
+teardown.boardArt.inspectUrl: https://kicanvas.org/?github=https://github.com/OpenDrone-hw/OpenESC-20x20
 downloads: [] (none published yet)
 optionAxis: Model
 ```

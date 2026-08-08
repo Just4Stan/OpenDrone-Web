@@ -23,9 +23,9 @@ const SHOP_LINKS: Array<{to: string; label: string}> = [
 
 const OPEN_SOURCE_LINKS: Array<{href: string; label: string}> = [
   {href: DISCORD_INVITE_URL, label: 'Discord'},
-  {href: 'https://github.com/incutec-hw', label: 'GitHub'},
-  {href: 'https://github.com/incutec-hw/OpenFC-Lite', label: 'OpenFC'},
-  {href: 'https://github.com/incutec-hw/OpenESC-20x20', label: 'OpenESC'},
+  {href: 'https://github.com/OpenDrone-hw', label: 'GitHub'},
+  {href: 'https://github.com/OpenDrone-hw/OpenFC-Lite', label: 'OpenFC'},
+  {href: 'https://github.com/OpenDrone-hw/OpenESC-20x20', label: 'OpenESC'},
 ];
 
 const COMPANY_LINKS: Array<{to: string; label: string}> = [
@@ -187,7 +187,7 @@ export function Footer({
             CERN-OHL-S. Firmware: GPL/MIT. Open Source Hardware.
           </p>
           <a
-            href="https://github.com/incutec-hw"
+            href="https://github.com/OpenDrone-hw"
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center justify-center min-h-[44px] min-w-[44px] md:min-h-0 md:min-w-0 text-[var(--color-text-muted)] hover:text-[var(--color-text)] transition-colors"

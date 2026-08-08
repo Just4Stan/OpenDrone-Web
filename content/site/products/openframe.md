@@ -11,7 +11,7 @@ fence is structural data (file numbers, URLs, part refs, costs) — leave it.
 handle: openframe
 fileNumber: 04
 firmware.project: —   (no firmware; the €N+€1 chapter is suppressed)
-repoUrl: https://github.com/incutec-hw
+repoUrl: https://github.com/OpenDrone-hw
 teardown.frameViewer.src: /models/frame.glb   (inspectUrl omitted)
 downloads: [] (none — frame is an OnShape doc, not a GitHub repo)
 optionAxis: Model

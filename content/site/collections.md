@@ -83,7 +83,7 @@ active (`?type=`), one when the whole catalog is empty.
 ```do-not-edit
 "{type}" in the filtered-empty title is the active category value (Shopify
 productType, e.g. "ESC") — dynamic, do not retype. Filtered-empty CTA links to
-/collections/all. Catalog-empty secondary link → https://github.com/incutec-hw
+/collections/all. Catalog-empty secondary link → https://github.com/OpenDrone-hw
 ```
 
 ## `/collections/:handle` — single collection

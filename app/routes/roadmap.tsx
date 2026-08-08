@@ -95,35 +95,35 @@ const ROADMAP: RoadmapItem[] = [
     status: 'beta',
     note: 'RP2354 Betaflight flight controller, 30.5\u00d730.5.',
     productPath: '/products/openfc-lite',
-    link: 'https://github.com/incutec-hw/OpenFC-Lite',
+    link: 'https://github.com/OpenDrone-hw/OpenFC-Lite',
   },
   {
     item: 'OpenFC Lite Mini · 20×20',
     status: 'beta',
     note: 'The same flight controller at 20×20.',
     productPath: '/products/openfc-lite',
-    link: 'https://github.com/incutec-hw/OpenFC-Lite-Mini',
+    link: 'https://github.com/OpenDrone-hw/OpenFC-Lite-Mini',
   },
   {
     item: 'OpenESC · 20×20',
     status: 'beta',
     note: '4-in-1 AM32 ESC, 30 A per channel.',
     productPath: '/products/openesc',
-    link: 'https://github.com/incutec-hw/OpenESC-20x20',
+    link: 'https://github.com/OpenDrone-hw/OpenESC-20x20',
   },
   {
     item: 'OpenESC · 30×30',
     status: 'beta',
     note: '4-in-1 AM32 ESC, 50 A per channel.',
     productPath: '/products/openesc',
-    link: 'https://github.com/incutec-hw/OpenESC-30x30',
+    link: 'https://github.com/OpenDrone-hw/OpenESC-30x30',
   },
   {
     item: 'OpenRX',
     status: 'alpha',
     note: 'ExpressLRS receiver family, four variants.',
     productPath: '/products/openrx',
-    link: 'https://github.com/incutec-hw/OpenRX',
+    link: 'https://github.com/OpenDrone-hw/OpenRX',
   },
   {
     item: 'OpenFrame · 5" + 3"',
@@ -140,25 +140,25 @@ const ROADMAP: RoadmapItem[] = [
     item: 'OpenVTX',
     status: 'planned',
     note: 'Video transmitter.',
-    link: 'https://github.com/incutec-hw/OpenVTX',
+    link: 'https://github.com/OpenDrone-hw/OpenVTX',
   },
   {
     item: 'OpenRemoteID',
     status: 'planned',
     note: 'Remote ID module.',
-    link: 'https://github.com/incutec-hw/OpenRemoteID',
+    link: 'https://github.com/OpenDrone-hw/OpenRemoteID',
   },
   {
     item: 'OpenAIO + OpenAIO-Whoop',
     status: 'planned',
     note: 'All-in-one boards, full-size and whoop.',
-    link: 'https://github.com/incutec-hw/OpenAIO',
+    link: 'https://github.com/OpenDrone-hw/OpenAIO',
   },
   {
     item: 'Charger',
     status: 'planned',
     note: 'LiPo charger.',
-    link: 'https://github.com/incutec-hw/Charger',
+    link: 'https://github.com/OpenDrone-hw/Charger',
   },
 ];
 
@@ -382,7 +382,7 @@ export default function RoadmapRoute({loaderData}: Route.ComponentProps) {
           Join the Discord ↗
         </a>
         <a
-          href="https://github.com/incutec-hw"
+          href="https://github.com/OpenDrone-hw"
           target="_blank"
           rel="noopener noreferrer"
           className="editorial-cta-secondary"

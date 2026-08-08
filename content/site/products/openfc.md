@@ -13,7 +13,7 @@ fileNumber: 02
 firmware.project: Betaflight
 firmware.projectUrl: https://github.com/betaflight/betaflight
 firmware.logo: /logos/betaflight.svg
-repoUrl: https://github.com/incutec-hw/OpenFC
+repoUrl: https://github.com/OpenDrone-hw/OpenFC
 teardown.boardArt: (none)
 optionAxis: Model
 ```
@@ -71,13 +71,13 @@ qty (in order): 1×, 1×, 1×, 4×, 1×
 Edit the `label` and `note` text. `kind` and `href` shown for context.
 
 ```do-not-edit
-download_1: kind=schematic href=https://github.com/incutec-hw/OpenFC/raw/main/hardware/schematic.pdf
-download_2: kind=step      href=https://github.com/incutec-hw/OpenFC/raw/main/hardware/board.step
-download_3: kind=bom       href=https://github.com/incutec-hw/OpenFC/raw/main/hardware/bom.csv
-download_4: kind=gerber    href=https://github.com/incutec-hw/OpenFC/raw/main/hardware/gerbers.zip
-download_5: kind=manual    href=https://github.com/incutec-hw/OpenFC/raw/main/docs/manual.pdf
-download_6: kind=wiring    href=https://github.com/incutec-hw/OpenFC/raw/main/docs/wiring.pdf
-download_7: kind=flash     href=https://github.com/incutec-hw/OpenFC/blob/main/docs/flashing.md
+download_1: kind=schematic href=https://github.com/OpenDrone-hw/OpenFC/raw/main/hardware/schematic.pdf
+download_2: kind=step      href=https://github.com/OpenDrone-hw/OpenFC/raw/main/hardware/board.step
+download_3: kind=bom       href=https://github.com/OpenDrone-hw/OpenFC/raw/main/hardware/bom.csv
+download_4: kind=gerber    href=https://github.com/OpenDrone-hw/OpenFC/raw/main/hardware/gerbers.zip
+download_5: kind=manual    href=https://github.com/OpenDrone-hw/OpenFC/raw/main/docs/manual.pdf
+download_6: kind=wiring    href=https://github.com/OpenDrone-hw/OpenFC/raw/main/docs/wiring.pdf
+download_7: kind=flash     href=https://github.com/OpenDrone-hw/OpenFC/blob/main/docs/flashing.md
 ```
 
 - **download_1_label:** Schematic (PDF)
