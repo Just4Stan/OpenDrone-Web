@@ -519,10 +519,17 @@ export function HeroDroneScene({
       previewOn = false;
 
       const occRoot: THREE.Object3D = asm;
+      const underPivot = (o: THREE.Object3D) => {
+        for (let p = o.parent; p; p = p.parent) if (p.name === 'prop-pivot') return true;
+        return false;
+      };
       const pick = (re: RegExp) => {
         const out: THREE.Object3D[] = [];
         droneRoot.traverse((o) => {
-          if (o.name && re.test(tidy(o.name))) out.push(o);
+          // Nothing inside a prop pivot is selectable on its own: the prop and
+          // the motor's rotating parts ride the spinner, and the pivot group is
+          // what a beat moves. Selecting both would move them twice.
+          if (o.name && re.test(tidy(o.name)) && !underPivot(o)) out.push(o);
         });
         return out;
       };
@@ -663,6 +670,46 @@ export function HeroDroneScene({
         }
         if (propPivots.length !== 4)
           console.warn(`[hero] expected 4 props, rigged ${propPivots.length}`);
+
+        // The bell and shaft spin with the prop; only the stator side stays
+        // still. The motor's five occurrences all share one part name, so they
+        // are told apart by shape: the shaft is tall and thin (it tops the
+        // cluster too, since the prop mounts on it), and the bell is the piece
+        // with the largest bounding volume (the can wraps the whole motor;
+        // measured on this export it is 2x the runner-up). They join the prop
+        // on its spinner.
+        scene.updateMatrixWorld(true);
+        const byMotor = new Map<number, Array<{node: THREE.Object3D; vol: number; size: THREE.Vector3}>>();
+        for (const n of topLevel(pick(/^Admi/i))) {
+          const bb = new THREE.Box3().setFromObject(n);
+          const c = bb.getCenter(new THREE.Vector3());
+          const mi = motors.findIndex((m) => Math.hypot(m.x - c.x, m.z - c.z) < 0.015);
+          if (mi < 0) continue;
+          const size = bb.getSize(new THREE.Vector3());
+          const arr = byMotor.get(mi) ?? [];
+          arr.push({node: n, vol: size.x * size.y * size.z, size});
+          byMotor.set(mi, arr);
+        }
+        for (const [mi, pieces] of byMotor) {
+          const m = motors[mi];
+          let bestG: THREE.Group | null = null;
+          let bestD = Infinity;
+          for (const g of propPivots) {
+            const p = g.getWorldPosition(new THREE.Vector3());
+            const d = Math.hypot(p.x - m.x, p.z - m.z);
+            if (d < bestD) {
+              bestD = d;
+              bestG = g;
+            }
+          }
+          if (!bestG || bestD > 0.03) continue;
+          const spin = (bestG as any).userData.spin as THREE.Group;
+          const bell = pieces.reduce((a, b) => (b.vol > a.vol ? b : a));
+          for (const p of pieces) {
+            const thin = p.size.y > 2.5 * Math.max(p.size.x, p.size.z);
+            if (p === bell || thin) spin.attach(p.node);
+          }
+        }
       }
 
       /* ------------------------------------------------------------ beats */
@@ -1085,7 +1132,8 @@ export function HeroDroneScene({
       /* ---------------------------------------------------- drag to rotate
        * Matches the old hero: 0.004 rad per pixel, horizontal drag turns the
        * drone and KEEPS the new heading (the auto-orbit simply resumes from
-       * there), vertical drag tilts and springs back on release.
+       * there). Vertical drag tilts, holds the tilt while the timeline rests,
+       * and eases home once the sequence travels to the next stop.
        *
        * The old scene rotated the model; this one orbits the camera, so a
        * horizontal drag goes straight into orbitAngle -- which is what makes the
@@ -1112,9 +1160,12 @@ export function HeroDroneScene({
         // Sign chosen so the drone reads as GRABBED: drag right pulls the face
         // under the cursor to the right (the camera orbits the other way).
         orbitAngle += dx * 0.004;
-        // Clamped: past about +-0.9 the camera crosses over the drone and the
-        // lookAt flips, which reads as the scene snapping upside down.
-        dragTilt = THREE.MathUtils.clamp(dragTilt + dy * 0.004, -0.9, 0.9);
+        // The tilt is the y-component of the orbit offset before normalising,
+        // and the horizontal component is always unit length, so the view can
+        // never cross the pole. +-2.5 lets a drag reach ~60 degrees below the
+        // drone (enough to read the underside of a spotlit part) while keeping
+        // the asymptote comfortably away.
+        dragTilt = THREE.MathUtils.clamp(dragTilt + dy * 0.007, -2.5, 2.5);
       };
       const onPtrUp = () => {
         dragging = false;
@@ -1315,15 +1366,16 @@ export function HeroDroneScene({
         rimL.intensity = BASE.rim * d;
         bncL.intensity = BASE.bounce * d;
 
-        scene.updateMatrixWorld(true);
-        present(b, k, t);
-
-        // Auto-orbit pauses while the hand is on the drone, and the tilt springs
-        // back once it lets go.
+        // Auto-orbit pauses while the hand is on the drone. The tilt persists
+        // while the timeline rests, so a reader can hold a view of the part's
+        // underside; it eases home once the sequence travels again.
+        const travelling = Math.abs(target - pos) > dur() * 0.01 || Math.abs(vel) > dur() * 0.01;
         if (!dragging) {
           orbitAngle += dt * Q.autoOrbit;
-          dragTilt *= (1 - Math.min(1, 3 * dt));
-          if (Math.abs(dragTilt) < 0.0005) dragTilt = 0;
+          if (travelling) {
+            dragTilt *= (1 - Math.min(1, 3 * dt));
+            if (Math.abs(dragTilt) < 0.0005) dragTilt = 0;
+          }
         }
         el.style.cursor = dragging ? 'grabbing' : 'grab';
         const wantH = b.faceOn ? (cfg.camera?.heightOnBoard ?? 0.72) : (cfg.camera?.height ?? 0.5);
@@ -1342,6 +1394,13 @@ export function HeroDroneScene({
         if (dragging) camera.position.copy(focus.clone().add(off));
         else camera.position.lerp(focus.clone().add(off), 1 - 0.004 ** dt);
         camera.lookAt(focus);
+
+        // The camera must be posed BEFORE the presentation: a spotlit part is
+        // anchored to the camera, so presenting against last frame's pose makes
+        // the part chase the camera one frame behind. Under a drag (camera
+        // written directly, no smoothing) that lag reads as vibration.
+        scene.updateMatrixWorld(true);
+        present(b, k, t);
 
         renderer.render(scene, camera);
        } catch (err) {
