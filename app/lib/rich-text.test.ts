@@ -109,3 +109,31 @@ describe('isPlain', () => {
     assert.equal(isPlain(s), false);
   });
 });
+
+describe('bold', () => {
+  it('parses **strong**', () => {
+    assert.deepEqual(parseRich('**Stocking:** ten boards'), [
+      {t: 'strong', v: 'Stocking:'},
+      {t: 'text', v: ' ten boards'},
+    ]);
+  });
+
+  it('does not mistake bold for two empty emphases', () => {
+    // Emphasis is matched after bold for exactly this reason.
+    const out = parseRich('**a**');
+    assert.equal(out.length, 1);
+    assert.equal(out[0].t, 'strong');
+  });
+
+  it('still handles single emphasis alongside bold', () => {
+    const out = parseRich('**bold** and *em*');
+    assert.deepEqual(
+      out.map((n) => n.t),
+      ['strong', 'text', 'em'],
+    );
+  });
+
+  it('counts bold as markup', () => {
+    assert.equal(isPlain('**x**'), false);
+  });
+});

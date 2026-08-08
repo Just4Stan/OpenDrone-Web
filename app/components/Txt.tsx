@@ -21,6 +21,7 @@ function Rich({value}: {value: string}) {
         // span would quietly change what those selectors match.
         if (n.t === 'text') return <Fragment key={i}>{n.v}</Fragment>;
         if (n.t === 'em') return <em key={i}>{n.v}</em>;
+        if (n.t === 'strong') return <strong key={i}>{n.v}</strong>;
         if (n.external) {
           return (
             <a key={i} href={n.href} target="_blank" rel="noopener noreferrer">

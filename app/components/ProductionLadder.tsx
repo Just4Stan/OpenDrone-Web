@@ -1,3 +1,5 @@
+import {Txt} from '~/components/Txt';
+
 /**
  * The production page's visual column: the capability ladder, drawn as a
  * dated climb rather than described in a paragraph.
@@ -10,33 +12,25 @@
  *
  * Date and title only. The why and how of each rung is section 03 of the
  * prose; repeating it here turned the graphic into a second article.
+ *
+ * The rung order is structure and lives here; the dates and titles are copy
+ * and live in `content/copy/production.json` as `ladder<n>_when` /
+ * `ladder<n>_title`. Adding a rung is a code change, moving a date is not.
  */
-type Rung = {
-  when: string;
-  title: string;
-};
-
-const RUNGS: Rung[] = [
-  {when: '2027 Q2', title: 'PCB assembly'},
-  {when: '2027 Q4', title: 'Carbon fibre routing'},
-  {when: '2028 Q3', title: 'Aluminium and anodising'},
-  {when: '2029 Q2', title: 'Motors'},
-];
+const RUNGS = [1, 2, 3, 4];
 
 export function ProductionLadder() {
   return (
     <figure className="ladder">
       <ol className="ladder-rungs">
-        {RUNGS.map((rung) => (
-          <li key={rung.title} className="ladder-rung">
-            <span className="ladder-when">{rung.when}</span>
-            <span className="ladder-title">{rung.title}</span>
+        {RUNGS.map((n) => (
+          <li key={n} className="ladder-rung">
+            <Txt id={`production.ladder${n}_when`} className="ladder-when" />
+            <Txt id={`production.ladder${n}_title`} className="ladder-title" />
           </li>
         ))}
       </ol>
-      <p className="ladder-note">
-        Targets, not promises: the dates move when the numbers do.
-      </p>
+      <Txt id="production.ladder_note" as="p" className="ladder-note" />
     </figure>
   );
 }

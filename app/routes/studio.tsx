@@ -20,6 +20,8 @@ import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import type {MetaFunction} from 'react-router';
 import {PREVIEW_CSS, STUDIO_CSS} from '~/studio/studio-css';
 import {StudioTokens} from '~/studio/StudioTokens';
+import {StudioChapters} from '~/studio/StudioChapters';
+import {PRODUCT_CONTENT} from '~/lib/product-content';
 
 export const meta: MetaFunction = () => [
   {title: 'OpenDrone Studio'},
@@ -29,7 +31,10 @@ export const meta: MetaFunction = () => [
 ];
 
 type CopyFile = Record<string, unknown>;
-type Tab = 'words' | 'design';
+type Tab = 'words' | 'chapters' | 'design';
+
+/** Handles that have editorial content, so a chapter list means something. */
+const PRODUCT_HANDLES = Object.keys(PRODUCT_CONTENT).sort();
 
 /** Reserved keys carry configuration, not copy. They are not editable text. */
 const isMeta = (k: string) => k.startsWith('$');
@@ -209,6 +214,13 @@ export default function Studio() {
           </button>
           <button
             type="button"
+            className={tab === 'chapters' ? 'is-on' : undefined}
+            onClick={() => setTab('chapters')}
+          >
+            Chapters
+          </button>
+          <button
+            type="button"
             className={tab === 'design' ? 'is-on' : undefined}
             onClick={() => setTab('design')}
           >
@@ -233,6 +245,12 @@ export default function Studio() {
 
       {tab === 'design' ? (
         <StudioTokens frame={frame} route={route} setStatus={setStatus} />
+      ) : tab === 'chapters' ? (
+        <StudioChapters
+          frame={frame}
+          handles={PRODUCT_HANDLES}
+          setStatus={setStatus}
+        />
       ) : (
         <div className="studio-grid">
           <aside className="studio-rail">

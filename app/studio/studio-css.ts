@@ -284,6 +284,97 @@ export const STUDIO_CSS = `
   border-left: 2px solid #2b2b33;
   border-radius: 0 5px 5px 0;
 }
+/* ---- chapters tab ---- */
+.studio-select {
+  width: 100%;
+  background: #0b0b0e;
+  border: 1px solid #2b2b33;
+  color: #e8e8ea;
+  border-radius: 6px;
+  padding: 5px 8px;
+  font: inherit;
+  font-size: 12px;
+}
+.studio-scope { display: flex; gap: 4px; }
+.studio-scope button {
+  flex: 1;
+  background: #14141a;
+  border: 1px solid #2b2b33;
+  color: #9a9aa4;
+  padding: 5px 8px;
+  border-radius: 6px;
+  font-size: 11px;
+}
+.studio-scope button.is-on { background: #c89d2e; border-color: #c89d2e; color: #0b0b0e; font-weight: 600; }
+
+.studio-chapters { list-style: none; margin: 0; padding: 0; }
+.studio-chapter {
+  display: grid;
+  grid-template-columns: 26px minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: center;
+  padding: 7px 6px;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  cursor: grab;
+}
+.studio-chapter:hover { background: #14141a; border-color: #23232a; }
+/* A dragged row dims rather than disappears, so the list length stays readable
+   while you are deciding where to drop it. */
+.studio-chapter.is-dragging { opacity: 0.4; border-style: dashed; border-color: #c89d2e; }
+.studio-chapter.is-off { opacity: 0.45; }
+.studio-chapter-num {
+  font-family: ui-monospace, Menlo, monospace;
+  font-size: 11px;
+  color: #c89d2e;
+  text-align: right;
+}
+.studio-chapter.is-off .studio-chapter-num { color: #55555e; }
+.studio-chapter-main { min-width: 0; }
+.studio-chapter-main input {
+  width: 100%;
+  background: none;
+  border: 0;
+  border-bottom: 1px solid transparent;
+  color: #e8e8ea;
+  font: inherit;
+  font-size: 12px;
+  padding: 1px 0;
+}
+.studio-chapter-main input:hover { border-bottom-color: #2b2b33; }
+.studio-chapter-main input:focus { outline: none; border-bottom-color: #c89d2e; }
+.studio-chapter-main input::placeholder { color: #7d7d86; }
+.studio-chapter-type {
+  display: block;
+  font-size: 10px;
+  color: #55555e;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.studio-chapter-btns { display: flex; gap: 1px; }
+.studio-chapter-btns button {
+  background: none;
+  border: 0;
+  color: #55555e;
+  padding: 2px 4px;
+  font-size: 11px;
+  line-height: 1;
+  border-radius: 4px;
+}
+.studio-chapter-btns button:hover { color: #c89d2e; background: #1d1d24; }
+
+.studio-add { display: flex; flex-wrap: wrap; gap: 5px; }
+.studio-add button {
+  background: #14141a;
+  border: 1px dashed #2b2b33;
+  color: #9a9aa4;
+  padding: 4px 9px;
+  border-radius: 6px;
+  font-size: 11px;
+}
+.studio-add button:hover { color: #c89d2e; border-color: #c89d2e; border-style: solid; }
+
 `;
 
 /**

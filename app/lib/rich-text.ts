@@ -12,6 +12,7 @@
  *   [production page](/production)     internal link, client-side navigation
  *   [Discord](https://discord.gg/x)    external link, opens in a new tab
  *   *is mostly*                        emphasis
+ *   **Stocking:**                      strong
  *
  * Deliberately NOT markdown. No headings, lists, images, code or HTML: those
  * are structure, and structure is the chapter model's job, not a string's. A
@@ -21,6 +22,7 @@
 export type RichNode =
   | {t: 'text'; v: string}
   | {t: 'em'; v: string}
+  | {t: 'strong'; v: string}
   | {t: 'link'; v: string; href: string; external: boolean};
 
 /**
@@ -36,7 +38,9 @@ function safeHref(href: string): string | null {
   return null;
 }
 
-const TOKEN = /\[([^\]]+)\]\(([^)\s]+)\)|\*([^*]+)\*/g;
+// Bold is matched BEFORE emphasis, or `**x**` would parse as an empty `*` run
+// followed by stray asterisks.
+const TOKEN = /\[([^\]]+)\]\(([^)\s]+)\)|\*\*([^*]+)\*\*|\*([^*]+)\*/g;
 
 export function parseRich(input: string): RichNode[] {
   const out: RichNode[] = [];
@@ -62,7 +66,9 @@ export function parseRich(input: string): RichNode[] {
         out.push({t: 'text', v: m[1]});
       }
     } else if (m[3] !== undefined) {
-      out.push({t: 'em', v: m[3]});
+      out.push({t: 'strong', v: m[3]});
+    } else if (m[4] !== undefined) {
+      out.push({t: 'em', v: m[4]});
     }
     last = m.index + m[0].length;
   }
