@@ -534,6 +534,45 @@ export function BoardArt({
     return () => cancelAnimationFrame(r);
   }, [raw]);
 
+  // Compositor pre-warm, one gate ahead of the fly. The entrance animates
+  // `translate` on every sheet, and until now nothing promoted them: frame 0 of
+  // the fly paid layer creation AND first raster for the whole stack, which is
+  // exactly the stutter `.is-swap-ready` was added to avoid for the *swap*
+  // ("promoting at swap start drops the first frames"). The entrance deserves
+  // the same trade.
+  //
+  // Deliberately NOT tied to `is-armed`: arming happens as soon as the SVG
+  // parses, which on a desktop viewport is during page load, so promoting there
+  // would hand every visitor a stack of GPU layers whether or not they ever
+  // scroll this far. This observer fires ~a viewport before the centre-band fly
+  // trigger instead, which since the schematic chapter moved ahead of the
+  // teardown is a real window of approach: the layers exist and are rastered by
+  // the time the animation starts, and a visitor who never gets here pays
+  // nothing. Skipped under reduced motion, where the fly does not run at all.
+  const [warm, setWarm] = useState(false);
+  useEffect(() => {
+    // Wait for `revealed`: before the sheets exist the chapter is collapsed to
+    // its skeleton height and this element sits near the top of the document,
+    // so a one-shot observer attached then fires immediately and promotes at
+    // load — the exact thing this gate exists to avoid. Once the board is built
+    // the element has its real box and the margin means what it says.
+    if (warm || !revealed) return;
+    const el = ref.current;
+    if (!el || typeof IntersectionObserver === 'undefined') return;
+    if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return;
+    const io = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((e) => e.isIntersecting)) {
+          io.disconnect();
+          setWarm(true);
+        }
+      },
+      {rootMargin: '800px 0px', threshold: 0},
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, [warm, revealed]);
+
   // Trigger the layer fly-in only once the board reaches the centre band of the
   // viewport (not the moment the chapter scrolls in) so it reads as a deliberate
   // reveal. One-shot; the sheets sit off-screen (paused) until it fires.
@@ -1324,9 +1363,9 @@ export function BoardArt({
       ref={ref}
       className={`board-art board-folder${revealed ? ' is-revealed' : ''}${
         revealed && !flyDone ? ' is-armed' : ''
-      }${flyIn && !flyDone ? ' is-flying' : ''}${
-        flyDone ? ' is-swap-ready' : ''
-      }${railIn ? ' is-rail-in' : ''}`}
+      }${warm && !flyDone ? ' is-warm' : ''}${
+        flyIn && !flyDone ? ' is-flying' : ''
+      }${flyDone ? ' is-swap-ready' : ''}${railIn ? ' is-rail-in' : ''}`}
       // The swap durations live in ONE place (SWAP_TIMING) and are pushed to CSS
       // here so the @keyframes block and the JS settle backstop read identical
       // numbers — change a duration in board-swap-timing.ts and both follow.

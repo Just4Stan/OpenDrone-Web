@@ -6020,6 +6020,19 @@ button.reset {
 .board-art.is-swap-ready .board-sheet {
   will-change: translate;
 }
+/* Same trade, one animation earlier: the ENTRANCE fly also animates `translate`,
+   and it used to start on unpromoted sheets, so frame 0 paid layer creation plus
+   first raster for the whole stack. `.is-warm` is set by an observer ~800px
+   before the centre-band fly trigger (BoardArt), so the layers are built and
+   rastered during the approach and the fly opens on a warm compositor. Handed
+   over to .is-swap-ready at flyDone, so will-change is continuous, never doubled.
+   Desktop only: the mobile board swaps as one element rather than per sheet, and
+   promoting a whole stack is the wrong trade on a phone's GPU budget. */
+@media (min-width: 880px) {
+  .board-art.is-warm .board-sheet {
+    will-change: translate;
+  }
+}
 /* PERF — strip the per-layer drop-shadow (a gaussian blur) for the flight on BOTH
    stacks; animating ~16 blurred layers at once saturates fill-rate and drops
    frames. Only the cheap brightness/saturate is kept (no brightness pop). The
