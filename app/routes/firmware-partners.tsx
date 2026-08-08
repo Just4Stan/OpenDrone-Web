@@ -2,6 +2,7 @@ import type {Route} from './+types/firmware-partners';
 import {Link} from 'react-router';
 import {buildSeoMeta} from '~/lib/seo';
 import {EditorialShell} from '~/components/EditorialShell';
+import {MarginArt, SplitFlowArt, ChipsArt} from '~/components/MarginArt';
 
 export const meta: Route.MetaFunction = () =>
   buildSeoMeta({
@@ -89,6 +90,7 @@ export default function FirmwarePartnersRoute() {
 
       <section className="editorial-section">
         <h2 className="editorial-section-title">01 · How the split works</h2>
+        <MarginArt><SplitFlowArt /></MarginArt>
         <p>
           When you buy a board, the checkout total covers the hardware price plus
           a €1 firmware contribution baked in. We batch those contributions and
@@ -105,6 +107,7 @@ export default function FirmwarePartnersRoute() {
 
       <section className="editorial-section">
         <h2 className="editorial-section-title">02 · The projects</h2>
+        <MarginArt><ChipsArt /></MarginArt>
         <div className="partners-grid">
           {PARTNERS.map((p) => (
             <article key={p.project} className="partner-card">

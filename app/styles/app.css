@@ -9907,6 +9907,36 @@ button.reset {
   font-style: italic;
 }
 
+/* Margin art: one stroke-only drawing per section, floated into the free
+   canvas right of the prose column and aligned with its section's top.
+   Dim gray linework — it should register as a sketch in the margin, not
+   an image. Hidden when the viewport has no spare right margin. */
+.editorial-section {
+  position: relative;
+}
+
+.section-art {
+  display: none;
+  position: absolute;
+  left: calc(100% + 4.5rem);
+  top: -0.5rem;
+  width: 12rem;
+  margin: 0;
+  color: color-mix(in srgb, var(--color-text-muted) 55%, transparent);
+  pointer-events: none;
+}
+
+.section-art svg {
+  width: 100%;
+  height: auto;
+}
+
+@media (min-width: 1280px) {
+  .section-art {
+    display: block;
+  }
+}
+
 /* Bonded to its section: generous air above, little below (>=3:1), so
    the gap itself draws the section boundaries. */
 .editorial-section-title {

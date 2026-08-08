@@ -1,6 +1,7 @@
 import type {Route} from './+types/wholesale';
 import {Link} from 'react-router';
 import {buildSeoMeta} from '~/lib/seo';
+import {MarginArt, ShopfrontArt, ShelfArt, EnvelopeArt} from '~/components/MarginArt';
 import {getCompanyIdentity} from '~/lib/company';
 
 export const meta: Route.MetaFunction = () =>
@@ -42,6 +43,7 @@ export default function WholesaleRoute({loaderData}: Route.ComponentProps) {
 
       <section className="editorial-section">
         <h2 className="editorial-section-title">01 · Who this is for</h2>
+        <MarginArt><ShopfrontArt /></MarginArt>
         <p>
           EU-based FPV retailers and distributors, first. You know your local
           scene better than a webshop in Leuven ever will; we&apos;d rather
@@ -52,6 +54,7 @@ export default function WholesaleRoute({loaderData}: Route.ComponentProps) {
 
       <section className="editorial-section">
         <h2 className="editorial-section-title">02 · What you&apos;d be stocking</h2>
+        <MarginArt><ShelfArt /></MarginArt>
         <ul className="editorial-list">
           <li>
             <strong>The line</strong>: flight controllers (OpenFC Lite), 4-in-1
@@ -78,6 +81,7 @@ export default function WholesaleRoute({loaderData}: Route.ComponentProps) {
 
       <section className="editorial-section">
         <h2 className="editorial-section-title">03 · Talk to us</h2>
+        <MarginArt><EnvelopeArt /></MarginArt>
         <p>
           Tell us who you are, where you sell, and roughly what volume you
           think makes sense. A human at Incutec answers, usually one of the

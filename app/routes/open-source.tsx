@@ -2,6 +2,7 @@ import type {Route} from './+types/open-source';
 import {Link} from 'react-router';
 import {buildSeoMeta} from '~/lib/seo';
 import {EditorialShell} from '~/components/EditorialShell';
+import {MarginArt, BranchMergeArt, PackagedBoardArt, FunnelArt, RecordTracesArt, UnboxArt, CopyleftCascadeArt, ForkVariantsArt} from '~/components/MarginArt';
 import {DISCORD_INVITE_URL} from '~/lib/company';
 
 export const meta: Route.MetaFunction = () =>
@@ -30,6 +31,7 @@ export default function OpenSourceRoute() {
 
       <section className="editorial-section">
         <h2 className="editorial-section-title">01 · Job one: the community designs it</h2>
+        <MarginArt><BranchMergeArt /></MarginArt>
         <p>
           OpenDrone was started by people from Incutec, but it is not ours. The
           designs are developed in the open and the direction belongs to the
@@ -51,6 +53,7 @@ export default function OpenSourceRoute() {
 
       <section className="editorial-section">
         <h2 className="editorial-section-title">02 · Job two: Incutec brings it to market</h2>
+        <MarginArt><PackagedBoardArt /></MarginArt>
         <p>
           Incutec does what a community cannot do alone: production, quality
           control, certification, distribution and legal responsibility for
@@ -71,6 +74,7 @@ export default function OpenSourceRoute() {
 
       <section className="editorial-section">
         <h2 className="editorial-section-title">03 · Why a company is in the loop</h2>
+        <MarginArt><FunnelArt /></MarginArt>
         <p>
           Incutec is a young startup from Leuven, Belgium, founded in June 2026.
           We&apos;re trying out a new business model where development is
@@ -88,6 +92,7 @@ export default function OpenSourceRoute() {
 
       <section className="editorial-section">
         <h2 className="editorial-section-title">04 · A record label for hardware</h2>
+        <MarginArt><RecordTracesArt /></MarginArt>
         <p>
           For the future business model of Incutec, think of it as a music
           record label for hardware: someone brings us a working design with
@@ -107,6 +112,7 @@ export default function OpenSourceRoute() {
 
       <section className="editorial-section">
         <h2 className="editorial-section-title">05 · What you buy</h2>
+        <MarginArt><UnboxArt /></MarginArt>
         <p>
           A finished, tested, packaged board, sold by Incutec. Fabricated and
           assembled in China today, then inspected, flashed, and shipped from
@@ -122,6 +128,7 @@ export default function OpenSourceRoute() {
 
       <section className="editorial-section">
         <h2 className="editorial-section-title">06 · Why CERN-OHL-S</h2>
+        <MarginArt><CopyleftCascadeArt /></MarginArt>
         <p>
           CERN-OHL-S v2 is a reciprocal, copyleft open-hardware licence. It keeps
           the design open: modify an OpenDrone board, ship your own version, and
@@ -134,6 +141,7 @@ export default function OpenSourceRoute() {
 
       <section className="editorial-section">
         <h2 className="editorial-section-title">07 · What this means for you</h2>
+        <MarginArt><ForkVariantsArt /></MarginArt>
         <ul className="editorial-list">
           <li>
             If Incutec disappears tomorrow, you still have the files, and the
