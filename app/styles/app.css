@@ -9845,7 +9845,7 @@ button.reset {
 
 .editorial-hero {
   /* The title earns its presence from the air around it, not its size. */
-  margin-bottom: 6rem;
+  margin-bottom: 4.5rem;
 }
 
 .editorial-eyebrow {
@@ -9882,11 +9882,11 @@ button.reset {
   margin: 0;
 }
 
-/* Space is spent between sections (6rem), not between paragraphs
-   (0.85rem). That ~8:1 contrast is what reads as spacious; padding every
-   gap equally reads as loose but still cramped. */
+/* Space is spent between sections, not between paragraphs (0.85rem);
+   the contrast is what reads as spacious. 4rem: our sections are short,
+   the 6rem of the reference sites left them floating. */
 .editorial-section {
-  margin-top: 6rem;
+  margin-top: 4rem;
   font-family: var(--font-sans);
   font-size: 1rem;
   line-height: 1.6;
