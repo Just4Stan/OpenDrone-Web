@@ -70,7 +70,7 @@ const TIMELINE: TimelineEvent[] = [
   {date: '2026-05-25', title: 'FC build video published', detail: 'How flight controllers work (so I built my own).', tag: 'fc', kind: 'post', url: 'https://www.youtube.com/watch?v=XDYZoMRJFeQ'},
   {date: '2026-06-03', title: 'OpenFC Lite 30.5×30.5: first commit', tag: 'fc', kind: 'commit', url: 'https://github.com/incutec-hw/OpenFC-Lite/commits/main'},
   {date: '2026-06-05', title: 'ESC production exports for the validation run', detail: 'Rev2 20×20 and Rev1 30×30 sent out as a combined panel.', tag: 'esc', kind: 'order', url: 'https://github.com/incutec-hw/OpenESC-20x20'},
-  {date: '2026-06-10', title: 'OpenRX fabrication set ordered', detail: 'All four receiver variants on one JLCPCB order.', tag: 'rx', kind: 'order', url: 'https://github.com/incutec-hw/OpenRX'},
+  {date: '2026-06-10', title: 'OpenRX fabrication set ordered', detail: 'All four receiver variants on one fab order.', tag: 'rx', kind: 'order', url: 'https://github.com/incutec-hw/OpenRX'},
   {date: '2026-06-14', title: 'Charger: first commit', detail: 'LiPo charger spec and part selection start in public.', tag: 'company', kind: 'commit', url: 'https://github.com/incutec-hw/Charger/commits/main'},
   {date: '2026-06-21', title: 'Site redesign deployed', detail: 'The current look of opendrone.be goes live.', tag: 'company', kind: 'launch', url: 'https://github.com/incutec-hw/OpenDrone-Web'},
   {date: '2026-06-29', title: 'Shared KiCad library: first commit', tag: 'company', kind: 'commit', url: 'https://github.com/incutec-hw/KiCad-Library/commits/main'},

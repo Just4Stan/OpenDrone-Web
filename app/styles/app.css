@@ -9972,6 +9972,343 @@ button.reset {
   color: var(--color-text);
 }
 
+/* ═══════════════════════════════════════════════════════════════════════
+   Editorial shell — series rail | prose | page visual
+
+   The long-form pages read as one series, so every page carries the index
+   of the whole series and a picture of its own argument. `.editorial-page`
+   is untouched inside here: it still owns the 720px measure, which is why
+   a page can adopt the shell without a word of its copy reflowing.
+
+   Column budget at the 1360px breakpoint: 13rem rail + 720 prose + 19rem
+   aside + two 3rem gaps = 1288px, inside the rail gutters. Below that the
+   rail drops under the prose; below 1120px the aside does too. Nothing is
+   display:none at any width — the rail IS the navigation for the series.
+   ═══════════════════════════════════════════════════════════════════════ */
+.editorial-shell {
+  width: var(--rail-width);
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  justify-content: center;
+  gap: var(--sp-7);
+}
+
+/* The prose column already centres itself; inside the grid the track does
+   that job, so drop its own width rule or --rail-width re-resolves against
+   the (narrower) grid area and shrinks the measure. */
+.editorial-shell > .editorial-page {
+  width: auto;
+  margin: 0;
+}
+
+/* Aside before rail when both are stacked: the picture belongs to this
+   page, the index belongs to the series and can wait until the end. */
+.editorial-aside {
+  order: 1;
+}
+
+.series-rail {
+  order: 2;
+}
+
+@media (min-width: 1120px) {
+  .editorial-shell {
+    grid-template-columns: minmax(0, 720px) minmax(0, 19rem);
+    align-items: start;
+  }
+
+  .editorial-shell.is-narrow {
+    grid-template-columns: minmax(0, 720px);
+  }
+
+  .editorial-aside {
+    position: sticky;
+    top: calc(var(--header-height) + 1.5rem);
+  }
+
+  /* Under the prose, in the prose column only. Spanning to the far edge
+     would run the rail underneath the sticky aside, which keeps rendering
+     beside it after the article ends. */
+  .series-rail {
+    grid-column: 1;
+  }
+}
+
+@media (min-width: 1360px) {
+  .editorial-shell {
+    grid-template-columns: 13rem minmax(0, 720px) minmax(0, 19rem);
+  }
+
+  .editorial-shell.is-narrow {
+    grid-template-columns: 13rem minmax(0, 720px);
+  }
+
+  .series-rail {
+    grid-column: 1;
+    order: -1;
+    position: sticky;
+    top: calc(var(--header-height) + 1.5rem);
+    /* Aligns the rail head with the page eyebrow. Margin, not padding, so it
+       does not eat into the max-height below. */
+    margin-top: 3rem;
+    /* The rail can outgrow the viewport once the series does; scroll it
+       rather than let it push the sticky top off screen. Thin, low-contrast
+       bar: this scrolls by a line or two, it should not read as a panel. */
+    max-height: calc(100vh - var(--header-height) - 4.5rem);
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: color-mix(in srgb, var(--color-border) 90%, transparent)
+      transparent;
+  }
+}
+
+.series-rail-head {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--color-gold);
+  margin: 0 0 1.1rem;
+}
+
+.series-rail-head span {
+  color: var(--color-text-muted);
+  letter-spacing: 0.14em;
+}
+
+.series-rail-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 1px;
+}
+
+.series-rail-list a {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 0.7rem;
+  padding: 0.7rem 0;
+  border-top: 1px solid color-mix(in srgb, var(--color-border) 70%, transparent);
+  color: var(--color-text-muted);
+  font-family: var(--font-mono);
+  transition: color 0.2s ease, border-color 0.2s ease;
+}
+
+.series-rail-list li:last-child a {
+  border-bottom: 1px solid
+    color-mix(in srgb, var(--color-border) 70%, transparent);
+}
+
+.series-rail-list a:hover {
+  color: var(--color-text);
+  border-color: var(--color-gold);
+}
+
+.series-rail-num {
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  color: color-mix(in srgb, var(--color-text-muted) 70%, transparent);
+  padding-top: 0.2rem;
+}
+
+.series-rail-body {
+  display: grid;
+  gap: 0.2rem;
+  min-width: 0;
+}
+
+.series-rail-title {
+  font-size: 12px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--color-text);
+}
+
+.series-rail-hook {
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--color-text-muted);
+}
+
+.series-rail-min {
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--color-text-muted) 65%, transparent);
+}
+
+/* Current entry: gold spine, not a colour swap, so the rail still reads as
+   a list of links rather than one active tab. */
+.series-rail-list li.is-current a {
+  color: var(--color-text);
+  box-shadow: inset 2px 0 0 var(--color-gold);
+  padding-left: 0.7rem;
+}
+
+.series-rail-list li.is-current .series-rail-num {
+  color: var(--color-gold);
+}
+
+/* End-of-page hand-off */
+.editorial-next {
+  display: grid;
+  gap: 0.3rem;
+  margin-top: var(--sp-8);
+  padding: 1.4rem 1.5rem;
+  border: 1px solid color-mix(in srgb, var(--color-border) 80%, transparent);
+  border-radius: var(--r-xs);
+  font-family: var(--font-mono);
+  transition: border-color 0.2s ease;
+}
+
+.editorial-next:hover {
+  border-color: var(--color-gold);
+}
+
+.editorial-next-label {
+  font-size: 10px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--color-gold);
+}
+
+.editorial-next-title {
+  font-family: var(--font-display);
+  font-size: 1.35rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--color-text);
+}
+
+.editorial-next-hook {
+  font-size: 0.85rem;
+  line-height: 1.6;
+  color: var(--color-text-muted);
+}
+
+.editorial-next-min {
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+  margin-top: 0.35rem;
+}
+
+/* ── Capability ladder (production page aside) ────────────────────────── */
+.ladder {
+  margin: 0;
+  font-family: var(--font-mono);
+}
+
+.ladder-head {
+  display: grid;
+  gap: 0.3rem;
+  margin-bottom: 1.4rem;
+}
+
+.ladder-eyebrow {
+  font-size: 11px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--color-gold);
+}
+
+.ladder-sub {
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--color-text-muted);
+}
+
+/* Climb, drawn bottom-up in meaning but top-down on screen: the rail is one
+   line behind the dots, inset so the dots sit on it. */
+.ladder-rungs {
+  list-style: none;
+  margin: 0;
+  padding: 0 0 0 1.4rem;
+  position: relative;
+}
+
+.ladder-rungs::before {
+  content: '';
+  position: absolute;
+  left: 3px;
+  top: 0.45rem;
+  bottom: 0.6rem;
+  width: 1px;
+  background: linear-gradient(
+    to bottom,
+    var(--color-gold),
+    color-mix(in srgb, var(--color-border) 90%, transparent)
+  );
+}
+
+.ladder-rung {
+  position: relative;
+  display: grid;
+  gap: 0.25rem;
+  padding-bottom: 1.6rem;
+}
+
+.ladder-rung:last-child {
+  padding-bottom: 0;
+}
+
+.ladder-rung::before {
+  content: '';
+  position: absolute;
+  left: -1.4rem;
+  top: 0.4rem;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--color-bg);
+  border: 1px solid var(--color-gold);
+}
+
+.ladder-rung:first-child::before {
+  background: var(--color-gold);
+}
+
+.ladder-when {
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--color-gold);
+}
+
+.ladder-title {
+  font-size: 12px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--color-text);
+}
+
+.ladder-detail {
+  font-size: 11px;
+  line-height: 1.6;
+  color: var(--color-text-muted);
+}
+
+.ladder-steps {
+  font-size: 10px;
+  line-height: 1.6;
+  color: color-mix(in srgb, var(--color-text-muted) 70%, transparent);
+}
+
+.ladder-note {
+  margin: 1.4rem 0 0;
+  padding-top: 1rem;
+  border-top: 1px solid color-mix(in srgb, var(--color-border) 70%, transparent);
+  font-size: 10px;
+  line-height: 1.7;
+  color: color-mix(in srgb, var(--color-text-muted) 80%, transparent);
+}
+
 /* Firmware partner cards */
 .partners-grid {
   display: grid;
