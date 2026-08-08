@@ -346,6 +346,75 @@ async function handle(
       return send(res, 200, {ok: true, files: out});
     }
 
+    /**
+     * Every image the site could reference, from `public/`.
+     *
+     * Read-only on purpose. The studio can point a page at a different picture,
+     * which is the common edit; it cannot upload or delete one. Adding an image
+     * means dropping a file in `public/` and it appears here, which keeps binary
+     * assets going through git the same way everything else does.
+     */
+    if (route === '/media' && req.method === 'GET') {
+      const root = path.resolve(repoRoot, 'public');
+      const out: Array<{path: string; bytes: number}> = [];
+      const walk = async (dir: string) => {
+        const entries = await fs.readdir(dir, {withFileTypes: true});
+        for (const e of entries) {
+          const abs = path.join(dir, e.name);
+          // Skip the model folders: GLBs are a build-pipeline output, not
+          // pickable art, and their sidecars are handled by the Hero tab.
+          if (e.isDirectory()) {
+            if (e.name === 'models' || e.name.startsWith('.')) continue;
+            await walk(abs);
+          } else if (/\.(svg|png|jpe?g|webp|avif|gif)$/i.test(e.name)) {
+            const st = await fs.stat(abs);
+            out.push({
+              // The URL the site would use, which is the value a copy key holds.
+              path: `/${path.relative(root, abs).split(path.sep).join('/')}`,
+              bytes: st.size,
+            });
+          }
+        }
+      };
+      await walk(root);
+      out.sort((a, b) => a.path.localeCompare(b.path));
+      return send(res, 200, {ok: true, images: out});
+    }
+
+    /**
+     * Where an image is referenced, so a swap is not made blind.
+     *
+     * Computed on demand rather than for the whole list: the answer needs a
+     * scan of `app/` and `content/`, and doing that for every image on every
+     * load would make the tab slow for information nobody asked for yet.
+     */
+    if (route === '/usage' && req.method === 'POST') {
+      const {needle} = JSON.parse(await readBody(req)) as {needle?: string};
+      if (typeof needle !== 'string' || needle.length < 2) {
+        return send(res, 400, {error: 'bad needle'});
+      }
+      const hits: string[] = [];
+      const scan = async (dir: string) => {
+        const entries = await fs.readdir(dir, {withFileTypes: true}).catch(() => []);
+        for (const e of entries) {
+          const abs = path.join(dir, e.name);
+          if (e.isDirectory()) {
+            if (e.name === 'node_modules' || e.name.startsWith('.')) continue;
+            await scan(abs);
+          } else if (/\.(tsx?|json|css|mdx?)$/i.test(e.name)) {
+            const text = await fs.readFile(abs, 'utf8').catch(() => '');
+            if (text.includes(needle)) {
+              hits.push(path.relative(repoRoot, abs));
+            }
+          }
+        }
+      };
+      await scan(path.resolve(repoRoot, 'app'));
+      await scan(path.resolve(repoRoot, 'content'));
+      hits.sort();
+      return send(res, 200, {ok: true, files: hits});
+    }
+
     return send(res, 404, {error: 'no such studio endpoint'});
   } catch (err) {
     // Surface the real reason in dev. This endpoint never runs in production,

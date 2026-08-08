@@ -22,6 +22,7 @@ import {PREVIEW_CSS, STUDIO_CSS} from '~/studio/studio-css';
 import {StudioTokens} from '~/studio/StudioTokens';
 import {StudioChapters} from '~/studio/StudioChapters';
 import {StudioHero} from '~/studio/StudioHero';
+import {StudioMedia} from '~/studio/StudioMedia';
 import {PRODUCT_CONTENT} from '~/lib/product-content';
 
 export const meta: MetaFunction = () => [
@@ -32,7 +33,7 @@ export const meta: MetaFunction = () => [
 ];
 
 type CopyFile = Record<string, unknown>;
-type Tab = 'words' | 'chapters' | 'design' | 'hero';
+type Tab = 'words' | 'chapters' | 'design' | 'media' | 'hero';
 
 /** Handles that have editorial content, so a chapter list means something. */
 const PRODUCT_HANDLES = Object.keys(PRODUCT_CONTENT).sort();
@@ -236,6 +237,13 @@ export default function Studio() {
           </button>
           <button
             type="button"
+            className={tab === 'media' ? 'is-on' : undefined}
+            onClick={() => setTab('media')}
+          >
+            Media
+          </button>
+          <button
+            type="button"
             className={tab === 'hero' ? 'is-on' : undefined}
             onClick={() => setTab('hero')}
           >
@@ -258,7 +266,9 @@ export default function Studio() {
         </div>
       </header>
 
-      {tab === 'hero' ? (
+      {tab === 'media' ? (
+        <StudioMedia setStatus={setStatus} />
+      ) : tab === 'hero' ? (
         <StudioHero setStatus={setStatus} />
       ) : tab === 'design' ? (
         <StudioTokens frame={frame} route={route} setStatus={setStatus} />

@@ -285,6 +285,86 @@ export const STUDIO_CSS = `
   border-radius: 0 5px 5px 0;
 }
 
+
+/* ---- media tab ---- */
+.studio-media {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 320px;
+}
+.studio-media-main { display: flex; flex-direction: column; min-width: 0; }
+.studio-media-grid {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 8px;
+  align-content: start;
+  scrollbar-width: thin;
+  scrollbar-color: #2b2b33 transparent;
+}
+.studio-media-item {
+  background: #14141a;
+  border: 1px solid #23232a;
+  border-radius: 8px;
+  padding: 8px;
+  display: grid;
+  gap: 5px;
+  text-align: left;
+  min-width: 0;
+}
+.studio-media-item:hover { border-color: #3a3a44; }
+.studio-media-item.is-on { border-color: #c89d2e; background: #1a1a20; }
+/* A checker under the thumb, so a transparent PNG is obviously transparent
+   rather than looking like it has a dark background baked in. */
+.studio-media-thumb {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 84px;
+  border-radius: 5px;
+  background-color: #0b0b0e;
+  background-image:
+    linear-gradient(45deg, #17171d 25%, transparent 25%),
+    linear-gradient(-45deg, #17171d 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, #17171d 75%),
+    linear-gradient(-45deg, transparent 75%, #17171d 75%);
+  background-size: 12px 12px;
+  background-position: 0 0, 0 6px, 6px -6px, -6px 0;
+  overflow: hidden;
+}
+.studio-media-thumb img { max-width: 100%; max-height: 100%; object-fit: contain; }
+.studio-media-name {
+  font-size: 11px;
+  color: #c4c4cc;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.studio-media-size { font-size: 10px; color: #55555e; }
+.studio-media-preview {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px;
+  border-radius: 8px;
+  background: #0b0b0e;
+  border: 1px solid #23232a;
+  margin-bottom: 8px;
+}
+.studio-media-preview img { max-width: 100%; max-height: 240px; object-fit: contain; }
+.studio-usage { list-style: none; margin: 0; padding: 0; }
+.studio-usage li {
+  font-family: ui-monospace, Menlo, monospace;
+  font-size: 11px;
+  color: #9a9aa4;
+  padding: 3px 0;
+  border-bottom: 1px solid #17171d;
+  overflow-wrap: anywhere;
+}
+
 /* ---- hero tab ---- */
 .studio-hero { flex: 1; min-height: 0; display: flex; flex-direction: column; }
 .studio-hero-bar {
