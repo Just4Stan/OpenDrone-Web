@@ -16,7 +16,12 @@ import path from 'node:path';
 const CSS = path.resolve('app/styles/app.css');
 const OUT = path.resolve('app/studio/token-catalogue.json');
 
-const css = fs.readFileSync(CSS, 'utf8');
+// Strip comments BEFORE any brace counting. `blockBody` counts raw `{`/`}`,
+// so a single `}` inside a comment truncates the block — and because it
+// returns a short-but-non-null string, the `if (!theme) throw` guard never
+// fires and the script silently writes zero tokens. Same class of bug as the
+// opener that used to match `html.light` inside a comment on line 76.
+const css = fs.readFileSync(CSS, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
 
 /**
  * Pull the body of a top-level block, brace-counting so nested rules survive.
@@ -47,6 +52,10 @@ function blockBody(source, opener) {
 const theme = blockBody(css, /^@theme\b/m);
 if (!theme) throw new Error('No @theme block found in app/styles/app.css');
 const light = blockBody(css, /^html\.light\s*\{/m);
+// Never write a catalogue that quietly lost the light theme. If the selector is
+// ever reformatted or grouped (`html.light,\nhtml.dark {`) this must be a loud
+// failure, not 18 missing overrides nobody notices until the studio is wrong.
+if (!light) throw new Error('No `html.light {` block found in app/styles/app.css');
 
 /** `--name: value;` at the top level of a block, ignoring comments. */
 function parseDecls(body) {
@@ -92,6 +101,8 @@ const tokens = themeDecls.map((d) => ({
   derivedFrom: [...d.value.matchAll(/var\((--[\w-]+)/g)].map((m) => m[1]),
   light: lightMap[d.name] ?? null,
 }));
+
+if (tokens.length === 0) throw new Error('Parsed zero tokens from @theme — refusing to write an empty catalogue');
 
 const catalogue = {
   $generated: 'npm run studio:tokens — do not hand-edit',

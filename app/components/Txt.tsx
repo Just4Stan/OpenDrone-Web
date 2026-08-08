@@ -72,7 +72,18 @@ export function Txt({
   // reaching for `any`.
   const Tag = as as ElementType<{className?: string; children?: ReactNode}>;
 
-  if (value === undefined) return <>{fallback}</>;
+  // Only strings and arrays of strings are renderable. `isPlain` coerces its
+  // argument for the regex test, so an object sails through as
+  // "[object Object]" and is then handed to React, which throws "Objects are
+  // not valid as a React child" and 500s the route. `{"hero": {"en": …}}` is an
+  // obvious first attempt at i18n, and the write endpoint applies no schema, so
+  // the studio can persist exactly that. A bad value must degrade, never crash.
+  if (
+    value === undefined ||
+    (typeof value !== 'string' && !Array.isArray(value))
+  ) {
+    return <>{fallback}</>;
+  }
 
   // An array is a run of paragraphs. Each gets its own annotation, indexed, so
   // the studio can edit one paragraph without rewriting the whole block.
@@ -86,7 +97,7 @@ export function Txt({
             {...editAttrs(`${id}.${i}`)}
             {...rest}
           >
-            <Rich value={para} />
+            <Rich value={typeof para === 'string' ? para : String(para ?? '')} />
           </Tag>
         ))}
       </>

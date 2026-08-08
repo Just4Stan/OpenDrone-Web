@@ -34,12 +34,57 @@ const OVERRIDES: Record<string, string> =
 const NAME_OK = /^--[a-zA-Z0-9-]+$/;
 const VALUE_BAD = /[;{}<]|\/\*|\*\//;
 
-export function themeOverrideCss(): string {
-  const decls = Object.entries(OVERRIDES)
-    .filter(([k, v]) => NAME_OK.test(k) && typeof v === 'string' && !VALUE_BAD.test(v))
-    .map(([k, v]) => `${k}:${v.trim()}`);
+/**
+ * Reject a value whose brackets or quotes do not close.
+ *
+ * The character filter above is not sufficient on its own, because the value
+ * never has to contain `;` or `}` to break out: the GENERATOR supplies those,
+ * and an unterminated `url(` or string swallows them. `--evil: url(` turned
+ * `{--color-bg:#000;--evil:url(;--color-accent:gold}` into one unclosed
+ * function running to end of file, and the browser dropped the entire rule.
+ * One bad token took the whole theme with it, which is precisely what the
+ * filter exists to prevent.
+ */
+function balanced(v: string): boolean {
+  let depth = 0;
+  let quote: string | null = null;
+  for (const ch of v) {
+    if (quote) {
+      if (ch === quote) quote = null;
+      continue;
+    }
+    if (ch === '"' || ch === "'") quote = ch;
+    else if (ch === '(') depth++;
+    else if (ch === ')' && --depth < 0) return false;
+  }
+  return depth === 0 && quote === null;
+}
+
+/**
+ * The pure half, so the filters above can be tested without a bundler. The
+ * loaded overrides are module state; the rules that decide what is safe to emit
+ * are not, and those are the part worth pinning.
+ */
+export function buildThemeCss(overrides: Record<string, unknown>): string {
+  const decls = Object.entries(overrides)
+    .filter(
+      ([k, v]) =>
+        NAME_OK.test(k) &&
+        typeof v === 'string' &&
+        !VALUE_BAD.test(v) &&
+        balanced(v),
+    )
+    .map(([k, v]) => `${k}:${(v as string).trim()}`);
   if (!decls.length) return '';
   // Both selectors, because `html.light` is a class and would otherwise
   // out-specify a bare `:root` for the 18 tokens it redefines.
-  return `:root,html.light,html.dark{${decls.join(';')}}`;
+  //
+  // One rule per declaration, not one rule with many declarations: if a value
+  // still manages to derail its own rule despite the checks above, it takes
+  // only itself down instead of every other token.
+  return decls.map((d) => `:root,html.light,html.dark{${d}}`).join('');
+}
+
+export function themeOverrideCss(): string {
+  return buildThemeCss(OVERRIDES);
 }

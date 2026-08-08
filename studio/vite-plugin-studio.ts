@@ -23,6 +23,7 @@
  * surface is deliberately narrow.
  */
 import fs from 'node:fs/promises';
+import {randomUUID} from 'node:crypto';
 import path from 'node:path';
 import type {Plugin, ViteDevServer} from 'vite';
 import type {IncomingMessage, ServerResponse} from 'node:http';
@@ -41,6 +42,9 @@ const API = '/__studio';
  */
 const WRITE_ROOT = 'content';
 
+/** Hostnames that mean "this machine". */
+const LOOPBACK = new Set(['localhost', '127.0.0.1', '::1', '[::1]']);
+
 /** Reject anything that is not a plain .json file under WRITE_ROOT. */
 function resolveWritePath(repoRoot: string, rel: string): string | null {
   if (typeof rel !== 'string' || !rel) return null;
@@ -56,6 +60,35 @@ function resolveWritePath(repoRoot: string, rel: string): string | null {
   // directory named `contentX` cannot pass as `content`.
   if (abs !== root && !abs.startsWith(root + path.sep)) return null;
   return abs;
+}
+
+/**
+ * Second containment check, this time against the real filesystem.
+ *
+ * `resolveWritePath` is purely lexical: it collapses `..` but has no idea what
+ * a path component actually IS. A directory symlink under `content/` therefore
+ * escapes it completely — reads leak arbitrary files, writes land outside the
+ * repo, and the success response reports a path inside `content/` that is not
+ * where the bytes went. There is no such symlink today, but the repo root
+ * already carries one (`drafts`), so the pattern is one `ln -s` away.
+ *
+ * Resolves the deepest existing ancestor, because the target file itself may
+ * legitimately not exist yet on a first write.
+ */
+async function realContained(repoRoot: string, abs: string): Promise<boolean> {
+  const root = await fs.realpath(path.resolve(repoRoot, WRITE_ROOT)).catch(() => null);
+  if (!root) return false;
+  let probe = abs;
+  for (;;) {
+    const real = await fs.realpath(probe).catch(() => null);
+    if (real) {
+      return real === root || real.startsWith(root + path.sep);
+    }
+    const parent = path.dirname(probe);
+    // Ran out of path without finding anything real: nothing to trust.
+    if (parent === probe) return false;
+    probe = parent;
+  }
 }
 
 async function readBody(req: IncomingMessage, limitBytes = 2_000_000) {
@@ -81,17 +114,50 @@ function send(res: ServerResponse, status: number, body: unknown) {
 }
 
 /**
- * Write a file the way an editor should: serialise, write to a temp file in the
- * same directory, then rename over the target. Rename is atomic on the same
- * filesystem, so a crash mid-write leaves the old file intact rather than a
- * half-written one. Content files are the source of truth for the site, so a
- * truncated write would take pages down until git restored them.
+ * Serialise writes per target path.
+ *
+ * Rename-over-temp is only atomic against a CRASH. It does nothing about two
+ * overlapping writes, and the first version of this file made that worse by
+ * deriving the temp name from the target: both writers opened the same temp
+ * file with O_TRUNC, the longer one's tail survived past the shorter one's
+ * terminator, and the loser's rename hit ENOENT because the winner had already
+ * moved the file away. Measured on 200 concurrent double-saves of one file:
+ * 151 rounds left syntactically invalid JSON on disk and 198 returned a 500 for
+ * a write that had partly landed.
+ *
+ * That is not theoretical for this studio. Cmd-S twice in quick succession, or
+ * a token drag firing saves back to back, is exactly the shape. A corrupt
+ * content file breaks the `import.meta.glob` and takes down every page that
+ * imports it, and it fails the production build if committed.
+ *
+ * So: one promise chain per path, and a temp name nothing else can collide
+ * with. Note macOS is case-insensitive, so the chain is keyed on the lowercased
+ * path — otherwise `copy/A.json` and `copy/a.json` would be two chains writing
+ * one file.
  */
+const writeChains = new Map<string, Promise<unknown>>();
+
 async function writeAtomic(abs: string, text: string) {
-  await fs.mkdir(path.dirname(abs), {recursive: true});
-  const tmp = `${abs}.studio-tmp`;
-  await fs.writeFile(tmp, text, 'utf8');
-  await fs.rename(tmp, abs);
+  const key = abs.toLowerCase();
+  const prev = writeChains.get(key) ?? Promise.resolve();
+  const next = prev.then(
+    async () => {
+      await fs.mkdir(path.dirname(abs), {recursive: true});
+      const tmp = `${abs}.${process.pid}.${randomUUID()}.tmp`;
+      try {
+        await fs.writeFile(tmp, text, 'utf8');
+        await fs.rename(tmp, abs);
+      } catch (err) {
+        // Never leave a stray temp file behind on a failed write.
+        await fs.rm(tmp, {force: true}).catch(() => {});
+        throw err;
+      }
+    },
+    // A failed predecessor must not poison the queue for later writes.
+    () => undefined,
+  );
+  writeChains.set(key, next.catch(() => undefined));
+  await next;
 }
 
 export function studioPlugin(): Plugin {
@@ -113,19 +179,44 @@ export function studioPlugin(): Plugin {
           const url = req.url ?? '';
           if (!url.startsWith(`${API}/`)) return next();
 
-          // Same-origin only. A request with no Origin header is a direct
-          // fetch (curl, the studio's own same-origin XHR in some browsers);
-          // one with a foreign Origin is another site probing localhost.
+          /**
+           * Three checks, because the obvious one is not enough.
+           *
+           * The first version only inspected Origin, compared it by hostname
+           * alone, and accepted a request that had no Origin at all. That let
+           * any page on any other localhost port write into `content/`, and it
+           * accepted exactly the request shape a DNS-rebinding attack produces:
+           * a cross-origin `<form enctype="text/plain">` POST is same-origin
+           * from the browser's point of view after rebinding, and such
+           * navigations do not reliably carry an Origin header.
+           *
+           * So: Host must be loopback (defeats rebinding, which relies on a
+           * non-loopback Host), Origin if present must match this exact server
+           * including port, and the body must be declared JSON, which no
+           * simple-request form can send without triggering a preflight.
+           */
+          const host = (req.headers.host ?? '').split(':')[0];
+          if (!LOOPBACK.has(host)) {
+            return send(res, 403, {error: 'non-loopback host refused'});
+          }
+
           const origin = req.headers.origin;
           if (origin) {
             let ok = false;
             try {
-              const h = new URL(origin).hostname;
-              ok = h === 'localhost' || h === '127.0.0.1' || h === '[::1]';
+              const u = new URL(origin);
+              ok = LOOPBACK.has(u.hostname) && u.host === req.headers.host;
             } catch {
               ok = false;
             }
             if (!ok) return send(res, 403, {error: 'cross-origin write refused'});
+          }
+
+          if (req.method === 'POST') {
+            const ct = (req.headers['content-type'] ?? '').split(';')[0].trim();
+            if (ct !== 'application/json') {
+              return send(res, 415, {error: 'expected content-type: application/json'});
+            }
           }
 
           void handle(req, res, url, repoRoot, server);
@@ -150,6 +241,9 @@ async function handle(
       const {file} = JSON.parse(await readBody(req)) as {file?: string};
       const abs = resolveWritePath(repoRoot, file ?? '');
       if (!abs) return send(res, 400, {error: 'bad path'});
+      if (!(await realContained(repoRoot, abs))) {
+        return send(res, 400, {error: 'path escapes content/'});
+      }
       try {
         const text = await fs.readFile(abs, 'utf8');
         return send(res, 200, {ok: true, data: JSON.parse(text)});
@@ -168,7 +262,18 @@ async function handle(
       };
       const abs = resolveWritePath(repoRoot, file ?? '');
       if (!abs) return send(res, 400, {error: 'bad path'});
+      if (!(await realContained(repoRoot, abs))) {
+        return send(res, 400, {error: 'path escapes content/'});
+      }
       if (data === undefined) return send(res, 400, {error: 'no data'});
+      // A copy file's basename becomes the page segment of every id on it, and
+      // `splitId` splits an id on its FIRST dot. `nav.cart.json` would register
+      // as page "nav.cart" while every lookup resolved page "nav", so the file
+      // would be silently unreadable by the site. Refuse to create one.
+      const base = path.basename(abs, '.json');
+      if (!base || base.includes('.')) {
+        return send(res, 400, {error: 'file name must not contain a dot'});
+      }
 
       // Two trailing newline conventions in one repo is a diff-noise generator.
       // Match what Prettier writes for JSON: two-space indent, trailing newline.

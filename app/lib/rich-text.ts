@@ -33,7 +33,13 @@ export type RichNode =
 function safeHref(href: string): string | null {
   const h = href.trim();
   if (/^https?:\/\//i.test(h)) return h;
-  if (h.startsWith('/') && !h.startsWith('//')) return h;
+  // `/\evil.com` is NOT an internal path. WHATWG URL treats a backslash as a
+  // separator in special schemes, so `/\`, `/\\` and `/\/` all resolve the same
+  // way `//` does: new URL('/\\evil.com', 'https://opendrone.be/x') is
+  // https://evil.com/. Checking only for a leading `//` classified it internal,
+  // which rendered it through <Link> with no rel="noopener noreferrer".
+  if (h === '/') return h;
+  if (/^\/[^/\\]/.test(h)) return h;
   if (h.startsWith('#')) return h;
   return null;
 }
@@ -42,7 +48,19 @@ function safeHref(href: string): string | null {
 // followed by stray asterisks.
 const TOKEN = /\[([^\]]+)\]\(([^)\s]+)\)|\*\*([^*]+)\*\*|\*([^*]+)\*/g;
 
+/**
+ * Above this length the string is treated as plain text.
+ *
+ * `\[([^\]]+)\]` rescans to end-of-string from every `[`, so a value full of
+ * unmatched brackets is quadratic: 60 KB measured at 1.4s, 200 KB at roughly
+ * 15s. Copy strings come from the repo so this is self-inflicted, but it burns
+ * on EVERY server render inside the Oxygen worker, which has a CPU budget. No
+ * real paragraph is anywhere near this.
+ */
+const MAX_RICH = 20_000;
+
 export function parseRich(input: string): RichNode[] {
+  if (input.length > MAX_RICH) return [{t: 'text', v: input}];
   const out: RichNode[] = [];
   let last = 0;
   let m: RegExpExecArray | null;
@@ -79,6 +97,7 @@ export function parseRich(input: string): RichNode[] {
 
 /** True when a string carries no markup, so callers can skip the parse. */
 export function isPlain(input: string): boolean {
+  if (input.length > MAX_RICH) return true;
   TOKEN.lastIndex = 0;
   return !TOKEN.test(input);
 }

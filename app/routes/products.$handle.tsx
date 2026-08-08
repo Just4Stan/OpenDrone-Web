@@ -1,4 +1,4 @@
-import {Suspense, useEffect, useMemo, useRef, useState} from 'react';
+import {Fragment, Suspense, useEffect, useMemo, useRef, useState} from 'react';
 import {createPortal} from 'react-dom';
 import {
   Await,
@@ -19,6 +19,7 @@ import {
   useSelectedOptionInUrlParam,
 } from '@shopify/hydrogen';
 import {useAside} from '~/components/Aside';
+import {Txt} from '~/components/Txt';
 import {ProductPrice} from '~/components/ProductPrice';
 import {ProductGallery} from '~/components/ProductGallery';
 import {ProductForm} from '~/components/ProductForm';
@@ -35,6 +36,12 @@ import {CommitHistoryCard, LatestCommitCard} from '~/components/LatestCommit';
 import {AnimatedNumber} from '~/components/AnimatedNumber';
 import {WatchCard} from '~/components/WatchCard';
 import {redirectIfHandleIsLocalized} from '~/lib/redirect';
+import {copy} from '~/lib/copy';
+import {
+  resolveChapters,
+  type ChapterEntry,
+  type ChapterType,
+} from '~/lib/chapters';
 import {buildSeoMeta, buildProductJsonLd, SITE_ORIGIN} from '~/lib/seo';
 import {fetchContributors, fetchLatestCommits} from '~/lib/github';
 import {ContributorGrid, ContributorGridSkeleton} from '~/components/Contributors';
@@ -64,7 +71,6 @@ import type {
   ChapterPin,
   DownloadAsset,
   DownloadKind,
-  ProductContent,
 } from '~/lib/product-content';
 
 export const meta: Route.MetaFunction = ({data, location}) =>
@@ -308,17 +314,6 @@ function DownloadsGrid({downloads}: {downloads: DownloadAsset[]}) {
   );
 }
 
-type ChapterNumbers = {
-  teardown?: string;
-  openSource: string;
-  inTheBox?: string;
-  firmware?: string;
-  specs?: string;
-  downloads?: string;
-  contributors?: string;
-  reviews?: string;
-};
-
 /**
  * Intro line for the contributors chapter. It streams with the grid rather
  * than above it, because it can only promise avatars when there are avatars:
@@ -342,60 +337,6 @@ function ContributorsIntro({empty, title}: {empty?: boolean; title?: string}) {
       )}
     </p>
   );
-}
-
-/** Compute chapter numbers that stay contiguous when any chapter is hidden. */
-function computeChapterNumbers(
-  content: ProductContent,
-  includeOpenSource = true,
-  includeFirmware = true,
-  includeReviews = false,
-): ChapterNumbers {
-  let n = 1;
-  const pad = (x: number) => x.toString().padStart(2, '0');
-  const out: ChapterNumbers = {openSource: ''};
-
-  // Numbering follows the render order in the route: the promise the board is
-  // made on (published, then produced), then the layout that promise buys you,
-  // then what it measures, then what ships. Keep the two in step.
-  //
-  // Accessories (fallback content) aren't open-hardware products — they get
-  // no "Open for learning" chapter, so don't burn a chapter number on it.
-  if (includeOpenSource) {
-    out.openSource = pad(n++);
-  }
-  if (content.teardown) {
-    out.teardown = pad(n++);
-  }
-  if (content.specs.length > 0) {
-    out.specs = pad(n++);
-  }
-  if (content.inTheBox.length > 0 || content.bundle) {
-    out.inTheBox = pad(n++);
-  }
-  if (content.downloads.length > 0) {
-    out.downloads = pad(n++);
-  }
-  if (
-    includeFirmware &&
-    !content.bundle &&
-    content.firmware.project &&
-    content.firmware.project !== '—'
-  ) {
-    out.firmware = pad(n++);
-  }
-  // Contributor grid: every editorial product has a public repo, so the
-  // chapter always exists for them — the grid degrades to the "+ you"
-  // invitation when the GitHub API is rate-limited.
-  if (includeOpenSource) {
-    out.contributors = pad(n++);
-  }
-  // Reviews render only when the feature is enabled AND the synced
-  // metafields carry at least one rating — the caller resolves that.
-  if (includeReviews) {
-    out.reviews = pad(n++);
-  }
-  return out;
 }
 
 /**
@@ -698,14 +639,6 @@ export default function Product() {
         product.reviewsRatingCount?.value,
       )
     : null;
-  // The "€1" firmware-split chapter is priceless copy without a price —
-  // skip it (and its chapter number) while the product is coming soon.
-  const chapterNums = computeChapterNumbers(
-    content,
-    isEditorial,
-    !soon,
-    Boolean(reviewAggregate),
-  );
 
   // Comparison-ladder state for product lines (OpenRX/OpenESC). The
   // editorial `variants` map is the tier source of truth; the active tier
@@ -1555,150 +1488,82 @@ export default function Product() {
     </div>
   );
 
-  return (
-    <div className="product-page">
-      <script
-        type="application/ld+json"
-         
-        dangerouslySetInnerHTML={{__html: JSON.stringify(productJsonLd)}}
-      />
-      {/* === HERO: gallery left, copy + sticky buy module right === */}
-      <section className="product-hero" ref={heroSectionRef}>
-        <div className="product-hero-gallery-col">
-          <div className="product-hero-media">
-            <ProductGallery
-              images={galleryImages}
-              activeImageId={selectedVariant?.image?.id ?? null}
-            />
-          </div>
-        </div>
+  /** Copy id behind a free-text chapter: one pair of strings per chapter id. */
+  const proseKey = (id: string | undefined, part: 'title' | 'body') =>
+    `products.${product.handle}.${id ?? ''}_${part}`;
 
-        <div className="product-hero-copy">
-          <p className="product-hero-eyebrow">
-            File {content.fileNumber} · {content.family}
-          </p>
-          {hasHeroCopy ? (
-            <h1 className="product-hero-headline">
-              {/* Skip empty lines — single-line heroes (OpenESC) otherwise
-                  render stray empty <em>/<span> nodes and join spaces. */}
-              <span>{content.hero.line1}</span>
-              {content.hero.line2Italic ? (
-                <>
-                  {' '}
-                  <span>
-                    <em>{content.hero.line2Italic}</em>
-                  </span>
-                </>
-              ) : null}
-              {content.hero.line3 ? (
-                <>
-                  {' '}
-                  <span>{content.hero.line3}</span>
-                </>
-              ) : null}
-            </h1>
-          ) : (
-            <h1 className="product-hero-headline">
-              <span>
-                <BrandName>{title}</BrandName>
-              </span>
-            </h1>
-          )}
-          {content.hero.lead ? (
-            <p className="product-hero-lead">{content.hero.lead}</p>
-          ) : null}
+  /**
+   * Does a chapter of this type have anything to show on THIS product?
+   *
+   * These are the conditions that used to gate each inline block, unchanged.
+   * They stay in the route rather than moving into the config because their
+   * answers come from three places `content/chapters.json` cannot see: whether
+   * the handle has an editorial entry at all, the product's lifecycle status,
+   * and the Shopify review metafields.
+   */
+  const present = (type: ChapterType, entry: ChapterEntry): boolean => {
+    switch (type) {
+      // Accessories (fallback content) aren't open-hardware products — no
+      // "Open for learning" chapter, and no chapter number burnt on it.
+      case 'openSource':
+        return isEditorial;
+      case 'teardown':
+        return Boolean(content.teardown);
+      case 'specs':
+        return content.specs.length > 0;
+      case 'inTheBox':
+        return content.inTheBox.length > 0 || Boolean(content.bundle);
+      case 'downloads':
+        return content.downloads.length > 0;
+      // The "€1" firmware split is priceless copy without a price — skip it
+      // while the product is coming soon.
+      case 'firmware':
+        return (
+          !soon &&
+          !content.bundle &&
+          Boolean(content.firmware.project) &&
+          content.firmware.project !== '—'
+        );
+      // Every editorial product has a public repo, so the chapter always exists
+      // for them — the grid degrades to the "+ you" invitation when the GitHub
+      // API is rate-limited.
+      case 'contributors':
+        return isEditorial;
+      // Only when the feature is enabled AND the synced metafields carry at
+      // least one rating, so a zero-review store shows no trace of it.
+      case 'reviews':
+        return Boolean(reviewAggregate);
+      // A free-text chapter exists once it has words. Keyed by the chapter's
+      // id, so several of them on one page stay distinct.
+      case 'prose':
+        return copy(proseKey(entry.id, 'body')) !== undefined;
+      default:
+        return false;
+    }
+  };
 
-          <ul className="trust-chips" aria-label="Certifications">
-            {isEditorial ? (
-              <li>
-                <Link
-                  to="/open-source"
-                  prefetch="viewport"
-                  className="trust-chip trust-chip-green trust-chip-link"
-                >
-                  Open source
-                </Link>
-              </li>
-            ) : null}
-            {activeOshwaUid ? (
-              <li>
-                <a
-                  href={`https://certification.oshwa.org/${activeOshwaUid.toLowerCase()}.html`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="trust-chip trust-chip-oshwa trust-chip-link"
-                  title={`OSHWA-certified open source hardware · ${activeOshwaUid}`}
-                >
-                  <img
-                    src="/logos/oshwa.svg"
-                    alt=""
-                    aria-hidden="true"
-                    className="trust-chip-oshwa-mark"
-                  />
-                  OSHWA certified · {activeOshwaUid}
-                </a>
-              </li>
-            ) : null}
-            {content.bundle ? (
-              <li>
-                <Link
-                  to="/firmware-partners"
-                  prefetch="viewport"
-                  className="trust-chip trust-chip-gold trust-chip-link"
-                >
-                  €1 × {content.bundle.components.length} →{' '}
-                  {content.bundle.components.map((c) => c.firmware).join(' + ')}
-                </Link>
-              </li>
-            ) : content.firmware.project && content.firmware.project !== '—' ? (
-              <li>
-                <Link
-                  to="/firmware-partners"
-                  prefetch="viewport"
-                  className="trust-chip trust-chip-gold trust-chip-link"
-                >
-                  €1 → {content.firmware.project} devs
-                </Link>
-              </li>
-            ) : null}
-          </ul>
-
-          {/* In-flow buy box — scrolls past with the page like any content,
-              so nothing vanishes or leaves a gap. The sentinel sits BELOW the
-              buy module: the compact top bar takes over only once the whole
-              module (CTA included) is under the header, otherwise the two
-              overlap now that the column scrolls normally. */}
-          <div className="buy-rail">
-            {railLadder}
-            {railBuyModule}
-            <div
-              ref={railSentinelRef}
-              className="buy-rail-sentinel"
-              aria-hidden="true"
-            />
-          </div>
-          {/* Separate compact bar pinned to the top while the in-hero selector
-              is out of view, so variants stay switchable from anywhere. Coming
-              soon: nothing to buy, so no pinned bar — an email form fixed to
-              the viewport would be noise, and the in-flow signup is enough. */}
-          {railPinned && !soon ? createPortal(pinnedRail, document.body) : null}
-
-          {content.pairCta ? (
-            <Link className="pair-cta" to={content.pairCta.to} prefetch="viewport">
-              <span className="pair-cta-eyebrow">{content.pairCta.eyebrow}</span>
-              <span className="pair-cta-title">{content.pairCta.title}</span>
-              <span className="pair-cta-arrow" aria-hidden="true">→</span>
-            </Link>
-          ) : null}
-        </div>
-      </section>
-
-      {/* === Chapter: Open for learning === */}
-      {!isEditorial ? null : (
+  /**
+   * How each chapter type draws itself.
+   *
+   * The data model picks which of these run and in what order; it does not pick
+   * how they look. `n` is the number `resolveChapters` assigned from position,
+   * so it cannot drift from the render order. `title` is the studio's optional
+   * override — absent, the designed title (inline `<em>` and all) stands.
+   */
+  const chapterNodes: Partial<
+    Record<
+      ChapterType,
+      (n: string, title?: string, id?: string) => React.ReactNode
+    >
+  > = {
+    /** What the board is published as: repos, license, latest commit. */
+    openSource: (n, title) => (
       <Chapter
-        number={chapterNums.openSource}
+        number={n}
         label="Open for learning"
-        title="Published so you can study it. Produced so you don't have to."
+        title={
+          title ?? "Published so you can study it. Produced so you don't have to."
+        }
         wideMedia={!!schematicHandle}
         media={
           schematicHandle ? (
@@ -1858,14 +1723,16 @@ export default function Product() {
           ) : null}
         </div>
       </Chapter>
-      )}
-
-      {/* === Chapter: Teardown === */}
-      {content.teardown && chapterNums.teardown ? (
+    ),
+    /** What it is made of: board art or exploded frame, plus the pin map. */
+    teardown: (n, title) => (
         <Chapter
-          number={chapterNums.teardown}
+          number={n}
           label="Teardown"
-          title={frameViewer ? 'Every arm, plate and standoff, exploded' : 'Teardown'}
+          title={
+            title ??
+            (frameViewer ? 'Every arm, plate and standoff, exploded' : 'Teardown')
+          }
           textReveal={frameViewer ? undefined : textIn}
           backdrop={
             frameViewer ? (
@@ -2014,14 +1881,13 @@ export default function Product() {
             </a>
           ) : null}
         </Chapter>
-      ) : null}
-
-      {/* === Chapter: Specs === */}
-      {content.specs.length > 0 && chapterNums.specs ? (
+    ),
+    /** What it measures. */
+    specs: (n, title) => (
         <Chapter
-          number={chapterNums.specs}
+          number={n}
           label="Datasheet"
-          title="Every spec, one table"
+          title={title ?? 'Every spec, one table'}
           noMedia
         >
           <dl className="spec-table">
@@ -2042,23 +1908,22 @@ export default function Product() {
             <p className="chapter-footnote">{content.footnote}</p>
           ) : null}
         </Chapter>
-      ) : null}
-
-      {/* === Chapter: In the box (always) === */}
-      {(content.inTheBox.length > 0 || content.bundle) &&
-      chapterNums.inTheBox ? (
+    ),
+    /** What ships. */
+    inTheBox: (n, title) => (
         <Chapter
-          number={chapterNums.inTheBox}
+          number={n}
           label="In the box"
           title={
-            content.bundle ? (
+            title ??
+            (content.bundle ? (
               <>
                 Two boards, two firmwares,{' '}
                 <em>two maintainers paid.</em>
               </>
             ) : (
               'In the box'
-            )
+            ))
           }
         >
           {content.bundle ? (
@@ -2117,18 +1982,19 @@ export default function Product() {
             }
           />
         </Chapter>
-      ) : null}
-
-      {/* === Chapter: Downloads — schematic, STEP, BOM, manuals === */}
-      {content.downloads.length > 0 && chapterNums.downloads ? (
+    ),
+    /** The files themselves. */
+    downloads: (n, title) => (
         <Chapter
-          number={chapterNums.downloads}
+          number={n}
           label="Downloads"
           title={
-            <>
-              Files you can fork,{' '}
-              <em>build on, or audit.</em>
-            </>
+            title ?? (
+              <>
+                Files you can fork,{' '}
+                <em>build on, or audit.</em>
+              </>
+            )
           }
         >
           <p className="chapter-body">
@@ -2138,21 +2004,18 @@ export default function Product() {
           </p>
           <DownloadsGrid downloads={content.downloads} />
         </Chapter>
-      ) : null}
-
-      {/* === Chapter: The €1 — singles with a firmware project === */}
-      {!soon &&
-      !content.bundle &&
-      content.firmware.project &&
-      content.firmware.project !== '—' &&
-      chapterNums.firmware ? (
+    ),
+    /** Where the €1 of every order goes. */
+    firmware: (n, title) => (
         <Chapter
-          number={chapterNums.firmware}
+          number={n}
           label="The €1"
           title={
-            <>
-              What <em>you</em> pay, what the <em>developers</em> get.
-            </>
+            title ?? (
+              <>
+                What <em>you</em> pay, what the <em>developers</em> get.
+              </>
+            )
           }
           media={
             content.firmware.logo ? (
@@ -2178,21 +2041,23 @@ export default function Product() {
             firmwareUrl={content.firmware.projectUrl}
           />
         </Chapter>
-      ) : null}
-
-      {/* === Chapter: Contributors — GitHub accounts with commits on the
-             product's repos, streamed in deferred. The grid always closes
-             with a "+ you" tile pointing at the issues page; when GitHub
-             rate-limits the fetch the chapter still renders with just that
-             invitation. === */}
-      {isEditorial && chapterNums.contributors ? (
+    ),
+    /**
+     * Who built it. GitHub accounts with commits on the product's repos,
+     * streamed in deferred. The grid always closes with a "+ you" tile pointing
+     * at the issues page; when GitHub rate-limits the fetch the chapter still
+     * renders with just that invitation.
+     */
+    contributors: (n, title) => (
         <Chapter
-          number={chapterNums.contributors}
+          number={n}
           label="Contributors"
           title={
-            <>
-              Built in the open, <em>by whoever shows up.</em>
-            </>
+            title ?? (
+              <>
+                Built in the open, <em>by whoever shows up.</em>
+              </>
+            )
           }
           noMedia
         >
@@ -2222,7 +2087,7 @@ export default function Product() {
             >
               {(list) => (
                 <>
-                  <ContributorsIntro empty={!list?.length} title={title} />
+                  <ContributorsIntro empty={!list?.length} title={product.title} />
                   <ContributorGrid
                     contributors={list ?? []}
                     issuesUrl={`${activeRepoUrl}/issues`}
@@ -2232,22 +2097,26 @@ export default function Product() {
             </Await>
           </Suspense>
         </Chapter>
-      ) : null}
-
-      {/* === Chapter: Reviews — Judge.me data, own markup (no widget).
-             Appears only when the review env vars are set AND the synced
-             metafields carry at least one rating, so a zero-review store
-             shows no trace of it. Bodies stream in deferred; a fetch
-             failure degrades to the aggregate count line. === */}
-      {reviewAggregate && chapterNums.reviews ? (
+    ),
+    /**
+     * Judge.me data, own markup (no widget). Bodies stream in deferred; a fetch
+     * failure degrades to the aggregate count line.
+     */
+    reviews: (n, title) => {
+      // `present` already ruled this out, but the aggregate is read half a
+      // dozen times below and the compiler wants the narrowing spelled out.
+      if (!reviewAggregate) return null;
+      return (
         <Chapter
           id="reviews"
-          number={chapterNums.reviews}
+          number={n}
           label="Reviews"
           title={
-            <>
-              Field reports, <em>order on file.</em>
-            </>
+            title ?? (
+              <>
+                Field reports, <em>order on file.</em>
+              </>
+            )
           }
           noMedia
         >
@@ -2282,8 +2151,172 @@ export default function Product() {
             </Await>
           </Suspense>
         </Chapter>
-      ) : null}
+      );
+    },
+    /**
+     * The generic type. Everything it says comes from the copy store, so Stan
+     * can add as many as he likes without a code change.
+     */
+    prose: (n, title, id) => {
+      const titleId = proseKey(id, 'title');
+      // A missing title must leave no heading at all. `<Txt>` renders nothing
+      // for an absent key, but the element is still truthy, so Chapter would
+      // draw an empty <h2>.
+      const heading =
+        title ??
+        (copy(titleId) === undefined ? null : <Txt id={titleId} as="span" />);
+      return (
+        <Chapter number={n} label="Free text" title={heading} noMedia>
+          <Txt id={proseKey(id, 'body')} as="p" className="chapter-body" />
+        </Chapter>
+      );
+    },
+  };
 
+  return (
+    <div className="product-page">
+      <script
+        type="application/ld+json"
+         
+        dangerouslySetInnerHTML={{__html: JSON.stringify(productJsonLd)}}
+      />
+      {/* === HERO: gallery left, copy + sticky buy module right === */}
+      <section className="product-hero" ref={heroSectionRef}>
+        <div className="product-hero-gallery-col">
+          <div className="product-hero-media">
+            <ProductGallery
+              images={galleryImages}
+              activeImageId={selectedVariant?.image?.id ?? null}
+            />
+          </div>
+        </div>
+
+        <div className="product-hero-copy">
+          <p className="product-hero-eyebrow">
+            File {content.fileNumber} · {content.family}
+          </p>
+          {hasHeroCopy ? (
+            <h1 className="product-hero-headline">
+              {/* Skip empty lines — single-line heroes (OpenESC) otherwise
+                  render stray empty <em>/<span> nodes and join spaces. */}
+              <span>{content.hero.line1}</span>
+              {content.hero.line2Italic ? (
+                <>
+                  {' '}
+                  <span>
+                    <em>{content.hero.line2Italic}</em>
+                  </span>
+                </>
+              ) : null}
+              {content.hero.line3 ? (
+                <>
+                  {' '}
+                  <span>{content.hero.line3}</span>
+                </>
+              ) : null}
+            </h1>
+          ) : (
+            <h1 className="product-hero-headline">
+              <span>
+                <BrandName>{title}</BrandName>
+              </span>
+            </h1>
+          )}
+          {content.hero.lead ? (
+            <p className="product-hero-lead">{content.hero.lead}</p>
+          ) : null}
+
+          <ul className="trust-chips" aria-label="Certifications">
+            {isEditorial ? (
+              <li>
+                <Link
+                  to="/open-source"
+                  prefetch="viewport"
+                  className="trust-chip trust-chip-green trust-chip-link"
+                >
+                  Open source
+                </Link>
+              </li>
+            ) : null}
+            {activeOshwaUid ? (
+              <li>
+                <a
+                  href={`https://certification.oshwa.org/${activeOshwaUid.toLowerCase()}.html`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="trust-chip trust-chip-oshwa trust-chip-link"
+                  title={`OSHWA-certified open source hardware · ${activeOshwaUid}`}
+                >
+                  <img
+                    src="/logos/oshwa.svg"
+                    alt=""
+                    aria-hidden="true"
+                    className="trust-chip-oshwa-mark"
+                  />
+                  OSHWA certified · {activeOshwaUid}
+                </a>
+              </li>
+            ) : null}
+            {content.bundle ? (
+              <li>
+                <Link
+                  to="/firmware-partners"
+                  prefetch="viewport"
+                  className="trust-chip trust-chip-gold trust-chip-link"
+                >
+                  €1 × {content.bundle.components.length} →{' '}
+                  {content.bundle.components.map((c) => c.firmware).join(' + ')}
+                </Link>
+              </li>
+            ) : content.firmware.project && content.firmware.project !== '—' ? (
+              <li>
+                <Link
+                  to="/firmware-partners"
+                  prefetch="viewport"
+                  className="trust-chip trust-chip-gold trust-chip-link"
+                >
+                  €1 → {content.firmware.project} devs
+                </Link>
+              </li>
+            ) : null}
+          </ul>
+
+          {/* In-flow buy box — scrolls past with the page like any content,
+              so nothing vanishes or leaves a gap. The sentinel sits BELOW the
+              buy module: the compact top bar takes over only once the whole
+              module (CTA included) is under the header, otherwise the two
+              overlap now that the column scrolls normally. */}
+          <div className="buy-rail">
+            {railLadder}
+            {railBuyModule}
+            <div
+              ref={railSentinelRef}
+              className="buy-rail-sentinel"
+              aria-hidden="true"
+            />
+          </div>
+          {/* Separate compact bar pinned to the top while the in-hero selector
+              is out of view, so variants stay switchable from anywhere. Coming
+              soon: nothing to buy, so no pinned bar — an email form fixed to
+              the viewport would be noise, and the in-flow signup is enough. */}
+          {railPinned && !soon ? createPortal(pinnedRail, document.body) : null}
+
+          {content.pairCta ? (
+            <Link className="pair-cta" to={content.pairCta.to} prefetch="viewport">
+              <span className="pair-cta-eyebrow">{content.pairCta.eyebrow}</span>
+              <span className="pair-cta-title">{content.pairCta.title}</span>
+              <span className="pair-cta-arrow" aria-hidden="true">→</span>
+            </Link>
+          ) : null}
+        </div>
+      </section>
+
+      {/* === Chapters, in the order `content/chapters.json` puts them === */}
+      {resolveChapters(product.handle, present).map((c) => (
+        <Fragment key={c.id}>
+          {chapterNodes[c.type]?.(c.number, c.title, c.id)}
+        </Fragment>
+      ))}
 
       <RelatedProducts recommendations={recommendations} />
       <Analytics.ProductView
