@@ -19,9 +19,14 @@ export type CopyFile = Record<string, CopyValue>;
 
 // Absolute-from-repo-root glob. `content/` sits outside `app/`, so the `~`
 // alias cannot reach it; Vite resolves a leading slash against the project root.
-const FILES = import.meta.glob<{default: CopyFile}>('/content/copy/*.json', {
-  eager: true,
-});
+/**
+ * Guarded so the module can also be imported by the node:test suites, which run
+ * the TypeScript directly with no bundler and have no `import.meta.glob`. Vite
+ * still rewrites the call itself, so the real build is unaffected.
+ */
+const FILES = import.meta.env
+  ? import.meta.glob<{default: CopyFile}>('/content/copy/*.json', {eager: true})
+  : {};
 
 /** `/content/copy/home.json` -> `home` */
 function pageOf(filePath: string): string {

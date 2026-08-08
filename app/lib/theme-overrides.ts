@@ -10,10 +10,16 @@
  * Loaded through a glob rather than a direct import so a missing or empty file
  * is simply "no overrides" instead of a build error.
  */
-const FILES = import.meta.glob<{default: Record<string, string>}>(
-  '/content/theme.json',
-  {eager: true},
-);
+/**
+ * Guarded so the module can also be imported by the node:test suites, which run
+ * the TypeScript directly with no bundler and have no `import.meta.glob`. Vite
+ * still rewrites the call itself, so the real build is unaffected.
+ */
+const FILES = import.meta.env
+  ? import.meta.glob<{default: Record<string, string>}>('/content/theme.json', {
+      eager: true,
+    })
+  : {};
 
 const OVERRIDES: Record<string, string> =
   Object.values(FILES)[0]?.default ?? {};
