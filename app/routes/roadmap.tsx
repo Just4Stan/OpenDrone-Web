@@ -41,7 +41,7 @@ const ROADMAP: RoadmapItem[] = [
   {
     item: 'OpenFC Lite · 30×30',
     status: 'beta',
-    note: 'RP2354 Betaflight flight controller. First production batch in preparation.',
+    note: 'RP2354 Betaflight flight controller, 30.5\u00d730.5.',
     productPath: '/products/openfc-lite',
     link: 'https://github.com/incutec-hw/OpenFC-Lite',
   },
@@ -69,31 +69,31 @@ const ROADMAP: RoadmapItem[] = [
   {
     item: 'OpenRX',
     status: 'alpha',
-    note: 'ExpressLRS receiver family, four variants, in community testing.',
+    note: 'ExpressLRS receiver family, four variants.',
     productPath: '/products/openrx',
     link: 'https://github.com/incutec-hw/OpenRX',
   },
   {
     item: 'OpenFrame · 5" + 3"',
     status: 'in-progress',
-    note: 'CNC carbon freestyle frames. First sample sets ordered.',
+    note: 'CNC carbon freestyle frames, 5\u2033 and 3\u2033.',
     productPath: '/products/openframe',
   },
   {
     item: 'Motors',
     status: 'in-progress',
-    note: 'First prototype motors ordered, waiting on delivery. Nothing public yet.',
+    note: 'Brushless FPV motors.',
   },
   {
     item: 'OpenVTX',
     status: 'planned',
-    note: 'Video transmitter. Specs and architecture open for discussion.',
+    note: 'Video transmitter.',
     link: 'https://github.com/incutec-hw/OpenVTX',
   },
   {
     item: 'OpenRemoteID',
     status: 'planned',
-    note: 'Remote ID module. Requirements still being worked out.',
+    note: 'Remote ID module.',
     link: 'https://github.com/incutec-hw/OpenRemoteID',
   },
   {
@@ -196,9 +196,10 @@ export default function RoadmapRoute() {
       <section className="editorial-section">
         <h2 className="editorial-section-title">02 · Where every product stands</h2>
         <p>
-          The same board we work from. Each product carries one status label,
-          explained below; the label is mirrored on its product page and on
-          its GitHub repo.
+          The same board we work from. Each product carries exactly one
+          status flag, explained below. The flag is the status: the same
+          value is set as a status-* topic on the product&apos;s GitHub repo,
+          and nothing describes status in prose anywhere else.
         </p>
         <div className="kanban">
           {columns.map((col) => (
