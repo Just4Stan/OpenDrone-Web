@@ -2,7 +2,7 @@
  * Stack-deal display math, shared by every surface that advertises the
  * FC + ESC stack (PDP CTA flyout, catalog cards, header pod rows).
  *
- * REALITY (Stan, 2026-07-17): the Shopify automatic discount is 10% off the
+ * REALITY (maintainer, 2026-07-17): the Shopify automatic discount is 10% off the
  * OpenESC when it's bought together with an OpenFC Lite. It is NOT 10% off
  * the whole pair. Copy must name the discounted board (e.g. "OpenESC −10%"),
  * and any discounted price shown must be derived from the live price with

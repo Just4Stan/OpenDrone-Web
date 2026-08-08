@@ -145,7 +145,7 @@ declare global {
     //
     // Webhook URL to register in Shopify admin:
     //   POST https://opendrone.be/api/newsletter/dispatch
-    //   topic: articles/update  (Stan also create a one-shot
+    //   topic: articles/update  (also create a one-shot
     //   articles/create subscription if desired)
     //   format: JSON
     //   secret: same value as SHOPIFY_WEBHOOK_SECRET

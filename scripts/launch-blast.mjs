@@ -202,7 +202,7 @@ async function shopifyNotifyEmails(handle) {
 }
 
 // --- email template ------------------------------------------------------------
-// TODO(copy-stan): draft copy — subject + body need your voice, and the
+// TODO(copy): draft copy — subject + body need your voice, and the
 // handle ("openfc-lite") should become the real product title.
 
 function renderBlast(handle) {

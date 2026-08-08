@@ -1,7 +1,7 @@
 /**
  * Populates the custom.* compliance metafields with values that are
  * verifiable from the codebase / known facts only. Intentionally leaves
- * blank the fields that require Stan's input or real per-batch data:
+ * blank the fields that require the maintainer's input or real per-batch data:
  *   safety_warnings_{nl,fr,en}  — must be authored, not invented (GPSR)
  *   doc_url, sbom_url           — Declaration of Conformity / SBOM not yet published
  *   firmware_version, batch_id  — per-build values, set at fulfillment
@@ -95,4 +95,4 @@ for (const [handle, fields] of Object.entries(DATA)) {
     console.log(`✓ ${handle}: set ${metafields.map((m) => m.key).join(', ')}`);
   }
 }
-console.log('\nDone. Left blank (need Stan / real data): safety_warnings_nl/fr/en, doc_url, sbom_url, firmware_version, batch_id, support_end_date, battery_wh, battery_un_number');
+console.log('\nDone. Left blank (need maintainer input / real data): safety_warnings_nl/fr/en, doc_url, sbom_url, firmware_version, batch_id, support_end_date, battery_wh, battery_un_number');

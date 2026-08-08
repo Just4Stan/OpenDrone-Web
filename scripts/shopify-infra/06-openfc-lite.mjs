@@ -3,7 +3,7 @@
  * mount sizes (20×20, 30×30). The full OpenFC / OpenFC Mini stay on the
  * existing `openfc` product as coming-soon.
  *
- * Created as DRAFT with PLACEHOLDER price/SKU — Stan sets the real values in
+ * Created as DRAFT with PLACEHOLDER price/SKU — the maintainer sets the real values in
  * admin before activating. Idempotent: skips creation if the handle exists,
  * always re-applies the option + price/sku/stock.
  *

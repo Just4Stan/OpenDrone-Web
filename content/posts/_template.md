@@ -3,7 +3,7 @@ title: Post title goes here
 summary: One or two sentences. Becomes the list deck and the email preview text.
 date: 2026-05-22
 tags: [build-notes]
-author: Stan
+author: OpenDrone
 published: false
 ---
 

@@ -21,7 +21,7 @@
  * So chapters are TYPED, and each type is backed by a real component. The data
  * controls which chapters exist, their order, whether each is on, and its
  * title. It does not control how a chapter draws itself. The one exception is
- * `prose`, a genuinely generic type Stan can add as many of as he likes, whose
+ * `prose`, a genuinely generic type the maintainer can add as many of as they like, whose
  * whole content comes from the copy store.
  */
 

@@ -3,7 +3,7 @@ title: OpenRX Video Release
 summary: Four open-source ExpressLRS receivers, one range test, and the design rule one of them breaks. 
 date: 2026-07-18
 tags: [video, build-notes]
-author: Stan
+author: OpenDrone
 published: true
 image: ./images/openrx-range-test-ride.jpg
 ---

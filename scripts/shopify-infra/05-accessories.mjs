@@ -1,7 +1,7 @@
 /**
  * Creates the launch set of accessory products (productType "Accessory", so
  * they group under "Accessories" on the web browse page). Prices/SKUs are
- * placeholders for Stan to replace; 100 in stock. New products are PUBLISHED
+ * placeholders for the maintainer to replace; 100 in stock. New products are PUBLISHED
  * to every publication — Admin-API-created products are invisible to the
  * Storefront API (and so to the site) until published.
  *

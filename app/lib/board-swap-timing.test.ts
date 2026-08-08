@@ -72,7 +72,7 @@ describe('layerSweepDelays', () => {
   });
 
   it('opens well inside a frame budget and ends on a long settle', () => {
-    // The shape Stan asked for: the first layers go by in a couple of frames,
+    // The shape the maintainer asked for: the first layers go by in a couple of frames,
     // the last takes roughly half the whole sweep.
     const d = layerSweepDelays(7);
     const total = d.reduce((a, b) => a + b, 0);

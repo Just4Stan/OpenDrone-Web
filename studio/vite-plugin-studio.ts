@@ -18,7 +18,7 @@
  *    cannot be pulled into the client or worker bundle by an accidental import.
  *
  * Everything it writes is inside `content/` and is committed to git, so every
- * edit Stan makes in the studio shows up in `git diff` and can be reverted with
+ * edit the maintainer makes in the studio shows up in `git diff` and can be reverted with
  * `git checkout`. That is the undo button, and it is the reason the write
  * surface is deliberately narrow.
  */
@@ -36,7 +36,7 @@ const API = '/__studio';
  *
  * A path allowlist is the whole security model here. The endpoint is bound to
  * localhost in dev, but "it is only dev" is not a reason to accept a traversal
- * bug: this process runs with Stan's permissions on his own machine, and a
+ * bug: this process runs with the maintainer's permissions on their own machine, and a
  * malicious page in his browser can POST to localhost. Every write resolves the
  * target and confirms it is still inside this directory afterwards.
  */
