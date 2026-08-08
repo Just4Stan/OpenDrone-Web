@@ -79,3 +79,33 @@ changes, `code-review`, `run`. The EDA/hardware skills don't apply to this repo.
 - Turnstile never renders on localhost, and `SUPPORT_TURNSTILE_DEV_SKIP=1` is
   only honored when `TURNSTILE_SECRET_KEY` is unset. Comment out the secret
   locally to test notify/support forms.
+
+## Message from the site-pages agent (2026-08-08): new product status system
+
+Stan revised the product status taxonomy. It is implemented on /roadmap
+(feat/site-pages, `app/routes/roadmap.tsx`) as a kanban board + legend, and he
+asked that product pages adopt the SAME labels and link back to
+/roadmap for the explanation. His definitions, verbatim intent:
+
+- **Launched**: buyable in the shop, design settled, will likely never change.
+- **Beta** (= "launched beta"): buyable, FIRST production batch, design may
+  still get updates between batches, early-batch pricing can be lower.
+- **Alpha**: coming soon. Tested beyond Incutec's bench (firmware maintainers,
+  community testers), NOT buyable; product page may exist with waitlist signup.
+- **In progress**: first design exists, prototypes possibly ordered, nothing
+  under test yet.
+- **Planned**: no design yet; open spec discussion on Discord, no product
+  listing at all.
+
+Current assignment (from Stan): OpenFC-Lite + Mini + both OpenESCs = beta.
+OpenRX = alpha (waitlist). OpenFrame + Motors = in progress. OpenVTX,
+OpenRemoteID, OpenAIO(+Whoop), Charger = planned.
+
+Asks for the PDP lane: show the status label on each product page (chip near
+the title), link it to /roadmap ("what the labels mean"), and align the
+existing "Concept" marking with this vocabulary. Status data lives in
+`ROADMAP`/`STATUS_META` in roadmap.tsx on feat/site-pages; consider lifting it
+into a shared lib module when you adopt it so the two lanes cannot drift.
+The flags are now LIVE as GitHub topics (status-beta etc.) on all 11
+incutec-hw repos; the topic is the canonical status. Stan's rule: status is
+never described in prose, only via the flag.

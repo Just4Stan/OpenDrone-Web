@@ -40,3 +40,46 @@ export function swapSettleBackstopMs(outLayers: number, inLayers: number): numbe
     SWAP_TIMING.durS;
   return Math.round(lastInLandS * 1000) + 350;
 }
+
+// Layer sweep: the walk BoardArt does when the active layer changes by more than
+// one, so a top-to-bottom flip shows what is in between rather than cutting
+// straight there. Separate from SWAP_TIMING above, which is the variant swap.
+export const LAYER_SWEEP = {
+  /**
+   * Time budget per step (ms). The total is steps × this, so the sweep scales
+   * with distance: a full 8-layer traverse runs ~530ms, a three-layer hop ~230ms.
+   */
+  perStepMs: 76,
+  /**
+   * Ease-out exponent. 3 (cubic) is a hard launch and a long settle, 2 is
+   * gentler, 1 is a flat interval. Raising it makes the first layers pass
+   * faster still.
+   */
+  ease: 3,
+} as const;
+
+/**
+ * Per-step delays (ms) for a sweep of `steps` layers, in order.
+ *
+ * Step k is placed at the INVERSE of an ease-out: position over time is eased,
+ * so solving it for time gives the delays. The first few layers go by in a few
+ * frames and the last takes roughly half the sweep, which reads as the stack
+ * being thrown open and settling rather than a mechanical flick-through.
+ *
+ * Delays sum to exactly `steps × perStepMs` (floating point aside), so easing
+ * only redistributes the budget, it never changes the total.
+ */
+export function layerSweepDelays(steps: number): number[] {
+  if (!(steps > 0)) return [];
+  const total = steps * LAYER_SWEEP.perStepMs;
+  const landAt = (k: number) =>
+    total * (1 - Math.pow(1 - k / steps, 1 / LAYER_SWEEP.ease));
+  const out: number[] = [];
+  let prev = 0;
+  for (let k = 1; k <= steps; k++) {
+    const at = landAt(k);
+    out.push(Math.max(0, at - prev));
+    prev = at;
+  }
+  return out;
+}

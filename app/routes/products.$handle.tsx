@@ -10,7 +10,6 @@ import {
   type ShouldRevalidateFunctionArgs,
 } from 'react-router';
 import type {RootLoader} from '~/root';
-import type {CompanyIdentity} from '~/lib/company';
 import type {Route} from './+types/products.$handle';
 import {
   getSelectedProductOptions,
@@ -207,7 +206,10 @@ function loadDeferredData({context, params}: Route.LoaderArgs) {
       repoUrls.push(content.repoUrl);
     }
   }
-  const latestCommits = fetchLatestCommits(repoUrls).catch(() => []);
+  // Optional GITHUB_TOKEN lifts the API ceiling from 60 to 5000 calls an
+  // hour; unset, both fetches degrade to their empty states.
+  const ghToken = context.env.GITHUB_TOKEN;
+  const latestCommits = fetchLatestCommits(repoUrls, ghToken).catch(() => []);
 
   // Contributor grid: every repo in the line (tier repos included) so the
   // section credits people whichever mount they worked on. Same
@@ -228,7 +230,9 @@ function loadDeferredData({context, params}: Route.LoaderArgs) {
       }
     }
   }
-  const contributors = fetchContributors(contributorRepoUrls).catch(() => []);
+  const contributors = fetchContributors(contributorRepoUrls, 12, ghToken).catch(
+    () => [],
+  );
 
   // Shopify's productRecommendations returns [] for new stores with no
   // purchase history. Fall back to "other products from the catalog" so
@@ -304,41 +308,6 @@ function DownloadsGrid({downloads}: {downloads: DownloadAsset[]}) {
   );
 }
 
-/**
- * GPSR manufacturer block (Regulation (EU) 2023/988, art. 19): every product
- * listing must carry the manufacturer's identity, postal address and an
- * electronic address. Identity comes from the company module via the root
- * loader — never hardcode the legal entity here (product branding is not
- * the seller). Placeholder values ('[pending]') are never rendered, same
- * convention as CompanyFooterBlock.
- *
- * TODO(gpsr): company phone is '[pending]' in company.ts and therefore
- * hidden — it appears automatically once PUBLIC_COMPANY_TEL is real.
- */
-function ManufacturerBlock({company}: {company?: CompanyIdentity}) {
-  if (!company) return null;
-  const real = (v?: string) => Boolean(v && v.trim() && v !== '[pending]');
-  const rows: Array<[string, string]> = [];
-  if (real(company.name)) rows.push(['Company', company.name]);
-  if (real(company.address)) rows.push(['Address', company.address]);
-  if (real(company.email)) rows.push(['E-mail', company.email]);
-  if (real(company.tel)) rows.push(['Phone', company.tel]);
-  if (rows.length === 0) return null;
-  return (
-    <section className="pdp-manufacturer" aria-label="Manufacturer information">
-      <p className="pdp-manufacturer-label">Manufacturer</p>
-      <dl className="pdp-manufacturer-rows">
-        {rows.map(([k, v]) => (
-          <div key={k}>
-            <dt>{k}</dt>
-            <dd>{v}</dd>
-          </div>
-        ))}
-      </dl>
-    </section>
-  );
-}
-
 type ChapterNumbers = {
   teardown?: string;
   openSource: string;
@@ -346,10 +315,34 @@ type ChapterNumbers = {
   firmware?: string;
   specs?: string;
   downloads?: string;
-  community?: string;
   contributors?: string;
   reviews?: string;
 };
+
+/**
+ * Intro line for the contributors chapter. It streams with the grid rather
+ * than above it, because it can only promise avatars when there are avatars:
+ * GitHub's unauthenticated API is 60 calls an hour per IP, so an empty list
+ * is a normal outcome, not an error. The empty wording still says the work is
+ * public and still invites, it just doesn't point at people who aren't there.
+ */
+function ContributorsIntro({empty, title}: {empty?: boolean; title?: string}) {
+  return (
+    <p className="chapter-body">
+      {empty || !title ? (
+        <>
+          Every commit on this design is public: the history, the issues and
+          the pull requests all live on GitHub. The next tile is yours.
+        </>
+      ) : (
+        <>
+          Every commit on this design is public. These are the GitHub accounts
+          behind {title}; the next tile is reserved.
+        </>
+      )}
+    </p>
+  );
+}
 
 /** Compute chapter numbers that stay contiguous when any chapter is hidden. */
 function computeChapterNumbers(
@@ -362,16 +355,26 @@ function computeChapterNumbers(
   const pad = (x: number) => x.toString().padStart(2, '0');
   const out: ChapterNumbers = {openSource: ''};
 
-  if (content.teardown) {
-    out.teardown = pad(n++);
-  }
+  // Numbering follows the render order in the route: the promise the board is
+  // made on (published, then produced), then the layout that promise buys you,
+  // then what it measures, then what ships. Keep the two in step.
+  //
   // Accessories (fallback content) aren't open-hardware products — they get
   // no "Open for learning" chapter, so don't burn a chapter number on it.
   if (includeOpenSource) {
     out.openSource = pad(n++);
   }
+  if (content.teardown) {
+    out.teardown = pad(n++);
+  }
+  if (content.specs.length > 0) {
+    out.specs = pad(n++);
+  }
   if (content.inTheBox.length > 0 || content.bundle) {
     out.inTheBox = pad(n++);
+  }
+  if (content.downloads.length > 0) {
+    out.downloads = pad(n++);
   }
   if (
     includeFirmware &&
@@ -380,15 +383,6 @@ function computeChapterNumbers(
     content.firmware.project !== '—'
   ) {
     out.firmware = pad(n++);
-  }
-  if (content.specs.length > 0) {
-    out.specs = pad(n++);
-  }
-  if (content.downloads.length > 0) {
-    out.downloads = pad(n++);
-  }
-  if (content.communityChanges && content.communityChanges.length > 0) {
-    out.community = pad(n++);
   }
   // Contributor grid: every editorial product has a public repo, so the
   // chapter always exists for them — the grid degrades to the "+ you"
@@ -518,7 +512,6 @@ function Chapter({
   media,
   backdrop,
   wideMedia,
-  bigMedia,
   noMedia,
   textReveal,
   id,
@@ -540,14 +533,12 @@ function Chapter({
    *  content (the exploded frame viewer). When set, the right-hand media
    *  slot is dropped and the text sits on top of this layer. */
   backdrop?: React.ReactNode;
-  /** Flip the column split so the media takes most of the width and the text
-   *  column narrows — used for the wide schematic viewer. */
+  /** Let the media span the full chapter width below the copy — used for the
+   *  wide schematic viewer. */
   wideMedia?: boolean;
-  /** Even the column split 50/50 so the media takes half the chapter width —
-   *  used for the in-the-box parts shot. */
-  bigMedia?: boolean;
-  /** Drop the media column entirely so the body spans full width — used by
-   *  chapters whose content (e.g. the spec table) needs no image. */
+  /** Leave the media slot empty for chapters whose content (e.g. the spec
+   *  table) needs no image. The grid tracks stay put, so the body column
+   *  keeps the same width and left edge as every other chapter. */
   noMedia?: boolean;
 }) {
   return (
@@ -557,7 +548,6 @@ function Chapter({
       data-chapter={number}
       data-backdrop={backdrop ? '' : undefined}
       data-wide-media={wideMedia ? '' : undefined}
-      data-big-media={bigMedia ? '' : undefined}
       data-no-media={noMedia ? '' : undefined}
       data-text-pending={textReveal === false ? '' : undefined}
     >
@@ -1004,15 +994,6 @@ export default function Product() {
       clearTimeout(tDone);
     };
   }, [activePins]);
-  // The board swap drives only the connector wires: retract on start (they'd hang
-  // frozen across the gutter, still pinned to the OLD bubbles), redraw on settle
-  // once the board + the (already-crossfaded) list have landed.
-  const handleSwapStart = () => {
-    setLinesReady(false);
-  };
-  const handleSwapSettle = () => {
-    setLinesReady(true);
-  };
   // Partition pins by the dominant side of their refs. Until the map loads (or
   // for pins with no resolvable side) pins fall into `other`, rendered flat.
   const groupedPins = useMemo(() => {
@@ -1200,33 +1181,10 @@ export default function Product() {
     const t = setTimeout(() => setTextIn(true), 600);
     return () => clearTimeout(t);
   }, [boardFlying]);
-  // The connector lines are the LAST thing in: after the fly finishes (layers
-  // selectable), they stroke-draw from the bubbles to the rail. Trigger ~0.4s
-  // after the fly completes (boardFlying true→false).
-  const [linesReady, setLinesReady] = useState(false);
-  const flewRef = useRef(false);
+  // BoardArt remounts on a product switch while the PDP stays mounted, so
+  // reset the fly-in flag for the incoming board.
   useEffect(() => {
-    if (boardFlying) {
-      flewRef.current = true;
-      return;
-    }
-    if (flewRef.current && !linesReady) {
-      const t = setTimeout(() => setLinesReady(true), 400);
-      return () => clearTimeout(t);
-    }
-  }, [boardFlying, linesReady]);
-  // Re-arm the connector lines on every product switch (the PDP stays mounted
-  // across nav, only BoardArt remounts). Without this they'd keep their already-
-  // drawn state instead of redrawing for the new board. Reduced motion shows them
-  // immediately with no draw animation. (No blind timer — if the board never
-  // flies there's no rail for the lines to connect to, so they stay hidden.)
-  useEffect(() => {
-    setLinesReady(false);
-    flewRef.current = false;
     setBoardFlying(false);
-    if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) {
-      setLinesReady(true);
-    }
   }, [product.handle]);
   // Clear all hover highlight state. Called only when the pointer leaves the
   // whole list (not between rows) so the spotlight stays lit and just moves from
@@ -1343,147 +1301,6 @@ export default function Product() {
     document.documentElement.classList.toggle('board-focus', on);
     return () => document.documentElement.classList.remove('board-focus');
   }, [hoveredRefs]);
-  // Subtle connector lines tying each Top/Bottom pin bubble to its matching face
-  // box in the board's layer rail, so it reads "these parts live on that side".
-  // Drawn on a fixed, full-viewport SVG and recomputed on scroll/resize (the
-  // board is sticky while the list scrolls, so the endpoints drift). Imperative
-  // via rAF so scrolling doesn't trigger React re-renders.
-  const teardownLinksRef = useRef<SVGSVGElement>(null);
-  // The link SVG is portaled to <body> so its `position: fixed` is viewport-
-  // relative (a transformed ancestor — board column / page-transition wrapper —
-  // would otherwise contain `fixed`, throwing the coords off and making it
-  // scroll at the wrong rate). Mount client-side only to avoid SSR mismatch.
-  const [linksMounted, setLinksMounted] = useState(false);
-  useEffect(() => setLinksMounted(true), []);
-  useEffect(() => {
-    const svg = teardownLinksRef.current;
-    if (!svg) return;
-    const paths = svg.querySelectorAll('path');
-    const dots = svg.querySelectorAll('circle');
-    let raf = 0;
-    const draw = () => {
-      raf = 0;
-      const bubbles = document.querySelectorAll<HTMLElement>('.teardown-side');
-      const hideSvg = () => {
-        svg.style.display = 'none';
-      };
-      if (bubbles.length < 2) return hideSvg();
-      const ends = [
-        document.querySelector<HTMLElement>(
-          '.board-folder-tabs [data-slug="front"]',
-        ),
-        document.querySelector<HTMLElement>(
-          '.board-folder-tabs [data-slug="back"]',
-        ),
-      ];
-      const H = window.innerHeight;
-      // Collect the visible segments (bubble edge → rail-box edge).
-      const segs: Array<{i: number; bx: number; by: number; rx: number; ry: number}> =
-        [];
-      for (let i = 0; i < 2; i++) {
-        const b = bubbles[i];
-        const r = ends[i];
-        if (!b || !r) continue;
-        const bb = b.getBoundingClientRect();
-        const rr = r.getBoundingClientRect();
-        const bx = bb.right;
-        const by = bb.top + bb.height / 2;
-        const rx = rr.left;
-        const ry = rr.top + rr.height / 2;
-        if (rr.width > 0 && rx > bx && Math.max(by, ry) > 0 && Math.min(by, ry) < H)
-          segs.push({i, bx, by, rx, ry});
-      }
-      const present = new Set(segs.map((s) => s.i));
-      for (let i = 0; i < 2; i++) {
-        if (present.has(i)) continue;
-        paths[i]?.setAttribute('d', '');
-        dots[i * 2]?.setAttribute('r', '0');
-        dots[i * 2 + 1]?.setAttribute('r', '0');
-      }
-      if (!segs.length) return hideSvg();
-      // Size + position the SVG to JUST the lines' bounding box (in the empty
-      // gutter) — NOT the whole viewport. A full-screen fixed overlay forced the
-      // compositor to re-blend the entire page over every animating element each
-      // frame (idle GPU). A small box overlapping nothing is nearly free.
-      const PAD = 12;
-      let minX = Infinity;
-      let minY = Infinity;
-      let maxX = -Infinity;
-      let maxY = -Infinity;
-      for (const s of segs) {
-        minX = Math.min(minX, s.bx - 5, s.rx + 5);
-        maxX = Math.max(maxX, s.bx - 5, s.rx + 5);
-        minY = Math.min(minY, s.by, s.ry);
-        maxY = Math.max(maxY, s.by, s.ry);
-      }
-      const ox = minX - PAD;
-      const oy = minY - PAD;
-      const w = maxX - minX + 2 * PAD;
-      const h = maxY - minY + 2 * PAD;
-      svg.style.display = 'block';
-      svg.style.left = `${ox}px`;
-      svg.style.top = `${oy}px`;
-      svg.style.width = `${w}px`;
-      svg.style.height = `${h}px`;
-      svg.setAttribute('width', String(w));
-      svg.setAttribute('height', String(h));
-      for (const s of segs) {
-        const x0 = s.bx - 5;
-        const x1 = s.rx + 5;
-        const dx = Math.max(40, (x1 - x0) * 0.5);
-        const X = (v: number) => v - ox;
-        const Y = (v: number) => v - oy;
-        paths[s.i].setAttribute(
-          'd',
-          `M${X(x0)},${Y(s.by)} C${X(x0 + dx)},${Y(s.by)} ${X(x1 - dx)},${Y(
-            s.ry,
-          )} ${X(x1)},${Y(s.ry)}`,
-        );
-        const cb = dots[s.i * 2];
-        const cr = dots[s.i * 2 + 1];
-        cb.setAttribute('cx', String(X(s.bx)));
-        cb.setAttribute('cy', String(Y(s.by)));
-        cb.setAttribute('r', '3.5');
-        cr.setAttribute('cx', String(X(s.rx)));
-        cr.setAttribute('cy', String(Y(s.ry)));
-        cr.setAttribute('r', '3.5');
-      }
-    };
-    // Redraw on scroll/resize only (rAF-throttled) — NOT a continuous loop,
-    // which pinned the GPU at idle. The portal (viewport-fixed coords) is what
-    // keeps the links connected; a per-event redraw tracks scroll fine.
-    const onScroll = () => {
-      if (!raf)
-        raf = requestAnimationFrame(() => {
-          raf = 0;
-          draw();
-        });
-    };
-    draw();
-    // Board SVG + rail stream in async — nudge a few redraws after mount (these
-    // re-run whenever the deps change, so they also catch the post-entrance
-    // settle when boardFlying flips false).
-    const timers = [150, 500, 1200].map((t) => setTimeout(draw, t));
-    // While the entrance runs (board fly + text slide), the bubbles AND the rail
-    // move via CSS transforms that fire no scroll/resize — so redraw every frame
-    // so the connector lines track them live (and stay connected after, with no
-    // scroll needed). Bounded to the entrance via boardFlying, NOT perpetual.
-    let loopRaf = 0;
-    const loop = () => {
-      draw();
-      loopRaf = boardFlying ? requestAnimationFrame(loop) : 0;
-    };
-    if (boardFlying) loopRaf = requestAnimationFrame(loop);
-    window.addEventListener('scroll', onScroll, {passive: true, capture: true});
-    window.addEventListener('resize', onScroll);
-    return () => {
-      window.removeEventListener('scroll', onScroll, {capture: true});
-      window.removeEventListener('resize', onScroll);
-      timers.forEach(clearTimeout);
-      if (raf) cancelAnimationFrame(raf);
-      if (loopRaf) cancelAnimationFrame(loopRaf);
-    };
-  }, [activeBoardArt, groupedPins, linksMounted, boardFlying]);
   // <960px the pinned rail becomes a bottom bar (price + add-to-cart only):
   // phones previously had NO sticky buy control at all once the in-hero buy
   // module scrolled away.
@@ -1876,184 +1693,6 @@ export default function Product() {
         </div>
       </section>
 
-      {/* === Chapter: Teardown === */}
-      {content.teardown && chapterNums.teardown ? (
-        <Chapter
-          number={chapterNums.teardown}
-          label="Teardown"
-          title={frameViewer ? 'Every arm, plate and standoff, exploded' : 'Teardown'}
-          textReveal={frameViewer ? undefined : textIn}
-          backdrop={
-            frameViewer ? (
-              // No key on src: keep the canvas mounted across tier switches so
-              // the viewer toggles between preloaded models instantly rather
-              // than remounting and re-fetching the GLB. Wrapped so a WebGL
-              // failure drops the (decorative) viewer instead of crashing the
-              // whole product page.
-              <SceneErrorBoundary fallback={null}>
-                <ClientFrameViewer
-                  src={frameViewer.src}
-                  srcs={frameViewerSrcs}
-                  inspectUrl={frameViewer.inspectUrl}
-                />
-              </SceneErrorBoundary>
-            ) : undefined
-          }
-          media={
-            !frameViewer && activeBoardArt ? (
-              // Key by product HANDLE (not src): stays mounted across TIER swaps
-              // so it swaps between warmed boards instantly (no remount/refetch),
-              // but REMOUNTS on a product switch (FC↔ESC↔RX) so the one-shot
-              // fly-in re-arms and plays for the new board. `srcs` prefetches the
-              // tiers up front.
-              <>
-                <BoardArt
-                  key={product.handle}
-                  src={activeBoardArt.src}
-                  srcs={boardArtSrcs}
-                  inspectUrl={activeBoardArt.inspectUrl}
-                  layerFns={activeBoardArt.layers}
-                  handle={product.handle}
-                  componentsSrc={activeBoardArt.src.replace(
-                    /board\.svg$/,
-                    'components.json',
-                  )}
-                  highlightRefs={hoveredRefs}
-                  highlightUnion={hoveredUnion}
-                  highlightGroups={hoveredGroups}
-                  onFlying={setBoardFlying}
-                  onHighlightVisible={setHighlightVisible}
-                  onSwapStart={handleSwapStart}
-                  onSwapSettle={handleSwapSettle}
-                />
-                {/* Part tour: which component is lit + how far through the set.
-                    Swipe the board sideways (or tap a part) to step. Each tick is
-                    tappable to jump straight to that part. */}
-                {isMobile && orderedParts.length ? (
-                  <div className="board-part-tour">
-                    <p className="board-part-tour-head" aria-live="polite">
-                      <span className="board-deck-name">Components</span>
-                      <span className="board-deck-hint">
-                        Tap one to find it on the board
-                      </span>
-                    </p>
-                    {/* Real, labelled, thumb-sized chips split into a top-side and
-                        a bottom-side row — not one long scroller. Tap one to
-                        spotlight that part on the board; each row scrolls for the
-                        rest. */}
-                    {[
-                      {label: 'Top', parts: partRows.top},
-                      {label: 'Bottom', parts: partRows.bottom},
-                    ]
-                      .filter((row) => row.parts.length)
-                      .map((row) => (
-                        <div
-                          key={row.label}
-                          className="board-part-chips"
-                          aria-label={`${row.label}-side components`}
-                        >
-                          <span className="board-part-chips-side">{row.label}</span>
-                          {row.parts.map((p, i) => {
-                            const lit = partLit(p);
-                            return (
-                              <button
-                                type="button"
-                                key={p.name + i}
-                                className={`board-part-chip${lit ? ' is-active' : ''}`}
-                                aria-pressed={lit}
-                                onClick={() => {
-                                  setHoveredRefs([...p.refs]);
-                                  setHoveredUnion(p.union);
-                                  setHoveredGroups(p.groups);
-                                }}
-                              >
-                                {/* Just the model/short name on the chip (e.g.
-                                    "RP2354A"), not the whole descriptive sentence
-                                    — split off anything after a dash/middot. */}
-                                {p.name.split(/\s+[—–·-]\s+/)[0]}
-                                {p.cost && p.cost !== '×1' ? (
-                                  <span className="board-part-chip-qty">{p.cost}</span>
-                                ) : null}
-                              </button>
-                            );
-                          })}
-                        </div>
-                      ))}
-                  </div>
-                ) : null}
-              </>
-            ) : undefined
-          }
-        >
-          {linksMounted && !isMobile
-            ? createPortal(
-                <svg
-                  ref={teardownLinksRef}
-                  className={`teardown-links${linesReady ? ' is-drawn' : ''}`}
-                  aria-hidden="true"
-                >
-                  {/* pathLength normalises each line to 100 so the dash draw-in
-                      (stroke-dashoffset 100→0) is length-independent even as the
-                      path is recomputed on scroll. */}
-                  <path d="" pathLength={100} />
-                  <path d="" pathLength={100} />
-                  <circle r="0" />
-                  <circle r="0" />
-                  <circle r="0" />
-                  <circle r="0" />
-                </svg>,
-                document.body,
-              )
-            : null}
-          {groupedPins.top.length > 0 && groupedPins.bottom.length > 0 ? (
-            <div
-              className={`teardown-sides${boardFlying ? ' is-locked' : ''}${
-                pinsSwapping ? ' is-swapping' : ''
-              }`}
-              onMouseLeave={noHover ? undefined : clearHover}
-            >
-              <section className="teardown-side">
-                <ul className="teardown-pins">
-                  {groupedPins.top.map(renderPin)}
-                </ul>
-              </section>
-              <section className="teardown-side">
-                <ul className="teardown-pins">
-                  {[...groupedPins.bottom, ...groupedPins.other].map(renderPin)}
-                </ul>
-              </section>
-            </div>
-          ) : (
-            <div
-              className={`teardown-sides${boardFlying ? ' is-locked' : ''}${
-                pinsSwapping ? ' is-swapping' : ''
-              }`}
-              onMouseLeave={noHover ? undefined : clearHover}
-            >
-              <section className="teardown-side">
-                <ul className="teardown-pins">
-                  {[
-                    ...groupedPins.top,
-                    ...groupedPins.bottom,
-                    ...groupedPins.other,
-                  ].map(renderPin)}
-                </ul>
-              </section>
-            </div>
-          )}
-          {!frameViewer && activeBoardArt?.inspectUrl ? (
-            <a
-              className="board-art-inspect teardown-inspect"
-              href={activeBoardArt.inspectUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Inspect interactively ↗
-            </a>
-          ) : null}
-        </Chapter>
-      ) : null}
-
       {/* === Chapter: Open for learning === */}
       {!isEditorial ? null : (
       <Chapter
@@ -2221,13 +1860,196 @@ export default function Product() {
       </Chapter>
       )}
 
+      {/* === Chapter: Teardown === */}
+      {content.teardown && chapterNums.teardown ? (
+        <Chapter
+          number={chapterNums.teardown}
+          label="Teardown"
+          title={frameViewer ? 'Every arm, plate and standoff, exploded' : 'Teardown'}
+          textReveal={frameViewer ? undefined : textIn}
+          backdrop={
+            frameViewer ? (
+              // No key on src: keep the canvas mounted across tier switches so
+              // the viewer toggles between preloaded models instantly rather
+              // than remounting and re-fetching the GLB. Wrapped so a WebGL
+              // failure drops the (decorative) viewer instead of crashing the
+              // whole product page.
+              <SceneErrorBoundary fallback={null}>
+                <ClientFrameViewer
+                  src={frameViewer.src}
+                  srcs={frameViewerSrcs}
+                  inspectUrl={frameViewer.inspectUrl}
+                />
+              </SceneErrorBoundary>
+            ) : undefined
+          }
+          media={
+            !frameViewer && activeBoardArt ? (
+              // Key by product HANDLE (not src): stays mounted across TIER swaps
+              // so it swaps between warmed boards instantly (no remount/refetch),
+              // but REMOUNTS on a product switch (FC↔ESC↔RX) so the one-shot
+              // fly-in re-arms and plays for the new board. `srcs` prefetches the
+              // tiers up front.
+              <>
+                <BoardArt
+                  key={product.handle}
+                  src={activeBoardArt.src}
+                  srcs={boardArtSrcs}
+                  inspectUrl={activeBoardArt.inspectUrl}
+                  layerFns={activeBoardArt.layers}
+                  handle={product.handle}
+                  componentsSrc={activeBoardArt.src.replace(
+                    /board\.svg$/,
+                    'components.json',
+                  )}
+                  highlightRefs={hoveredRefs}
+                  highlightUnion={hoveredUnion}
+                  highlightGroups={hoveredGroups}
+                  onFlying={setBoardFlying}
+                  onHighlightVisible={setHighlightVisible}
+                />
+                {/* Part tour: which component is lit + how far through the set.
+                    Swipe the board sideways (or tap a part) to step. Each tick is
+                    tappable to jump straight to that part. */}
+                {isMobile && orderedParts.length ? (
+                  <div className="board-part-tour">
+                    <p className="board-part-tour-head" aria-live="polite">
+                      <span className="board-deck-name">Components</span>
+                      <span className="board-deck-hint">
+                        Tap one to find it on the board
+                      </span>
+                    </p>
+                    {/* Real, labelled, thumb-sized chips split into a top-side and
+                        a bottom-side row — not one long scroller. Tap one to
+                        spotlight that part on the board; each row scrolls for the
+                        rest. */}
+                    {[
+                      {label: 'Top', parts: partRows.top},
+                      {label: 'Bottom', parts: partRows.bottom},
+                    ]
+                      .filter((row) => row.parts.length)
+                      .map((row) => (
+                        <div
+                          key={row.label}
+                          className="board-part-chips"
+                          aria-label={`${row.label}-side components`}
+                        >
+                          <span className="board-part-chips-side">{row.label}</span>
+                          {row.parts.map((p, i) => {
+                            const lit = partLit(p);
+                            return (
+                              <button
+                                type="button"
+                                key={p.name + i}
+                                className={`board-part-chip${lit ? ' is-active' : ''}`}
+                                aria-pressed={lit}
+                                onClick={() => {
+                                  setHoveredRefs([...p.refs]);
+                                  setHoveredUnion(p.union);
+                                  setHoveredGroups(p.groups);
+                                }}
+                              >
+                                {/* Just the model/short name on the chip (e.g.
+                                    "RP2354A"), not the whole descriptive sentence
+                                    — split off anything after a dash/middot. */}
+                                {p.name.split(/\s+[—–·-]\s+/)[0]}
+                                {p.cost && p.cost !== '×1' ? (
+                                  <span className="board-part-chip-qty">{p.cost}</span>
+                                ) : null}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      ))}
+                  </div>
+                ) : null}
+              </>
+            ) : undefined
+          }
+        >
+          {groupedPins.top.length > 0 && groupedPins.bottom.length > 0 ? (
+            <div
+              className={`teardown-sides${boardFlying ? ' is-locked' : ''}${
+                pinsSwapping ? ' is-swapping' : ''
+              }`}
+              onMouseLeave={noHover ? undefined : clearHover}
+            >
+              <section className="teardown-side">
+                <ul className="teardown-pins">
+                  {groupedPins.top.map(renderPin)}
+                </ul>
+              </section>
+              <section className="teardown-side">
+                <ul className="teardown-pins">
+                  {[...groupedPins.bottom, ...groupedPins.other].map(renderPin)}
+                </ul>
+              </section>
+            </div>
+          ) : (
+            <div
+              className={`teardown-sides${boardFlying ? ' is-locked' : ''}${
+                pinsSwapping ? ' is-swapping' : ''
+              }`}
+              onMouseLeave={noHover ? undefined : clearHover}
+            >
+              <section className="teardown-side">
+                <ul className="teardown-pins">
+                  {[
+                    ...groupedPins.top,
+                    ...groupedPins.bottom,
+                    ...groupedPins.other,
+                  ].map(renderPin)}
+                </ul>
+              </section>
+            </div>
+          )}
+          {!frameViewer && activeBoardArt?.inspectUrl ? (
+            <a
+              className="board-art-inspect teardown-inspect"
+              href={activeBoardArt.inspectUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Inspect interactively ↗
+            </a>
+          ) : null}
+        </Chapter>
+      ) : null}
+
+      {/* === Chapter: Specs === */}
+      {content.specs.length > 0 && chapterNums.specs ? (
+        <Chapter
+          number={chapterNums.specs}
+          label="Datasheet"
+          title="Every spec, one table"
+          noMedia
+        >
+          <dl className="spec-table">
+            {mergedSpecs.map(([k, v]) => (
+              <div key={k}>
+                <dt>{k}</dt>
+                {/* Count-up on the numeric runs the first time the table
+                    scrolls into view. spec-table already sets tabular-nums,
+                    so digits don't jitter mid-count; reduced-motion and
+                    variant-switch re-renders are handled inside. */}
+                <dd>
+                  <AnimatedNumber value={v} />
+                </dd>
+              </div>
+            ))}
+          </dl>
+          {content.footnote ? (
+            <p className="chapter-footnote">{content.footnote}</p>
+          ) : null}
+        </Chapter>
+      ) : null}
+
       {/* === Chapter: In the box (always) === */}
       {(content.inTheBox.length > 0 || content.bundle) &&
       chapterNums.inTheBox ? (
         <Chapter
           number={chapterNums.inTheBox}
           label="In the box"
-          bigMedia
           title={
             content.bundle ? (
               <>
@@ -2297,71 +2119,6 @@ export default function Product() {
         </Chapter>
       ) : null}
 
-      {/* === Chapter: The €1 — singles with a firmware project === */}
-      {!soon &&
-      !content.bundle &&
-      content.firmware.project &&
-      content.firmware.project !== '—' &&
-      chapterNums.firmware ? (
-        <Chapter
-          number={chapterNums.firmware}
-          label="The €1"
-          title={
-            <>
-              What <em>you</em> pay, what the <em>developers</em> get.
-            </>
-          }
-          media={
-            content.firmware.logo ? (
-              <img
-                className={
-                  content.firmware.logoDark
-                    ? 'firmware-logo firmware-logo--tile'
-                    : 'firmware-logo'
-                }
-                src={content.firmware.logo}
-                alt={`${content.firmware.project} logo`}
-                loading="lazy"
-              />
-            ) : undefined
-          }
-        >
-          <FirmwareSplit
-            price={selectedVariant?.price}
-            firmwareProject={content.firmware.project}
-            firmwareUrl={content.firmware.projectUrl}
-          />
-        </Chapter>
-      ) : null}
-
-      {/* === Chapter: Specs === */}
-      {content.specs.length > 0 && chapterNums.specs ? (
-        <Chapter
-          number={chapterNums.specs}
-          label="Datasheet"
-          title="Every spec, one table"
-          noMedia
-        >
-          <dl className="spec-table">
-            {mergedSpecs.map(([k, v]) => (
-              <div key={k}>
-                <dt>{k}</dt>
-                {/* Count-up on the numeric runs the first time the table
-                    scrolls into view. spec-table already sets tabular-nums,
-                    so digits don't jitter mid-count; reduced-motion and
-                    variant-switch re-renders are handled inside. */}
-                <dd>
-                  <AnimatedNumber value={v} />
-                </dd>
-              </div>
-            ))}
-          </dl>
-          {content.footnote ? (
-            <p className="chapter-footnote">{content.footnote}</p>
-          ) : null}
-        </Chapter>
-      ) : null}
-
       {/* === Chapter: Downloads — schematic, STEP, BOM, manuals === */}
       {content.downloads.length > 0 && chapterNums.downloads ? (
         <Chapter
@@ -2383,45 +2140,43 @@ export default function Product() {
         </Chapter>
       ) : null}
 
-      {/* === Chapter: You asked, we changed — community-driven revisions.
-             Entries live in product-content.ts (`communityChanges`) and must
-             be backed by a real GitHub issue/PR — see the type's doc rule. === */}
-      {content.communityChanges &&
-      content.communityChanges.length > 0 &&
-      chapterNums.community ? (
+      {/* === Chapter: The €1 — singles with a firmware project === */}
+      {!soon &&
+      !content.bundle &&
+      content.firmware.project &&
+      content.firmware.project !== '—' &&
+      chapterNums.firmware ? (
         <Chapter
-          number={chapterNums.community}
-          label="Community"
+          number={chapterNums.firmware}
+          label="The €1"
           title={
             <>
-              You asked. <em>We changed it.</em>
+              What <em>you</em> pay, what the <em>developers</em> get.
             </>
           }
-          noMedia
+          media={
+            content.firmware.logo ? (
+              /* Not loading="lazy": same reason as the contributor avatars,
+                 a lazy image inside a content-visibility: auto chapter is
+                 treated as far offscreen and never fetched. */
+              <img
+                className={
+                  content.firmware.logoDark
+                    ? 'firmware-logo firmware-logo--tile'
+                    : 'firmware-logo'
+                }
+                src={content.firmware.logo}
+                alt={`${content.firmware.project} logo`}
+                decoding="async"
+              />
+            ) : undefined
+          }
         >
-          {/* TODO(copy-stan): placeholder framing line. */}
-          <p className="chapter-body">
-            Open hardware means the feedback loop is public too. These are
-            design changes that started as an issue or a PR from someone who
-            isn&apos;t us, receipts linked.
-          </p>
-          <ul className="community-changes">
-            {content.communityChanges.map((c) => (
-              <li className="community-change" key={c.url}>
-                <p className="community-change-asked">
-                  <a
-                    href={c.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    {c.who} ↗
-                  </a>{' '}
-                  {c.asked}
-                </p>
-                <p className="community-change-changed">{c.changed}</p>
-              </li>
-            ))}
-          </ul>
+          <FirmwareSplit
+            price={selectedVariant?.price}
+            firmwareProject={content.firmware.project}
+            firmwareUrl={content.firmware.projectUrl}
+          />
         </Chapter>
       ) : null}
 
@@ -2441,25 +2196,38 @@ export default function Product() {
           }
           noMedia
         >
-          <p className="chapter-body">
-            Every commit on this design is public. These are the GitHub
-            accounts behind {title}; the next tile is reserved.
-          </p>
-          <Suspense fallback={<ContributorGridSkeleton />}>
+          {/* The intro has to stream with the grid, not ahead of it. GitHub's
+              unauthenticated API allows 60 calls an hour per IP, so an empty
+              list is routine, and "these are the accounts behind X" above a
+              lone "+ you?" tile reads as nobody having built the thing. */}
+          <Suspense
+            fallback={
+              <>
+                <ContributorsIntro empty />
+                <ContributorGridSkeleton />
+              </>
+            }
+          >
             <Await
               resolve={contributors}
               errorElement={
-                <ContributorGrid
-                  contributors={[]}
-                  issuesUrl={`${activeRepoUrl}/issues`}
-                />
+                <>
+                  <ContributorsIntro empty />
+                  <ContributorGrid
+                    contributors={[]}
+                    issuesUrl={`${activeRepoUrl}/issues`}
+                  />
+                </>
               }
             >
               {(list) => (
-                <ContributorGrid
-                  contributors={list ?? []}
-                  issuesUrl={`${activeRepoUrl}/issues`}
-                />
+                <>
+                  <ContributorsIntro empty={!list?.length} title={title} />
+                  <ContributorGrid
+                    contributors={list ?? []}
+                    issuesUrl={`${activeRepoUrl}/issues`}
+                  />
+                </>
               )}
             </Await>
           </Suspense>
@@ -2516,8 +2284,6 @@ export default function Product() {
         </Chapter>
       ) : null}
 
-      {/* GPSR manufacturer identity — on every listing, coming-soon included. */}
-      <ManufacturerBlock company={rootData?.company} />
 
       <RelatedProducts recommendations={recommendations} />
       <Analytics.ProductView

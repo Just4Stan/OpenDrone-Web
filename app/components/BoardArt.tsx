@@ -1,4 +1,5 @@
 import {
+  useCallback,
   useEffect,
   useId,
   useLayoutEffect,
@@ -25,6 +26,7 @@ import {useIsMobile} from '~/lib/use-media-query';
 import {useLayerSwipe} from '~/lib/use-layer-swipe';
 import {
   SWAP_TIMING,
+  layerSweepDelays,
   swapInDelayS,
   swapSettleBackstopMs,
 } from '~/lib/board-swap-timing';
@@ -534,6 +536,45 @@ export function BoardArt({
     return () => cancelAnimationFrame(r);
   }, [raw]);
 
+  // Compositor pre-warm, one gate ahead of the fly. The entrance animates
+  // `translate` on every sheet, and until now nothing promoted them: frame 0 of
+  // the fly paid layer creation AND first raster for the whole stack, which is
+  // exactly the stutter `.is-swap-ready` was added to avoid for the *swap*
+  // ("promoting at swap start drops the first frames"). The entrance deserves
+  // the same trade.
+  //
+  // Deliberately NOT tied to `is-armed`: arming happens as soon as the SVG
+  // parses, which on a desktop viewport is during page load, so promoting there
+  // would hand every visitor a stack of GPU layers whether or not they ever
+  // scroll this far. This observer fires ~a viewport before the centre-band fly
+  // trigger instead, which since the schematic chapter moved ahead of the
+  // teardown is a real window of approach: the layers exist and are rastered by
+  // the time the animation starts, and a visitor who never gets here pays
+  // nothing. Skipped under reduced motion, where the fly does not run at all.
+  const [warm, setWarm] = useState(false);
+  useEffect(() => {
+    // Wait for `revealed`: before the sheets exist the chapter is collapsed to
+    // its skeleton height and this element sits near the top of the document,
+    // so a one-shot observer attached then fires immediately and promotes at
+    // load — the exact thing this gate exists to avoid. Once the board is built
+    // the element has its real box and the margin means what it says.
+    if (warm || !revealed) return;
+    const el = ref.current;
+    if (!el || typeof IntersectionObserver === 'undefined') return;
+    if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return;
+    const io = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((e) => e.isIntersecting)) {
+          io.disconnect();
+          setWarm(true);
+        }
+      },
+      {rootMargin: '800px 0px', threshold: 0},
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, [warm, revealed]);
+
   // Trigger the layer fly-in only once the board reaches the centre band of the
   // viewport (not the moment the chapter scrolls in) so it reads as a deliberate
   // reveal. One-shot; the sheets sit off-screen (paused) until it fires.
@@ -830,14 +871,106 @@ export function BoardArt({
         ? 'B'
         : null;
 
-  // On a new hover, flip the stack to the FACE that mounts the part (front for
-  // F-side parts, back for B-side) so the box always lands on a face, never a
-  // copper layer. Deps exclude `active` (read via ref) so manual layer paging
-  // isn't fought; only a hover triggers a flip.
   const activeRef = useRef(active);
   activeRef.current = active;
+  // Stack depth, read through a ref so the walk below can clamp to it without
+  // taking `sheets` as a dependency and rebuilding on every parse.
+  const sheetCountRef = useRef(0);
+  sheetCountRef.current = sheets.length;
+
+  // The layer the VISITOR chose, as opposed to one a hover borrowed. Every
+  // deliberate pick (rail click, deck dot, sheet click, chevron/key/wheel step,
+  // mobile swipe) moves this; a hover-driven flip never does. Hovering a
+  // bottom-side part therefore borrows the bottom layer and hands it back when
+  // the pointer leaves, instead of stranding the visitor on a layer they never
+  // asked for. Defaults to 0, the top.
+  const anchorRef = useRef(0);
+
+  // Walk the stack one layer at a time instead of cutting straight to the
+  // target, so a flip from top to bottom shows what is in between: the visitor
+  // sees the board is eight layers deep rather than watching two faces swap.
+  // Each step retriggers the sheets' 0.6s transform transition, so the steps
+  // overlap into one continuous sweep rather than eight discrete hops.
+  //
+  // The sweep is eased, not linear, and the curve lives in board-swap-timing.ts
+  // (`layerSweepDelays`) so it is unit-testable without a browser: this file can
+  // only be exercised through rAF, which a backgrounded tab suspends.
+  const travelRef = useRef<number | null>(null);
+  const cancelTravel = useCallback(() => {
+    if (travelRef.current != null) {
+      window.clearTimeout(travelRef.current);
+      travelRef.current = null;
+    }
+  }, []);
+  // Cancel on unmount so a pending step can't setState on a dead component.
+  useEffect(() => cancelTravel, [cancelTravel]);
+  const travelTo = useCallback((target: number) => {
+    cancelTravel();
+    const from = activeRef.current;
+    // Clamp rather than trust the caller: a tier switch to a board with fewer
+    // layers can leave the anchor pointing past the end of the new stack, and
+    // an unclamped walk would step forever past the last sheet.
+    const last = Math.max(0, sheetCountRef.current - 1);
+    target = Math.max(0, Math.min(last, target));
+    if (target === from) return;
+    if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) {
+      setActive(target);
+      return;
+    }
+    const dir = target > from ? 1 : -1;
+    const delays = layerSweepDelays(Math.abs(target - from));
+    let done = 0;
+    const schedule = () => {
+      travelRef.current = window.setTimeout(() => {
+        done += 1;
+        // Writing the ref here as well as in render keeps the walk correct even
+        // though the next render has not happened yet when the timer re-arms.
+        activeRef.current += dir;
+        setActive(activeRef.current);
+        if (done >= delays.length) {
+          travelRef.current = null;
+          return;
+        }
+        schedule();
+      }, delays[done]);
+    };
+    schedule();
+  }, [cancelTravel]);
+
+  // Deliberate layer pick: stop any hover-driven walk, and move the anchor so
+  // this is the layer a later hover-off returns to.
+  const selectLayer = useCallback(
+    (i: number) => {
+      cancelTravel();
+      anchorRef.current = i;
+      setActive(i);
+    },
+    [cancelTravel],
+  );
+  // Updater form, for callers that compute the next index from the current one
+  // (useLayerSwipe). Reads through the ref so it never sees a stale index.
+  const selectLayerFrom = useCallback(
+    (updater: (i: number) => number) => selectLayer(updater(activeRef.current)),
+    [selectLayer],
+  );
+
+  // A different board (product or tier switch) starts at the top again, so the
+  // anchor must not carry the previous board's chosen layer across.
   useEffect(() => {
-    if (!manifest || !highlightRefs?.length) return;
+    anchorRef.current = 0;
+  }, [src]);
+
+  // On a new hover, flip the stack to the FACE that mounts the part (front for
+  // F-side parts, back for B-side) so the box always lands on a face, never a
+  // copper layer. On hover-off, walk back to the visitor's own layer. Deps
+  // exclude `active` (read via ref) so manual layer paging isn't fought; only a
+  // hover change triggers a flip.
+  useEffect(() => {
+    if (!manifest) return;
+    if (!highlightRefs?.length) {
+      travelTo(anchorRef.current);
+      return;
+    }
     const comps = highlightRefs
       .map((r) => manifest.map.get(r))
       .filter(Boolean) as BoardComponent[];
@@ -845,7 +978,10 @@ export function BoardArt({
     const fCount = comps.filter((c) => c.layer === 'F').length;
     const targetFace = fCount >= comps.length - fCount ? 'front' : 'back';
     const idx = sheets.findIndex((s) => s.slug === targetFace);
-    if (idx >= 0 && idx !== activeRef.current) setActive(idx);
+    if (idx >= 0 && idx !== activeRef.current) travelTo(idx);
+    // travelTo/anchorRef are stable refs+closures over state read through refs;
+    // adding them would re-run this on every render and restart the walk.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [manifest, highlightRefs, sheets]);
 
   // Footprint boxes for parts mounted on the visible FACE only. A padded bbox
@@ -1144,11 +1280,11 @@ export function BoardArt({
           }}
           aria-label={`Show ${s.label} layer`}
           aria-pressed={i === shownIndex}
-          onClick={() => setActive(i)}
+          onClick={() => selectLayer(i)}
           dangerouslySetInnerHTML={{__html: s.html}}
         />
       )),
-    [sheets, shownIndex, isMobile],
+    [sheets, shownIndex, isMobile, selectLayer],
   );
 
   const stackElRef = useRef<HTMLDivElement | null>(null);
@@ -1304,7 +1440,7 @@ export function BoardArt({
 
   // Step through the stack, clamped to its ends (used by chevrons / keys / wheel).
   const step = (delta: number) =>
-    setActive((i) => Math.min(sheets.length - 1, Math.max(0, i + delta)));
+    selectLayer(Math.min(sheets.length - 1, Math.max(0, activeRef.current + delta)));
 
   // Mobile: drag the board ←/→ to peel a layer. The active sheet really slides
   // out under the finger while the next/prev sheet chases in behind it (the
@@ -1315,7 +1451,7 @@ export function BoardArt({
     ref: stackElRef,
     count: sheets.length,
     index: shownIndex,
-    setIndex: setActive,
+    setIndex: selectLayerFrom,
     enabled: isMobile,
   });
 
@@ -1324,9 +1460,9 @@ export function BoardArt({
       ref={ref}
       className={`board-art board-folder${revealed ? ' is-revealed' : ''}${
         revealed && !flyDone ? ' is-armed' : ''
-      }${flyIn && !flyDone ? ' is-flying' : ''}${
-        flyDone ? ' is-swap-ready' : ''
-      }${railIn ? ' is-rail-in' : ''}`}
+      }${warm && !flyDone ? ' is-warm' : ''}${
+        flyIn && !flyDone ? ' is-flying' : ''
+      }${flyDone ? ' is-swap-ready' : ''}${railIn ? ' is-rail-in' : ''}`}
       // The swap durations live in ONE place (SWAP_TIMING) and are pushed to CSS
       // here so the @keyframes block and the JS settle backstop read identical
       // numbers — change a duration in board-swap-timing.ts and both follow.
@@ -1382,7 +1518,7 @@ export function BoardArt({
                   data-slug={s.slug}
                   className={i === railIndex ? 'is-active' : undefined}
                   aria-pressed={i === railIndex}
-                  onClick={() => setActive(i)}
+                  onClick={() => selectLayer(i)}
                 >
                   <span className="board-folder-tab-name">{s.label}</span>
                   <span className="board-folder-tab-fn">
@@ -1455,7 +1591,7 @@ export function BoardArt({
                     }`}
                     aria-label={`Show ${s.label} layer`}
                     aria-current={i === shownIndex ? 'true' : undefined}
-                    onClick={() => setActive(i)}
+                    onClick={() => selectLayer(i)}
                   />
                 ))}
               </div>
