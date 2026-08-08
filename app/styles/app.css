@@ -10072,15 +10072,6 @@ button.reset {
   }
 }
 
-.series-rail-head {
-  font-family: var(--font-mono);
-  font-size: 11px;
-  letter-spacing: 0.22em;
-  text-transform: uppercase;
-  color: var(--color-gold);
-  margin: 0 0 1.4rem;
-}
-
 /* Number + title rows, nothing else. No borders, no spine, no blurbs:
    whitespace is the container, and the current page is marked by a
    contrast flip (muted -> full text color), the way Linear's chapter
@@ -10176,25 +10167,6 @@ button.reset {
 .ladder {
   margin: 0;
   font-family: var(--font-mono);
-}
-
-.ladder-head {
-  display: grid;
-  gap: 0.3rem;
-  margin-bottom: 1.4rem;
-}
-
-.ladder-eyebrow {
-  font-size: 11px;
-  letter-spacing: 0.22em;
-  text-transform: uppercase;
-  color: var(--color-gold);
-}
-
-.ladder-sub {
-  font-size: 11px;
-  line-height: 1.5;
-  color: var(--color-text-muted);
 }
 
 /* Drawn as a graphic, not a list: hairline spine, well-separated nodes

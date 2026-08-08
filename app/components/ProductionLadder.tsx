@@ -26,10 +26,6 @@ const RUNGS: Rung[] = [
 export function ProductionLadder() {
   return (
     <figure className="ladder">
-      <figcaption className="ladder-head">
-        <span className="ladder-eyebrow">Capability ladder</span>
-        <span className="ladder-sub">What the boards are meant to pay for</span>
-      </figcaption>
       <ol className="ladder-rungs">
         {RUNGS.map((rung) => (
           <li key={rung.title} className="ladder-rung">

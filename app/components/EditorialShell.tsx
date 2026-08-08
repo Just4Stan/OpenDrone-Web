@@ -55,7 +55,6 @@ export function EditorialShell({
 function SeriesRail({slug}: {slug: string}) {
   return (
     <nav className="series-rail" aria-label="Reading series">
-      <p className="series-rail-head">The series</p>
       <ol className="series-rail-list">
         {EDITORIAL_SERIES.map((entry, i) => {
           const current = entry.slug === slug;
