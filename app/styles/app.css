@@ -6671,10 +6671,6 @@ button.reset {
   font-weight: 600;
 }
 
-/* A few chapter titles are one long sentence — let them use the full left
- * column so they stay on a single line, wrapping only when the column genuinely
- * runs out of room (narrow viewports). The 24ch cap above suits shorter heads. */
-.chapter:has(.teardown-sides) .chapter-title,
 .chapter-body {
   font-family: var(--font-sans);
   font-size: var(--fs-base);

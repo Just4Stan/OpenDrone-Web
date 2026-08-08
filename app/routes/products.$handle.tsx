@@ -355,16 +355,17 @@ function computeChapterNumbers(
   const pad = (x: number) => x.toString().padStart(2, '0');
   const out: ChapterNumbers = {openSource: ''};
 
-  // Numbering follows the render order in the route: how the board is built
-  // (layout, then the schematics behind it), then what it measures, then
-  // what ships. Keep the two in step.
-  if (content.teardown) {
-    out.teardown = pad(n++);
-  }
+  // Numbering follows the render order in the route: the promise the board is
+  // made on (published, then produced), then the layout that promise buys you,
+  // then what it measures, then what ships. Keep the two in step.
+  //
   // Accessories (fallback content) aren't open-hardware products — they get
   // no "Open for learning" chapter, so don't burn a chapter number on it.
   if (includeOpenSource) {
     out.openSource = pad(n++);
+  }
+  if (content.teardown) {
+    out.teardown = pad(n++);
   }
   if (content.specs.length > 0) {
     out.specs = pad(n++);
@@ -1692,162 +1693,6 @@ export default function Product() {
         </div>
       </section>
 
-      {/* === Chapter: Teardown === */}
-      {content.teardown && chapterNums.teardown ? (
-        <Chapter
-          number={chapterNums.teardown}
-          label="Teardown"
-          title={frameViewer ? 'Every arm, plate and standoff, exploded' : 'Teardown'}
-          textReveal={frameViewer ? undefined : textIn}
-          backdrop={
-            frameViewer ? (
-              // No key on src: keep the canvas mounted across tier switches so
-              // the viewer toggles between preloaded models instantly rather
-              // than remounting and re-fetching the GLB. Wrapped so a WebGL
-              // failure drops the (decorative) viewer instead of crashing the
-              // whole product page.
-              <SceneErrorBoundary fallback={null}>
-                <ClientFrameViewer
-                  src={frameViewer.src}
-                  srcs={frameViewerSrcs}
-                  inspectUrl={frameViewer.inspectUrl}
-                />
-              </SceneErrorBoundary>
-            ) : undefined
-          }
-          media={
-            !frameViewer && activeBoardArt ? (
-              // Key by product HANDLE (not src): stays mounted across TIER swaps
-              // so it swaps between warmed boards instantly (no remount/refetch),
-              // but REMOUNTS on a product switch (FC↔ESC↔RX) so the one-shot
-              // fly-in re-arms and plays for the new board. `srcs` prefetches the
-              // tiers up front.
-              <>
-                <BoardArt
-                  key={product.handle}
-                  src={activeBoardArt.src}
-                  srcs={boardArtSrcs}
-                  inspectUrl={activeBoardArt.inspectUrl}
-                  layerFns={activeBoardArt.layers}
-                  handle={product.handle}
-                  componentsSrc={activeBoardArt.src.replace(
-                    /board\.svg$/,
-                    'components.json',
-                  )}
-                  highlightRefs={hoveredRefs}
-                  highlightUnion={hoveredUnion}
-                  highlightGroups={hoveredGroups}
-                  onFlying={setBoardFlying}
-                  onHighlightVisible={setHighlightVisible}
-                />
-                {/* Part tour: which component is lit + how far through the set.
-                    Swipe the board sideways (or tap a part) to step. Each tick is
-                    tappable to jump straight to that part. */}
-                {isMobile && orderedParts.length ? (
-                  <div className="board-part-tour">
-                    <p className="board-part-tour-head" aria-live="polite">
-                      <span className="board-deck-name">Components</span>
-                      <span className="board-deck-hint">
-                        Tap one to find it on the board
-                      </span>
-                    </p>
-                    {/* Real, labelled, thumb-sized chips split into a top-side and
-                        a bottom-side row — not one long scroller. Tap one to
-                        spotlight that part on the board; each row scrolls for the
-                        rest. */}
-                    {[
-                      {label: 'Top', parts: partRows.top},
-                      {label: 'Bottom', parts: partRows.bottom},
-                    ]
-                      .filter((row) => row.parts.length)
-                      .map((row) => (
-                        <div
-                          key={row.label}
-                          className="board-part-chips"
-                          aria-label={`${row.label}-side components`}
-                        >
-                          <span className="board-part-chips-side">{row.label}</span>
-                          {row.parts.map((p, i) => {
-                            const lit = partLit(p);
-                            return (
-                              <button
-                                type="button"
-                                key={p.name + i}
-                                className={`board-part-chip${lit ? ' is-active' : ''}`}
-                                aria-pressed={lit}
-                                onClick={() => {
-                                  setHoveredRefs([...p.refs]);
-                                  setHoveredUnion(p.union);
-                                  setHoveredGroups(p.groups);
-                                }}
-                              >
-                                {/* Just the model/short name on the chip (e.g.
-                                    "RP2354A"), not the whole descriptive sentence
-                                    — split off anything after a dash/middot. */}
-                                {p.name.split(/\s+[—–·-]\s+/)[0]}
-                                {p.cost && p.cost !== '×1' ? (
-                                  <span className="board-part-chip-qty">{p.cost}</span>
-                                ) : null}
-                              </button>
-                            );
-                          })}
-                        </div>
-                      ))}
-                  </div>
-                ) : null}
-              </>
-            ) : undefined
-          }
-        >
-          {groupedPins.top.length > 0 && groupedPins.bottom.length > 0 ? (
-            <div
-              className={`teardown-sides${boardFlying ? ' is-locked' : ''}${
-                pinsSwapping ? ' is-swapping' : ''
-              }`}
-              onMouseLeave={noHover ? undefined : clearHover}
-            >
-              <section className="teardown-side">
-                <ul className="teardown-pins">
-                  {groupedPins.top.map(renderPin)}
-                </ul>
-              </section>
-              <section className="teardown-side">
-                <ul className="teardown-pins">
-                  {[...groupedPins.bottom, ...groupedPins.other].map(renderPin)}
-                </ul>
-              </section>
-            </div>
-          ) : (
-            <div
-              className={`teardown-sides${boardFlying ? ' is-locked' : ''}${
-                pinsSwapping ? ' is-swapping' : ''
-              }`}
-              onMouseLeave={noHover ? undefined : clearHover}
-            >
-              <section className="teardown-side">
-                <ul className="teardown-pins">
-                  {[
-                    ...groupedPins.top,
-                    ...groupedPins.bottom,
-                    ...groupedPins.other,
-                  ].map(renderPin)}
-                </ul>
-              </section>
-            </div>
-          )}
-          {!frameViewer && activeBoardArt?.inspectUrl ? (
-            <a
-              className="board-art-inspect teardown-inspect"
-              href={activeBoardArt.inspectUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Inspect interactively ↗
-            </a>
-          ) : null}
-        </Chapter>
-      ) : null}
-
       {/* === Chapter: Open for learning === */}
       {!isEditorial ? null : (
       <Chapter
@@ -2014,6 +1859,162 @@ export default function Product() {
         </div>
       </Chapter>
       )}
+
+      {/* === Chapter: Teardown === */}
+      {content.teardown && chapterNums.teardown ? (
+        <Chapter
+          number={chapterNums.teardown}
+          label="Teardown"
+          title={frameViewer ? 'Every arm, plate and standoff, exploded' : 'Teardown'}
+          textReveal={frameViewer ? undefined : textIn}
+          backdrop={
+            frameViewer ? (
+              // No key on src: keep the canvas mounted across tier switches so
+              // the viewer toggles between preloaded models instantly rather
+              // than remounting and re-fetching the GLB. Wrapped so a WebGL
+              // failure drops the (decorative) viewer instead of crashing the
+              // whole product page.
+              <SceneErrorBoundary fallback={null}>
+                <ClientFrameViewer
+                  src={frameViewer.src}
+                  srcs={frameViewerSrcs}
+                  inspectUrl={frameViewer.inspectUrl}
+                />
+              </SceneErrorBoundary>
+            ) : undefined
+          }
+          media={
+            !frameViewer && activeBoardArt ? (
+              // Key by product HANDLE (not src): stays mounted across TIER swaps
+              // so it swaps between warmed boards instantly (no remount/refetch),
+              // but REMOUNTS on a product switch (FC↔ESC↔RX) so the one-shot
+              // fly-in re-arms and plays for the new board. `srcs` prefetches the
+              // tiers up front.
+              <>
+                <BoardArt
+                  key={product.handle}
+                  src={activeBoardArt.src}
+                  srcs={boardArtSrcs}
+                  inspectUrl={activeBoardArt.inspectUrl}
+                  layerFns={activeBoardArt.layers}
+                  handle={product.handle}
+                  componentsSrc={activeBoardArt.src.replace(
+                    /board\.svg$/,
+                    'components.json',
+                  )}
+                  highlightRefs={hoveredRefs}
+                  highlightUnion={hoveredUnion}
+                  highlightGroups={hoveredGroups}
+                  onFlying={setBoardFlying}
+                  onHighlightVisible={setHighlightVisible}
+                />
+                {/* Part tour: which component is lit + how far through the set.
+                    Swipe the board sideways (or tap a part) to step. Each tick is
+                    tappable to jump straight to that part. */}
+                {isMobile && orderedParts.length ? (
+                  <div className="board-part-tour">
+                    <p className="board-part-tour-head" aria-live="polite">
+                      <span className="board-deck-name">Components</span>
+                      <span className="board-deck-hint">
+                        Tap one to find it on the board
+                      </span>
+                    </p>
+                    {/* Real, labelled, thumb-sized chips split into a top-side and
+                        a bottom-side row — not one long scroller. Tap one to
+                        spotlight that part on the board; each row scrolls for the
+                        rest. */}
+                    {[
+                      {label: 'Top', parts: partRows.top},
+                      {label: 'Bottom', parts: partRows.bottom},
+                    ]
+                      .filter((row) => row.parts.length)
+                      .map((row) => (
+                        <div
+                          key={row.label}
+                          className="board-part-chips"
+                          aria-label={`${row.label}-side components`}
+                        >
+                          <span className="board-part-chips-side">{row.label}</span>
+                          {row.parts.map((p, i) => {
+                            const lit = partLit(p);
+                            return (
+                              <button
+                                type="button"
+                                key={p.name + i}
+                                className={`board-part-chip${lit ? ' is-active' : ''}`}
+                                aria-pressed={lit}
+                                onClick={() => {
+                                  setHoveredRefs([...p.refs]);
+                                  setHoveredUnion(p.union);
+                                  setHoveredGroups(p.groups);
+                                }}
+                              >
+                                {/* Just the model/short name on the chip (e.g.
+                                    "RP2354A"), not the whole descriptive sentence
+                                    — split off anything after a dash/middot. */}
+                                {p.name.split(/\s+[—–·-]\s+/)[0]}
+                                {p.cost && p.cost !== '×1' ? (
+                                  <span className="board-part-chip-qty">{p.cost}</span>
+                                ) : null}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      ))}
+                  </div>
+                ) : null}
+              </>
+            ) : undefined
+          }
+        >
+          {groupedPins.top.length > 0 && groupedPins.bottom.length > 0 ? (
+            <div
+              className={`teardown-sides${boardFlying ? ' is-locked' : ''}${
+                pinsSwapping ? ' is-swapping' : ''
+              }`}
+              onMouseLeave={noHover ? undefined : clearHover}
+            >
+              <section className="teardown-side">
+                <ul className="teardown-pins">
+                  {groupedPins.top.map(renderPin)}
+                </ul>
+              </section>
+              <section className="teardown-side">
+                <ul className="teardown-pins">
+                  {[...groupedPins.bottom, ...groupedPins.other].map(renderPin)}
+                </ul>
+              </section>
+            </div>
+          ) : (
+            <div
+              className={`teardown-sides${boardFlying ? ' is-locked' : ''}${
+                pinsSwapping ? ' is-swapping' : ''
+              }`}
+              onMouseLeave={noHover ? undefined : clearHover}
+            >
+              <section className="teardown-side">
+                <ul className="teardown-pins">
+                  {[
+                    ...groupedPins.top,
+                    ...groupedPins.bottom,
+                    ...groupedPins.other,
+                  ].map(renderPin)}
+                </ul>
+              </section>
+            </div>
+          )}
+          {!frameViewer && activeBoardArt?.inspectUrl ? (
+            <a
+              className="board-art-inspect teardown-inspect"
+              href={activeBoardArt.inspectUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Inspect interactively ↗
+            </a>
+          ) : null}
+        </Chapter>
+      ) : null}
 
       {/* === Chapter: Specs === */}
       {content.specs.length > 0 && chapterNums.specs ? (
