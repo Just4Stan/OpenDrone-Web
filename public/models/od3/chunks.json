@@ -30,11 +30,11 @@
       "verts": 89036
     },
     {
-      "id": "board-OpenRX-Mono",
-      "label": "OpenRX-Mono",
-      "file": "board-OpenRX-Mono.glb",
-      "bytes": 703108,
-      "verts": 42375
+      "id": "board-OpenRX-Lite-UFL",
+      "label": "OpenRX Lite-UFL",
+      "file": "board-OpenRX-Lite-UFL.glb",
+      "bytes": 368040,
+      "verts": 58216
     },
     {
       "id": "video",

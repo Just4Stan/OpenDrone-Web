@@ -155,6 +155,18 @@ try {
 
   const io = await makeIO();
   const doc = await io.read(raw);
+
+  // KiCad 10's glTF export parks the real substrate names on the MESHES and
+  // gives their nodes junk like "=>[0:1:1:16]". The hero runtime groups a
+  // board by NODE name (boardMembers in HeroDroneScene.tsx), so copy the mesh
+  // name up whenever a substrate node carries no usable name of its own.
+  for (const node of doc.getRoot().listNodes()) {
+    const mesh = node.getMesh();
+    if (!mesh) continue;
+    const mn = mesh.getName() ?? '';
+    if (BOARD_MESH.test(mn) && !BOARD_MESH.test(node.getName() ?? '')) node.setName(mn);
+  }
+
   // Measure straight off the kicad-cli output, before any transform runs.
   // Downstream (place-boards.mjs) needs honest millimetres to check the outline
   // against pcbnew, and every later stage muddies that: flatten()/join() rewrite

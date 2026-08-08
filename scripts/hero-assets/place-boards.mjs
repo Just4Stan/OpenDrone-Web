@@ -134,7 +134,14 @@ for (const pair of pairs) {
     scene.removeChild(child);
     recentre.addChild(child);
   }
-  scene.addChild(wrap);
+  // The hero runtime reassembles chunks by taking each file's single root
+  // child and reparenting ITS children under the first chunk's root, dropping
+  // the root's own transform. Every build-hero chunk ships an identity
+  // "Assembly 1" root, so this file must too or the placement wrapper's
+  // transform is silently discarded at load.
+  const asmRoot = doc.createNode('Assembly 1');
+  asmRoot.addChild(wrap);
+  scene.addChild(asmRoot);
 
   await doc.transform(prune({keepAttributes: false}), dedup());
   await doc.transform(meshopt({encoder: MeshoptEncoder, level: 'high'}));
