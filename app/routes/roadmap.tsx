@@ -2,7 +2,6 @@ import type {Route} from './+types/roadmap';
 import {Link} from 'react-router';
 import {buildSeoMeta} from '~/lib/seo';
 import {EditorialShell} from '~/components/EditorialShell';
-import {RoadmapPipelineAside} from '~/components/EditorialAsides';
 import {DISCORD_INVITE_URL} from '~/lib/company';
 
 export const meta: Route.MetaFunction = () =>
@@ -16,139 +15,145 @@ export async function loader(_args: Route.LoaderArgs) {
   return {};
 }
 
-type RoadmapStatus = 'coming-soon' | 'in-development' | 'pre-design' | 'idea';
+/**
+ * Product status index. One vocabulary, used in three places that must
+ * agree: this board, the product pages, and (as `status-<label>` topics)
+ * the GitHub repos. Change a status here and mirror it in the other two.
+ */
+type ProductStatus = 'launched' | 'beta' | 'alpha' | 'in-progress' | 'planned';
 
 type RoadmapItem = {
   item: string;
-  status: RoadmapStatus;
-  /** One factual line. No dates, no promises — only what is verifiable
-   *  in the public repos / on this site today. */
+  status: ProductStatus;
+  /** One factual line, short enough for a board card. */
   note: string;
-  /** Public source (GitHub repo or issue). Omit when nothing public exists. */
+  /** Product page on this site, when one exists. */
+  productPath?: string;
+  /** Public design source. Omit when nothing public exists. */
   link?: string;
 };
 
 /**
- * DATA RULE: every entry must be verifiable in public — an incutec-hw
- * repo, a product page on this site, or nothing. Nothing gets a date.
- * To add a future-project idea, append an entry with status 'idea':
- * a name and one honest line is enough.
- * Verified against github.com/incutec-hw on 2026-08-08.
+ * DATA RULE: every entry must be verifiable in public, or be an explicit
+ * statement of intent (planned). Nothing gets a date.
  */
 const ROADMAP: RoadmapItem[] = [
   {
     item: 'OpenFC Lite · 30×30',
-    status: 'coming-soon',
-    note: 'Betaflight flight controller, RP2354, 30.5×30.5 mounting. Rev 2 bench-validated; first production batch in preparation.',
+    status: 'beta',
+    note: 'RP2354 Betaflight flight controller. First production batch in preparation.',
+    productPath: '/products/openfc-lite',
     link: 'https://github.com/incutec-hw/OpenFC-Lite',
   },
   {
     item: 'OpenFC Lite Mini · 20×20',
-    status: 'coming-soon',
-    note: 'The 20×20 version of the same RP2354 flight controller. Bench-validated; first production batch in preparation.',
+    status: 'beta',
+    note: 'The same flight controller at 20×20.',
+    productPath: '/products/openfc-lite',
     link: 'https://github.com/incutec-hw/OpenFC-Lite-Mini',
   },
   {
     item: 'OpenESC · 20×20',
-    status: 'coming-soon',
-    note: '4-in-1 AM32 ESC, 30 A/channel. Bench validation passed; characterization data to be published.',
+    status: 'beta',
+    note: '4-in-1 AM32 ESC, 30 A per channel.',
+    productPath: '/products/openesc',
     link: 'https://github.com/incutec-hw/OpenESC-20x20',
   },
   {
     item: 'OpenESC · 30×30',
-    status: 'coming-soon',
-    note: '4-in-1 AM32 ESC, 50 A/channel. Bench validation passed; characterization data to be published.',
+    status: 'beta',
+    note: '4-in-1 AM32 ESC, 50 A per channel.',
+    productPath: '/products/openesc',
     link: 'https://github.com/incutec-hw/OpenESC-30x30',
   },
   {
-    item: 'OpenRX · Lite / Lite-UFL / Mono / Gemini',
-    status: 'coming-soon',
-    note: 'ExpressLRS receiver family: SX1281 2.4 GHz and single/dual LR1121 multi-band. All four variants bench-validated.',
+    item: 'OpenRX',
+    status: 'alpha',
+    note: 'ExpressLRS receiver family, four variants, in community testing.',
+    productPath: '/products/openrx',
     link: 'https://github.com/incutec-hw/OpenRX',
   },
   {
     item: 'OpenFrame · 5" + 3"',
-    status: 'in-development',
-    note: 'CNC carbon freestyle frames. First sample sets ordered; CAD lives in Onshape, public link pending.',
+    status: 'in-progress',
+    note: 'CNC carbon freestyle frames. First sample sets ordered.',
+    productPath: '/products/openframe',
+  },
+  {
+    item: 'Motors',
+    status: 'in-progress',
+    note: 'Early design work. Nothing public yet.',
   },
   {
     item: 'OpenVTX',
-    status: 'pre-design',
-    note: 'Video transmitter. The repo is public; specs and architecture are open for discussion.',
+    status: 'planned',
+    note: 'Video transmitter. Specs and architecture open for discussion.',
     link: 'https://github.com/incutec-hw/OpenVTX',
   },
   {
     item: 'OpenRemoteID',
-    status: 'pre-design',
-    note: 'Remote ID module. The repo is public; requirements are still being worked out.',
+    status: 'planned',
+    note: 'Remote ID module. Requirements still being worked out.',
     link: 'https://github.com/incutec-hw/OpenRemoteID',
   },
   {
     item: 'OpenAIO + OpenAIO-Whoop',
-    status: 'pre-design',
-    note: 'All-in-one boards, full-size and whoop. Early designs are public; specs are still being argued, no prototype ordered yet.',
+    status: 'planned',
+    note: 'All-in-one boards, full-size and whoop.',
     link: 'https://github.com/incutec-hw/OpenAIO',
   },
   {
     item: 'Charger',
-    status: 'pre-design',
-    note: 'LiPo charger. Early design is public; no prototype ordered yet.',
+    status: 'planned',
+    note: 'LiPo charger.',
     link: 'https://github.com/incutec-hw/Charger',
-  },
-  {
-    item: 'Motors',
-    status: 'idea',
-    note: 'Named on the long list. Nothing public yet.',
   },
 ];
 
-const STATUS_META: Record<RoadmapStatus, {label: string; blurb: string}> = {
-  'coming-soon': {
-    label: 'Coming soon',
-    blurb:
-      'Bench-validated designs with first production batches in preparation. These arrive in the shop next; the remaining work is manufacturing, not design.',
+const STATUS_META: Record<ProductStatus, {label: string; legend: string}> = {
+  launched: {
+    label: 'Launched',
+    legend:
+      'In the shop and settled. The design has stopped moving; buy it and it will not change under you.',
   },
-  'in-development': {
-    label: 'In development',
-    blurb:
-      'Hardware is ordered or being iterated. The design is public where it can be, and still moving.',
+  beta: {
+    label: 'Beta',
+    legend:
+      'Launched, first production batch. You can buy it in the shop, early-batch pricing can be lower, and the design can still get updates between batches.',
   },
-  'pre-design': {
-    label: 'Pre-design',
-    blurb:
-      'Boards we want to make and want help making. The work right now is reading the market, agreeing on specs, and discussing what we can actually produce. That conversation runs on Discord, and anyone can join it.',
+  alpha: {
+    label: 'Alpha',
+    legend:
+      'Coming soon. Hardware is being tested beyond our own bench, by firmware maintainers and community testers, but is not buyable yet. Where a product page exists, you can join the waitlist there.',
   },
-  idea: {
-    label: 'Idea',
-    blurb: 'Named, nothing more. If one of these is your itch, say so.',
+  'in-progress': {
+    label: 'In progress',
+    legend:
+      'A first design exists and prototypes may already be ordered, but nothing is under test yet.',
+  },
+  planned: {
+    label: 'Planned',
+    legend:
+      'No design yet, on purpose. We name it early so the community can shape the spec from day one: the discussion runs on Discord, and design proposals are welcome. No product listing until there is hardware.',
   },
 };
 
-const STATUS_ORDER: RoadmapStatus[] = [
-  'coming-soon',
-  'in-development',
-  'pre-design',
-  'idea',
+const STATUS_ORDER: ProductStatus[] = [
+  'launched',
+  'beta',
+  'alpha',
+  'in-progress',
+  'planned',
 ];
 
 export default function RoadmapRoute() {
-  const groups = STATUS_ORDER.map((status) => ({
+  const columns = STATUS_ORDER.map((status) => ({
     status,
     items: ROADMAP.filter((r) => r.status === status),
-  })).filter((g) => g.items.length > 0);
-
-  const stages = groups.map((g) => ({
-    label: STATUS_META[g.status].label,
-    count: g.items.length,
   }));
 
-  // Section 01 is "How this works"; the status groups take 02..(n+1);
-  // the contribution sections continue the numbering after that.
-  const sec = (i: number) => String(i).padStart(2, '0');
-  const afterGroups = groups.length + 2;
-
   return (
-    <EditorialShell slug="roadmap" aside={<RoadmapPipelineAside stages={stages} />}>
+    <EditorialShell slug="roadmap">
       <header className="editorial-hero">
         <p className="editorial-eyebrow">Roadmap and Contributing</p>
         <h1 className="editorial-title">
@@ -188,38 +193,68 @@ export default function RoadmapRoute() {
         </p>
       </section>
 
-      {groups.map((group, gi) => (
-        <section className="editorial-section" key={group.status}>
-          <h2 className="editorial-section-title">
-            {sec(gi + 2)} · {STATUS_META[group.status].label}
-          </h2>
-          <p>{STATUS_META[group.status].blurb}</p>
-          <ul className="roadmap-list">
-            {group.items.map((r) => (
-              <li className="roadmap-item" key={r.item}>
-                <div className="roadmap-item-head">
-                  <span className="roadmap-name">{r.item}</span>
-                </div>
-                <p className="roadmap-note">{r.note}</p>
-                {r.link ? (
-                  <a
-                    className="roadmap-link"
-                    href={r.link}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    Source ↗
-                  </a>
-                ) : null}
-              </li>
-            ))}
-          </ul>
-        </section>
-      ))}
+      <section className="editorial-section">
+        <h2 className="editorial-section-title">02 · Where every product stands</h2>
+        <p>
+          The same board we work from. Each product carries one status label,
+          explained below; the label is mirrored on its product page and on
+          its GitHub repo.
+        </p>
+        <div className="kanban">
+          {columns.map((col) => (
+            <div className="kanban-col" key={col.status}>
+              <p className="kanban-col-head" data-status={col.status}>
+                <span className="kanban-dot" />
+                {STATUS_META[col.status].label}
+                <span className="kanban-count">{col.items.length}</span>
+              </p>
+              {col.items.length === 0 ? (
+                <p className="kanban-empty">none yet</p>
+              ) : (
+                col.items.map((r) => (
+                  <article className="kanban-card" key={r.item}>
+                    <h3 className="kanban-name">{r.item}</h3>
+                    <p className="kanban-note">{r.note}</p>
+                    {r.productPath || r.link ? (
+                      <p className="kanban-links">
+                        {r.productPath ? (
+                          <Link prefetch="viewport" to={r.productPath}>
+                            Product →
+                          </Link>
+                        ) : null}
+                        {r.link ? (
+                          <a href={r.link} target="_blank" rel="noopener noreferrer">
+                            Source ↗
+                          </a>
+                        ) : null}
+                      </p>
+                    ) : null}
+                  </article>
+                ))
+              )}
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section className="editorial-section">
+        <h2 className="editorial-section-title">03 · What the labels mean</h2>
+        <dl className="status-legend">
+          {STATUS_ORDER.map((status) => (
+            <div key={status}>
+              <dt data-status={status}>
+                <span className="kanban-dot" />
+                {STATUS_META[status].label}
+              </dt>
+              <dd>{STATUS_META[status].legend}</dd>
+            </div>
+          ))}
+        </dl>
+      </section>
 
       <section className="editorial-section">
         <h2 className="editorial-section-title">
-          {sec(afterGroups)} · Report what broke
+          04 · Report what broke
         </h2>
         <p>
           Flew it, bench-tested it, or just read the schematic and found
@@ -231,7 +266,7 @@ export default function RoadmapRoute() {
 
       <section className="editorial-section">
         <h2 className="editorial-section-title">
-          {sec(afterGroups + 1)} · Change the design
+          05 · Change the design
         </h2>
         <p>
           Hardware is not software: two people can edit the same code file, but
@@ -260,7 +295,7 @@ export default function RoadmapRoute() {
 
       <section className="editorial-section">
         <h2 className="editorial-section-title">
-          {sec(afterGroups + 2)} · Improve the firmware
+          06 · Improve the firmware
         </h2>
         <p>
           The boards run community firmware: Betaflight, AM32 and ExpressLRS.
@@ -273,7 +308,7 @@ export default function RoadmapRoute() {
 
       <section className="editorial-section">
         <h2 className="editorial-section-title">
-          {sec(afterGroups + 3)} · The repos
+          07 · The repos
         </h2>
         <p>
           Every entry above links to its source where one is public. The
