@@ -286,6 +286,36 @@ export const STUDIO_CSS = `
 }
 
 
+
+/* ---- legal tab ---- */
+.studio-doc {
+  flex: 1;
+  width: 100%;
+  border: 0;
+  border-radius: 0;
+  resize: none;
+  background: #0b0b0e;
+  color: #d8d8dc;
+  padding: 18px 22px;
+  font-family: ui-monospace, Menlo, Monaco, monospace;
+  font-size: 12.5px;
+  line-height: 1.75;
+  scrollbar-width: thin;
+  scrollbar-color: #2b2b33 transparent;
+}
+.studio-doc:focus { outline: none; }
+.studio-doc[readonly] { color: #8b8b95; }
+.studio-locked {
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #55555e;
+  border: 1px solid #2b2b33;
+  border-radius: 3px;
+  padding: 0 3px;
+  margin-left: 5px;
+}
+
 /* ---- media tab ---- */
 .studio-media {
   flex: 1;

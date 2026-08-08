@@ -23,6 +23,7 @@ import {StudioTokens} from '~/studio/StudioTokens';
 import {StudioChapters} from '~/studio/StudioChapters';
 import {StudioHero} from '~/studio/StudioHero';
 import {StudioMedia} from '~/studio/StudioMedia';
+import {StudioLegal} from '~/studio/StudioLegal';
 import {flattenLeaves, leafLabel, setLeaf} from '~/studio/leaves';
 import {PRODUCT_CONTENT} from '~/lib/product-content';
 
@@ -34,7 +35,7 @@ export const meta: MetaFunction = () => [
 ];
 
 type CopyFile = Record<string, unknown>;
-type Tab = 'words' | 'chapters' | 'design' | 'media' | 'hero';
+type Tab = 'words' | 'chapters' | 'design' | 'media' | 'legal' | 'hero';
 
 /** Handles that have editorial content, so a chapter list means something. */
 const PRODUCT_HANDLES = Object.keys(PRODUCT_CONTENT).sort();
@@ -273,6 +274,13 @@ export default function Studio() {
           </button>
           <button
             type="button"
+            className={tab === 'legal' ? 'is-on' : undefined}
+            onClick={() => setTab('legal')}
+          >
+            Legal
+          </button>
+          <button
+            type="button"
             className={tab === 'hero' ? 'is-on' : undefined}
             onClick={() => setTab('hero')}
           >
@@ -295,7 +303,9 @@ export default function Studio() {
         </div>
       </header>
 
-      {tab === 'media' ? (
+      {tab === 'legal' ? (
+        <StudioLegal setStatus={setStatus} />
+      ) : tab === 'media' ? (
         <StudioMedia setStatus={setStatus} />
       ) : tab === 'hero' ? (
         <StudioHero setStatus={setStatus} />
