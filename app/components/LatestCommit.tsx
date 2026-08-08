@@ -1,4 +1,6 @@
 import type {LatestCommit} from '~/lib/github';
+import {Txt} from './Txt';
+import {copyText} from '~/lib/copy';
 
 function relativeTime(iso: string): string {
   if (!iso) return '';
@@ -28,7 +30,8 @@ export function LatestCommitCard({commit}: {commit: LatestCommit}) {
       className="latest-commit-card"
     >
       <p className="latest-commit-label">
-        Last commit · <span>{commit.repoLabel}</span>
+        {copyText('product-chrome.commit_label')}{' '}
+        <span>{commit.repoLabel}</span>
       </p>
       <p className="latest-commit-message">{commit.message}</p>
       <p className="latest-commit-meta">
@@ -56,9 +59,21 @@ export function CommitHistoryCard({repoUrl}: {repoUrl: string}) {
       rel="noopener noreferrer"
       className="open-source-card"
     >
-      <p className="open-source-card-label">Changelog</p>
-      <p className="open-source-card-title">Commit history ↗</p>
-      <p className="open-source-card-sub">Every revision, public on GitHub</p>
+      <Txt
+        id="product-chrome.commit_history_label"
+        as="p"
+        className="open-source-card-label"
+      />
+      <Txt
+        id="product-chrome.commit_history_title"
+        as="p"
+        className="open-source-card-title"
+      />
+      <Txt
+        id="product-chrome.commit_history_sub"
+        as="p"
+        className="open-source-card-sub"
+      />
     </a>
   );
 }

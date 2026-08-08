@@ -5,9 +5,22 @@ import {reactRouter} from '@react-router/dev/vite';
 import tsconfigPaths from 'vite-tsconfig-paths';
 import tailwindcss from '@tailwindcss/vite';
 import path from 'path';
+import {
+  heroStudioExcludePlugin,
+  studioPlugin,
+} from './studio/vite-plugin-studio';
 
 export default defineConfig({
   plugins: [
+    // MUST stay ahead of oxygen(). Both register `configureServer` with
+    // `order: 'pre'`, and Vite keeps registration order inside a bucket, so
+    // this is what lets the studio's write endpoint be answered by real Node
+    // instead of being proxied into the filesystem-less Workerd sandbox.
+    // It is `apply: 'serve'`, so it does not exist in a production build.
+    studioPlugin(),
+    // Strips the hero tuning tool out of the production client build; it sits
+    // in publicDir, so Vite would otherwise serve it at a public URL.
+    heroStudioExcludePlugin(),
     tailwindcss(),
     hydrogen(),
     oxygen(),

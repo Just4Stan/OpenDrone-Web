@@ -525,27 +525,40 @@ embargo is 90 days from first report.
 
 Content splits into three editing surfaces, each with a clear runtime contract.
 
-### Site copy library (`content/site/`)
+### The studio (`content/`)
 
-An editable plain-text mirror of every production page's copy. It is the **editing
-surface, not the runtime**: the live values live in the `.tsx` / `.ts` source. Each file
-mirrors one page or component and holds two kinds of content:
+Run `npm run dev` and open **`/studio`**. It is a local, dev-only mirror of the site:
+the real pages in an iframe with every editable string outlined. Click one, change it,
+save. There is no database and no publish step, so `git diff` is the changelog and
+`git checkout` is undo. The studio never reaches production: `app/routes.ts` excludes it
+from the build and the write endpoint is an `apply: 'serve'` Vite plugin.
 
-- **Keyed strings**: short UI copy, e.g. `- **cta_primary:** Shop Now`. Edit only the
-  text after the colon; the key is a stable ID. Keep it on one line.
-- **Prose blocks**: longer copy under a `### prose: <id>` heading; edit freely as
-  Markdown.
+| Tab | Edits | Files |
+|---|---|---|
+| Words | Page copy, product copy | `content/copy/*.json`, `content/products/*.json` |
+| Chapters | Product page sections: order, titles, on/off | `content/chapters.json` |
+| Design | The 61 design tokens | `content/theme.json` |
+| Media | Browse images, see where each is used | read-only, `public/` |
+| Legal | Policy pages in en, nl, fr | `app/content/legal/**` |
+| Hero | The 3D scene: lighting, timeline, camera, materials | `public/models/<design>/studio.json` |
 
-Anything in a `> source:` line or a `do-not-edit` fence is metadata, leave it. The folder
-is committed as a snapshot of the *current* live copy; you edit it, `git diff
-content/site/` shows exactly which values changed, and those changed strings get rewritten
-back into source. Untouched keys are never touched; a brand-new key is flagged rather than
-guessed.
+**Adding a page.** Create `content/copy/<page>.json` with `$route` and `$title`, then
+render its strings with `<Txt id="<page>.<key>" as="p" />` (`app/components/Txt.tsx`).
+The `data-edit` annotation and the value come from the same id, so they cannot drift.
+For a string that has to go in an attribute, use `copyText(id)`.
 
-Not in here: **legal pages** (edit `app/content/legal/{en,nl,fr}/` directly, but NL is
-overwritten by `sync:legal`, so edit NL in the external compliance repo; legal page
-*chrome* is in `content/site/legal-chrome.md`) and **Shopify-managed copy** (product
-titles, prices, collection descriptions, edited in Shopify admin).
+**Inline markup**, the whole of it: `[label](/path)`, `[Discord](@discord)` for links
+defined in code, `*emphasis*`, `**strong**`. Deliberately not Markdown, because headings
+and lists are structure and structure is not a string's job.
+
+**What is not editable, by design.** Shopify data (product titles, prices, collection
+descriptions) is edited in Shopify admin. The five Dutch legal pages listed in
+`scripts/sync-legal.mjs` are overwritten from the external compliance repo on every
+build, so the studio shows them read-only. Board art is generated from KiCad and the
+hero model from Onshape; the studio can point at a different asset but cannot author one.
+
+**Coverage.** `npm run studio:coverage` reports which files still have words baked into
+the code. It over-reports on purpose, so a count means "worth a look", not "broken".
 
 ### Blog posts (`content/posts/`)
 

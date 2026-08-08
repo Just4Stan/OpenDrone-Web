@@ -28,6 +28,9 @@ import {
 import {buildSeoMeta} from '~/lib/seo';
 import {countOpenForCustomer} from '~/lib/support/ticket-index';
 import {Money, flattenConnection} from '@shopify/hydrogen';
+import {Txt} from '~/components/Txt';
+import {copyText} from '~/lib/copy';
+import {DISCORD_INVITE_URL} from '~/lib/company';
 
 // Dashboard that greets the signed-in customer with a time-aware hello,
 // a quick preview of their last couple of orders, and the next actions
@@ -37,8 +40,10 @@ import {Money, flattenConnection} from '@shopify/hydrogen';
 
 export const meta: Route.MetaFunction = () =>
   buildSeoMeta({
-    title: 'Account',
-    description: 'Your OpenDrone dashboard: orders, addresses, profile.',
+    title: copyText('account.dash.meta_title') ?? 'Account',
+    description:
+      copyText('account.dash.meta_description') ??
+      'Your OpenDrone dashboard: orders, addresses, profile.',
     robots: 'noindex,nofollow',
   });
 
@@ -108,8 +113,17 @@ export async function action({request, context}: Route.ActionArgs) {
   const form = await request.formData();
   const intent = String(form.get('intent') ?? '');
   if (intent !== 'subscribe' && intent !== 'unsubscribe') {
-    return {ok: false, subscribed: null, error: 'Unknown action.'};
+    return {
+      ok: false,
+      subscribed: null,
+      error: copyText('account.dash.newsletter_error_unknown') ?? 'Unknown action.',
+    };
   }
+
+  // Our own fallback wording. The Customer Account API's own `userErrors`
+  // messages come back from Shopify and are passed through untouched.
+  const failed =
+    copyText('account.dash.newsletter_error_failed') ?? 'Update failed.';
 
   try {
     if (intent === 'unsubscribe') {
@@ -119,9 +133,7 @@ export async function action({request, context}: Route.ActionArgs) {
       const payload = data?.customerEmailMarketingUnsubscribe;
       if (errors?.length || payload?.userErrors?.length) {
         throw new Error(
-          payload?.userErrors?.[0]?.message ??
-            errors?.[0]?.message ??
-            'Update failed.',
+          payload?.userErrors?.[0]?.message ?? errors?.[0]?.message ?? failed,
         );
       }
       return {
@@ -137,9 +149,7 @@ export async function action({request, context}: Route.ActionArgs) {
     const payload = data?.customerEmailMarketingSubscribe;
     if (errors?.length || payload?.userErrors?.length) {
       throw new Error(
-        payload?.userErrors?.[0]?.message ??
-          errors?.[0]?.message ??
-          'Update failed.',
+        payload?.userErrors?.[0]?.message ?? errors?.[0]?.message ?? failed,
       );
     }
     return {
@@ -151,7 +161,7 @@ export async function action({request, context}: Route.ActionArgs) {
     return {
       ok: false,
       subscribed: null,
-      error: error instanceof Error ? error.message : 'Update failed.',
+      error: error instanceof Error ? error.message : failed,
     };
   }
 }
@@ -163,7 +173,10 @@ export default function AccountIndex() {
   const [searchParams, setSearchParams] = useSearchParams();
   const firstName = customer.firstName?.trim();
   const email = customer.emailAddress?.emailAddress ?? '';
-  const displayName = firstName || email.split('@')[0] || 'there';
+  const displayName =
+    firstName ||
+    email.split('@')[0] ||
+    (copyText('account.dash.name_fallback') ?? 'there');
   const showWelcome = justOnboarded && searchParams.get('welcome') === '1';
 
   return (
@@ -171,11 +184,12 @@ export default function AccountIndex() {
       {showWelcome ? (
         <div className="account-dashboard-nudge" role="status">
           <div>
-            <p className="account-dashboard-eyebrow-mono">You&rsquo;re all set</p>
-            <p>
-              Account created. Orders, addresses, and build notes show up
-              here as you go.
-            </p>
+            <Txt
+              id="account.dash.nudge_eyebrow"
+              as="p"
+              className="account-dashboard-eyebrow-mono"
+            />
+            <Txt id="account.dash.nudge_body" as="p" />
           </div>
           <button
             type="button"
@@ -186,13 +200,17 @@ export default function AccountIndex() {
               setSearchParams(next, {replace: true});
             }}
           >
-            Dismiss ×
+            <Txt id="account.dash.nudge_dismiss" />
           </button>
         </div>
       ) : null}
 
       <header className="account-dashboard-hero">
-        <p className="account-dashboard-eyebrow">{timeOfDayGreeting()}</p>
+        <Txt
+          id={timeOfDayGreetingId()}
+          as="p"
+          className="account-dashboard-eyebrow"
+        />
         <h2 className="account-dashboard-title">
           {displayName}
           <span>.</span>
@@ -227,15 +245,25 @@ function NewsletterCard({subscribed}: {subscribed: boolean}) {
         isSubscribed ? ' is-active' : ''
       }`}
     >
-      <p className="account-dashboard-eyebrow-mono">
-        Newsletter · Engineering Essentials
-      </p>
-      <h3 className="account-dashboard-card-title">Build notes</h3>
-      <p className="account-dashboard-card-lede">
-        {isSubscribed
-          ? 'Subscribed. New posts land in your inbox.'
-          : 'Get product releases and build notes by email.'}
-      </p>
+      <Txt
+        id="account.dash.newsletter_eyebrow"
+        as="p"
+        className="account-dashboard-eyebrow-mono"
+      />
+      <Txt
+        id="account.dash.newsletter_title"
+        as="h3"
+        className="account-dashboard-card-title"
+      />
+      <Txt
+        id={
+          isSubscribed
+            ? 'account.dash.newsletter_lede_subscribed'
+            : 'account.dash.newsletter_lede'
+        }
+        as="p"
+        className="account-dashboard-card-lede"
+      />
       <fetcher.Form method="post">
         <input
           type="hidden"
@@ -248,11 +276,15 @@ function NewsletterCard({subscribed}: {subscribed: boolean}) {
           disabled={pending}
           aria-busy={pending || undefined}
         >
-          {pending
-            ? 'Saving…'
-            : isSubscribed
-              ? 'Unsubscribe →'
-              : 'Subscribe →'}
+          <Txt
+            id={
+              pending
+                ? 'account.dash.newsletter_saving'
+                : isSubscribed
+                  ? 'account.dash.newsletter_unsubscribe'
+                  : 'account.dash.newsletter_subscribe'
+            }
+          />
         </button>
       </fetcher.Form>
       {error ? (
@@ -276,52 +308,74 @@ function SupportCard({openCount}: {openCount: number}) {
         isActive ? ' is-active' : ''
       }`}
     >
-      <p className="account-dashboard-eyebrow-mono">
-        {isActive ? '→ SUPPORT · ACTIVE' : '→ SUPPORT'}
-      </p>
-      <h3 className="account-dashboard-card-title">Support</h3>
+      <Txt
+        id={
+          isActive
+            ? 'account.dash.support_eyebrow_active'
+            : 'account.dash.support_eyebrow'
+        }
+        as="p"
+        className="account-dashboard-eyebrow-mono"
+      />
+      <Txt
+        id="account.dash.support_title"
+        as="h3"
+        className="account-dashboard-card-title"
+      />
       {isActive ? (
         <span className="od-count">
           {openCount}
-          <span className="od-count-label">
-            {openCount === 1 ? 'OPEN TICKET' : 'OPEN TICKETS'}
-          </span>
+          <Txt
+            id={
+              openCount === 1
+                ? 'account.dash.support_count_one'
+                : 'account.dash.support_count_many'
+            }
+            className="od-count-label"
+          />
         </span>
       ) : (
-        <p className="account-dashboard-card-lede">
-          No open tickets. Need help?
-        </p>
+        <Txt
+          id="account.dash.support_empty"
+          as="p"
+          className="account-dashboard-card-lede"
+        />
       )}
       <div className="account-dashboard-card-actions">
         <Link prefetch="viewport" to="/support" className="account-dashboard-cta">
-          Open a ticket →
+          <Txt id="account.dash.support_cta" />
         </Link>
         <Link
           prefetch="viewport"
           to="/account/support"
           className="account-dashboard-card-link"
         >
-          Ticket history →
+          <Txt id="account.dash.support_history" />
         </Link>
       </div>
     </section>
   );
 }
 
-function timeOfDayGreeting(): string {
+/** Which of the three greetings the clock calls for. Wording is copy. */
+function timeOfDayGreetingId(): string {
   const h = new Date().getHours();
-  if (h < 12) return 'Good morning,';
-  if (h < 18) return 'Good afternoon,';
-  return 'Good evening,';
+  if (h < 12) return 'account.dash.greeting_morning';
+  if (h < 18) return 'account.dash.greeting_afternoon';
+  return 'account.dash.greeting_evening';
 }
 
 function OrdersCard({orders}: {orders: OrderItemFragment[]}) {
   return (
     <section className="account-dashboard-card">
       <header className="account-dashboard-card-head">
-        <p className="account-dashboard-eyebrow-mono">Orders</p>
+        <Txt
+          id="account.dash.orders_eyebrow"
+          as="p"
+          className="account-dashboard-eyebrow-mono"
+        />
         <Link prefetch="viewport" to="/account/orders" className="account-dashboard-card-link">
-          View all →
+          <Txt id="account.dash.orders_view_all" />
         </Link>
       </header>
       {orders.length ? (
@@ -354,9 +408,9 @@ function OrdersCard({orders}: {orders: OrderItemFragment[]}) {
         </ul>
       ) : (
         <div className="account-dashboard-empty">
-          <p>No orders yet.</p>
+          <Txt id="account.dash.orders_empty" as="p" />
           <Link prefetch="viewport" to="/collections/all" className="account-dashboard-cta">
-            Browse the catalog →
+            <Txt id="account.dash.orders_empty_cta" />
           </Link>
         </div>
       )}
@@ -369,9 +423,13 @@ function AddressCard({customer}: {customer: CustomerFragment}) {
   return (
     <section className="account-dashboard-card">
       <header className="account-dashboard-card-head">
-        <p className="account-dashboard-eyebrow-mono">Default address</p>
+        <Txt
+          id="account.dash.address_eyebrow"
+          as="p"
+          className="account-dashboard-eyebrow-mono"
+        />
         <Link prefetch="viewport" to="/account/addresses" className="account-dashboard-card-link">
-          Manage →
+          <Txt id="account.dash.address_manage" />
         </Link>
       </header>
       {addr ? (
@@ -382,9 +440,9 @@ function AddressCard({customer}: {customer: CustomerFragment}) {
         </address>
       ) : (
         <div className="account-dashboard-empty">
-          <p>No shipping address yet.</p>
+          <Txt id="account.dash.address_empty" as="p" />
           <Link prefetch="viewport" to="/account/addresses" className="account-dashboard-cta">
-            Add an address →
+            <Txt id="account.dash.address_empty_cta" />
           </Link>
         </div>
       )}
@@ -395,21 +453,28 @@ function AddressCard({customer}: {customer: CustomerFragment}) {
 function CommunityCard() {
   return (
     <section className="account-dashboard-card account-dashboard-card-accent">
-      <p className="account-dashboard-eyebrow-mono">Community</p>
-      <h3 className="account-dashboard-card-title">
-        The work happens on Discord.
-      </h3>
-      <p className="account-dashboard-card-lede">
-        Firmware help, build logs, release threads. Same engineers who
-        designed the boards answer there.
-      </p>
+      <Txt
+        id="account.dash.community_eyebrow"
+        as="p"
+        className="account-dashboard-eyebrow-mono"
+      />
+      <Txt
+        id="account.dash.community_title"
+        as="h3"
+        className="account-dashboard-card-title"
+      />
+      <Txt
+        id="account.dash.community_lede"
+        as="p"
+        className="account-dashboard-card-lede"
+      />
       <a
-        href="https://discord.gg/ABajnacUsS"
+        href={DISCORD_INVITE_URL}
         target="_blank"
         rel="noreferrer noopener"
         className="account-dashboard-cta"
       >
-        Open Discord →
+        <Txt id="account.dash.community_cta" />
       </a>
     </section>
   );
@@ -418,19 +483,28 @@ function CommunityCard() {
 function BuildCard() {
   return (
     <section className="account-dashboard-card">
-      <p className="account-dashboard-eyebrow-mono">Open source</p>
-      <h3 className="account-dashboard-card-title">Every board, on GitHub.</h3>
-      <p className="account-dashboard-card-lede">
-        Schematics, firmware, Gerbers. Fork your own, submit a PR, or just
-        read along to understand what&rsquo;s flying in your drone.
-      </p>
+      <Txt
+        id="account.dash.build_eyebrow"
+        as="p"
+        className="account-dashboard-eyebrow-mono"
+      />
+      <Txt
+        id="account.dash.build_title"
+        as="h3"
+        className="account-dashboard-card-title"
+      />
+      <Txt
+        id="account.dash.build_lede"
+        as="p"
+        className="account-dashboard-card-lede"
+      />
       <a
         href="https://github.com/OpenDrone-hw"
         target="_blank"
         rel="noreferrer noopener"
         className="account-dashboard-cta"
       >
-        Browse the repos →
+        <Txt id="account.dash.build_cta" />
       </a>
     </section>
   );

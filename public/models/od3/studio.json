@@ -2,11 +2,12 @@
   "name": "OpenDrone 3\"",
   "model": "drone.glb",
   "_howto": [
-    "Intended flow once the studio reads this file: export the assembly from",
-    "Onshape, run scripts/hero-assets/build-hero.mjs --all, drop the GLB in a",
-    "sibling folder with a copy of this file, open the studio with ?model=<folder>.",
-    "TODAY the studio hardcodes the values below and only reads ?v= for cache",
-    "busting, so a new design still needs JavaScript edits. See _status.",
+    "Flow for a new design: export the assembly from Onshape, run",
+    "scripts/hero-assets/build-hero.mjs --all into public/models/<design>/, then",
+    "copy this file and _studio.html in beside the GLB and open that folder's",
+    "_studio.html. The studio loads this file on open and writes it back, so no",
+    "JavaScript edit is needed for the values below. See _status for what the",
+    "panel does not cover.",
     "",
     "Name matching, verified against this assembly: three.js appends _1/_2 to",
     "duplicate node names, turns spaces into underscores, and DELETES the",
@@ -21,9 +22,9 @@
     "missing, never to correct brightness."
   ],
   "lighting": {
-    "exposure": 1.0,
+    "exposure": 1,
     "environment": 0.3,
-    "ambient": 0.0,
+    "ambient": 0,
     "background": "#0a0c0f",
     "key": {
       "power": 2.6,
@@ -56,7 +57,7 @@
     "softness": 0.6,
     "sideAngle": 35,
     "height": 0.48,
-    "darkenRest": 1.0,
+    "darkenRest": 1,
     "dimLights": 0.28,
     "shrinkDrone": 0.55,
     "stageLeft": 0.28,
@@ -64,7 +65,7 @@
     "stageLift": -0.06,
     "colour": "#ffd7a0",
     "beamColour": "#ffcf96",
-    "beamGain": 4.0
+    "beamGain": 4
   },
   "sequence": {
     "speed": 0.85,
@@ -317,7 +318,7 @@
       "choreo": "frame-teardown",
       "stops": [
         {
-          "at": 0.0,
+          "at": 0,
           "title": "Airframe",
           "note": "T700 carbon, standoffs, hardware, camera cage"
         },
@@ -333,10 +334,11 @@
     "distance": 2.15,
     "height": 0.5,
     "heightOnBoard": 0.72,
-    "dollyOnShow": 0.92
+    "dollyOnShow": 0.92,
+    "lift": 0.24
   },
-  "_saved": "2026-08-07, captured from the live studio panel",
-  "_status": "PARTIALLY WIRED. app/components/HeroDroneScene.tsx reads this file for lighting, spotlight, sequence, camera, materials, boards and beats. public/models/od3/_studio.html (the tuning studio) still hardcodes the same values and does NOT read this file: tune there, then copy the numbers here.",
+  "_saved": "2026-08-08, saved from the studio panel",
+  "_status": "WIRED BOTH WAYS. app/components/HeroDroneScene.tsx reads this file at runtime. public/models/od3/_studio.html loads it on open, including the beat timeline, so every control starts on the value the site renders, and its save button POSTs the whole file back through the dev-only /__studio/write endpoint. The panel edits beat titles, notes, fade, partSize and stops, but not the shape of the timeline: adding, deleting and reordering beats, and every `select` and `choreo`, are file edits. Also carried through untouched on save: name, model, boards, boardExclude, videoModule, notFrame, scroll.minDwellS, spotlight.beamGain (which the panel renderer has no equivalent for), and each material id, label and match.",
   "scroll": {
     "_note": "Weight comes from springHz: it is a critically damped spring, so a lower frequency reads as more mass. gain sets how far one notch of wheel pushes the target, commitAt how much of a stop-to-stop move a gesture must cover before it counts as intent to advance.",
     "springHz": 0.38,

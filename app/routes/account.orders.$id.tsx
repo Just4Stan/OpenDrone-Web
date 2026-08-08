@@ -12,11 +12,24 @@ import type {
 } from 'customer-accountapi.generated';
 import {CUSTOMER_ORDER_QUERY} from '~/graphql/customer-account/CustomerOrderQuery';
 import {buildSeoMeta} from '~/lib/seo';
+import {Txt} from '~/components/Txt';
+import {copyText} from '~/lib/copy';
+
+/** One copy string with `{placeholders}` filled in. */
+function fill(id: string, fallback: string, vars: Record<string, string>) {
+  let out = copyText(id) ?? fallback;
+  for (const [k, v] of Object.entries(vars)) out = out.replace(`{${k}}`, v);
+  return out;
+}
 
 export const meta: Route.MetaFunction = ({data}) =>
   buildSeoMeta({
-    title: data?.order?.name ? `Order ${data.order.name}` : 'Order',
-    description: 'Review order details, line items, and fulfillment status.',
+    title: data?.order?.name
+      ? fill('account.order.title', 'Order {name}', {name: data.order.name})
+      : (copyText('account.order.meta_title') ?? 'Order'),
+    description:
+      copyText('account.order.meta_description') ??
+      'Review order details, line items, and fulfillment status.',
     robots: 'noindex,nofollow',
   });
 
@@ -99,12 +112,20 @@ export default function OrderRoute() {
   return (
     <div className="account-order">
       <header className="page-header">
-        <p className="page-eyebrow">Order</p>
-        <h2 className="page-title">Order {order.name}</h2>
+        <Txt id="account.order.eyebrow" as="p" className="page-eyebrow" />
+        <h2 className="page-title">
+          {fill('account.order.title', 'Order {name}', {name: order.name})}
+        </h2>
         <p className="page-description">
-          Placed on {new Date(order.processedAt!).toDateString()}
+          {fill('account.order.placed_on', 'Placed on {date}', {
+            date: new Date(order.processedAt!).toDateString(),
+          })}
           {order.confirmationNumber
-            ? ` - Confirmation ${order.confirmationNumber}`
+            ? ` ${fill(
+                'account.order.placed_confirmation',
+                '- Confirmation {number}',
+                {number: order.confirmationNumber},
+              )}`
             : ''}
         </p>
       </header>
@@ -113,10 +134,10 @@ export default function OrderRoute() {
           <table>
             <thead>
               <tr>
-                <th scope="col">Product</th>
-                <th scope="col">Price</th>
-                <th scope="col">Quantity</th>
-                <th scope="col">Total</th>
+                <Txt id="account.order.col_product" as="th" scope="col" />
+                <Txt id="account.order.col_price" as="th" scope="col" />
+                <Txt id="account.order.col_quantity" as="th" scope="col" />
+                <Txt id="account.order.col_total" as="th" scope="col" />
               </tr>
             </thead>
             <tbody>
@@ -129,12 +150,19 @@ export default function OrderRoute() {
               {((discountValue && discountValue.amount) ||
                 discountPercentage) && (
                 <tr>
-                  <th scope="row" colSpan={3}>
-                    Discounts
-                  </th>
+                  <Txt
+                    id="account.order.discounts"
+                    as="th"
+                    scope="row"
+                    colSpan={3}
+                  />
                   <td>
                     {discountPercentage ? (
-                      <span>-{discountPercentage}% OFF</span>
+                      <span>
+                        {fill('account.order.discount_off', '-{percentage}% OFF', {
+                          percentage: String(discountPercentage),
+                        })}
+                      </span>
                     ) : (
                       discountValue && <Money data={discountValue!} />
                     )}
@@ -142,25 +170,24 @@ export default function OrderRoute() {
                 </tr>
               )}
               <tr>
-                <th scope="row" colSpan={3}>
-                  Subtotal
-                </th>
+                <Txt
+                  id="account.order.subtotal"
+                  as="th"
+                  scope="row"
+                  colSpan={3}
+                />
                 <td>
                   <Money data={order.subtotal!} />
                 </td>
               </tr>
               <tr>
-                <th scope="row" colSpan={3}>
-                  Tax
-                </th>
+                <Txt id="account.order.tax" as="th" scope="row" colSpan={3} />
                 <td>
                   <Money data={order.totalTax!} />
                 </td>
               </tr>
               <tr>
-                <th scope="row" colSpan={3}>
-                  Total
-                </th>
+                <Txt id="account.order.total" as="th" scope="row" colSpan={3} />
                 <td>
                   <Money data={order.totalPrice!} />
                 </td>
@@ -169,7 +196,7 @@ export default function OrderRoute() {
           </table>
         </div>
         <aside className="account-order-sidebar">
-          <h3>Shipping Address</h3>
+          <Txt id="account.order.shipping_address" as="h3" />
           {order?.shippingAddress ? (
             <address>
               <p>{order.shippingAddress.name}</p>
@@ -185,9 +212,9 @@ export default function OrderRoute() {
               )}
             </address>
           ) : (
-            <p>No shipping address defined</p>
+            <Txt id="account.order.no_shipping_address" as="p" />
           )}
-          <h3>Status</h3>
+          <Txt id="account.order.status" as="h3" />
           <div>
             <p>{fulfillmentStatus}</p>
           </div>
@@ -197,7 +224,7 @@ export default function OrderRoute() {
             (f) => f.trackingInformation?.length,
           ) ? (
             <>
-              <h3>Tracking</h3>
+              <Txt id="account.order.tracking" as="h3" />
               <div>
                 {order.fulfillments.nodes.flatMap(
                   (f, i) =>
@@ -206,7 +233,10 @@ export default function OrderRoute() {
                         {t.url ? (
                           <a target="_blank" href={t.url} rel="noreferrer">
                             {t.company ? `${t.company} · ` : ''}
-                            {t.number ?? 'Track parcel'} ↗
+                            {t.number ??
+                              (copyText('account.order.track_parcel') ??
+                                'Track parcel')}{' '}
+                            ↗
                           </a>
                         ) : (
                           <>
@@ -224,7 +254,7 @@ export default function OrderRoute() {
       </div>
       <p className="account-order-status-link">
         <a target="_blank" href={order.statusPageUrl} rel="noreferrer">
-          View Order Status →
+          <Txt id="account.order.view_status" />
         </a>
       </p>
     </div>

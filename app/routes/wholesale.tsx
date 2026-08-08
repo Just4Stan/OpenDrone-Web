@@ -3,12 +3,19 @@ import {Link} from 'react-router';
 import {buildSeoMeta} from '~/lib/seo';
 import {MarginArt, ShopfrontArt, ShelfArt, EnvelopeArt} from '~/components/MarginArt';
 import {getCompanyIdentity} from '~/lib/company';
+import {Txt} from '~/components/Txt';
+import {copyText} from '~/lib/copy';
 
+/**
+ * Copy lives in `content/copy/wholesale.json`. The address itself does not:
+ * it comes from the company identity in the environment, so the sentences
+ * that quote it are split around the value rather than hard-coding it into
+ * an editable string that would then go stale.
+ */
 export const meta: Route.MetaFunction = () =>
   buildSeoMeta({
-    title: 'Wholesale · Dealers & distributors',
-    description:
-      'Stock the OpenDrone open-source hardware line: flight controllers, ESCs and receivers, community-designed and sold by Incutec in Belgium. Dealer terms on request.',
+    title: copyText('wholesale.meta_title') ?? 'Wholesale',
+    description: copyText('wholesale.meta_description') ?? '',
   });
 
 export async function loader({context}: Route.LoaderArgs) {
@@ -17,6 +24,9 @@ export async function loader({context}: Route.LoaderArgs) {
   );
   return {company};
 }
+
+/** The four stocking points. Order and the bold lead-in are structure. */
+const STOCK_ITEMS = [1, 2, 3, 4];
 
 export default function WholesaleRoute({loaderData}: Route.ComponentProps) {
   const {company} = loaderData;
@@ -27,78 +37,62 @@ export default function WholesaleRoute({loaderData}: Route.ComponentProps) {
   return (
     <div className="editorial-page">
       <header className="editorial-hero">
-        <p className="editorial-eyebrow">Wholesale · B2B</p>
-        <h1 className="editorial-title">
-          Put open hardware <em>on your shelf.</em>
-        </h1>
-        <p className="editorial-lead">
-          OpenDrone sells direct first: this webshop is the primary channel.
-          Dealers are welcome all the same. If you run an FPV shop in the EU
-          and want boards whose designs your customers can actually read, talk
-          to Incutec, the company that manufactures and sells the line.
-          Wholesale is a conversation with the company, not with the community
-          project.
-        </p>
+        <Txt id="wholesale.eyebrow" as="p" className="editorial-eyebrow" />
+        <Txt id="wholesale.title" as="h1" className="editorial-title" />
+        <Txt id="wholesale.lead" as="p" className="editorial-lead" />
       </header>
 
       <section className="editorial-section">
-        <h2 className="editorial-section-title">01 · Who this is for</h2>
+        <Txt
+          id="wholesale.s1_title"
+          as="h2"
+          className="editorial-section-title"
+        />
         <MarginArt><ShopfrontArt /></MarginArt>
-        <p>
-          EU-based FPV retailers and distributors, first. You know your local
-          scene better than a webshop in Leuven ever will; we&apos;d rather
-          your customers get local stock, local advice and local returns than
-          wait on a parcel from us.
-        </p>
+        <Txt id="wholesale.s1_body" as="p" />
       </section>
 
       <section className="editorial-section">
-        <h2 className="editorial-section-title">02 · What you&apos;d be stocking</h2>
+        <Txt
+          id="wholesale.s2_title"
+          as="h2"
+          className="editorial-section-title"
+        />
         <MarginArt><ShelfArt /></MarginArt>
         <ul className="editorial-list">
-          <li>
-            <strong>The line</strong>: flight controllers (OpenFC Lite), 4-in-1
-            ESCs (OpenESC) and ExpressLRS receivers (OpenRX). Carbon frames
-            (OpenFrame) are at sample stage and follow. Community-designed,
-            sold from Belgium with EU consumer law taken seriously.
-          </li>
-          <li>
-            <strong>Open source, for real</strong>: every board&apos;s full
-            design source is public under CERN-OHL-S v2. Your customers can
-            audit what you sell them: that is the pitch.
-          </li>
-          <li>
-            <strong>Standard firmware</strong>: Betaflight, AM32 and
-            ExpressLRS, no vendor forks. Nothing for your support desk to
-            special-case.
-          </li>
-          <li>
-            <strong>Dealer terms</strong>: B2B pricing and terms exist and are
-            shared on request, not on a public page.
-          </li>
+          {STOCK_ITEMS.map((n) => (
+            <li key={n}>
+              <strong>
+                <Txt id={`wholesale.s2_item${n}_label`} />
+              </strong>
+              <Txt id={`wholesale.s2_item${n}_body`} />
+            </li>
+          ))}
         </ul>
       </section>
 
       <section className="editorial-section">
-        <h2 className="editorial-section-title">03 · Talk to us</h2>
+        <Txt
+          id="wholesale.s3_title"
+          as="h2"
+          className="editorial-section-title"
+        />
         <MarginArt><EnvelopeArt /></MarginArt>
+        <Txt id="wholesale.s3_body" as="p" />
         <p>
-          Tell us who you are, where you sell, and roughly what volume you
-          think makes sense. A human at Incutec answers, usually one of the
-          people who work on the boards.
-        </p>
-        <p>
-          Email <a href={mailto}>{company.email}</a> (the button below prefills
-          the subject), or use the support chat and say you&apos;re a shop.
+          <Txt id="wholesale.s3_email_before" />{' '}
+          <a href={mailto}>{company.email}</a>{' '}
+          <Txt id="wholesale.s3_email_after" />
         </p>
       </section>
 
       <section className="editorial-cta">
         <a href={mailto} className="editorial-cta-primary">
-          Email {company.email} →
+          <Txt id="wholesale.cta_primary_before" /> {company.email}{' '}
+          <Txt id="wholesale.cta_primary_after" />
         </a>
         <Link prefetch="viewport" to="/support" className="editorial-cta-secondary">
-          Open support chat →
+          <Txt id="wholesale.cta_secondary" />
         </Link>
       </section>
     </div>

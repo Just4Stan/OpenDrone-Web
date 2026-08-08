@@ -1,6 +1,8 @@
 import {Link} from 'react-router';
 
-export type Crumb = {label: string; to?: string};
+// `label` is a ReactNode so a crumb can be a <Txt> from the copy store and
+// stay editable in the studio; Shopify-sourced crumbs stay plain strings.
+export type Crumb = {label: React.ReactNode; to?: string};
 
 export function Breadcrumb({items}: {items: Crumb[]}) {
   if (items.length === 0) return null;
@@ -10,7 +12,9 @@ export function Breadcrumb({items}: {items: Crumb[]}) {
         {items.map((item, i) => {
           const isLast = i === items.length - 1;
           return (
-            <li key={`${item.label}-${i}`}>
+            // A crumb's `to` is its identity; the trailing current-page crumb
+            // is the only one without one.
+            <li key={item.to ?? 'current'}>
               {item.to && !isLast ? (
                 <Link to={item.to} prefetch="viewport">
                   {item.label}

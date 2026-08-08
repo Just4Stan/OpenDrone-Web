@@ -1,4 +1,6 @@
 import {useEffect, useId, useRef, useState} from 'react';
+import {Txt} from '~/components/Txt';
+import {copyText, editAttrs} from '~/lib/copy';
 
 /**
  * End-of-ticket survey modal. Three 1-5 ratings + optional notes.
@@ -6,27 +8,15 @@ import {useEffect, useId, useRef, useState} from 'react';
  * (parent decides whether to call /api/support/close after the
  * feedback succeeds — `onSubmitted` is fired with the chosen scores
  * so analytics can hook in).
+ *
+ * Only /support mounts this, so its words live in `content/copy/support.json`
+ * under `feedback_*`. The score each button sets is data and stays here.
  */
 
 type Scores = {speed: number; helpfulness: number; overall: number};
 
-const QUESTIONS: Array<{
-  id: keyof Scores;
-  q: string;
-  hint: string;
-}> = [
-  {id: 'speed', q: 'Response speed', hint: '1 = slow · 5 = fast'},
-  {
-    id: 'helpfulness',
-    q: 'How helpful was the answer?',
-    hint: '1 = not at all · 5 = solved it',
-  },
-  {
-    id: 'overall',
-    q: 'Overall feeling about this ticket',
-    hint: '1 = rough · 5 = great',
-  },
-];
+/** Question order. The question and its scale hint are copy, keyed off `id`. */
+const QUESTIONS: Array<keyof Scores> = ['speed', 'helpfulness', 'overall'];
 
 export interface FeedbackModalProps {
   open: boolean;
@@ -113,13 +103,17 @@ export function FeedbackModal({open, onSkip, onSubmitted}: FeedbackModalProps) {
         | {ok: true}
         | {ok: false; message: string};
       if (!json.ok) {
+        // Server copy, rendered verbatim: /api/support/feedback owns it.
         setError(json.message);
         return;
       }
       onSubmitted(scores);
     } catch (err) {
       console.error('[feedback] submit failed', err);
-      setError('Could not submit feedback. Try again.');
+      setError(
+        copyText('support.feedback_err_submit') ??
+          'Could not submit feedback. Try again.',
+      );
     } finally {
       setBusy(false);
     }
@@ -145,21 +139,29 @@ export function FeedbackModal({open, onSkip, onSubmitted}: FeedbackModalProps) {
     >
       <div className="feedback-modal">
         <div className="feedback-head">
-          <p className="od-eyebrow">→ THANKS FOR USING SUPPORT</p>
-          <h2 id={titleId}>How did we do?</h2>
-          <p>Three quick taps. Helps us figure out what to fix next.</p>
+          <Txt
+            id="support.feedback_eyebrow"
+            as="p"
+            className="od-eyebrow"
+          />
+          {/* `<Txt>` spends its own `id` prop on the copy key, and this
+              heading needs a real DOM id for aria-labelledby. */}
+          <h2 id={titleId} {...editAttrs('support.feedback_title')}>
+            {copyText('support.feedback_title')}
+          </h2>
+          <Txt id="support.feedback_intro" as="p" />
         </div>
 
-        {QUESTIONS.map(({id, q, hint}, qi) => (
+        {QUESTIONS.map((id, qi) => (
           <div key={id} className="feedback-q">
             <div className="feedback-q-label">
-              <span className="od-q">{q}</span>
-              <span className="od-scale-hint">{hint}</span>
+              <Txt id={`support.feedback_q_${id}`} className="od-q" />
+              <Txt id={`support.feedback_q_${id}_hint`} className="od-scale-hint" />
             </div>
             <div
               className="feedback-rating"
               role="radiogroup"
-              aria-label={q}
+              aria-label={copyText(`support.feedback_q_${id}`)}
             >
               {[1, 2, 3, 4, 5].map((n) => (
                 <button
@@ -171,6 +173,8 @@ export function FeedbackModal({open, onSkip, onSubmitted}: FeedbackModalProps) {
                   }`}
                   role="radio"
                   aria-checked={scores[id] === n}
+                  // Reads out the score the dot sets. That is the control's
+                  // name rather than copy, so it stays with the scale.
                   aria-label={`${n} out of 5`}
                   onClick={() =>
                     setScores((prev) => ({...prev, [id]: n}))
@@ -184,18 +188,23 @@ export function FeedbackModal({open, onSkip, onSubmitted}: FeedbackModalProps) {
         ))}
 
         <div className="od-field" style={{marginTop: 14, marginBottom: 0}}>
-          <label htmlFor="fb-notes">
-            Anything else? <span className="od-opt">· optional</span>
+          <label
+            htmlFor="fb-notes"
+            {...editAttrs('support.feedback_notes_label')}
+          >
+            {copyText('support.feedback_notes_label')}{' '}
+            <Txt id="support.feedback_notes_optional" className="od-opt" />
           </label>
           <textarea
             id="fb-notes"
             className="od-textarea"
             rows={3}
             maxLength={1500}
-            placeholder="What we got right, what we missed…"
+            placeholder={copyText('support.feedback_notes_placeholder')}
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
             disabled={busy}
+            {...editAttrs('support.feedback_notes_placeholder')}
           />
         </div>
 
@@ -212,7 +221,7 @@ export function FeedbackModal({open, onSkip, onSubmitted}: FeedbackModalProps) {
             onClick={onSkip}
             disabled={busy}
           >
-            End without feedback
+            <Txt id="support.feedback_skip" />
           </button>
           <button
             type="button"
@@ -222,7 +231,13 @@ export function FeedbackModal({open, onSkip, onSubmitted}: FeedbackModalProps) {
             }}
             disabled={!ready || busy}
           >
-            {busy ? 'Submitting…' : 'Submit & close ticket →'}
+            <Txt
+              id={
+                busy
+                  ? 'support.feedback_submit_busy'
+                  : 'support.feedback_submit_idle'
+              }
+            />
           </button>
         </div>
       </div>

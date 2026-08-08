@@ -1,0 +1,176 @@
+{
+  "fileNumber": "04",
+  "family": "Carbon Frame",
+  "hero": {
+    "line1": "The body",
+    "line2Italic": "everything else",
+    "line3": "mounts to.",
+    "lead": "CNC carbon-fibre freestyle frame on a 30.5×30.5 stack pattern. Designed in-house, OEM-machined. OpenFC Lite and OpenESC drop in without spacers."
+  },
+  "firmware": {
+    "project": "—"
+  },
+  "repoUrl": "https://github.com/OpenDrone-hw",
+  "teardown": {
+    "pins": [
+      {
+        "ref": "①",
+        "part": "Top plate: carbon, carries the camera + VTX bay"
+      },
+      {
+        "ref": "②",
+        "part": "Arms: replaced individually",
+        "cost": "×4"
+      },
+      {
+        "ref": "③",
+        "part": "Bottom plate: dual stack pattern"
+      },
+      {
+        "ref": "④",
+        "part": "M3 aluminium standoffs + hardware kit"
+      }
+    ],
+    "frameViewer": {
+      "src": "/models/frame5.glb"
+    }
+  },
+  "inTheBox": [
+    {
+      "qty": "1×",
+      "item": "Top plate + bottom plate"
+    },
+    {
+      "qty": "4×",
+      "item": "5\" arms"
+    },
+    {
+      "qty": "1×",
+      "item": "Hardware kit"
+    },
+    {
+      "qty": "1×",
+      "item": "Camera mount"
+    },
+    {
+      "qty": "1×",
+      "item": "VTX antenna tube clamp"
+    },
+    {
+      "qty": "1×",
+      "item": "Build card"
+    }
+  ],
+  "downloads": [],
+  "specs": [
+    [
+      "Wheelbase",
+      "226 mm"
+    ],
+    [
+      "Prop size",
+      "5\""
+    ],
+    [
+      "Arm thickness",
+      "6 mm carbon"
+    ],
+    [
+      "Plate thickness",
+      "2.5 · 3.0 · 3.0 mm"
+    ],
+    [
+      "Stack mounting",
+      "30.5 × 30.5 (M3) + 20 × 20"
+    ],
+    [
+      "Motor mounting",
+      "16 × 16 (M3)"
+    ],
+    [
+      "Max stack height",
+      "20 mm"
+    ],
+    [
+      "Camera width",
+      "Up to 20 mm"
+    ],
+    [
+      "Video systems",
+      "Analog · DJI · Walksnail · HDZero"
+    ],
+    [
+      "Material",
+      "T700 carbon, aluminium camera mounts"
+    ]
+  ],
+  "optionAxis": "Model",
+  "variants": {
+    "5\" Freestyle": {
+      "tagline": "The standard freestyle size: 30.5 or 20 mm stacks, M3 motors.",
+      "highlights": [
+        [
+          "Wheelbase",
+          "226 mm"
+        ],
+        [
+          "Stack mounts",
+          "30.5×30.5 · 20×20"
+        ],
+        [
+          "Motor mount",
+          "16×16 (M3)"
+        ]
+      ],
+      "frameViewer": {
+        "src": "/models/frame5.glb"
+      }
+    },
+    "3\" Freestyle": {
+      "tagline": "The compact build: 25.5 or 20 mm stacks, M2 motors.",
+      "highlights": [
+        [
+          "Wheelbase",
+          "141 mm"
+        ],
+        [
+          "Stack mounts",
+          "25.5×25.5 · 20×20"
+        ],
+        [
+          "Motor mount",
+          "9×9 · 12×12 (M2)"
+        ]
+      ],
+      "specs": [
+        [
+          "Wheelbase",
+          "141 mm"
+        ],
+        [
+          "Prop size",
+          "3\""
+        ],
+        [
+          "Arm thickness",
+          "4 mm carbon"
+        ],
+        [
+          "Plate thickness",
+          "2.0 · 2.5 · 2.5 mm"
+        ],
+        [
+          "Stack mounting",
+          "25.5 × 25.5 + 20 × 20 (M2)"
+        ],
+        [
+          "Motor mounting",
+          "9 × 9 · 12 × 12 (M2)"
+        ]
+      ],
+      "frameViewer": {
+        "src": "/models/frame3.glb"
+      }
+    }
+  }
+}

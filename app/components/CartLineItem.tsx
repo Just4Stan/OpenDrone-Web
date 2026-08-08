@@ -5,6 +5,8 @@ import {useVariantUrl} from '~/lib/variants';
 import {Link} from 'react-router';
 import {ProductPrice} from './ProductPrice';
 import {useAside} from './Aside';
+import {Txt} from '~/components/Txt';
+import {copyText, editAttrs} from '~/lib/copy';
 import type {
   CartApiQueryFragment,
   CartLineFragment,
@@ -29,7 +31,11 @@ function lineDiscountOf(line: CartLine) {
   if (total <= 0) return null;
   const first = allocs.find((a) => a.title || a.code);
   return {
-    label: first?.title ?? first?.code ?? 'Discount',
+    label:
+      first?.title ??
+      first?.code ??
+      copyText('cart.line_discount_fallback') ??
+      'Discount',
     amount: {
       amount: total.toFixed(2),
       currencyCode: allocs[0]!.discountedAmount!.currencyCode,
@@ -73,8 +79,15 @@ export function CartLineItem({
 
   const childrenRows = lineItemChildren ? (
     <div>
-      <p id={childrenLabelId} className="sr-only">
-        Line items with {product.title}
+      {/* Needs a real DOM id for aria-labelledby, and the product name is
+          Shopify data, so the prefix is read as a string. */}
+      <p
+        id={childrenLabelId}
+        className="sr-only"
+        {...editAttrs('cart.line_children_sr_prefix')}
+      >
+        {copyText('cart.line_children_sr_prefix') ?? 'Line items with'}{' '}
+        {product.title}
       </p>
       <ul aria-labelledby={childrenLabelId} className="cart-line-children">
         {lineItemChildren.map((childLine) => (
@@ -251,7 +264,7 @@ function CartLineQuantity({line, sheet}: {line: CartLine; sheet?: boolean}) {
         <div className="cart-sheet-stepper">
           <CartLineUpdateButton lines={[{id: lineId, quantity: prevQuantity}]}>
             <button
-              aria-label="Decrease quantity"
+              aria-label={copyText('cart.line_decrease_aria') ?? 'Decrease quantity'}
               disabled={quantity <= 1 || !!isOptimistic}
               name="decrease-quantity"
               value={prevQuantity}
@@ -264,7 +277,7 @@ function CartLineQuantity({line, sheet}: {line: CartLine; sheet?: boolean}) {
           </span>
           <CartLineUpdateButton lines={[{id: lineId, quantity: nextQuantity}]}>
             <button
-              aria-label="Increase quantity"
+              aria-label={copyText('cart.line_increase_aria') ?? 'Increase quantity'}
               name="increase-quantity"
               value={nextQuantity}
               disabled={!!isOptimistic}
@@ -280,10 +293,12 @@ function CartLineQuantity({line, sheet}: {line: CartLine; sheet?: boolean}) {
 
   return (
     <div className="cart-line-quantity">
-      <small>Quantity: {quantity} &nbsp;&nbsp;</small>
+      <small>
+        <Txt id="cart.line_quantity_label" /> {quantity} &nbsp;&nbsp;
+      </small>
       <CartLineUpdateButton lines={[{id: lineId, quantity: prevQuantity}]}>
         <button
-          aria-label="Decrease quantity"
+          aria-label={copyText('cart.line_decrease_aria') ?? 'Decrease quantity'}
           disabled={quantity <= 1 || !!isOptimistic}
           name="decrease-quantity"
           value={prevQuantity}
@@ -294,7 +309,7 @@ function CartLineQuantity({line, sheet}: {line: CartLine; sheet?: boolean}) {
       &nbsp;
       <CartLineUpdateButton lines={[{id: lineId, quantity: nextQuantity}]}>
         <button
-          aria-label="Increase quantity"
+          aria-label={copyText('cart.line_increase_aria') ?? 'Increase quantity'}
           name="increase-quantity"
           value={nextQuantity}
           disabled={!!isOptimistic}
@@ -328,7 +343,7 @@ function CartLineRemoveButton({
       inputs={{lineIds}}
     >
       <button disabled={disabled} type="submit">
-        Remove
+        <Txt id="cart.line_remove" />
       </button>
     </CartForm>
   );

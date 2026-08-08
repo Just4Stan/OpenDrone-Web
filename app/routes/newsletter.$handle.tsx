@@ -6,12 +6,18 @@ import {buildSeoMeta} from '~/lib/seo';
 import {VersionChip, pickVersionTag} from '~/components/release-notes/VersionChip';
 import {PrevNextNav} from '~/components/release-notes/PrevNextNav';
 import {FILTER_TAGS, type FilterTag} from '~/components/release-notes/TagFilter';
+import {Txt} from '~/components/Txt';
+import {copyText} from '~/lib/copy';
 
 const BLOG_HANDLE_FALLBACK = 'news';
 
 export const meta: Route.MetaFunction = ({data}) =>
   buildSeoMeta({
-    title: data?.article?.seo?.title || data?.article?.title || 'Post',
+    title:
+      data?.article?.seo?.title ||
+      data?.article?.title ||
+      copyText('newsletter.post_meta_title_fallback') ||
+      'Post',
     description:
       data?.article?.seo?.description || data?.article?.excerpt || undefined,
     image: data?.article?.image?.url,
@@ -82,7 +88,9 @@ export default function NewsletterPost() {
     <article className="page-shell">
       <div className="rn-post-page">
         <div className="rn-post-crumb">
-          <Link prefetch="viewport" to="/newsletter">Newsletter</Link>
+          <Link prefetch="viewport" to="/newsletter">
+            <Txt id="newsletter.post_crumb" />
+          </Link>
           <span className="rn-sep">/</span>
           <span>{article.handle}</span>
         </div>

@@ -1,0 +1,36 @@
+{
+  "$route": "/firmware-partners",
+  "$title": "Firmware partners",
+  "meta_title": "Firmware partners · Where your €1 goes",
+  "meta_description": "OpenDrone ships on Betaflight, AM32 and ExpressLRS. Incutec forwards €1 of every board sold to the upstream maintainers. Here is the list.",
+  "eyebrow": "€1 per board · forwarded",
+  "title": "The firmware makes the hardware fly. *We pay the people who wrote it.*",
+  "lead": "Every OpenDrone board runs on community firmware the project didn't write. For every board sold, Incutec forwards €1 to the upstream project: one contribution, one transaction, one line item in the books. Here's the list, with links if you want to give them more directly.",
+  "s1_title": "01 · How the split works",
+  "s1_body": [
+    "When you buy a board, the checkout total covers the hardware price plus a €1 firmware contribution baked in. We batch those contributions and forward them to the upstream project via GitHub Sponsors, OpenCollective, or a direct bank transfer, depending on what the maintainers have set up.",
+    "Buy a stack (an OpenFC-Lite and an OpenESC in one order) and the split doubles: €1 to Betaflight, €1 to AM32. Every board carries its own contribution, so both maintainers keep their cut."
+  ],
+  "s2_title": "02 · The projects",
+  "partner_betaflight_label": "Runs on · OpenFC-Lite",
+  "partner_betaflight_project": "Betaflight",
+  "partner_betaflight_blurb": "Betaflight is the flight controller firmware used in most mini-quad freestyle builds. OpenFC-Lite is a Betaflight-target board; the RP2354 target work is developed on a public fork and has not been submitted upstream yet.",
+  "partner_am32_label": "Runs on · OpenESC",
+  "partner_am32_project": "AM32",
+  "partner_am32_blurb": "AM32 is a multi-MCU ESC firmware alternative to BLHeli, GPL-3.0 licensed. OpenESC runs AM32 on AT32F421 channels: the same firmware as other AM32 ESCs, no custom fork, no vendor lock-in.",
+  "partner_expresslrs_label": "Runs on · OpenRX",
+  "partner_expresslrs_project": "ExpressLRS",
+  "partner_expresslrs_blurb": "ExpressLRS is the open long-range 2.4 GHz / sub-GHz radio protocol. OpenRX targets are upstream (Unified_ESP32C3_2400_RX for Lite, Unified_ESP32C3_LR1121_RX for Mono/Gemini) so you flash with the standard ExpressLRS configurator.",
+  "partner_link_source": "Source ↗",
+  "partner_link_donate": "Donate directly ↗",
+  "s3_title": "03 · Giving directly",
+  "s3_body": [
+    "Want to give the maintainers more than the baked-in €1? Where a project runs a public donation page, its card above links to it; AM32 has none, so its share is forwarded by direct transfer. Giving directly means no payment-processor fee: 100% of what you send reaches them."
+  ],
+  "s4_title": "04 · Merged upstream",
+  "s4_body": [
+    "Money is one half; patches are the other. These are our changes that upstream actually merged: every link goes to the real PR."
+  ],
+  "cta_primary": "Read why we open-source everything →",
+  "cta_secondary": "Browse the boards →"
+}

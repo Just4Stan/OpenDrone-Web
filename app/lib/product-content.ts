@@ -5,8 +5,17 @@
  * placeholder). When a SKU gets real variants/metafields in Shopify
  * those take priority; this file fills the gaps the CMS doesn't cover.
  *
- * When you add a new product: add an entry keyed by the Shopify handle.
- * Missing entry = product renders with a minimal fallback layout.
+ * The data itself lives in `content/products/<handle>.json` and is loaded
+ * below by `import.meta.glob({eager: true})`, the same way `app/lib/copy.ts`
+ * loads `content/copy/*.json`. That is what makes it editable in the studio:
+ * the Oxygen worker has no filesystem so the files have to be bundled rather
+ * than read, and Vite tracks the glob as a real dependency, so saving a file
+ * invalidates this module and hot-reloads the page. This file keeps the types
+ * and the lifecycle helpers; it no longer keeps the words.
+ *
+ * When you add a new product: drop a `content/products/<handle>.json` named
+ * after the Shopify handle. Missing file = product renders with
+ * `_fallback.json`.
  */
 
 export type ChapterPin = {
@@ -293,811 +302,179 @@ export type ProductContent = {
   statusNote?: string;
 };
 
-export const PRODUCT_CONTENT: Record<string, ProductContent> = {
-  openesc: {
-    fileNumber: '01',
-    family: '4-in-1 ESC',
-    hero: {
-      line1: 'An ESC (or 4)',
-      line2Italic: '',
-      line3: '',
-      lead:
-        "6 mosfets per motor, 2 for each phase. Driven by a gate driver, controlled by a microcontroller. Duplicate that 4 times et voila, 'An ESC'.",
-    },
-    firmware: {
-      project: 'AM32',
-      projectUrl:
-        'https://github.com/am32-firmware/AM32',
-      logo: '/logos/am32.svg',
-      logoDark: true,
-    },
-    repoUrl: 'https://github.com/OpenDrone-hw/OpenESC-20x20',
-    video: {id: 'TwAmmPxOpTM', title: 'How Drone ESCs Work (so I built my own)'},
-    teardown: {
-      // refs keyed to /boards/openesc/components.json (20×20 board, the default
-      // tier). The 30×30 tier overrides these in its variant `pins`.
-      pins: [
-        {ref: '①', part: 'AT32F421 motor MCU', cost: '×4', refs: ['U2', 'U6', 'U8', 'U10']},
-        {ref: '②', part: 'NSG2065Q gate driver', cost: '×4', refs: ['U3', 'U7', 'U9', 'U11']},
-        {
-          ref: '③',
-          part: 'DOY180N03 power MOSFET',
-          cost: '×24',
-          refs: ['Q1', 'Q2', 'Q3', 'Q4', 'Q5', 'Q6', 'Q7', 'Q8', 'Q9', 'Q10', 'Q11', 'Q12', 'Q13', 'Q14', 'Q15', 'Q16', 'Q17', 'Q18', 'Q19', 'Q20', 'Q21', 'Q22', 'Q23', 'Q24'],
-        },
-        {ref: '④', part: 'INA186A3 current sense', refs: ['U12']},
-        {ref: '⑤', part: '0.2 mΩ sense shunt', refs: ['Rsense1']},
-        {ref: '⑥', part: 'TLV767 3.3 V LDO', refs: ['U1']},
-        {ref: '⑦', part: 'LMR54406 buck', refs: ['U13']},
-        {ref: '⑧', part: 'JST-SH FC connector', refs: ['J1']},
-        {
-          ref: '⑨',
-          part: 'Motor solder pads',
-          refs: [
-            'U4~ESC1_MotorA_1', 'U4~ESC1_MotorA_2', 'U4~ESC1_MotorB_1', 'U4~ESC1_MotorB_2', 'U4~ESC1_MotorC_1', 'U4~ESC1_MotorC_2',
-            'U4~ESC2_MotorA_1', 'U4~ESC2_MotorA_2', 'U4~ESC2_MotorB_1', 'U4~ESC2_MotorB_2', 'U4~ESC2_MotorC_1', 'U4~ESC2_MotorC_2',
-            'U4~ESC3_MotorA_1', 'U4~ESC3_MotorA_2', 'U4~ESC3_MotorB_1', 'U4~ESC3_MotorB_2', 'U4~ESC3_MotorC_1', 'U4~ESC3_MotorC_2',
-            'U4~ESC4_MotorA_1', 'U4~ESC4_MotorA_2', 'U4~ESC4_MotorB_1', 'U4~ESC4_MotorB_2', 'U4~ESC4_MotorC_1', 'U4~ESC4_MotorC_2',
-          ],
-          // one box per motor (3 phases × 2 pads each)
-          boxGroups: [
-            ['U4~ESC1_MotorA_1', 'U4~ESC1_MotorA_2', 'U4~ESC1_MotorB_1', 'U4~ESC1_MotorB_2', 'U4~ESC1_MotorC_1', 'U4~ESC1_MotorC_2'],
-            ['U4~ESC2_MotorA_1', 'U4~ESC2_MotorA_2', 'U4~ESC2_MotorB_1', 'U4~ESC2_MotorB_2', 'U4~ESC2_MotorC_1', 'U4~ESC2_MotorC_2'],
-            ['U4~ESC3_MotorA_1', 'U4~ESC3_MotorA_2', 'U4~ESC3_MotorB_1', 'U4~ESC3_MotorB_2', 'U4~ESC3_MotorC_1', 'U4~ESC3_MotorC_2'],
-            ['U4~ESC4_MotorA_1', 'U4~ESC4_MotorA_2', 'U4~ESC4_MotorB_1', 'U4~ESC4_MotorB_2', 'U4~ESC4_MotorC_1', 'U4~ESC4_MotorC_2'],
-          ],
-        },
-        {
-          ref: '⑩',
-          part: 'Battery pads',
-          // The two big PTH lugs where the battery leads solder: CSA+ is the
-          // post-shunt B+ terminal, GND_1 is the B− terminal. +BATT is the raw
-          // pre-shunt rail tap. The 4 corner mounting holes are NOT here (they
-          // were the old wrong highlight).
-          refs: ['U4~CSA+', 'U4~+BATT', 'U4~GND_1'],
-        },
-        {
-          ref: '⑪',
-          part: 'Signal pads',
-          // CURR = current-sense output; M1–M4 = per-motor telemetry; GND_2 the
-          // small signal-row ground. NOT the +BATT power rail or the CSA+ lug.
-          refs: ['U4~CURR', 'U4~M1', 'U4~M2', 'U4~M3', 'U4~M4', 'U4~GND_2'],
-        },
-        {
-          ref: '⑫',
-          part: 'Bulk ceramic capacitor array',
-          cost: '×20',
-          box: 'union',
-          refs: ['CL32', 'CL33', 'CL34', 'CL35', 'CL36', 'CL38', 'CL39', 'CL40', 'CL42', 'CL43', 'CL44', 'CL45', 'CL46', 'CL47', 'CL48', 'CL49', 'CL50', 'CL51', 'CL54', 'CL55'],
-        },
-      ],
-      boardArt: {
-        src: '/boards/openesc/board.svg',
-        inspectUrl:
-          'https://kicanvas.org/?github=https://github.com/OpenDrone-hw/OpenESC-20x20/blob/main/hardware/4in1-mini.kicad_pcb',
-        schematicUrl:
-          'https://kicanvas.org/?github=https://github.com/OpenDrone-hw/OpenESC-20x20/blob/main/hardware/4in1-mini.kicad_sch',
-        layers: {
-          f: 'Signal + components',
-          in1: 'Ground plane',
-          in2: 'Signal · 10V · 3V3',
-          in3: 'Signal',
-          in4: 'Ground plane',
-          b: 'Signal + components',
-        },
-      },
-    },
-    inTheBox: [
-      {qty: '1×', item: 'OpenESC'},
-      {qty: '2×', item: '8-pin JST cable'},
-      {qty: '1×', item: 'XT battery pigtail'},
-      {qty: '4×', item: 'M3 grommets'},
-      {qty: '1×', item: 'Low-ESR Electrolytic Capacitor'},
-    ],
-    // TODO(downloads): publish schematic.pdf, bom.csv, gerbers.zip, manual.pdf,
-    // wiring.pdf, flashing.md to the OpenESC-20x20 repo and re-add the cards.
-    // The KiCanvas viewer above + the GitHub link cover "study the design"
-    // until the release artifacts ship.
-    downloads: [],
-    // Spec values verified against the OpenESC repos (KiCad files + Rev3
-    // production BOMs, 2026-08-07). Field order follows FPV retail
-    // convention: firmware, current, input, protocol, silicon, sensing,
-    // connector, physical. Weight rows land once boards are weighed.
-    // Buyer-facing summary, deliberately not a BOM: no part numbers, no
-    // build targets. The teardown viewer and the repo carry that detail.
-    // Rows the tiers replace by key (Continuous, MOSFETs, Current sense,
-    // TVS, Mounting, Dimensions) carry the 20×20 default here purely so the
-    // merged table keeps this order; the active tier's value always wins.
-    specs: [
-      ['Continuous', '40 A / channel'],
-      ['Firmware', 'AM32'],
-      ['ESC protocol', 'DShot, bidirectional'],
-      ['Telemetry', 'Extended DShot'],
-      ['Input', '2–6S LiPo'],
-      ['BEC', 'None'],
-      ['MCU', 'One per motor'],
-      ['MOSFETs', '6 per motor'],
-      ['Current sense', 'On-board'],
-      ['TVS protection', 'None'],
-      ['FC connector', 'JST-SH 8-pin'],
-      ['Mounting', '20 × 20 mm, Ø3.0 mm holes'],
-      ['Dimensions', '31.2 × 33.0 mm'],
-      ['PCB', '6-layer, 1.6 mm, 2 oz copper'],
-    ],
-    // Launching with the 20×20 and 30×30 models. Pro (higher-current)
-    // variants land later as additional values on the same "Model" axis.
-    optionAxis: 'Model',
-    variants: {
-      '20×20': {
-        oshwaUid: 'BE000028',
-        highlights: [
-          ['Mount', '20×20'],
-          ['Continuous', '40 A / channel'],
-          ['Input', '2–6S'],
-        ],
-        specs: [
-          ['Continuous', '40 A / channel'],
-          ['Input', '2–6S LiPo'],
-          ['Current sense', 'On-board, 165 A'],
-        ],
-      },
-      '30×30': {
-        oshwaUid: 'BE000029',
-        // The 30×30 ESC is a separate repo from the 20×20 (the product default).
-        repoUrl: 'https://github.com/OpenDrone-hw/OpenESC-30x30',
-        highlights: [
-          ['Mount', '30×30'],
-          ['Continuous', '60 A / channel'],
-          ['Input', '2–8S'],
-        ],
-        specs: [
-          ['Continuous', '60 A / channel'],
-          ['Input', '2–8S LiPo'],
-          ['Current sense', 'On-board, 330 A'],
-          ['TVS protection', 'On the battery rail'],
-          ['Mounting', '30.5 × 30.5 mm, Ø4.0 mm holes (M3)'],
-          // The 30×30 outline is an open item in its repo; no dimensions
-          // until it is confirmed.
-          ['Dimensions', null],
-        ],
-        // refs keyed to /boards/openesc-30x30/components.json.
-        pins: [
-          {ref: '①', part: 'AT32F421 motor MCU', cost: '×4', refs: ['U2', 'U5', 'U7', 'U9']},
-          {ref: '②', part: 'NSG2065Q gate driver', cost: '×4', refs: ['U4', 'U6', 'U8', 'U10']},
-          {
-            ref: '③',
-            part: 'SP40N01 power MOSFET (both sides)',
-            cost: '×24',
-            // 10 on the front, 14 on the back — the FET array spans both faces
-            // on the 30×30. All 24 are listed; the viewer shows each side's
-            // subset on its own face.
-            refs: ['Q1', 'Q2', 'Q3', 'Q4', 'Q5', 'Q6', 'Q7', 'Q8', 'Q9', 'Q10', 'Q11', 'Q12', 'Q13', 'Q14', 'Q15', 'Q16', 'Q17', 'Q18', 'Q19', 'Q20', 'Q21', 'Q22', 'Q23', 'Q24'],
-          },
-          {ref: '④', part: 'INA186A3 current sense', refs: ['U12']},
-          {ref: '⑤', part: '0.2 mΩ sense shunt', cost: '×2', refs: ['Rsense1', 'Rsense2']},
-          {ref: '⑥', part: 'TLV767 3.3 V LDO', refs: ['U15']},
-          {ref: '⑦', part: 'LMR54406 buck', refs: ['U13']},
-          {ref: '⑧', part: 'JST-SH FC connector', refs: ['J1']},
-          {
-            ref: '⑨',
-            part: 'Motor solder pads',
-            refs: [
-              'U3~ESC1_MotorA_1', 'U3~ESC1_MotorA_2', 'U3~ESC1_MotorB_1', 'U3~ESC1_MotorB_2', 'U3~ESC1_MotorC_1', 'U3~ESC1_MotorC_2',
-              'U3~ESC2_MotorA_1', 'U3~ESC2_MotorA_2', 'U3~ESC2_MotorB_1', 'U3~ESC2_MotorB_2', 'U3~ESC2_MotorC_1', 'U3~ESC2_MotorC_2',
-              'U3~ESC3_MotorA_1', 'U3~ESC3_MotorA_2', 'U3~ESC3_MotorB_1', 'U3~ESC3_MotorB_2', 'U3~ESC3_MotorC_1', 'U3~ESC3_MotorC_2',
-              'U3~ESC4_MotorA_1', 'U3~ESC4_MotorA_2', 'U3~ESC4_MotorB_1', 'U3~ESC4_MotorB_2', 'U3~ESC4_MotorC_1', 'U3~ESC4_MotorC_2',
-            ],
-            // one box per motor (3 phases × 2 pads each)
-            boxGroups: [
-              ['U3~ESC1_MotorA_1', 'U3~ESC1_MotorA_2', 'U3~ESC1_MotorB_1', 'U3~ESC1_MotorB_2', 'U3~ESC1_MotorC_1', 'U3~ESC1_MotorC_2'],
-              ['U3~ESC2_MotorA_1', 'U3~ESC2_MotorA_2', 'U3~ESC2_MotorB_1', 'U3~ESC2_MotorB_2', 'U3~ESC2_MotorC_1', 'U3~ESC2_MotorC_2'],
-              ['U3~ESC3_MotorA_1', 'U3~ESC3_MotorA_2', 'U3~ESC3_MotorB_1', 'U3~ESC3_MotorB_2', 'U3~ESC3_MotorC_1', 'U3~ESC3_MotorC_2'],
-              ['U3~ESC4_MotorA_1', 'U3~ESC4_MotorA_2', 'U3~ESC4_MotorB_1', 'U3~ESC4_MotorB_2', 'U3~ESC4_MotorC_1', 'U3~ESC4_MotorC_2'],
-            ],
-          },
-          {
-            ref: '⑩',
-            part: 'Battery pads',
-            // Big PTH lugs for the battery leads: CSA+ post-shunt B+, GND_1 B−,
-            // +BATT the raw pre-shunt rail tap. Corner mounting holes excluded.
-            refs: ['U3~CSA+', 'U3~+BATT', 'U3~GND_1'],
-          },
-          {
-            ref: '⑪',
-            part: 'Signal pads',
-            // CURR = current-sense; M1–M4 = telemetry; GND_2 the signal-row
-            // ground. Not the +BATT rail or the CSA+ lug.
-            refs: ['U3~CURR', 'U3~M1', 'U3~M2', 'U3~M3', 'U3~M4', 'U3~GND_2'],
-          },
-          {
-            ref: '⑫',
-            part: 'Bulk ceramic capacitor array',
-            cost: '×48',
-            box: 'union',
-            refs: ['C2', 'C3', 'C6', 'C7', 'C8', 'C9', 'C13', 'C14', 'C15', 'C16', 'C17', 'C18', 'C19', 'C20', 'C24', 'C25', 'C26', 'C27', 'C28', 'C29', 'C30', 'C31', 'C43', 'C44', 'C45', 'C69', 'C70', 'C71', 'C72', 'C79', 'C80', 'C82', 'C83', 'C84', 'C85', 'C87', 'C88', 'C95', 'C96', 'C97', 'C98', 'C99', 'C100', 'C101', 'C105', 'C106', 'C107', 'C108'],
-          },
-        ],
-        boardArt: {
-          src: '/boards/openesc-30x30/board.svg',
-          inspectUrl:
-            'https://kicanvas.org/?github=https://github.com/OpenDrone-hw/OpenESC-30x30/blob/main/hardware/4in1.kicad_pcb',
-          schematicUrl:
-            'https://kicanvas.org/?github=https://github.com/OpenDrone-hw/OpenESC-30x30/blob/main/hardware/4in1.kicad_sch',
-          layers: {
-            f: 'Signal + components',
-            in1: 'Ground plane',
-            in2: 'Signal · 10V · 3V3',
-            in3: 'Signal',
-            in4: 'Ground plane',
-            b: 'Signal + components',
-          },
-        },
-      },
-    },
-    stack: {
-      adds: 'flight controller',
-      partners: [{handle: 'openfc-lite', label: 'OpenFC Lite'}],
-      matchOption: 'Model',
-      discountPct: 10,
-      // The BXGY discounts the ESC itself (this product) when the FC joins.
-      discountedHandle: 'openesc',
-    },
-  },
+/*
+ * Provenance and open items.
+ *
+ * These notes used to sit as comments next to the values they describe. JSON
+ * carries no comments, so they live here. Verify a note against the design
+ * files before trusting it, and update it when you edit `content/products/`.
+ *
+ * All products
+ * - `specs` is a buyer-facing summary, deliberately not a BOM: no part
+ *   numbers, no build targets. The teardown viewer and the repo carry those.
+ * - The shared `specs` list holds the default tier's value for every row a
+ *   tier later replaces, purely so the merged table keeps this row order. The
+ *   active tier's value always wins.
+ * - Pin `refs` are case-sensitive refdes keyed to the
+ *   `/boards/<handle>/components.json` of the board that tier renders.
+ *
+ * openesc
+ * - Base `teardown.pins` are the 20x20 board; the 30x30 tier overrides them,
+ *   keyed to /boards/openesc-30x30/components.json.
+ * - Motor pads draw one union box per motor: 3 phases, 2 pads each.
+ * - Battery pads are the two big PTH lugs. CSA+ is the post-shunt B+
+ *   terminal, GND_1 the B- terminal, +BATT the raw pre-shunt rail tap. The
+ *   four corner mounting holes are NOT battery pads (an old, wrong highlight).
+ * - Signal pads: CURR is the current-sense output, M1-M4 per-motor telemetry,
+ *   GND_2 the small signal-row ground. Not the +BATT rail, not the CSA+ lug.
+ * - 30x30 MOSFETs sit 10 on the front and 14 on the back. All 24 are listed;
+ *   the viewer shows each side's subset on its own face.
+ * - The 30x30 hides `Dimensions` (null) because the outline is still an open
+ *   item in its repo.
+ * - Specs verified against the OpenESC repos (KiCad files + Rev3 production
+ *   BOMs, 2026-08-07). Field order follows FPV retail convention: firmware,
+ *   current, input, protocol, silicon, sensing, connector, physical. Weight
+ *   rows land once boards are weighed.
+ * - The stack BXGY discounts the ESC itself when the FC joins the cart.
+ * - Launching with 20x20 and 30x30. Pro (higher-current) variants land later
+ *   as further values on the same "Model" axis.
+ * - TODO(downloads): publish schematic.pdf, bom.csv, gerbers.zip, manual.pdf,
+ *   wiring.pdf and flashing.md to the OpenESC-20x20 repo, then add the cards.
+ *   Until then KiCanvas plus the GitHub link cover "study the design".
+ *
+ * openfc-lite
+ * - The shipping cost-down flight controller: one design, two mount sizes
+ *   sharing nearly the whole BOM. The Shopify product (handle `openfc-lite`,
+ *   Model "20x20"/"30x30") is ACTIVE; the old `openfc` product is archived.
+ * - `boardArt` is supplied per variant, so the layer reveal follows the ladder.
+ * - Buck pins use one enlarged box per region, IC plus inductor plus in/out
+ *   caps, so it reads as the whole buck rather than just the chip.
+ * - The 20x20 (Mini) is its own repo and its own refdes layout: RP2354A
+ *   QFN-60, no op-amp in the OSD front end.
+ * - Specs verified against the OpenFC-Lite / OpenFC-Lite-Mini repos (KiCad
+ *   files + Rev3 BOMs, 2026-08-07). IMU: every shipping OpenFC is BMI270
+ *   (Stan, 2026-08-08). The LGA-14 footprint also takes the LSM6DSV16X the
+ *   rev2 build used, which is why the KiCad value, and so the teardown
+ *   viewer, still reads LSM6DSV16X on the 30x30.
+ * - The stack BXGY discounts the added ESC, not this FC and not the pair.
+ * - TODO(downloads): publish schematic.pdf, bom.csv, gerbers.zip and
+ *   manual.pdf to the OpenFC-Lite repos and wire the cards here.
+ *
+ * openrx
+ * - Base `teardown.pins` match the Lite tier; every variant overrides them.
+ *   The Wi-Fi antenna and the ELRS link antenna are SEPARATE: AE1 is on the
+ *   /WIFI net to the ESP32-C3, the link path is AE2 or U.FL.
+ * - Downloads point at what the repo publishes today (verified 200 on
+ *   raw.githubusercontent, 2026-07-18). Still unpublished, add when they
+ *   land: STEP for Lite/Gemini, BOM for Lite-UFL/Mono, gerbers, manual.
+ * - Specs verified against the OpenRX repo (KiCad boards, fab BOMs,
+ *   shared/elrs-targets JSON, 2026-08-07): bands rather than radio part
+ *   numbers, no flash targets.
+ *
+ * openframe
+ * - Geometry parsed from the released STEP files (2026-08-07). Wheelbase and
+ *   stack clearance are derived from the CAD, they appear in no doc. Weights
+ *   land once the first CNC batch is measured.
+ * - `teardown.frameViewer` is the fallback when a tier defines none. Both
+ *   tiers override it and it seeds the viewer's preload set, so it points at
+ *   a current model (the 5") rather than the stale generic frame.glb.
+ * - TODO(copy): teardown pin text is placeholder. The exploded viewer is the
+ *   CAD analogue of the boards' KiCanvas layer reveal; the text states only
+ *   known specs (5 mm arms, 30.5 x 30.5 pattern), no invented material
+ *   grades. `inspectUrl` stays omitted until the OnShape doc is public.
+ * - TODO(copy): variant editorial is placeholder and only wires the "Model"
+ *   axis and ladder. Shared specs still read 5-inch; reconcile once the 3"
+ *   (OpenFrame3) specs land.
+ * - TODO(onshape): the frame is an OnShape document, not a GitHub repo. The
+ *   old STEP/DXF/assembly links pointed at a repo that does not exist and
+ *   were removed. Wire real artifacts (OnShape embedded viewer + STEP export)
+ *   once the OnShape integration lands. We do not release DXF cutting files.
+ */
 
-  // The shipping cost-down flight controller. One design, two mount sizes
-  // (20×20 / 30×30) that share nearly the whole BOM. Spec drawn from the
-  // OpenFC-Lite / OpenFC-Lite-Mini READMEs. The Shopify product
-  // (handle `openfc-lite`, Model: "20×20" / "30×30") is ACTIVE — this is the
-  // live FC PDP; the old `openfc` product is archived in Shopify.
-  'openfc-lite': {
-    fileNumber: '02',
-    family: 'Flight Controller',
-    hero: {
-      line1: 'A flight controller,',
-      line2Italic: 'minus',
-      line3: 'what you don’t need.',
-      lead:
-        'An RP2354 dual-core M33 running Betaflight on a 6-layer board: a 6-axis IMU, microSD blackbox, PIO-driven analog OSD, and a switchable 10 V VTX rail. No barometer, no onboard radio. Bring your own RX over UART and keep the board small and cheap.',
-    },
-    firmware: {
-      project: 'Betaflight',
-      projectUrl: 'https://github.com/betaflight/betaflight',
-      logo: '/logos/betaflight.svg',
-    },
-    repoUrl: 'https://github.com/OpenDrone-hw/OpenFC-Lite',
-    video: {
-      id: 'XDYZoMRJFeQ',
-      title: 'How Flight Controllers Work (so I built my own)',
-    },
-    teardown: {
-      // `refs` keyed to the live components.json so hovering a pin highlights
-      // the real footprint(s) on the board (case-sensitive refdes).
-      pins: [
-        {ref: '①', part: 'RP2354B · dual M33 @ 150 MHz', refs: ['U2']},
-        {ref: '②', part: '6-axis IMU (SPI)', refs: ['U9']},
-        {ref: '③', part: 'microSD blackbox (SPI)', refs: ['Card1']},
-        {
-          ref: '④',
-          part: 'Analog OSD',
-          refs: ['U12', 'U11', 'U10'],
-        },
-        {
-          ref: '⑤',
-          part: 'Switchable VTX / 5 V buck',
-          refs: ['U3', 'U4'],
-          // One enlarged box per buck region: the IC + its inductor + in/out caps,
-          // so it reads as "the whole buck", not just the chip.
-          boxGroups: [
-            ['U3', 'L2', 'C22', 'C24'],
-            ['U4', 'L3', 'C23', 'C25'],
-          ],
-        },
-        {ref: '⑥', part: 'Gyro 1.8 V LDO', refs: ['U6']},
-        {ref: '⑥b', part: '3.3 V logic LDO', refs: ['U7']},
-        {ref: '⑦', part: 'USB-C + power mux', refs: ['USB1', 'U5']},
-        {
-          ref: '⑧',
-          part: 'JST-SH I/O connectors',
-          refs: ['P1', 'U8', 'U13', 'U14', 'CN1'],
-        },
-        {
-          ref: '⑨',
-          part: 'I/O solder pads',
-          refs: ['J35', 'J37', 'J39', 'J41', 'J9', 'J13', 'J43', 'J44', 'J48', 'J49', 'J52', 'J54', 'J15', 'J18', 'J10', 'J11', 'J23', 'J24', 'J2', 'J32', 'J33', 'J34', 'J21'],
-          chips: [
-            {label: 'DSHOT', refs: ['J35', 'J37', 'J39', 'J41']},
-            {label: 'UART', refs: ['J9', 'J13', 'J43', 'J44', 'J48', 'J49', 'J52', 'J54']},
-            {label: 'I2C', refs: ['J15', 'J18']},
-            {label: 'LED', refs: ['J10', 'J11', 'J23', 'J24']},
-            {label: 'CAM', refs: ['J2', 'J32']},
-            {label: 'VTX', refs: ['J33', 'J34']},
-            {label: 'BUZZER', refs: ['J21']},
-          ],
-        },
-      ],
-      // boardArt is supplied per variant (openfc-lite-mini / openfc-lite); the
-      // PDP swaps the layer reveal as the ladder selects a mount size.
-    },
-    inTheBox: [
-      {qty: '1×', item: 'OpenFC Lite board'},
-      {qty: '1×', item: '8-pin JST SH ESC harness'},
-      {qty: '4×', item: 'M3 rubber soft-mount grommets'},
-      {qty: '1×', item: 'Build card', note: 'batch ID, QC initials, firmware flash command, GitHub rev'},
-    ],
-    // TODO(downloads): publish schematic.pdf / bom.csv / gerbers.zip / manual.pdf
-    // to the OpenFC-Lite repos and wire the cards here.
-    downloads: [],
-    // Spec values verified against the OpenFC-Lite / OpenFC-Lite-Mini repos
-    // (KiCad files + Rev3 BOMs, 2026-08-07). IMU: every shipping OpenFC is
-    // BMI270 (Stan, 2026-08-08). The LGA-14 footprint also takes the
-    // LSM6DSV16X the rev2 build used, which is why the KiCad value and so
-    // the teardown viewer still read LSM6DSV16X on the 30×30.
-    // Buyer-facing summary, deliberately not a BOM: no part numbers, no
-    // build targets. The teardown viewer and the repo carry that detail.
-    // Rows the tiers replace by key (MCU, UARTs, Mounting, Dimensions)
-    // carry the 30×30 default here so the merged table keeps this order;
-    // the active tier's value wins on the PDP.
-    specs: [
-      ['Firmware', 'Betaflight'],
-      ['MCU', 'RP2354B'],
-      ['IMU', 'BMI270'],
-      ['Barometer', 'None'],
-      ['Blackbox', 'microSD'],
-      ['OSD', 'Analog and digital'],
-      ['UARTs', '4'],
-      ['Motor outputs', '4× DShot, bidirectional'],
-      ['RX', 'External, CRSF or SBUS'],
-      ['Input', '3–6S LiPo'],
-      ['BEC', '10 V switchable + 5 V always-on, 3 A'],
-      ['Current sense', 'Yes'],
-      ['USB', 'USB-C'],
-      ['Mounting', '30.5 × 30.5 mm, Ø4.0 mm holes'],
-      ['Dimensions', '37.9 × 37.9 mm'],
-      ['PCB', '6-layer, 1.6 mm'],
-    ],
-    optionAxis: 'Model',
-    variants: {
-      '20×20': {
-        oshwaUid: 'BE000027',
-        // The 20×20 (Mini) is its own repo; the 30×30 uses the product default.
-        repoUrl: 'https://github.com/OpenDrone-hw/OpenFC-Lite-Mini',
-        tagline: 'The 20×20 mount: the compact stack size.',
-        highlights: [
-          ['Mount', '20×20'],
-          ['Size', '26.9 × 26.9 mm'],
-        ],
-        specs: [
-          ['MCU', 'RP2354A'],
-          ['UARTs', '3'],
-          ['Mounting', '20 × 20 mm, Ø3.0 mm holes'],
-          ['Dimensions', '26.9 × 26.9 mm'],
-        ],
-        // The mini has its own refdes layout (RP2354A QFN-60, no op-amp in the
-        // OSD front end). refs keyed to /boards/openfc-lite-mini/components.json.
-        pins: [
-          {ref: '①', part: 'RP2354A · dual M33 @ 150 MHz', refs: ['U10']},
-          {ref: '②', part: '6-axis IMU (SPI)', refs: ['U9']},
-          {ref: '③', part: 'microSD blackbox (SPI)', refs: ['Card1']},
-          {
-            ref: '④',
-            part: 'Analog OSD',
-            refs: ['U2', 'U1', 'U18'],
-          },
-          {
-            ref: '⑤',
-            part: 'Switchable VTX / 5 V buck',
-            refs: ['U3', 'U4'],
-            // One enlarged box per buck region: IC + inductor + in/out caps.
-            boxGroups: [
-              ['U3', 'L2', 'C24', 'C26'],
-              ['U4', 'L3', 'C25', 'C29'],
-            ],
-          },
-          {ref: '⑥', part: 'Gyro 1.8 V LDO', refs: ['U6']},
-          {ref: '⑥b', part: '3.3 V logic LDO', refs: ['U7']},
-          {ref: '⑦', part: 'USB-C + power mux', refs: ['USB1', 'U5']},
-          {
-            ref: '⑧',
-            part: 'JST-SH I/O connectors',
-            refs: ['P1', 'U8'],
-          },
-          {
-            ref: '⑨',
-            part: 'I/O solder pads',
-            refs: ['J35', 'J37', 'J39', 'J41', 'J8', 'J12', 'J43', 'J44', 'J48', 'J49', 'J15', 'J18', 'J10', 'J24', 'J32', 'J33', 'J34', 'J21'],
-            chips: [
-              {label: 'DSHOT', refs: ['J35', 'J37', 'J39', 'J41']},
-              {label: 'UART', refs: ['J8', 'J12', 'J43', 'J44', 'J48', 'J49']},
-              {label: 'I2C', refs: ['J15', 'J18']},
-              {label: 'LED', refs: ['J10', 'J24']},
-              {label: 'CAM', refs: ['J32']},
-              {label: 'VTX', refs: ['J33', 'J34']},
-              {label: 'BUZZER', refs: ['J21']},
-            ],
-          },
-        ],
-        boardArt: {
-          src: '/boards/openfc-lite-mini/board.svg',
-          inspectUrl:
-            'https://kicanvas.org/?github=https://github.com/OpenDrone-hw/OpenFC-Lite-Mini/blob/main/hardware/OpenFC.kicad_pcb',
-          schematicUrl:
-            'https://kicanvas.org/?github=https://github.com/OpenDrone-hw/OpenFC-Lite-Mini/blob/main/hardware/OpenFC.kicad_sch',
-        },
-      },
-      '30×30': {
-        oshwaUid: 'BE000026',
-        tagline: 'The 30×30 mount: bigger pads and more I/O.',
-        highlights: [
-          ['Mount', '30.5×30.5'],
-          ['Size', '37.9 × 37.9 mm'],
-        ],
-        specs: [
-          ['MCU', 'RP2354B'],
-          ['UARTs', '4'],
-          ['Mounting', '30.5 × 30.5 mm, Ø4.0 mm holes'],
-          ['Dimensions', '37.9 × 37.9 mm'],
-        ],
-        boardArt: {
-          src: '/boards/openfc-lite/board.svg',
-          inspectUrl:
-            'https://kicanvas.org/?github=https://github.com/OpenDrone-hw/OpenFC-Lite/blob/main/hardware/OpenFC.kicad_pcb',
-          schematicUrl:
-            'https://kicanvas.org/?github=https://github.com/OpenDrone-hw/OpenFC-Lite/blob/main/hardware/OpenFC.kicad_sch',
-        },
-      },
-    },
-    stack: {
-      adds: 'ESC',
-      partners: [{handle: 'openesc', label: 'OpenESC'}],
-      matchOption: 'Model',
-      discountPct: 10,
-      // The BXGY discounts the added ESC, not this FC and not the pair.
-      discountedHandle: 'openesc',
-    },
-  },
-
-  openrx: {
-    fileNumber: '03',
-    family: 'ELRS Receiver',
-    hero: {
-      line1: 'An ExpressLRS receiver,',
-      line2Italic: 'open',
-      line3: 'from antenna to firmware.',
-      lead:
-        'Four board designs, one firmware. Lite runs SX1281 on 2.4 GHz with a ceramic antenna. Lite-UFL swaps to a U.FL pigtail. Mono steps up to a single LR1121 for multi-band. Gemini runs dual LR1121 in ExpressLRS Xrossband mode for frequency-diverse links.',
-    },
-    firmware: {
-      project: 'ExpressLRS',
-      projectUrl: 'https://github.com/ExpressLRS/ExpressLRS',
-    },
-    repoUrl: 'https://github.com/OpenDrone-hw/OpenRX',
-    video: {
-      id: 'ssmQkRkXE84',
-      title: 'How LoRa (ExpressLRS) Receivers Work',
-    },
-    teardown: {
-      // Fallback set (matches the Lite tier); each variant overrides with its
-      // own refs keyed to that board's components.json. NOTE the Wi-Fi antenna
-      // and the ELRS link antenna are SEPARATE (council net-trace: AE1 is on the
-      // /WIFI net to the ESP32-C3; the link path is AE2 / U.FL).
-      pins: [
-        {ref: '①', part: 'SX1281 · 2.4 GHz LoRa radio', refs: ['U3']},
-        {ref: '②', part: 'ESP32-C3 · Wi-Fi MCU', refs: ['U1']},
-        {ref: '③', part: '2.4 GHz SAW band-pass filter', refs: ['FL1']},
-        {ref: '④', part: 'ELRS link antenna (Molex 47948)', refs: ['AE2']},
-        {ref: '⑤', part: 'Wi-Fi antenna (ESP32-C3)', refs: ['AE1']},
-        {ref: '⑥', part: '52 MHz radio TCXO', refs: ['OSC1']},
-        {ref: '⑦', part: 'TLV75533 · 3.3 V LDO', refs: ['U2']},
-        {ref: '⑧', part: 'Solder pad I/O · CRSF UART', refs: ['TP1', 'TP2', 'TP3', 'TP4', 'TP5']},
-      ],
-    },
-    inTheBox: [
-      {qty: '1×', item: 'OpenRX board', note: 'tier selected at checkout'},
-      {qty: '1×', item: 'CRSF servo cable', note: '3-pin JST-SH1.0, pre-crimped, 10 cm'},
-      {qty: '1×', item: 'Heat-shrink sleeve + double-sided tape'},
-      {qty: '1×', item: 'Build card', note: 'batch ID, QC initials, ExpressLRS flash target, GitHub rev'},
-    ],
-    // Links point at what the OpenRX repo actually publishes today (verified
-    // 200 on raw.githubusercontent 2026-07-18). Still unpublished, add when
-    // they land: STEP for Lite/Gemini, BOM for Lite-UFL/Mono, gerbers, manual.
-    downloads: [
-      {
-        kind: 'schematic',
-        label: 'Schematic · Lite',
-        href: 'https://raw.githubusercontent.com/OpenDrone-hw/OpenRX/main/exports/schematics/OpenRX-Lite.pdf',
-        size: '103 KB',
-      },
-      {
-        kind: 'schematic',
-        label: 'Schematic · Lite-UFL',
-        href: 'https://raw.githubusercontent.com/OpenDrone-hw/OpenRX/main/exports/schematics/OpenRX-Lite-UFL.pdf',
-        size: '106 KB',
-      },
-      {
-        kind: 'schematic',
-        label: 'Schematic · Mono',
-        href: 'https://raw.githubusercontent.com/OpenDrone-hw/OpenRX/main/exports/schematics/OpenRX-Mono.pdf',
-        size: '128 KB',
-      },
-      {
-        kind: 'schematic',
-        label: 'Schematic · Gemini',
-        href: 'https://raw.githubusercontent.com/OpenDrone-hw/OpenRX/main/exports/schematics/OpenRX-Gemini.pdf',
-        size: '174 KB',
-      },
-      {
-        kind: 'step',
-        label: '3D STEP · Lite-UFL',
-        href: 'https://raw.githubusercontent.com/OpenDrone-hw/OpenRX/main/OpenRX-Lite-UFL/export/lite-ufl.step',
-        size: '5.7 MB',
-      },
-      {
-        kind: 'step',
-        label: '3D STEP · Mono',
-        href: 'https://raw.githubusercontent.com/OpenDrone-hw/OpenRX/main/OpenRX-Mono/export/mono.step',
-        size: '6.8 MB',
-      },
-      {
-        kind: 'bom',
-        label: 'BOM · Lite',
-        href: 'https://raw.githubusercontent.com/OpenDrone-hw/OpenRX/main/OpenRX-Lite/export/OpenRX-Lite.csv',
-        note: 'CSV',
-        size: '2.9 KB',
-      },
-      {
-        kind: 'bom',
-        label: 'BOM · Gemini',
-        href: 'https://raw.githubusercontent.com/OpenDrone-hw/OpenRX/main/OpenRX-Gemini/export/OpenRX-Gemini.csv',
-        note: 'CSV',
-        size: '4.1 KB',
-      },
-    ],
-    // Spec values verified against the OpenRX repo (KiCad boards, fab BOMs,
-    // shared/elrs-targets JSON, 2026-08-07). Buyer-facing summary, not a
-    // BOM: bands rather than radio part numbers, no flash targets. The
-    // teardown viewer and the repo carry that detail. Rows the tiers
-    // replace by key (Band, Antenna, Telemetry power, Flashing, Dimensions)
-    // carry the Lite default so the merged table keeps this order.
-    specs: [
-      ['Band', '2.4 GHz'],
-      ['Antenna', 'On-board ceramic'],
-      ['Telemetry power', '13 dBm (20 mW)'],
-      ['Protocol', 'CRSF'],
-      ['MCU', 'ESP32-C3'],
-      ['Input', '5 V pad'],
-      ['Firmware', 'ExpressLRS'],
-      ['Flashing', 'Betaflight passthrough or Wi-Fi'],
-      ['Wi-Fi antenna', 'Separate on-board ceramic'],
-      ['Dimensions', '10.0 × 11.5 mm'],
-      ['PCB', '6-layer, 1.6 mm'],
-    ],
-    optionAxis: 'Model',
-    variants: {
-      Lite: {
-        oshwaUid: 'BE000030',
-        tagline: '2.4 GHz with an on-board ceramic antenna: the low-cost default.',
-        highlights: [
-          ['Band', '2.4 GHz'],
-          ['Antenna', 'Ceramic, on-board'],
-        ],
-        specs: [
-          ['Antenna', 'On-board ceramic, no wire to tear off'],
-          ['Dimensions', '10.0 × 11.5 mm'],
-        ],
-        pins: [
-          {ref: '①', part: 'SX1281 · 2.4 GHz LoRa radio', refs: ['U3']},
-          {ref: '②', part: 'ESP32-C3 · Wi-Fi MCU', refs: ['U1']},
-          {ref: '③', part: '2.4 GHz SAW band-pass filter', refs: ['FL1']},
-          {ref: '④', part: 'ELRS link antenna (Molex 47948)', refs: ['AE2']},
-          {ref: '⑤', part: 'Wi-Fi antenna (ESP32-C3)', refs: ['AE1']},
-          {ref: '⑥', part: '52 MHz radio TCXO', refs: ['OSC1']},
-          {ref: '⑦', part: 'TLV75533 · 3.3 V LDO', refs: ['U2']},
-          {ref: '⑧', part: 'Solder pad I/O · CRSF UART', refs: ['TP1', 'TP2', 'TP3', 'TP4', 'TP5']},
-        ],
-        boardArt: {
-          src: '/boards/openrx-lite/board.svg',
-          inspectUrl:
-            'https://kicanvas.org/?github=https://github.com/OpenDrone-hw/OpenRX/blob/main/OpenRX-Lite/OpenRX-Lite.kicad_pcb',
-          schematicUrl:
-            'https://kicanvas.org/?github=https://github.com/OpenDrone-hw/OpenRX/blob/main/OpenRX-Lite/OpenRX-Lite.kicad_sch',
-        },
-      },
-      'Lite-UFL': {
-        oshwaUid: 'BE000031',
-        tagline: 'Same radio, swapped to a U.FL pigtail for an external antenna.',
-        highlights: [
-          ['Band', '2.4 GHz'],
-          ['Antenna', 'U.FL × 1'],
-        ],
-        specs: [
-          ['Antenna', 'U.FL, run the dipole of your choice'],
-          ['Dimensions', '10.0 × 11.5 mm'],
-        ],
-        inTheBox: [{qty: '1×', item: 'U.FL dipole antenna'}],
-        pins: [
-          {ref: '①', part: 'SX1281 · 2.4 GHz LoRa radio', refs: ['U3']},
-          {ref: '②', part: 'ESP32-C3 · Wi-Fi MCU', refs: ['U1']},
-          {ref: '③', part: '2.4 GHz SAW band-pass filter', refs: ['FL1']},
-          {ref: '④', part: 'ELRS link antenna · U.FL connector', refs: ['J1']},
-          {ref: '⑤', part: 'Wi-Fi antenna (on-board ceramic)', refs: ['AE1']},
-          {ref: '⑥', part: '52 MHz radio TCXO', refs: ['OSC1']},
-          {ref: '⑦', part: 'TLV75533 · 3.3 V LDO', refs: ['U2']},
-          {ref: '⑧', part: 'Solder pad I/O · CRSF UART', refs: ['TP1', 'TP2', 'TP3', 'TP4', 'TP5']},
-        ],
-        boardArt: {
-          src: '/boards/openrx-lite-ufl/board.svg',
-          inspectUrl:
-            'https://kicanvas.org/?github=https://github.com/OpenDrone-hw/OpenRX/blob/main/OpenRX-Lite-UFL/OpenRX-Lite-UFL.kicad_pcb',
-          schematicUrl:
-            'https://kicanvas.org/?github=https://github.com/OpenDrone-hw/OpenRX/blob/main/OpenRX-Lite-UFL/OpenRX-Lite-UFL.kicad_sch',
-        },
-      },
-      Mono: {
-        oshwaUid: 'BE000032',
-        tagline: 'One radio covering both bands, with the RF front-end.',
-        highlights: [
-          ['Band', '2.4 GHz + sub-GHz'],
-          ['Antenna', 'U.FL × 1'],
-        ],
-        specs: [
-          ['Band', '2.4 GHz + sub-GHz, one antenna'],
-          ['Antenna', 'U.FL, both bands through one RF switch'],
-          ['Telemetry power', '12–22 dBm selectable (158 mW max)'],
-          ['Dimensions', '10.0 × 17.3 mm'],
-        ],
-        inTheBox: [{qty: '1×', item: 'U.FL dipole antenna'}],
-        pins: [
-          {ref: '①', part: 'LR1121 · dual-band LoRa radio', refs: ['U3']},
-          {ref: '②', part: 'ESP32-C3 · Wi-Fi MCU', refs: ['U1']},
-          {ref: '③', part: 'RFX2401C · PA / LNA front-end', refs: ['U4']},
-          {ref: '④', part: 'SKY13373 · RF switch', refs: ['U5']},
-          {ref: '⑤', part: 'ELRS link antenna · U.FL connector', refs: ['J1']},
-          {ref: '⑥', part: 'Wi-Fi antenna (on-board ceramic)', refs: ['AE1']},
-          {ref: '⑦', part: '32 MHz radio TCXO', refs: ['OSC1']},
-          {ref: '⑧', part: 'Solder pad I/O · CRSF UART (BOOT pad on back)', refs: ['TP1', 'TP2', 'TP3', 'TP4', 'TP5']},
-        ],
-        boardArt: {
-          src: '/boards/openrx-mono/board.svg',
-          inspectUrl:
-            'https://kicanvas.org/?github=https://github.com/OpenDrone-hw/OpenRX/blob/main/OpenRX-Mono/OpenRX-Mono.kicad_pcb',
-          schematicUrl:
-            'https://kicanvas.org/?github=https://github.com/OpenDrone-hw/OpenRX/blob/main/OpenRX-Mono/OpenRX-Mono.kicad_sch',
-        },
-      },
-      Gemini: {
-        oshwaUid: 'BE000033',
-        tagline: 'Two radios in ExpressLRS Xrossband mode for frequency-diverse links.',
-        highlights: [
-          ['Band', '2.4 GHz + sub-GHz, diversity'],
-          ['Antenna', 'U.FL × 2'],
-        ],
-        specs: [
-          ['Band', '2.4 GHz + sub-GHz, two radio chains'],
-          ['Antenna', '2× U.FL, one per radio'],
-          ['Telemetry power', '12–22 dBm per radio (158 mW)'],
-          ['Dimensions', '17.0 × 15.7 mm'],
-        ],
-        inTheBox: [
-          {qty: '2×', item: 'U.FL dipole antenna', note: 'diversity pair'},
-        ],
-        pins: [
-          {ref: '①', part: 'LR1121 · dual-band LoRa radio', cost: '×2', refs: ['U3', 'U6']},
-          {ref: '②', part: 'ESP32-C3 · Wi-Fi MCU', refs: ['U1']},
-          {ref: '③', part: 'RFX2401C · PA / LNA front-end', cost: '×2', refs: ['U4', 'U7']},
-          {ref: '④', part: 'SKY13373 · RF switch', cost: '×2', refs: ['U5', 'U8']},
-          {ref: '⑤', part: 'ELRS link antennas · U.FL', cost: '×2', refs: ['J1', 'J2']},
-          {ref: '⑥', part: 'Wi-Fi antenna (on-board ceramic)', refs: ['AE1']},
-          {ref: '⑦', part: '32 MHz radio TCXO', refs: ['OSC1']},
-          {ref: '⑧', part: 'Solder pad I/O · CRSF UART', refs: ['TP1', 'TP2', 'TP3', 'TP4']},
-        ],
-        boardArt: {
-          src: '/boards/openrx-gemini/board.svg',
-          inspectUrl:
-            'https://kicanvas.org/?github=https://github.com/OpenDrone-hw/OpenRX/blob/main/OpenRX-Gemini/OpenRX-Gemini.kicad_pcb',
-          schematicUrl:
-            'https://kicanvas.org/?github=https://github.com/OpenDrone-hw/OpenRX/blob/main/OpenRX-Gemini/OpenRX-Gemini.kicad_sch',
-        },
-      },
-    },
-  },
-
-  openframe: {
-    fileNumber: '04',
-    family: 'Carbon Frame',
-    hero: {
-      line1: 'The body',
-      line2Italic: 'everything else',
-      line3: 'mounts to.',
-      lead:
-        'CNC carbon-fibre freestyle frame on a 30.5×30.5 stack pattern. Designed in-house, OEM-machined. OpenFC Lite and OpenESC drop in without spacers.',
-    },
-    firmware: {
-      project: '—',
-    },
-    repoUrl: 'https://github.com/OpenDrone-hw',
-    // TODO(copy): placeholder teardown editorial. The exploded viewer is the
-    // CAD analogue of the boards' KiCanvas layer reveal; pin text reflects
-    // only known specs (5 mm arms, 30.5 × 30.5 pattern) — no invented
-    // material grades. inspectUrl omitted until the OnShape doc is public.
-    teardown: {
-      pins: [
-        {ref: '①', part: 'Top plate: carbon, carries the camera + VTX bay'},
-        {ref: '②', part: 'Arms: replaced individually', cost: '×4'},
-        {ref: '③', part: 'Bottom plate: dual stack pattern'},
-        {ref: '④', part: 'M3 aluminium standoffs + hardware kit'},
-      ],
-      // Fallback model when a tier defines none. Both tiers (3"/5") override
-      // this, so it also seeds the viewer's preload set — point it at a current
-      // model (the 5") rather than the stale generic frame.glb.
-      frameViewer: {
-        src: '/models/frame5.glb',
-      },
-    },
-    inTheBox: [
-      {qty: '1×', item: 'Top plate + bottom plate'},
-      {qty: '4×', item: '5" arms'},
-      {qty: '1×', item: 'Hardware kit'},
-      {qty: '1×', item: 'Camera mount'},
-      {qty: '1×', item: 'VTX antenna tube clamp'},
-      {qty: '1×', item: 'Build card'},
-    ],
-    // TODO(onshape): the frame is an OnShape document, not a GitHub repo. The
-    // STEP/DXF/assembly links above were placeholders pointing at a non-existent
-    // GitHub repo and have been removed. Wire real artifacts (OnShape embedded
-    // viewer + STEP export) once the OnShape integration lands. We do not
-    // release DXF cutting files.
-    downloads: [],
-    // Geometry parsed from the released STEP files (2026-08-07); wheelbase
-    // and stack clearance are derived from the CAD, they appear in no doc.
-    // Rows the tiers replace carry the 5" values so the merged table keeps
-    // this order. Weights land once the first CNC batch is measured.
-    specs: [
-      ['Wheelbase', '226 mm'],
-      ['Prop size', '5"'],
-      ['Arm thickness', '6 mm carbon'],
-      ['Plate thickness', '2.5 · 3.0 · 3.0 mm'],
-      ['Stack mounting', '30.5 × 30.5 (M3) + 20 × 20'],
-      ['Motor mounting', '16 × 16 (M3)'],
-      ['Max stack height', '20 mm'],
-      ['Camera width', 'Up to 20 mm'],
-      ['Video systems', 'Analog · DJI · Walksnail · HDZero'],
-      ['Material', 'T700 carbon, aluminium camera mounts'],
-    ],
-    // TODO(copy): placeholder variant editorial — wires the "Model" axis +
-    // ladder. Shared specs above still read 5-inch; reconcile once the 3"
-    // (OpenFrame3) specs land.
-    optionAxis: 'Model',
-    variants: {
-      '5" Freestyle': {
-        tagline: 'The standard freestyle size: 30.5 or 20 mm stacks, M3 motors.',
-        highlights: [
-          ['Wheelbase', '226 mm'],
-          ['Stack mounts', '30.5×30.5 · 20×20'],
-          ['Motor mount', '16×16 (M3)'],
-        ],
-        frameViewer: {src: '/models/frame5.glb'},
-      },
-      '3" Freestyle': {
-        tagline: 'The compact build: 25.5 or 20 mm stacks, M2 motors.',
-        highlights: [
-          ['Wheelbase', '141 mm'],
-          ['Stack mounts', '25.5×25.5 · 20×20'],
-          ['Motor mount', '9×9 · 12×12 (M2)'],
-        ],
-        specs: [
-          ['Wheelbase', '141 mm'],
-          ['Prop size', '3"'],
-          ['Arm thickness', '4 mm carbon'],
-          ['Plate thickness', '2.0 · 2.5 · 2.5 mm'],
-          ['Stack mounting', '25.5 × 25.5 + 20 × 20 (M2)'],
-          ['Motor mounting', '9 × 9 · 12 × 12 (M2)'],
-        ],
-        frameViewer: {src: '/models/frame3.glb'},
-      },
-    },
-  },
-
+/** Minimal structural view of the two `node:fs` calls the disk fallback uses. */
+type NodeFs = {
+  readdirSync(dir: URL): string[];
+  readFileSync(file: URL, encoding: 'utf8'): string;
 };
+
+/** One loaded `content/products/*.json`, as the glob hands it over. */
+type ProductFile = {default: ProductContent};
+
+/** `_fallback.json` holds {@link PRODUCT_CONTENT_FALLBACK}, not a product. */
+const FALLBACK_HANDLE = '_fallback';
+
+// Path of the content directory relative to this module, assembled rather
+// than written as a literal: Vite rewrites `new URL('<literal>',
+// import.meta.url)` into an asset reference, which is not what we want here.
+const CONTENT_DIR = ['..', '..', 'content', 'products', ''].join('/');
+
+/**
+ * Bundler-free fallback so the node:test suites can import this module: they
+ * run the TypeScript directly, with no Vite and so no `import.meta.glob`.
+ * `node:fs` is reached through `process.getBuiltinModule` instead of an import
+ * statement so that no bundler ever sees a Node builtin in the module graph.
+ * In the worker build this branch is dead, because `import.meta.env` is always
+ * truthy there, and both paths read the same files, so both see the same data.
+ */
+function readProductsFromDisk(): Record<string, ProductFile> {
+  const fs = (
+    globalThis as unknown as {
+      process?: {getBuiltinModule?: (id: string) => NodeFs};
+    }
+  ).process?.getBuiltinModule?.('node:fs');
+  if (!fs) return {};
+  const dir = new URL(CONTENT_DIR, import.meta.url);
+  const files: Record<string, ProductFile> = {};
+  for (const name of fs.readdirSync(dir)) {
+    if (!name.endsWith('.json')) continue;
+    files[`/content/products/${name}`] = {
+      // ts-reset types JSON.parse as unknown; the shape is asserted by
+      // app/lib/product-content.test.ts, which is what this branch exists for.
+      default: JSON.parse(
+        fs.readFileSync(new URL(name, dir), 'utf8'),
+      ) as ProductContent,
+    };
+  }
+  return files;
+}
+
+// Absolute-from-repo-root glob. `content/` sits outside `app/`, so the `~`
+// alias cannot reach it; Vite resolves a leading slash against the project
+// root. Guarded on `import.meta.env` exactly as `app/lib/copy.ts` is.
+const FILES: Record<string, ProductFile> = import.meta.env
+  ? import.meta.glob<ProductFile>('/content/products/*.json', {eager: true})
+  : readProductsFromDisk();
+
+/** `/content/products/openesc.json` -> `openesc` */
+function handleOf(filePath: string): string {
+  return filePath.slice(filePath.lastIndexOf('/') + 1, -'.json'.length);
+}
+
+const LOADED: Array<[string, ProductContent]> = [];
+let loadedFallback: ProductContent | undefined;
+for (const [filePath, mod] of Object.entries(FILES)) {
+  const handle = handleOf(filePath);
+  if (handle === FALLBACK_HANDLE) {
+    loadedFallback = mod.default;
+  } else if (handle) {
+    LOADED.push([handle, mod.default]);
+  }
+}
+
+/**
+ * Ordered by `fileNumber`, the number the PDP prints in its eyebrow and the
+ * order the line-up reads in. Glob keys come back alphabetical by path, which
+ * would put OpenFrame (04) ahead of OpenRX (03); products without a number
+ * sort last. Handle breaks ties so the order never depends on the filesystem.
+ */
+LOADED.sort(([handleA, a], [handleB, b]) => {
+  if (a.fileNumber !== b.fileNumber) return a.fileNumber < b.fileNumber ? -1 : 1;
+  if (handleA !== handleB) return handleA < handleB ? -1 : 1;
+  return 0;
+});
+
+export const PRODUCT_CONTENT: Record<string, ProductContent> =
+  Object.fromEntries(LOADED);
 
 /** Product lifecycle. See {@link ProductContent.status}. */
 export type ProductStatus = 'idea' | 'development' | 'live';
@@ -1133,18 +510,17 @@ export function isComingSoon(
   return resolveStatus(handle, globalFlag) !== 'live';
 }
 
-/** Fallback when a handle has no editorial content yet. */
-export const PRODUCT_CONTENT_FALLBACK: ProductContent = {
-  fileNumber: '—',
-  family: 'Product',
-  hero: {
-    line1: '',
-    line2Italic: '',
-    line3: '',
-    lead: '',
-  },
+/**
+ * Fallback when a handle has no editorial content yet. Edited as
+ * `content/products/_fallback.json`; the literal below is only reached if that
+ * file is deleted, and is deliberately blank rather than a second copy of it.
+ */
+export const PRODUCT_CONTENT_FALLBACK: ProductContent = loadedFallback ?? {
+  fileNumber: '',
+  family: '',
+  hero: {line1: '', line2Italic: '', line3: '', lead: ''},
   firmware: {project: ''},
-  repoUrl: 'https://github.com/OpenDrone-hw',
+  repoUrl: '',
   inTheBox: [],
   downloads: [],
   specs: [],

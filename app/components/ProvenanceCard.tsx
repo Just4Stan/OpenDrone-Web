@@ -1,3 +1,6 @@
+import {Txt} from './Txt';
+import {copyText} from '~/lib/copy';
+
 /**
  * Provenance card — the honest where-is-this-made line. Designed in
  * Belgium, first runs assembled in Shenzhen, EU assembly on the roadmap.
@@ -6,39 +9,56 @@
  *
  * `designNote` customises the "Designed" annotation per product family —
  * the PCB default ("schematic, PCB, BOM…") is nonsense on the carbon
- * frame, which passes its own CAD wording.
+ * frame, which passes its own CAD wording. Both strings live in
+ * `content/copy/product-chrome.json`; the prop is which one to use, not
+ * the words themselves.
  */
 export function ProvenanceCard({
-  designNote = 'schematic, PCB, BOM, firmware partnerships',
+  designNote = copyText('product-chrome.provenance_design_note'),
 }: {
   designNote?: string;
 } = {}) {
   return (
-    <section className="provenance-card" aria-label="Where this is made">
-      <p className="provenance-label">Provenance</p>
+    <section
+      className="provenance-card"
+      aria-label={copyText('product-chrome.provenance_aria')}
+    >
+      <Txt id="product-chrome.provenance_label" as="p" className="provenance-label" />
       <ul className="provenance-rows">
         <li>
-          <span className="provenance-row-label">Designed</span>
+          <Txt
+            id="product-chrome.provenance_designed_label"
+            as="span"
+            className="provenance-row-label"
+          />
           <span className="provenance-row-value">
-            Leuven, Belgium{' '}
+            {copyText('product-chrome.provenance_designed_value')}{' '}
             <span className="provenance-row-note">· {designNote}</span>
           </span>
         </li>
         <li>
-          <span className="provenance-row-label">Assembled</span>
+          <Txt
+            id="product-chrome.provenance_assembled_label"
+            as="span"
+            className="provenance-row-label"
+          />
           <span className="provenance-row-value">
-            Shenzhen, China{' '}
+            {copyText('product-chrome.provenance_assembled_value')}{' '}
             <span className="provenance-row-note">
-              · first runs, while we bring up an EU line
+              · {copyText('product-chrome.provenance_assembled_note')}
             </span>
           </span>
         </li>
         <li>
-          <span className="provenance-row-label">Next</span>
+          <Txt
+            id="product-chrome.provenance_next_label"
+            as="span"
+            className="provenance-row-label"
+          />
           <span className="provenance-row-value">
-            EU assembly{' '}
+            {copyText('product-chrome.provenance_next_value')}{' '}
             <span className="provenance-row-note">
-              · in planning
+              · {copyText('product-chrome.provenance_next_note')}
             </span>
           </span>
         </li>

@@ -131,9 +131,27 @@ export default async function handleRequest(
   }
 
   responseHeaders.set('Content-Type', 'text/html');
-  responseHeaders.set('Content-Security-Policy', header);
   responseHeaders.set('X-Content-Type-Options', 'nosniff');
-  responseHeaders.set('X-Frame-Options', 'DENY');
+
+  /**
+   * Clickjacking defence: nothing may frame this site. Production keeps the
+   * absolute form, `DENY` plus `frame-ancestors 'none'`.
+   *
+   * In dev only, that softens to same-origin. The studio at `/studio` previews
+   * the real pages in an iframe, and self-framing is blocked by `'none'` just
+   * as hard as a foreign site is. `'self'` still refuses every other origin, so
+   * the dev machine is not meaningfully more exposed, and the production
+   * headers are untouched: `process.env.NODE_ENV` is replaced at build time,
+   * so the deployed worker hard-codes the strict branch with no runtime flag
+   * that could be flipped by an environment variable. Same reasoning as
+   * app/lib/support/turnstile.ts.
+   */
+  const isDev = process.env.NODE_ENV !== 'production';
+  responseHeaders.set(
+    'Content-Security-Policy',
+    isDev ? header.replace("frame-ancestors 'none'", "frame-ancestors 'self'") : header,
+  );
+  responseHeaders.set('X-Frame-Options', isDev ? 'SAMEORIGIN' : 'DENY');
   responseHeaders.set('Referrer-Policy', 'strict-origin-when-cross-origin');
   responseHeaders.set(
     'Permissions-Policy',

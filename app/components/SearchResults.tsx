@@ -1,8 +1,16 @@
+/**
+ * Only the chrome is copy. Section headings, the pagination links and the empty
+ * state come from `content/copy/search.json`; result titles, images and prices
+ * are Shopify data and stay where they are, so nothing a studio edit can do
+ * changes what the catalog says a product is called.
+ */
 import {Link} from 'react-router';
 import {Image, Money, Pagination} from '@shopify/hydrogen';
 import {urlWithTrackingParams, type RegularSearchReturn} from '~/lib/search';
 import {useComingSoon} from '~/lib/coming-soon';
 import {isComingSoon} from '~/lib/product-content';
+import {Txt} from '~/components/Txt';
+import {copyText} from '~/lib/copy';
 
 type SearchItems = RegularSearchReturn['result']['items'];
 type PartialSearchResult<ItemType extends keyof SearchItems> = Pick<
@@ -42,7 +50,7 @@ function SearchResultsArticles({
 
   return (
     <section className="search-section">
-      <h2>Articles</h2>
+      <Txt id="search.section_articles" as="h2" />
       <div className="search-results-list">
         {articles?.nodes?.map((article) => {
           const articleUrl = urlWithTrackingParams({
@@ -71,7 +79,7 @@ function SearchResultsPages({term, pages}: PartialSearchResult<'pages'>) {
 
   return (
     <section className="search-section">
-      <h2>Pages</h2>
+      <Txt id="search.section_pages" as="h2" />
       <div className="search-results-list">
         {pages?.nodes?.map((page) => {
           const pageUrl = urlWithTrackingParams({
@@ -105,7 +113,7 @@ function SearchResultsProducts({
 
   return (
     <section className="search-section">
-      <h2>Products</h2>
+      <Txt id="search.section_products" as="h2" />
       <Pagination connection={products}>
         {({nodes, isLoading, NextLink, PreviousLink}) => {
           const ItemsMarkup = nodes.map((product) => {
@@ -140,7 +148,11 @@ function SearchResultsProducts({
             <div>
               <div className="search-pagination">
                 <PreviousLink>
-                  {isLoading ? 'Loading...' : <span>↑ Load previous</span>}
+                  {isLoading ? (
+                    copyText('search.pagination_loading')
+                  ) : (
+                    <Txt id="search.pagination_previous" />
+                  )}
                 </PreviousLink>
               </div>
               <div className="search-results-list">
@@ -148,7 +160,11 @@ function SearchResultsProducts({
               </div>
               <div className="search-pagination">
                 <NextLink>
-                  {isLoading ? 'Loading...' : <span>Load more ↓</span>}
+                  {isLoading ? (
+                    copyText('search.pagination_loading')
+                  ) : (
+                    <Txt id="search.pagination_next" />
+                  )}
                 </NextLink>
               </div>
             </div>
@@ -162,7 +178,7 @@ function SearchResultsProducts({
 function SearchResultsEmpty() {
   return (
     <div className="empty-state">
-      <p>No results yet. Try a product name, part number, or article keyword.</p>
+      <Txt id="search.empty" as="p" />
     </div>
   );
 }

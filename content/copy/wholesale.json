@@ -1,0 +1,31 @@
+{
+  "$route": "/wholesale",
+  "$title": "Wholesale",
+  "meta_title": "Wholesale · Dealers & distributors",
+  "meta_description": "Stock the OpenDrone open-source hardware line: flight controllers, ESCs and receivers, community-designed and sold by Incutec in Belgium. Dealer terms on request.",
+  "eyebrow": "Wholesale · B2B",
+  "title": "Put open hardware *on your shelf.*",
+  "lead": "OpenDrone sells direct first: this webshop is the primary channel. Dealers are welcome all the same. If you run an FPV shop in the EU and want boards whose designs your customers can actually read, talk to Incutec, the company that manufactures and sells the line. Wholesale is a conversation with the company, not with the community project.",
+  "s1_title": "01 · Who this is for",
+  "s1_body": [
+    "EU-based FPV retailers and distributors, first. You know your local scene better than a webshop in Leuven ever will; we'd rather your customers get local stock, local advice and local returns than wait on a parcel from us."
+  ],
+  "s2_title": "02 · What you'd be stocking",
+  "s2_item1_label": "The line",
+  "s2_item1_body": ": flight controllers (OpenFC Lite), 4-in-1 ESCs (OpenESC) and ExpressLRS receivers (OpenRX). Carbon frames (OpenFrame) are at sample stage and follow. Community-designed, sold from Belgium with EU consumer law taken seriously.",
+  "s2_item2_label": "Open source, for real",
+  "s2_item2_body": ": every board's full design source is public under CERN-OHL-S v2. Your customers can audit what you sell them: that is the pitch.",
+  "s2_item3_label": "Standard firmware",
+  "s2_item3_body": ": Betaflight, AM32 and ExpressLRS, no vendor forks. Nothing for your support desk to special-case.",
+  "s2_item4_label": "Dealer terms",
+  "s2_item4_body": ": B2B pricing and terms exist and are shared on request, not on a public page.",
+  "s3_title": "03 · Talk to us",
+  "s3_body": [
+    "Tell us who you are, where you sell, and roughly what volume you think makes sense. A human at Incutec answers, usually one of the people who work on the boards."
+  ],
+  "s3_email_before": "Email",
+  "s3_email_after": "(the button below prefills the subject), or use the support chat and say you're a shop.",
+  "cta_primary_before": "Email",
+  "cta_primary_after": "→",
+  "cta_secondary": "Open support chat →"
+}

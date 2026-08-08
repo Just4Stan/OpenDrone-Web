@@ -4,6 +4,7 @@ import {motion} from 'motion/react';
 import {Check} from 'lucide-react';
 import {type MappedProductOptions} from '@shopify/hydrogen';
 import type {VariantContent} from '~/lib/product-content';
+import {copyText} from '~/lib/copy';
 
 /**
  * Comparison ladder — the variant selector for a product *line*
@@ -67,12 +68,14 @@ export function VariantLadder({
     <div
       className={`variant-ladder${compact ? ' variant-ladder--compact' : ''}`}
       role="radiogroup"
-      aria-label={`${axis} options`}
+      aria-label={`${axis} ${copyText('product-chrome.ladder_aria_suffix') ?? ''}`}
     >
       {compact ? null : (
         <p className="variant-ladder-axis">
           {axis}
-          <span className="variant-ladder-axis-hint">· pick your build</span>
+          <span className="variant-ladder-axis-hint">
+            {copyText('product-chrome.ladder_axis_hint')}
+          </span>
         </p>
       )}
       <div className="variant-ladder-track">
@@ -124,9 +127,13 @@ export function VariantLadder({
               <span className="variant-tier-head">
                 <span className="variant-tier-name">{content.label ?? value}</span>
                 {comingSoon ? (
-                  <span className="variant-tier-flag">Coming soon</span>
+                  <span className="variant-tier-flag">
+                    {copyText('product-chrome.ladder_flag_coming_soon')}
+                  </span>
                 ) : soldOut ? (
-                  <span className="variant-tier-flag">Sold out</span>
+                  <span className="variant-tier-flag">
+                    {copyText('product-chrome.ladder_flag_sold_out')}
+                  </span>
                 ) : selected ? (
                   <span className="variant-tier-flag is-selected" aria-hidden="true">
                     <Check size={12} strokeWidth={3} />

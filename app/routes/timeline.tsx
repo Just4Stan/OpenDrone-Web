@@ -3,12 +3,20 @@ import {Link} from 'react-router';
 import type {Route} from './+types/timeline';
 import {buildSeoMeta} from '~/lib/seo';
 import {EditorialShell} from '~/components/EditorialShell';
+import {Txt} from '~/components/Txt';
+import {copyText} from '~/lib/copy';
 
+/**
+ * Every word on this page comes from `content/copy/timeline.json`, edited in
+ * the studio. What stays here is structure and evidence: which events exist,
+ * their dates, tags, kinds and receipt URLs. An event's title and detail are
+ * copy, keyed off its `id`; its date is not, because the same date sorts the
+ * list and groups it by year.
+ */
 export const meta: Route.MetaFunction = () =>
   buildSeoMeta({
-    title: 'Timeline · OpenDrone, dated',
-    description:
-      'Every milestone of the OpenDrone project with a receipt: first commits, fab orders, bench validations, certifications, upstream merges.',
+    title: copyText('timeline.meta_title') ?? 'Timeline',
+    description: copyText('timeline.meta_description') ?? '',
   });
 
 export async function loader(_args: Route.LoaderArgs) {
@@ -25,9 +33,9 @@ type EventKind =
   | 'post';
 
 type TimelineEvent = {
+  /** Copy key stem: `event_<id>_title` and optional `event_<id>_detail`. */
+  id: string;
   date: string; // YYYY-MM-DD
-  title: string;
-  detail?: string;
   /** Filter tag: esc | fc | rx | frame | company. Untagged = company. */
   tag?: 'esc' | 'fc' | 'rx' | 'frame' | 'company';
   kind: EventKind;
@@ -45,13 +53,13 @@ const KIND_GLYPH: Record<EventKind, string> = {
   post: '✎',
 };
 
-const FILTERS: Array<{key: 'all' | NonNullable<TimelineEvent['tag']>; label: string}> = [
-  {key: 'all', label: 'Everything'},
-  {key: 'esc', label: 'OpenESC'},
-  {key: 'fc', label: 'OpenFC'},
-  {key: 'rx', label: 'OpenRX'},
-  {key: 'frame', label: 'OpenFrame'},
-  {key: 'company', label: 'Company'},
+const FILTERS: Array<{key: 'all' | NonNullable<TimelineEvent['tag']>}> = [
+  {key: 'all'},
+  {key: 'esc'},
+  {key: 'fc'},
+  {key: 'rx'},
+  {key: 'frame'},
+  {key: 'company'},
 ];
 
 /**
@@ -60,33 +68,33 @@ const FILTERS: Array<{key: 'all' | NonNullable<TimelineEvent['tag']>; label: str
  * Keep newest LAST in this array; the page renders newest first.
  */
 const TIMELINE: TimelineEvent[] = [
-  {date: '2026-03-09', title: 'OpenESC 20×20: first commit', detail: 'The project starts as one 4-in-1 ESC design.', tag: 'esc', kind: 'commit', url: 'https://github.com/OpenDrone-hw/OpenESC-20x20/commits/main'},
-  {date: '2026-03-10', title: 'ESC build video published', detail: 'How drone ESCs work (so I built my own).', tag: 'esc', kind: 'post', url: 'https://www.youtube.com/watch?v=TwAmmPxOpTM'},
-  {date: '2026-03-11', title: 'OpenESC 30×30 split into its own repo', tag: 'esc', kind: 'commit', url: 'https://github.com/OpenDrone-hw/OpenESC-30x30/commits/main'},
-  {date: '2026-03-16', title: 'First production files exported', detail: '20×20 V1 and 30×30 V0.1 gerbers, BOM and placement.', tag: 'esc', kind: 'order', url: 'https://github.com/OpenDrone-hw/OpenESC-20x20'},
-  {date: '2026-03-19', title: 'OpenFC Lite Mini: first commit', detail: 'A stripped, cost-down flight controller begins.', tag: 'fc', kind: 'commit', url: 'https://github.com/OpenDrone-hw/OpenFC-Lite-Mini/commits/main'},
-  {date: '2026-03-21', title: 'This webshop: first commit', tag: 'company', kind: 'commit', url: 'https://github.com/OpenDrone-hw/OpenDrone-Web/commits/main'},
-  {date: '2026-03-23', title: 'OpenRX: first commit', detail: 'A six-receiver ExpressLRS lineup, shared BOM.', tag: 'rx', kind: 'commit', url: 'https://github.com/OpenDrone-hw/OpenRX/commits/main'},
-  {date: '2026-04-22', title: 'RP2350 framebuffer OSD merged into Betaflight', detail: 'The OSD driver the RP2354 FCs depend on lands upstream, contributed by the Betaflight community (betaflight#14882).', tag: 'fc', kind: 'upstream', url: 'https://github.com/betaflight/betaflight/pull/14882'},
-  {date: '2026-05-25', title: 'FC build video published', detail: 'How flight controllers work (so I built my own).', tag: 'fc', kind: 'post', url: 'https://www.youtube.com/watch?v=XDYZoMRJFeQ'},
-  {date: '2026-06-03', title: 'OpenFC Lite 30.5×30.5: first commit', tag: 'fc', kind: 'commit', url: 'https://github.com/OpenDrone-hw/OpenFC-Lite/commits/main'},
-  {date: '2026-06-05', title: 'ESC production exports for the validation run', detail: 'Rev2 20×20 and Rev1 30×30 sent out as a combined panel.', tag: 'esc', kind: 'order', url: 'https://github.com/OpenDrone-hw/OpenESC-20x20'},
-  {date: '2026-06-10', title: 'OpenRX fabrication set ordered', detail: 'All four receiver variants on one fab order.', tag: 'rx', kind: 'order', url: 'https://github.com/OpenDrone-hw/OpenRX'},
-  {date: '2026-06-14', title: 'Charger: first commit', detail: 'LiPo charger spec and part selection start in public.', tag: 'company', kind: 'commit', url: 'https://github.com/OpenDrone-hw/Charger/commits/main'},
-  {date: '2026-06-21', title: 'Site redesign deployed', detail: 'The current look of opendrone.be goes live.', tag: 'company', kind: 'launch', url: 'https://github.com/OpenDrone-hw/OpenDrone-Web'},
-  {date: '2026-06-29', title: 'Shared KiCad library: first commit', tag: 'company', kind: 'commit', url: 'https://github.com/OpenDrone-hw/KiCad-Library/commits/main'},
-  {date: '2026-07-05', title: 'OpenFrame: first commit', detail: '3" and 5" CNC carbon frames, CAD from Onshape. Repo not public yet.', tag: 'frame', kind: 'commit'},
-  {date: '2026-07-05', title: 'ESC bench validation opens', detail: 'Test records logged in OpenDrone-Testing; publication pending.', tag: 'esc', kind: 'validation'},
-  {date: '2026-07-06', title: 'OpenRX RF bring-up baselines recorded', detail: 'Mono and Gemini link budgets measured and logged.', tag: 'rx', kind: 'validation'},
-  {date: '2026-07-18', title: 'OpenRX video and range test published', tag: 'rx', kind: 'post', url: 'https://www.youtube.com/watch?v=ssmQkRkXE84'},
-  {date: '2026-07-25', title: 'External contributor proposes a full 20×20 rework', detail: 'Issue #8: exactly the kind of contribution the license invites.', tag: 'esc', kind: 'upstream', url: 'https://github.com/OpenDrone-hw/OpenESC-20x20/issues/8'},
-  {date: '2026-07-28', title: 'First CNC frame samples ordered', detail: '10× 3" and 10× 5" sample sets on their way.', tag: 'frame', kind: 'order'},
-  {date: '2026-08-04', title: 'Shared library live across ten repos', detail: '105 symbols, 195 footprints, one pinned submodule.', tag: 'company', kind: 'launch', url: 'https://github.com/OpenDrone-hw/KiCad-Library'},
-  {date: '2026-08-04', title: 'OpenFrame v0.1 tagged, first CNC pack ordered', tag: 'frame', kind: 'launch'},
-  {date: '2026-08-04', title: 'Production batch 1 planned', detail: '200 boards across 8 SKUs for the first stocked run.', tag: 'company', kind: 'order'},
-  {date: '2026-08-05', title: 'Hardware validated', detail: 'Both ESCs, both FCs and all four OpenRX variants pass bench validation.', tag: 'company', kind: 'validation'},
-  {date: '2026-08-05', title: 'Eight boards OSHWA-certified', detail: 'BE000026 through BE000033, both FCs, both ESCs, all four receivers.', tag: 'company', kind: 'cert', url: 'https://certification.oshwa.org/list.html'},
-  {date: '2026-08-06', title: 'Release tags cut on the validated boards', detail: 'rev2 on OpenESC 20×20 and both FCs, rev1 on OpenESC 30×30.', tag: 'company', kind: 'launch', url: 'https://github.com/OpenDrone-hw'},
+  {id: 'esc20_first_commit', date: '2026-03-09', tag: 'esc', kind: 'commit', url: 'https://github.com/OpenDrone-hw/OpenESC-20x20/commits/main'},
+  {id: 'esc_build_video', date: '2026-03-10', tag: 'esc', kind: 'post', url: 'https://www.youtube.com/watch?v=TwAmmPxOpTM'},
+  {id: 'esc30_repo_split', date: '2026-03-11', tag: 'esc', kind: 'commit', url: 'https://github.com/OpenDrone-hw/OpenESC-30x30/commits/main'},
+  {id: 'esc_first_production_files', date: '2026-03-16', tag: 'esc', kind: 'order', url: 'https://github.com/OpenDrone-hw/OpenESC-20x20'},
+  {id: 'fc_mini_first_commit', date: '2026-03-19', tag: 'fc', kind: 'commit', url: 'https://github.com/OpenDrone-hw/OpenFC-Lite-Mini/commits/main'},
+  {id: 'web_first_commit', date: '2026-03-21', tag: 'company', kind: 'commit', url: 'https://github.com/OpenDrone-hw/OpenDrone-Web/commits/main'},
+  {id: 'rx_first_commit', date: '2026-03-23', tag: 'rx', kind: 'commit', url: 'https://github.com/OpenDrone-hw/OpenRX/commits/main'},
+  {id: 'bf_osd_merged', date: '2026-04-22', tag: 'fc', kind: 'upstream', url: 'https://github.com/betaflight/betaflight/pull/14882'},
+  {id: 'fc_build_video', date: '2026-05-25', tag: 'fc', kind: 'post', url: 'https://www.youtube.com/watch?v=XDYZoMRJFeQ'},
+  {id: 'fc_lite_first_commit', date: '2026-06-03', tag: 'fc', kind: 'commit', url: 'https://github.com/OpenDrone-hw/OpenFC-Lite/commits/main'},
+  {id: 'esc_validation_exports', date: '2026-06-05', tag: 'esc', kind: 'order', url: 'https://github.com/OpenDrone-hw/OpenESC-20x20'},
+  {id: 'rx_fab_ordered', date: '2026-06-10', tag: 'rx', kind: 'order', url: 'https://github.com/OpenDrone-hw/OpenRX'},
+  {id: 'charger_first_commit', date: '2026-06-14', tag: 'company', kind: 'commit', url: 'https://github.com/OpenDrone-hw/Charger/commits/main'},
+  {id: 'site_redesign', date: '2026-06-21', tag: 'company', kind: 'launch', url: 'https://github.com/OpenDrone-hw/OpenDrone-Web'},
+  {id: 'library_first_commit', date: '2026-06-29', tag: 'company', kind: 'commit', url: 'https://github.com/OpenDrone-hw/KiCad-Library/commits/main'},
+  {id: 'frame_first_commit', date: '2026-07-05', tag: 'frame', kind: 'commit'},
+  {id: 'esc_bench_validation', date: '2026-07-05', tag: 'esc', kind: 'validation'},
+  {id: 'rx_rf_baselines', date: '2026-07-06', tag: 'rx', kind: 'validation'},
+  {id: 'rx_range_video', date: '2026-07-18', tag: 'rx', kind: 'post', url: 'https://www.youtube.com/watch?v=ssmQkRkXE84'},
+  {id: 'esc20_rework_proposal', date: '2026-07-25', tag: 'esc', kind: 'upstream', url: 'https://github.com/OpenDrone-hw/OpenESC-20x20/issues/8'},
+  {id: 'frame_samples_ordered', date: '2026-07-28', tag: 'frame', kind: 'order'},
+  {id: 'library_live', date: '2026-08-04', tag: 'company', kind: 'launch', url: 'https://github.com/OpenDrone-hw/KiCad-Library'},
+  {id: 'frame_v01_tagged', date: '2026-08-04', tag: 'frame', kind: 'launch'},
+  {id: 'batch1_planned', date: '2026-08-04', tag: 'company', kind: 'order'},
+  {id: 'hardware_validated', date: '2026-08-05', tag: 'company', kind: 'validation'},
+  {id: 'oshwa_certified', date: '2026-08-05', tag: 'company', kind: 'cert', url: 'https://certification.oshwa.org/list.html'},
+  {id: 'release_tags_cut', date: '2026-08-06', tag: 'company', kind: 'launch', url: 'https://github.com/OpenDrone-hw'},
 ];
 
 function fmtDate(iso: string): string {
@@ -168,15 +176,9 @@ export default function TimelineRoute() {
   return (
     <EditorialShell slug="timeline" pageClassName="timeline-page">
       <header className="editorial-hero">
-        <p className="editorial-eyebrow">Timeline · receipts linked</p>
-        <h1 className="editorial-title">
-          Dated, <em>like everything else in the repo.</em>
-        </h1>
-        <p className="editorial-lead">
-          The project&apos;s history as a trace: first commits, fab orders,
-          bench validations, certifications, upstream merges. Where a public
-          receipt exists, the entry links to it.
-        </p>
+        <Txt id="timeline.eyebrow" as="p" className="editorial-eyebrow" />
+        <Txt id="timeline.title" as="h1" className="editorial-title" />
+        <Txt id="timeline.lead" as="p" className="editorial-lead" />
         <div
           className="tl-filters"
           role="group"
@@ -190,7 +192,7 @@ export default function TimelineRoute() {
               aria-pressed={filter === f.key}
               onClick={() => setFilter(f.key)}
             >
-              {f.label}
+              <Txt id={`timeline.filter_${f.key}`} />
             </button>
           ))}
         </div>
@@ -203,7 +205,7 @@ export default function TimelineRoute() {
             <h2 className="tl-year-label">{year}</h2>
             <ol className="tl-events">
               {events.map((e) => (
-                <li key={`${e.date}-${e.title}`} className="tl-event">
+                <li key={e.id} className="tl-event">
                   <span className="tl-pad" aria-hidden="true" />
                   <div className="tl-card">
                     <p className="tl-date">
@@ -222,13 +224,18 @@ export default function TimelineRoute() {
                           target="_blank"
                           rel="noopener noreferrer"
                         >
-                          {e.title} ↗
+                          <Txt id={`timeline.event_${e.id}_title`} /> ↗
                         </a>
                       ) : (
-                        e.title
+                        <Txt id={`timeline.event_${e.id}_title`} />
                       )}
                     </h3>
-                    {e.detail ? <p className="tl-detail">{e.detail}</p> : null}
+                    {/* No detail key on this event renders nothing. */}
+                    <Txt
+                      id={`timeline.event_${e.id}_detail`}
+                      as="p"
+                      className="tl-detail"
+                    />
                   </div>
                 </li>
               ))}
@@ -236,20 +243,20 @@ export default function TimelineRoute() {
           </section>
         ))}
         {groups.length === 0 ? (
-          <p className="tl-empty">Nothing under this filter yet.</p>
+          <Txt id="timeline.empty" as="p" className="tl-empty" />
         ) : null}
       </div>
 
       <section className="editorial-cta">
         <Link prefetch="viewport" to="/roadmap" className="editorial-cta-primary">
-          What ships next →
+          <Txt id="timeline.cta_primary" />
         </Link>
         <Link
           prefetch="viewport"
           to="/roadmap"
           className="editorial-cta-secondary"
         >
-          Put yourself on this timeline →
+          <Txt id="timeline.cta_secondary" />
         </Link>
       </section>
     </EditorialShell>

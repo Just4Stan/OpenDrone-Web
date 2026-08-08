@@ -1,0 +1,19 @@
+{
+  "$route": "/collections/:handle",
+  "$title": "Collection page",
+  "meta_title_suffix": "Collection",
+  "meta_title_fallback": "Collection",
+  "meta_description": "Explore curated OpenDrone hardware collections and product families.",
+  "breadcrumb_shop": "Shop",
+  "eyebrow": "Collection",
+  "empty_title": "No products yet",
+  "empty_body": "This collection is empty. Check back soon or browse the full catalog.",
+  "empty_cta": "Shop all",
+  "sort_label": "Sort",
+  "sort_featured": "Featured",
+  "sort_price_asc": "Price: low to high",
+  "sort_price_desc": "Price: high to low",
+  "sort_newest": "Newest",
+  "sort_bestselling": "Best selling",
+  "sort_title": "Alphabetical"
+}

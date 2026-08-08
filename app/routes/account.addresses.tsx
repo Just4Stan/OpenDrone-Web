@@ -24,6 +24,8 @@ export const headers: HeadersFunction = () => ({
   'Cache-Control': 'private, no-store',
 });
 import {buildSeoMeta} from '~/lib/seo';
+import {Txt} from '~/components/Txt';
+import {copyText} from '~/lib/copy';
 
 export type ActionResponse = {
   addressId?: string | null;
@@ -36,8 +38,10 @@ export type ActionResponse = {
 
 export const meta: Route.MetaFunction = () =>
   buildSeoMeta({
-    title: 'Addresses',
-    description: 'Manage saved shipping addresses for your OpenDrone account.',
+    title: copyText('account.addresses.meta_title') ?? 'Addresses',
+    description:
+      copyText('account.addresses.meta_description') ??
+      'Manage saved shipping addresses for your OpenDrone account.',
     robots: 'noindex,nofollow',
   });
 
@@ -64,7 +68,12 @@ export async function action({request, context}: Route.ActionArgs) {
     const isLoggedIn = await customerAccount.isLoggedIn();
     if (!isLoggedIn) {
       return data(
-        {error: {[addressId]: 'Unauthorized'}},
+        {
+          error: {
+            [addressId]:
+              copyText('account.addresses.error_unauthorized') ?? 'Unauthorized',
+          },
+        },
         {
           status: 401,
         },
@@ -119,7 +128,10 @@ export async function action({request, context}: Route.ActionArgs) {
           }
 
           if (!data?.customerAddressCreate?.customerAddress) {
-            throw new Error('Customer address create failed.');
+            throw new Error(
+              copyText('account.addresses.error_create') ??
+                'Customer address create failed.',
+            );
           }
 
           return {
@@ -169,7 +181,10 @@ export async function action({request, context}: Route.ActionArgs) {
           }
 
           if (!data?.customerAddressUpdate?.customerAddress) {
-            throw new Error('Customer address update failed.');
+            throw new Error(
+              copyText('account.addresses.error_update') ??
+                'Customer address update failed.',
+            );
           }
 
           return {
@@ -217,7 +232,10 @@ export async function action({request, context}: Route.ActionArgs) {
           }
 
           if (!data?.customerAddressDelete?.deletedAddressId) {
-            throw new Error('Customer address delete failed.');
+            throw new Error(
+              copyText('account.addresses.error_delete') ??
+                'Customer address delete failed.',
+            );
           }
 
           return {error: null, deletedAddress: addressId};
@@ -241,7 +259,13 @@ export async function action({request, context}: Route.ActionArgs) {
 
       default: {
         return data(
-          {error: {[addressId]: 'Method not allowed'}},
+          {
+            error: {
+              [addressId]:
+                copyText('account.addresses.error_method') ??
+                  'Method not allowed',
+            },
+          },
           {
             status: 405,
           },
@@ -273,16 +297,20 @@ export default function Addresses() {
   return (
     <div className="account-addresses">
       <header className="account-section-header">
-        <h2>Addresses</h2>
-        <p>Save shipping destinations for faster checkout.</p>
+        <Txt id="account.addresses.title" as="h2" />
+        <Txt id="account.addresses.lede" as="p" />
       </header>
       <div className="address-sections">
         <section className="account-form-section">
-          <h3 className="section-heading">Create address</h3>
+          <Txt
+            id="account.addresses.create_heading"
+            as="h3"
+            className="section-heading"
+          />
           <NewAddressForm key={addresses.nodes.length} />
         </section>
         {!addresses.nodes.length ? (
-          <p>You have no addresses saved.</p>
+          <Txt id="account.addresses.empty" as="p" />
         ) : (
           <ExistingAddresses
             addresses={addresses}
@@ -323,7 +351,13 @@ function NewAddressForm() {
             formMethod="POST"
             type="submit"
           >
-            {stateForMethod('POST') !== 'idle' ? 'Creating' : 'Create'}
+            <Txt
+              id={
+                stateForMethod('POST') !== 'idle'
+                  ? 'account.addresses.create_busy'
+                  : 'account.addresses.create'
+              }
+            />
           </button>
         </div>
       )}
@@ -337,7 +371,11 @@ function ExistingAddresses({
 }: Pick<CustomerFragment, 'addresses' | 'defaultAddress'>) {
   return (
     <section className="account-form-section">
-      <h3 className="section-heading">Existing addresses</h3>
+      <Txt
+        id="account.addresses.existing_heading"
+        as="h3"
+        className="section-heading"
+      />
       <div className="address-list">
         {addresses.nodes.map((address) => (
           <AddressForm
@@ -354,7 +392,13 @@ function ExistingAddresses({
                   formMethod="PUT"
                   type="submit"
                 >
-                  {stateForMethod('PUT') !== 'idle' ? 'Saving' : 'Save'}
+                  <Txt
+                    id={
+                      stateForMethod('PUT') !== 'idle'
+                        ? 'account.addresses.save_busy'
+                        : 'account.addresses.save'
+                    }
+                  />
                 </button>
                 <button
                   className="account-button account-button-secondary"
@@ -362,7 +406,13 @@ function ExistingAddresses({
                   formMethod="DELETE"
                   type="submit"
                 >
-                  {stateForMethod('DELETE') !== 'idle' ? 'Deleting' : 'Delete'}
+                  <Txt
+                    id={
+                      stateForMethod('DELETE') !== 'idle'
+                        ? 'account.addresses.delete_busy'
+                        : 'account.addresses.delete'
+                    }
+                  />
                 </button>
               </div>
             )}
@@ -395,114 +445,154 @@ export function AddressForm({
     <Form className="account-form address-form" id={addressId}>
       <fieldset className="account-form-grid">
         <input type="hidden" name="addressId" defaultValue={addressId} />
-        <label htmlFor={`${idPrefix}-firstName`}>First name*</label>
+        <Txt
+          id="account.addresses.first_name_label"
+          as="label"
+          htmlFor={`${idPrefix}-firstName`}
+        />
         <input
-          aria-label="First name"
+          aria-label={copyText('account.addresses.first_name_aria')}
           autoComplete="given-name"
           defaultValue={address?.firstName ?? ''}
           id={`${idPrefix}-firstName`}
           name="firstName"
-          placeholder="First name"
+          placeholder={copyText('account.addresses.first_name_placeholder')}
           required
           type="text"
         />
-        <label htmlFor={`${idPrefix}-lastName`}>Last name*</label>
+        <Txt
+          id="account.addresses.last_name_label"
+          as="label"
+          htmlFor={`${idPrefix}-lastName`}
+        />
         <input
-          aria-label="Last name"
+          aria-label={copyText('account.addresses.last_name_aria')}
           autoComplete="family-name"
           defaultValue={address?.lastName ?? ''}
           id={`${idPrefix}-lastName`}
           name="lastName"
-          placeholder="Last name"
+          placeholder={copyText('account.addresses.last_name_placeholder')}
           required
           type="text"
         />
-        <label htmlFor={`${idPrefix}-company`}>Company</label>
+        <Txt
+          id="account.addresses.company_label"
+          as="label"
+          htmlFor={`${idPrefix}-company`}
+        />
         <input
-          aria-label="Company"
+          aria-label={copyText('account.addresses.company_aria')}
           autoComplete="organization"
           defaultValue={address?.company ?? ''}
           id={`${idPrefix}-company`}
           name="company"
-          placeholder="Company"
+          placeholder={copyText('account.addresses.company_placeholder')}
           type="text"
         />
-        <label htmlFor={`${idPrefix}-address1`}>Address line*</label>
+        <Txt
+          id="account.addresses.address1_label"
+          as="label"
+          htmlFor={`${idPrefix}-address1`}
+        />
         <input
-          aria-label="Address line 1"
+          aria-label={copyText('account.addresses.address1_aria')}
           autoComplete="address-line1"
           defaultValue={address?.address1 ?? ''}
           id={`${idPrefix}-address1`}
           name="address1"
-          placeholder="Address line 1*"
+          placeholder={copyText('account.addresses.address1_placeholder')}
           required
           type="text"
         />
-        <label htmlFor={`${idPrefix}-address2`}>Address line 2</label>
+        <Txt
+          id="account.addresses.address2_label"
+          as="label"
+          htmlFor={`${idPrefix}-address2`}
+        />
         <input
-          aria-label="Address line 2"
+          aria-label={copyText('account.addresses.address2_aria')}
           autoComplete="address-line2"
           defaultValue={address?.address2 ?? ''}
           id={`${idPrefix}-address2`}
           name="address2"
-          placeholder="Address line 2"
+          placeholder={copyText('account.addresses.address2_placeholder')}
           type="text"
         />
-        <label htmlFor={`${idPrefix}-city`}>City*</label>
+        <Txt
+          id="account.addresses.city_label"
+          as="label"
+          htmlFor={`${idPrefix}-city`}
+        />
         <input
-          aria-label="City"
+          aria-label={copyText('account.addresses.city_aria')}
           autoComplete="address-level2"
           defaultValue={address?.city ?? ''}
           id={`${idPrefix}-city`}
           name="city"
-          placeholder="City"
+          placeholder={copyText('account.addresses.city_placeholder')}
           required
           type="text"
         />
-        <label htmlFor={`${idPrefix}-zoneCode`}>State / Province*</label>
+        <Txt
+          id="account.addresses.zone_label"
+          as="label"
+          htmlFor={`${idPrefix}-zoneCode`}
+        />
         <input
-          aria-label="State/Province"
+          aria-label={copyText('account.addresses.zone_aria')}
           autoComplete="address-level1"
           defaultValue={address?.zoneCode ?? ''}
           id={`${idPrefix}-zoneCode`}
           name="zoneCode"
-          placeholder="State / Province"
+          placeholder={copyText('account.addresses.zone_placeholder')}
           required
           type="text"
         />
-        <label htmlFor={`${idPrefix}-zip`}>Zip / Postal Code*</label>
+        <Txt
+          id="account.addresses.zip_label"
+          as="label"
+          htmlFor={`${idPrefix}-zip`}
+        />
         <input
-          aria-label="Zip"
+          aria-label={copyText('account.addresses.zip_aria')}
           autoComplete="postal-code"
           defaultValue={address?.zip ?? ''}
           id={`${idPrefix}-zip`}
           name="zip"
-          placeholder="Zip / Postal Code"
+          placeholder={copyText('account.addresses.zip_placeholder')}
           required
           type="text"
         />
-        <label htmlFor={`${idPrefix}-territoryCode`}>Country Code*</label>
+        <Txt
+          id="account.addresses.country_label"
+          as="label"
+          htmlFor={`${idPrefix}-territoryCode`}
+        />
         <input
-          aria-label="territoryCode"
+          aria-label={copyText('account.addresses.country_aria')}
           autoComplete="country"
           defaultValue={address?.territoryCode ?? ''}
           id={`${idPrefix}-territoryCode`}
           name="territoryCode"
-          placeholder="Country"
+          placeholder={copyText('account.addresses.country_placeholder')}
           required
           type="text"
           maxLength={2}
         />
-        <label htmlFor={`${idPrefix}-phoneNumber`}>Phone</label>
+        <Txt
+          id="account.addresses.phone_label"
+          as="label"
+          htmlFor={`${idPrefix}-phoneNumber`}
+        />
         <input
-          aria-label="Phone Number"
+          aria-label={copyText('account.addresses.phone_aria')}
           autoComplete="tel"
           defaultValue={address?.phoneNumber ?? ''}
           id={`${idPrefix}-phoneNumber`}
           name="phoneNumber"
-          placeholder="+16135551111"
-          pattern="^\+?[1-9]\d{3,14}$"
+          placeholder={copyText('account.addresses.phone_placeholder')}
           type="tel"
+          pattern="^\+?[1-9]\d{3,14}$"
         />
         <div className="account-checkbox-row">
           <input
@@ -511,9 +601,11 @@ export function AddressForm({
             name="defaultAddress"
             type="checkbox"
           />
-          <label htmlFor={`${idPrefix}-defaultAddress`}>
-            Set as default address
-          </label>
+          <Txt
+            id="account.addresses.default_label"
+            as="label"
+            htmlFor={`${idPrefix}-defaultAddress`}
+          />
         </div>
         {error ? (
           <p>

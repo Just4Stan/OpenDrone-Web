@@ -1,0 +1,453 @@
+{
+  "$generated": "npm run studio:tokens — do not hand-edit",
+  "$source": "app/styles/app.css @theme",
+  "count": 61,
+  "tokens": [
+    {
+      "name": "--color-bg",
+      "value": "#0d0d10",
+      "group": "colour",
+      "derivedFrom": [],
+      "light": "#f7f6f3"
+    },
+    {
+      "name": "--color-bg-card",
+      "value": "#141417",
+      "group": "colour",
+      "derivedFrom": [],
+      "light": "#ffffff"
+    },
+    {
+      "name": "--color-bg-elevated",
+      "value": "#1a1a1e",
+      "group": "colour",
+      "derivedFrom": [],
+      "light": "#efece6"
+    },
+    {
+      "name": "--color-text",
+      "value": "#e5e5e5",
+      "group": "colour",
+      "derivedFrom": [],
+      "light": "#1a1a1e"
+    },
+    {
+      "name": "--color-text-muted",
+      "value": "#9a9a9a",
+      "group": "colour",
+      "derivedFrom": [],
+      "light": "#57575c"
+    },
+    {
+      "name": "--color-text-dim",
+      "value": "#6a6a6a",
+      "group": "colour",
+      "derivedFrom": [],
+      "light": "#86868c"
+    },
+    {
+      "name": "--color-gold",
+      "value": "#c89d2e",
+      "group": "colour",
+      "derivedFrom": [],
+      "light": "#c89d2e"
+    },
+    {
+      "name": "--color-gold-hover",
+      "value": "#dab040",
+      "group": "colour",
+      "derivedFrom": [],
+      "light": "#dab040"
+    },
+    {
+      "name": "--color-gold-bright",
+      "value": "#fdb600",
+      "group": "colour",
+      "derivedFrom": [],
+      "light": null
+    },
+    {
+      "name": "--color-gold-soft",
+      "value": "rgba(200, 157, 46, 0.12)",
+      "group": "colour",
+      "derivedFrom": [],
+      "light": "rgba(200, 157, 46, 0.14)"
+    },
+    {
+      "name": "--color-gold-fill",
+      "value": "#c89d2e",
+      "group": "colour",
+      "derivedFrom": [],
+      "light": "#dab040"
+    },
+    {
+      "name": "--color-gold-fill-hover",
+      "value": "#dab040",
+      "group": "colour",
+      "derivedFrom": [],
+      "light": "#c89d2e"
+    },
+    {
+      "name": "--color-green",
+      "value": "#4ea866",
+      "group": "colour",
+      "derivedFrom": [],
+      "light": "#147A31"
+    },
+    {
+      "name": "--color-green-deep",
+      "value": "#327014",
+      "group": "colour",
+      "derivedFrom": [],
+      "light": null
+    },
+    {
+      "name": "--color-stock",
+      "value": "var(--color-green)",
+      "group": "derived",
+      "derivedFrom": [
+        "--color-green"
+      ],
+      "light": null
+    },
+    {
+      "name": "--color-error",
+      "value": "#f87171",
+      "group": "colour",
+      "derivedFrom": [],
+      "light": "#b42318"
+    },
+    {
+      "name": "--color-border",
+      "value": "#24242a",
+      "group": "colour",
+      "derivedFrom": [],
+      "light": "#e4e0d8"
+    },
+    {
+      "name": "--color-border-strong",
+      "value": "#34343c",
+      "group": "colour",
+      "derivedFrom": [],
+      "light": "#cfc9bd"
+    },
+    {
+      "name": "--color-on-accent",
+      "value": "#0d0d10",
+      "group": "colour",
+      "derivedFrom": [],
+      "light": null
+    },
+    {
+      "name": "--color-accent",
+      "value": "var(--color-gold)",
+      "group": "derived",
+      "derivedFrom": [
+        "--color-gold"
+      ],
+      "light": null
+    },
+    {
+      "name": "--color-accent-hover",
+      "value": "var(--color-gold-hover)",
+      "group": "derived",
+      "derivedFrom": [
+        "--color-gold-hover"
+      ],
+      "light": null
+    },
+    {
+      "name": "--color-accent-light",
+      "value": "var(--color-gold)",
+      "group": "derived",
+      "derivedFrom": [
+        "--color-gold"
+      ],
+      "light": null
+    },
+    {
+      "name": "--color-gold-light",
+      "value": "var(--color-gold-hover)",
+      "group": "derived",
+      "derivedFrom": [
+        "--color-gold-hover"
+      ],
+      "light": null
+    },
+    {
+      "name": "--font-display",
+      "value": "\"Inter\", -apple-system, BlinkMacSystemFont, ui-sans-serif, system-ui, \"Segoe UI\", Roboto, Helvetica, Arial, sans-serif",
+      "group": "font",
+      "derivedFrom": [],
+      "light": null
+    },
+    {
+      "name": "--font-sans",
+      "value": "\"Inter\", -apple-system, BlinkMacSystemFont, ui-sans-serif, system-ui, \"Segoe UI\", Roboto, Helvetica, Arial, sans-serif",
+      "group": "font",
+      "derivedFrom": [],
+      "light": null
+    },
+    {
+      "name": "--font-mono",
+      "value": "\"JetBrains Mono\", ui-monospace, Menlo, Monaco, \"SF Mono\", \"Cascadia Mono\", \"Segoe UI Mono\", Consolas, monospace",
+      "group": "font",
+      "derivedFrom": [],
+      "light": null
+    },
+    {
+      "name": "--font-brand",
+      "value": "\"Tokyo\", var(--font-display)",
+      "group": "font",
+      "derivedFrom": [
+        "--font-display"
+      ],
+      "light": null
+    },
+    {
+      "name": "--fs-xs",
+      "value": "0.6875rem",
+      "group": "size",
+      "derivedFrom": [],
+      "light": null
+    },
+    {
+      "name": "--fs-sm",
+      "value": "0.8125rem",
+      "group": "size",
+      "derivedFrom": [],
+      "light": null
+    },
+    {
+      "name": "--fs-base",
+      "value": "0.9375rem",
+      "group": "size",
+      "derivedFrom": [],
+      "light": null
+    },
+    {
+      "name": "--fs-md",
+      "value": "1.0625rem",
+      "group": "size",
+      "derivedFrom": [],
+      "light": null
+    },
+    {
+      "name": "--fs-lg",
+      "value": "1.375rem",
+      "group": "size",
+      "derivedFrom": [],
+      "light": null
+    },
+    {
+      "name": "--fs-xl",
+      "value": "clamp(1.625rem, 2.4vw, 2rem)",
+      "group": "derived",
+      "derivedFrom": [],
+      "light": null
+    },
+    {
+      "name": "--fs-2xl",
+      "value": "clamp(2rem, 3.4vw, 2.75rem)",
+      "group": "derived",
+      "derivedFrom": [],
+      "light": null
+    },
+    {
+      "name": "--fs-3xl",
+      "value": "clamp(2.5rem, 4vw, 3.5rem)",
+      "group": "derived",
+      "derivedFrom": [],
+      "light": null
+    },
+    {
+      "name": "--sp-1",
+      "value": "0.25rem",
+      "group": "spacing",
+      "derivedFrom": [],
+      "light": null
+    },
+    {
+      "name": "--sp-2",
+      "value": "0.5rem",
+      "group": "spacing",
+      "derivedFrom": [],
+      "light": null
+    },
+    {
+      "name": "--sp-3",
+      "value": "0.75rem",
+      "group": "spacing",
+      "derivedFrom": [],
+      "light": null
+    },
+    {
+      "name": "--sp-4",
+      "value": "1rem",
+      "group": "spacing",
+      "derivedFrom": [],
+      "light": null
+    },
+    {
+      "name": "--sp-5",
+      "value": "1.5rem",
+      "group": "spacing",
+      "derivedFrom": [],
+      "light": null
+    },
+    {
+      "name": "--sp-6",
+      "value": "2rem",
+      "group": "spacing",
+      "derivedFrom": [],
+      "light": null
+    },
+    {
+      "name": "--sp-7",
+      "value": "3rem",
+      "group": "spacing",
+      "derivedFrom": [],
+      "light": null
+    },
+    {
+      "name": "--sp-8",
+      "value": "4.5rem",
+      "group": "spacing",
+      "derivedFrom": [],
+      "light": null
+    },
+    {
+      "name": "--r-2xs",
+      "value": "2px",
+      "group": "radius",
+      "derivedFrom": [],
+      "light": null
+    },
+    {
+      "name": "--r-xs",
+      "value": "4px",
+      "group": "radius",
+      "derivedFrom": [],
+      "light": null
+    },
+    {
+      "name": "--r-sm",
+      "value": "6px",
+      "group": "radius",
+      "derivedFrom": [],
+      "light": null
+    },
+    {
+      "name": "--r-md",
+      "value": "10px",
+      "group": "radius",
+      "derivedFrom": [],
+      "light": null
+    },
+    {
+      "name": "--r-lg",
+      "value": "14px",
+      "group": "radius",
+      "derivedFrom": [],
+      "light": null
+    },
+    {
+      "name": "--r-pod",
+      "value": "22px",
+      "group": "radius",
+      "derivedFrom": [],
+      "light": null
+    },
+    {
+      "name": "--r-pill",
+      "value": "999px",
+      "group": "radius",
+      "derivedFrom": [],
+      "light": null
+    },
+    {
+      "name": "--pod-bg",
+      "value": "rgba(13, 13, 16, 0.8)",
+      "group": "colour",
+      "derivedFrom": [],
+      "light": "rgba(247, 246, 243, 0.82)"
+    },
+    {
+      "name": "--pod-bg-strong",
+      "value": "rgba(16, 16, 20, 0.94)",
+      "group": "colour",
+      "derivedFrom": [],
+      "light": "rgba(255, 255, 255, 0.96)"
+    },
+    {
+      "name": "--pod-border",
+      "value": "var(--color-border)",
+      "group": "derived",
+      "derivedFrom": [
+        "--color-border"
+      ],
+      "light": null
+    },
+    {
+      "name": "--pod-blur",
+      "value": "14px",
+      "group": "layout",
+      "derivedFrom": [],
+      "light": null
+    },
+    {
+      "name": "--pod-shadow",
+      "value": "0 10px 34px -16px rgba(0, 0, 0, 0.55)",
+      "group": "shadow",
+      "derivedFrom": [],
+      "light": "0 10px 30px -16px rgba(60, 50, 30, 0.3)"
+    },
+    {
+      "name": "--pod-pad",
+      "value": "clamp(var(--sp-3), 1.5vw, var(--sp-5))",
+      "group": "derived",
+      "derivedFrom": [
+        "--sp-3",
+        "--sp-5"
+      ],
+      "light": null
+    },
+    {
+      "name": "--header-height",
+      "value": "56px",
+      "group": "layout",
+      "derivedFrom": [],
+      "light": null
+    },
+    {
+      "name": "--aside-width",
+      "value": "400px",
+      "group": "layout",
+      "derivedFrom": [],
+      "light": null
+    },
+    {
+      "name": "--rail-gutter",
+      "value": "1.25rem",
+      "group": "layout",
+      "derivedFrom": [],
+      "light": null
+    },
+    {
+      "name": "--rail-width",
+      "value": "min(calc(100% - (2 * var(--rail-gutter))), 1520px)",
+      "group": "derived",
+      "derivedFrom": [
+        "--rail-gutter"
+      ],
+      "light": null
+    },
+    {
+      "name": "--prose-width",
+      "value": "680px",
+      "group": "layout",
+      "derivedFrom": [],
+      "light": null
+    }
+  ]
+}

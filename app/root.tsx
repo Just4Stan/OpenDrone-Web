@@ -9,6 +9,7 @@ import {
   Meta,
   Scripts,
   ScrollRestoration,
+  useLocation,
   useRouteLoaderData,
 } from 'react-router';
 import type {Route} from './+types/root';
@@ -19,10 +20,13 @@ import resetStyles from '~/styles/reset.css?url';
 import appStyles from '~/styles/app.css?url';
 import {PageLayout} from './components/PageLayout';
 import {SignalLost} from './components/SignalLost';
+import {Txt} from './components/Txt';
+import {copyText} from '~/lib/copy';
 import {getCompanyIdentity} from '~/lib/company';
 import {localeFromPathname, seoLocaleTag} from '~/lib/i18n';
 import {buildOrgJsonLd, buildSeoMeta} from '~/lib/seo';
 import {THEME_COLORS, THEME_INIT_SCRIPT} from '~/lib/theme';
+import {themeOverrideCss} from '~/lib/theme-overrides';
 import {installViewTransitionGuard} from '~/lib/view-transition';
 import {captureAttribution} from '~/lib/growth/attribution';
 
@@ -39,11 +43,16 @@ export const meta: Route.MetaFunction = ({error}) => {
   if (!error) return buildSeoMeta({});
   const status = isRouteErrorResponse(error) ? error.status : 500;
   return buildSeoMeta({
-    title: status === 404 ? 'Signal lost' : 'Something went wrong',
+    title:
+      status === 404
+        ? (copyText('not-found.meta_title') ?? 'Signal lost')
+        : (copyText('not-found.error_meta_title') ?? 'Something went wrong'),
     description:
       status === 404
-        ? 'This page does not exist. Return to home.'
-        : 'An unexpected error occurred.',
+        ? (copyText('not-found.meta_description') ??
+          'This page does not exist. Return to home.')
+        : (copyText('not-found.error_meta_description') ??
+          'An unexpected error occurred.'),
     robots: 'noindex,nofollow',
   });
 };
@@ -240,6 +249,7 @@ export function Layout({children}: {children?: React.ReactNode}) {
   const data = useRouteLoaderData<RootLoader>('root');
   const htmlLang = (data?.locale || 'en_US').split('_')[0] || 'en';
   const orgJsonLd = data?.company ? buildOrgJsonLd(data.company) : null;
+  const themeCss = themeOverrideCss();
 
   // Make every view transition resilient: route React Router's navigation
   // transitions (and the manual theme-toggle reveal) through one guard that
@@ -309,6 +319,17 @@ export function Layout({children}: {children?: React.ReactNode}) {
         />
         <link rel="stylesheet" href={resetStyles}></link>
         <link rel="stylesheet" href={appStyles}></link>
+        {/* Design-token overrides authored in the studio (content/theme.json).
+            After the stylesheet so it wins on order, before <Meta/> so route
+            styles can still override it. Empty string when nothing is
+            overridden, which is the normal state. */}
+        {themeCss ? (
+          <style
+            nonce={nonce}
+            suppressHydrationWarning
+            dangerouslySetInnerHTML={{__html: themeCss}}
+          />
+        ) : null}
         <Meta />
         <Links />
         {/* Plausible — cookieless analytics, no consent required.
@@ -349,6 +370,15 @@ export function Layout({children}: {children?: React.ReactNode}) {
 
 export default function App() {
   const data = useRouteLoaderData<RootLoader>('root');
+  const {pathname} = useLocation();
+
+  // The studio owns the whole viewport and must not be wrapped in the site's
+  // header, footer or analytics: it is a tool, not a page. `import.meta.env.DEV`
+  // is statically false in a production build, so this test and everything it
+  // guards folds away, matching the route-level exclusion in app/routes.ts.
+  if (import.meta.env.DEV && pathname.startsWith('/studio')) {
+    return <Outlet />;
+  }
 
   if (!data) {
     return <Outlet />;
@@ -387,27 +417,25 @@ export function ErrorBoundary() {
     return <SignalLost />;
   }
 
-  const title = 'Something went wrong';
-  const description =
-    'An unexpected error occurred. Try again, or head back to the catalog.';
-
   return (
     <div className="route-error page-shell">
       <p className="route-error-status">{errorStatus}</p>
-      <h1 className="route-error-title">{title}</h1>
-      <p className="route-error-body">{description}</p>
+      <Txt id="not-found.error_title" as="h1" className="route-error-title" />
+      <Txt id="not-found.error_body" as="p" className="route-error-body" />
       {errorMessage ? (
         <details className="route-error-details">
-          <summary>Technical details</summary>
+          <summary>
+            <Txt id="not-found.error_details" />
+          </summary>
           <pre>{errorMessage}</pre>
         </details>
       ) : null}
       <div className="route-error-actions">
         <a href="/" className="hero-cta-primary">
-          Home
+          <Txt id="not-found.error_cta_home" />
         </a>
         <a href="/collections/all" className="hero-cta-secondary">
-          Shop
+          <Txt id="not-found.error_cta_shop" />
         </a>
       </div>
     </div>

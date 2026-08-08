@@ -6,6 +6,8 @@ import {verifyUnsubscribeToken} from '~/lib/growth/unsubscribe-token';
 import {recordUnsubscribe} from '~/lib/growth/ledger';
 import {unsubscribeContact} from '~/lib/growth/resend';
 import {unsubscribeCustomerMarketing} from '~/lib/shopify-admin';
+import {Txt} from '~/components/Txt';
+import {copyText} from '~/lib/copy';
 
 // Newsletter opt-out — the URL every OpenDrone email footer points at.
 //
@@ -25,8 +27,10 @@ const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export const meta: Route.MetaFunction = ({location}) =>
   buildSeoMeta({
-    title: 'Unsubscribe',
-    description: 'Unsubscribe from OpenDrone emails.',
+    title: copyText('newsletter.unsub_meta_title') ?? 'Unsubscribe',
+    description:
+      copyText('newsletter.unsub_meta_description') ??
+      'Unsubscribe from OpenDrone emails.',
     robots: 'noindex',
     url: `${SITE_ORIGIN}${location.pathname}`,
   });
@@ -49,7 +53,12 @@ type UnsubscribeResult = {ok: boolean; message: string};
 export async function action({request, context}: Route.ActionArgs) {
   if (request.method !== 'POST') {
     return data<UnsubscribeResult>(
-      {ok: false, message: 'Method not allowed.'},
+      {
+        ok: false,
+        message:
+          copyText('newsletter.unsub_method_not_allowed') ??
+          'Method not allowed.',
+      },
       {status: 405},
     );
   }
@@ -64,13 +73,18 @@ export async function action({request, context}: Route.ActionArgs) {
   } else {
     if (String(formData.get('website') ?? '')) {
       // Honeypot filled — pretend success.
-      return data<UnsubscribeResult>({ok: true, message: DONE_MESSAGE});
+      return data<UnsubscribeResult>({ok: true, message: doneMessage()});
     }
     const ip = clientIp(request);
     const limit = checkRateLimit(`unsubscribe:ip:${ip}`, 5, 10 * 60 * 1000);
     if (!limit.allowed) {
       return data<UnsubscribeResult>(
-        {ok: false, message: 'Too many requests. Try again in a few minutes.'},
+        {
+          ok: false,
+          message:
+            copyText('newsletter.unsub_rate_limited') ??
+            'Too many requests. Try again in a few minutes.',
+        },
         {status: 429, headers: {'Retry-After': String(limit.resetInSeconds)}},
       );
     }
@@ -79,7 +93,12 @@ export async function action({request, context}: Route.ActionArgs) {
       .toLowerCase();
     if (!email || !EMAIL_REGEX.test(email) || email.length > 254) {
       return data<UnsubscribeResult>(
-        {ok: false, message: 'Enter a valid email address.'},
+        {
+          ok: false,
+          message:
+            copyText('newsletter.unsub_invalid_email') ??
+            'Enter a valid email address.',
+        },
         {status: 400},
       );
     }
@@ -93,10 +112,13 @@ export async function action({request, context}: Route.ActionArgs) {
     unsubscribeCustomerMarketing(context.env, email),
   ]);
 
-  return data<UnsubscribeResult>({ok: true, message: DONE_MESSAGE});
+  return data<UnsubscribeResult>({ok: true, message: doneMessage()});
 }
 
-const DONE_MESSAGE =
+// A function, not a module const: read at request time so a studio edit to
+// the copy file takes effect without restarting the worker.
+const doneMessage = () =>
+  copyText('newsletter.unsub_done') ??
   "Done. If this address was on any OpenDrone list, it isn't anymore.";
 
 export default function UnsubscribePage() {
@@ -110,9 +132,9 @@ export default function UnsubscribePage() {
       <header className="rn-archive-head">
         <div>
           <p className="rn-eyebrow">
-            <span>Newsletter · Unsubscribe</span>
+            <Txt id="newsletter.unsub_eyebrow" />
           </p>
-          <h1>Unsubscribe.</h1>
+          <Txt id="newsletter.unsub_title" as="h1" />
         </div>
       </header>
 
@@ -123,7 +145,7 @@ export default function UnsubscribePage() {
           <fetcher.Form method="post">
             <input type="hidden" name="t" value={token ?? ''} />
             <p className="mb-4 text-[var(--color-text-dim)]">
-              Stop all OpenDrone newsletter and launch emails to{' '}
+              <Txt id="newsletter.unsub_confirm_before" />{' '}
               <strong className="text-[var(--color-text)]">{tokenEmail}</strong>
               ?
             </p>
@@ -132,15 +154,18 @@ export default function UnsubscribePage() {
               disabled={busy}
               className="border border-[var(--color-border)] bg-[var(--color-accent)] px-5 py-2.5 font-mono text-[12px] uppercase tracking-[0.14em] text-[var(--color-on-accent)] disabled:opacity-60"
             >
-              {busy ? 'Working…' : 'Unsubscribe'}
+              <Txt
+                id={busy ? 'newsletter.unsub_busy' : 'newsletter.unsub_submit'}
+              />
             </button>
           </fetcher.Form>
         ) : (
           <fetcher.Form method="post">
-            <p className="mb-4 text-[var(--color-text-dim)]">
-              Enter the address you want removed from all OpenDrone newsletter
-              and launch emails.
-            </p>
+            <Txt
+              id="newsletter.unsub_form_lede"
+              as="p"
+              className="mb-4 text-[var(--color-text-dim)]"
+            />
             {/* Honeypot — same trick as the signup form. */}
             <input
               type="text"
@@ -156,7 +181,7 @@ export default function UnsubscribePage() {
                 name="email"
                 required
                 defaultValue={prefill}
-                placeholder="you@domain.com"
+                placeholder={copyText('newsletter.unsub_email_placeholder')}
                 className="min-w-64 flex-1 border border-[var(--color-border)] bg-transparent px-4 py-2.5 font-mono text-[13px] text-[var(--color-text)]"
               />
               <button
@@ -164,7 +189,9 @@ export default function UnsubscribePage() {
                 disabled={busy}
                 className="border border-[var(--color-border)] bg-[var(--color-accent)] px-5 py-2.5 font-mono text-[12px] uppercase tracking-[0.14em] text-[var(--color-on-accent)] disabled:opacity-60"
               >
-                {busy ? 'Working…' : 'Unsubscribe'}
+                <Txt
+                  id={busy ? 'newsletter.unsub_busy' : 'newsletter.unsub_submit'}
+                />
               </button>
             </div>
           </fetcher.Form>

@@ -6,6 +6,15 @@ import {readSupportCookie, verifyTicket} from '~/lib/support/session';
 import {listByCustomer, type TicketIndexEntry} from '~/lib/support/ticket-index';
 import {SupportThread, type ThreadMessage} from '~/components/SupportThread';
 import {buildSeoMeta} from '~/lib/seo';
+import {Txt} from '~/components/Txt';
+import {copyText} from '~/lib/copy';
+
+/** One copy string with `{placeholders}` filled in. */
+function fill(id: string, fallback: string, vars: Record<string, string>) {
+  let out = copyText(id) ?? fallback;
+  for (const [k, v] of Object.entries(vars)) out = out.replace(`{${k}}`, v);
+  return out;
+}
 
 export const headers: HeadersFunction = () => ({
   'Cache-Control': 'private, no-store',
@@ -13,8 +22,10 @@ export const headers: HeadersFunction = () => ({
 
 export const meta: Route.MetaFunction = () =>
   buildSeoMeta({
-    title: 'Support tickets',
-    description: 'Your OpenDrone support history.',
+    title: copyText('account.support.meta_title') ?? 'Support tickets',
+    description:
+      copyText('account.support.meta_description') ??
+      'Your OpenDrone support history.',
     robots: 'noindex,nofollow',
   });
 
@@ -23,7 +34,7 @@ export async function loader({request, context}: Route.LoaderArgs) {
   const env = context.env;
 
   let customerId: string | null = null;
-  let customerName = 'You';
+  let customerName = copyText('account.support.customer_fallback') ?? 'You';
   try {
     const {data} = await context.customerAccount.query(
       SUPPORT_CUSTOMER_PREFILL_QUERY,
@@ -57,7 +68,8 @@ export async function loader({request, context}: Route.LoaderArgs) {
           {
             tid: cookieTicket.tid,
             pid: cookieTicket.pid ?? '',
-            subject: 'Support ticket',
+            subject:
+              copyText('account.support.default_subject') ?? 'Support ticket',
             openedAt: cookieTicket.createdAt,
             closedAt: null,
             lastActivityAt: cookieTicket.createdAt,
@@ -96,13 +108,9 @@ export default function AccountSupportRoute() {
   return (
     <div className="od-page-frame od-page-wide">
       <header className="od-page-head">
-        <p className="od-eyebrow">ACCOUNT · SUPPORT</p>
-        <h1>
-          Your <em>support tickets</em>.
-        </h1>
-        <p>
-          Open threads pinned at the top. Closed ones are kept for reference.
-        </p>
+        <Txt id="account.support.eyebrow" as="p" className="od-eyebrow" />
+        <Txt id="account.support.title" as="h1" />
+        <Txt id="account.support.lede" as="p" />
       </header>
 
       {tickets.length === 0 ? (
@@ -111,21 +119,23 @@ export default function AccountSupportRoute() {
         <div className="account-support">
           <aside
             className="account-support-list"
-            aria-label="Tickets"
+            aria-label={copyText('account.support.list_aria') ?? 'Tickets'}
           >
             <div className="account-support-list-head">
-              <h3>Tickets</h3>
+              <Txt id="account.support.list_heading" as="h3" />
               <Link prefetch="viewport"
                 to="/support"
                 className="od-btn od-btn-secondary od-btn-sm"
               >
-                + New
+                <Txt id="account.support.new" />
               </Link>
             </div>
 
             {open.length > 0 ? (
               <div className="account-support-list-section">
-                Open · {open.length}
+                {fill('account.support.section_open', 'Open · {count}', {
+                  count: String(open.length),
+                })}
               </div>
             ) : null}
             {open.map((t) => (
@@ -139,7 +149,9 @@ export default function AccountSupportRoute() {
 
             {resolved.length > 0 ? (
               <div className="account-support-list-section">
-                Resolved · {resolved.length}
+                {fill('account.support.section_resolved', 'Resolved · {count}', {
+                  count: String(resolved.length),
+                })}
               </div>
             ) : null}
             {resolved.map((t) => (
@@ -169,13 +181,16 @@ export default function AccountSupportRoute() {
 function EmptyState() {
   return (
     <div className="od-tile" style={{textAlign: 'center', padding: 48}}>
-      <p className="od-tile-eyebrow" style={{color: 'var(--od-pcb-gold-2)'}}>
-        → NO TICKETS YET
-      </p>
-      <h3>You haven&rsquo;t opened any tickets.</h3>
-      <p>Need help? Open one and we&rsquo;ll thread it back to you here.</p>
+      <Txt
+        id="account.support.empty_eyebrow"
+        as="p"
+        className="od-tile-eyebrow"
+        style={{color: 'var(--od-pcb-gold-2)'}}
+      />
+      <Txt id="account.support.empty_title" as="h3" />
+      <Txt id="account.support.empty_body" as="p" />
       <Link prefetch="viewport" to="/support" className="od-btn od-btn-primary">
-        Open a ticket →
+        <Txt id="account.support.empty_cta" />
       </Link>
     </div>
   );
@@ -199,12 +214,17 @@ function TicketRow({
     <button
       type="button"
       className={`account-ticket-row${isActive ? ' is-active' : ''}`}
-      aria-label={`Open ticket ${ticket.subject}`}
+      aria-label={fill('account.support.row_aria', 'Open ticket {subject}', {
+        subject: ticket.subject,
+      })}
       aria-current={isActive ? 'true' : undefined}
       onClick={onSelect}
     >
       <div className="od-row-top">
-        <span className="od-subj">{ticket.subject || 'Untitled ticket'}</span>
+        <span className="od-subj">
+          {ticket.subject ||
+            (copyText('account.support.untitled') ?? 'Untitled ticket')}
+        </span>
         <span className="od-time">{last}</span>
       </div>
       <div className="od-row-bot">
@@ -227,15 +247,17 @@ function StatusPill({
     resolved: 'is-resolved',
   } as const;
   const label = {
-    open: 'Open',
-    awaiting: 'Awaiting',
-    progress: 'In progress',
-    resolved: 'Resolved',
+    open: 'account.support.status_open',
+    awaiting: 'account.support.status_awaiting',
+    progress: 'account.support.status_progress',
+    resolved: 'account.support.status_resolved',
   } as const;
   return (
-    <span className={`od-status ${map[status]}`} role="status">
-      {label[status]}
-    </span>
+    <Txt
+      id={label[status]}
+      className={`od-status ${map[status]}`}
+      role="status"
+    />
   );
 }
 
@@ -252,7 +274,11 @@ function DetailPane({
 }) {
   if (!pid || !ticket) {
     return (
-      <div className="account-support-empty">Pick a ticket on the left.</div>
+      <Txt
+        id="account.support.pick"
+        as="div"
+        className="account-support-empty"
+      />
     );
   }
   // /account/support is the read-only history view. Live interaction
@@ -265,9 +291,9 @@ function DetailPane({
     <>
       {isCookieActive ? (
         <div className="account-support-active-banner">
-          <span>This ticket is open. Continue the conversation here:</span>
+          <Txt id="account.support.active_banner" />
           <Link prefetch="viewport" to="/support" className="od-btn od-btn-primary od-btn-sm">
-            Continue thread →
+            <Txt id="account.support.continue" />
           </Link>
         </div>
       ) : null}
@@ -312,7 +338,11 @@ function ReadOnlyThread({
         if (cancelled) return;
         setState({
           phase: 'error',
-          message: err instanceof Error ? err.message : 'Could not load thread.',
+          message:
+            err instanceof Error
+              ? err.message
+              : (copyText('account.support.load_failed') ??
+                'Could not load thread.'),
         });
       }
     })();
@@ -322,12 +352,18 @@ function ReadOnlyThread({
   }, [pid]);
 
   if (state.phase === 'loading') {
-    return <div className="account-support-empty">Loading thread…</div>;
+    return (
+      <Txt
+        id="account.support.loading"
+        as="div"
+        className="account-support-empty"
+      />
+    );
   }
   if (state.phase === 'error') {
     return (
       <div className="account-support-empty">
-        Could not load this thread. {state.message}
+        <Txt id="account.support.load_error" /> {state.message}
       </div>
     );
   }
@@ -337,7 +373,9 @@ function ReadOnlyThread({
       embedded
       ticket={{
         pid: ticket.pid,
-        subject: ticket.subject || 'Support ticket',
+        subject:
+          ticket.subject ||
+          (copyText('account.support.default_subject') ?? 'Support ticket'),
         status: mapStatus(ticket),
         customerName,
       }}
@@ -358,10 +396,13 @@ function mapStatus(
 function relativeTime(unixSeconds: number): string {
   if (!unixSeconds) return '';
   const diff = Date.now() / 1000 - unixSeconds;
-  if (diff < 60) return 'just now';
-  if (diff < 3600) return `${Math.floor(diff / 60)} min ago`;
-  if (diff < 86400) return `${Math.floor(diff / 3600)} h ago`;
-  if (diff < 86400 * 14) return `${Math.floor(diff / 86400)} d ago`;
+  const ago = (id: string, fallback: string, n: number) =>
+    fill(`account.support.${id}`, fallback, {count: String(n)});
+  if (diff < 60) return copyText('account.support.time_now') ?? 'just now';
+  if (diff < 3600) return ago('time_minutes', '{count} min ago', Math.floor(diff / 60));
+  if (diff < 86400) return ago('time_hours', '{count} h ago', Math.floor(diff / 3600));
+  if (diff < 86400 * 14)
+    return ago('time_days', '{count} d ago', Math.floor(diff / 86400));
   return new Date(unixSeconds * 1000).toLocaleDateString(undefined, {
     month: 'short',
     day: 'numeric',

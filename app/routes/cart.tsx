@@ -4,6 +4,8 @@ import type {CartQueryDataReturn} from '@shopify/hydrogen';
 import {CartForm} from '@shopify/hydrogen';
 import {CartMain} from '~/components/CartMain';
 import {buildSeoMeta} from '~/lib/seo';
+import {Txt} from '~/components/Txt';
+import {copyText} from '~/lib/copy';
 import {
   anyComingSoonLocks,
   comingSoonFlag,
@@ -12,8 +14,10 @@ import {
 
 export const meta: Route.MetaFunction = () =>
   buildSeoMeta({
-    title: 'Cart',
-    description: 'Review the items currently in your OpenDrone cart.',
+    title: copyText('cart.meta_title') ?? 'Cart',
+    description:
+      copyText('cart.meta_description') ??
+      'Review the items currently in your OpenDrone cart.',
     robots: 'noindex,nofollow',
   });
 
@@ -78,6 +82,7 @@ export async function action({request, context}: Route.ActionArgs) {
                 errors: [
                   {
                     message:
+                      copyText('cart.error_coming_soon_all') ??
                       'This product is coming soon and not orderable yet. Join the launch list on the product page instead.',
                   },
                 ],
@@ -88,6 +93,7 @@ export async function action({request, context}: Route.ActionArgs) {
             );
           }
           comingSoonNotice =
+            copyText('cart.warning_coming_soon_some') ??
             'Some items are coming soon and were not added to the cart.';
           lines = open;
         }
@@ -210,11 +216,9 @@ export default function Cart() {
   return (
     <div className="cart page-shell">
       <header className="page-header">
-        <p className="page-eyebrow">Checkout</p>
-        <h1 className="page-title">Your cart</h1>
-        <p className="page-description">
-          Review your selected hardware before heading to Shopify checkout.
-        </p>
+        <Txt id="cart.eyebrow" as="p" className="page-eyebrow" />
+        <Txt id="cart.title" as="h1" className="page-title" />
+        <Txt id="cart.description" as="p" className="page-description" />
       </header>
       <CartMain layout="page" cart={cart} />
     </div>

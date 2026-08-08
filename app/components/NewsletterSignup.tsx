@@ -4,6 +4,8 @@ import {Check} from 'lucide-react';
 import {getActiveTheme} from '~/lib/theme';
 import {trackEvent} from '~/lib/growth/plausible';
 import {attributionSource} from '~/lib/growth/attribution';
+import {Txt} from '~/components/Txt';
+import {copyText} from '~/lib/copy';
 
 // Engineering Essentials — dual-purpose: product-release announcements and
 // engineering content digest. Posts to app/routes/newsletter.tsx which
@@ -173,12 +175,18 @@ export function NewsletterSignup({
 
     if (!email) {
       event.preventDefault();
-      setClientError('Enter your email address.');
+      setClientError(
+        copyText('newsletter.signup_error_email') ??
+          'Enter your email address.',
+      );
       return;
     }
     if (!consent) {
       event.preventDefault();
-      setClientError('Please confirm you want to receive updates.');
+      setClientError(
+        copyText('newsletter.signup_error_consent') ??
+          'Please confirm you want to receive updates.',
+      );
       return;
     }
     setClientError(null);
@@ -216,9 +224,18 @@ export function NewsletterSignup({
         .join(' ')}
     >
       <div>
-        <p className="gold-tag font-mono text-[12px] uppercase tracking-[0.2em] text-[var(--color-gold)] mb-0.5">
-          {isNotify ? 'Launch list' : 'Newsletter · Engineering Essentials'}
-        </p>
+        <Txt
+          id={
+            isNotify
+              ? 'newsletter.signup_eyebrow_notify'
+              : 'newsletter.signup_eyebrow'
+          }
+          as="p"
+          className="gold-tag font-mono text-[12px] uppercase tracking-[0.2em] text-[var(--color-gold)] mb-0.5"
+        />
+        {/* The heading keeps its DOM id in code: `aria-labelledby` on the
+            section points at it, and <Txt> spends its own `id` prop on the
+            copy key. */}
         <h3
           id={`${emailId}-heading`}
           className={
@@ -227,7 +244,13 @@ export function NewsletterSignup({
               : 'font-display text-sm font-bold tracking-[0.04em] uppercase text-[var(--color-text)] mb-0.5'
           }
         >
-          {isNotify ? 'Get notified at launch.' : 'Product releases. Build notes.'}
+          <Txt
+            id={
+              isNotify
+                ? 'newsletter.signup_title_notify'
+                : 'newsletter.signup_title'
+            }
+          />
         </h3>
         <p
           className={
@@ -238,14 +261,12 @@ export function NewsletterSignup({
         >
           {isNotify ? (
             <>
-              Launch email for the {notify!.productTitle} + occasional build
-              notes. Unsubscribe anytime.
+              <Txt id="newsletter.signup_lede_notify_before" />{' '}
+              {notify!.productTitle}{' '}
+              <Txt id="newsletter.signup_lede_notify_after" />
             </>
           ) : (
-            <>
-              Only when there&rsquo;s something to ship. No marketing fluff.
-              Unsubscribe anytime.
-            </>
+            <Txt id="newsletter.signup_lede" />
           )}
         </p>
       </div>
@@ -261,15 +282,15 @@ export function NewsletterSignup({
         >
           <p className="gold-tag inline-flex items-center gap-1.5 font-mono text-[12px] uppercase tracking-[0.14em] text-[var(--color-gold)]">
             <Check size={13} strokeWidth={2.5} aria-hidden="true" />
-            You&rsquo;re subscribed
+            <Txt id="newsletter.signup_subscribed_badge" />
           </p>
           <p className="text-[12px] text-[var(--color-text-muted)] leading-snug">
-            Build notes land in your inbox. Manage it anytime in your{' '}
+            <Txt id="newsletter.signup_subscribed_body" />{' '}
             <a
               href="/account"
               className="underline underline-offset-2 hover:text-[var(--color-text)]"
             >
-              account
+              <Txt id="newsletter.signup_subscribed_link" />
             </a>
             .
           </p>
@@ -281,7 +302,7 @@ export function NewsletterSignup({
             className="gold-tag inline-flex items-center gap-1.5 font-mono text-[12px] uppercase tracking-[0.14em] text-[var(--color-gold)]"
           >
             <Check size={13} strokeWidth={2.5} aria-hidden="true" />
-            You&rsquo;re on the launch list
+            <Txt id="newsletter.signup_notify_badge" />
           </p>
           <p className="text-[12px] text-[var(--color-text-muted)] leading-snug">
             {serverMessage}
@@ -327,9 +348,12 @@ export function NewsletterSignup({
               : 'flex flex-col gap-2'
           }
         >
-          <label htmlFor={emailId} className="sr-only">
-            Email address
-          </label>
+          <Txt
+            id="newsletter.signup_email_label"
+            as="label"
+            htmlFor={emailId}
+            className="sr-only"
+          />
           <input
             id={emailId}
             type="email"
@@ -337,7 +361,7 @@ export function NewsletterSignup({
             required
             autoComplete="email"
             inputMode="email"
-            placeholder="you@domain.com"
+            placeholder={copyText('newsletter.signup_email_placeholder')}
             defaultValue={account?.email ?? undefined}
             disabled={isSubmitting}
             onFocus={markInteracted}
@@ -364,13 +388,17 @@ export function NewsletterSignup({
               isWide || isFooter ? 'sm:shrink-0' : '',
             ].join(' ')}
           >
-            {isNotify
-              ? isSubmitting
-                ? 'Saving…'
-                : 'Notify me'
-              : isSubmitting
-                ? 'Subscribing…'
-                : 'Subscribe'}
+            <Txt
+              id={
+                isNotify
+                  ? isSubmitting
+                    ? 'newsletter.signup_submit_notify_busy'
+                    : 'newsletter.signup_submit_notify'
+                  : isSubmitting
+                    ? 'newsletter.signup_submit_busy'
+                    : 'newsletter.signup_submit'
+              }
+            />
           </button>
         </div>
 
@@ -388,12 +416,12 @@ export function NewsletterSignup({
             className="mt-0.5 accent-[var(--color-gold)] cursor-pointer"
           />
           <span>
-            I agree to receive updates from OpenDrone.{' '}
+            <Txt id="newsletter.signup_consent" />{' '}
             <a
               href="/privacy"
               className="underline underline-offset-2 hover:text-[var(--color-text)]"
             >
-              Privacy
+              <Txt id="newsletter.signup_consent_link" />
             </a>
             .
           </span>
@@ -442,6 +470,8 @@ export function NewsletterSignup({
 
 type EuPremiumAnswer = 'no' | '10' | '20' | '30';
 
+// `value` is the wire value posted to /api/survey; the label is copy, keyed
+// off it. The fallback keeps the pills readable if the copy file loses a key.
 const EU_PREMIUM_OPTIONS: {value: EuPremiumAnswer; label: string}[] = [
   {value: 'no', label: 'No'},
   {value: '10', label: '+10%'},
@@ -493,8 +523,7 @@ function NotifySurvey({token}: {token: string}) {
       onClick={() => setStep('done')}
       className="font-mono text-[11px] text-[var(--color-text-dim)] underline underline-offset-2 hover:text-[var(--color-text-muted)] cursor-pointer self-start"
     >
-      {/* TODO(copy-stan) */}
-      skip
+      <Txt id="newsletter.survey_skip" />
     </button>
   );
 
@@ -502,30 +531,36 @@ function NotifySurvey({token}: {token: string}) {
     // Nothing answered → vanish quietly; answered → terse thanks.
     if (!answeredAny) return null;
     return (
-      <p className="mt-2 pt-2 border-t border-[var(--color-border)] font-mono text-[11px] uppercase tracking-[0.1em] text-[var(--color-text-dim)]">
-        {/* TODO(copy-stan) */}
-        Noted. Thanks for the signal.
-      </p>
+      <Txt
+        id="newsletter.survey_done"
+        as="p"
+        className="mt-2 pt-2 border-t border-[var(--color-border)] font-mono text-[11px] uppercase tracking-[0.1em] text-[var(--color-text-dim)]"
+      />
     );
   }
 
   return (
     <div className="mt-2 pt-2 border-t border-[var(--color-border)] flex flex-col gap-1.5">
-      <p className="font-mono text-[11px] uppercase tracking-[0.14em] text-[var(--color-text-dim)]">
-        {/* TODO(copy-stan) */}
-        Two-question survey · optional
-      </p>
+      <Txt
+        id="newsletter.survey_heading"
+        as="p"
+        className="font-mono text-[11px] uppercase tracking-[0.14em] text-[var(--color-text-dim)]"
+      />
 
       {step === 'eu' ? (
         <div
           role="group"
-          aria-label="Would you pay more for EU-assembled boards?"
+          aria-label={
+            copyText('newsletter.survey_eu_question') ??
+            'Would you pay more for EU-assembled boards?'
+          }
           className="flex flex-col gap-1.5"
         >
-          <p className="text-[12px] text-[var(--color-text-muted)] leading-snug">
-            {/* TODO(copy-stan) */}
-            Would you pay more for EU-assembled boards?
-          </p>
+          <Txt
+            id="newsletter.survey_eu_question"
+            as="p"
+            className="text-[12px] text-[var(--color-text-muted)] leading-snug"
+          />
           <div className="flex flex-wrap items-center gap-1.5">
             {EU_PREMIUM_OPTIONS.map((opt) => (
               <button
@@ -534,7 +569,10 @@ function NotifySurvey({token}: {token: string}) {
                 onClick={() => answerEu(opt.value)}
                 className={SURVEY_PILL_CLASS}
               >
-                {opt.label}
+                <Txt
+                  id={`newsletter.survey_opt_${opt.value}`}
+                  fallback={opt.label}
+                />
               </button>
             ))}
             {skipLink}
@@ -543,29 +581,31 @@ function NotifySurvey({token}: {token: string}) {
       ) : (
         <div
           role="group"
-          aria-label="15-minute call with the builder?"
+          aria-label={
+            copyText('newsletter.survey_interview_aria') ??
+            '15-minute call with the builder?'
+          }
           className="flex flex-col gap-1.5"
         >
-          <p className="text-[12px] text-[var(--color-text-muted)] leading-snug">
-            {/* TODO(copy-stan) */}
-            15-min call with the builder? Early-adopter perk for interviewees.
-          </p>
+          <Txt
+            id="newsletter.survey_interview_question"
+            as="p"
+            className="text-[12px] text-[var(--color-text-muted)] leading-snug"
+          />
           <div className="flex flex-wrap items-center gap-1.5">
             <button
               type="button"
               onClick={() => answerInterview(true)}
               className={SURVEY_PILL_CLASS}
             >
-              {/* TODO(copy-stan) */}
-              Yes
+              <Txt id="newsletter.survey_yes" />
             </button>
             <button
               type="button"
               onClick={() => answerInterview(false)}
               className={SURVEY_PILL_CLASS}
             >
-              {/* TODO(copy-stan) */}
-              No
+              <Txt id="newsletter.survey_no" />
             </button>
             {skipLink}
           </div>

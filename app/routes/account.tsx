@@ -8,11 +8,15 @@ import {
 import type {Route} from './+types/account';
 import {CUSTOMER_DETAILS_QUERY} from '~/graphql/customer-account/CustomerDetailsQuery';
 import {buildSeoMeta} from '~/lib/seo';
+import {Txt} from '~/components/Txt';
+import {copyText} from '~/lib/copy';
 
 export const meta: Route.MetaFunction = () =>
   buildSeoMeta({
-    title: 'Account',
-    description: 'Manage your OpenDrone customer account, orders, profile, and addresses.',
+    title: copyText('account.meta_title') ?? 'Account',
+    description:
+      copyText('account.meta_description') ??
+      'Manage your OpenDrone customer account, orders, profile, and addresses.',
     robots: 'noindex,nofollow',
   });
 
@@ -72,18 +76,22 @@ function AccountMenu() {
   }
 
   return (
-    <nav className="account-nav" role="navigation" aria-label="Account">
+    <nav
+      className="account-nav"
+      role="navigation"
+      aria-label={copyText('account.nav.aria') ?? 'Account'}
+    >
       <NavLink prefetch="viewport" className="account-nav-link" to="/account/orders" style={isActiveStyle}>
-        Orders
+        <Txt id="account.nav.orders" />
       </NavLink>
       <NavLink prefetch="viewport" className="account-nav-link" to="/account/profile" style={isActiveStyle}>
-        Profile
+        <Txt id="account.nav.profile" />
       </NavLink>
       <NavLink prefetch="viewport" className="account-nav-link" to="/account/addresses" style={isActiveStyle}>
-        Addresses
+        <Txt id="account.nav.addresses" />
       </NavLink>
       <NavLink prefetch="viewport" className="account-nav-link" to="/account/support" style={isActiveStyle}>
-        Support
+        <Txt id="account.nav.support" />
       </NavLink>
       <Logout />
     </nav>
@@ -94,7 +102,7 @@ function Logout() {
   return (
     <Form className="account-logout" method="POST" action="/account/logout">
       <button className="account-button account-button-secondary" type="submit">
-        Sign out
+        <Txt id="account.nav.signout" />
       </button>
     </Form>
   );

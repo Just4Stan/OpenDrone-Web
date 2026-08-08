@@ -1,5 +1,6 @@
 import {Money} from '@shopify/hydrogen';
 import type {MoneyV2} from '@shopify/hydrogen/storefront-api-types';
+import {copyText} from '~/lib/copy';
 
 const CONTRIBUTION_EUR = 1;
 
@@ -52,8 +53,23 @@ export function FirmwareSplit({
   const boardAmountText = EUR_FORMATTER.format(boardAmountRaw);
   const contributionText = EUR_FORMATTER.format(CONTRIBUTION_EUR);
 
+  // Both tagline sentences stay ONE editable string each. The money and the
+  // firmware project's name are data, so the copy marks their slots with
+  // `{amount}` and `{project}` and the sentence is split around them here —
+  // rather than shipping "for the" and "devs." to the studio as two
+  // meaningless fragments.
+  const boardParts = (
+    copyText('product-chrome.firmware_split_board') ?? ''
+  ).split('{amount}');
+  const devParts = (
+    copyText('product-chrome.firmware_split_devs') ?? ''
+  ).split(/\{amount\}|\{project\}/);
+
   return (
-    <section className="firmware-split" aria-label="Open-source firmware contribution">
+    <section
+      className="firmware-split"
+      aria-label={copyText('product-chrome.firmware_split_aria')}
+    >
       <div className="firmware-split-amounts">
         <span className="firmware-split-board">
           <Money data={boardAmountData} />
@@ -72,18 +88,23 @@ export function FirmwareSplit({
         </span>
       </div>
       <p className="firmware-split-tagline">
-        {boardAmountText} for the board.
+        {boardParts[0]}
+        {boardAmountText}
+        {boardParts[1]}
         <br />
         <strong>
-          {contributionText} for the{' '}
+          {devParts[0]}
+          {contributionText}
+          {devParts[1]}
           {firmwareProject && firmwareUrl ? (
             <a href={firmwareUrl} target="_blank" rel="noopener noreferrer">
               {firmwareProject} ↗
             </a>
           ) : (
-            firmwareProject ?? 'firmware'
-          )}{' '}
-          devs.
+            (firmwareProject ??
+              copyText('product-chrome.firmware_split_project_fallback'))
+          )}
+          {devParts[2]}
         </strong>
       </p>
     </section>

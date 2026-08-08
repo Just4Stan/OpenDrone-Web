@@ -13,6 +13,8 @@ import {
   ReleaseRow,
   type ReleaseRowArticle,
 } from '~/components/release-notes/ReleaseRow';
+import {Txt} from '~/components/Txt';
+import {copyText} from '~/lib/copy';
 
 // Newsletter — the single hub. It's all newsletter: posts written locally and
 // published to the Shopify `news` blog show up here as the newsletter archive,
@@ -35,8 +37,9 @@ const BLOG_HANDLE_FALLBACK = 'news';
 
 export const meta: Route.MetaFunction = () => {
   const base = buildSeoMeta({
-    title: 'Newsletter',
+    title: copyText('newsletter.meta_title') ?? 'Newsletter',
     description:
+      copyText('newsletter.meta_description') ??
       'Engineering Essentials: build notes, hardware releases, and write-ups from OpenDrone. Subscribe to get each post by email.',
   });
   return [
@@ -45,7 +48,7 @@ export const meta: Route.MetaFunction = () => {
       tagName: 'link',
       rel: 'alternate',
       type: 'application/rss+xml',
-      title: 'OpenDrone · Newsletter',
+      title: copyText('newsletter.rss_link_title') ?? 'OpenDrone · Newsletter',
       href: '/newsletter.rss',
     },
   ];
@@ -93,12 +96,12 @@ export default function NewsletterPage() {
       <header className="rn-archive-head">
         <div>
           <p className="rn-eyebrow">
-            <span>Newsletter · Engineering Essentials</span>
+            <Txt id="newsletter.eyebrow" />
             <a href="/newsletter.rss" className="rn-rss" rel="alternate">
-              ⌁ RSS · /newsletter.rss
+              <Txt id="newsletter.rss_label" />
             </a>
           </p>
-          <h1>Build notes.</h1>
+          <Txt id="newsletter.title" as="h1" />
         </div>
       </header>
 
@@ -110,7 +113,14 @@ export default function NewsletterPage() {
                 <span className="rn-year-n">{year}</span>
                 <span className="rn-year-rule" aria-hidden />
                 <span className="rn-year-count">
-                  {articles.length} post{articles.length === 1 ? '' : 's'}
+                  {articles.length}{' '}
+                  <Txt
+                    id={
+                      articles.length === 1
+                        ? 'newsletter.count_one'
+                        : 'newsletter.count_other'
+                    }
+                  />
                 </span>
               </div>
               <ol className="rn-list">
@@ -126,8 +136,8 @@ export default function NewsletterPage() {
           <div className="rn-empty-icon" aria-hidden>
             ·
           </div>
-          <h3>No posts yet.</h3>
-          <p>First post coming soon. Subscribe below to get it in your inbox.</p>
+          <Txt id="newsletter.empty_title" as="h3" />
+          <Txt id="newsletter.empty_body" as="p" />
         </div>
       )}
     </div>
@@ -219,7 +229,7 @@ function generateOpaquePassword(): string {
 export async function action({request, context}: Route.ActionArgs) {
   if (request.method !== 'POST') {
     return data<NewsletterResult>(
-      {ok: false, message: 'Method not allowed.'},
+      {ok: false, message: (copyText('newsletter.action_method_not_allowed') ?? 'Method not allowed.')},
       {status: 405},
     );
   }
@@ -228,7 +238,7 @@ export async function action({request, context}: Route.ActionArgs) {
   const ipLimit = checkRateLimit(`newsletter:ip:${ip}`, 5, 10 * 60 * 1000);
   if (!ipLimit.allowed) {
     return data<NewsletterResult>(
-      {ok: false, message: 'Too many requests. Try again in a few minutes.'},
+      {ok: false, message: (copyText('newsletter.action_rate_limited') ?? 'Too many requests. Try again in a few minutes.')},
       {
         status: 429,
         headers: {'Retry-After': String(ipLimit.resetInSeconds)},
@@ -302,19 +312,19 @@ export async function action({request, context}: Route.ActionArgs) {
   };
 
   if (honeypot) {
-    return data<NewsletterResult>({ok: true, message: 'Thanks.'});
+    return data<NewsletterResult>({ok: true, message: (copyText('newsletter.action_honeypot') ?? 'Thanks.')});
   }
 
   if (!email || !EMAIL_REGEX.test(email) || email.length > 254) {
     return data<NewsletterResult>(
-      {ok: false, message: 'Enter a valid email address.'},
+      {ok: false, message: (copyText('newsletter.action_invalid_email') ?? 'Enter a valid email address.')},
       {status: 400},
     );
   }
 
   if (!consent) {
     return data<NewsletterResult>(
-      {ok: false, message: 'Please confirm you want to receive updates.'},
+      {ok: false, message: (copyText('newsletter.action_no_consent') ?? 'Please confirm you want to receive updates.')},
       {status: 400},
     );
   }
@@ -327,7 +337,7 @@ export async function action({request, context}: Route.ActionArgs) {
   const turnstile = await verifyTurnstile(context.env, turnstileToken, ip);
   if (!turnstile.ok) {
     return data<NewsletterResult>(
-      {ok: false, message: 'Could not verify you are human. Refresh and try again.'},
+      {ok: false, message: (copyText('newsletter.action_turnstile_failed') ?? 'Could not verify you are human. Refresh and try again.')},
       {status: 400},
     );
   }
@@ -359,7 +369,7 @@ export async function action({request, context}: Route.ActionArgs) {
       scheduleGrowth(false);
       return data<NewsletterResult>({
         ok: true,
-        message: "You're on the list. We'll email you at launch.",
+        message: (copyText('newsletter.action_notify_listed') ?? "You're on the list. We'll email you at launch."),
         alreadySubscribed: true,
         ...(surveyToken ? {surveyToken} : {}),
       });
@@ -367,7 +377,7 @@ export async function action({request, context}: Route.ActionArgs) {
     // Be generic to avoid confirming which addresses have already signed up.
     return data<NewsletterResult>({
       ok: true,
-      message: "You're already on the list.",
+      message: (copyText('newsletter.action_already_listed') ?? "You're already on the list."),
       alreadySubscribed: true,
     });
   }
@@ -406,13 +416,13 @@ export async function action({request, context}: Route.ActionArgs) {
         });
         return data<NewsletterResult>({
           ok: true,
-          message: "You're on the list. We'll email you at launch.",
+          message: (copyText('newsletter.action_notify_listed') ?? "You're on the list. We'll email you at launch."),
           alreadySubscribed: true,
         });
       }
       return data<NewsletterResult>({
         ok: true,
-        message: "You're already on the list.",
+        message: (copyText('newsletter.action_already_listed') ?? "You're already on the list."),
         alreadySubscribed: true,
       });
     }
@@ -427,8 +437,8 @@ export async function action({request, context}: Route.ActionArgs) {
       const firstError = userErrors[0];
       const field = firstError.field?.join('.') ?? '';
       const userFacing = /email/i.test(field)
-        ? 'That email address was rejected. Double-check it and try again.'
-        : "Couldn't subscribe right now. Try again in a moment.";
+        ? (copyText('newsletter.action_email_rejected') ?? 'That email address was rejected. Double-check it and try again.')
+        : (copyText('newsletter.action_generic_failure') ?? "Couldn't subscribe right now. Try again in a moment.");
       return data<NewsletterResult>(
         {ok: false, message: userFacing},
         {status: 400},
@@ -450,19 +460,19 @@ export async function action({request, context}: Route.ActionArgs) {
       });
       return data<NewsletterResult>({
         ok: true,
-        message: "You're on the list. We'll email you at launch.",
+        message: (copyText('newsletter.action_notify_listed') ?? "You're on the list. We'll email you at launch."),
         ...(surveyToken ? {surveyToken} : {}),
       });
     }
 
     return data<NewsletterResult>({
       ok: true,
-      message: 'Subscribed. The next post goes to your inbox.',
+      message: (copyText('newsletter.action_subscribed') ?? 'Subscribed. The next post goes to your inbox.'),
     });
   } catch (err) {
     console.error('[newsletter] customerCreate failed', err);
     return data<NewsletterResult>(
-      {ok: false, message: 'Signup temporarily unavailable. Try again later.'},
+      {ok: false, message: (copyText('newsletter.action_unavailable') ?? 'Signup temporarily unavailable. Try again later.')},
       {status: 502},
     );
   }

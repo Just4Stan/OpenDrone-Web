@@ -53,7 +53,7 @@ export function isLegalPath(pathname: string): boolean {
  * The legal body itself is untouched and comes from Markdown in
  * `app/content/legal/<locale>/<slug>.md`.
  */
-export const LEGAL_LABELS: Record<
+const LEGAL_LABELS_FALLBACK: Record<
   LegalPathSlug,
   Record<Locale, {title: string; eyebrow: string; description: string}>
 > = {
@@ -246,6 +246,34 @@ export const LEGAL_LABELS: Record<
   },
 };
 
+/**
+ * The title, eyebrow and description of every legal page, in three languages.
+ *
+ * Loaded from `content/copy/legal-labels.json` rather than written here, so the
+ * studio can edit it: these are the only page titles on the site that are not
+ * reachable any other way, because the legal routes are generated rather than
+ * hand-written. The Markdown bodies live in `app/content/legal/<locale>/` and
+ * are edited on the studio's Legal tab.
+ *
+ * Guarded on `import.meta.env` like the other content loaders, so node:test can
+ * import this module: there the glob never runs and the fallback below is used.
+ * Regenerate the JSON from a literal with `scripts/dump-legal-labels.mjs`.
+ */
+const LEGAL_LABEL_FILES = import.meta.env
+  ? import.meta.glob<{default: Record<string, unknown>}>(
+      '/content/copy/legal-labels.json',
+      {eager: true},
+    )
+  : {};
+
+export const LEGAL_LABELS = (() => {
+  const loaded = Object.values(LEGAL_LABEL_FILES)[0]?.default;
+  if (!loaded) return LEGAL_LABELS_FALLBACK;
+  // `$`-prefixed keys are studio metadata, not slugs.
+  const out: Record<string, unknown> = {};
+  for (const [k, v] of Object.entries(loaded)) if (!k.startsWith('$')) out[k] = v;
+  return out as typeof LEGAL_LABELS_FALLBACK;
+})();
 /** Short UI strings shown on the legal page chrome (back link, etc.). */
 export const LEGAL_UI_STRINGS: Record<
   Locale,

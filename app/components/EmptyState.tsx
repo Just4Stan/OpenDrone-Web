@@ -7,9 +7,11 @@ export function EmptyState({
   ctaTo,
   secondary,
 }: {
-  title: string;
-  description?: string;
-  ctaLabel?: string;
+  // ReactNode, not string: callers pass <Txt id="…"> so the studio can edit
+  // the words in place. Plain strings still work.
+  title: React.ReactNode;
+  description?: React.ReactNode;
+  ctaLabel?: React.ReactNode;
   ctaTo?: string;
   secondary?: React.ReactNode;
 }) {

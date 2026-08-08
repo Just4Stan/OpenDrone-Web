@@ -4,11 +4,14 @@ import {getPaginationVariables, Image} from '@shopify/hydrogen';
 import type {CollectionFragment} from 'storefrontapi.generated';
 import {PaginatedResourceSection} from '~/components/PaginatedResourceSection';
 import {buildSeoMeta, SITE_ORIGIN} from '~/lib/seo';
+import {Txt} from '~/components/Txt';
+import {copyText} from '~/lib/copy';
 
 export const meta: Route.MetaFunction = ({location}) =>
   buildSeoMeta({
-    title: 'Collections',
+    title: copyText('collections.meta_title') ?? 'Collections',
     description:
+      copyText('collections.meta_description') ??
       'Browse OpenDrone collections for flight controllers, ESCs, frames, and open hardware builds.',
     url: `${SITE_ORIGIN}${location.pathname}`,
   });
@@ -65,12 +68,9 @@ export default function Collections() {
   return (
     <div className="collections page-shell">
       <header className="page-header">
-        <p className="page-eyebrow">Catalog</p>
-        <h1 className="page-title">Collections</h1>
-        <p className="page-description">
-          Browse the catalog by product family and jump straight into the
-          hardware stack you care about.
-        </p>
+        <Txt id="collections.eyebrow" as="p" className="page-eyebrow" />
+        <Txt id="collections.title" as="h1" className="page-title" />
+        <Txt id="collections.description" as="p" className="page-description" />
       </header>
       <PaginatedResourceSection<CollectionFragment>
         connection={collections}

@@ -4,6 +4,8 @@ import {Money, type OptimisticCart} from '@shopify/hydrogen';
 import {useEffect, useId, useRef, useState} from 'react';
 import {Link} from 'react-router';
 import {useAside} from '~/components/Aside';
+import {Txt} from '~/components/Txt';
+import {copyText} from '~/lib/copy';
 import {trackEvent} from '~/lib/growth/plausible';
 import {attributionSource} from '~/lib/growth/attribution';
 import {trackCheckoutClick} from '~/lib/growth/checkout-beacon';
@@ -51,7 +53,7 @@ export function CartSummary({cart, layout}: CartSummaryProps) {
         // will charge.
         <dl role="group" className="cart-register">
           <div className="cart-register-row">
-            <dt>Subtotal</dt>
+            <Txt id="cart.register_subtotal" as="dt" />
             <dd>
               {cost?.subtotalAmount?.amount ? (
                 <Money data={cost.subtotalAmount} />
@@ -61,11 +63,11 @@ export function CartSummary({cart, layout}: CartSummaryProps) {
             </dd>
           </div>
           <div className="cart-register-row">
-            <dt>VAT included (21%)</dt>
+            <Txt id="cart.register_vat" as="dt" />
             <dd>{vatAmount ? <Money data={vatAmount} /> : '—'}</dd>
           </div>
           <div className="cart-register-row is-total">
-            <dt>Total</dt>
+            <Txt id="cart.register_total" as="dt" />
             <dd>
               {cost?.totalAmount?.amount ? (
                 <Money data={cost.totalAmount} />
@@ -77,7 +79,7 @@ export function CartSummary({cart, layout}: CartSummaryProps) {
         </dl>
       ) : (
         <dl role="group" className="cart-subtotal">
-          <dt>Subtotal</dt>
+          <Txt id="cart.subtotal" as="dt" />
           <dd>
             {cart?.cost?.subtotalAmount?.amount ? (
               <Money data={cart?.cost?.subtotalAmount} />
@@ -101,19 +103,12 @@ export function CartSummary({cart, layout}: CartSummaryProps) {
           className="cart-keep-shopping"
           onClick={layout === 'aside' ? close : undefined}
         >
-          Keep shopping →
+          <Txt id="cart.keep_shopping" />
         </Link>
         {layout === 'page' ? <ShareCartButton cart={cart} /> : null}
       </div>
-      <p className="cart-summary-note">
-        Prices include VAT. Shipping and any discount or gift-card codes
-        are applied on the next page.
-      </p>
-      <p className="cart-summary-note">
-        By completing this order you accept the Incutec{' '}
-        <Link prefetch="viewport" to="/end-use">End-Use Policy</Link> and the{' '}
-        <Link prefetch="viewport" to="/algemene-voorwaarden">General Terms and Conditions</Link>.
-      </p>
+      <Txt id="cart.note_vat" as="p" className="cart-summary-note" />
+      <Txt id="cart.note_terms" as="p" className="cart-summary-note" />
     </div>
   );
 }
@@ -170,7 +165,10 @@ function ShareCartButton({cart}: {cart: CartSummaryProps['cart']}) {
     // throw a *synchronous* TypeError that bypasses the rejection handler —
     // guard it and fall back to the prompt directly.
     if (!navigator.clipboard?.writeText) {
-      window.prompt('Copy this cart link', url);
+      window.prompt(
+        copyText('cart.share_prompt') ?? 'Copy this cart link',
+        url,
+      );
       return;
     }
     navigator.clipboard.writeText(url).then(
@@ -182,7 +180,10 @@ function ShareCartButton({cart}: {cart: CartSummaryProps['cart']}) {
       () => {
         // Clipboard blocked (permissions / non-secure context) — hand the
         // link over the old way.
-        window.prompt('Copy this cart link', url);
+        window.prompt(
+          copyText('cart.share_prompt') ?? 'Copy this cart link',
+          url,
+        );
       },
     );
   }
@@ -194,11 +195,15 @@ function ShareCartButton({cart}: {cart: CartSummaryProps['cart']}) {
       data-copied={copied || undefined}
       onClick={copy}
     >
-      {copied ? 'Link copied ✓' : 'Share this cart'}
+      {copied ? (
+        <Txt id="cart.share_copied" />
+      ) : (
+        <Txt id="cart.share_label" />
+      )}
       {/* The visible label swap isn't announced by screen readers on its
           own — mirror the confirmation into a polite live region. */}
       <span aria-live="polite" className="sr-only">
-        {copied ? 'Cart link copied to clipboard' : ''}
+        {copied ? (copyText('cart.share_copied_sr') ?? 'Cart link copied to clipboard') : ''}
       </span>
     </button>
   );
@@ -232,7 +237,7 @@ function CartCheckoutActions({
       className="cart-checkout-cta"
       onClick={handleClick}
     >
-      Checkout
+      <Txt id="cart.checkout_cta" />
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" aria-hidden="true">
         <line x1="5" y1="12" x2="19" y2="12" />
         <polyline points="12 5 19 12 12 19" />

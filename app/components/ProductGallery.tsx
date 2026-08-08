@@ -2,6 +2,8 @@ import {Image} from '@shopify/hydrogen';
 import {useSearchParams} from 'react-router';
 import {useEffect, useRef} from 'react';
 import {SmoothImage} from './SmoothImage';
+import {Txt} from './Txt';
+import {copyText} from '~/lib/copy';
 
 type GalleryImage = {
   id?: string | null;
@@ -46,7 +48,11 @@ export function ProductGallery({
   if (images.length === 0) {
     return (
       <div className="product-gallery-empty">
-        <span className="product-card-media-ghost">Render pending</span>
+        <Txt
+          id="product-chrome.gallery_empty"
+          as="span"
+          className="product-card-media-ghost"
+        />
       </div>
     );
   }
@@ -88,13 +94,15 @@ export function ProductGallery({
       <div
         className="product-gallery-main"
         role="group"
-        aria-label="Product images"
+        aria-label={copyText('product-chrome.gallery_aria')}
         onTouchStart={onTouchStart}
         onTouchEnd={onTouchEnd}
       >
         <SmoothImage
           data={current}
-          alt={current.altText || 'Product image'}
+          alt={
+            current.altText || copyText('product-chrome.gallery_image_alt') || ''
+          }
           aspectRatio="1/1"
           sizes="(min-width: 960px) 60vw, 100vw"
           loading="eager"
@@ -107,7 +115,7 @@ export function ProductGallery({
             <button
               type="button"
               onClick={prev}
-              aria-label="Previous image"
+              aria-label={copyText('product-chrome.gallery_prev')}
               className="product-gallery-arrow"
             >
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -120,7 +128,7 @@ export function ProductGallery({
             <button
               type="button"
               onClick={next}
-              aria-label="Next image"
+              aria-label={copyText('product-chrome.gallery_next')}
               className="product-gallery-arrow"
             >
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -130,9 +138,12 @@ export function ProductGallery({
           </div>
         )}
         {images.length > 1 && (
-          <span className="product-gallery-swipe-hint" aria-hidden="true">
-            Swipe ←/→
-          </span>
+          <Txt
+            id="product-chrome.swipe_hint"
+            as="span"
+            className="product-gallery-swipe-hint"
+            aria-hidden="true"
+          />
         )}
       </div>
       {/* Mobile swipe bar — the touch-first replacement for the arrow pill +
@@ -140,7 +151,10 @@ export function ProductGallery({
           to jump) + counter + swipe hint, matching the board/schematic decks. */}
       {images.length > 1 && (
         <div className="product-gallery-deck">
-          <div className="board-deck-dots" aria-label="Product image">
+          <div
+            className="board-deck-dots"
+            aria-label={copyText('product-chrome.gallery_deck_aria')}
+          >
             {images.map((img, i) => (
               <button
                 type="button"
@@ -148,7 +162,7 @@ export function ProductGallery({
                 className={`board-deck-dot${i === index ? ' is-active' : ''}${
                   i < index ? ' is-done' : ''
                 }`}
-                aria-label={`Show image ${i + 1}`}
+                aria-label={`${copyText('product-chrome.gallery_show_image_prefix') ?? ''} ${i + 1}`}
                 aria-current={i === index ? 'true' : undefined}
                 onClick={() => setIndex(i)}
               />
@@ -158,18 +172,26 @@ export function ProductGallery({
             <span className="board-deck-count">
               {index + 1}/{images.length}
             </span>
-            <span className="board-deck-hint">Swipe ←/→</span>
+            <Txt
+              id="product-chrome.swipe_hint"
+              as="span"
+              className="board-deck-hint"
+            />
           </p>
         </div>
       )}
       {images.length > 1 && (
-        <ul className="product-gallery-thumbs" role="tablist" aria-label="Product image thumbnails">
+        <ul
+          className="product-gallery-thumbs"
+          role="tablist"
+          aria-label={copyText('product-chrome.gallery_thumbs_aria')}
+        >
           {images.map((img, i) => (
             <li key={img.id ?? img.url}>
               <button
                 type="button"
                 onClick={() => setIndex(i)}
-                aria-label={`Show image ${i + 1}`}
+                aria-label={`${copyText('product-chrome.gallery_show_image_prefix') ?? ''} ${i + 1}`}
                 aria-selected={i === index}
                 role="tab"
                 className={`product-gallery-thumb${
@@ -178,7 +200,10 @@ export function ProductGallery({
               >
                 <Image
                   data={img}
-                  alt={img.altText || `Thumbnail ${i + 1}`}
+                  alt={
+                    img.altText ||
+                    `${copyText('product-chrome.gallery_thumb_alt_prefix') ?? ''} ${i + 1}`
+                  }
                   aspectRatio="1/1"
                   sizes="80px"
                   loading="lazy"

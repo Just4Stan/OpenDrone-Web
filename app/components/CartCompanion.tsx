@@ -10,6 +10,8 @@ import type {
 } from '~/components/Header';
 import {AddToCartButton} from '~/components/AddToCartButton';
 import {useAside} from '~/components/Aside';
+import {Txt} from '~/components/Txt';
+import {copyText} from '~/lib/copy';
 import {PRODUCT_CONTENT, isComingSoon} from '~/lib/product-content';
 import {trackEvent} from '~/lib/growth/plausible';
 import {attributionSource} from '~/lib/growth/attribution';
@@ -89,8 +91,13 @@ function CartCompanionRow({
   // NOTE: <section>, not <aside> — the drawer's `.overlay aside` panel CSS
   // (fixed, 100vh, 400px) would hijack any nested <aside> element.
   return (
-    <section className="cart-companion" aria-label="Suggested companion product">
-      <span className="cart-companion-eyebrow">Goes well with</span>
+    <section
+      className="cart-companion"
+      aria-label={
+        copyText('cart.companion_aria') ?? 'Suggested companion product'
+      }
+    >
+      <Txt id="cart.companion_eyebrow" className="cart-companion-eyebrow" />
       <div className="cart-companion-row">
         <Link
           to={`/products/${product.handle}`}
@@ -141,7 +148,7 @@ function CartCompanionRow({
             },
           ]}
         >
-          + Add
+          <Txt id="cart.companion_add" />
         </AddToCartButton>
       </div>
     </section>
