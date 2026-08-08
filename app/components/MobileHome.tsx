@@ -21,7 +21,7 @@ const OPEN_DESIGN_COUNT = Object.values(PRODUCT_CONTENT).filter(
 const HOME_LEDGER: Array<[string, string, boolean?]> = [
   ['Board designs published', String(OPEN_DESIGN_COUNT).padStart(2, '0'), true],
   ['Hardware licence', 'CERN-OHL-S 2.0'],
-  ['Source format', 'KiCad 9 · STEP · BOM'],
+  ['Source format', 'KiCad 10 · STEP · BOM'],
   ['Firmware split', '€1 / unit upstream'],
   ['Designed in', 'Belgium'],
 ];

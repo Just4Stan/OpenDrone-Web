@@ -1,13 +1,14 @@
 import type {Route} from './+types/wholesale';
 import {Link} from 'react-router';
 import {buildSeoMeta} from '~/lib/seo';
+import {MarginArt, ShopfrontArt, ShelfArt, EnvelopeArt} from '~/components/MarginArt';
 import {getCompanyIdentity} from '~/lib/company';
 
 export const meta: Route.MetaFunction = () =>
   buildSeoMeta({
     title: 'Wholesale · Dealers & distributors',
     description:
-      'Stock the OpenDrone open-source hardware line: flight controllers, ESCs, receivers and frames, designed in Belgium. Dealer terms available on request.',
+      'Stock the OpenDrone open-source hardware line: flight controllers, ESCs and receivers, community-designed and sold by Incutec in Belgium. Dealer terms on request.',
   });
 
 export async function loader({context}: Route.LoaderArgs) {
@@ -27,20 +28,22 @@ export default function WholesaleRoute({loaderData}: Route.ComponentProps) {
     <div className="editorial-page">
       <header className="editorial-hero">
         <p className="editorial-eyebrow">Wholesale · B2B</p>
-        {/* TODO(copy-stan): placeholder hero copy — rewrite in your voice. */}
         <h1 className="editorial-title">
           Put open hardware <em>on your shelf.</em>
         </h1>
         <p className="editorial-lead">
-          We&apos;re building a dealer channel for the OpenDrone line. If you
-          run an FPV shop in the EU and want boards whose designs your
-          customers can actually read, this page is for you.
+          OpenDrone sells direct first: this webshop is the primary channel.
+          Dealers are welcome all the same. If you run an FPV shop in the EU
+          and want boards whose designs your customers can actually read, talk
+          to Incutec, the company that manufactures and sells the line.
+          Wholesale is a conversation with the company, not with the community
+          project.
         </p>
       </header>
 
       <section className="editorial-section">
         <h2 className="editorial-section-title">01 · Who this is for</h2>
-        {/* TODO(copy-stan): placeholder. */}
+        <MarginArt><ShopfrontArt /></MarginArt>
         <p>
           EU-based FPV retailers and distributors, first. You know your local
           scene better than a webshop in Leuven ever will; we&apos;d rather
@@ -51,14 +54,13 @@ export default function WholesaleRoute({loaderData}: Route.ComponentProps) {
 
       <section className="editorial-section">
         <h2 className="editorial-section-title">02 · What you&apos;d be stocking</h2>
-        {/* TODO(copy-stan): placeholder — line-up facts from the catalog;
-            keep claims to what the shop itself states. */}
+        <MarginArt><ShelfArt /></MarginArt>
         <ul className="editorial-list">
           <li>
             <strong>The line</strong>: flight controllers (OpenFC Lite), 4-in-1
-            ESCs (OpenESC), ExpressLRS receivers (OpenRX) and carbon frames
-            (OpenFrame). Designed in Belgium, sold with EU consumer law taken
-            seriously.
+            ESCs (OpenESC) and ExpressLRS receivers (OpenRX). Carbon frames
+            (OpenFrame) are at sample stage and follow. Community-designed,
+            sold from Belgium with EU consumer law taken seriously.
           </li>
           <li>
             <strong>Open source, for real</strong>: every board&apos;s full
@@ -79,16 +81,15 @@ export default function WholesaleRoute({loaderData}: Route.ComponentProps) {
 
       <section className="editorial-section">
         <h2 className="editorial-section-title">03 · Talk to us</h2>
-        {/* TODO(copy-stan): placeholder. */}
+        <MarginArt><EnvelopeArt /></MarginArt>
         <p>
           Tell us who you are, where you sell, and roughly what volume you
-          think makes sense. A human answers: the same people who design the
-          boards.
+          think makes sense. A human at Incutec answers, usually one of the
+          people who work on the boards.
         </p>
         <p>
-          Email <a href={mailto}>{company.email}</a> with
-          &ldquo;Wholesale&rdquo; in the subject, or use the support chat and
-          say you&apos;re a shop.
+          Email <a href={mailto}>{company.email}</a> (the button below prefills
+          the subject), or use the support chat and say you&apos;re a shop.
         </p>
       </section>
 

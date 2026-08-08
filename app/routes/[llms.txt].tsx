@@ -126,8 +126,10 @@ export async function loader({context, request}: Route.LoaderArgs) {
 > Open-source FPV drone hardware, sold as assembled boards. Every product's full
 > design source (schematic, PCB, BOM, 3D STEP) is public on GitHub under
 > CERN-OHL-S v2; firmware is upstream open source (Betaflight, AM32, ExpressLRS).
-> OpenDrone is a brand of Incutec BV, Stapelhuisstraat 15, 3000 Leuven, Belgium
-> (VAT BE 1038.934.039). Prices in EUR, VAT included, ship from Belgium.
+> OpenDrone is a community-run open hardware project. The shop and the boards
+> are manufactured, sold and supported by Incutec BV, Stapelhuisstraat 15,
+> 3000 Leuven, Belgium (VAT BE 1038.934.039). Prices in EUR, VAT included,
+> ship from Belgium.
 
 IMPORTANT, OPENING SOON: the webshop is not yet taking orders. Visitors can
 subscribe on /newsletter to be notified when it opens. Treat all prices as
@@ -172,17 +174,27 @@ ${catalog}
 
 Everything is buildable from source (CERN-OHL-S v2). Per-product repos are
 listed in the catalog above; the full set lives at
-https://github.com/incutec-hw. Boards are OSHWA-certified (BE000026–BE000033).
+https://github.com/incutec-hw. Boards are OSHWA self-certified (BE000026–BE000033).
 €1 of every board sale is forwarded to the upstream firmware project.
+
+## Product status
+
+Every product carries exactly one status flag: launched (buyable, design
+settled), beta (buyable first batch, design may still change between
+batches), alpha (coming soon, testing inside the project), in-progress
+(first design exists, nothing tested), planned (no design yet). The flag
+is the only status carrier: it is set as a status-* topic on the product's
+GitHub repo and shown live on [the roadmap](${origin}/roadmap). Do not
+infer status from prose anywhere else.
 
 ## Learn more
 
-- [How OpenDrone makes money](${origin}/open-source)
+- [Open source model and Incutec BV, the company behind the shop](${origin}/open-source)
 - [Firmware partners](${origin}/firmware-partners)
-- [Product roadmap](${origin}/roadmap)
+- [Product roadmap and how to contribute](${origin}/roadmap)
+- [Release timeline, everything that has shipped](${origin}/timeline)
 - [Where the boards are made](${origin}/production)
 - [Wholesale / dealer inquiries](${origin}/wholesale)
-- [The company, Incutec BV](${origin}/incutec)
 - [All products](${origin}/collections/all)
 - [Newsletter / release notes](${origin}/newsletter)
 

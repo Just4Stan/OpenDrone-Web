@@ -291,7 +291,7 @@ export async function action({request, context}: Route.ActionArgs) {
           email,
           product: notifyProduct ?? undefined,
           unsubscribeUrl: unsubToken
-            ? `https://opendrone.store/newsletter/unsubscribe?t=${encodeURIComponent(unsubToken)}`
+            ? `https://opendrone.be/newsletter/unsubscribe?t=${encodeURIComponent(unsubToken)}`
             : null,
         });
       }

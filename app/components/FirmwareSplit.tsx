@@ -12,7 +12,7 @@ const EUR_FORMATTER = new Intl.NumberFormat('en-IE', {
 /**
  * Marketing block shown on each PDP: breaks the price into what funds
  * the hardware vs what we forward to the open-source firmware
- * maintainers. The split is a flat €1 per order regardless of variant
+ * maintainers. The split is a flat €1 per board regardless of variant
  * for now. Only renders when the price is above a small floor and the
  * currency is EUR.
  */

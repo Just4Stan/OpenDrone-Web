@@ -9,6 +9,7 @@ import {
   File as GenericFileIcon,
   Paperclip,
 } from 'lucide-react';
+import {DISCORD_INVITE_URL} from '~/lib/company';
 
 /**
  * Active-ticket chat UI. Rebuilt for the Apr-2026 design — chat-bubble
@@ -617,7 +618,7 @@ function SupportThreadSidebar({
         <p className="od-tile-eyebrow">↗ WHILE YOU WAIT</p>
         <ul className="support-sidebar-links">
           <li>
-            <a href="https://discord.gg/ABajnacUsS" target="_blank" rel="noreferrer noopener">
+            <a href={DISCORD_INVITE_URL} target="_blank" rel="noreferrer noopener">
               Search the Discord first; someone may have asked already →
             </a>
           </li>
