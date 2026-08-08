@@ -80,6 +80,6 @@ We do *not* make money from: ads, affiliate trackers, reselling analytics data, 
 - **cta_secondary:** Browse the repos on GitHub ↗
 
 ```do-not-edit
-CTA targets → /firmware-partners, https://github.com/incutec-hw
+CTA targets → /firmware-partners, https://github.com/OpenDrone-hw
 (GitHub link opens in new tab)
 ```

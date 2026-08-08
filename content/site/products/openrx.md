@@ -12,7 +12,7 @@ handle: openrx
 fileNumber: 03
 firmware.project: ExpressLRS
 firmware.projectUrl: https://github.com/ExpressLRS/ExpressLRS
-repoUrl: https://github.com/incutec-hw/OpenRX
+repoUrl: https://github.com/OpenDrone-hw/OpenRX
 teardown.boardArt: (none at base level)
 optionAxis: Model
 ```
@@ -67,12 +67,12 @@ qty (in order): 1×, 1×, 1×, 1×
 Edit the `label` and `note` text. `kind` and `href` shown for context.
 
 ```do-not-edit
-download_1: kind=schematic href=https://github.com/incutec-hw/OpenRX/raw/main/hardware/schematic.pdf
-download_2: kind=step      href=https://github.com/incutec-hw/OpenRX/raw/main/hardware/boards.step
-download_3: kind=bom       href=https://github.com/incutec-hw/OpenRX/raw/main/hardware/bom.csv
-download_4: kind=gerber    href=https://github.com/incutec-hw/OpenRX/raw/main/hardware/gerbers.zip
-download_5: kind=manual    href=https://github.com/incutec-hw/OpenRX/raw/main/docs/manual.pdf
-download_6: kind=flash     href=https://github.com/incutec-hw/OpenRX/blob/main/docs/flashing.md
+download_1: kind=schematic href=https://github.com/OpenDrone-hw/OpenRX/raw/main/hardware/schematic.pdf
+download_2: kind=step      href=https://github.com/OpenDrone-hw/OpenRX/raw/main/hardware/boards.step
+download_3: kind=bom       href=https://github.com/OpenDrone-hw/OpenRX/raw/main/hardware/bom.csv
+download_4: kind=gerber    href=https://github.com/OpenDrone-hw/OpenRX/raw/main/hardware/gerbers.zip
+download_5: kind=manual    href=https://github.com/OpenDrone-hw/OpenRX/raw/main/docs/manual.pdf
+download_6: kind=flash     href=https://github.com/OpenDrone-hw/OpenRX/blob/main/docs/flashing.md
 ```
 
 - **download_1_label:** Schematic (PDF)

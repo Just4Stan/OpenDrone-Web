@@ -61,7 +61,7 @@ FALLBACK_HEADER_MENU items (Shopify-managed in admin; these are the
 hardcoded defaults). Titles + URLs:
 - Catalog       → /collections/all
 - Newsletter    → /newsletter
-- Open Source   → https://github.com/incutec-hw
+- Open Source   → https://github.com/OpenDrone-hw
 
 Local page rewrites: /pages/contact → /contact
 Category link hrefs: FC → /products/openfc ; ESC → /products/openesc ;

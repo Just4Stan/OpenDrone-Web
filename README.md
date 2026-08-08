@@ -62,7 +62,7 @@ Node 22 or 24, npm 10+ (pinned in `package.json`).
 ## Run it locally
 
 ```sh
-git clone https://github.com/incutec-hw/OpenDrone-Web.git
+git clone https://github.com/OpenDrone-hw/OpenDrone-Web.git
 cd OpenDrone-Web
 npm install
 cp .env.example .env       # fill in your Shopify tokens, see Environment variables below
@@ -662,6 +662,6 @@ CERN-OHL-S. This keeps the storefront a pure static-asset consumer with no runti
 ## License
 
 [MIT](LICENSE) for this repo. The hardware repos are CERN-OHL-S:
-[OpenFC](https://github.com/incutec-hw/OpenFC),
-[OpenESC](https://github.com/incutec-hw/OpenESC_20X20), and
-[OpenRX](https://github.com/incutec-hw/OpenRX).
+[OpenFC](https://github.com/OpenDrone-hw/OpenFC),
+[OpenESC](https://github.com/OpenDrone-hw/OpenESC-20x20), and
+[OpenRX](https://github.com/OpenDrone-hw/OpenRX).

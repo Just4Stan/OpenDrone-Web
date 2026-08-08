@@ -67,7 +67,7 @@ export async function loader({context, request}: Route.LoaderArgs) {
       image: p.featuredImage?.url ?? null,
       license: content ? 'CERN-OHL-S-2.0' : null,
       design_source:
-        content?.repoUrl && content.repoUrl !== 'https://github.com/incutec-hw'
+        content?.repoUrl && content.repoUrl !== 'https://github.com/OpenDrone-hw'
           ? content.repoUrl
           : null,
       ...(locked ? {coming_soon: true} : null),

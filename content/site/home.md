@@ -35,5 +35,5 @@ Shopify (titles/prices not editable here).
 ```do-not-edit
 Links (structural): hero CTAs → /collections/all; component labels →
 /products/openfc, /products/openframe, /products/openesc; GitHub →
-https://github.com/incutec-hw
+https://github.com/OpenDrone-hw
 ```

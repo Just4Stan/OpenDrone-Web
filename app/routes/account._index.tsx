@@ -425,7 +425,7 @@ function BuildCard() {
         read along to understand what&rsquo;s flying in your drone.
       </p>
       <a
-        href="https://github.com/incutec-hw"
+        href="https://github.com/OpenDrone-hw"
         target="_blank"
         rel="noreferrer noopener"
         className="account-dashboard-cta"

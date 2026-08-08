@@ -107,5 +107,5 @@ existing "Concept" marking with this vocabulary. Status data lives in
 `ROADMAP`/`STATUS_META` in roadmap.tsx on feat/site-pages; consider lifting it
 into a shared lib module when you adopt it so the two lanes cannot drift.
 The flags are now LIVE as GitHub topics (status-beta etc.) on all 11
-incutec-hw repos; the topic is the canonical status. Stan's rule: status is
+OpenDrone-hw repos; the topic is the canonical status. Stan's rule: status is
 never described in prose, only via the flag.

@@ -113,7 +113,7 @@ export async function loader({context, request}: Route.LoaderArgs) {
       return (
         `- [${p.title}](${origin}/products/${p.handle})` +
         (desc ? `: ${desc}` : '') +
-        (repo && repo !== 'https://github.com/incutec-hw'
+        (repo && repo !== 'https://github.com/OpenDrone-hw'
           ? `\n  Design source: ${repo}`
           : '') +
         (lines ? `\n${lines}` : '')
@@ -174,7 +174,7 @@ ${catalog}
 
 Everything is buildable from source (CERN-OHL-S v2). Per-product repos are
 listed in the catalog above; the full set lives at
-https://github.com/incutec-hw. Boards are OSHWA self-certified (BE000026–BE000033).
+https://github.com/OpenDrone-hw. Boards are OSHWA self-certified (BE000026–BE000033).
 €1 of every board sale is forwarded to the upstream firmware project.
 
 ## Product status

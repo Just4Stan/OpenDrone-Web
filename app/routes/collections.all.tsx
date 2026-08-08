@@ -468,7 +468,7 @@ export default function Collection() {
           description="Products are not yet listed. Follow along on GitHub for hardware progress."
           secondary={
             <a
-              href="https://github.com/incutec-hw"
+              href="https://github.com/OpenDrone-hw"
               target="_blank"
               rel="noopener noreferrer"
               className="hero-cta-secondary"

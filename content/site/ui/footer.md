@@ -35,6 +35,7 @@ line is hidden when unset or `[pending]`.
 
 ## Open Source column links
 
+- **os_discord:** Discord
 - **os_github:** GitHub
 - **os_openfc:** OpenFC
 - **os_openesc:** OpenESC
@@ -99,9 +100,10 @@ limit, etc.) are captured in `newsletter.md`, not here.
 ```do-not-edit
 Footer link hrefs:
 Shop: Catalog → /collections/all ; Newsletter → /newsletter ; Search → /search
-Open Source (external): GitHub → https://github.com/incutec-hw ;
-  OpenFC → https://github.com/incutec-hw/OpenFC ;
-  OpenESC → https://github.com/incutec-hw/Open-4in1-AM32-ESC
+Open Source (external): Discord → the Discord invite ;
+  GitHub → https://github.com/OpenDrone-hw ;
+  OpenFC → https://github.com/OpenDrone-hw/OpenFC-Lite ;
+  OpenESC → https://github.com/OpenDrone-hw/OpenESC-20x20
 Company: How we open source → /open-source ; Firmware partners →
   /firmware-partners ; Legal / Imprint → /legal ; Contact → /contact ;
   Security → /security
@@ -109,6 +111,6 @@ Legal: Terms & Conditions → /algemene-voorwaarden ; Privacy → /privacy ;
   Cookies → /cookies ; Right of withdrawal → /herroepingsrecht ;
   Shipping → /shipping ; Warranty → /warranty ;
   Cookie settings → /cookie-settings
-Bottom bar GitHub → https://github.com/incutec-hw
+Bottom bar GitHub → https://github.com/OpenDrone-hw
 Newsletter form posts to /newsletter ; Privacy link → /privacy
 ```

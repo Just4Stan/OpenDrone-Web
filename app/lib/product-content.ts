@@ -140,7 +140,7 @@ export type VariantContent = {
    *  from the matched key (e.g. key "20×20" shown as "20×20 (mini)"). */
   label?: string;
   /** Per-tier GitHub repo, when a line splits its mounts across separate repos
-   *  (OpenFC-Lite vs OpenFC-Lite-Mini, OpenESC_20X20 vs OpenESC-30x30). The PDP
+   *  (OpenFC-Lite vs OpenFC-Lite-Mini, OpenESC-20x20 vs OpenESC-30x30). The PDP
    *  points the repo card, issues link and latest-commit card at this when the
    *  tier is selected; tiers without their own repo fall back to the product's
    *  `repoUrl`. Lines whose tiers share one repo (OpenRX subfolders) leave it
@@ -311,7 +311,7 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
       logo: '/logos/am32.svg',
       logoDark: true,
     },
-    repoUrl: 'https://github.com/incutec-hw/OpenESC-20x20',
+    repoUrl: 'https://github.com/OpenDrone-hw/OpenESC-20x20',
     video: {id: 'TwAmmPxOpTM', title: 'How Drone ESCs Work (so I built my own)'},
     teardown: {
       // refs keyed to /boards/openesc/components.json (20×20 board, the default
@@ -374,9 +374,9 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
       boardArt: {
         src: '/boards/openesc/board.svg',
         inspectUrl:
-          'https://kicanvas.org/?github=https://github.com/incutec-hw/OpenESC-20x20/blob/main/hardware/4in1-mini.kicad_pcb',
+          'https://kicanvas.org/?github=https://github.com/OpenDrone-hw/OpenESC-20x20/blob/main/hardware/4in1-mini.kicad_pcb',
         schematicUrl:
-          'https://kicanvas.org/?github=https://github.com/incutec-hw/OpenESC-20x20/blob/main/hardware/4in1-mini.kicad_sch',
+          'https://kicanvas.org/?github=https://github.com/OpenDrone-hw/OpenESC-20x20/blob/main/hardware/4in1-mini.kicad_sch',
         layers: {
           f: 'Signal + components',
           in1: 'Ground plane',
@@ -395,7 +395,7 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
       {qty: '1×', item: 'Low-ESR Electrolytic Capacitor'},
     ],
     // TODO(downloads): publish schematic.pdf, bom.csv, gerbers.zip, manual.pdf,
-    // wiring.pdf, flashing.md to the OpenESC_20X20 repo and re-add the cards.
+    // wiring.pdf, flashing.md to the OpenESC-20x20 repo and re-add the cards.
     // The KiCanvas viewer above + the GitHub link cover "study the design"
     // until the release artifacts ship.
     downloads: [],
@@ -444,7 +444,7 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
       '30×30': {
         oshwaUid: 'BE000029',
         // The 30×30 ESC is a separate repo from the 20×20 (the product default).
-        repoUrl: 'https://github.com/incutec-hw/OpenESC-30x30',
+        repoUrl: 'https://github.com/OpenDrone-hw/OpenESC-30x30',
         highlights: [
           ['Mount', '30×30'],
           ['Continuous', '60 A / channel'],
@@ -520,9 +520,9 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
         boardArt: {
           src: '/boards/openesc-30x30/board.svg',
           inspectUrl:
-            'https://kicanvas.org/?github=https://github.com/incutec-hw/OpenESC-30x30/blob/main/hardware/4in1.kicad_pcb',
+            'https://kicanvas.org/?github=https://github.com/OpenDrone-hw/OpenESC-30x30/blob/main/hardware/4in1.kicad_pcb',
           schematicUrl:
-            'https://kicanvas.org/?github=https://github.com/incutec-hw/OpenESC-30x30/blob/main/hardware/4in1.kicad_sch',
+            'https://kicanvas.org/?github=https://github.com/OpenDrone-hw/OpenESC-30x30/blob/main/hardware/4in1.kicad_sch',
           layers: {
             f: 'Signal + components',
             in1: 'Ground plane',
@@ -564,7 +564,7 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
       projectUrl: 'https://github.com/betaflight/betaflight',
       logo: '/logos/betaflight.svg',
     },
-    repoUrl: 'https://github.com/incutec-hw/OpenFC-Lite',
+    repoUrl: 'https://github.com/OpenDrone-hw/OpenFC-Lite',
     video: {
       id: 'XDYZoMRJFeQ',
       title: 'How Flight Controllers Work (so I built my own)',
@@ -660,7 +660,7 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
       '20×20': {
         oshwaUid: 'BE000027',
         // The 20×20 (Mini) is its own repo; the 30×30 uses the product default.
-        repoUrl: 'https://github.com/incutec-hw/OpenFC-Lite-Mini',
+        repoUrl: 'https://github.com/OpenDrone-hw/OpenFC-Lite-Mini',
         tagline: 'The 20×20 mount: the compact stack size.',
         highlights: [
           ['Mount', '20×20'],
@@ -719,9 +719,9 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
         boardArt: {
           src: '/boards/openfc-lite-mini/board.svg',
           inspectUrl:
-            'https://kicanvas.org/?github=https://github.com/incutec-hw/OpenFC-Lite-Mini/blob/main/hardware/OpenFC.kicad_pcb',
+            'https://kicanvas.org/?github=https://github.com/OpenDrone-hw/OpenFC-Lite-Mini/blob/main/hardware/OpenFC.kicad_pcb',
           schematicUrl:
-            'https://kicanvas.org/?github=https://github.com/incutec-hw/OpenFC-Lite-Mini/blob/main/hardware/OpenFC.kicad_sch',
+            'https://kicanvas.org/?github=https://github.com/OpenDrone-hw/OpenFC-Lite-Mini/blob/main/hardware/OpenFC.kicad_sch',
         },
       },
       '30×30': {
@@ -740,9 +740,9 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
         boardArt: {
           src: '/boards/openfc-lite/board.svg',
           inspectUrl:
-            'https://kicanvas.org/?github=https://github.com/incutec-hw/OpenFC-Lite/blob/main/hardware/OpenFC.kicad_pcb',
+            'https://kicanvas.org/?github=https://github.com/OpenDrone-hw/OpenFC-Lite/blob/main/hardware/OpenFC.kicad_pcb',
           schematicUrl:
-            'https://kicanvas.org/?github=https://github.com/incutec-hw/OpenFC-Lite/blob/main/hardware/OpenFC.kicad_sch',
+            'https://kicanvas.org/?github=https://github.com/OpenDrone-hw/OpenFC-Lite/blob/main/hardware/OpenFC.kicad_sch',
         },
       },
     },
@@ -770,7 +770,7 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
       project: 'ExpressLRS',
       projectUrl: 'https://github.com/ExpressLRS/ExpressLRS',
     },
-    repoUrl: 'https://github.com/incutec-hw/OpenRX',
+    repoUrl: 'https://github.com/OpenDrone-hw/OpenRX',
     video: {
       id: 'ssmQkRkXE84',
       title: 'How LoRa (ExpressLRS) Receivers Work',
@@ -804,50 +804,50 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
       {
         kind: 'schematic',
         label: 'Schematic · Lite',
-        href: 'https://raw.githubusercontent.com/incutec-hw/OpenRX/main/exports/schematics/OpenRX-Lite.pdf',
+        href: 'https://raw.githubusercontent.com/OpenDrone-hw/OpenRX/main/exports/schematics/OpenRX-Lite.pdf',
         size: '103 KB',
       },
       {
         kind: 'schematic',
         label: 'Schematic · Lite-UFL',
-        href: 'https://raw.githubusercontent.com/incutec-hw/OpenRX/main/exports/schematics/OpenRX-Lite-UFL.pdf',
+        href: 'https://raw.githubusercontent.com/OpenDrone-hw/OpenRX/main/exports/schematics/OpenRX-Lite-UFL.pdf',
         size: '106 KB',
       },
       {
         kind: 'schematic',
         label: 'Schematic · Mono',
-        href: 'https://raw.githubusercontent.com/incutec-hw/OpenRX/main/exports/schematics/OpenRX-Mono.pdf',
+        href: 'https://raw.githubusercontent.com/OpenDrone-hw/OpenRX/main/exports/schematics/OpenRX-Mono.pdf',
         size: '128 KB',
       },
       {
         kind: 'schematic',
         label: 'Schematic · Gemini',
-        href: 'https://raw.githubusercontent.com/incutec-hw/OpenRX/main/exports/schematics/OpenRX-Gemini.pdf',
+        href: 'https://raw.githubusercontent.com/OpenDrone-hw/OpenRX/main/exports/schematics/OpenRX-Gemini.pdf',
         size: '174 KB',
       },
       {
         kind: 'step',
         label: '3D STEP · Lite-UFL',
-        href: 'https://raw.githubusercontent.com/incutec-hw/OpenRX/main/OpenRX-Lite-UFL/export/lite-ufl.step',
+        href: 'https://raw.githubusercontent.com/OpenDrone-hw/OpenRX/main/OpenRX-Lite-UFL/export/lite-ufl.step',
         size: '5.7 MB',
       },
       {
         kind: 'step',
         label: '3D STEP · Mono',
-        href: 'https://raw.githubusercontent.com/incutec-hw/OpenRX/main/OpenRX-Mono/export/mono.step',
+        href: 'https://raw.githubusercontent.com/OpenDrone-hw/OpenRX/main/OpenRX-Mono/export/mono.step',
         size: '6.8 MB',
       },
       {
         kind: 'bom',
         label: 'BOM · Lite',
-        href: 'https://raw.githubusercontent.com/incutec-hw/OpenRX/main/OpenRX-Lite/export/OpenRX-Lite.csv',
+        href: 'https://raw.githubusercontent.com/OpenDrone-hw/OpenRX/main/OpenRX-Lite/export/OpenRX-Lite.csv',
         note: 'CSV',
         size: '2.9 KB',
       },
       {
         kind: 'bom',
         label: 'BOM · Gemini',
-        href: 'https://raw.githubusercontent.com/incutec-hw/OpenRX/main/OpenRX-Gemini/export/OpenRX-Gemini.csv',
+        href: 'https://raw.githubusercontent.com/OpenDrone-hw/OpenRX/main/OpenRX-Gemini/export/OpenRX-Gemini.csv',
         note: 'CSV',
         size: '4.1 KB',
       },
@@ -897,9 +897,9 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
         boardArt: {
           src: '/boards/openrx-lite/board.svg',
           inspectUrl:
-            'https://kicanvas.org/?github=https://github.com/incutec-hw/OpenRX/blob/main/OpenRX-Lite/OpenRX-Lite.kicad_pcb',
+            'https://kicanvas.org/?github=https://github.com/OpenDrone-hw/OpenRX/blob/main/OpenRX-Lite/OpenRX-Lite.kicad_pcb',
           schematicUrl:
-            'https://kicanvas.org/?github=https://github.com/incutec-hw/OpenRX/blob/main/OpenRX-Lite/OpenRX-Lite.kicad_sch',
+            'https://kicanvas.org/?github=https://github.com/OpenDrone-hw/OpenRX/blob/main/OpenRX-Lite/OpenRX-Lite.kicad_sch',
         },
       },
       'Lite-UFL': {
@@ -927,9 +927,9 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
         boardArt: {
           src: '/boards/openrx-lite-ufl/board.svg',
           inspectUrl:
-            'https://kicanvas.org/?github=https://github.com/incutec-hw/OpenRX/blob/main/OpenRX-Lite-UFL/OpenRX-Lite-UFL.kicad_pcb',
+            'https://kicanvas.org/?github=https://github.com/OpenDrone-hw/OpenRX/blob/main/OpenRX-Lite-UFL/OpenRX-Lite-UFL.kicad_pcb',
           schematicUrl:
-            'https://kicanvas.org/?github=https://github.com/incutec-hw/OpenRX/blob/main/OpenRX-Lite-UFL/OpenRX-Lite-UFL.kicad_sch',
+            'https://kicanvas.org/?github=https://github.com/OpenDrone-hw/OpenRX/blob/main/OpenRX-Lite-UFL/OpenRX-Lite-UFL.kicad_sch',
         },
       },
       Mono: {
@@ -959,9 +959,9 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
         boardArt: {
           src: '/boards/openrx-mono/board.svg',
           inspectUrl:
-            'https://kicanvas.org/?github=https://github.com/incutec-hw/OpenRX/blob/main/OpenRX-Mono/OpenRX-Mono.kicad_pcb',
+            'https://kicanvas.org/?github=https://github.com/OpenDrone-hw/OpenRX/blob/main/OpenRX-Mono/OpenRX-Mono.kicad_pcb',
           schematicUrl:
-            'https://kicanvas.org/?github=https://github.com/incutec-hw/OpenRX/blob/main/OpenRX-Mono/OpenRX-Mono.kicad_sch',
+            'https://kicanvas.org/?github=https://github.com/OpenDrone-hw/OpenRX/blob/main/OpenRX-Mono/OpenRX-Mono.kicad_sch',
         },
       },
       Gemini: {
@@ -993,9 +993,9 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
         boardArt: {
           src: '/boards/openrx-gemini/board.svg',
           inspectUrl:
-            'https://kicanvas.org/?github=https://github.com/incutec-hw/OpenRX/blob/main/OpenRX-Gemini/OpenRX-Gemini.kicad_pcb',
+            'https://kicanvas.org/?github=https://github.com/OpenDrone-hw/OpenRX/blob/main/OpenRX-Gemini/OpenRX-Gemini.kicad_pcb',
           schematicUrl:
-            'https://kicanvas.org/?github=https://github.com/incutec-hw/OpenRX/blob/main/OpenRX-Gemini/OpenRX-Gemini.kicad_sch',
+            'https://kicanvas.org/?github=https://github.com/OpenDrone-hw/OpenRX/blob/main/OpenRX-Gemini/OpenRX-Gemini.kicad_sch',
         },
       },
     },
@@ -1014,7 +1014,7 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
     firmware: {
       project: '—',
     },
-    repoUrl: 'https://github.com/incutec-hw',
+    repoUrl: 'https://github.com/OpenDrone-hw',
     // TODO(copy): placeholder teardown editorial. The exploded viewer is the
     // CAD analogue of the boards' KiCanvas layer reveal; pin text reflects
     // only known specs (5 mm arms, 30.5 × 30.5 pattern) — no invented
@@ -1144,7 +1144,7 @@ export const PRODUCT_CONTENT_FALLBACK: ProductContent = {
     lead: '',
   },
   firmware: {project: ''},
-  repoUrl: 'https://github.com/incutec-hw',
+  repoUrl: 'https://github.com/OpenDrone-hw',
   inTheBox: [],
   downloads: [],
   specs: [],

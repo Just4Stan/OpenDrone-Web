@@ -25,32 +25,32 @@ const TYPES = {
 
 const DATA = {
   openesc: {
-    github_repo: 'https://github.com/incutec-hw/OpenESC_20X20',
+    github_repo: 'https://github.com/OpenDrone-hw/OpenESC-20x20',
     vuln_contact_email: SECURITY_EMAIL,
     model_number: 'OPENESC',
   },
   openfc: {
-    github_repo: 'https://github.com/incutec-hw/OpenFC',
-    datasheet_url: 'https://github.com/incutec-hw/OpenFC/raw/main/hardware/schematic.pdf',
-    manual_url: 'https://github.com/incutec-hw/OpenFC/raw/main/docs/manual.pdf',
+    github_repo: 'https://github.com/OpenDrone-hw/OpenFC',
+    datasheet_url: 'https://github.com/OpenDrone-hw/OpenFC/raw/main/hardware/schematic.pdf',
+    manual_url: 'https://github.com/OpenDrone-hw/OpenFC/raw/main/docs/manual.pdf',
     vuln_contact_email: SECURITY_EMAIL,
     model_number: 'OPENFC',
   },
   openrx: {
-    github_repo: 'https://github.com/incutec-hw/OpenRX',
-    datasheet_url: 'https://github.com/incutec-hw/OpenRX/raw/main/hardware/schematic.pdf',
-    manual_url: 'https://github.com/incutec-hw/OpenRX/raw/main/docs/manual.pdf',
+    github_repo: 'https://github.com/OpenDrone-hw/OpenRX',
+    datasheet_url: 'https://github.com/OpenDrone-hw/OpenRX/raw/main/hardware/schematic.pdf',
+    manual_url: 'https://github.com/OpenDrone-hw/OpenRX/raw/main/docs/manual.pdf',
     vuln_contact_email: SECURITY_EMAIL,
     model_number: 'OPENRX',
   },
   openframe: {
-    github_repo: 'https://github.com/incutec-hw',
-    manual_url: 'https://github.com/incutec-hw/OpenFrame/raw/main/docs/assembly.pdf',
+    github_repo: 'https://github.com/OpenDrone-hw',
+    manual_url: 'https://github.com/OpenDrone-hw/OpenFrame/raw/main/docs/assembly.pdf',
     vuln_contact_email: SECURITY_EMAIL,
     model_number: 'OPENFRAME',
   },
   openstack: {
-    github_repo: 'https://github.com/incutec-hw',
+    github_repo: 'https://github.com/OpenDrone-hw',
     vuln_contact_email: SECURITY_EMAIL,
     model_number: 'OPENSTACK',
   },

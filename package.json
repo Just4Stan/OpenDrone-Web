@@ -8,10 +8,10 @@
   "homepage": "https://opendrone.store",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/incutec-hw/OpenDrone-Web.git"
+    "url": "git+https://github.com/OpenDrone-hw/OpenDrone-Web.git"
   },
   "bugs": {
-    "url": "https://github.com/incutec-hw/OpenDrone-Web/issues"
+    "url": "https://github.com/OpenDrone-hw/OpenDrone-Web/issues"
   },
   "scripts": {
     "prebuild": "npm run sync:legal",

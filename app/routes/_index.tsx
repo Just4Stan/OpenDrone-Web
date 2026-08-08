@@ -896,7 +896,7 @@ function DesktopHome({heroStacks}: {heroStacks: Promise<HeroStacks>}) {
               settled wordmark in the bottom-left corner, centred on the
               wordmark's height. Persists through the scroll. */}
           <a
-            href="https://github.com/incutec-hw"
+            href="https://github.com/OpenDrone-hw"
             target="_blank"
             rel="noopener noreferrer"
             className={`hero-github${splashSettled ? ' is-visible' : ''}`}
