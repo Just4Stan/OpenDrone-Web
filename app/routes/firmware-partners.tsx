@@ -1,12 +1,14 @@
 import type {Route} from './+types/firmware-partners';
 import {Link} from 'react-router';
 import {buildSeoMeta} from '~/lib/seo';
+import {EditorialShell} from '~/components/EditorialShell';
+import {MarginArt, SplitFlowArt, ChipsArt} from '~/components/MarginArt';
 
 export const meta: Route.MetaFunction = () =>
   buildSeoMeta({
     title: 'Firmware partners · Where your €1 goes',
     description:
-      'OpenDrone ships on Betaflight, AM32 and ExpressLRS. We forward €1 of every order to the upstream maintainers. Here is the list.',
+      'OpenDrone ships on Betaflight, AM32 and ExpressLRS. Incutec forwards €1 of every board sold to the upstream maintainers. Here is the list.',
   });
 
 export async function loader(_args: Route.LoaderArgs) {
@@ -46,7 +48,7 @@ const PARTNERS: Partner[] = [
     project: 'Betaflight',
     runsOn: 'OpenFC-Lite',
     blurb:
-      'Betaflight is the flight controller firmware used in most mini-quad freestyle builds. OpenFC-Lite is a Betaflight-target board; the RP2350-platform port is being upstreamed.',
+      'Betaflight is the flight controller firmware used in most mini-quad freestyle builds. OpenFC-Lite is a Betaflight-target board; the RP2354 target work is developed on a public fork and has not been submitted upstream yet.',
     repoUrl: 'https://github.com/betaflight/betaflight',
     donationUrl: 'https://opencollective.com/betaflight',
   },
@@ -70,23 +72,25 @@ const PARTNERS: Partner[] = [
 
 export default function FirmwarePartnersRoute() {
   return (
-    <div className="editorial-page">
+    <EditorialShell slug="firmware-partners">
       <header className="editorial-hero">
-        <p className="editorial-eyebrow">€1 per order · forwarded</p>
+        <p className="editorial-eyebrow">€1 per board · forwarded</p>
         <h1 className="editorial-title">
           The firmware makes the hardware fly.{' '}
           <em>We pay the people who wrote it.</em>
         </h1>
         <p className="editorial-lead">
-          Every OpenDrone board runs on firmware we didn&apos;t write. For every
-          unit sold we forward €1 to the upstream project: one contribution,
-          one transaction, one line item in our books. Here&apos;s the list, with
-          links if you want to give them more directly.
+          Every OpenDrone board runs on community firmware the project
+          didn&apos;t write. For every board sold, Incutec forwards €1 to the
+          upstream project: one contribution, one transaction, one line item in
+          the books. Here&apos;s the list, with links if you want to give them
+          more directly.
         </p>
       </header>
 
       <section className="editorial-section">
         <h2 className="editorial-section-title">01 · How the split works</h2>
+        <MarginArt><SplitFlowArt /></MarginArt>
         <p>
           When you buy a board, the checkout total covers the hardware price plus
           a €1 firmware contribution baked in. We batch those contributions and
@@ -103,6 +107,7 @@ export default function FirmwarePartnersRoute() {
 
       <section className="editorial-section">
         <h2 className="editorial-section-title">02 · The projects</h2>
+        <MarginArt><ChipsArt /></MarginArt>
         <div className="partners-grid">
           {PARTNERS.map((p) => (
             <article key={p.project} className="partner-card">
@@ -136,16 +141,16 @@ export default function FirmwarePartnersRoute() {
         <h2 className="editorial-section-title">03 · Giving directly</h2>
         <p>
           Want to give the maintainers more than the baked-in €1? Where a
-          project runs a public donation page, its card above links to it.
-          Giving directly means no payment-processor fee: 100% of what you
-          send reaches them.
+          project runs a public donation page, its card above links to it;
+          AM32 has none, so its share is forwarded by direct transfer. Giving
+          directly means no payment-processor fee: 100% of what you send
+          reaches them.
         </p>
       </section>
 
       {MERGED_PRS.length > 0 ? (
         <section className="editorial-section">
           <h2 className="editorial-section-title">04 · Merged upstream</h2>
-          {/* TODO(copy-stan): placeholder framing line. */}
           <p>
             Money is one half; patches are the other. These are our changes
             that upstream actually merged: every link goes to the real PR.
@@ -177,6 +182,6 @@ export default function FirmwarePartnersRoute() {
           Browse the boards →
         </Link>
       </section>
-    </div>
+    </EditorialShell>
   );
 }

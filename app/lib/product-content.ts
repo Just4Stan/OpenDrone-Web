@@ -311,7 +311,7 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
       logo: '/logos/am32.svg',
       logoDark: true,
     },
-    repoUrl: 'https://github.com/incutec-hw/OpenESC_20X20',
+    repoUrl: 'https://github.com/incutec-hw/OpenESC-20x20',
     video: {id: 'TwAmmPxOpTM', title: 'How Drone ESCs Work (so I built my own)'},
     teardown: {
       // refs keyed to /boards/openesc/components.json (20×20 board, the default
@@ -374,9 +374,9 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
       boardArt: {
         src: '/boards/openesc/board.svg',
         inspectUrl:
-          'https://kicanvas.org/?github=https://github.com/incutec-hw/OpenESC_20X20/blob/main/hardware/4in1-mini.kicad_pcb',
+          'https://kicanvas.org/?github=https://github.com/incutec-hw/OpenESC-20x20/blob/main/hardware/4in1-mini.kicad_pcb',
         schematicUrl:
-          'https://kicanvas.org/?github=https://github.com/incutec-hw/OpenESC_20X20/blob/main/hardware/4in1-mini.kicad_sch',
+          'https://kicanvas.org/?github=https://github.com/incutec-hw/OpenESC-20x20/blob/main/hardware/4in1-mini.kicad_sch',
         layers: {
           f: 'Signal + components',
           in1: 'Ground plane',
