@@ -7,7 +7,7 @@
  * stays authoritative ONLY for price/stock/variant ids, resolved at load time
  * (see buildHeroStacks in routes/_index.tsx). The registry therefore NEVER
  * stores variant GIDs — only `handle` + option values — so a future storefront
- * swap replaces the resolver, not this data. (drafts/drone-builder-scope.md §5)
+ * swap replaces the resolver, not this data.
  *
  * The legacy hero registry (`app/lib/hero-airframes.ts`) is now a DERIVED view
  * over this file — its exports (HERO_AIRFRAMES / HERO_BOARDS / …) are computed
