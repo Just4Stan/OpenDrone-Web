@@ -2,4 +2,4 @@
 // Content hash of every exported board.svg + front.png + back.png. BoardArt
 // appends it as ?v= to bust Oxygen's 1-year immutable asset cache when board
 // art is regenerated in place.
-export const BOARD_ART_VERSION = '54b028ba9b47';
+export const BOARD_ART_VERSION = 'c7c7ea0815e2';

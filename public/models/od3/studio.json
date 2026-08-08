@@ -254,9 +254,9 @@
       "note": "4-in-1 AM32 ESC"
     },
     {
-      "id": "OpenRX-Mono",
-      "title": "OpenRX-Mono",
-      "note": "ELRS receiver"
+      "id": "OpenRX-Lite-UFL",
+      "title": "OpenRX",
+      "note": "ELRS receiver family"
     }
   ],
   "boardExclude": "(screw|hex nut|pressnut|press nut|washer|softmount|Standoff|20mmx4mm|Casing|^Arm$|^Cross$|^Base-|^Top$|DJI|VTX-Mount|Bumper|AirTag|Boot-|Admi|BM6B|^[0-9]+$)",
@@ -290,10 +290,10 @@
     },
     {
       "id": "rx",
-      "title": "OpenRX-Mono",
-      "note": "ELRS receiver",
+      "title": "OpenRX",
+      "note": "ELRS receiver lineup. Lite-UFL fits a 3 inch; Mono's 900 MHz antenna wants a bigger frame.",
       "select": {
-        "board": "OpenRX-Mono"
+        "board": "OpenRX-Lite-UFL"
       }
     },
     {
