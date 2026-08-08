@@ -1,6 +1,8 @@
 import type {Route} from './+types/open-source';
 import {Link} from 'react-router';
 import {buildSeoMeta} from '~/lib/seo';
+import {EditorialShell} from '~/components/EditorialShell';
+import {RepoTreeAside} from '~/components/EditorialAsides';
 import {DISCORD_INVITE_URL} from '~/lib/company';
 
 export const meta: Route.MetaFunction = () =>
@@ -16,7 +18,7 @@ export async function loader(_args: Route.LoaderArgs) {
 
 export default function OpenSourceRoute() {
   return (
-    <div className="editorial-page">
+    <EditorialShell slug="open-source" aside={<RepoTreeAside />}>
       <header className="editorial-hero">
         <p className="editorial-eyebrow">Open Source</p>
         <h1 className="editorial-title">
@@ -51,7 +53,13 @@ export default function OpenSourceRoute() {
       <section className="editorial-section">
         <h2 className="editorial-section-title">02 · Job two: Incutec brings it to market</h2>
         <p>
-          Incutec does what a community cannot do alone: production, quality control, certification, distribution and legal responsibility for what is sold. That does not change because the design is open. Although we believe that the best support will be when community members can help others since information about FPV is widely available. As a small team, we want to focus improving our vertical integration to deliver the best products possible.
+          Incutec does what a community cannot do alone: production, quality
+          control, certification, distribution and legal responsibility for
+          what is sold. That does not change because the design is open. We
+          believe the best support comes from community members helping each
+          other, since information about FPV is widely available. As a small
+          team, we want to focus on improving our vertical integration to
+          deliver the best products possible.
         </p>
         <p>
           The community project needs no revenue; the company manufacturing and
@@ -157,6 +165,6 @@ export default function OpenSourceRoute() {
           Browse the repos on GitHub ↗
         </a>
       </section>
-    </div>
+    </EditorialShell>
   );
 }

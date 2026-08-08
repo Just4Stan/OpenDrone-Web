@@ -124,7 +124,7 @@ export function Footer({
               OpenDrone
             </h3>
             <p className="text-[12px] text-[var(--color-text-muted)] mb-3 leading-relaxed">
-              OpenDrone is a community project. This shop is run by
+              This shop is run by
             </p>
             <CompanyFooterBlock company={company} />
           </div>

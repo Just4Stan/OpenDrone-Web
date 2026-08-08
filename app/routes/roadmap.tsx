@@ -1,6 +1,8 @@
 import type {Route} from './+types/roadmap';
 import {Link} from 'react-router';
 import {buildSeoMeta} from '~/lib/seo';
+import {EditorialShell} from '~/components/EditorialShell';
+import {RoadmapPipelineAside} from '~/components/EditorialAsides';
 import {DISCORD_INVITE_URL} from '~/lib/company';
 
 export const meta: Route.MetaFunction = () =>
@@ -135,24 +137,36 @@ export default function RoadmapRoute() {
     items: ROADMAP.filter((r) => r.status === status),
   })).filter((g) => g.items.length > 0);
 
+  const stages = groups.map((g) => ({
+    label: STATUS_META[g.status].label,
+    count: g.items.length,
+  }));
+
   // Section 01 is "How this works"; the status groups take 02..(n+1);
   // the contribution sections continue the numbering after that.
   const sec = (i: number) => String(i).padStart(2, '0');
   const afterGroups = groups.length + 2;
 
   return (
-    <div className="editorial-page">
+    <EditorialShell slug="roadmap" aside={<RoadmapPipelineAside stages={stages} />}>
       <header className="editorial-hero">
-        <p className="editorial-eyebrow">Roadmap · Contribute</p>
+        <p className="editorial-eyebrow">Roadmap and Contributing</p>
         <h1 className="editorial-title">
-          What we&apos;re building, <em>and how you can help.</em>
+          What we&apos;re building, and how you can help.
         </h1>
         <p className="editorial-lead">
-          OpenDrone is a community project: every board is designed in public
-          from the first commit, and this page lists all of them with an honest
-          status. No dates: we&apos;d only be guessing. The list is not closed
-          either. Anyone can propose a board, and the FC connector on every
-          OpenESC exists because someone sent a PR.
+          OpenDrone is a community project, but that doesn&apos;t mean
+          compromise. The end goal is to cover each corner of the FPV hardware
+          spectrum. The way we get there is by first laying out foundational
+          hardware and then building on top of that. We think foundational
+          hardware means all the parts to build a 5 inch or 3 inch freestyle
+          drone, so that roughly translates to: stack (FC + ESC), receiver,
+          frame, motors and video system. You&apos;ll find the status of those
+          products below. The ecosystem around the drone is the next part:
+          chargers, accessories, propellers, batteries, consumables, buzzers,
+          GPS. After that, expanding into different size classes like whoops
+          and toothpicks with AIOs, or bigger cinelifters. Step by step, we
+          hope to provide everything you need to build and fly your drone.
         </p>
       </header>
 
@@ -163,26 +177,14 @@ export default function RoadmapRoute() {
           <a href={DISCORD_INVITE_URL} target="_blank" rel="noreferrer">
             the OpenDrone Discord
           </a>
-          : what the market needs, which specs make sense, what can
-          realistically be produced. Agreeing before anyone draws is the point.
-          It stops two people building the same thing, and it kills bad ideas
-          before someone spends weeks on a layout. Once a plan settles, the
-          design work moves to GitHub, which holds the record.
+          : what the market needs, which specs make sense, what can realistically be produced. Agreeing before anyone draws is the point. It stops two people building the same thing, and it kills bad ideas before someone spends weeks on a layout.
         </p>
         <p>
-          Anyone can propose hardware, including boards that compete with what
-          is already in the shop. A proposal names an owner who carries the
-          design through review and measurement, and decisions are argued on
-          published measurements, not preference. Products marked{' '}
-          <strong>Concept</strong> in the shop are published before hardware
-          exists, precisely so this discussion can happen in public.
+          Anyone can propose future hardware. A proposal names an owner who carries the design through review and measurement, and decisions are argued on published measurements, not preference. Products marked{' '}
+          <strong>Concept</strong> in the shop are published before hardware exists, precisely so this discussion can happen in public, on Discord.
         </p>
         <p>
-          Incutec, the company behind this shop, supports the development
-          rather than steering it: it buys the prototype samples, pays for test
-          runs, and manufactures a design once it is verified. Contributors
-          whose hardware is verified by the community receive manufactured
-          samples of their own design.
+          Incutec, the company behind this shop, supports and steers the development. Contributors whose hardware is verified by the community receive manufactured samples of their own design. Once hardware is verified we can move to small test runs and integrate it in the rest of the OpenDrone ecosystem.
         </p>
       </section>
 
@@ -197,9 +199,6 @@ export default function RoadmapRoute() {
               <li className="roadmap-item" key={r.item}>
                 <div className="roadmap-item-head">
                   <span className="roadmap-name">{r.item}</span>
-                  <span className="roadmap-status" data-status={r.status}>
-                    {STATUS_META[r.status].label}
-                  </span>
                 </div>
                 <p className="roadmap-note">{r.note}</p>
                 {r.link ? (
@@ -303,6 +302,6 @@ export default function RoadmapRoute() {
           Watch the repos on GitHub ↗
         </a>
       </section>
-    </div>
+    </EditorialShell>
   );
 }

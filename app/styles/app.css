@@ -9832,21 +9832,20 @@ button.reset {
    ============================================ */
 
 .editorial-page {
-  /* Centered reading column. The old layout kept the page at rail width
-     and left-capped every child at --prose-width, which parked the whole
-     text column on the left edge and left ~60% of a 1440px canvas empty
-     (QA P2-3). One measure, centered — margins are symmetric whitespace
-     instead of dead space. Slightly wider than --prose-width to suit the
-     mono body face. */
+  /* Centered reading column, 640px: ~70-75 characters at 16px, the
+     measure Oxide's docs run and nobody serious exceeds by much. Mono is
+     for labels and data on these pages, never body prose, so the column
+     no longer needs mono's extra width. */
   width: var(--rail-width);
-  max-width: 720px;
+  max-width: 640px;
   margin: 0 auto;
-  padding: 3rem 0 5rem;
+  padding: 4rem 0 6rem;
   color: var(--color-text);
 }
 
 .editorial-hero {
-  margin-bottom: 3rem;
+  /* The title earns its presence from the air around it, not its size. */
+  margin-bottom: 6rem;
 }
 
 .editorial-eyebrow {
@@ -9872,24 +9871,30 @@ button.reset {
   color: inherit;
 }
 
+/* Body prose is sans, 16px/1.5. Mono at body size across whole articles
+   is what made these pages read as a terminal dump; the reference sites
+   (Oxide, Linear) keep mono to labels and data at 11-14px. */
 .editorial-lead {
-  font-family: var(--font-mono);
-  font-size: 0.95rem;
-  line-height: 1.7;
-  color: var(--color-text-muted);
+  font-family: var(--font-sans);
+  font-size: 1.075rem;
+  line-height: 1.65;
+  color: color-mix(in srgb, var(--color-text) 72%, var(--color-text-muted));
   margin: 0;
 }
 
+/* Space is spent between sections (6rem), not between paragraphs
+   (0.85rem). That ~8:1 contrast is what reads as spacious; padding every
+   gap equally reads as loose but still cramped. */
 .editorial-section {
-  margin-top: 2.5rem;
-  font-family: var(--font-mono);
-  font-size: 0.9rem;
-  line-height: 1.75;
-  color: var(--color-text-muted);
+  margin-top: 6rem;
+  font-family: var(--font-sans);
+  font-size: 1rem;
+  line-height: 1.6;
+  color: color-mix(in srgb, var(--color-text) 62%, var(--color-text-muted));
 }
 
 .editorial-section p {
-  margin: 0 0 1rem;
+  margin: 0 0 0.85rem;
 }
 
 .editorial-section strong {
@@ -9902,13 +9907,15 @@ button.reset {
   font-style: italic;
 }
 
+/* Bonded to its section: generous air above, little below (>=3:1), so
+   the gap itself draws the section boundaries. */
 .editorial-section-title {
   font-family: var(--font-mono);
   font-size: 12px;
   letter-spacing: 0.25em;
   text-transform: uppercase;
   color: var(--color-text);
-  margin: 0 0 1rem;
+  margin: 0 0 1.1rem;
 }
 
 .editorial-list {
@@ -9980,8 +9987,8 @@ button.reset {
    is untouched inside here: it still owns the 720px measure, which is why
    a page can adopt the shell without a word of its copy reflowing.
 
-   Column budget at the 1360px breakpoint: 13rem rail + 720 prose + 19rem
-   aside + two 3rem gaps = 1288px, inside the rail gutters. Below that the
+   Column budget at the 1360px breakpoint: 13rem rail + 640 prose + 19rem
+   aside + two 3rem gaps = 1208px, inside the rail gutters. Below that the
    rail drops under the prose; below 1120px the aside does too. Nothing is
    display:none at any width — the rail IS the navigation for the series.
    ═══════════════════════════════════════════════════════════════════════ */
@@ -10014,17 +10021,19 @@ button.reset {
 
 @media (min-width: 1120px) {
   .editorial-shell {
-    grid-template-columns: minmax(0, 720px) minmax(0, 19rem);
+    grid-template-columns: minmax(0, 640px) minmax(0, 19rem);
     align-items: start;
   }
 
   .editorial-shell.is-narrow {
-    grid-template-columns: minmax(0, 720px);
+    grid-template-columns: minmax(0, 640px);
   }
 
   .editorial-aside {
     position: sticky;
     top: calc(var(--header-height) + 1.5rem);
+    /* Aligns the aside eyebrow with the page eyebrow (page padding-top). */
+    margin-top: 4rem;
   }
 
   /* Under the prose, in the prose column only. Spanning to the far edge
@@ -10037,11 +10046,11 @@ button.reset {
 
 @media (min-width: 1360px) {
   .editorial-shell {
-    grid-template-columns: 13rem minmax(0, 720px) minmax(0, 19rem);
+    grid-template-columns: 13rem minmax(0, 640px) minmax(0, 19rem);
   }
 
   .editorial-shell.is-narrow {
-    grid-template-columns: 13rem minmax(0, 720px);
+    grid-template-columns: 13rem minmax(0, 640px);
   }
 
   .series-rail {
@@ -10049,9 +10058,9 @@ button.reset {
     order: -1;
     position: sticky;
     top: calc(var(--header-height) + 1.5rem);
-    /* Aligns the rail head with the page eyebrow. Margin, not padding, so it
-       does not eat into the max-height below. */
-    margin-top: 3rem;
+    /* Aligns the rail head with the page eyebrow (page padding-top).
+       Margin, not padding, so it does not eat into the max-height below. */
+    margin-top: 4rem;
     /* The rail can outgrow the viewport once the series does; scroll it
        rather than let it push the sticky top off screen. Thin, low-contrast
        bar: this scrolls by a line or two, it should not read as a panel. */
@@ -10064,90 +10073,54 @@ button.reset {
 }
 
 .series-rail-head {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
   font-family: var(--font-mono);
   font-size: 11px;
   letter-spacing: 0.22em;
   text-transform: uppercase;
   color: var(--color-gold);
-  margin: 0 0 1.1rem;
+  margin: 0 0 1.4rem;
 }
 
-.series-rail-head span {
-  color: var(--color-text-muted);
-  letter-spacing: 0.14em;
-}
-
+/* Number + title rows, nothing else. No borders, no spine, no blurbs:
+   whitespace is the container, and the current page is marked by a
+   contrast flip (muted -> full text color), the way Linear's chapter
+   rails do it. The rail should read as texture next to the article. */
 .series-rail-list {
   list-style: none;
   margin: 0;
   padding: 0;
   display: grid;
-  gap: 1px;
+  gap: 0.3rem;
 }
 
 .series-rail-list a {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
-  gap: 0.7rem;
-  padding: 0.7rem 0;
-  border-top: 1px solid color-mix(in srgb, var(--color-border) 70%, transparent);
-  color: var(--color-text-muted);
+  display: flex;
+  align-items: baseline;
+  gap: 0.8rem;
+  padding: 0.35rem 0;
+  color: color-mix(in srgb, var(--color-text-muted) 80%, transparent);
   font-family: var(--font-mono);
-  transition: color 0.2s ease, border-color 0.2s ease;
-}
-
-.series-rail-list li:last-child a {
-  border-bottom: 1px solid
-    color-mix(in srgb, var(--color-border) 70%, transparent);
+  transition: color 0.2s ease;
 }
 
 .series-rail-list a:hover {
   color: var(--color-text);
-  border-color: var(--color-gold);
 }
 
 .series-rail-num {
   font-size: 10px;
   letter-spacing: 0.1em;
-  color: color-mix(in srgb, var(--color-text-muted) 70%, transparent);
-  padding-top: 0.2rem;
-}
-
-.series-rail-body {
-  display: grid;
-  gap: 0.2rem;
-  min-width: 0;
+  color: color-mix(in srgb, var(--color-text-muted) 55%, transparent);
 }
 
 .series-rail-title {
   font-size: 12px;
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: var(--color-text);
 }
 
-.series-rail-hook {
-  font-size: 11px;
-  line-height: 1.5;
-  color: var(--color-text-muted);
-}
-
-.series-rail-min {
-  font-size: 10px;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: color-mix(in srgb, var(--color-text-muted) 65%, transparent);
-}
-
-/* Current entry: gold spine, not a colour swap, so the rail still reads as
-   a list of links rather than one active tab. */
 .series-rail-list li.is-current a {
   color: var(--color-text);
-  box-shadow: inset 2px 0 0 var(--color-gold);
-  padding-left: 0.7rem;
 }
 
 .series-rail-list li.is-current .series-rail-num {
@@ -10224,80 +10197,84 @@ button.reset {
   color: var(--color-text-muted);
 }
 
-/* Climb, drawn bottom-up in meaning but top-down on screen: the rail is one
-   line behind the dots, inset so the dots sit on it. */
+/* Drawn as a graphic, not a list: hairline spine, well-separated nodes
+   (gap ~4x the title size so the line reads as a drawn element), the next
+   rung marked by fill + ring, brightness stepping down toward the far
+   rungs, and the line fading out past the last node into the future. */
 .ladder-rungs {
   list-style: none;
   margin: 0;
-  padding: 0 0 0 1.4rem;
+  padding: 0 0 2.5rem 1.6rem;
   position: relative;
 }
 
 .ladder-rungs::before {
   content: '';
   position: absolute;
-  left: 3px;
+  left: 4px;
   top: 0.45rem;
-  bottom: 0.6rem;
+  bottom: 0;
   width: 1px;
   background: linear-gradient(
     to bottom,
-    var(--color-gold),
     color-mix(in srgb, var(--color-border) 90%, transparent)
+      calc(100% - 3rem),
+    transparent
   );
 }
 
 .ladder-rung {
   position: relative;
   display: grid;
-  gap: 0.25rem;
-  padding-bottom: 1.6rem;
+  gap: 0.35rem;
+  padding-bottom: 3.5rem;
 }
 
 .ladder-rung:last-child {
   padding-bottom: 0;
 }
 
+/* Hollow node punched through the hairline: page-background fill so the
+   line does not run through it. */
 .ladder-rung::before {
   content: '';
   position: absolute;
-  left: -1.4rem;
-  top: 0.4rem;
+  left: -1.6rem;
+  top: 0.35rem;
   width: 7px;
   height: 7px;
   border-radius: 50%;
   background: var(--color-bg);
-  border: 1px solid var(--color-gold);
+  border: 1px solid color-mix(in srgb, var(--color-text-muted) 55%, transparent);
 }
 
+/* The next rung up: filled, with a static glow ring. The one place the
+   accent appears inside the graphic. */
 .ladder-rung:first-child::before {
+  left: calc(-1.6rem - 1px);
+  width: 9px;
+  height: 9px;
   background: var(--color-gold);
+  border-color: var(--color-gold);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-gold) 25%, transparent);
 }
 
 .ladder-when {
   font-size: 10px;
   letter-spacing: 0.2em;
   text-transform: uppercase;
-  color: var(--color-gold);
+  color: color-mix(in srgb, var(--color-text-muted) 80%, transparent);
 }
 
 .ladder-title {
-  font-size: 12px;
+  font-size: 13px;
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: var(--color-text);
-}
-
-.ladder-detail {
-  font-size: 11px;
-  line-height: 1.6;
   color: var(--color-text-muted);
 }
 
-.ladder-steps {
-  font-size: 10px;
-  line-height: 1.6;
-  color: color-mix(in srgb, var(--color-text-muted) 70%, transparent);
+.ladder-rung:first-child .ladder-title {
+  color: var(--color-text);
 }
 
 .ladder-note {
@@ -10307,6 +10284,145 @@ button.reset {
   font-size: 10px;
   line-height: 1.7;
   color: color-mix(in srgb, var(--color-text-muted) 80%, transparent);
+}
+
+/* ── Editorial aside figures (one per page) ────────────────────────────
+   Same grammar as the ladder: mono eyebrow + one-line sub, then a small
+   graphic of type and hairlines. Never paragraphs. */
+.aside-fig {
+  margin: 0;
+  font-family: var(--font-mono);
+}
+
+.aside-head {
+  display: grid;
+  gap: 0.3rem;
+  margin-bottom: 1.6rem;
+}
+
+.aside-eyebrow {
+  font-size: 11px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--color-gold);
+}
+
+.aside-sub {
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--color-text-muted);
+}
+
+.aside-note {
+  margin: 1.6rem 0 0;
+  padding-top: 1rem;
+  border-top: 1px solid color-mix(in srgb, var(--color-border) 70%, transparent);
+  font-size: 10px;
+  line-height: 1.7;
+  color: color-mix(in srgb, var(--color-text-muted) 80%, transparent);
+}
+
+/* Repo tree: branch glyphs dim, names bright, annotations muted. The
+   licence line carries the figure's single accent. */
+.repo-tree {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.85rem;
+  font-size: 12px;
+}
+
+.repo-tree li {
+  display: flex;
+  align-items: baseline;
+  gap: 0.6rem;
+  min-width: 0;
+}
+
+.repo-tree-branch {
+  color: color-mix(in srgb, var(--color-text-muted) 45%, transparent);
+}
+
+.repo-tree-name {
+  color: var(--color-text);
+  letter-spacing: 0.04em;
+}
+
+.repo-tree-note {
+  margin-left: auto;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  color: color-mix(in srgb, var(--color-text-muted) 80%, transparent);
+  text-align: right;
+}
+
+.repo-tree li.is-licence .repo-tree-name {
+  color: var(--color-gold);
+}
+
+/* Roadmap pipeline: big counts, small labels, the active stage lit. */
+.pipeline {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 1.5rem;
+}
+
+.pipeline li {
+  display: flex;
+  align-items: baseline;
+  gap: 0.9rem;
+  color: var(--color-text-muted);
+}
+
+.pipeline-count {
+  font-size: 1.6rem;
+  font-weight: 600;
+  min-width: 1.6rem;
+  text-align: right;
+  color: color-mix(in srgb, var(--color-text) 55%, var(--color-text-muted));
+  font-variant-numeric: tabular-nums;
+}
+
+.pipeline-label {
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.pipeline li.is-now .pipeline-count {
+  color: var(--color-gold);
+}
+
+.pipeline li.is-now .pipeline-label {
+  color: var(--color-text);
+}
+
+/* Firmware split: one number, three arrows. */
+.split-src {
+  margin: 0 0 1.1rem;
+  font-size: 2.2rem;
+  font-weight: 600;
+  color: var(--color-text);
+  letter-spacing: -0.02em;
+}
+
+.split-dsts {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.8rem;
+  font-size: 12px;
+  letter-spacing: 0.1em;
+  color: var(--color-text-muted);
+}
+
+.split-arrow {
+  color: var(--color-gold);
+  margin-right: 0.7rem;
 }
 
 /* Firmware partner cards */

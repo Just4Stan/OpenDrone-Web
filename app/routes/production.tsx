@@ -21,7 +21,7 @@ export default function ProductionRoute() {
       <header className="editorial-hero">
         <p className="editorial-eyebrow">Production</p>
         <h1 className="editorial-title">
-          Made where we say it&apos;s made. <em>Made where we say it&apos;s made.</em>
+          Made where we say it&apos;s made.
         </h1>
         <p className="editorial-lead">
           Every board on this site tells you where it comes from, because the

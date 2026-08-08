@@ -1,10 +1,6 @@
 import type {ReactNode} from 'react';
 import {Link} from 'react-router';
-import {
-  EDITORIAL_SERIES,
-  SERIES_MINUTES,
-  nextInSeries,
-} from '~/lib/editorial-index';
+import {EDITORIAL_SERIES, nextInSeries} from '~/lib/editorial-index';
 
 /**
  * Three-column reading frame for the long-form pages.
@@ -24,17 +20,20 @@ import {
 export function EditorialShell({
   slug,
   aside,
+  pageClassName,
   children,
 }: {
   /** This page's slug, matched against EDITORIAL_SERIES. */
   slug: string;
   /** The page's visual column. Omit and the shell runs two-column. */
   aside?: ReactNode;
+  /** Extra class on the prose column, e.g. timeline-page. */
+  pageClassName?: string;
   children: ReactNode;
 }) {
   return (
     <div className={`editorial-shell${aside ? '' : ' is-narrow'}`}>
-      <div className="editorial-page">
+      <div className={`editorial-page${pageClassName ? ` ${pageClassName}` : ''}`}>
         {children}
         <EditorialNext slug={slug} />
       </div>
@@ -48,14 +47,15 @@ export function EditorialShell({
  * The series index. Rendered after the prose in DOM order so a screen
  * reader and a phone both get the article first; CSS `order` lifts it into
  * the left column on wide viewports.
+ *
+ * Number and title only. The hooks and reading times live in the data for
+ * the end-of-page hand-off card; putting them in the rail made it a wall
+ * of small text competing with the article.
  */
 function SeriesRail({slug}: {slug: string}) {
   return (
     <nav className="series-rail" aria-label="Reading series">
-      <p className="series-rail-head">
-        The series
-        <span>{SERIES_MINUTES} min end to end</span>
-      </p>
+      <p className="series-rail-head">The series</p>
       <ol className="series-rail-list">
         {EDITORIAL_SERIES.map((entry, i) => {
           const current = entry.slug === slug;
@@ -69,13 +69,7 @@ function SeriesRail({slug}: {slug: string}) {
                 <span className="series-rail-num">
                   {String(i + 1).padStart(2, '0')}
                 </span>
-                <span className="series-rail-body">
-                  <span className="series-rail-title">{entry.title}</span>
-                  <span className="series-rail-hook">{entry.hook}</span>
-                  <span className="series-rail-min">
-                    {entry.minutes} min read
-                  </span>
-                </span>
+                <span className="series-rail-title">{entry.title}</span>
               </Link>
             </li>
           );

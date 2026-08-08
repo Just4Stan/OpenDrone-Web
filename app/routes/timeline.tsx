@@ -2,6 +2,7 @@ import {useEffect, useMemo, useRef, useState} from 'react';
 import {Link} from 'react-router';
 import type {Route} from './+types/timeline';
 import {buildSeoMeta} from '~/lib/seo';
+import {EditorialShell} from '~/components/EditorialShell';
 
 export const meta: Route.MetaFunction = () =>
   buildSeoMeta({
@@ -165,7 +166,7 @@ export default function TimelineRoute() {
   }, [filter]);
 
   return (
-    <div className="editorial-page timeline-page">
+    <EditorialShell slug="timeline" pageClassName="timeline-page">
       <header className="editorial-hero">
         <p className="editorial-eyebrow">Timeline · receipts linked</p>
         <h1 className="editorial-title">
@@ -251,6 +252,6 @@ export default function TimelineRoute() {
           Put yourself on this timeline →
         </Link>
       </section>
-    </div>
+    </EditorialShell>
   );
 }
