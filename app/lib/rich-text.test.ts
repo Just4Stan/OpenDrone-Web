@@ -137,3 +137,23 @@ describe('bold', () => {
     assert.equal(isPlain('**x**'), false);
   });
 });
+
+describe('named link targets', () => {
+  it('resolves @discord to the one invite in company.ts', () => {
+    const [node] = parseRich('[Discord](@discord)');
+    assert.equal(node.t, 'link');
+    assert.ok(node.t === 'link' && node.href.startsWith('https://discord.gg/'));
+    assert.ok(node.t === 'link' && node.external);
+  });
+
+  it('resolves @github', () => {
+    const [node] = parseRich('[repos](@github)');
+    assert.ok(node.t === 'link' && node.href.includes('github.com'));
+  });
+
+  it('an unknown name degrades to plain text rather than a broken link', () => {
+    // A typo must not render an <a href="@nope">.
+    const out = parseRich('[x](@nope)');
+    assert.ok(!out.some((n) => n.t === 'link'));
+  });
+});

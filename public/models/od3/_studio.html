@@ -129,13 +129,13 @@
     <div class="btns"><select id="jump"></select></div>
     <div class="row"><label>speed</label><input type="range" id="speed" min="0.25" max="2.5" step="0.05" value="1.5"><span class="val" id="speedv"></span></div>
     <div class="row"><label>hold</label><input type="range" id="hold" min="0.6" max="10" step="0.1" value="8.8"><span class="val" id="holdv"></span></div>
-    <div class="row"><label>travel</label><input type="range" id="travel" min="0.3" max="3" step="0.05" value="2.65"><span class="val" id="travelv"></span></div>
+    <div class="row"><label>travel</label><input type="range" id="travel" min="0.3" max="6" step="0.05" value="2.65"><span class="val" id="travelv"></span></div>
     <div class="row"><label>part size</label><input type="range" id="fill" min="0.15" max="0.95" step="0.01" value="0.6"><span class="val" id="fillv"></span></div>
     <div class="row"><label>inspect spin</label><input type="range" id="spin" min="0" max="1.5" step="0.02" value="0.06"><span class="val" id="spinv"></span></div>
     <div class="row"><label>auto-orbit</label><input type="range" id="orbit" min="0" max="0.3" step="0.005" value="0.195"><span class="val" id="orbitv"></span></div>
     <div class="row"><label>prop rad/s</label><input type="range" id="rpm" min="0" max="20" step="0.25" value="1.25"><span class="val" id="rpmv"></span></div>
-    <div class="row"><label>scroll spring</label><input type="range" id="sfreq" min="0.3" max="4" step="0.05" value="1.1"><span class="val" id="sfreqv"></span></div>
-    <div class="row"><label>scroll gain</label><input type="range" id="sgain" min="0.0004" max="0.006" step="0.0002" value="0.0016"><span class="val" id="sgainv"></span></div>
+    <div class="row"><label>scroll spring</label><input type="range" id="sfreq" min="0.3" max="4" step="0.01" value="1.1"><span class="val" id="sfreqv"></span></div>
+    <div class="row"><label>scroll gain</label><input type="range" id="sgain" min="0.0004" max="0.006" step="0.0001" value="0.0016"><span class="val" id="sgainv"></span></div>
     <div class="row"><label>stop magnet</label><input type="range" id="smag" min="0" max="0.4" step="0.01" value="0.14"><span class="val" id="smagv"></span></div>
     <div class="row"><label>commit at</label><input type="range" id="scommit" min="0.08" max="0.6" step="0.01" value="0.28"><span class="val" id="scommitv"></span></div>
     <div class="hint">how far into a transition a flick has to carry before it advances instead of falling back</div>
@@ -173,8 +173,8 @@
     <div class="row"><label>tint</label><input type="color" id="col"><button id="colreset" style="padding:2px 6px">reset</button></div>
   </details>
 
-  <details><summary>Export</summary>
-    <div class="btns"><button id="dump">copy settings JSON</button></div>
+  <details open><summary>Save</summary>
+    <div class="btns"><button id="save">save to studio.json</button><button id="dump">copy JSON</button></div>
     <div class="hint" id="dumpmsg"></div>
   </details>
 </div>
@@ -193,6 +193,31 @@ import * as BufferGeometryUtils from 'three/addons/utils/BufferGeometryUtils.js'
 const errEl = document.getElementById('err');
 const say = (m) => { errEl.textContent += m + '\n'; };
 addEventListener('error', (e) => say(e.message));
+
+/* ------------------------------------------------------------------- CONFIG
+ * studio.json is the single source of truth: the site reads it at runtime
+ * (app/components/HeroDroneScene.tsx) and this studio reads it here, so opening
+ * the panel shows exactly what the hero renders. Everything hardcoded below is
+ * only a fallback for opening this file without the dev server.
+ *
+ * Top-level await: the material profiles and every control's start value depend
+ * on this, and the profiles are needed before the first GLB chunk is painted.
+ */
+// The HTML carries a cache-buster but the GLB did not, so a rebuilt asset kept
+// being served from cache. Pass the page's ?v= through to the model request.
+const ASSET_V = new URLSearchParams(location.search).get('v') ?? Date.now();
+// Which design folder this page sits in, so the save path matches the file we
+// loaded. The dev endpoint only accepts public/models/<name>/studio.json.
+const FOLDER = (location.pathname.match(/\/models\/([^/]+)\//) ?? [, 'od3'])[1];
+const SETTINGS_PATH = `public/models/${FOLDER}/studio.json`;
+let CFG = null;
+try {
+  const r = await fetch(`studio.json?v=${ASSET_V}`, {cache: 'no-store'});
+  if (r.ok) CFG = await r.json();
+  else say(`studio.json ${r.status}: using built-in defaults`);
+} catch (e) {
+  say(`studio.json unreadable (${e?.message ?? e}): using built-in defaults`);
+}
 
 const renderer = new THREE.WebGLRenderer({antialias: true});
 renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
@@ -267,40 +292,38 @@ const rig = new THREE.Group(); pivot.add(rig);
  * really is green and gold anodised, the TPU prints really are green and gold
  * filament), so colour must never be used to infer material.
  */
-const PROFILES = {
-  carbon:   {label:'carbon fibre', tint:'#000000', metalness: 0, roughness: 0.19, env: 0.37, sat: 2.04,
-             match:(n)=>/^(Arm|Cross|Base-Top|Base-Bot|Top)$/i.test(n)},
-  alu:      {label:'aluminium', tint:null, metalness: 0.74, roughness: 0.13, env: 0.87, sat: 1.06,
-             match:(n)=>/^(Cam-Mount|Standoff|20mmx4mm)/i.test(n)},
-  motor:    {label:'motor (anodised)', tint:null, metalness: 1, roughness: 0.32, env: 0.9, sat: 1,
-             match:(n)=>/^Admi/i.test(n)},
-  heatsink: {label:'air unit heatsink', tint:null, metalness: 1, roughness: 0.5, env: 0, sat: 1,
-             match:(n)=>/^(Top Casing|Bottom Casing)/i.test(n)},
-  tpu:      {label:'TPU print', tint:null, metalness: 0.79, roughness: 1, env: 0, sat: 1,
-             match:(n)=>/^(Bumper|Airtag\/Antenna-Mount|VTX-Mount|Boot-)/i.test(n)},
-  rubber:   {label:'rubber / grommet', tint:null, metalness: 1, roughness: 1, env: 0.05, sat: 1,
-             match:(n)=>/^(softmount)/i.test(n)},
-  antenna:  {label:'antenna sleeve', tint:null, metalness: 0.22, roughness: 0.39, env: 0.1, sat: 1,
-             match:(n)=>/^DJI/i.test(n)},
-  prop:     {label:'propeller', tint:null, metalness: 0.21, roughness: 0.44, env: 0.35, sat: 1,
-             match:(n)=>/^[0-9]+$/.test(n)},
-  camera:   {label:'camera + lens', tint:null, metalness: 0.54, roughness: 0.19, env: 0.65, sat: 1,
-             match:(n)=>/^(Body|Lens)/i.test(n)},
-  tag:      {label:'AirTag', tint:null, metalness: 0.58, roughness: 0.38, env: 0.55, sat: 1,
-             match:(n)=>/^AirTag/i.test(n)},
-  steel:    {label:'steel fasteners', tint:null, metalness: 1, roughness: 0.36, env: 0.9, sat: 1,
-             match:(n)=>/(screw|hex nut|pressnut|press nut|washer)/i.test(n)},
-  mask:     {label:'PCB soldermask', tint:'#175634', metalness: 0.71, roughness: 0.96, env: 0.6, sat: 1,
-             match:()=>false},
-  silk:     {label:'PCB silkscreen', tint:'#dfe3e0', metalness: 0.26, roughness: 0.63, env: 0.45, sat: 1,
-             match:()=>false},
-  padgold:  {label:'PCB pads (ENIG)', tint:'#d9a441', metalness: 0.58, roughness: 0.25, env: 0.23, sat: 1,
-             match:()=>false},
-  fr4:      {label:'PCB core / edge', tint:'#a3894f', metalness: 0, roughness: 1, env: 0.4, sat: 1,
-             match:()=>false},
-  smd:      {label:'SMD components', tint:null, metalness: 1, roughness: 0.44, env: 0.5, sat: 1,
-             match:()=>true},   // catch-all, must stay last
-};
+// Held in studio.json's own shape: an ordered array, `match` a regex SOURCE
+// string rather than a function, so the loaded file and this fallback go
+// through one code path and the export can hand the match back untouched.
+// Order matters; the last entry is the catch-all.
+const FALLBACK_MATERIALS = [
+  {id:'carbon',   label:'carbon fibre',       match:'^(Arm|Cross|Base-Top|Base-Bot|Top)$', tint:'#000000', metalness:0,    roughness:0.19, env:0.37, sat:2.04},
+  {id:'alu',      label:'aluminium',          match:'^(Cam-Mount|Standoff|20mmx4mm)',      tint:null,      metalness:0.74, roughness:0.13, env:0.87, sat:1.06},
+  {id:'motor',    label:'motor (anodised)',   match:'^Admi',                               tint:null,      metalness:1,    roughness:0.32, env:0.9,  sat:1},
+  {id:'heatsink', label:'air unit heatsink',  match:'^(Top Casing|Bottom Casing)',         tint:null,      metalness:1,    roughness:0.5,  env:0,    sat:1},
+  {id:'tpu',      label:'TPU print',          match:'^(Bumper|Airtag/Antenna-Mount|VTX-Mount|Boot-)', tint:null, metalness:0.79, roughness:1, env:0, sat:1},
+  {id:'rubber',   label:'rubber / grommet',   match:'^softmount',                          tint:null,      metalness:1,    roughness:1,    env:0.05, sat:1},
+  {id:'antenna',  label:'antenna sleeve',     match:'^DJI',                                tint:null,      metalness:0.22, roughness:0.39, env:0.1,  sat:1},
+  {id:'prop',     label:'propeller',          match:'^[0-9]+$',                            tint:null,      metalness:0.21, roughness:0.44, env:0.35, sat:1},
+  {id:'camera',   label:'camera + lens',      match:'^(Body|Lens)',                        tint:null,      metalness:0.54, roughness:0.19, env:0.65, sat:1},
+  {id:'tag',      label:'AirTag',             match:'^AirTag',                             tint:null,      metalness:0.58, roughness:0.38, env:0.55, sat:1},
+  {id:'steel',    label:'steel fasteners',    match:'(screw|hex nut|pressnut|press nut|washer)', tint:null, metalness:1,   roughness:0.36, env:0.9,  sat:1},
+  {id:'mask',     label:'PCB soldermask',     match:null, tint:'#175634', metalness:0.71, roughness:0.96, env:0.6,  sat:1},
+  {id:'silk',     label:'PCB silkscreen',     match:null, tint:'#dfe3e0', metalness:0.26, roughness:0.63, env:0.45, sat:1},
+  {id:'padgold',  label:'PCB pads (ENIG)',    match:null, tint:'#d9a441', metalness:0.58, roughness:0.25, env:0.23, sat:1},
+  {id:'fr4',      label:'PCB core / edge',    match:null, tint:'#a3894f', metalness:0,    roughness:1,    env:0.4,  sat:1},
+  {id:'smd',      label:'SMD components',     match:'.',  tint:null,      metalness:1,    roughness:0.44, env:0.5,  sat:1},
+];
+const MAT_SRC = CFG?.materials?.length ? CFG.materials : FALLBACK_MATERIALS;
+const PROFILES = {};
+for (const m of MAT_SRC) {
+  const re = m.match ? new RegExp(m.match, 'i') : null;
+  PROFILES[m.id] = {
+    label: m.label ?? m.id, tint: m.tint ?? null,
+    metalness: m.metalness, roughness: m.roughness, env: m.env, sat: m.sat,
+    match: re ? (n) => re.test(n) : () => false,
+  };
+}
 const PKEYS = Object.keys(PROFILES);
 const classMats = Object.fromEntries(PKEYS.map((k)=>[k,[]]));
 
@@ -359,10 +382,6 @@ window.__diag = DIAG;
 const loader = new GLTFLoader().setMeshoptDecoder(MeshoptDecoder);
 let droneRoot = null;
 const bar = document.querySelector('#bar > i');
-
-// The HTML carries a cache-buster but the GLB did not, so a rebuilt asset kept
-// being served from cache. Pass the page's ?v= through to the model request.
-const ASSET_V = new URLSearchParams(location.search).get('v') ?? Date.now();
 
 // The assembly ships as several GLBs (build-hero.mjs --split) so the browser can
 // stream it and show the drone building up instead of one long stall. They are
@@ -498,7 +517,8 @@ function boardGroup(prefix) {
   bb.min.x -= 0.0025; bb.max.x += 0.0025;
   bb.min.y -= 0.0025; bb.max.y += 0.0025;
   bb.min.z -= 0.0015; bb.max.z += 0.0060;   // component height only
-  const EXCLUDE = /(screw|hex nut|pressnut|press nut|washer|softmount|Standoff|20mmx4mm|Casing|^Arm$|^Cross$|^Base-|^Top$|DJI|VTX-Mount|Bumper|AirTag|Boot-|Admi|BM6B|^[0-9]+$)/i;
+  const EXCLUDE = new RegExp(CFG?.boardExclude
+    ?? '(screw|hex nut|pressnut|press nut|washer|softmount|Standoff|20mmx4mm|Casing|^Arm$|^Cross$|^Base-|^Top$|DJI|VTX-Mount|Bumper|AirTag|Boot-|Admi|BM6B|^[0-9]+$)', 'i');
   // The GLB nests everything under a single "Assembly 1" node, so the
   // occurrences are its children, not droneRoot's.
   const occRoot = droneRoot.children.length === 1 ? droneRoot.children[0] : droneRoot;
@@ -548,8 +568,8 @@ const mergedBoard = (prefix) => {
   return g ? [g] : [];
 };
 
-const VIDEO_RE = /^(Top Casing|Bottom Casing|DJI|VTX-Mount|USB C|Body|Lens|BM6B)/i;
-const NOT_FRAME_RE = /^(Admi|prop-pivot|[0-9]+$)/i;
+const VIDEO_RE = new RegExp(CFG?.videoModule ?? '^(Top Casing|Bottom Casing|DJI|VTX-Mount|USB C|Body|Lens|BM6B)', 'i');
+const NOT_FRAME_RE = new RegExp(CFG?.notFrame ?? '^(Admi|prop-pivot|[0-9]+$)', 'i');
 function frameGroup() {
   const boardNodes = new Set();
   const occRoot = droneRoot.children.length === 1 ? droneRoot.children[0] : droneRoot;
@@ -651,7 +671,10 @@ function mergeBoards() {
   const inv = new THREE.Matrix4().copy(occRoot.matrixWorld).invert();
   const report = {};
 
-  for (const prefix of ['OpenFC', '4in1-mini', 'OpenRX-Mono']) {
+  const prefixes = CFG?.boards?.length
+    ? CFG.boards.map((b) => b.id)
+    : ['OpenFC', '4in1-mini', 'OpenRX-Mono'];
+  for (const prefix of prefixes) {
     const members = boardGroup(prefix);
     if (!members.length) continue;
 
@@ -1312,19 +1335,165 @@ document.getElementById('colreset').onclick=()=>{const k=matSel.value; PROFILES[
   loadMat();};
 loadMat();
 
-document.getElementById('dump').onclick=async()=>{
-  const out={materials:{},sequence:{speed,hold:HOLD,travel:TRAVEL,fill:FILL,spin:SPIN,orbit:orbitRate,prop:PROP_W},
-    spotlight:{shrink:SHRINK,dim:DIM,spot:SPOT},
-    lighting:{exposure:+renderer.toneMappingExposure.toFixed(3),env:+scene.environmentIntensity.toFixed(3),
-      ambient:BASE.hemi, bounce:BASE.bounce, rig:RIG,
-      background:'#'+scene.background.getHexString()},
-    spotlight:{power:SPOT, beam:BEAM, strike:STRIKE, darken:FADE, dim:DIM, shrink:SHRINK, stageX:STAGE_X}};
-  for(const k of PKEYS){const p=PROFILES[k];
-    out.materials[k]={tint:p.tint,metalness:p.metalness,roughness:p.roughness,env:p.env,sat:p.sat};}
-  const text=JSON.stringify(out,null,2);
-  try{await navigator.clipboard.writeText(text);document.getElementById('dumpmsg').textContent='copied';}
-  catch{document.getElementById('dumpmsg').textContent='clipboard blocked; see console';}
-  console.log('[hero-settings]',text);};
+/* ------------------------------------------------------------ LOAD AND SAVE
+ * One schema, both directions. Every control's start value comes from
+ * studio.json and the save writes the same keys back, so the panel and the site
+ * cannot drift. Anything the panel has no control for is carried through from
+ * the loaded file byte for byte rather than dropped, which is what makes a
+ * load/save cycle with nothing touched a no-op.
+ */
+
+// Range inputs snap the value they are given onto their own step grid and clamp
+// it to min/max, so a file written by hand (or by an older, wider slider) would
+// come back changed. Widen the bounds and drop to a continuous step rather than
+// silently rewriting the number.
+function setCtl(id, v) {
+  const el = document.getElementById(id);
+  if (!el || v === undefined || v === null) return;
+  if (el.type === 'range') {
+    const want = +v;
+    if (!Number.isFinite(want)) return;
+    if (want < +el.min) el.min = String(want);
+    if (want > +el.max) el.max = String(want);
+    el.value = String(want);
+    if (+el.value !== want) { el.step = 'any'; el.value = String(want); }
+  } else {
+    el.value = v;
+  }
+  // Fires the same handler a human drag would, so nothing is bypassed and the
+  // numeric readout beside the slider updates too.
+  el.dispatchEvent(new Event('input'));
+}
+
+function applyConfig(cfg) {
+  if (!cfg) return;
+  const L = cfg.lighting ?? {};
+  setCtl('exp', L.exposure); setCtl('genv', L.environment);
+  setCtl('hemii', L.ambient); setCtl('bgc', L.background);
+  for (const [pfx, slot] of [['key','key'],['fil','fill'],['rim','rim']]) {
+    const g = L[slot] ?? {};
+    setCtl(pfx+'I', g.power); setCtl(pfx+'A', g.azimuth);
+    setCtl(pfx+'E', g.elevation); setCtl(pfx+'C', g.colour);
+  }
+  setCtl('bncI', L.bounce?.power); setCtl('bncC', L.bounce?.colour);
+
+  const S = cfg.spotlight ?? {};
+  setCtl('spot', S.power); setCtl('beam', S.beam); setCtl('strike', S.strike);
+  setCtl('spotang', S.coneAngle); setCtl('spotsoft', S.softness);
+  setCtl('spotside', S.sideAngle); setCtl('spoth', S.height);
+  setCtl('fade', S.darkenRest); setCtl('dim', S.dimLights);
+  setCtl('shrink', S.shrinkDrone); setCtl('stagex', S.stageLeft);
+  setCtl('btilt', S.boardTilt);
+  // No control for these two, but applying them keeps the studio's beam the
+  // same colour as the site's.
+  if (S.colour) spotL.color.set(S.colour);
+  if (S.beamColour) beamMat.color.set(S.beamColour);
+
+  const Q = cfg.sequence ?? {};
+  setCtl('speed', Q.speed); setCtl('hold', Q.hold); setCtl('travel', Q.travel);
+  setCtl('fill', Q.partSize); setCtl('spin', Q.inspectSpin);
+  setCtl('orbit', Q.autoOrbit); setCtl('rpm', Q.propRate); setCtl('hand', Q.propHanded);
+
+  const C = cfg.camera ?? {};
+  setCtl('camdist', C.distance); setCtl('camheight', C.height);
+  setCtl('camheightb', C.heightOnBoard); setCtl('camdolly', C.dollyOnShow);
+
+  const R = cfg.scroll ?? {};
+  setCtl('sfreq', R.springHz); setCtl('sgain', R.gain);
+  setCtl('smag', R.magnet); setCtl('scommit', R.commitAt);
+
+  loadMat();
+}
+applyConfig(CFG);
+
+// Slider arithmetic leaves the odd 0.30000000000000004. Six decimals is well
+// past any meaningful precision here and kills the noise.
+const num = (v) => +(+v).toFixed(6);
+const hex = (id) => document.getElementById(id).value;
+
+// Rebuilds studio.json in its own shape, on top of the loaded file so that
+// beats, boards, the board and video regexes, the material match patterns, the
+// name, the model and every _-prefixed note survive untouched.
+function collect() {
+  const out = CFG ? JSON.parse(JSON.stringify(CFG)) : {};
+  out.lighting = {
+    ...out.lighting,
+    exposure: num(renderer.toneMappingExposure),
+    environment: num(scene.environmentIntensity),
+    ambient: num(BASE.hemi),
+    background: hex('bgc'),
+    key:  {...out.lighting?.key,  power: num(RIG.key.intensity),  azimuth: num(RIG.key.az),  elevation: num(RIG.key.el),  colour: hex('keyC')},
+    fill: {...out.lighting?.fill, power: num(RIG.fill.intensity), azimuth: num(RIG.fill.az), elevation: num(RIG.fill.el), colour: hex('filC')},
+    rim:  {...out.lighting?.rim,  power: num(RIG.rim.intensity),  azimuth: num(RIG.rim.az),  elevation: num(RIG.rim.el),  colour: hex('rimC')},
+    bounce: {...out.lighting?.bounce, power: num(BASE.bounce), colour: hex('bncC')},
+  };
+  out.spotlight = {
+    ...out.spotlight,
+    power: num(SPOT), beam: num(BEAM), strike: num(STRIKE),
+    coneAngle: num(SPOT_ANGLE), softness: num(SPOT_SOFT),
+    sideAngle: num(SPOT_SIDE), height: num(SPOT_HEIGHT),
+    darkenRest: num(FADE), dimLights: num(DIM), shrinkDrone: num(SHRINK),
+    stageLeft: num(STAGE_X), boardTilt: num(BOARD_TILT),
+  };
+  out.sequence = {
+    ...out.sequence,
+    speed: num(speed), hold: num(HOLD), travel: num(TRAVEL),
+    partSize: num(FILL), inspectSpin: num(SPIN), autoOrbit: num(orbitRate),
+    propRate: num(PROP_W), propHanded: num(HAND),
+  };
+  out.camera = {
+    ...out.camera,
+    distance: num(CAM_DIST), height: num(CAM_HEIGHT),
+    heightOnBoard: num(BOARD_CAM_H), dollyOnShow: num(CAM_DOLLY),
+  };
+  out.scroll = {
+    ...out.scroll,
+    springHz: num(SCROLL_FREQ), gain: num(SCROLL_GAIN),
+    magnet: num(MAGNET), commitAt: num(COMMIT_FRAC),
+  };
+  out.materials = MAT_SRC.map((m) => {
+    const p = PROFILES[m.id];
+    if (!p) return m;
+    return {...m, tint: p.tint ?? null, metalness: num(p.metalness),
+            roughness: num(p.roughness), env: num(p.env), sat: num(p.sat)};
+  });
+  out._saved = `${new Date().toISOString().slice(0, 10)}, saved from the studio panel`;
+  out._status = 'WIRED BOTH WAYS. app/components/HeroDroneScene.tsx reads this file at runtime. '
+    + 'public/models/od3/_studio.html loads it on open, so every control starts on the value the site '
+    + 'renders, and its save button POSTs the whole file back through the dev-only /__studio/write '
+    + 'endpoint. Settings the panel has no control for are carried through untouched on save: name, '
+    + 'model, beats, boards, boardExclude, videoModule, notFrame, scroll.minDwellS, '
+    + 'spotlight.stageLift, spotlight.colour, spotlight.beamColour, spotlight.beamGain, and each '
+    + 'material id, label and match.';
+  return out;
+}
+
+const msg = document.getElementById('dumpmsg');
+document.getElementById('save').onclick = async () => {
+  // Saving on top of a file we could not read would write a settings file with
+  // no beats and no boards in it. Refuse instead.
+  if (!CFG) { msg.textContent = 'studio.json never loaded; use copy JSON instead'; return; }
+  const data = collect();
+  msg.textContent = 'saving...';
+  try {
+    const r = await fetch('/__studio/write', {
+      method: 'POST',
+      headers: {'content-type': 'application/json'},
+      body: JSON.stringify({file: SETTINGS_PATH, data}),
+    });
+    const j = await r.json().catch(() => ({}));
+    if (r.ok && j.ok) { CFG = data; msg.textContent = `saved ${j.file}`; }
+    else msg.textContent = `save failed: ${j.error ?? `HTTP ${r.status}`}`;
+  } catch (e) {
+    msg.textContent = `save failed: ${e?.message ?? e}. The write endpoint only exists on the dev server.`;
+  }
+};
+document.getElementById('dump').onclick = async () => {
+  const text = JSON.stringify(collect(), null, 2);
+  try { await navigator.clipboard.writeText(text); msg.textContent = 'copied'; }
+  catch { msg.textContent = 'clipboard blocked; the JSON is in the console'; }
+  console.log('[studio.json]', text);
+};
 
 function resize(){const w=innerWidth-320,h=innerHeight;
   camera.aspect=w/h;camera.updateProjectionMatrix();renderer.setSize(w,h);}

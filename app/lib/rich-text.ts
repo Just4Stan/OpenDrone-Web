@@ -11,6 +11,7 @@
  *
  *   [production page](/production)     internal link, client-side navigation
  *   [Discord](https://discord.gg/x)    external link, opens in a new tab
+ *   [Discord](@discord)                a named target, resolved from code
  *   *is mostly*                        emphasis
  *   **Stocking:**                      strong
  *
@@ -19,6 +20,8 @@
  * full markdown renderer here would let a copy edit change the page's shape,
  * which is exactly the failure mode a studio has to avoid.
  */
+import {DISCORD_INVITE_URL} from './company.ts';
+
 export type RichNode =
   | {t: 'text'; v: string}
   | {t: 'em'; v: string}
@@ -26,12 +29,32 @@ export type RichNode =
   | {t: 'link'; v: string; href: string; external: boolean};
 
 /**
- * Only http(s) and site-relative hrefs. Values come from a repo file rather
+ * Links that must not be typed out in copy.
+ *
+ * A URL written into a sentence is a second copy of a fact that already lives
+ * in code, and the two drift silently. That is not hypothetical here: the
+ * open-source page's Discord link was migrated as a literal and the invite it
+ * contained was wrong, so the live site carried a dead link. Writing
+ * `[Discord](@discord)` resolves through `company.ts` instead, so there is one
+ * invite and changing it changes every page.
+ *
+ * Deliberately tiny. This is for identity that appears in prose across the
+ * site, not a general variable system: the moment copy can interpolate
+ * arbitrary values it stops being copy.
+ */
+const NAMED: Record<string, string> = {
+  discord: DISCORD_INVITE_URL,
+  github: 'https://github.com/OpenDrone-hw',
+};
+
+/**
+ * Only http(s), site-relative hrefs, and named targets. Values come from a repo file rather
  * than from a visitor, so this is not an XSS boundary, but `javascript:` in a
  * copy file would still be a live hazard and there is no reason to allow it.
  */
 function safeHref(href: string): string | null {
   const h = href.trim();
+  if (h.startsWith('@')) return NAMED[h.slice(1)] ?? null;
   if (/^https?:\/\//i.test(h)) return h;
   // `/\evil.com` is NOT an internal path. WHATWG URL treats a backslash as a
   // separator in special schemes, so `/\`, `/\\` and `/\/` all resolve the same

@@ -32,13 +32,22 @@ import {
 import {MobileHome} from '~/components/MobileHome';
 import {SceneErrorBoundary} from '~/components/SceneErrorBoundary';
 import {HERO_REVEAL_WINDOWS, HERO_SLOTS} from '~/lib/builder/registry';
+import {Txt} from '~/components/Txt';
+import {copyText} from '~/lib/copy';
 
+/**
+ * The homepage's words live in `content/copy/home.json`, shared with
+ * `MobileHome` (its keys are prefixed `m_`; the Shop label is one key used by
+ * both layouts so it is edited once). Everything else here is machinery -
+ * scroll progress, reveal windows, splash phases, the `--hero-p` custom
+ * property - and none of it is copy. Product titles, prices and the load
+ * manifest's piece labels are runtime data, not editable strings.
+ */
 export const meta: Route.MetaFunction = ({location}) =>
   buildSeoMeta({
     // buildSeoMeta appends "| OpenDrone"; don't repeat the brand here.
-    title: 'Open Source Drone Parts',
-    description:
-      'Open source flight controllers and ESCs. Designed in Belgium.',
+    title: copyText('home.meta_title') ?? 'Open Source Drone Parts',
+    description: copyText('home.meta_description') ?? '',
     url: `${SITE_ORIGIN}${location.pathname}`,
   });
 
@@ -869,14 +878,18 @@ function DesktopHome({heroStacks}: {heroStacks: Promise<HeroStacks>}) {
               role="status"
               aria-live="polite"
             >
-              <span className="hero-load-overflow__text">loading models…</span>
+              <Txt
+                id="home.loading_models"
+                as="span"
+                className="hero-load-overflow__text"
+              />
               <Link
                 prefetch="viewport"
                 to="/collections/all"
                 className="hero-load-overflow__skip"
                 onClick={() => setSplashSettled(true)}
               >
-                Skip to catalog
+                <Txt id="home.skip_to_catalog" />
                 <svg
                   width="14"
                   height="14"
@@ -998,7 +1011,11 @@ function DesktopHome({heroStacks}: {heroStacks: Promise<HeroStacks>}) {
                                   ) : null}
                                 </span>
                                 {isComingSoon(card.handle, globalComingSoon) ? (
-                                  <span className="hero-reveal-soon">Soon</span>
+                                  <Txt
+                                    id="home.reveal_soon"
+                                    as="span"
+                                    className="hero-reveal-soon"
+                                  />
                                 ) : card.price ? (
                                   <span className="hero-reveal-price">
                                     <Money data={card.price} />
@@ -1019,7 +1036,7 @@ function DesktopHome({heroStacks}: {heroStacks: Promise<HeroStacks>}) {
               to="/collections/all"
               className="hero-action-primary hero-buy-btn"
             >
-              Shop
+              <Txt id="home.shop" />
               <svg
                 width="20"
                 height="20"
@@ -1080,7 +1097,7 @@ function DesktopHome({heroStacks}: {heroStacks: Promise<HeroStacks>}) {
               <polyline points="17 8 21 12 17 16" />
               <line x1="3" y1="12" x2="21" y2="12" />
             </svg>
-            drag to rotate
+            <Txt id="home.drag_hint" />
           </div>
 
           {/* Scroll-to-explore cue — anchored at the bottom of the hero, shares the
@@ -1090,7 +1107,7 @@ function DesktopHome({heroStacks}: {heroStacks: Promise<HeroStacks>}) {
             className={`hero-scroll-hint${showDragHint ? ' is-visible' : ''}`}
             aria-hidden="true"
           >
-            scroll to explore
+            <Txt id="home.scroll_hint" />
             <svg
               width="18"
               height="18"

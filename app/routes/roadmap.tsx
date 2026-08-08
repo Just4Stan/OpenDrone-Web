@@ -2,13 +2,28 @@ import type {Route} from './+types/roadmap';
 import {Link} from 'react-router';
 import {buildSeoMeta} from '~/lib/seo';
 import {EditorialShell} from '~/components/EditorialShell';
+import {Txt} from '~/components/Txt';
+import {copyText} from '~/lib/copy';
 import {DISCORD_INVITE_URL} from '~/lib/company';
 
+/**
+ * Words live in `content/copy/roadmap.json`; this file holds the machinery.
+ *
+ * The split is not the usual one here, because this page carries the product
+ * status system. A status is a controlled vocabulary shared with the
+ * `status-*` topics on the GitHub repos, so the status KEYS and their column
+ * order stay in code where a copy edit cannot invent a sixth status or
+ * reorder the board. What a status is CALLED, and the sentence explaining it,
+ * are prose and live in the copy file, keyed 1:1 off the status key. Same for
+ * the roadmap entries: the status, the links and the order are code; the name
+ * and the one-line note are copy, keyed off the entry's `id`.
+ */
 export const meta: Route.MetaFunction = () =>
   buildSeoMeta({
-    title: 'Roadmap · What we build and how to help',
-    description:
-      'Every OpenDrone project with its current status: what is nearly in the shop, what is in development, and the pre-design ideas anyone can help shape on Discord and GitHub.',
+    title:
+      copyText('roadmap.meta_title') ??
+      'Roadmap · What we build and how to help',
+    description: copyText('roadmap.meta_description') ?? '',
   });
 
 /**
@@ -75,10 +90,9 @@ export async function loader({context}: Route.LoaderArgs) {
 type ProductStatus = 'launched' | 'beta' | 'alpha' | 'in-progress' | 'planned';
 
 type RoadmapItem = {
-  item: string;
+  /** Copy key stem: `item_<id>_name` and `item_<id>_note`. */
+  id: string;
   status: ProductStatus;
-  /** One factual line, short enough for a board card. */
-  note: string;
   /** Product page on this site, when one exists. */
   productPath?: string;
   /** Public design source. Omit when nothing public exists. */
@@ -88,108 +102,80 @@ type RoadmapItem = {
 /**
  * DATA RULE: every entry must be verifiable in public, or be an explicit
  * statement of intent (planned). Nothing gets a date.
+ *
+ * The entry's name and its one-line note are copy, keyed off `id`. Everything
+ * here is structure: which products exist, what they link to, and the status
+ * that puts them in a column (overwritten at request time by the repo topic).
  */
 const ROADMAP: RoadmapItem[] = [
   {
-    item: 'OpenFC Lite · 30×30',
+    id: 'openfc_lite_30',
     status: 'beta',
-    note: 'RP2354 Betaflight flight controller, 30.5\u00d730.5.',
     productPath: '/products/openfc-lite',
     link: 'https://github.com/OpenDrone-hw/OpenFC-Lite',
   },
   {
-    item: 'OpenFC Lite Mini · 20×20',
+    id: 'openfc_lite_mini_20',
     status: 'beta',
-    note: 'The same flight controller at 20×20.',
     productPath: '/products/openfc-lite',
     link: 'https://github.com/OpenDrone-hw/OpenFC-Lite-Mini',
   },
   {
-    item: 'OpenESC · 20×20',
+    id: 'openesc_20',
     status: 'beta',
-    note: '4-in-1 AM32 ESC, 30 A per channel.',
     productPath: '/products/openesc',
     link: 'https://github.com/OpenDrone-hw/OpenESC-20x20',
   },
   {
-    item: 'OpenESC · 30×30',
+    id: 'openesc_30',
     status: 'beta',
-    note: '4-in-1 AM32 ESC, 50 A per channel.',
     productPath: '/products/openesc',
     link: 'https://github.com/OpenDrone-hw/OpenESC-30x30',
   },
   {
-    item: 'OpenRX',
+    id: 'openrx',
     status: 'alpha',
-    note: 'ExpressLRS receiver family, four variants.',
     productPath: '/products/openrx',
     link: 'https://github.com/OpenDrone-hw/OpenRX',
   },
   {
-    item: 'OpenFrame · 5" + 3"',
+    id: 'openframe',
     status: 'in-progress',
-    note: 'CNC carbon freestyle frames, 5\u2033 and 3\u2033.',
     productPath: '/products/openframe',
   },
   {
-    item: 'Motors',
+    id: 'motors',
     status: 'in-progress',
-    note: 'Brushless FPV motors.',
   },
   {
-    item: 'OpenVTX',
+    id: 'openvtx',
     status: 'planned',
-    note: 'Video transmitter.',
     link: 'https://github.com/OpenDrone-hw/OpenVTX',
   },
   {
-    item: 'OpenRemoteID',
+    id: 'openremoteid',
     status: 'planned',
-    note: 'Remote ID module.',
     link: 'https://github.com/OpenDrone-hw/OpenRemoteID',
   },
   {
-    item: 'OpenAIO + OpenAIO-Whoop',
+    id: 'openaio',
     status: 'planned',
-    note: 'All-in-one boards, full-size and whoop.',
     link: 'https://github.com/OpenDrone-hw/OpenAIO',
   },
   {
-    item: 'Charger',
+    id: 'charger',
     status: 'planned',
-    note: 'LiPo charger.',
     link: 'https://github.com/OpenDrone-hw/Charger',
   },
 ];
 
-const STATUS_META: Record<ProductStatus, {label: string; legend: string}> = {
-  launched: {
-    label: 'Launched',
-    legend:
-      'In the shop and settled. The design has stopped moving; buy it and it will not change under you.',
-  },
-  beta: {
-    label: 'Beta',
-    legend:
-      'Launched, first production batch. You can buy it in the shop, early-batch pricing can be lower, and the design can still get updates between batches.',
-  },
-  alpha: {
-    label: 'Alpha',
-    legend:
-      'Coming soon. Testing inside the project: community testers and firmware maintainers fly the hardware before anyone can buy it. Where a product page exists, you can join the waitlist there.',
-  },
-  'in-progress': {
-    label: 'In progress',
-    legend:
-      'A first design exists and prototypes may already be ordered, but nothing is under test yet.',
-  },
-  planned: {
-    label: 'Planned',
-    legend:
-      'No design yet, on purpose. We name it early so the community can shape the spec from day one: the discussion runs on Discord, and design proposals are welcome. No product listing until there is hardware.',
-  },
-};
-
+/**
+ * The vocabulary and its column order. Deliberately a bare list of KEYS: each
+ * status's label and legend are copy (`status_<key>_label` /
+ * `status_<key>_legend`), so a studio edit can rename a status but cannot add,
+ * drop or reorder one. The `status-*` topics on the repos are matched against
+ * exactly this list.
+ */
 const STATUS_ORDER: ProductStatus[] = [
   'launched',
   'beta',
@@ -207,77 +193,52 @@ export default function RoadmapRoute({loaderData}: Route.ComponentProps) {
   return (
     <EditorialShell slug="roadmap">
       <header className="editorial-hero">
-        <p className="editorial-eyebrow">Roadmap and Contributing</p>
-        <h1 className="editorial-title">
-          What we&apos;re building, and how you can help.
-        </h1>
-        <p className="editorial-lead">
-          OpenDrone is a community project, but that doesn&apos;t mean
-          compromise. The end goal is to cover each corner of the FPV hardware
-          spectrum. The way we get there is by first laying out foundational
-          hardware and then building on top of that. We think foundational
-          hardware means all the parts to build a 5 inch or 3 inch freestyle
-          drone, so that roughly translates to: stack (FC + ESC), receiver,
-          frame, motors and video system. You&apos;ll find the status of those
-          products below. The ecosystem around the drone is the next part:
-          chargers, accessories, propellers, batteries, consumables, buzzers,
-          GPS. After that, expanding into different size classes like whoops
-          and toothpicks with AIOs, or bigger cinelifters. Step by step, we
-          hope to provide everything you need to build and fly your drone.
-        </p>
+        <Txt id="roadmap.eyebrow" as="p" className="editorial-eyebrow" />
+        <Txt id="roadmap.title" as="h1" className="editorial-title" />
+        <Txt id="roadmap.lead" as="p" className="editorial-lead" />
       </header>
 
       <section className="editorial-section">
-        <h2 className="editorial-section-title">01 · How this works</h2>
-        <p>
-          Everything starts as a conversation on{' '}
-          <a href={DISCORD_INVITE_URL} target="_blank" rel="noreferrer">
-            the OpenDrone Discord
-          </a>
-          : what the market needs, which specs make sense, what can realistically be produced. Agreeing before anyone draws is the point. It stops two people building the same thing, and it kills bad ideas before someone spends weeks on a layout.
-        </p>
-        <p>
-          Anyone can propose future hardware. A proposal names an owner who carries the design through review and measurement, and decisions are argued on published measurements, not preference. Products marked{' '}
-          <strong>Concept</strong> in the shop are published before hardware exists, precisely so this discussion can happen in public, on Discord.
-        </p>
-        <p>
-          Incutec, the company behind this shop, supports and steers the development. Contributors whose hardware is verified by the community receive manufactured samples of their own design. Once hardware is verified we can move to small test runs and integrate it in the rest of the OpenDrone ecosystem.
-        </p>
+        <Txt id="roadmap.s1_title" as="h2" className="editorial-section-title" />
+        <Txt id="roadmap.s1_body" as="p" />
       </section>
 
       <section className="editorial-section">
-        <h2 className="editorial-section-title">02 · Where every product stands</h2>
-        <p>
-          The same board we work from. Each product carries exactly one
-          status flag, explained below. The flag is the status: the same
-          value is set as a status-* topic on the product&apos;s GitHub repo,
-          and nothing describes status in prose anywhere else.
-        </p>
+        <Txt id="roadmap.s2_title" as="h2" className="editorial-section-title" />
+        <Txt id="roadmap.s2_body" as="p" />
         <div className="kanban">
           {columns.map((col) => (
             <div className="kanban-col" key={col.status}>
               <p className="kanban-col-head" data-status={col.status}>
                 <span className="kanban-dot" />
-                {STATUS_META[col.status].label}
+                <Txt id={`roadmap.status_${col.status}_label`} />
                 <span className="kanban-count">{col.items.length}</span>
               </p>
               {col.items.length === 0 ? (
-                <p className="kanban-empty">none yet</p>
+                <Txt id="roadmap.kanban_empty" as="p" className="kanban-empty" />
               ) : (
                 col.items.map((r) => (
-                  <article className="kanban-card" key={r.item}>
-                    <h3 className="kanban-name">{r.item}</h3>
-                    <p className="kanban-note">{r.note}</p>
+                  <article className="kanban-card" key={r.id}>
+                    <Txt
+                      id={`roadmap.item_${r.id}_name`}
+                      as="h3"
+                      className="kanban-name"
+                    />
+                    <Txt
+                      id={`roadmap.item_${r.id}_note`}
+                      as="p"
+                      className="kanban-note"
+                    />
                     {r.productPath || r.link ? (
                       <p className="kanban-links">
                         {r.productPath ? (
                           <Link prefetch="viewport" to={r.productPath}>
-                            Product →
+                            <Txt id="roadmap.kanban_product_link" />
                           </Link>
                         ) : null}
                         {r.link ? (
                           <a href={r.link} target="_blank" rel="noopener noreferrer">
-                            Source ↗
+                            <Txt id="roadmap.kanban_source_link" />
                           </a>
                         ) : null}
                       </p>
@@ -291,85 +252,38 @@ export default function RoadmapRoute({loaderData}: Route.ComponentProps) {
       </section>
 
       <section className="editorial-section">
-        <h2 className="editorial-section-title">03 · What the labels mean</h2>
+        <Txt id="roadmap.s3_title" as="h2" className="editorial-section-title" />
         <dl className="status-legend">
           {STATUS_ORDER.map((status) => (
             <div key={status}>
               <dt data-status={status}>
                 <span className="kanban-dot" />
-                {STATUS_META[status].label}
+                <Txt id={`roadmap.status_${status}_label`} />
               </dt>
-              <dd>{STATUS_META[status].legend}</dd>
+              <Txt id={`roadmap.status_${status}_legend`} as="dd" />
             </div>
           ))}
         </dl>
       </section>
 
       <section className="editorial-section">
-        <h2 className="editorial-section-title">
-          04 · Report what broke
-        </h2>
-        <p>
-          Flew it, bench-tested it, or just read the schematic and found
-          something off: open an issue on the board&apos;s repo. A photo, a log
-          file, or a net name is enough. Confirmed design problems get fixed in
-          the next revision and credited on the product page, receipts linked.
-        </p>
+        <Txt id="roadmap.s4_title" as="h2" className="editorial-section-title" />
+        <Txt id="roadmap.s4_body" as="p" />
       </section>
 
       <section className="editorial-section">
-        <h2 className="editorial-section-title">
-          05 · Change the design
-        </h2>
-        <p>
-          Hardware is not software: two people can edit the same code file, but
-          a PCB layout cannot be merged. So each board has one maintainer who
-          holds the layout, and edits are serialised through file locks.
-          Schematics are split across hierarchical sheets, so separate sheets
-          can have separate owners. Two people can hold two boards. Two people
-          cannot hold one layout.
-        </p>
-        <p>
-          Everyone else contributes through review, and review is where the
-          real capacity is: CI renders the schematic, the board images, ERC and
-          DRC output and a BOM diff on every pull request, so a design one
-          person draws can be reviewed by anyone, without opening KiCad. Small,
-          focused changes land fastest: one connector, one footprint, one
-          silkscreen fix, agreed with the board&apos;s maintainer.
-        </p>
-        <p>
-          Merged design changes show up in the &ldquo;You asked. We changed
-          it.&rdquo; chapter of the product page, and your account lands in its
-          contributor grid. Every product page names who developed the board,
-          maintainer first, the way a record sleeve names the band. A handle
-          and avatar are enough; nobody needs your real name.
-        </p>
+        <Txt id="roadmap.s5_title" as="h2" className="editorial-section-title" />
+        <Txt id="roadmap.s5_body" as="p" />
       </section>
 
       <section className="editorial-section">
-        <h2 className="editorial-section-title">
-          06 · Improve the firmware
-        </h2>
-        <p>
-          The boards run community firmware: Betaflight, AM32 and ExpressLRS.
-          Work there helps every board, not just ours; €1 of every board sold
-          already goes to these projects. Start with the{' '}
-          <Link to="/firmware-partners">firmware partners</Link> page if you
-          want the details.
-        </p>
+        <Txt id="roadmap.s6_title" as="h2" className="editorial-section-title" />
+        <Txt id="roadmap.s6_body" as="p" />
       </section>
 
       <section className="editorial-section">
-        <h2 className="editorial-section-title">
-          07 · The repos
-        </h2>
-        <p>
-          Every entry above links to its source where one is public. The
-          hardware is KiCad, latest stable release, licensed CERN-OHL-S v2:
-          strong reciprocal, share your changes. By opening a PR you license
-          your contribution under the repo&apos;s license. No CLA, no
-          paperwork.
-        </p>
+        <Txt id="roadmap.s7_title" as="h2" className="editorial-section-title" />
+        <Txt id="roadmap.s7_body" as="p" />
       </section>
 
       <section className="editorial-cta">
@@ -379,7 +293,7 @@ export default function RoadmapRoute({loaderData}: Route.ComponentProps) {
           rel="noopener noreferrer"
           className="editorial-cta-primary"
         >
-          Join the Discord ↗
+          <Txt id="roadmap.cta_primary" />
         </a>
         <a
           href="https://github.com/OpenDrone-hw"
@@ -387,7 +301,7 @@ export default function RoadmapRoute({loaderData}: Route.ComponentProps) {
           rel="noopener noreferrer"
           className="editorial-cta-secondary"
         >
-          Watch the repos on GitHub ↗
+          <Txt id="roadmap.cta_secondary" />
         </a>
       </section>
     </EditorialShell>

@@ -5,6 +5,7 @@ import type {CollectionItemFragment} from 'storefrontapi.generated';
 import {HeroWordmark} from '~/components/HeroWordmark';
 import {ProductItem} from '~/components/ProductItem';
 import {AnimatedNumber} from '~/components/AnimatedNumber';
+import {Txt} from '~/components/Txt';
 import {PRODUCT_CONTENT} from '~/lib/product-content';
 
 /* Below-fold "index" band — the open-hardware ledger in the PDP's
@@ -15,15 +16,22 @@ const OPEN_DESIGN_COUNT = Object.values(PRODUCT_CONTENT).filter(
   (c) => c.fileNumber !== '—',
 ).length;
 
-/* [key, value, countUp?] — only the derived design COUNT is a quantity worth
+/* Row order and which row is derived. Labels are copy
+ * (`home.m_ledger_<key>_label`), and so is every value EXCEPT the design
+ * count, which is computed from the registry so it can't drift — a value here
+ * wins over the copy file. Only that derived count is a quantity worth
  * sweeping; licence versions, tool versions and prices are identifiers/fixed
  * figures and render static. */
-const HOME_LEDGER: Array<[string, string, boolean?]> = [
-  ['Board designs published', String(OPEN_DESIGN_COUNT).padStart(2, '0'), true],
-  ['Hardware licence', 'CERN-OHL-S 2.0'],
-  ['Source format', 'KiCad 10 · STEP · BOM'],
-  ['Firmware split', '€1 / unit upstream'],
-  ['Designed in', 'Belgium'],
+const HOME_LEDGER: Array<{key: string; value?: string; countUp?: boolean}> = [
+  {
+    key: 'designs',
+    value: String(OPEN_DESIGN_COUNT).padStart(2, '0'),
+    countUp: true,
+  },
+  {key: 'licence'},
+  {key: 'source_format'},
+  {key: 'firmware_split'},
+  {key: 'designed_in'},
 ];
 
 /**
@@ -101,10 +109,12 @@ export function MobileHome({
           <HeroWordmark progress={1} className="is-filled" />
         </motion.h1>
 
-        <motion.p className="home-mobile-tagline" {...rise(2)}>
-          Open Source drone parts, designed in Belgium. Published and transparent
-          so you can understand it, not just fly it.
-        </motion.p>
+        <Txt
+          id="home.m_tagline"
+          as={motion.p}
+          className="home-mobile-tagline"
+          {...rise(2)}
+        />
 
         {/* Two full-width actions side by side — Shop (gold) + GitHub (ghost).
             Each is its own pill spanning half the row, not nested in one pod. */}
@@ -114,7 +124,7 @@ export function MobileHome({
             to="/collections/all"
             className="home-mobile-cta-btn home-mobile-cta-shop"
           >
-            Shop
+            <Txt id="home.shop" />
             <svg
               width="18"
               height="18"
@@ -137,7 +147,7 @@ export function MobileHome({
             <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
               <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z" />
             </svg>
-            GitHub
+            <Txt id="home.m_github" />
           </a>
         </motion.div>
       </section>
@@ -147,7 +157,11 @@ export function MobileHome({
           {(items) =>
             items.length > 0 ? (
               <section className="home-mobile-featured">
-                <p className="section-label">Flagship hardware</p>
+                <Txt
+                  id="home.m_featured_label"
+                  as="p"
+                  className="section-label"
+                />
                 <div className="home-mobile-grid">
                   {items.map((product, i) => (
                     <ProductItem
@@ -167,12 +181,20 @@ export function MobileHome({
           right-aligned values) with count-ups on the numerals. Reuses the
           PDP's .spec-table so the band IS the house datasheet language. */}
       <section className="home-mobile-ledger" aria-label="Open hardware index">
-        <p className="section-label">Open hardware · index</p>
+        <Txt id="home.m_ledger_label" as="p" className="section-label" />
         <dl className="spec-table">
-          {HOME_LEDGER.map(([k, v, countUp]) => (
-            <div key={k}>
-              <dt>{k}</dt>
-              <dd>{countUp ? <AnimatedNumber value={v} /> : v}</dd>
+          {HOME_LEDGER.map(({key, value, countUp}) => (
+            <div key={key}>
+              <Txt id={`home.m_ledger_${key}_label`} as="dt" />
+              <dd>
+                {value === undefined ? (
+                  <Txt id={`home.m_ledger_${key}_value`} />
+                ) : countUp ? (
+                  <AnimatedNumber value={value} />
+                ) : (
+                  value
+                )}
+              </dd>
             </div>
           ))}
         </dl>
@@ -183,7 +205,7 @@ export function MobileHome({
         to="/collections/all"
         className="home-mobile-browse"
       >
-        Browse the full catalog
+        <Txt id="home.m_browse" />
         <svg
           width="16"
           height="16"

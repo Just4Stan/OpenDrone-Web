@@ -101,8 +101,12 @@ wrong colour" or "why did that screw fly off with the wrong thing".
 cost, filterable, with anything unclaimed flagged in red. Check this reads
 0 orphans before you call a design done.
 
-When it looks right, press **copy settings JSON** and paste the values into
-`studio.json`.
+When it looks right, press **save to studio.json**. The file is written
+directly, so there is no copy-paste step: the panel loads `studio.json` on
+startup and saves back into it in the same shape, carrying through everything
+it does not control. Saving needs the dev server, because the write goes
+through its studio endpoint. Opened as a bare file, the panel still works and
+**copy JSON** is the fallback.
 
 ## The three name hazards
 
@@ -151,8 +155,9 @@ Say you are adding the 5-inch.
    - `beats[]`: ids, titles and notes are free text; `select` is one of
      `{none}`, `{board: "<id>"}`, `{cluster: "<regex>", withProp: true}` or
      `{complement: true, plus: "videoModule"}`.
-3. **Copy `_studio.html` into the new folder** and open it. Tune, then paste the
-   settings back into `od5/studio.json`.
+3. **Copy `_studio.html` and a `studio.json` into the new folder** and open it.
+   The panel reads its starting values from the file beside it, so the copy
+   needs both. Tune, then save.
 4. **Render the hero** with `<HeroDroneScene model="od5" />`.
 
 ### What will not work without code changes
@@ -205,11 +210,21 @@ cause drift. That duplication is the main known debt.
 
 Kept here rather than in commit messages so it stays visible.
 
-- `_studio.html` does not read `studio.json`.
 - The choreography, prop rigging and group membership rules are code, not
   config, so a new design with a different structure still needs edits.
-- The studio's "copy settings JSON" output does not match `studio.json`'s shape
-  and omits about half the panel.
+- The studio does not control the beat timeline. `beats[]` is still a hardcoded
+  array inside `_studio.html` rather than read from the file, so the two can
+  drift, and one value already has: `beats.frame.partSize` is set in
+  `studio.json` and ignored by the panel.
+- Not exposed as controls, though carried through a save unchanged:
+  `spotlight.stageLift/colour/beamColour/beamGain`, `camera.lift` (which
+  `HeroDroneScene` reads but is absent from the file), `scroll.minDwellS`, each
+  material's `id`/`label`/`match`, and `boards`/`boardExclude`/`videoModule`/
+  `notFrame`.
+- The studio and the site do not render materials identically: side by side at
+  the same beat, the site shows gold motor bells where the studio shows red.
+  Both apply the same profile table, so the divergence is in the renderer paths
+  rather than in the settings. Unresolved.
 - Failures are mostly `console.warn`, not visible. A beat that resolves to zero
   nodes still runs, still spotlights nothing, and still shows its caption, which
   reads as an animation bug rather than a config one.
