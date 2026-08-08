@@ -9,6 +9,7 @@ import {
   Meta,
   Scripts,
   ScrollRestoration,
+  useLocation,
   useRouteLoaderData,
 } from 'react-router';
 import type {Route} from './+types/root';
@@ -23,6 +24,7 @@ import {getCompanyIdentity} from '~/lib/company';
 import {localeFromPathname, seoLocaleTag} from '~/lib/i18n';
 import {buildOrgJsonLd, buildSeoMeta} from '~/lib/seo';
 import {THEME_COLORS, THEME_INIT_SCRIPT} from '~/lib/theme';
+import {themeOverrideCss} from '~/lib/theme-overrides';
 import {installViewTransitionGuard} from '~/lib/view-transition';
 import {captureAttribution} from '~/lib/growth/attribution';
 
@@ -240,6 +242,7 @@ export function Layout({children}: {children?: React.ReactNode}) {
   const data = useRouteLoaderData<RootLoader>('root');
   const htmlLang = (data?.locale || 'en_US').split('_')[0] || 'en';
   const orgJsonLd = data?.company ? buildOrgJsonLd(data.company) : null;
+  const themeCss = themeOverrideCss();
 
   // Make every view transition resilient: route React Router's navigation
   // transitions (and the manual theme-toggle reveal) through one guard that
@@ -309,6 +312,17 @@ export function Layout({children}: {children?: React.ReactNode}) {
         />
         <link rel="stylesheet" href={resetStyles}></link>
         <link rel="stylesheet" href={appStyles}></link>
+        {/* Design-token overrides authored in the studio (content/theme.json).
+            After the stylesheet so it wins on order, before <Meta/> so route
+            styles can still override it. Empty string when nothing is
+            overridden, which is the normal state. */}
+        {themeCss ? (
+          <style
+            nonce={nonce}
+            suppressHydrationWarning
+            dangerouslySetInnerHTML={{__html: themeCss}}
+          />
+        ) : null}
         <Meta />
         <Links />
         {/* Plausible — cookieless analytics, no consent required.
@@ -349,6 +363,15 @@ export function Layout({children}: {children?: React.ReactNode}) {
 
 export default function App() {
   const data = useRouteLoaderData<RootLoader>('root');
+  const {pathname} = useLocation();
+
+  // The studio owns the whole viewport and must not be wrapped in the site's
+  // header, footer or analytics: it is a tool, not a page. `import.meta.env.DEV`
+  // is statically false in a production build, so this test and everything it
+  // guards folds away, matching the route-level exclusion in app/routes.ts.
+  if (import.meta.env.DEV && pathname.startsWith('/studio')) {
+    return <Outlet />;
+  }
 
   if (!data) {
     return <Outlet />;

@@ -1,0 +1,308 @@
+/**
+ * The studio's own styling, kept as a string and injected by the route.
+ *
+ * Deliberately NOT in `app/styles/app.css`. That stylesheet ships to every
+ * visitor, and the studio never reaches production, so putting these rules
+ * there would be dead weight in the bundle for everyone. Keeping them here also
+ * means the studio's chrome cannot be broken by a token change the studio
+ * itself just made, which matters when the thing you are editing is the theme.
+ *
+ * Fixed values, not `var(--color-*)`, for exactly that reason: the editor has to
+ * stay legible while you are dragging the site's colours around.
+ */
+export const STUDIO_CSS = `
+.studio {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  background: #0b0b0e;
+  color: #e8e8ea;
+  font: 13px/1.5 ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  z-index: 9999;
+}
+
+.studio button { font: inherit; cursor: pointer; }
+.studio h2 {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  color: #7d7d86;
+  margin: 18px 0 8px;
+  font-weight: 600;
+}
+.studio h2:first-child { margin-top: 0; }
+
+/* ---- top bar ---- */
+.studio-bar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 0 14px;
+  height: 46px;
+  flex: 0 0 auto;
+  border-bottom: 1px solid #23232a;
+  background: #101014;
+}
+.studio-brand { font-size: 13px; letter-spacing: 0.02em; color: #9a9aa4; }
+.studio-brand b { color: #c89d2e; font-weight: 600; }
+
+.studio-tabs { display: flex; gap: 2px; }
+.studio-tabs button {
+  background: none;
+  border: 0;
+  color: #8b8b95;
+  padding: 5px 12px;
+  border-radius: 6px;
+}
+.studio-tabs button:hover { color: #e8e8ea; background: #1a1a20; }
+.studio-tabs button.is-on { color: #0b0b0e; background: #c89d2e; font-weight: 600; }
+
+.studio-status {
+  flex: 1;
+  min-width: 0;
+  color: #7d7d86;
+  font-size: 12px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.studio-actions { display: flex; gap: 8px; }
+.studio-actions button {
+  background: #1a1a20;
+  border: 1px solid #2b2b33;
+  color: #d8d8dc;
+  padding: 5px 12px;
+  border-radius: 6px;
+}
+.studio-actions button:hover:not(:disabled) { background: #23232a; }
+.studio-actions button:disabled { opacity: 0.4; cursor: default; }
+.studio-actions .is-primary {
+  background: #c89d2e;
+  border-color: #c89d2e;
+  color: #0b0b0e;
+  font-weight: 600;
+}
+.studio-actions .is-primary:hover:not(:disabled) { background: #dab040; }
+
+/* ---- three columns ---- */
+.studio-grid {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: 260px minmax(0, 1fr) 320px;
+}
+
+.studio-rail, .studio-inspector {
+  overflow-y: auto;
+  padding: 14px;
+  background: #0e0e12;
+  scrollbar-width: thin;
+  scrollbar-color: #2b2b33 transparent;
+}
+.studio-rail { border-right: 1px solid #1e1e25; }
+.studio-inspector { border-left: 1px solid #1e1e25; }
+
+.studio-pages, .studio-keys { list-style: none; margin: 0; padding: 0; }
+.studio-pages button, .studio-keys button {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: 0;
+  color: #c4c4cc;
+  padding: 6px 8px;
+  border-radius: 5px;
+  line-height: 1.35;
+}
+.studio-pages button:hover, .studio-keys button:hover { background: #17171d; }
+.studio-pages button.is-on, .studio-keys button.is-on {
+  background: #1d1d24;
+  color: #fff;
+  box-shadow: inset 2px 0 0 #c89d2e;
+}
+.studio-keys .studio-key {
+  display: block;
+  font-family: ui-monospace, Menlo, monospace;
+  font-size: 11px;
+  color: #9a9aa4;
+}
+.studio-keys button.is-on .studio-key { color: #c89d2e; }
+.studio-keys .studio-peek {
+  display: block;
+  font-size: 11px;
+  color: #63636c;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+/* An unsaved key is marked in the list, not just in the editor, so you can see
+   at a glance what is about to be written. */
+.studio-keys button.is-dirty .studio-key::after {
+  content: " ●";
+  color: #c89d2e;
+}
+
+/* ---- preview ---- */
+.studio-stage { display: flex; flex-direction: column; min-width: 0; background: #17171b; }
+.studio-urlbar {
+  display: flex;
+  gap: 6px;
+  padding: 8px;
+  border-bottom: 1px solid #1e1e25;
+  background: #101014;
+}
+.studio-urlbar input {
+  flex: 1;
+  background: #0b0b0e;
+  border: 1px solid #2b2b33;
+  color: #e8e8ea;
+  border-radius: 6px;
+  padding: 5px 10px;
+  font: inherit;
+  font-family: ui-monospace, Menlo, monospace;
+  font-size: 12px;
+}
+.studio-urlbar input:focus { outline: none; border-color: #c89d2e; }
+.studio-urlbar button {
+  background: #1a1a20;
+  border: 1px solid #2b2b33;
+  color: #d8d8dc;
+  padding: 5px 14px;
+  border-radius: 6px;
+}
+.studio-stage iframe { flex: 1; width: 100%; border: 0; background: #0d0d10; }
+
+/* ---- inspector ---- */
+.studio-inspector textarea {
+  width: 100%;
+  min-height: 220px;
+  resize: vertical;
+  background: #0b0b0e;
+  border: 1px solid #2b2b33;
+  border-radius: 8px;
+  color: #e8e8ea;
+  padding: 10px;
+  font: inherit;
+  line-height: 1.6;
+}
+.studio-inspector textarea:focus { outline: none; border-color: #c89d2e; }
+.studio-inspector h2 {
+  font-family: ui-monospace, Menlo, monospace;
+  text-transform: none;
+  letter-spacing: 0;
+  font-size: 12px;
+  color: #c89d2e;
+}
+.studio-hint { color: #63636c; font-size: 11px; margin: 0 0 10px; }
+.studio-empty { color: #63636c; font-size: 12px; line-height: 1.6; }
+.studio-empty code {
+  font-family: ui-monospace, Menlo, monospace;
+  color: #9a9aa4;
+  background: #17171d;
+  padding: 1px 4px;
+  border-radius: 3px;
+}
+.studio-undo {
+  margin-top: 8px;
+  background: none;
+  border: 1px solid #2b2b33;
+  color: #9a9aa4;
+  padding: 4px 10px;
+  border-radius: 6px;
+}
+
+/* ---- design tab ---- */
+.studio-tokens {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: 340px minmax(0, 1fr);
+}
+.studio-token-list {
+  overflow-y: auto;
+  padding: 14px;
+  border-right: 1px solid #1e1e25;
+  background: #0e0e12;
+  scrollbar-width: thin;
+  scrollbar-color: #2b2b33 transparent;
+}
+.studio-token {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 8px;
+  align-items: center;
+  padding: 5px 0;
+}
+.studio-token label {
+  font-family: ui-monospace, Menlo, monospace;
+  font-size: 11px;
+  color: #9a9aa4;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.studio-token.is-changed label { color: #c89d2e; }
+.studio-token-controls { display: flex; gap: 5px; align-items: center; }
+.studio-token input[type='color'] {
+  width: 26px;
+  height: 24px;
+  padding: 0;
+  border: 1px solid #2b2b33;
+  border-radius: 5px;
+  background: none;
+  cursor: pointer;
+}
+.studio-token input[type='text'] {
+  width: 118px;
+  background: #0b0b0e;
+  border: 1px solid #2b2b33;
+  color: #e8e8ea;
+  border-radius: 5px;
+  padding: 3px 7px;
+  font-family: ui-monospace, Menlo, monospace;
+  font-size: 11px;
+}
+.studio-token input[type='text']:focus { outline: none; border-color: #c89d2e; }
+.studio-token-reset {
+  background: none;
+  border: 0;
+  color: #55555e;
+  padding: 0 3px;
+  font-size: 14px;
+  line-height: 1;
+}
+.studio-token-reset:hover { color: #c89d2e; }
+.studio-tokens iframe { width: 100%; height: 100%; border: 0; background: #0d0d10; }
+.studio-token-note {
+  color: #63636c;
+  font-size: 11px;
+  line-height: 1.6;
+  margin: 0 0 14px;
+  padding: 9px 10px;
+  background: #121218;
+  border-left: 2px solid #2b2b33;
+  border-radius: 0 5px 5px 0;
+}
+`;
+
+/**
+ * Rules injected INTO the preview iframe, not into the studio's own page.
+ *
+ * A `<style>` in the parent document does not apply inside an iframe, even a
+ * same-origin one: each document has its own stylesheet set. These are appended
+ * to the preview's `<head>` on every load, which is also what makes the
+ * highlights survive the hot reload after a save.
+ */
+export const PREVIEW_CSS = `
+.studio-preview [data-edit] { cursor: text; }
+.studio-preview .studio-editable {
+  outline: 1px dashed rgba(200, 157, 46, 0.35);
+  outline-offset: 2px;
+  transition: outline-color 0.12s, background-color 0.12s;
+}
+.studio-preview .studio-editable:hover {
+  outline: 1px solid #c89d2e;
+  background-color: rgba(200, 157, 46, 0.09);
+}
+`;
