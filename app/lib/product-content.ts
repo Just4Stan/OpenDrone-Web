@@ -422,7 +422,7 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
       ['FC connector', 'JST-SH 8-pin'],
       ['Mounting', '20 × 20 mm, Ø3.0 mm holes'],
       ['Dimensions', '31.2 × 33.0 mm'],
-      ['PCB', '6-layer, 2 oz copper'],
+      ['PCB', '6-layer, 1.6 mm, 2 oz copper'],
     ],
     // Launching with the 20×20 and 30×30 models. Pro (higher-current)
     // variants land later as additional values on the same "Model" axis.
@@ -557,7 +557,7 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
       line2Italic: 'minus',
       line3: 'what you don’t need.',
       lead:
-        'An RP2354 dual-core M33 running Betaflight on a 6-layer board: a 6-axis IMU, microSD blackbox, PIO-driven analog OSD (in development), and a switchable 10 V VTX rail. No barometer, no onboard radio. Bring your own RX over UART and keep the board small and cheap.',
+        'An RP2354 dual-core M33 running Betaflight on a 6-layer board: a 6-axis IMU, microSD blackbox, PIO-driven analog OSD, and a switchable 10 V VTX rail. No barometer, no onboard radio. Bring your own RX over UART and keep the board small and cheap.',
     },
     firmware: {
       project: 'Betaflight',
@@ -643,17 +643,17 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
       ['IMU', 'BMI270'],
       ['Barometer', 'None'],
       ['Blackbox', 'microSD'],
-      ['OSD', 'Analog (in development), digital via MSP DisplayPort'],
+      ['OSD', 'Analog and digital'],
       ['UARTs', '4'],
       ['Motor outputs', '4× DShot, bidirectional'],
       ['RX', 'External, CRSF or SBUS'],
-      ['Input', '3–6S LiPo, reverse-polarity protected'],
+      ['Input', '3–6S LiPo'],
       ['BEC', '10 V switchable + 5 V always-on, 3 A'],
-      ['Current sense', 'ESC-side, no on-board shunt'],
+      ['Current sense', 'Yes'],
       ['USB', 'USB-C'],
       ['Mounting', '30.5 × 30.5 mm, Ø4.0 mm holes'],
       ['Dimensions', '37.9 × 37.9 mm'],
-      ['PCB', '6-layer, 1.0 mm'],
+      ['PCB', '6-layer, 1.6 mm'],
     ],
     optionAxis: 'Model',
     variants: {
@@ -869,7 +869,7 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> = {
       ['Flashing', 'Betaflight passthrough or Wi-Fi'],
       ['Wi-Fi antenna', 'Separate on-board ceramic'],
       ['Dimensions', '10.0 × 11.5 mm'],
-      ['PCB', '6-layer, 1.0 mm'],
+      ['PCB', '6-layer, 1.6 mm'],
     ],
     optionAxis: 'Model',
     variants: {
