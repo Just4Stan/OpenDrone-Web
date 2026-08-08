@@ -6,41 +6,6 @@
  */
 
 /**
- * Open source page: what is actually in every board repo, drawn as the
- * repo tree. The argument of the page in one glance: the factory files
- * and the download are the same thing.
- */
-const REPO_TREE: Array<{name: string; note: string; last?: boolean}> = [
-  {name: 'hardware/', note: 'KiCad source'},
-  {name: 'production/', note: 'Gerbers · BOM · CPL'},
-  {name: '3d/', note: 'STEP'},
-  {name: 'firmware/', note: 'configs'},
-  {name: 'LICENSE', note: 'CERN-OHL-S-2.0', last: true},
-];
-
-export function RepoTreeAside() {
-  return (
-    <figure className="aside-fig">
-      <figcaption className="aside-head">
-        <span className="aside-eyebrow">In every repo</span>
-        <span className="aside-sub">The factory gets the same files</span>
-      </figcaption>
-      <ul className="repo-tree">
-        {REPO_TREE.map((row) => (
-          <li key={row.name} className={row.last ? 'is-licence' : undefined}>
-            <span className="repo-tree-branch" aria-hidden="true">
-              {row.last ? '└─' : '├─'}
-            </span>
-            <span className="repo-tree-name">{row.name}</span>
-            <span className="repo-tree-note">{row.note}</span>
-          </li>
-        ))}
-      </ul>
-    </figure>
-  );
-}
-
-/**
  * Roadmap page: the pipeline at a glance. Counts come from the page's own
  * data so the figure can never drift from the list it summarises.
  */

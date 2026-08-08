@@ -2,7 +2,6 @@ import type {Route} from './+types/open-source';
 import {Link} from 'react-router';
 import {buildSeoMeta} from '~/lib/seo';
 import {EditorialShell} from '~/components/EditorialShell';
-import {RepoTreeAside} from '~/components/EditorialAsides';
 import {DISCORD_INVITE_URL} from '~/lib/company';
 
 export const meta: Route.MetaFunction = () =>
@@ -18,7 +17,7 @@ export async function loader(_args: Route.LoaderArgs) {
 
 export default function OpenSourceRoute() {
   return (
-    <EditorialShell slug="open-source" aside={<RepoTreeAside />}>
+    <EditorialShell slug="open-source">
       <header className="editorial-hero">
         <p className="editorial-eyebrow">Open Source</p>
         <h1 className="editorial-title">
