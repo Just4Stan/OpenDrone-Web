@@ -82,7 +82,7 @@ const ROADMAP: RoadmapItem[] = [
   {
     item: 'Motors',
     status: 'in-progress',
-    note: 'Early design work. Nothing public yet.',
+    note: 'First prototype motors ordered, waiting on delivery. Nothing public yet.',
   },
   {
     item: 'OpenVTX',
