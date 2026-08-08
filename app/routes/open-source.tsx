@@ -23,21 +23,17 @@ export default function OpenSourceRoute() {
           We sell hardware. The designs are yours.
         </h1>
         <p className="editorial-lead">
-          Every OpenDrone product comes with its full source on GitHub. Read it, fork it, order your own copies, ship a variant. OpenDrone is a community project; Incutec is the Belgian startup that started the initiative, hosts this website, sells the products here, and does what the community can&apos;t do on their own. Production, quality control, certification, distribution, legal responsibility, shipping, packaging, managing supply chains. What you pay for is the production run, done properly.
+          Every OpenDrone product comes with its full source on GitHub. Incutec is the Belgian startup that started the initiative, hosts this website, sells the products here, and does what the community can&apos;t do on their own.
         </p>
       </header>
 
       <section className="editorial-section">
-        <h2 className="editorial-section-title">01 · Two jobs: the role of Incutec</h2>
+        <h2 className="editorial-section-title">01 · Job one: the community designs it</h2>
         <p>
           OpenDrone was started by people from Incutec, but it is not ours. The
           designs are developed in the open and the direction belongs to the
           people who fly them. The community designs, reviews, tests and
-          decides. Incutec does what a community cannot do alone: production,
-          quality control, certification, distribution, warranty and legal
-          responsibility for what is sold. When you buy a board on this
-          website, Incutec BV is the seller, and the warranty and support are
-          our job. That does not change because the design is open.
+          decides.
         </p>
         <p>
           The intent for us is to move from designer to maintainer as contributors arrive. We believe there&apos;s plenty of talent out there to take on the challenges of hardware development. We will support that in any way we can to drive innovation in our hobby. If you feel like you want and can help, then{' '}
@@ -50,8 +46,26 @@ export default function OpenSourceRoute() {
           </a>
           .
         </p>
+      </section>
+
+      <section className="editorial-section">
+        <h2 className="editorial-section-title">02 · Job two: Incutec brings it to market</h2>
         <p>
-          Incutec itself is a young hardware company from Leuven, Belgium.
+          Incutec does what a community cannot do alone: production, quality control, certification, distribution and legal responsibility for what is sold. That does not change because the design is open. Although we believe that the best support will be when community members can help others since information about FPV is widely available. As a small team, we want to focus improving our vertical integration to deliver the best products possible.
+        </p>
+        <p>
+          The community project needs no revenue; the company manufacturing and
+          supporting the boards does. We don&apos;t make money from ads,
+          affiliate trackers, resold analytics, bundled apps, or features locked
+          behind firmware keys. Our analytics are cookieless (Plausible), and
+          the product works whether or not this web store exists.
+        </p>
+      </section>
+
+      <section className="editorial-section">
+        <h2 className="editorial-section-title">03 · Why a company is in the loop</h2>
+        <p>
+          Incutec is a young startup from Leuven, Belgium, founded in June 2026.
           We&apos;re trying out a new business model where development is
           decentralised like open-source code projects, but a company still
           holds the responsibility of bringing the product to market.
@@ -63,6 +77,10 @@ export default function OpenSourceRoute() {
           them to innovate on the hardware side. We don&apos;t think this is
           bad, but we think they shouldn&apos;t be the only players.
         </p>
+      </section>
+
+      <section className="editorial-section">
+        <h2 className="editorial-section-title">04 · A record label for hardware</h2>
         <p>
           For the future business model of Incutec, think of it as a music
           record label for hardware: someone brings us a working design with
@@ -81,7 +99,7 @@ export default function OpenSourceRoute() {
       </section>
 
       <section className="editorial-section">
-        <h2 className="editorial-section-title">02 · What you buy</h2>
+        <h2 className="editorial-section-title">05 · What you buy</h2>
         <p>
           A finished, tested, packaged board, sold by Incutec. Fabricated and
           assembled in China today, then inspected, flashed, and shipped from
@@ -96,34 +114,7 @@ export default function OpenSourceRoute() {
       </section>
 
       <section className="editorial-section">
-        <h2 className="editorial-section-title">03 · What stays open</h2>
-        <ul className="editorial-list">
-          <li>
-            <strong>Schematic</strong>: the KiCad 10 project files, not just a
-            PDF export. Every net and value is rebuildable from source.
-          </li>
-          <li>
-            <strong>PCB layout</strong>: the same Gerbers and CPL we send to the
-            fab. Not a &ldquo;reference&rdquo;, the actual production files.
-          </li>
-          <li>
-            <strong>BOM</strong>: the same CSV the assembler gets, with real
-            orderable LCSC part numbers, not generic MPNs you still have to
-            chase down.
-          </li>
-          <li>
-            <strong>3D STEP</strong>: check clearance against your frame before
-            you buy.
-          </li>
-          <li>
-            <strong>Fab notes</strong>: the fab-ready export settings and the
-            revision notes that explain what changed and why, spin after spin.
-          </li>
-        </ul>
-      </section>
-
-      <section className="editorial-section">
-        <h2 className="editorial-section-title">04 · Why CERN-OHL-S</h2>
+        <h2 className="editorial-section-title">06 · Why CERN-OHL-S</h2>
         <p>
           CERN-OHL-S v2 is a reciprocal, copyleft open-hardware licence. It keeps
           the design open: modify an OpenDrone board, ship your own version, and
@@ -132,29 +123,10 @@ export default function OpenSourceRoute() {
           want to. The point is that every clone carries its sources forward to
           the next maker.
         </p>
-        <p>
-          Firmware stays under whatever its upstream uses. Betaflight, AM32 and
-          ExpressLRS are all GPL-3.0. We don&apos;t relicense anyone&apos;s
-          work.
-        </p>
       </section>
 
       <section className="editorial-section">
-        <h2 className="editorial-section-title">05 · How Incutec stays solvent</h2>
-        <p>
-          The community project needs no revenue; the company manufacturing
-          and supporting the boards does.
-        </p>
-        <p>
-          We don&apos;t make money from ads, affiliate trackers, resold
-          analytics, bundled apps, or features locked behind firmware keys. Our
-          analytics are cookieless (Plausible), and the product works whether or
-          not this web store exists.
-        </p>
-      </section>
-
-      <section className="editorial-section">
-        <h2 className="editorial-section-title">06 · What this means for you</h2>
+        <h2 className="editorial-section-title">07 · What this means for you</h2>
         <ul className="editorial-list">
           <li>
             If Incutec disappears tomorrow, you still have the files, and the
