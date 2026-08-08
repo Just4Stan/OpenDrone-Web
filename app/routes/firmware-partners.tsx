@@ -2,7 +2,6 @@ import type {Route} from './+types/firmware-partners';
 import {Link} from 'react-router';
 import {buildSeoMeta} from '~/lib/seo';
 import {EditorialShell} from '~/components/EditorialShell';
-import {FirmwareSplitAside} from '~/components/EditorialAsides';
 
 export const meta: Route.MetaFunction = () =>
   buildSeoMeta({
@@ -72,7 +71,7 @@ const PARTNERS: Partner[] = [
 
 export default function FirmwarePartnersRoute() {
   return (
-    <EditorialShell slug="firmware-partners" aside={<FirmwareSplitAside />}>
+    <EditorialShell slug="firmware-partners">
       <header className="editorial-hero">
         <p className="editorial-eyebrow">€1 per board · forwarded</p>
         <h1 className="editorial-title">

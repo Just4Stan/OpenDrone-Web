@@ -10333,30 +10333,6 @@ button.reset {
   color: var(--color-text);
 }
 
-/* Firmware split: one number, three arrows. */
-.split-src {
-  margin: 0 0 1.1rem;
-  font-size: 2.2rem;
-  font-weight: 600;
-  color: var(--color-text);
-  letter-spacing: -0.02em;
-}
-
-.split-dsts {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: grid;
-  gap: 0.8rem;
-  font-size: 12px;
-  letter-spacing: 0.1em;
-  color: var(--color-text-muted);
-}
-
-.split-arrow {
-  color: var(--color-gold);
-  margin-right: 0.7rem;
-}
 
 /* Firmware partner cards */
 .partners-grid {
