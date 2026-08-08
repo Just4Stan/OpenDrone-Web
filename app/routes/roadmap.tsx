@@ -176,7 +176,7 @@ const STATUS_META: Record<ProductStatus, {label: string; legend: string}> = {
   alpha: {
     label: 'Alpha',
     legend:
-      'Coming soon. Hardware is being tested beyond our own bench, by firmware maintainers and community testers, but is not buyable yet. Where a product page exists, you can join the waitlist there.',
+      'Coming soon. Testing inside the project: community testers and firmware maintainers fly the hardware before anyone can buy it. Where a product page exists, you can join the waitlist there.',
   },
   'in-progress': {
     label: 'In progress',
