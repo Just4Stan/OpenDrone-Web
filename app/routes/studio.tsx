@@ -21,6 +21,7 @@ import type {MetaFunction} from 'react-router';
 import {PREVIEW_CSS, STUDIO_CSS} from '~/studio/studio-css';
 import {StudioTokens} from '~/studio/StudioTokens';
 import {StudioChapters} from '~/studio/StudioChapters';
+import {StudioHero} from '~/studio/StudioHero';
 import {PRODUCT_CONTENT} from '~/lib/product-content';
 
 export const meta: MetaFunction = () => [
@@ -31,7 +32,7 @@ export const meta: MetaFunction = () => [
 ];
 
 type CopyFile = Record<string, unknown>;
-type Tab = 'words' | 'chapters' | 'design';
+type Tab = 'words' | 'chapters' | 'design' | 'hero';
 
 /** Handles that have editorial content, so a chapter list means something. */
 const PRODUCT_HANDLES = Object.keys(PRODUCT_CONTENT).sort();
@@ -94,6 +95,13 @@ export default function Studio() {
   useEffect(() => {
     if (page) loadPage(page);
   }, [page, loadPage]);
+
+  // The status line is written by whichever tab is open. Without this it kept
+  // showing "25 editable strings on this page" while the Chapters tab was up,
+  // describing a page that was no longer on screen.
+  useEffect(() => {
+    setStatus('');
+  }, [tab]);
 
   /**
    * Wire the preview. Runs on every iframe load, including the reloads Vite
@@ -226,6 +234,13 @@ export default function Studio() {
           >
             Design
           </button>
+          <button
+            type="button"
+            className={tab === 'hero' ? 'is-on' : undefined}
+            onClick={() => setTab('hero')}
+          >
+            Hero
+          </button>
         </nav>
         <span className="studio-status">{status}</span>
         <div className="studio-actions">
@@ -243,7 +258,9 @@ export default function Studio() {
         </div>
       </header>
 
-      {tab === 'design' ? (
+      {tab === 'hero' ? (
+        <StudioHero setStatus={setStatus} />
+      ) : tab === 'design' ? (
         <StudioTokens frame={frame} route={route} setStatus={setStatus} />
       ) : tab === 'chapters' ? (
         <StudioChapters

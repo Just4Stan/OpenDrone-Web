@@ -284,6 +284,43 @@ export const STUDIO_CSS = `
   border-left: 2px solid #2b2b33;
   border-radius: 0 5px 5px 0;
 }
+
+/* ---- hero tab ---- */
+.studio-hero { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.studio-hero-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  border-bottom: 1px solid #1e1e25;
+  background: #101014;
+  flex: 0 0 auto;
+}
+.studio-hero-bar label { font-size: 11px; color: #7d7d86; }
+.studio-hero-bar .studio-select { width: auto; min-width: 150px; }
+.studio-hero-bar button {
+  background: #1a1a20;
+  border: 1px solid #2b2b33;
+  color: #d8d8dc;
+  padding: 5px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+}
+.studio-hero-bar button:hover { background: #23232a; }
+.studio-hero-bar a { color: #c89d2e; font-size: 12px; text-decoration: none; }
+.studio-hero-bar a:hover { text-decoration: underline; }
+.studio-hero-note {
+  margin-left: auto;
+  font-size: 11px;
+  color: #55555e;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+/* The hero tool is a full-screen app with its own 320px side panel, so it takes
+   the whole area rather than sharing it with a second preview column. */
+.studio-hero iframe { flex: 1; width: 100%; border: 0; background: #0a0c0f; }
+
 /* ---- chapters tab ---- */
 .studio-select {
   width: 100%;

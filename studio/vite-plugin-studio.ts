@@ -45,6 +45,26 @@ const WRITE_ROOT = 'content';
 /** Hostnames that mean "this machine". */
 const LOOPBACK = new Set(['localhost', '127.0.0.1', '::1', '[::1]']);
 
+/**
+ * The one file outside `content/` the studio may write.
+ *
+ * The hero scene's tunables live in `public/models/<design>/studio.json`,
+ * because the asset pipeline (`scripts/hero-assets/build-hero.mjs`) drops the
+ * GLB and its settings side by side, and `HeroDroneScene` fetches the file from
+ * there at runtime. Moving it into `content/` to satisfy a tidy allowlist would
+ * break that pipeline for no gain.
+ *
+ * So it is an exact-shape exception, not a second root: one fixed directory
+ * prefix, one path segment for the design name with no separators or dots in
+ * it, and one fixed filename. Nothing else under `public/` is reachable.
+ */
+const HERO_SETTINGS = /^public\/models\/[A-Za-z0-9_-]+\/studio\.json$/;
+
+/** Which root a request's path is checked against. */
+function rootFor(rel: string): string {
+  return HERO_SETTINGS.test(rel) ? path.posix.dirname(rel) : WRITE_ROOT;
+}
+
 /** Reject anything that is not a plain .json file under WRITE_ROOT. */
 function resolveWritePath(repoRoot: string, rel: string): string | null {
   if (typeof rel !== 'string' || !rel) return null;
@@ -53,6 +73,15 @@ function resolveWritePath(repoRoot: string, rel: string): string | null {
     return null;
   }
   if (!rel.endsWith('.json')) return null;
+
+  if (HERO_SETTINGS.test(rel)) {
+    const abs = path.resolve(repoRoot, rel);
+    // Re-derive the expected path from the matched name rather than trusting
+    // the resolution: belt and braces against a future edit loosening the regex.
+    const expected = path.resolve(repoRoot, ...rel.split('/'));
+    return abs === expected ? abs : null;
+  }
+
   const root = path.resolve(repoRoot, WRITE_ROOT);
   const abs = path.resolve(root, rel);
   // The containment check has to happen AFTER resolution, because that is what
@@ -75,8 +104,12 @@ function resolveWritePath(repoRoot: string, rel: string): string | null {
  * Resolves the deepest existing ancestor, because the target file itself may
  * legitimately not exist yet on a first write.
  */
-async function realContained(repoRoot: string, abs: string): Promise<boolean> {
-  const root = await fs.realpath(path.resolve(repoRoot, WRITE_ROOT)).catch(() => null);
+async function realContained(
+  repoRoot: string,
+  abs: string,
+  rootRel: string = WRITE_ROOT,
+): Promise<boolean> {
+  const root = await fs.realpath(path.resolve(repoRoot, rootRel)).catch(() => null);
   if (!root) return false;
   let probe = abs;
   for (;;) {
@@ -241,8 +274,8 @@ async function handle(
       const {file} = JSON.parse(await readBody(req)) as {file?: string};
       const abs = resolveWritePath(repoRoot, file ?? '');
       if (!abs) return send(res, 400, {error: 'bad path'});
-      if (!(await realContained(repoRoot, abs))) {
-        return send(res, 400, {error: 'path escapes content/'});
+      if (!(await realContained(repoRoot, abs, rootFor(file ?? '')))) {
+        return send(res, 400, {error: 'path escapes its allowed root'});
       }
       try {
         const text = await fs.readFile(abs, 'utf8');
@@ -262,17 +295,23 @@ async function handle(
       };
       const abs = resolveWritePath(repoRoot, file ?? '');
       if (!abs) return send(res, 400, {error: 'bad path'});
-      if (!(await realContained(repoRoot, abs))) {
-        return send(res, 400, {error: 'path escapes content/'});
+      if (!(await realContained(repoRoot, abs, rootFor(file ?? '')))) {
+        return send(res, 400, {error: 'path escapes its allowed root'});
       }
       if (data === undefined) return send(res, 400, {error: 'no data'});
       // A copy file's basename becomes the page segment of every id on it, and
       // `splitId` splits an id on its FIRST dot. `nav.cart.json` would register
       // as page "nav.cart" while every lookup resolved page "nav", so the file
       // would be silently unreadable by the site. Refuse to create one.
-      const base = path.basename(abs, '.json');
-      if (!base || base.includes('.')) {
-        return send(res, 400, {error: 'file name must not contain a dot'});
+      // Only copy files: their basename becomes the page segment of every id
+      // on them, and `splitId` splits an id on its FIRST dot, so `nav.cart.json`
+      // would register as page "nav.cart" while every lookup resolved "nav".
+      // Other content files are read whole and have no such constraint.
+      if ((file ?? '').startsWith('copy/')) {
+        const base = path.basename(abs, '.json');
+        if (!base || base.includes('.')) {
+          return send(res, 400, {error: 'copy file name must not contain a dot'});
+        }
       }
 
       // Two trailing newline conventions in one repo is a diff-noise generator.
