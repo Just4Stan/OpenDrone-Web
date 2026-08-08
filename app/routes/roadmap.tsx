@@ -11,8 +11,60 @@ export const meta: Route.MetaFunction = () =>
       'Every OpenDrone project with its current status: what is nearly in the shop, what is in development, and the pre-design ideas anyone can help shape on Discord and GitHub.',
   });
 
-export async function loader(_args: Route.LoaderArgs) {
-  return {};
+/**
+ * The status-* topic on each public GitHub repo is the canonical status
+ * (see hardware/README.md in the working container). This loader pulls
+ * the topics at request time so the page mirrors the repos; the static
+ * status in ROADMAP is the fallback for products without a public repo
+ * and for API failures. In-memory cache, 1 hour per worker isolate,
+ * which also keeps unauthenticated API usage far under the rate limit.
+ */
+let topicCache: {at: number; map: Record<string, ProductStatus>} | null = null;
+
+async function fetchStatusFlags(
+  token?: string,
+): Promise<Record<string, ProductStatus>> {
+  if (topicCache && Date.now() - topicCache.at < 3_600_000) {
+    return topicCache.map;
+  }
+  const map: Record<string, ProductStatus> = {};
+  await Promise.all(
+    ROADMAP.filter((r) => r.link).map(async (r) => {
+      try {
+        const name = (r.link as string).replace('https://github.com/', '');
+        const res = await fetch(`https://api.github.com/repos/${name}/topics`, {
+          headers: {
+            'User-Agent': 'opendrone-store-roadmap',
+            Accept: 'application/vnd.github+json',
+            // 60 req/h unauthenticated vs 5000 with a token; set
+            // GITHUB_STATUS_TOKEN (read-only, public repos) in Oxygen.
+            ...(token ? {Authorization: `Bearer ${token}`} : {}),
+          },
+        });
+        if (!res.ok) return;
+        const data = (await res.json()) as {names?: string[]};
+        const flag = data.names
+          ?.find((t) => t.startsWith('status-'))
+          ?.slice('status-'.length);
+        if (flag && (STATUS_ORDER as string[]).includes(flag)) {
+          map[r.link as string] = flag as ProductStatus;
+        }
+      } catch {
+        // Unreachable API: the static status stands in.
+      }
+    }),
+  );
+  topicCache = {at: Date.now(), map};
+  return map;
+}
+
+export async function loader({context}: Route.LoaderArgs) {
+  const env = context.env as unknown as Record<string, string | undefined>;
+  const flags = await fetchStatusFlags(env.GITHUB_STATUS_TOKEN);
+  const roadmap = ROADMAP.map((r) =>
+    r.link && flags[r.link] ? {...r, status: flags[r.link]} : r,
+  );
+  return {roadmap};
 }
 
 /**
@@ -146,10 +198,10 @@ const STATUS_ORDER: ProductStatus[] = [
   'planned',
 ];
 
-export default function RoadmapRoute() {
+export default function RoadmapRoute({loaderData}: Route.ComponentProps) {
   const columns = STATUS_ORDER.map((status) => ({
     status,
-    items: ROADMAP.filter((r) => r.status === status),
+    items: loaderData.roadmap.filter((r) => r.status === status),
   }));
 
   return (
