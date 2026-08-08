@@ -71,4 +71,4 @@ This policy:
 ---
 
 **Signed for Incutec BV:**
-Stan Coene, Bestuurder
+De bestuurder

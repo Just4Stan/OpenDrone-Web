@@ -147,7 +147,7 @@ const RENDER_SIDE = {front: 'top', back: 'bottom'};
 // OpenDrone's canonical renderer (vias+paste stripped, orthographic, square).
 const RENDER_BOARD_PY =
   process.env.RENDER_BOARD_PY ||
-  '/Users/stan/OpenDrone/tools/render_board.py';
+  `${process.env.HOME}/OpenDrone/tools/render_board.py`;
 
 const TAU = Math.PI * 2;
 /** Max arc/bezier chord ≈ this many radians per sample — fine enough that a
