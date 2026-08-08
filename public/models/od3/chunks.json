@@ -19,21 +19,21 @@
       "id": "board-4in1-mini",
       "label": "4in1-mini",
       "file": "board-4in1-mini.glb",
-      "bytes": 2299636,
-      "verts": 153101
+      "bytes": 1112804,
+      "verts": 214234
     },
     {
       "id": "board-OpenFC",
       "label": "OpenFC",
       "file": "board-OpenFC.glb",
-      "bytes": 1424528,
-      "verts": 89036
+      "bytes": 726328,
+      "verts": 122699
     },
     {
       "id": "board-OpenRX-Lite-UFL",
       "label": "OpenRX Lite-UFL",
       "file": "board-OpenRX-Lite-UFL.glb",
-      "bytes": 368040,
+      "bytes": 361580,
       "verts": 58216
     },
     {

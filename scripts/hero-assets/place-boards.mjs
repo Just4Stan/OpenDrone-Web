@@ -27,9 +27,19 @@ import {join as pjoin} from 'node:path';
 
 await MeshoptEncoder.ready;
 
-const [placementPath, outDir, ...pairs] = process.argv.slice(2);
+// Strip "--yaw <key>=<deg>" pairs out of the positional args first; the yaw
+// override lookup below reads them from process.argv directly. Without this
+// the flag and its value were parsed as board pairs and place-boards tried to
+// io.read("0").
+const positional = [];
+const rest = process.argv.slice(2);
+for (let i = 0; i < rest.length; i++) {
+  if (rest[i].startsWith('--yaw')) { i++; continue; }
+  positional.push(rest[i]);
+}
+const [placementPath, outDir, ...pairs] = positional;
 if (!placementPath || !outDir || !pairs.length) {
-  console.error('usage: place-boards.mjs <placement.json> <outdir> <key>=<board.glb> [...]');
+  console.error('usage: place-boards.mjs <placement.json> <outdir> <key>=<board.glb> [--yaw <key>=<deg>] [...]');
   process.exit(1);
 }
 mkdirSync(outDir, {recursive: true});
