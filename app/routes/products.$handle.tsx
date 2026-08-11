@@ -44,7 +44,7 @@ import {
   type ChapterType,
 } from '~/lib/chapters';
 import {buildSeoMeta, buildProductJsonLd, SITE_ORIGIN} from '~/lib/seo';
-import {fetchCommitDates, fetchContributors, fetchLatestCommits} from '~/lib/github';
+import {fetchCommitActivity, fetchContributors, fetchLatestCommits} from '~/lib/github';
 import {ContributorGrid, ContributorGridSkeleton} from '~/components/Contributors';
 import {
   fetchProductReviews,
@@ -189,7 +189,7 @@ function loadDeferredData({context, params}: Route.LoaderArgs) {
     return {
       recommendations: Promise.resolve(null),
       latestCommits: Promise.resolve([]),
-      commitDates: Promise.resolve([] as string[]),
+      commitActivity: Promise.resolve([]),
       contributors: Promise.resolve([]),
       reviews: Promise.resolve(null),
     };
@@ -220,10 +220,8 @@ function loadDeferredData({context, params}: Route.LoaderArgs) {
   const latestCommits = fetchLatestCommits(repoUrls, ghToken).catch(() => []);
 
   // Commit-activity texture for the contributors chapter, same repo set and
-  // the same best-effort rules: an empty array just means no backdrop.
-  const commitDates = fetchCommitDates(repoUrls, ghToken).catch(
-    () => [] as string[],
-  );
+  // the same best-effort rules: an empty array just means no strip.
+  const commitActivity = fetchCommitActivity(repoUrls, ghToken).catch(() => []);
 
   // Contributor grid: every repo in the line (tier repos included) so the
   // section credits people whichever mount they worked on. Same
@@ -277,7 +275,7 @@ function loadDeferredData({context, params}: Route.LoaderArgs) {
   // metafield aggregate (or, with no aggregate, renders nothing at all).
   const reviews = fetchProductReviews(context.env, handle);
 
-  return {recommendations, latestCommits, commitDates, contributors, reviews};
+  return {recommendations, latestCommits, commitActivity, contributors, reviews};
 }
 
 const DOWNLOAD_ICONS: Record<DownloadKind, string> = {
@@ -582,7 +580,7 @@ export default function Product() {
     stackProducts,
     recommendations,
     latestCommits,
-    commitDates,
+    commitActivity,
     contributors,
     reviews,
     reviewsEnabled: reviewsOn,
@@ -2175,8 +2173,8 @@ export default function Product() {
               commit, streamed with the same best-effort GitHub budget as the
               grid below. Null on failure, invisible on quiet repos. */}
           <Suspense fallback={null}>
-            <Await resolve={commitDates} errorElement={null}>
-              {(dates) => <CommitTimeline dates={dates} />}
+            <Await resolve={commitActivity} errorElement={null}>
+              {(commits) => <CommitTimeline commits={commits} />}
             </Await>
           </Suspense>
           {/* The intro has to stream with the grid, not ahead of it. GitHub's

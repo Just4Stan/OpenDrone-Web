@@ -1,4 +1,5 @@
 import type {Contributor} from '~/lib/github';
+import {contributorColor} from '~/lib/contributor-colors';
 import {Txt} from './Txt';
 import {copyText} from '~/lib/copy';
 
@@ -25,6 +26,11 @@ export function ContributorGrid({
             href={c.htmlUrl}
             target="_blank"
             rel="noopener noreferrer"
+            // The tile's accent doubles as the legend for the commit strip:
+            // same login-hashed color on both (app/lib/contributor-colors.ts).
+            style={
+              {'--contrib-accent': contributorColor(c.login)} as React.CSSProperties
+            }
           >
             {/* NOT loading="lazy". The chapter sets content-visibility: auto,
                 so this subtree is size-contained until it nears the viewport,

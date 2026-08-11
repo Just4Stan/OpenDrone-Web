@@ -7397,13 +7397,16 @@ button.reset {
   column-gap: 0.75rem;
   align-items: center;
   padding: var(--sp-3) 0 0;
-  border-top: 2px solid color-mix(in srgb, var(--color-gold) 45%, var(--color-border));
+  /* Per-contributor accent, hash-colored like their ticks on the commit
+     strip below; gold when no accent is set (skeleton, the "+ you" tile). */
+  border-top: 2px solid
+    color-mix(in srgb, var(--contrib-accent, var(--color-gold)) 55%, var(--color-border));
   color: var(--color-text);
   text-decoration: none;
   transition: border-color 0.2s ease;
 }
 .contributor-tile:hover {
-  border-top-color: var(--color-gold);
+  border-top-color: var(--contrib-accent, var(--color-gold));
 }
 .contributor-avatar {
   grid-row: 1 / span 2;
