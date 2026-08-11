@@ -5,20 +5,15 @@
   "meta_title_term": "Search results for \"{term}\"",
   "meta_description": "Search OpenDrone products, articles, and pages.",
   "meta_description_term": "Search OpenDrone for {term}.",
-
   "eyebrow": "Search",
   "title": "Search the catalog",
-  "description": "Find products, technical pages, and build notes across the OpenDrone storefront.",
-
+  "description": "Find products, technical pages, and engineering notes across the OpenDrone storefront.",
   "input_placeholder": "Search...",
   "submit": "Search",
-
   "empty": "No results yet. Try a product name, part number, or article keyword.",
-
   "section_products": "Products",
   "section_pages": "Pages",
   "section_articles": "Articles",
-
   "pagination_loading": "Loading...",
   "pagination_previous": "↑ Load previous",
   "pagination_next": "Load more ↓"

@@ -194,7 +194,6 @@ infer status from prose anywhere else.
 - [Product roadmap and how to contribute](${origin}/roadmap)
 - [Release timeline, everything that has shipped](${origin}/timeline)
 - [Where the boards are made](${origin}/production)
-- [Wholesale / dealer inquiries](${origin}/wholesale)
 - [All products](${origin}/collections/all)
 - [Newsletter / release notes](${origin}/newsletter)
 

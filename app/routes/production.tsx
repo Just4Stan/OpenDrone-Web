@@ -30,15 +30,8 @@ export default function ProductionRoute() {
         <Txt id="production.lead" as="p" className="editorial-lead" />
       </header>
 
-      <section className="editorial-section">
-        <Txt
-          id="production.s1_title"
-          as="h2"
-          className="editorial-section-title"
-        />
-        <Txt id="production.s1_body" as="p" />
-      </section>
-
+      {/* Section 01 (designed in the open) was cut by Stan in the studio
+          (2026-08-11); the open-source page carries that story. */}
       <section className="editorial-section">
         <Txt
           id="production.s2_title"

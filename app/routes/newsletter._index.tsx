@@ -40,7 +40,7 @@ export const meta: Route.MetaFunction = () => {
     title: copyText('newsletter.meta_title') ?? 'Newsletter',
     description:
       copyText('newsletter.meta_description') ??
-      'Engineering Essentials: build notes, hardware releases, and write-ups from OpenDrone. Subscribe to get each post by email.',
+      'Engineering Essentials: engineering notes, hardware releases, and write-ups from OpenDrone. Subscribe to get each post by email.',
   });
   return [
     ...base,

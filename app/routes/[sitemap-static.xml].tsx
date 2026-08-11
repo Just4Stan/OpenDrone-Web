@@ -20,7 +20,6 @@ const STATIC_PATHS = [
   '/roadmap',
   '/timeline',
   '/firmware-partners',
-  '/wholesale',
   '/collections/all',
   '/newsletter',
 ];

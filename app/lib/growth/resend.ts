@@ -387,8 +387,8 @@ function renderWelcome(opts: {
     'Hi,',
     '',
     product
-      ? `You're on the launch list for ${product}. One email when it goes on sale, plus the occasional build note. Nothing else.`
-      : `You're subscribed to Engineering Essentials: build notes, hardware releases, and write-ups. Only when there's something to ship.`,
+      ? `You're on the launch list for ${product}. One email when it goes on sale, plus the occasional engineering note. Nothing else.`
+      : `You're subscribed to Engineering Essentials: engineering notes, hardware releases, and write-ups. Only when there's something to ship.`,
     '',
     `${contextLine} Not you, or changed your mind? Unsubscribe here: ${unsubscribeUrl}`,
     '',
@@ -401,8 +401,8 @@ function renderWelcome(opts: {
       <p>Hi,</p>
       <p>${
         product
-          ? `You're on the launch list for <strong>${escapeHtml(product)}</strong>. One email when it goes on sale, plus the occasional build note. Nothing else.`
-          : `You're subscribed to Engineering Essentials: build notes, hardware releases, and write-ups. Only when there's something to ship.`
+          ? `You're on the launch list for <strong>${escapeHtml(product)}</strong>. One email when it goes on sale, plus the occasional engineering note. Nothing else.`
+          : `You're subscribed to Engineering Essentials: engineering notes, hardware releases, and write-ups. Only when there's something to ship.`
       }</p>
       <p style="color:#737373;font-size:13px;line-height:1.6;margin-top:28px">${escapeHtml(contextLine)} Not you, or changed your mind? <a href="${escapeAttr(unsubscribeUrl)}" style="color:#b8922e">Unsubscribe</a> with one click, or write <a href="mailto:${escapeAttr(supportEmail)}" style="color:#b8922e">${escapeHtml(supportEmail)}</a>.</p>
     `,

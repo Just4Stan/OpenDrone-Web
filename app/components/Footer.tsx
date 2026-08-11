@@ -29,12 +29,15 @@ const SHOP_LINKS: Array<{to: string; copy: string}> = [
   {to: '/search', copy: 'nav_search'},
 ];
 
-const OPEN_SOURCE_LINKS: Array<{href: string; copy: string}> = [
+/**
+ * The community column: every place OpenDrone and Incutec are present, one
+ * link each. Per-repo links were removed on Stan's call (2026-08-11): the
+ * GitHub org covers them, and the site-source link lives in the bottom bar.
+ * Add new socials here as accounts go live; the label is a chrome.json key.
+ */
+const SOCIAL_LINKS: Array<{href: string; copy: string}> = [
   {href: DISCORD_INVITE_URL, copy: 'nav_discord'},
   {href: 'https://github.com/OpenDrone-hw', copy: 'nav_github'},
-  {href: 'https://github.com/OpenDrone-hw/OpenFC-Lite', copy: 'nav_openfc'},
-  {href: 'https://github.com/OpenDrone-hw/OpenESC-20x20', copy: 'nav_openesc'},
-  {href: 'https://github.com/OpenDrone-hw/OpenDrone-Web', copy: 'nav_site_source'},
 ];
 
 const COMPANY_LINKS: Array<{to: string; copy: string}> = [
@@ -43,7 +46,6 @@ const COMPANY_LINKS: Array<{to: string; copy: string}> = [
   {to: '/roadmap', copy: 'nav_roadmap'},
   {to: '/timeline', copy: 'nav_timeline'},
   {to: '/production', copy: 'nav_production'},
-  {to: '/wholesale', copy: 'nav_wholesale'},
   {to: '/legal', copy: 'nav_legal_imprint'},
   {to: '/support', copy: 'nav_contact'},
   {to: '/security', copy: 'nav_security'},
@@ -158,7 +160,7 @@ export function Footer({
           <div>
             <ColumnHeading id="chrome.heading_open_source" />
             <nav className="flex flex-col gap-1.5 mb-6">
-              {OPEN_SOURCE_LINKS.map((link) => (
+              {SOCIAL_LINKS.map((link) => (
                 <a
                   key={link.href}
                   href={link.href}

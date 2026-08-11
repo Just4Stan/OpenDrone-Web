@@ -93,7 +93,7 @@ function renderFeed({
     <title>OpenDrone · Newsletter</title>
     <link>${esc(origin)}/newsletter</link>
     <atom:link href="${esc(origin)}/newsletter.rss" rel="self" type="application/rss+xml" />
-    <description>Build notes, hardware releases, and engineering write-ups from OpenDrone.</description>
+    <description>Engineering notes, hardware releases, and write-ups from OpenDrone.</description>
     <language>en</language>
     <lastBuildDate>${lastBuild}</lastBuildDate>
 ${items}
