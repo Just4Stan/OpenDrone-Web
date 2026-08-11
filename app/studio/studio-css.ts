@@ -129,7 +129,8 @@ export const STUDIO_CSS = `
   color: #9a9aa4;
 }
 .studio-keys button.is-on .studio-key { color: #c89d2e; }
-.studio-keys .studio-peek {
+.studio-keys .studio-peek,
+.studio-pages .studio-peek {
   display: block;
   font-size: 11px;
   color: #63636c;
