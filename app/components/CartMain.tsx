@@ -14,9 +14,9 @@ import {copyText, editAttrs} from '~/lib/copy';
 
 /** Product families surfaced as chips on the empty-cart screen, so it reads as
  *  an exploration launchpad rather than a dead end. The destinations are
- *  structure; the chip words come from content/copy/cart.json. The flight
- *  controllers chip was removed by Stan in the studio (2026-08-11). */
+ *  structure; the chip words come from content/copy/cart.json. */
 const CART_EMPTY_FAMILIES: Array<{copyId: string; to: string}> = [
+  {copyId: 'cart.empty_family_flight_controllers', to: '/products/openfc-lite'},
   {copyId: 'cart.empty_family_escs', to: '/products/openesc'},
   {copyId: 'cart.empty_family_receivers', to: '/products/openrx'},
   {copyId: 'cart.empty_family_frames', to: '/products/openframe'},
