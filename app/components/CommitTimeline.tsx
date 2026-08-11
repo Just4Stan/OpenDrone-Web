@@ -30,17 +30,17 @@ export function CommitTimeline({dates}: {dates: string[]}) {
           key={`${t}-${i}`}
           className="commit-timeline-tick"
           style={{
-            left: `${2 + ((t - first) / span) * 96}%`,
+            left: `${((t - first) / span) * 100}%`,
             // Deterministic height variation so the row reads as activity,
             // not as a fence. No randomness: SSR and client must agree.
-            height: `${18 + (i % 4) * 9}px`,
+            height: `${10 + (i % 4) * 7}px`,
           }}
         />
       ))}
-      <span className="commit-timeline-date" style={{left: '2%'}}>
+      <span className="commit-timeline-date" style={{left: 0}}>
         {fmt(first)}
       </span>
-      <span className="commit-timeline-date" style={{right: '2%'}}>
+      <span className="commit-timeline-date" style={{right: 0}}>
         {fmt(last)}
       </span>
     </div>

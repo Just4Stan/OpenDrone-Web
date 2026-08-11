@@ -12,7 +12,8 @@
   ],
   "s2_title": "02 · Change the design",
   "s2_body": [
-    "Hardware is not software: two people can edit the same code file, but a PCB layout cannot be merged. Communication on Discord is key for coordinating changes and not having to overwrite other people's files. Schematics are split across hierarchical sheets, so separate sheets can have separate owners.",
+    "Before you change anything: come to [the Discord](@discord) first. Every board names its maintainer on GitHub; message them there and talk through what you want to change before you touch a file, because someone may already be working on exactly that.",
+    "KiCad files are text, and newer KiCad versions ship git integration, but merging two people's edits to one layout is still asking for trouble. Coordination beats merge tools here: one person holds a board at a time, and schematics are split across hierarchical sheets so separate sheets can have separate owners.",
     "Everyone else contributes through review, and review is where the real capacity is: CI renders the schematic, the board images, ERC and DRC output and a BOM diff on every pull request, so a design one person draws can be reviewed by anyone, without opening KiCad. Small, focused changes land fastest: one connector, one footprint, one silkscreen fix, agreed with the board's maintainer.",
     "Merged design changes land your handle in the contributors chapter of the product page. Every product page names who developed the board, maintainer first, the way a record sleeve names the band. A handle and avatar are enough; nobody needs your real name."
   ],

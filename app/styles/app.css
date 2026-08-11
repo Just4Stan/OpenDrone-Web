@@ -7726,13 +7726,16 @@ button.reset {
   letter-spacing: 0.04em;
 }
 
-/* Commit timeline: repo activity engraved behind the contributors chapter.
-   The chapter's content-visibility containment makes .chapter the containing
-   block AND a stacking context, so z-index -1 tucks this under the in-flow
-   text while keeping it inside the section. */
+/* Commit timeline: repo activity as a discrete strip along the chapter's
+   bottom edge, clear of the text and the contributor tiles. The chapter's
+   content-visibility containment makes .chapter the containing block and a
+   stacking context, so z-index -1 keeps it tucked under any overlap. */
 .commit-timeline {
   position: absolute;
-  inset: 0;
+  left: 0;
+  right: 0;
+  bottom: 0.75rem;
+  height: 56px;
   z-index: -1;
   pointer-events: none;
   overflow: hidden;
@@ -7740,27 +7743,27 @@ button.reset {
 
 .commit-timeline-axis {
   position: absolute;
-  left: 2%;
-  right: 2%;
-  top: 62%;
+  left: 0;
+  right: 0;
+  bottom: 14px;
   height: 1px;
-  background: color-mix(in srgb, var(--color-border) 60%, transparent);
+  background: color-mix(in srgb, var(--color-border) 70%, transparent);
 }
 
 .commit-timeline-tick {
   position: absolute;
-  bottom: 38%;
+  bottom: 14px;
   width: 1px;
-  background: color-mix(in srgb, var(--color-gold) 22%, transparent);
+  background: color-mix(in srgb, var(--color-gold) 30%, transparent);
 }
 
 .commit-timeline-date {
   position: absolute;
-  top: calc(62% + 0.6rem);
+  bottom: 0;
   font-family: var(--font-mono);
   font-size: 9px;
   letter-spacing: 0.14em;
-  color: color-mix(in srgb, var(--color-text-muted) 45%, transparent);
+  color: color-mix(in srgb, var(--color-text-muted) 55%, transparent);
 }
 
 @media (max-width: 879px) {
@@ -9892,8 +9895,8 @@ button.reset {
 
 .editorial-hero {
   /* Air around the title, but not so much the page reads as gaps
-     (tightened 2026-08-11 on Stan's call). */
-  margin-bottom: 3rem;
+     (tightened twice on 2026-08-11 on Stan's call). */
+  margin-bottom: 2.25rem;
 }
 
 .editorial-eyebrow {
@@ -9934,7 +9937,7 @@ button.reset {
    the contrast is what reads as spacious. 4rem: our sections are short,
    the 6rem of the reference sites left them floating. */
 .editorial-section {
-  margin-top: 3rem;
+  margin-top: 2.25rem;
   font-family: var(--font-sans);
   font-size: 1rem;
   line-height: 1.6;
@@ -9942,7 +9945,7 @@ button.reset {
 }
 
 .editorial-section p {
-  margin: 0 0 0.85rem;
+  margin: 0 0 0.7rem;
 }
 
 .editorial-section strong {

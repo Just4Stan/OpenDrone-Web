@@ -40,6 +40,8 @@ const SOCIAL_LINKS: Array<{href: string; copy: string}> = [
   {href: 'https://github.com/OpenDrone-hw', copy: 'nav_github'},
 ];
 
+// The company cell renders as two sub-columns (Stan, 2026-08-11): the story
+// pages on the left, the practical/legal trio on the right.
 const COMPANY_LINKS: Array<{to: string; copy: string}> = [
   {to: '/open-source', copy: 'nav_open_source_incutec'},
   {to: '/firmware-partners', copy: 'nav_firmware_partners'},
@@ -47,6 +49,9 @@ const COMPANY_LINKS: Array<{to: string; copy: string}> = [
   {to: '/contributing', copy: 'nav_contributing'},
   {to: '/timeline', copy: 'nav_timeline'},
   {to: '/production', copy: 'nav_production'},
+];
+
+const COMPANY_META_LINKS: Array<{to: string; copy: string}> = [
   {to: '/legal', copy: 'nav_legal_imprint'},
   {to: '/support', copy: 'nav_contact'},
   {to: '/security', copy: 'nav_security'},
@@ -174,13 +179,22 @@ export function Footer({
               ))}
             </nav>
             <ColumnHeading id="chrome.heading_company" />
-            <nav className="flex flex-col gap-1.5">
-              {COMPANY_LINKS.map((link) => (
-                <FooterNavLink key={link.to} to={link.to}>
-                  <Txt id={`chrome.${link.copy}`} />
-                </FooterNavLink>
-              ))}
-            </nav>
+            <div className="grid grid-cols-2 gap-x-6">
+              <nav className="flex flex-col gap-1.5">
+                {COMPANY_LINKS.map((link) => (
+                  <FooterNavLink key={link.to} to={link.to}>
+                    <Txt id={`chrome.${link.copy}`} />
+                  </FooterNavLink>
+                ))}
+              </nav>
+              <nav className="flex flex-col gap-1.5">
+                {COMPANY_META_LINKS.map((link) => (
+                  <FooterNavLink key={link.to} to={link.to}>
+                    <Txt id={`chrome.${link.copy}`} />
+                  </FooterNavLink>
+                ))}
+              </nav>
+            </div>
           </div>
 
           {/* Legal */}

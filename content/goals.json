@@ -14,11 +14,11 @@
       "since": "2026-08-11"
     },
     {
-      "id": "eu-assembly-line",
+      "id": "carbon-routing",
       "status": "next",
-      "title": "A full EU assembly line",
-      "body": "Everything the pick and place does not cover: solder paste printing, inspection, and enough throughput to run production batches, not just prototypes. This is the 'EU assembly is an ambition' line on the production page becoming a fact.",
-      "target_label": "well past the first goal",
+      "title": "Carbon fibre routing",
+      "body": "Cutting our own frame plates and arms instead of buying machine time. Mostly a filtration and enclosure problem, and the first step past bare PCBs.",
+      "target_label": "after the pick and place",
       "progress_pct": 0,
       "mode": "manual",
       "target_eur": null,
