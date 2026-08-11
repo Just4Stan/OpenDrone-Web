@@ -21,13 +21,7 @@
   ],
   "cta_primary": "Why the files are public →",
   "cta_secondary": "See the roadmap →",
-  "ladder1_when": "2027 Q2",
-  "ladder1_title": "PCB assembly",
-  "ladder2_when": "2027 Q4",
-  "ladder2_title": "Carbon fibre routing",
-  "ladder3_when": "2028 Q3",
-  "ladder3_title": "Aluminium and anodising",
-  "ladder4_when": "2029 Q2",
-  "ladder4_title": "Motors",
+  "ladder_now_when": "Now",
+  "ladder_now_title": "Inspect, flash, ship from Belgium",
   "ladder_note": "Targets, not promises"
 }

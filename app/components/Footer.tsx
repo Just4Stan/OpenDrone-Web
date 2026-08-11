@@ -44,6 +44,7 @@ const COMPANY_LINKS: Array<{to: string; copy: string}> = [
   {to: '/open-source', copy: 'nav_open_source_incutec'},
   {to: '/firmware-partners', copy: 'nav_firmware_partners'},
   {to: '/roadmap', copy: 'nav_roadmap'},
+  {to: '/contributing', copy: 'nav_contributing'},
   {to: '/timeline', copy: 'nav_timeline'},
   {to: '/production', copy: 'nav_production'},
   {to: '/legal', copy: 'nav_legal_imprint'},

@@ -18,6 +18,7 @@ const STATIC_PATHS = [
   '/open-source',
   '/production',
   '/roadmap',
+  '/contributing',
   '/timeline',
   '/firmware-partners',
   '/collections/all',

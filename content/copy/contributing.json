@@ -1,0 +1,29 @@
+{
+  "$route": "/contributing",
+  "$title": "Contributing",
+  "meta_title": "Contributing · How to take a piece of OpenDrone",
+  "meta_description": "How to report a problem, change a board design, work on the firmware, and get credited for it. The practical half of the OpenDrone community project.",
+  "eyebrow": "Contributing",
+  "title": "Designed by whoever shows up.",
+  "lead": "OpenDrone hardware is developed in the open, and the design work is not reserved for us. This page is the practical half: how to report a problem, change a design, help the firmware, and get credited for it.",
+  "s1_title": "01 · Report what broke",
+  "s1_body": [
+    "Flew it, bench-tested it, or just read the schematic and found something off: open an issue on the board's repo. A photo, a log file, or a net name is enough. Confirmed design problems get fixed in the next revision and credited on the product page."
+  ],
+  "s2_title": "02 · Change the design",
+  "s2_body": [
+    "Hardware is not software: two people can edit the same code file, but a PCB layout cannot be merged. Communication on Discord is key for coordinating changes and not having to overwrite other people's files. Schematics are split across hierarchical sheets, so separate sheets can have separate owners.",
+    "Everyone else contributes through review, and review is where the real capacity is: CI renders the schematic, the board images, ERC and DRC output and a BOM diff on every pull request, so a design one person draws can be reviewed by anyone, without opening KiCad. Small, focused changes land fastest: one connector, one footprint, one silkscreen fix, agreed with the board's maintainer.",
+    "Merged design changes land your handle in the contributors chapter of the product page. Every product page names who developed the board, maintainer first, the way a record sleeve names the band. A handle and avatar are enough; nobody needs your real name."
+  ],
+  "s3_title": "03 · Improve the firmware",
+  "s3_body": [
+    "The boards run community firmware: Betaflight, AM32 and ExpressLRS. Work there helps every board, not just ours. Start with the [firmware partners](/firmware-partners) page if you want the details."
+  ],
+  "s4_title": "04 · The repos",
+  "s4_body": [
+    "Every product links its source where one is public. The hardware is KiCad, latest stable version, one repo per board, all under [github.com/OpenDrone-hw](https://github.com/OpenDrone-hw). Issues and pull requests are open on all of them."
+  ],
+  "cta_primary": "Join the Discord ↗",
+  "cta_secondary": "Watch the repos on GitHub ↗"
+}

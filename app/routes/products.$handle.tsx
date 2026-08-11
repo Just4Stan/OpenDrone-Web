@@ -24,7 +24,8 @@ import {ProductPrice} from '~/components/ProductPrice';
 import {ProductGallery} from '~/components/ProductGallery';
 import {ProductForm} from '~/components/ProductForm';
 import {RelatedProducts} from '~/components/RelatedProducts';
-import {FirmwareSplit} from '~/components/FirmwareSplit';
+import {FirmwareSupport} from '~/components/FirmwareSupport';
+import {CommitTimeline} from '~/components/CommitTimeline';
 import {VariantLadder} from '~/components/VariantLadder';
 import {BoardArt} from '~/components/BoardArt';
 import {SchematicViewer} from '~/components/SchematicViewer';
@@ -43,7 +44,7 @@ import {
   type ChapterType,
 } from '~/lib/chapters';
 import {buildSeoMeta, buildProductJsonLd, SITE_ORIGIN} from '~/lib/seo';
-import {fetchContributors, fetchLatestCommits} from '~/lib/github';
+import {fetchCommitDates, fetchContributors, fetchLatestCommits} from '~/lib/github';
 import {ContributorGrid, ContributorGridSkeleton} from '~/components/Contributors';
 import {
   fetchProductReviews,
@@ -188,6 +189,7 @@ function loadDeferredData({context, params}: Route.LoaderArgs) {
     return {
       recommendations: Promise.resolve(null),
       latestCommits: Promise.resolve([]),
+      commitDates: Promise.resolve([] as string[]),
       contributors: Promise.resolve([]),
       reviews: Promise.resolve(null),
     };
@@ -216,6 +218,12 @@ function loadDeferredData({context, params}: Route.LoaderArgs) {
   // hour; unset, both fetches degrade to their empty states.
   const ghToken = context.env.GITHUB_TOKEN;
   const latestCommits = fetchLatestCommits(repoUrls, ghToken).catch(() => []);
+
+  // Commit-activity texture for the contributors chapter, same repo set and
+  // the same best-effort rules: an empty array just means no backdrop.
+  const commitDates = fetchCommitDates(repoUrls, ghToken).catch(
+    () => [] as string[],
+  );
 
   // Contributor grid: every repo in the line (tier repos included) so the
   // section credits people whichever mount they worked on. Same
@@ -269,7 +277,7 @@ function loadDeferredData({context, params}: Route.LoaderArgs) {
   // metafield aggregate (or, with no aggregate, renders nothing at all).
   const reviews = fetchProductReviews(context.env, handle);
 
-  return {recommendations, latestCommits, contributors, reviews};
+  return {recommendations, latestCommits, commitDates, contributors, reviews};
 }
 
 const DOWNLOAD_ICONS: Record<DownloadKind, string> = {
@@ -574,6 +582,7 @@ export default function Product() {
     stackProducts,
     recommendations,
     latestCommits,
+    commitDates,
     contributors,
     reviews,
     reviewsEnabled: reviewsOn,
@@ -1402,7 +1411,7 @@ export default function Product() {
   ).split('{project}');
   const bundleChipParts = (
     copyText('product-chrome.trust_chip_firmware_bundle') ?? ''
-  ).split(/\{count\}|\{firmwares\}/);
+  ).split('{firmwares}');
   const isBundle = Boolean(content.bundle);
   const buyPrice = isBundle ? bundlePrice : selectedVariant?.price;
   const buyAvailable = isBundle
@@ -1578,11 +1587,10 @@ export default function Product() {
         return content.inTheBox.length > 0 || Boolean(content.bundle);
       case 'downloads':
         return content.downloads.length > 0;
-      // The "€1" firmware split is priceless copy without a price — skip it
-      // while the product is coming soon.
+      // The firmware credit needs no price, so it shows even while the
+      // product is coming soon.
       case 'firmware':
         return (
-          !soon &&
           !content.bundle &&
           Boolean(content.firmware.project) &&
           content.firmware.project !== '—'
@@ -2118,11 +2126,11 @@ export default function Product() {
           <DownloadsGrid downloads={content.downloads} />
         </Chapter>
     ),
-    /** Where the €1 of every order goes. */
+    /** The open firmware the board runs, and how to support its devs. */
     firmware: (n, title) => (
         <Chapter
           number={n}
-          label="The €1"
+          label="Firmware"
           title={title}
           titleId="product-chrome.ch_firmware_title"
           media={
@@ -2143,8 +2151,7 @@ export default function Product() {
             ) : undefined
           }
         >
-          <FirmwareSplit
-            price={selectedVariant?.price}
+          <FirmwareSupport
             firmwareProject={content.firmware.project}
             firmwareUrl={content.firmware.projectUrl}
           />
@@ -2164,6 +2171,14 @@ export default function Product() {
           titleId="product-chrome.ch_contributors_title"
           noMedia
         >
+          {/* Repo activity as engraving behind the text: one faint tick per
+              commit, streamed with the same best-effort GitHub budget as the
+              grid below. Null on failure, invisible on quiet repos. */}
+          <Suspense fallback={null}>
+            <Await resolve={commitDates} errorElement={null}>
+              {(dates) => <CommitTimeline dates={dates} />}
+            </Await>
+          </Suspense>
           {/* The intro has to stream with the grid, not ahead of it. GitHub's
               unauthenticated API allows 60 calls an hour per IP, so an empty
               list is routine, and "these are the accounts behind X" above a
@@ -2375,10 +2390,8 @@ export default function Product() {
                   className="trust-chip trust-chip-gold trust-chip-link"
                 >
                   {bundleChipParts[0]}
-                  {content.bundle.components.length}
-                  {bundleChipParts[1]}
                   {content.bundle.components.map((c) => c.firmware).join(' + ')}
-                  {bundleChipParts[2]}
+                  {bundleChipParts[1]}
                 </Link>
               </li>
             ) : content.firmware.project && content.firmware.project !== '—' ? (

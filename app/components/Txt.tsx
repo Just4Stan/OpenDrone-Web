@@ -85,21 +85,34 @@ export function Txt({
     return <>{fallback}</>;
   }
 
+  // Emptied in the studio means GONE, not an empty element. Stan's rule
+  // (2026-08-11): clearing a text box removes the thing it filled, and an
+  // empty <p>/<h2> still carries its margins, which is exactly the stray
+  // whitespace he flagged. Whitespace-only counts as emptied.
+  if (typeof value === 'string' && value.trim() === '') {
+    return <>{fallback}</>;
+  }
+
   // An array is a run of paragraphs. Each gets its own annotation, indexed, so
   // the studio can edit one paragraph without rewriting the whole block.
+  // Emptied entries are skipped the same way an emptied string is.
   if (Array.isArray(value)) {
     return (
       <>
-        {value.map((para, i) => (
-          <Tag
-            key={i}
-            className={className}
-            {...editAttrs(`${id}.${i}`)}
-            {...rest}
-          >
-            <Rich value={typeof para === 'string' ? para : String(para ?? '')} />
-          </Tag>
-        ))}
+        {value.map((para, i) => {
+          const text = typeof para === 'string' ? para : String(para ?? '');
+          if (text.trim() === '') return null;
+          return (
+            <Tag
+              key={i}
+              className={className}
+              {...editAttrs(`${id}.${i}`)}
+              {...rest}
+            >
+              <Rich value={text} />
+            </Tag>
+          );
+        })}
       </>
     );
   }

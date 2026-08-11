@@ -155,6 +155,8 @@ export async function fetchStatusFlags(
             // GITHUB_STATUS_TOKEN (read-only, public repos) in Oxygen.
             ...(token ? {Authorization: `Bearer ${token}`} : {}),
           },
+          // A wedged GitHub connection must never wedge the page.
+          signal: AbortSignal.timeout(3500),
         });
         if (!res.ok) return;
         const data = (await res.json()) as {names?: string[]};
@@ -171,6 +173,28 @@ export async function fetchStatusFlags(
   );
   topicCache = {at: Date.now(), map};
   return map;
+}
+
+/**
+ * The page-speed variant: never blocks a loader for more than `ms`.
+ *
+ * Cache warm (the normal case) resolves instantly. Cache cold, the caller
+ * gets the static statuses after the deadline while the fetch keeps running
+ * and fills the cache for the next request. A roadmap that is milliseconds
+ * fresh beats one that is seconds slow: the statuses move on the scale of
+ * weeks.
+ */
+export async function fetchStatusFlagsFast(
+  token?: string,
+  ms = 600,
+): Promise<Record<string, ProductStatus>> {
+  const fetchPromise = fetchStatusFlags(token).catch(
+    () => ({}) as Record<string, ProductStatus>,
+  );
+  const deadline = new Promise<Record<string, ProductStatus>>((resolve) =>
+    setTimeout(() => resolve({}), ms),
+  );
+  return Promise.race([fetchPromise, deadline]);
 }
 
 /** ROADMAP with the live topic statuses applied over the static fallbacks. */

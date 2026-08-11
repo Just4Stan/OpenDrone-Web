@@ -7,7 +7,7 @@ import {copyText} from '~/lib/copy';
 import {DISCORD_INVITE_URL} from '~/lib/company';
 import {
   STATUS_ORDER,
-  fetchStatusFlags,
+  fetchStatusFlagsFast,
   resolveRoadmap,
   voteCandidates,
   type RoadmapItem,
@@ -37,9 +37,11 @@ export const meta: Route.MetaFunction = () =>
 
 // The status-* topic fetch (canonical status carrier) lives in
 // app/lib/roadmap-data.ts now, shared with the ballot's candidate route.
+// The fast variant caps the wait: static statuses stand in while a cold
+// cache warms, instead of the whole page hanging on GitHub.
 export async function loader({context}: Route.LoaderArgs) {
   const env = context.env as unknown as Record<string, string | undefined>;
-  const flags = await fetchStatusFlags(env.GITHUB_STATUS_TOKEN);
+  const flags = await fetchStatusFlagsFast(env.GITHUB_STATUS_TOKEN);
   return {roadmap: resolveRoadmap(flags)};
 }
 
@@ -271,26 +273,8 @@ export default function RoadmapRoute({loaderData}: Route.ComponentProps) {
 
       <GoalsSection />
 
-      <section className="editorial-section">
-        <Txt id="roadmap.s4_title" as="h2" className="editorial-section-title" />
-        <Txt id="roadmap.s4_body" as="p" />
-      </section>
-
-      <section className="editorial-section">
-        <Txt id="roadmap.s5_title" as="h2" className="editorial-section-title" />
-        <Txt id="roadmap.s5_body" as="p" />
-      </section>
-
-      <section className="editorial-section">
-        <Txt id="roadmap.s6_title" as="h2" className="editorial-section-title" />
-        <Txt id="roadmap.s6_body" as="p" />
-      </section>
-
-      <section className="editorial-section">
-        <Txt id="roadmap.s7_title" as="h2" className="editorial-section-title" />
-        <Txt id="roadmap.s7_body" as="p" />
-      </section>
-
+      {/* The how-to-contribute sections moved to /contributing (2026-08-11);
+          the roadmap is the status board, votes and goals. */}
       <section className="editorial-cta">
         <a
           href={DISCORD_INVITE_URL}

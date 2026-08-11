@@ -175,7 +175,7 @@ ${catalog}
 Everything is buildable from source (CERN-OHL-S v2). Per-product repos are
 listed in the catalog above; the full set lives at
 https://github.com/OpenDrone-hw. Boards are OSHWA self-certified (BE000026–BE000033).
-€1 of every board sale is forwarded to the upstream firmware project.
+Every product page links the firmware project its board runs and that project's donation page.
 
 ## Product status
 
@@ -191,7 +191,8 @@ infer status from prose anywhere else.
 
 - [Open source model and Incutec BV, the company behind the shop](${origin}/open-source)
 - [Firmware partners](${origin}/firmware-partners)
-- [Product roadmap and how to contribute](${origin}/roadmap)
+- [Product roadmap, community vote and financial goals](${origin}/roadmap)
+- [How to contribute](${origin}/contributing)
 - [Release timeline, everything that has shipped](${origin}/timeline)
 - [Where the boards are made](${origin}/production)
 - [All products](${origin}/collections/all)

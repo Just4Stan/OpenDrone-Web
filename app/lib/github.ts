@@ -99,6 +99,49 @@ export async function fetchLatestCommits(
   return results.filter((c): c is LatestCommit => c !== null);
 }
 
+/**
+ * The dates of a repo's last ~100 commits, oldest first. Feeds the commit
+ * timeline drawn behind the PDP contributors chapter: activity as a
+ * background texture, synced from the repo with no hand upkeep. Dates only,
+ * on purpose: messages and authors would make it a feed, not a texture.
+ */
+export async function fetchCommitDates(
+  repoUrls: string[],
+  token?: string,
+): Promise<string[]> {
+  const unique = Array.from(new Set(repoUrls));
+  const all = await Promise.all(
+    unique.map(async (repoUrl) => {
+      const parsed = parseRepoUrl(repoUrl);
+      if (!parsed) return [] as string[];
+      try {
+        const url = `https://api.github.com/repos/${parsed.owner}/${parsed.repo}/commits?per_page=100`;
+        const res = await fetch(url, {
+          headers: ghHeaders(token),
+          signal: AbortSignal.timeout(4000),
+          // Edge-cache an hour: commit texture does not need to be fresher.
+          ...({cf: {cacheTtl: 3600, cacheEverything: true}} as RequestInit),
+        });
+        if (!res.ok) {
+          console.warn('[github] commits', parsed.repo, res.status);
+          return [] as string[];
+        }
+        const data = (await res.json()) as Array<{
+          commit?: {author?: {date?: string}};
+        }>;
+        if (!Array.isArray(data)) return [] as string[];
+        return data
+          .map((c) => c.commit?.author?.date)
+          .filter((d): d is string => Boolean(d));
+      } catch (err) {
+        console.warn('[github] commits fetch failed', repoUrl, err);
+        return [] as string[];
+      }
+    }),
+  );
+  return all.flat().sort();
+}
+
 export type Contributor = {
   login: string;
   avatarUrl: string;

@@ -216,7 +216,7 @@ export type ProductContent = {
   firmware: {
     project: string;            // "AM32" / "Betaflight" / "ExpressLRS" / null
     projectUrl?: string;
-    /** Optional project wordmark shown in the "The €1" chapter media slot
+    /** Optional project wordmark shown in the firmware chapter media slot
      *  (public path, e.g. `/logos/betaflight.svg`). Falls back to the
      *  geometric placeholder glyph when unset. */
     logo?: string;

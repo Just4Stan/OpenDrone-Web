@@ -7304,6 +7304,25 @@ button.reset {
   margin-top: var(--sp-5);
 }
 
+.provenance-links {
+  margin: 0.75rem 0 0;
+  display: flex;
+  gap: 1.4rem;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.provenance-links a {
+  color: var(--color-text-muted);
+  text-decoration: none;
+}
+
+.provenance-links a:hover {
+  color: var(--color-gold);
+}
+
 .provenance-label {
   display: inline-block;
   margin: 0 0 var(--sp-3);
@@ -7658,11 +7677,9 @@ button.reset {
   text-align: right;
 }
 
-/* Firmware contribution split — 2-column grid so the big €N + €1 sits
-   left and the tagline + funded-project link fill the right side.
-   Avoids the empty right-half the old vertical layout created. */
-.firmware-split {
-  position: relative;
+/* Firmware credit — the project the board runs, with direct-donation links.
+   Replaced the price-split block when the per-board fee was cancelled. */
+.firmware-support {
   border: 1px solid var(--color-border);
   border-radius: var(--r-md);
   padding: 1.25rem 1.4rem;
@@ -7672,84 +7689,85 @@ button.reset {
       color-mix(in srgb, var(--color-accent) 10%, var(--color-bg-card)),
       var(--color-bg-card) 75%
     );
-  display: grid;
-  grid-template-columns: auto 1fr;
-  column-gap: 2.25rem;
-  row-gap: 0.5rem;
-  align-items: center;
 }
 
-.firmware-split-amounts {
-  grid-row: 1 / span 2;
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  font-family: var(--font-display);
-  font-weight: 700;
-  font-size: clamp(2rem, 5vw, 3rem);
-  letter-spacing: -0.01em;
-  line-height: 1;
+.firmware-support .chapter-body {
+  margin: 0 0 0.9rem;
+  max-width: 52ch;
+}
+
+.firmware-support-links {
   margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.4rem;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
 }
 
-@media (max-width: 640px) {
-  .firmware-split {
-    grid-template-columns: 1fr;
-  }
-  .firmware-split-amounts {
-    grid-row: auto;
-    margin-bottom: 0.5rem;
-  }
+.firmware-support-links a {
+  color: var(--color-text-muted);
+  text-decoration: none;
 }
 
-.firmware-split-board {
+.firmware-support-links a:hover {
   color: var(--color-gold);
 }
 
-.firmware-split-plus {
-  color: var(--color-text-muted);
-  font-weight: 500;
-}
-
-.firmware-split-contrib {
-  color: var(--color-accent-light);
-}
-
-.firmware-split-eq {
-  color: var(--color-text-muted);
-  font-weight: 500;
-}
-
-.firmware-split-total {
-  color: var(--color-text);
-}
-
-.firmware-split-tagline {
-  font-family: var(--font-display);
-  font-weight: 500;
-  font-size: var(--fs-lg);
-  line-height: 1.35;
-  letter-spacing: -0.01em;
-  color: var(--color-text);
-  margin: var(--sp-2) 0 0;
-  max-width: 38ch;
-}
-
-.firmware-split-tagline strong {
-  color: var(--color-text);
-  font-weight: 600;
-}
-
-.firmware-split-tagline a {
+.firmware-support-links a.firmware-support-donate {
   color: var(--color-gold);
-  text-decoration: underline;
-  text-decoration-color: color-mix(in srgb, var(--color-gold) 35%, transparent);
-  text-underline-offset: 3px;
-  transition: text-decoration-color 0.15s ease;
 }
 
-.firmware-split-tagline a:hover {
-  text-decoration-color: var(--color-gold);
+.firmware-support-nodonate {
+  color: color-mix(in srgb, var(--color-text-muted) 75%, transparent);
+  text-transform: none;
+  letter-spacing: 0.04em;
+}
+
+/* Commit timeline: repo activity engraved behind the contributors chapter.
+   The chapter's content-visibility containment makes .chapter the containing
+   block AND a stacking context, so z-index -1 tucks this under the in-flow
+   text while keeping it inside the section. */
+.commit-timeline {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.commit-timeline-axis {
+  position: absolute;
+  left: 2%;
+  right: 2%;
+  top: 62%;
+  height: 1px;
+  background: color-mix(in srgb, var(--color-border) 60%, transparent);
+}
+
+.commit-timeline-tick {
+  position: absolute;
+  bottom: 38%;
+  width: 1px;
+  background: color-mix(in srgb, var(--color-gold) 22%, transparent);
+}
+
+.commit-timeline-date {
+  position: absolute;
+  top: calc(62% + 0.6rem);
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.14em;
+  color: color-mix(in srgb, var(--color-text-muted) 45%, transparent);
+}
+
+@media (max-width: 879px) {
+  /* On phones the text fills the section; texture under it is just noise. */
+  .commit-timeline {
+    display: none;
+  }
 }
 
 /* Category chips */
@@ -9873,8 +9891,9 @@ button.reset {
 }
 
 .editorial-hero {
-  /* The title earns its presence from the air around it, not its size. */
-  margin-bottom: 4.5rem;
+  /* Air around the title, but not so much the page reads as gaps
+     (tightened 2026-08-11 on Stan's call). */
+  margin-bottom: 3rem;
 }
 
 .editorial-eyebrow {
@@ -9915,7 +9934,7 @@ button.reset {
    the contrast is what reads as spacious. 4rem: our sections are short,
    the 6rem of the reference sites left them floating. */
 .editorial-section {
-  margin-top: 4rem;
+  margin-top: 3rem;
   font-family: var(--font-sans);
   font-size: 1rem;
   line-height: 1.6;
@@ -10084,8 +10103,11 @@ button.reset {
     align-items: start;
   }
 
+  /* Same tracks as the aside layout, with the aside track left empty:
+     the shell must not re-center when a page has no aside, or the rail and
+     the prose visibly jump sideways on every page switch. */
   .editorial-shell.is-narrow {
-    grid-template-columns: minmax(0, 640px);
+    grid-template-columns: minmax(0, 640px) minmax(0, 19rem);
   }
 
   .editorial-aside {
@@ -10109,7 +10131,7 @@ button.reset {
   }
 
   .editorial-shell.is-narrow {
-    grid-template-columns: 13rem minmax(0, 640px);
+    grid-template-columns: 13rem minmax(0, 640px) minmax(0, 19rem);
   }
 
   .series-rail {
@@ -10228,30 +10250,17 @@ button.reset {
   font-family: var(--font-mono);
 }
 
-/* Drawn as a graphic, not a list: hairline spine, well-separated nodes
-   (gap ~4x the title size so the line reads as a drawn element), the next
-   rung marked by fill + ring, brightness stepping down toward the far
-   rungs, and the line fading out past the last node into the future. */
+/* Drawn as a graphic, not a list. Each rung owns the connector BELOW its
+   node, so the segment climbing into the speculative goal can be dotted
+   while the one to the funded goal stays solid. Node meaning: filled gold =
+   where we are now; hollow gold = the goal being saved for; dashed hollow =
+   the goal after that, openly speculative; filled muted = done. No dates
+   anywhere: the goals file carries no promises, so neither can this. */
 .ladder-rungs {
   list-style: none;
   margin: 0;
-  padding: 0 0 2.5rem 1.6rem;
+  padding: 0 0 0.5rem 1.6rem;
   position: relative;
-}
-
-.ladder-rungs::before {
-  content: '';
-  position: absolute;
-  left: 4px;
-  top: 0.45rem;
-  bottom: 0;
-  width: 1px;
-  background: linear-gradient(
-    to bottom,
-    color-mix(in srgb, var(--color-border) 90%, transparent)
-      calc(100% - 3rem),
-    transparent
-  );
 }
 
 .ladder-rung {
@@ -10263,6 +10272,24 @@ button.reset {
 
 .ladder-rung:last-child {
   padding-bottom: 0;
+}
+
+/* The connector from this node down to the next. */
+.ladder-rung[data-seg]::after {
+  content: '';
+  position: absolute;
+  left: calc(-1.6rem + 3px);
+  top: 1rem;
+  bottom: 0.15rem;
+  width: 0;
+}
+
+.ladder-rung[data-seg='solid']::after {
+  border-left: 1px solid color-mix(in srgb, var(--color-border) 90%, transparent);
+}
+
+.ladder-rung[data-seg='dashed']::after {
+  border-left: 1px dashed color-mix(in srgb, var(--color-text-muted) 45%, transparent);
 }
 
 /* Hollow node punched through the hairline: page-background fill so the
@@ -10279,15 +10306,34 @@ button.reset {
   border: 1px solid color-mix(in srgb, var(--color-text-muted) 55%, transparent);
 }
 
-/* The next rung up: filled, with a static glow ring. The one place the
-   accent appears inside the graphic. */
-.ladder-rung:first-child::before {
+/* Where we are: filled, with a static glow ring. */
+.ladder-rung[data-kind='now']::before {
   left: calc(-1.6rem - 1px);
   width: 9px;
   height: 9px;
   background: var(--color-gold);
   border-color: var(--color-gold);
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-gold) 25%, transparent);
+}
+
+/* The goal being saved for: hollow, gold rim — a target, not an arrival. */
+.ladder-rung[data-kind='current']::before {
+  border-color: var(--color-gold);
+}
+
+/* The speculative one: dashed rim, dimmed text. */
+.ladder-rung[data-kind='next']::before {
+  border-style: dashed;
+}
+
+.ladder-rung[data-kind='next'] {
+  opacity: 0.6;
+}
+
+/* Done goals: filled muted, a record rather than a promise. */
+.ladder-rung[data-kind='done']::before {
+  background: color-mix(in srgb, var(--color-text-muted) 55%, transparent);
+  border-color: color-mix(in srgb, var(--color-text-muted) 55%, transparent);
 }
 
 .ladder-when {
@@ -10297,6 +10343,10 @@ button.reset {
   color: color-mix(in srgb, var(--color-text-muted) 80%, transparent);
 }
 
+.ladder-when:empty {
+  display: none;
+}
+
 .ladder-title {
   font-size: 13px;
   letter-spacing: 0.14em;
@@ -10304,7 +10354,8 @@ button.reset {
   color: var(--color-text-muted);
 }
 
-.ladder-rung:first-child .ladder-title {
+.ladder-rung[data-kind='now'] .ladder-title,
+.ladder-rung[data-kind='current'] .ladder-title {
   color: var(--color-text);
 }
 
@@ -10465,8 +10516,11 @@ button.reset {
     align-items: start;
   }
 
+  /* Same tracks as the aside layout, with the aside track left empty:
+     the shell must not re-center when a page has no aside, or the rail and
+     the prose visibly jump sideways on every page switch. */
   .editorial-shell.is-narrow {
-    grid-template-columns: minmax(0, 640px);
+    grid-template-columns: minmax(0, 640px) minmax(0, 19rem);
   }
 
   .editorial-aside {
@@ -10490,7 +10544,7 @@ button.reset {
   }
 
   .editorial-shell.is-narrow {
-    grid-template-columns: 13rem minmax(0, 640px);
+    grid-template-columns: 13rem minmax(0, 640px) minmax(0, 19rem);
   }
 
   .series-rail {
