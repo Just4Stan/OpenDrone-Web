@@ -1,6 +1,6 @@
 import {useCallback, useEffect, useRef, useState} from 'react';
 import {ROADMAP} from '~/lib/roadmap-data';
-import type {Goal, GoalStatus} from '~/lib/goals';
+import type {Goal, GoalMode, GoalStatus} from '~/lib/goals';
 
 /**
  * The Goals tab: `content/goals.json` and `content/votes.json`, edited whole.
@@ -44,6 +44,10 @@ const BLANK_GOAL: Goal = {
   body: '',
   target_label: '',
   progress_pct: 0,
+  mode: 'manual',
+  target_eur: null,
+  allocation_pct: 100,
+  since: '',
 };
 
 /** `A pick and place machine` -> `a-pick-and-place-machine`. */
@@ -297,7 +301,71 @@ export function StudioGoals({setStatus}: {setStatus: (s: string) => void}) {
               </select>
             </label>
             <label className="studio-goal-field">
-              Progress: {goal.progress_pct}% (approximate, by hand)
+              Meter mode
+              <select
+                value={goal.mode ?? 'manual'}
+                onChange={(e) =>
+                  patchGoal(selected as number, {
+                    mode: e.target.value as GoalMode,
+                  })
+                }
+              >
+                <option value="manual">manual: the slider below</option>
+                <option value="auto">auto: weekly, from order totals</option>
+              </select>
+            </label>
+            {goal.mode === 'auto' ? (
+              <>
+                <label className="studio-goal-field">
+                  Real target in EUR (input only, never shown)
+                  <input
+                    type="number"
+                    min={1}
+                    value={goal.target_eur ?? ''}
+                    onChange={(e) =>
+                      patchGoal(selected as number, {
+                        target_eur: Number(e.target.value) || null,
+                      })
+                    }
+                  />
+                </label>
+                <label className="studio-goal-field">
+                  Share of gross order value that counts (%)
+                  <input
+                    type="number"
+                    min={0}
+                    max={100}
+                    value={goal.allocation_pct ?? 100}
+                    onChange={(e) =>
+                      patchGoal(selected as number, {
+                        allocation_pct: Math.min(
+                          100,
+                          Math.max(0, Number(e.target.value) || 0),
+                        ),
+                      })
+                    }
+                  />
+                </label>
+                <label className="studio-goal-field">
+                  Counting orders since (YYYY-MM-DD)
+                  <input
+                    value={goal.since ?? ''}
+                    onChange={(e) =>
+                      patchGoal(selected as number, {since: e.target.value})
+                    }
+                  />
+                </label>
+                <p className="studio-hint">
+                  Meter: {goal.progress_pct}%. Auto goals are moved by the
+                  weekly community-sync run (or `npm run goals:update`),
+                  floored to 5% steps. Saving here can still correct the
+                  value below.
+                </p>
+              </>
+            ) : null}
+            <label className="studio-goal-field">
+              Progress: {goal.progress_pct}%
+              {goal.mode === 'auto' ? ' (auto, correct only if wrong)' : ' (approximate, by hand)'}
               <input
                 type="range"
                 min={0}

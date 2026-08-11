@@ -10995,7 +10995,7 @@ button.reset {
 
 .vote-row {
   display: grid;
-  grid-template-columns: minmax(9rem, 14rem) 1fr 3ch;
+  grid-template-columns: minmax(9rem, 14rem) 1fr minmax(6ch, auto);
   align-items: center;
   gap: 0.9rem;
 }
@@ -11005,6 +11005,11 @@ button.reset {
   font-size: 12px;
   letter-spacing: 0.06em;
   color: var(--color-text);
+  overflow: hidden;
+}
+
+.vote-name > span:first-child {
+  display: block;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -11032,6 +11037,42 @@ button.reset {
   color: var(--color-text-muted);
   text-align: right;
   font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.vote-added,
+.vote-count {
+  display: block;
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  color: color-mix(in srgb, var(--color-text-muted) 65%, transparent);
+}
+
+.vote-graduated {
+  margin-top: 1.1rem;
+  padding: 0.85rem 0.95rem;
+  border: 1px solid color-mix(in srgb, var(--color-border) 70%, transparent);
+  border-radius: var(--r-xs);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  color: var(--color-text-muted);
+}
+
+.vote-graduated p {
+  margin: 0 0 0.4rem;
+  color: var(--color-gold);
+  text-transform: uppercase;
+  font-size: 10px;
+  letter-spacing: 0.14em;
+}
+
+.vote-graduated ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.3rem;
 }
 
 .vote-foot,

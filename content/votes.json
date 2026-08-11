@@ -2,5 +2,6 @@
   "$comment": "Community vote tally. Written by scripts/tally-votes.mjs from order attributes; reviewable and correctable in the studio's Goals tab. Read by app/lib/votes.ts.",
   "updated": "",
   "ballots": 0,
-  "points": {}
+  "points": {},
+  "mentions": {}
 }

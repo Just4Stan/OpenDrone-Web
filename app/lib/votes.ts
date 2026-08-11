@@ -64,13 +64,15 @@ export function ballotPoints(rank: number): number {
 export type VoteTally = {
   /** ISO date of the last tally run, or "" before the first one. */
   updated: string;
-  /** Ballots counted. Drives whether an absolute count is shown at all. */
+  /** Ballots counted. */
   ballots: number;
-  /** Weighted points per roadmap id. */
+  /** Weighted points per roadmap id (3/2/1 by rank). */
   points: Record<string, number>;
+  /** Ballots that ranked each id anywhere: the human-readable count. */
+  mentions: Record<string, number>;
 };
 
-const EMPTY: VoteTally = {updated: '', ballots: 0, points: {}};
+const EMPTY: VoteTally = {updated: '', ballots: 0, points: {}, mentions: {}};
 
 // Same guarded-glob pattern as app/lib/copy.ts: bundled for the worker,
 // HMR-tracked for the studio, absent under node:test.
@@ -86,6 +88,7 @@ export function voteTally(): VoteTally {
     updated: typeof t.updated === 'string' ? t.updated : '',
     ballots: Number.isFinite(t.ballots) ? Math.max(0, Math.floor(t.ballots)) : 0,
     points: t.points && typeof t.points === 'object' ? t.points : {},
+    mentions: t.mentions && typeof t.mentions === 'object' ? t.mentions : {},
   };
 }
 
@@ -105,6 +108,3 @@ export function voteShares(
   }
   return out;
 }
-
-/** Absolute ballot counts read as sad below this; show shares only. */
-export const VOTE_COUNT_VISIBLE_FROM = 25;

@@ -129,6 +129,7 @@ let cursor = null;
 let ballots = 0;
 let orders = 0;
 const points = {};
+const mentions = {};
 
 for (;;) {
   const data = await adminGraphql(ORDERS_QUERY, {cursor});
@@ -143,6 +144,7 @@ for (;;) {
     ballots += 1;
     rank.forEach((id, i) => {
       points[id] = (points[id] ?? 0) + WEIGHTS[i];
+      mentions[id] = (mentions[id] ?? 0) + 1;
     });
   }
   if (!page.pageInfo.hasNextPage) break;
@@ -156,6 +158,9 @@ const tally = {
   ballots,
   points: Object.fromEntries(
     Object.entries(points).sort(([, a], [, b]) => b - a),
+  ),
+  mentions: Object.fromEntries(
+    Object.entries(mentions).sort(([, a], [, b]) => b - a),
   ),
 };
 

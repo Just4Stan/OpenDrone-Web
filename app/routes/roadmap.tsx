@@ -6,17 +6,14 @@ import {Txt} from '~/components/Txt';
 import {copyText} from '~/lib/copy';
 import {DISCORD_INVITE_URL} from '~/lib/company';
 import {
-  ROADMAP,
   STATUS_ORDER,
+  fetchStatusFlags,
+  resolveRoadmap,
   voteCandidates,
-  type ProductStatus,
+  type RoadmapItem,
 } from '~/lib/roadmap-data';
 import {goals} from '~/lib/goals';
-import {
-  VOTE_COUNT_VISIBLE_FROM,
-  voteShares,
-  voteTally,
-} from '~/lib/votes';
+import {voteShares, voteTally} from '~/lib/votes';
 
 /**
  * Words live in `content/copy/roadmap.json`; this file holds the machinery.
@@ -38,60 +35,12 @@ export const meta: Route.MetaFunction = () =>
     description: copyText('roadmap.meta_description') ?? '',
   });
 
-/**
- * The status-* topic on each public GitHub repo is the canonical status
- * (see hardware/README.md in the working container). This loader pulls
- * the topics at request time so the page mirrors the repos; the static
- * status in ROADMAP is the fallback for products without a public repo
- * and for API failures. In-memory cache, 1 hour per worker isolate,
- * which also keeps unauthenticated API usage far under the rate limit.
- */
-let topicCache: {at: number; map: Record<string, ProductStatus>} | null = null;
-
-async function fetchStatusFlags(
-  token?: string,
-): Promise<Record<string, ProductStatus>> {
-  if (topicCache && Date.now() - topicCache.at < 3_600_000) {
-    return topicCache.map;
-  }
-  const map: Record<string, ProductStatus> = {};
-  await Promise.all(
-    ROADMAP.filter((r) => r.link).map(async (r) => {
-      try {
-        const name = (r.link as string).replace('https://github.com/', '');
-        const res = await fetch(`https://api.github.com/repos/${name}/topics`, {
-          headers: {
-            'User-Agent': 'opendrone-store-roadmap',
-            Accept: 'application/vnd.github+json',
-            // 60 req/h unauthenticated vs 5000 with a token; set
-            // GITHUB_STATUS_TOKEN (read-only, public repos) in Oxygen.
-            ...(token ? {Authorization: `Bearer ${token}`} : {}),
-          },
-        });
-        if (!res.ok) return;
-        const data = (await res.json()) as {names?: string[]};
-        const flag = data.names
-          ?.find((t) => t.startsWith('status-'))
-          ?.slice('status-'.length);
-        if (flag && (STATUS_ORDER as string[]).includes(flag)) {
-          map[r.link as string] = flag as ProductStatus;
-        }
-      } catch {
-        // Unreachable API: the static status stands in.
-      }
-    }),
-  );
-  topicCache = {at: Date.now(), map};
-  return map;
-}
-
+// The status-* topic fetch (canonical status carrier) lives in
+// app/lib/roadmap-data.ts now, shared with the ballot's candidate route.
 export async function loader({context}: Route.LoaderArgs) {
   const env = context.env as unknown as Record<string, string | undefined>;
   const flags = await fetchStatusFlags(env.GITHUB_STATUS_TOKEN);
-  const roadmap = ROADMAP.map((r) =>
-    r.link && flags[r.link] ? {...r, status: flags[r.link]} : r,
-  );
-  return {roadmap};
+  return {roadmap: resolveRoadmap(flags)};
 }
 
 // ROADMAP, STATUS_ORDER and the vote-candidate rule live in
@@ -100,21 +49,30 @@ export async function loader({context}: Route.LoaderArgs) {
 
 /**
  * The community vote, read from `content/votes.json` (written by the tally
- * script, reviewable in the studio's Goals tab). Shares are shown as
- * percentages of weighted points; the absolute ballot count only appears
- * once it stops being a small number, so week one does not read as an empty
- * room. Candidates and their order come from the same roadmap structure the
- * kanban renders.
+ * script, reviewable in the studio's Goals tab).
+ *
+ * Takes the LIVE roadmap from the loader, so the section keeps itself
+ * current: an entry graduating out of `planned`/`in-progress` leaves the
+ * standings on its own and moves to the "already moving" receipt below if it
+ * had votes, and a newly listed entry appears with its listed-since date so a
+ * low count reads as "new", not "unpopular". Each row shows how many ballots
+ * ranked it, as the reference figure next to the share bar.
  */
-function VotesSection() {
+function VotesSection({roadmap}: {roadmap: RoadmapItem[]}) {
   const tally = voteTally();
-  const candidates = voteCandidates();
+  const candidates = voteCandidates(roadmap);
   const shares = voteShares(
     tally,
     candidates.map((c) => c.id),
   );
   const rows = [...candidates].sort(
     (a, b) => (tally.points[b.id] ?? 0) - (tally.points[a.id] ?? 0),
+  );
+  // Voted-for entries that have since left the candidate set: the receipt
+  // that voting moves things. Their points stay in the tally on purpose.
+  const graduated = roadmap.filter(
+    (r) =>
+      !candidates.some((c) => c.id === r.id) && (tally.mentions[r.id] ?? 0) > 0,
   );
   const hasVotes = tally.ballots > 0;
 
@@ -126,29 +84,51 @@ function VotesSection() {
         <div className="vote-board">
           {rows.map((c) => (
             <div className="vote-row" key={c.id}>
-              <Txt
-                id={`roadmap.item_${c.id}_name`}
-                as="span"
-                className="vote-name"
-              />
+              <span className="vote-name">
+                <Txt id={`roadmap.item_${c.id}_name`} />
+                {c.added ? (
+                  <span className="vote-added">
+                    <Txt id="roadmap.votes_added_prefix" /> {c.added}
+                  </span>
+                ) : null}
+              </span>
               <span className="vote-bar" aria-hidden="true">
                 <span
                   className="vote-bar-fill"
                   style={{width: `${shares[c.id]}%`}}
                 />
               </span>
-              <span className="vote-share">{shares[c.id]}%</span>
+              <span className="vote-share">
+                {shares[c.id]}%
+                <span className="vote-count">
+                  {tally.mentions[c.id] ?? 0}{' '}
+                  <Txt id="roadmap.votes_count_label" />
+                </span>
+              </span>
             </div>
           ))}
           <p className="vote-foot">
-            {tally.ballots >= VOTE_COUNT_VISIBLE_FROM ? (
-              <>
-                {tally.ballots} <Txt id="roadmap.votes_ballots_label" />
-                {' · '}
-              </>
-            ) : null}
+            {tally.ballots} <Txt id="roadmap.votes_ballots_label" />
+            {' · '}
             <Txt id="roadmap.votes_method" />
           </p>
+          {graduated.length ? (
+            <div className="vote-graduated">
+              <Txt id="roadmap.votes_graduated_title" as="p" />
+              <ul>
+                {graduated.map((r) => (
+                  <li key={r.id}>
+                    <Txt id={`roadmap.item_${r.id}_name`} />
+                    {' · '}
+                    <Txt id={`roadmap.status_${r.status}_label`} />
+                    {' · '}
+                    {tally.mentions[r.id]}{' '}
+                    <Txt id="roadmap.votes_count_label" />
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
         </div>
       ) : (
         <Txt id="roadmap.votes_empty" as="p" className="vote-empty" />
@@ -287,7 +267,7 @@ export default function RoadmapRoute({loaderData}: Route.ComponentProps) {
         </dl>
       </section>
 
-      <VotesSection />
+      <VotesSection roadmap={loaderData.roadmap} />
 
       <GoalsSection />
 

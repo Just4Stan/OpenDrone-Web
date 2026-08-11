@@ -12,7 +12,7 @@ import {
   findLockedMerchandise,
 } from '~/lib/coming-soon';
 import {VOTE_ATTR_KEY, parseVoteRank, serializeVoteRank} from '~/lib/votes';
-import {voteCandidateIds} from '~/lib/roadmap-data';
+import {votableIds} from '~/lib/roadmap-data';
 
 export const meta: Route.MetaFunction = () =>
   buildSeoMeta({
@@ -174,15 +174,15 @@ export async function action({request, context}: Route.ActionArgs) {
         }))
         // The vote is re-encoded through the codec, not just length-capped:
         // only known roadmap ids in a known format reach the order records
-        // the tally script will trust. An empty re-encode (all ids bogus)
+        // the tally script will trust. Validated against ALL roadmap ids,
+        // not just today's candidates, so a ballot cast minutes before its
+        // project graduates still counts. An empty re-encode (all ids bogus)
         // falls through to the length filter below, clearing the vote.
         .map((a) =>
           a.key === VOTE_ATTR_KEY
             ? {
                 key: a.key,
-                value: serializeVoteRank(
-                  parseVoteRank(a.value, voteCandidateIds()),
-                ),
+                value: serializeVoteRank(parseVoteRank(a.value, votableIds())),
               }
             : a,
         )

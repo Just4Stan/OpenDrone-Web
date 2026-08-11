@@ -1,4 +1,4 @@
-import {useMemo} from 'react';
+import {useEffect, useMemo, useState} from 'react';
 import {CartForm, type OptimisticCart} from '@shopify/hydrogen';
 import {Link, useFetcher} from 'react-router';
 import type {CartApiQueryFragment} from 'storefrontapi.generated';
@@ -6,6 +6,8 @@ import type {CartLayout} from '~/components/CartMain';
 import {Txt} from '~/components/Txt';
 import {copyText} from '~/lib/copy';
 import {voteCandidates} from '~/lib/roadmap-data';
+
+type Candidate = {id: string; added?: string | null};
 import {
   VOTE_ATTR_KEY,
   VOTE_MAX_CHOICES,
@@ -35,7 +37,30 @@ export function CartBallot({
   layout: CartLayout;
 }) {
   const fetcher = useFetcher();
-  const candidates = useMemo(() => voteCandidates(), []);
+  // Server render uses the static statuses; the client then refines the list
+  // from /api/vote-candidates, which applies the live GitHub status topics.
+  // That keeps the ballot current when a project graduates or a new planned
+  // repo appears, without every page paying for the topics fetch.
+  const [candidates, setCandidates] = useState<Candidate[]>(() =>
+    voteCandidates().map((r) => ({id: r.id, added: r.added})),
+  );
+  useEffect(() => {
+    let alive = true;
+    fetch('/api/vote-candidates')
+      .then((r) => (r.ok ? (r.json() as Promise<unknown>) : null))
+      .then((data) => {
+        const list = (data as {candidates?: Candidate[]} | null)?.candidates;
+        if (alive && Array.isArray(list) && list.length) {
+          setCandidates(list);
+        }
+      })
+      .catch(() => {
+        // Static list stands in.
+      });
+    return () => {
+      alive = false;
+    };
+  }, []);
   const candidateIds = useMemo(() => candidates.map((c) => c.id), [candidates]);
 
   const attributes = useMemo(

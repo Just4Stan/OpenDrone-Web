@@ -9,8 +9,9 @@
  * (see the status-system note in CLAUDE.md).
  *
  * DATA RULE, unchanged from the route: every entry must be verifiable in
- * public, or be an explicit statement of intent (planned). Nothing gets a
- * date. The entry's name and its one-line note are copy in
+ * public, or be an explicit statement of intent (planned). No entry gets a
+ * promised date; `added` records the past (when it was listed), never a plan.
+ * The entry's name and its one-line note are copy in
  * `content/copy/roadmap.json`, keyed off `id`; everything here is structure.
  *
  * The status listed here is the static fallback. At request time the roadmap
@@ -33,6 +34,12 @@ export type RoadmapItem = {
   productPath?: string;
   /** Public design source. Omit when nothing public exists. */
   link?: string;
+  /**
+   * ISO date the entry joined this list. Shown on the vote standings so a
+   * newcomer's low count reads as "new", not "unpopular". Set it when adding
+   * an entry; the first six carry the date the ballot shipped.
+   */
+  added?: string;
 };
 
 export const ROADMAP: RoadmapItem[] = [
@@ -68,30 +75,36 @@ export const ROADMAP: RoadmapItem[] = [
   },
   {
     id: 'openframe',
+    added: '2026-08-11',
     status: 'in-progress',
     productPath: '/products/openframe',
   },
   {
     id: 'motors',
+    added: '2026-08-11',
     status: 'in-progress',
   },
   {
     id: 'openvtx',
+    added: '2026-08-11',
     status: 'planned',
     link: 'https://github.com/OpenDrone-hw/OpenVTX',
   },
   {
     id: 'openremoteid',
+    added: '2026-08-11',
     status: 'planned',
     link: 'https://github.com/OpenDrone-hw/OpenRemoteID',
   },
   {
     id: 'openaio',
+    added: '2026-08-11',
     status: 'planned',
     link: 'https://github.com/OpenDrone-hw/OpenAIO',
   },
   {
     id: 'charger',
+    added: '2026-08-11',
     status: 'planned',
     link: 'https://github.com/OpenDrone-hw/Charger',
   },
@@ -113,24 +126,85 @@ export const STATUS_ORDER: ProductStatus[] = [
 ];
 
 /**
+ * The `status-*` topic on each public GitHub repo is the canonical status
+ * (see hardware/README.md in the working container). This pulls the topics
+ * at request time so every consumer (kanban, ballot, standings) mirrors the
+ * repos; the static status in ROADMAP is the fallback for products without a
+ * public repo and for API failures. In-memory cache, 1 hour per worker
+ * isolate, which also keeps unauthenticated API usage far under the rate
+ * limit.
+ */
+let topicCache: {at: number; map: Record<string, ProductStatus>} | null = null;
+
+export async function fetchStatusFlags(
+  token?: string,
+): Promise<Record<string, ProductStatus>> {
+  if (topicCache && Date.now() - topicCache.at < 3_600_000) {
+    return topicCache.map;
+  }
+  const map: Record<string, ProductStatus> = {};
+  await Promise.all(
+    ROADMAP.filter((r) => r.link).map(async (r) => {
+      try {
+        const name = (r.link as string).replace('https://github.com/', '');
+        const res = await fetch(`https://api.github.com/repos/${name}/topics`, {
+          headers: {
+            'User-Agent': 'opendrone-store-roadmap',
+            Accept: 'application/vnd.github+json',
+            // 60 req/h unauthenticated vs 5000 with a token; set
+            // GITHUB_STATUS_TOKEN (read-only, public repos) in Oxygen.
+            ...(token ? {Authorization: `Bearer ${token}`} : {}),
+          },
+        });
+        if (!res.ok) return;
+        const data = (await res.json()) as {names?: string[]};
+        const flag = data.names
+          ?.find((t) => t.startsWith('status-'))
+          ?.slice('status-'.length);
+        if (flag && (STATUS_ORDER as string[]).includes(flag)) {
+          map[r.link as string] = flag as ProductStatus;
+        }
+      } catch {
+        // Unreachable API: the static status stands in.
+      }
+    }),
+  );
+  topicCache = {at: Date.now(), map};
+  return map;
+}
+
+/** ROADMAP with the live topic statuses applied over the static fallbacks. */
+export function resolveRoadmap(
+  flags: Record<string, ProductStatus>,
+): RoadmapItem[] {
+  return ROADMAP.map((r) =>
+    r.link && flags[r.link] ? {...r, status: flags[r.link]} : r,
+  );
+}
+
+/**
  * What the community can vote on: everything not yet buyable and not already
  * on the home straight. Alpha is excluded on purpose, a product with community
  * testers is being finished regardless of the vote.
  *
- * Uses the static statuses, not the live topics: the ballot is rendered in the
- * cart, which does not fetch GitHub, and a candidate list that changed under a
- * voter mid-session would be worse than one that lags a repo topic by a
- * deploy.
+ * Pass a live-resolved roadmap (resolveRoadmap) where possible so a project
+ * graduating out of `planned` leaves the ballot on its own; the no-argument
+ * form falls back to the static statuses.
  */
 const VOTABLE: ReadonlySet<ProductStatus> = new Set<ProductStatus>([
   'in-progress',
   'planned',
 ]);
 
-export function voteCandidates(): RoadmapItem[] {
-  return ROADMAP.filter((r) => VOTABLE.has(r.status));
+export function voteCandidates(roadmap: RoadmapItem[] = ROADMAP): RoadmapItem[] {
+  return roadmap.filter((r) => VOTABLE.has(r.status));
 }
 
-export function voteCandidateIds(): string[] {
-  return voteCandidates().map((r) => r.id);
+/**
+ * Ids a vote may reference: EVERY roadmap id, not just today's candidates.
+ * A ballot cast minutes before its project graduated must still validate and
+ * still count; the standings then show it under "already moving" instead.
+ */
+export function votableIds(): string[] {
+  return ROADMAP.map((r) => r.id);
 }

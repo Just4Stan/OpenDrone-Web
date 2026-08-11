@@ -10,7 +10,7 @@ import {
   serializeVoteRank,
   voteShares,
 } from './votes.ts';
-import {ROADMAP, voteCandidateIds} from './roadmap-data.ts';
+import {ROADMAP, votableIds} from './roadmap-data.ts';
 
 // Run with:
 //   node --experimental-strip-types --test app/lib/votes.test.ts
@@ -39,7 +39,7 @@ describe('vote rank codec', () => {
   });
 
   it('every real candidate ranking fits the 64-char cart attribute cap', () => {
-    const ids = voteCandidateIds();
+    const ids = votableIds();
     assert.ok(ids.length >= VOTE_MAX_CHOICES, 'need at least three candidates');
     const longest = [...ids]
       .sort((a, b) => b.length - a.length)
@@ -55,14 +55,17 @@ describe('vote rank codec', () => {
 describe('voteShares', () => {
   it('splits points into rounded percentages', () => {
     const shares = voteShares(
-      {updated: '', ballots: 3, points: {openvtx: 6, motors: 3}},
+      {updated: '', ballots: 3, points: {openvtx: 6, motors: 3}, mentions: {}},
       ['openvtx', 'motors', 'charger'],
     );
     assert.deepEqual(shares, {openvtx: 67, motors: 33, charger: 0});
   });
 
   it('is all zeros with no points', () => {
-    const shares = voteShares({updated: '', ballots: 0, points: {}}, IDS);
+    const shares = voteShares(
+      {updated: '', ballots: 0, points: {}, mentions: {}},
+      IDS,
+    );
     assert.ok(Object.values(shares).every((v) => v === 0));
   });
 });
