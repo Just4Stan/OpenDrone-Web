@@ -34,6 +34,7 @@ const OPEN_SOURCE_LINKS: Array<{href: string; copy: string}> = [
   {href: 'https://github.com/OpenDrone-hw', copy: 'nav_github'},
   {href: 'https://github.com/OpenDrone-hw/OpenFC-Lite', copy: 'nav_openfc'},
   {href: 'https://github.com/OpenDrone-hw/OpenESC-20x20', copy: 'nav_openesc'},
+  {href: 'https://github.com/OpenDrone-hw/OpenDrone-Web', copy: 'nav_site_source'},
 ];
 
 const COMPANY_LINKS: Array<{to: string; copy: string}> = [
@@ -199,7 +200,8 @@ export function Footer({
               licence sentence after them is editable. */}
           <p className="text-[12px] text-[var(--color-text-muted)] font-mono tracking-wide">
             &copy; {new Date().getFullYear()} {company.name}.{' '}
-            <Txt id="chrome.footer_licence_line" />
+            <Txt id="chrome.footer_licence_line" />{' '}
+            <Txt id="chrome.footer_site_source_line" />
           </p>
           <a
             href="https://github.com/OpenDrone-hw"

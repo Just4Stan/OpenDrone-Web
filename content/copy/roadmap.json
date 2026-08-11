@@ -52,21 +52,33 @@
   "status_in-progress_legend": "A first design exists and prototypes may already be ordered, but nothing is under test yet.",
   "status_planned_label": "Planned",
   "status_planned_legend": "No design yet, on purpose. We name it early so the community can shape the spec from day one: the discussion runs on Discord, and design proposals are welcome. No product listing until there is hardware.",
-  "s4_title": "04 · Report what broke",
+  "votes_title": "04 · What you want next",
+  "votes_body": "Every order carries an optional ballot: rank up to three of the in-progress and planned projects from your cart, and checkout files it with the order. This is how the queue below the betas gets its order. The vote steers our prioritisation; engineering reality can still overrule it, in the open.",
+  "votes_empty": "No ballots counted yet. Voting ships with the shop: when you order, the cart carries a ranked ballot for what we should build next.",
+  "votes_ballots_label": "ballots counted",
+  "votes_method": "Ranked choice: 3 points for a first pick, 2 for a second, 1 for a third.",
+  "goals_title": "05 · Where the money goes",
+  "goals_body": "Shop profit goes to R&D and manufacturing, and we would rather show that than say it. So here is what we are saving for, one goal at a time. The slider is approximate and moved by hand; there is no live feed of our books behind it.",
+  "goals_status_done": "Done",
+  "goals_status_current": "Saving for this",
+  "goals_status_next": "Up next",
+  "goals_target_prefix": "Target:",
+  "goals_foot": "Goals are ours, not earmarks. No order is tied to a machine, and nothing here is crowdfunding; it is just where the margin goes.",
+  "s4_title": "06 · Report what broke",
   "s4_body": [
     "Flew it, bench-tested it, or just read the schematic and found something off: open an issue on the board's repo. A photo, a log file, or a net name is enough. Confirmed design problems get fixed in the next revision and credited on the product page, receipts linked."
   ],
-  "s5_title": "05 · Change the design",
+  "s5_title": "07 · Change the design",
   "s5_body": [
     "Hardware is not software: two people can edit the same code file, but a PCB layout cannot be merged. So each board has one maintainer who holds the layout, and edits are serialised through file locks. Schematics are split across hierarchical sheets, so separate sheets can have separate owners. Two people can hold two boards. Two people cannot hold one layout.",
     "Everyone else contributes through review, and review is where the real capacity is: CI renders the schematic, the board images, ERC and DRC output and a BOM diff on every pull request, so a design one person draws can be reviewed by anyone, without opening KiCad. Small, focused changes land fastest: one connector, one footprint, one silkscreen fix, agreed with the board's maintainer.",
     "Merged design changes show up in the “You asked. We changed it.” chapter of the product page, and your account lands in its contributor grid. Every product page names who developed the board, maintainer first, the way a record sleeve names the band. A handle and avatar are enough; nobody needs your real name."
   ],
-  "s6_title": "06 · Improve the firmware",
+  "s6_title": "08 · Improve the firmware",
   "s6_body": [
     "The boards run community firmware: Betaflight, AM32 and ExpressLRS. Work there helps every board, not just ours; €1 of every board sold already goes to these projects. Start with the [firmware partners](/firmware-partners) page if you want the details."
   ],
-  "s7_title": "07 · The repos",
+  "s7_title": "09 · The repos",
   "s7_body": [
     "Every entry above links to its source where one is public. The hardware is KiCad, latest stable release, licensed CERN-OHL-S v2: strong reciprocal, share your changes. By opening a PR you license your contribution under the repo's license. No CLA, no paperwork."
   ],

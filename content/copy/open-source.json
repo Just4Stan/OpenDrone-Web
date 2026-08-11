@@ -41,5 +41,10 @@
     "Teacher or club? We would rather you copy the design than buy a cheap closed alternative."
   ],
   "cta_primary": "Help design the hardware →",
-  "cta_secondary": "Browse the repos on GitHub ↗"
+  "cta_secondary": "Browse the repos on GitHub ↗",
+  "s8_title": "08 · Even this website",
+  "s8_body": [
+    "The store you are reading is a repo like the boards are: [OpenDrone-hw/OpenDrone-Web](https://github.com/OpenDrone-hw/OpenDrone-Web). The pages, the 3D hero, the checkout wiring, the tooling that renders the board art: all of it is public, MIT licensed, and built in the open like everything else here.",
+    "That is not a gimmick. If we ever say something on this site that the files contradict, you can check. And if you want to fix a typo or a broken layout on the page you are looking at, the source is one click away."
+  ]
 }

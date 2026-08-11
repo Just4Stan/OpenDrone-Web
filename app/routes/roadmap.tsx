@@ -5,6 +5,18 @@ import {EditorialShell} from '~/components/EditorialShell';
 import {Txt} from '~/components/Txt';
 import {copyText} from '~/lib/copy';
 import {DISCORD_INVITE_URL} from '~/lib/company';
+import {
+  ROADMAP,
+  STATUS_ORDER,
+  voteCandidates,
+  type ProductStatus,
+} from '~/lib/roadmap-data';
+import {goals} from '~/lib/goals';
+import {
+  VOTE_COUNT_VISIBLE_FROM,
+  voteShares,
+  voteTally,
+} from '~/lib/votes';
 
 /**
  * Words live in `content/copy/roadmap.json`; this file holds the machinery.
@@ -82,107 +94,116 @@ export async function loader({context}: Route.LoaderArgs) {
   return {roadmap};
 }
 
-/**
- * Product status index. One vocabulary, used in three places that must
- * agree: this board, the product pages, and (as `status-<label>` topics)
- * the GitHub repos. Change a status here and mirror it in the other two.
- */
-type ProductStatus = 'launched' | 'beta' | 'alpha' | 'in-progress' | 'planned';
-
-type RoadmapItem = {
-  /** Copy key stem: `item_<id>_name` and `item_<id>_note`. */
-  id: string;
-  status: ProductStatus;
-  /** Product page on this site, when one exists. */
-  productPath?: string;
-  /** Public design source. Omit when nothing public exists. */
-  link?: string;
-};
+// ROADMAP, STATUS_ORDER and the vote-candidate rule live in
+// `app/lib/roadmap-data.ts` so the cart ballot derives its choices from the
+// same structure this board renders. Only the rendering stays here.
 
 /**
- * DATA RULE: every entry must be verifiable in public, or be an explicit
- * statement of intent (planned). Nothing gets a date.
- *
- * The entry's name and its one-line note are copy, keyed off `id`. Everything
- * here is structure: which products exist, what they link to, and the status
- * that puts them in a column (overwritten at request time by the repo topic).
+ * The community vote, read from `content/votes.json` (written by the tally
+ * script, reviewable in the studio's Goals tab). Shares are shown as
+ * percentages of weighted points; the absolute ballot count only appears
+ * once it stops being a small number, so week one does not read as an empty
+ * room. Candidates and their order come from the same roadmap structure the
+ * kanban renders.
  */
-const ROADMAP: RoadmapItem[] = [
-  {
-    id: 'openfc_lite_30',
-    status: 'beta',
-    productPath: '/products/openfc-lite',
-    link: 'https://github.com/OpenDrone-hw/OpenFC-Lite',
-  },
-  {
-    id: 'openfc_lite_mini_20',
-    status: 'beta',
-    productPath: '/products/openfc-lite',
-    link: 'https://github.com/OpenDrone-hw/OpenFC-Lite-Mini',
-  },
-  {
-    id: 'openesc_20',
-    status: 'beta',
-    productPath: '/products/openesc',
-    link: 'https://github.com/OpenDrone-hw/OpenESC-20x20',
-  },
-  {
-    id: 'openesc_30',
-    status: 'beta',
-    productPath: '/products/openesc',
-    link: 'https://github.com/OpenDrone-hw/OpenESC-30x30',
-  },
-  {
-    id: 'openrx',
-    status: 'alpha',
-    productPath: '/products/openrx',
-    link: 'https://github.com/OpenDrone-hw/OpenRX',
-  },
-  {
-    id: 'openframe',
-    status: 'in-progress',
-    productPath: '/products/openframe',
-  },
-  {
-    id: 'motors',
-    status: 'in-progress',
-  },
-  {
-    id: 'openvtx',
-    status: 'planned',
-    link: 'https://github.com/OpenDrone-hw/OpenVTX',
-  },
-  {
-    id: 'openremoteid',
-    status: 'planned',
-    link: 'https://github.com/OpenDrone-hw/OpenRemoteID',
-  },
-  {
-    id: 'openaio',
-    status: 'planned',
-    link: 'https://github.com/OpenDrone-hw/OpenAIO',
-  },
-  {
-    id: 'charger',
-    status: 'planned',
-    link: 'https://github.com/OpenDrone-hw/Charger',
-  },
-];
+function VotesSection() {
+  const tally = voteTally();
+  const candidates = voteCandidates();
+  const shares = voteShares(
+    tally,
+    candidates.map((c) => c.id),
+  );
+  const rows = [...candidates].sort(
+    (a, b) => (tally.points[b.id] ?? 0) - (tally.points[a.id] ?? 0),
+  );
+  const hasVotes = tally.ballots > 0;
+
+  return (
+    <section className="editorial-section">
+      <Txt id="roadmap.votes_title" as="h2" className="editorial-section-title" />
+      <Txt id="roadmap.votes_body" as="p" />
+      {hasVotes ? (
+        <div className="vote-board">
+          {rows.map((c) => (
+            <div className="vote-row" key={c.id}>
+              <Txt
+                id={`roadmap.item_${c.id}_name`}
+                as="span"
+                className="vote-name"
+              />
+              <span className="vote-bar" aria-hidden="true">
+                <span
+                  className="vote-bar-fill"
+                  style={{width: `${shares[c.id]}%`}}
+                />
+              </span>
+              <span className="vote-share">{shares[c.id]}%</span>
+            </div>
+          ))}
+          <p className="vote-foot">
+            {tally.ballots >= VOTE_COUNT_VISIBLE_FROM ? (
+              <>
+                {tally.ballots} <Txt id="roadmap.votes_ballots_label" />
+                {' · '}
+              </>
+            ) : null}
+            <Txt id="roadmap.votes_method" />
+          </p>
+        </div>
+      ) : (
+        <Txt id="roadmap.votes_empty" as="p" className="vote-empty" />
+      )}
+    </section>
+  );
+}
 
 /**
- * The vocabulary and its column order. Deliberately a bare list of KEYS: each
- * status's label and legend are copy (`status_<key>_label` /
- * `status_<key>_legend`), so a studio edit can rename a status but cannot add,
- * drop or reorder one. The `status-*` topics on the repos are matched against
- * exactly this list.
+ * Incutec's financial goals, from `content/goals.json` (edited in the
+ * studio's Goals tab). Titles and bodies come from the goals file itself
+ * rather than the copy store; the section heading and labels are copy.
  */
-const STATUS_ORDER: ProductStatus[] = [
-  'launched',
-  'beta',
-  'alpha',
-  'in-progress',
-  'planned',
-];
+function GoalsSection() {
+  const list = goals();
+  if (list.length === 0) return null;
+
+  return (
+    <section className="editorial-section">
+      <Txt id="roadmap.goals_title" as="h2" className="editorial-section-title" />
+      <Txt id="roadmap.goals_body" as="p" />
+      <div className="goal-list">
+        {list.map((g) => (
+          <article className="goal-card" key={g.id} data-goal-status={g.status}>
+            <header className="goal-head">
+              <h3 className="goal-title">{g.title}</h3>
+              <Txt
+                id={`roadmap.goals_status_${g.status}`}
+                as="span"
+                className="goal-status"
+              />
+            </header>
+            <p className="goal-body">{g.body}</p>
+            <div className="goal-meter-row">
+              <span
+                className="goal-meter"
+                role="img"
+                aria-label={`${g.status === 'done' ? 100 : g.progress_pct}%`}
+              >
+                <span
+                  className="goal-meter-fill"
+                  style={{width: `${g.status === 'done' ? 100 : g.progress_pct}%`}}
+                />
+              </span>
+              <span className="goal-target">
+                <Txt id="roadmap.goals_target_prefix" /> {g.target_label}
+              </span>
+            </div>
+          </article>
+        ))}
+      </div>
+      <Txt id="roadmap.goals_foot" as="p" className="goal-foot" />
+    </section>
+  );
+}
 
 export default function RoadmapRoute({loaderData}: Route.ComponentProps) {
   const columns = STATUS_ORDER.map((status) => ({
@@ -265,6 +286,10 @@ export default function RoadmapRoute({loaderData}: Route.ComponentProps) {
           ))}
         </dl>
       </section>
+
+      <VotesSection />
+
+      <GoalsSection />
 
       <section className="editorial-section">
         <Txt id="roadmap.s4_title" as="h2" className="editorial-section-title" />

@@ -78,6 +78,15 @@ export default function OpenSourceRoute() {
         </ul>
       </section>
 
+      <section className="editorial-section">
+        <Txt
+          id="open-source.s8_title"
+          as="h2"
+          className="editorial-section-title"
+        />
+        <Txt id="open-source.s8_body" as="p" />
+      </section>
+
       <section className="editorial-cta">
         <Link prefetch="viewport" to="/roadmap" className="editorial-cta-primary">
           <Txt id="open-source.cta_primary" />

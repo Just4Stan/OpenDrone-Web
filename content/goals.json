@@ -1,0 +1,21 @@
+{
+  "$comment": "Incutec's public financial goals. Edited in the studio's Goals tab; progress_pct is set by hand and is an approximation on purpose. Read by app/lib/goals.ts.",
+  "goals": [
+    {
+      "id": "pick-and-place",
+      "status": "current",
+      "title": "A pick and place machine",
+      "body": "The first step toward assembling boards in Belgium instead of only inspecting them here. A desktop pick and place plus reflow setup lets us run small batches and revisions in-house, and every product page stops saying 'assembled in China' one board at a time.",
+      "target_label": "about €30k",
+      "progress_pct": 0
+    },
+    {
+      "id": "eu-assembly-line",
+      "status": "next",
+      "title": "A full EU assembly line",
+      "body": "Everything the pick and place does not cover: solder paste printing, inspection, and enough throughput to run production batches, not just prototypes. This is the 'EU assembly is an ambition' line on the production page becoming a fact.",
+      "target_label": "well past the first goal",
+      "progress_pct": 0
+    }
+  ]
+}

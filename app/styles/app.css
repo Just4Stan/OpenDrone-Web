@@ -8487,6 +8487,133 @@ button.reset {
   line-height: 1.6;
 }
 
+/* The goal meter line under the summary: one link to /roadmap carrying the
+   current goal and its approximate progress. Reuses .goal-meter. */
+.cart-goal {
+  display: block;
+  margin-top: 1rem;
+  padding-top: 0.85rem;
+  border-top: 1px solid color-mix(in srgb, var(--color-border) 80%, transparent);
+  text-decoration: none;
+}
+
+.cart-goal-line {
+  margin: 0 0 0.5rem;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  color: var(--color-text-muted);
+}
+
+.cart-goal-title {
+  color: var(--color-text);
+}
+
+.cart-goal:hover .cart-goal-title {
+  color: var(--color-gold);
+}
+
+/* The ranked ballot under the cart summary. Chips share the quiet mono
+   register of the secondary actions; a ranked chip earns the gold number. */
+.cart-ballot {
+  margin-top: 1.4rem;
+  padding-top: 1.1rem;
+  border-top: 1px solid color-mix(in srgb, var(--color-border) 80%, transparent);
+}
+
+.cart-ballot-title {
+  margin: 0 0 0.3rem;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 400;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--color-text);
+}
+
+.cart-ballot-hint {
+  margin: 0 0 0.75rem;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--color-text-muted);
+}
+
+.cart-ballot-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.cart-ballot-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.4rem 0.7rem;
+  border: 1px solid color-mix(in srgb, var(--color-border) 85%, transparent);
+  border-radius: var(--r-xs);
+  background: none;
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  letter-spacing: 0.05em;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  transition: border-color 0.15s ease, color 0.15s ease;
+}
+
+.cart-ballot-chip:hover:not(:disabled) {
+  border-color: var(--color-border-strong);
+  color: var(--color-text);
+}
+
+.cart-ballot-chip:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.cart-ballot-chip.is-ranked {
+  border-color: var(--color-gold);
+  color: var(--color-text);
+}
+
+.cart-ballot-rank {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.1rem;
+  height: 1.1rem;
+  border-radius: 50%;
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+}
+
+.cart-ballot-chip.is-ranked .cart-ballot-rank {
+  background: var(--color-gold);
+  color: var(--color-on-accent);
+}
+
+.cart-ballot-chip:not(.is-ranked) .cart-ballot-rank {
+  border: 1px dashed color-mix(in srgb, var(--color-text-muted) 45%, transparent);
+}
+
+.cart-ballot-foot {
+  margin: 0.75rem 0 0;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  color: color-mix(in srgb, var(--color-text-muted) 80%, transparent);
+}
+
+.cart-ballot-foot a {
+  color: var(--color-text-muted);
+}
+
+.cart-ballot-foot a:hover {
+  color: var(--color-gold);
+}
+
 /* Quiet secondary actions under the checkout CTA: keep-shopping escape +
    share-cart copier. Mono hairline language, no button chrome — these must
    read a register below the gold CTA. The .cart-summary-* scope also lifts
@@ -10855,6 +10982,168 @@ button.reset {
 
 .status-legend dd {
   margin: 0;
+}
+
+/* Community vote standings (/roadmap). Same mono register as the kanban:
+   a name, a hairline track, a share figure. The fill is gold because the
+   bars ARE the community's voice, the one loud element the section gets. */
+.vote-board {
+  margin-top: 1.5rem;
+  display: grid;
+  gap: 0.8rem;
+}
+
+.vote-row {
+  display: grid;
+  grid-template-columns: minmax(9rem, 14rem) 1fr 3ch;
+  align-items: center;
+  gap: 0.9rem;
+}
+
+.vote-name {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  color: var(--color-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.vote-bar {
+  display: block;
+  height: 6px;
+  border-radius: 3px;
+  background: color-mix(in srgb, var(--color-border) 70%, transparent);
+  overflow: hidden;
+}
+
+.vote-bar-fill {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--color-gold);
+  transition: width 0.6s ease;
+}
+
+.vote-share {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--color-text-muted);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.vote-foot,
+.vote-empty {
+  margin: 0.9rem 0 0;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  color: color-mix(in srgb, var(--color-text-muted) 80%, transparent);
+}
+
+.vote-empty {
+  padding: 0.85rem 0.95rem;
+  border: 1px dashed color-mix(in srgb, var(--color-border) 70%, transparent);
+  border-radius: var(--r-xs);
+}
+
+/* Financial goals (/roadmap): one card per goal, meter + hand-set target.
+   The meter is reused in the cart summary (.cart-goal). */
+.goal-list {
+  margin-top: 1.5rem;
+  display: grid;
+  gap: 1rem;
+}
+
+.goal-card {
+  border: 1px solid color-mix(in srgb, var(--color-border) 80%, transparent);
+  border-radius: var(--r-xs);
+  padding: 1rem 1.1rem;
+  display: grid;
+  gap: 0.55rem;
+}
+
+.goal-card[data-goal-status='next'] {
+  opacity: 0.6;
+}
+
+.goal-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.goal-title {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 400;
+  letter-spacing: 0.06em;
+  color: var(--color-text);
+}
+
+.goal-status {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--color-gold);
+  white-space: nowrap;
+}
+
+.goal-card[data-goal-status='next'] .goal-status,
+.goal-card[data-goal-status='done'] .goal-status {
+  color: var(--color-text-muted);
+}
+
+.goal-body {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--color-text-muted);
+}
+
+.goal-meter-row {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  margin-top: 0.2rem;
+}
+
+.goal-meter {
+  display: block;
+  flex: 1;
+  height: 6px;
+  border-radius: 3px;
+  background: color-mix(in srgb, var(--color-border) 70%, transparent);
+  overflow: hidden;
+}
+
+.goal-meter-fill {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--color-gold);
+  transition: width 0.6s ease;
+}
+
+.goal-target {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  color: var(--color-text-muted);
+  white-space: nowrap;
+}
+
+.goal-foot {
+  margin: 0.9rem 0 0;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  color: color-mix(in srgb, var(--color-text-muted) 80%, transparent);
 }
 
 

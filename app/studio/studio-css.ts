@@ -522,6 +522,32 @@ export const STUDIO_CSS = `
 }
 .studio-add button:hover { color: #c89d2e; border-color: #c89d2e; border-style: solid; }
 
+/* Goals tab: labelled form fields in the inspector. */
+.studio-goal-field {
+  display: grid;
+  gap: 4px;
+  margin: 0 0 12px;
+  color: #9a9aa4;
+  font-size: 11px;
+}
+.studio-goal-field input,
+.studio-goal-field select,
+.studio-goal-field textarea {
+  width: 100%;
+  background: #101014;
+  border: 1px solid #26262e;
+  border-radius: 6px;
+  color: #e6e6ea;
+  font: inherit;
+  font-size: 12px;
+  padding: 6px 8px;
+}
+.studio-goal-field textarea { min-height: 110px; resize: vertical; }
+.studio-goal-field input:focus,
+.studio-goal-field select:focus,
+.studio-goal-field textarea:focus { outline: none; border-color: #c89d2e; }
+.studio-goal-field input[type='range'] { padding: 0; accent-color: #c89d2e; }
+
 `;
 
 /**
