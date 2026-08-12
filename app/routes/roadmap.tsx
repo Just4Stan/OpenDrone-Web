@@ -218,7 +218,7 @@ export default function RoadmapRoute({loaderData}: Route.ComponentProps) {
         <div className="kanban">
           {columns.map((col) => (
             <Fragment key={col.status}>
-            <div className="kanban-col">
+            <section className="kanban-row" data-status={col.status}>
               <p className="kanban-col-head" data-status={col.status}>
                 <span className="kanban-dot" />
                 <Txt id={`roadmap.status_${col.status}_label`} />
@@ -227,6 +227,7 @@ export default function RoadmapRoute({loaderData}: Route.ComponentProps) {
                   {col.items.reduce((n, r) => n + (r.variants?.length ?? 1), 0)}
                 </span>
               </p>
+              <div className="kanban-row-cards">
               {col.items.length === 0 ? (
                 <Txt id="roadmap.kanban_empty" as="p" className="kanban-empty" />
               ) : (
@@ -294,19 +295,21 @@ export default function RoadmapRoute({loaderData}: Route.ComponentProps) {
                   });
                 })
               )}
-            </div>
-            {/* The gate INTO this column: products move right to left, and
-                the arrow names what a design must earn to pass. The last
-                gate (after planned) is the door onto the board itself. */}
+              </div>
+            </section>
+            {/* The gate INTO this stage: products climb the board upward,
+                and the curved arrow names what a design must earn to pass
+                into the row above. The last gate (under planned) is the
+                door onto the board itself. Costs a text line of height and
+                zero width. */}
             <div className="kanban-gate">
               <svg
                 className="kanban-gate-arrow"
-                viewBox="0 0 64 10"
-                preserveAspectRatio="none"
+                viewBox="0 0 24 24"
                 aria-hidden="true"
               >
-                <line x1="64" y1="5" x2="5" y2="5" />
-                <path d="M11 1.5 L4 5 L11 8.5" fill="none" />
+                <path d="M21 21 C11 21 7 16 7 7" fill="none" />
+                <path d="M3.5 10 L7 5 L10.5 10" fill="none" />
               </svg>
               <Txt
                 id={`roadmap.gate_${col.status}`}

@@ -10334,44 +10334,14 @@ html.light .editorial-watermark {
 }
 
 .series-rail {
-  order: 2;
+  /* Below the left-column breakpoint the index leads the page as one
+     compact horizontal strip: wayfinding belongs before the content, and
+     a nav list at the very bottom of the page read as fallen furniture. */
+  order: -1;
+  margin-bottom: 0.25rem;
 }
 
-@media (min-width: 980px) {
-  .editorial-shell {
-    grid-template-columns: 13rem minmax(0, 640px);
-    align-items: start;
-  }
 
-  /* Same tracks with the aside stacking under the prose: the shell must
-     not re-center when a page has no aside, or the rail and the prose
-     visibly jump sideways on every page switch. */
-  .editorial-shell.is-narrow {
-    grid-template-columns: 13rem minmax(0, 640px);
-  }
-
-  /* The rail is the page's wayfinding: it holds the left column from
-     tablet width up instead of falling to the bottom of the page (where
-     it read as a bug, not as navigation). The aside stacks under the
-     prose in this band and returns beside it only when the third column
-     genuinely fits (1360px). */
-  .series-rail {
-    grid-column: 1;
-    order: -1;
-    position: sticky;
-    top: calc(var(--header-height) + 1.5rem);
-    margin-top: 4rem;
-    align-self: start;
-  }
-
-  .editorial-page {
-    grid-column: 2;
-  }
-
-  .editorial-aside {
-    grid-column: 2;
-  }
-}
 
 @media (min-width: 1360px) {
   .editorial-shell {
@@ -10393,6 +10363,7 @@ html.light .editorial-watermark {
   .series-rail {
     grid-column: 1;
     order: -1;
+    margin-bottom: 0;
     position: sticky;
     top: calc(var(--header-height) + 1.5rem);
     /* Aligns the rail head with the page eyebrow (page padding-top).
@@ -10407,6 +10378,11 @@ html.light .editorial-watermark {
     scrollbar-color: color-mix(in srgb, var(--color-border) 90%, transparent)
       transparent;
   }
+
+  .series-rail-list {
+    display: grid;
+    gap: 0.3rem;
+  }
 }
 
 /* Number + title rows, nothing else. No borders, no spine, no blurbs:
@@ -10417,8 +10393,9 @@ html.light .editorial-watermark {
   list-style: none;
   margin: 0;
   padding: 0;
-  display: grid;
-  gap: 0.3rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.15rem 1.5rem;
 }
 
 .series-rail-list a {
@@ -10783,44 +10760,14 @@ html.light .editorial-watermark {
 }
 
 .series-rail {
-  order: 2;
+  /* Below the left-column breakpoint the index leads the page as one
+     compact horizontal strip: wayfinding belongs before the content, and
+     a nav list at the very bottom of the page read as fallen furniture. */
+  order: -1;
+  margin-bottom: 0.25rem;
 }
 
-@media (min-width: 980px) {
-  .editorial-shell {
-    grid-template-columns: 13rem minmax(0, 640px);
-    align-items: start;
-  }
 
-  /* Same tracks with the aside stacking under the prose: the shell must
-     not re-center when a page has no aside, or the rail and the prose
-     visibly jump sideways on every page switch. */
-  .editorial-shell.is-narrow {
-    grid-template-columns: 13rem minmax(0, 640px);
-  }
-
-  /* The rail is the page's wayfinding: it holds the left column from
-     tablet width up instead of falling to the bottom of the page (where
-     it read as a bug, not as navigation). The aside stacks under the
-     prose in this band and returns beside it only when the third column
-     genuinely fits (1360px). */
-  .series-rail {
-    grid-column: 1;
-    order: -1;
-    position: sticky;
-    top: calc(var(--header-height) + 1.5rem);
-    margin-top: 4rem;
-    align-self: start;
-  }
-
-  .editorial-page {
-    grid-column: 2;
-  }
-
-  .editorial-aside {
-    grid-column: 2;
-  }
-}
 
 @media (min-width: 1360px) {
   .editorial-shell {
@@ -10842,6 +10789,7 @@ html.light .editorial-watermark {
   .series-rail {
     grid-column: 1;
     order: -1;
+    margin-bottom: 0;
     position: sticky;
     top: calc(var(--header-height) + 1.5rem);
     /* Aligns the rail head with the page eyebrow (page padding-top).
@@ -10856,6 +10804,11 @@ html.light .editorial-watermark {
     scrollbar-color: color-mix(in srgb, var(--color-border) 90%, transparent)
       transparent;
   }
+
+  .series-rail-list {
+    display: grid;
+    gap: 0.3rem;
+  }
 }
 
 /* Number + title rows, nothing else. No borders, no spine, no blurbs:
@@ -10866,8 +10819,9 @@ html.light .editorial-watermark {
   list-style: none;
   margin: 0;
   padding: 0;
-  display: grid;
-  gap: 0.3rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.15rem 1.5rem;
 }
 
 .series-rail-list a {
@@ -11186,23 +11140,24 @@ html.light .editorial-watermark {
    vocabulary: buyable states filled (beta additionally ringed), alpha a
    ring, the rest hollow. Columns scroll horizontally when the viewport
    cannot hold five. */
-/* Flex, not grid-auto-columns: the stage GATES between columns need their
-   own narrow track, and a grid's implicit columns are all one size. */
+/* Vertical board: each stage is a full-width ROW and its products wrap
+   inside it, so the board never scrolls horizontally, adds nothing when a
+   stage is empty, and grows downward card by card as the catalog does.
+   Products climb upward; the gates between rows carry the criteria. */
 .kanban {
   display: flex;
-  gap: 0.9rem;
+  flex-direction: column;
+  gap: 0.4rem;
   margin-top: 1.75rem;
-  overflow-x: auto;
-  padding-bottom: 0.75rem;
-  scrollbar-width: thin;
-  scrollbar-color: color-mix(in srgb, var(--color-border) 90%, transparent)
-    transparent;
 }
-.kanban-col {
-  flex: 1 1 10.5rem;
-  /* Shrinks to 8.5rem before the board resorts to horizontal scroll, so
-     the whole five-stage pipeline stays visible on ordinary laptops. */
-  min-width: 8.5rem;
+.kanban-row-cards {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.9rem;
+  margin-top: 0.75rem;
+}
+.kanban-row-cards > .kanban-card {
+  width: 10.5rem;
 }
 
 /* The board band: the roadmap's kanban lives OUTSIDE the editorial shell,
@@ -11214,33 +11169,29 @@ html.light .editorial-watermark {
   padding-top: var(--sp-5);
 }
 
-/* The gate between two stages: an arrow pointing INTO the more advanced
-   column (products move right to left here) with the pass criterion under
-   it in the smallest mono. Aligned with the column-head row so the arrows
-   read as one lane across the top of the board. */
+/* The gate between two stage rows: a small curved arrow climbing into the
+   row above, the pass criterion beside it. One text line of height, zero
+   extra width. */
 .kanban-gate {
-  flex: 0 0 clamp(3.25rem, 4vw, 4.5rem);
   display: flex;
-  flex-direction: column;
   align-items: center;
-  gap: 0.4rem;
-  padding-top: 0.35rem;
+  gap: 0.6rem;
+  padding: 0.45rem 0 0.45rem 0.25rem;
   color: color-mix(in srgb, var(--color-text-muted) 80%, transparent);
 }
 .kanban-gate-arrow {
-  width: 100%;
-  height: 10px;
+  width: 18px;
+  height: 18px;
   flex: none;
   stroke: color-mix(in srgb, var(--color-gold) 55%, transparent);
-  stroke-width: 1.2;
+  stroke-width: 1.6;
 }
 .kanban-gate-label {
   font-family: var(--font-mono);
-  font-size: 9px;
-  letter-spacing: 0.06em;
+  font-size: 10px;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
-  text-align: center;
-  line-height: 1.5;
+  line-height: 1.4;
 }
 
 /* The board-first hero: just the eyebrow and title, tightened so the board
