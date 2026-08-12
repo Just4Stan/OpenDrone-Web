@@ -50,16 +50,8 @@ export async function loader({context}: Route.LoaderArgs) {
  * file's viewBox width/height.
  */
 const SECTIONS = [
-  // 01 Report what broke: the conversation starts on Discord, issues on GitHub.
-  {
-    n: 1,
-    art: (
-      <>
-        <PartnerLogoArt src="/logos/discord.svg" ratio={127.14 / 96.36} />
-        <PartnerLogoArt src="/logos/github.svg" ratio={1} />
-      </>
-    ),
-  },
+  // 01 Report what broke: issues live on GitHub.
+  {n: 1, art: <PartnerLogoArt src="/logos/github.svg" ratio={1} />},
   // 02 Change the design: OpenDrone's own boards, certified open hardware.
   {
     n: 2,
