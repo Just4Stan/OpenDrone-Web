@@ -5627,7 +5627,10 @@ button.reset {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   gap: var(--sp-7);
-  padding: var(--sp-8) 0;
+  /* 1.35x the old rhythm: chapters need to end before the next one starts.
+     The gap between them is the pause that keeps a dense engineering page
+     from reading as one wall. */
+  padding: calc(var(--sp-8) * 1.35) 0;
   border-top: 1px solid var(--color-border);
   opacity: 1;
   transform: translateY(0);
@@ -5638,6 +5641,14 @@ button.reset {
   content-visibility: auto;
   contain-intrinsic-size: auto 640px;
 }
+/* Reading measure: chapter paragraphs never run the full rail. The
+   whitespace right of the text is deliberate — it is what directs the eye
+   down the column instead of across a 900px line. Interactive full-width
+   blocks (schematic, teardown, tables, card grids) are untouched. */
+.chapter p {
+  max-width: 68ch;
+}
+
 /* content-visibility's paint containment clips descendants at the chapter's
    box — but the teardown board art bleeds past its media column into the page
    margin, and the frame-viewer backdrop over-bleeds into the neighbouring
@@ -5740,6 +5751,13 @@ button.reset {
   }
 }
 
+/* Four abreast returns only where four cards get real room. */
+@media (min-width: 1500px) {
+  .chapter[data-wide-media] .open-source-cards {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
 /* Header for the schematic chapter: the title reads at the same width as every
  * other chapter title, the resource cards run as a full-width row beneath it,
  * and the full-width schematic drops below that. Squeezing the title into a
@@ -5752,10 +5770,11 @@ button.reset {
     grid-column: 1 / -1;
     max-width: none;
   }
-  /* Resource cards + the latest-commit card abreast, filling the row;
-   * a gold edge + lift on hover gives them a bit of life. */
+  /* Resource cards two-up by default: four abreast only exists where four
+   * cards genuinely get room (1500px+); below that the row read as a
+   * cramped strip and set the density tone for the whole page. */
   .chapter[data-wide-media] .open-source-cards {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: var(--sp-5);
   }
   /* Four cards and a dense schematic in one chapter: the densest block on the
