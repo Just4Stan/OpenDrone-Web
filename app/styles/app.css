@@ -4349,14 +4349,14 @@ button.reset {
    was dropped and the hero is the opening statement. */
 /* Product pages run a tighter rail than the shared 1520px one. At full rail
    width the chapters reach nearly edge to edge on a large display and the
-   page reads as a wall. 1224px (2026-08-12, Stan: ~10% narrower than the old
+   page reads as a wall. 1102px (2026-08-12, Stan: two 10% trims off the old
    1360px cap) matches the shrink-wrapped chapter cards, which no longer need
    the width. Scoped here on purpose: --rail-width is shared with the footer
    and the other routes, and narrowing it globally is the site lane's call,
    not this one's. Below the cap the shared responsive gutter still governs,
    so nothing changes on a laptop or a phone. */
 .product-page {
-  width: min(var(--rail-width), 1224px);
+  width: min(var(--rail-width), 1102px);
   margin: 0 auto;
   padding: var(--sp-5) 0 var(--sp-7);
 }
@@ -5691,6 +5691,20 @@ button.reset {
   .chapter:has(.in-the-box) .provenance-card {
     min-width: 100%;
   }
+  /* The box photo tracks the height of the two cards: the media column
+     stretches to the row, the top padding skips past the one-line chapter
+     title (its 1.1 line box + margin) so the frame's top edge sits level
+     with the parts card, and the frame gives up its square ratio to end
+     level with the provenance card. */
+  .chapter:has(.in-the-box) .chapter-media {
+    position: static;
+    align-self: stretch;
+    padding-top: calc(1.1 * var(--fs-2xl) + var(--sp-6));
+  }
+  .chapter:has(.in-the-box) .chapter-media-frame {
+    height: 100%;
+    aspect-ratio: auto;
+  }
   /* Firmware chapter, same idea: the support card shrink-wraps, the project
      logo grows into the freed width. The wide slot drops the logo's leftward
      gutter bleed so it can't reach the card. */
@@ -5699,6 +5713,17 @@ button.reset {
   }
   .chapter:has(.firmware-support) .firmware-logo {
     margin-left: 0;
+  }
+  /* Contributors chapter: the join button rides the title line (top right),
+     not the grid row (Stan, 2026-08-12). The one-line title leaves that
+     corner free at every desktop width. */
+  .chapter:has(.contributors-row) .chapter-body-col {
+    position: relative;
+  }
+  .chapter:has(.contributors-row) .contributors-cta-btn {
+    position: absolute;
+    top: 0;
+    right: 0;
   }
 }
 
@@ -5890,16 +5915,26 @@ button.reset {
   padding: clamp(1.5rem, 7%, 3rem);
 }
 
+/* Light mode: a near-black slab reads far too heavy (Stan, 2026-08-12), so
+   drop the tile and invert the white-on-transparent mark to near-black on
+   the page, mirroring how a multi-colour mark sits transparent. filter
+   would invert a background/border too, hence transparent and none. */
+html.light .firmware-logo--tile {
+  background: transparent;
+  border: none;
+  filter: invert(1);
+}
+
 .board-art {
   position: relative;
   /* Blow the block up well past its (capped) media column so the rail + stack
      fill the chapter's height; margin-left grows it leftward into the empty
      gutter rather than overflowing the page to the right. `--board-w` is the
-     blow-up factor: 245% by default, dialled down by BoardArt's placement
+     blow-up factor: 220% by default, dialled down by BoardArt's placement
      effect when the gutter is too tight to hold the full layer rail (the board
      gives up size to keep the menu legible). The matching margin keeps the
      board's right edge pinned (width + margin = 125%) as it scales. */
-  --board-w: 245%;
+  --board-w: 220%;
   width: var(--board-w);
   margin-left: calc(125% - var(--board-w));
 }

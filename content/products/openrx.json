@@ -103,58 +103,7 @@
       "note": "batch ID, QC initials, ExpressLRS flash target, GitHub rev"
     }
   ],
-  "downloads": [
-    {
-      "kind": "schematic",
-      "label": "Schematic · Lite",
-      "href": "https://raw.githubusercontent.com/OpenDrone-hw/OpenRX/main/exports/schematics/OpenRX-Lite.pdf",
-      "size": "103 KB"
-    },
-    {
-      "kind": "schematic",
-      "label": "Schematic · Lite-UFL",
-      "href": "https://raw.githubusercontent.com/OpenDrone-hw/OpenRX/main/exports/schematics/OpenRX-Lite-UFL.pdf",
-      "size": "106 KB"
-    },
-    {
-      "kind": "schematic",
-      "label": "Schematic · Mono",
-      "href": "https://raw.githubusercontent.com/OpenDrone-hw/OpenRX/main/exports/schematics/OpenRX-Mono.pdf",
-      "size": "128 KB"
-    },
-    {
-      "kind": "schematic",
-      "label": "Schematic · Gemini",
-      "href": "https://raw.githubusercontent.com/OpenDrone-hw/OpenRX/main/exports/schematics/OpenRX-Gemini.pdf",
-      "size": "174 KB"
-    },
-    {
-      "kind": "step",
-      "label": "3D STEP · Lite-UFL",
-      "href": "https://raw.githubusercontent.com/OpenDrone-hw/OpenRX/main/OpenRX-Lite-UFL/export/lite-ufl.step",
-      "size": "5.7 MB"
-    },
-    {
-      "kind": "step",
-      "label": "3D STEP · Mono",
-      "href": "https://raw.githubusercontent.com/OpenDrone-hw/OpenRX/main/OpenRX-Mono/export/mono.step",
-      "size": "6.8 MB"
-    },
-    {
-      "kind": "bom",
-      "label": "BOM · Lite",
-      "href": "https://raw.githubusercontent.com/OpenDrone-hw/OpenRX/main/OpenRX-Lite/export/OpenRX-Lite.csv",
-      "note": "CSV",
-      "size": "2.9 KB"
-    },
-    {
-      "kind": "bom",
-      "label": "BOM · Gemini",
-      "href": "https://raw.githubusercontent.com/OpenDrone-hw/OpenRX/main/OpenRX-Gemini/export/OpenRX-Gemini.csv",
-      "note": "CSV",
-      "size": "4.1 KB"
-    }
-  ],
+  "downloads": [],
   "specs": [
     [
       "Band",

@@ -731,7 +731,7 @@ export function BoardArt({
     if (!rail || !body || !root) return;
     const GAP = 18; // clearance between the rail and the board's left edge
     const MARGIN = 22; // clearance between the rail and the text content
-    const DEFAULT_W = 2.45; // board blow-up factor at full size (matches CSS)
+    const DEFAULT_W = 2.2; // board blow-up factor at full size (matches CSS)
     const chapter = root.closest('.chapter');
     const leftOf = (el: Element) => el.getBoundingClientRect().left;
     const widthOf = (el: Element) => el.getBoundingClientRect().width;
