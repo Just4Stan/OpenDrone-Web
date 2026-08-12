@@ -33,7 +33,6 @@ import type {FrameViewerProps} from '~/components/FrameViewer';
 import {SceneErrorBoundary} from '~/components/SceneErrorBoundary';
 import {ProvenanceCard} from '~/components/ProvenanceCard';
 import {BrandName} from '~/components/BrandName';
-import {CommitHistoryCard, LatestCommitCard} from '~/components/LatestCommit';
 import {AnimatedNumber} from '~/components/AnimatedNumber';
 import {WatchCard} from '~/components/WatchCard';
 import {redirectIfHandleIsLocalized} from '~/lib/redirect';
@@ -44,7 +43,7 @@ import {
   type ChapterType,
 } from '~/lib/chapters';
 import {buildSeoMeta, buildProductJsonLd, SITE_ORIGIN} from '~/lib/seo';
-import {fetchCommitActivity, fetchContributors, fetchLatestCommits} from '~/lib/github';
+import {fetchCommitActivity, fetchContributors} from '~/lib/github';
 import {ContributorGrid, ContributorGridSkeleton} from '~/components/Contributors';
 import {
   fetchProductReviews,
@@ -202,16 +201,15 @@ function loadDeferredData({context, params}: Route.LoaderArgs) {
   if (!handle) {
     return {
       recommendations: Promise.resolve(null),
-      latestCommits: Promise.resolve([]),
       commitActivity: Promise.resolve([]),
       contributors: Promise.resolve([]),
       reviews: Promise.resolve(null),
     };
   }
 
-  // Latest-commit fetch is best-effort: if GitHub rate-limits us or
-  // a repo moves, we render the PDP without the card rather than
-  // failing the page.
+  // Repo set for the contributors chapter's commit-activity strip. Only the
+  // primary repo per product: fetching every tier's repo too tripled the
+  // unauthenticated GitHub API calls per page and blew the 60/hr rate limit.
   const content = PRODUCT_CONTENT[handle];
   const repoUrls: string[] = [];
   if (content) {
@@ -221,20 +219,15 @@ function loadDeferredData({context, params}: Route.LoaderArgs) {
         if (sub?.repoUrl) repoUrls.push(sub.repoUrl);
       }
     } else if (content.repoUrl) {
-      // Only the primary repo — fetching every tier's repo too tripled the
-      // unauthenticated GitHub API calls per page and blew the 60/hr rate
-      // limit, so the live commit fell back to the static card. The card's
-      // resilient fallback still shows this commit for every tier.
       repoUrls.push(content.repoUrl);
     }
   }
   // Optional GITHUB_TOKEN lifts the API ceiling from 60 to 5000 calls an
   // hour; unset, both fetches degrade to their empty states.
   const ghToken = context.env.GITHUB_TOKEN;
-  const latestCommits = fetchLatestCommits(repoUrls, ghToken).catch(() => []);
 
-  // Commit-activity texture for the contributors chapter, same repo set and
-  // the same best-effort rules: an empty array just means no strip.
+  // Commit-activity texture for the contributors chapter, best-effort: an
+  // empty array just means no strip.
   const commitActivity = fetchCommitActivity(repoUrls, ghToken).catch(() => []);
 
   // Contributor grid: every repo in the line (tier repos included) so the
@@ -289,7 +282,7 @@ function loadDeferredData({context, params}: Route.LoaderArgs) {
   // metafield aggregate (or, with no aggregate, renders nothing at all).
   const reviews = fetchProductReviews(context.env, handle);
 
-  return {recommendations, latestCommits, commitActivity, contributors, reviews};
+  return {recommendations, commitActivity, contributors, reviews};
 }
 
 const DOWNLOAD_ICONS: Record<DownloadKind, string> = {
@@ -581,7 +574,6 @@ export default function Product() {
     bundleProducts,
     stackProducts,
     recommendations,
-    latestCommits,
     commitActivity,
     contributors,
     reviews,
@@ -791,14 +783,6 @@ export default function Product() {
   // OSHWA certification follows the selected tier — each certified board has its
   // own UID, so the chip links to the directory page for the active variant.
   const activeOshwaUid = activeVariant?.oshwaUid ?? content.oshwaUid;
-  // Repo whose commit history backs the "Open for learning" row's 4th card —
-  // the bundle's first component repo, else the selected tier's repo. Used as
-  // the fallback link when the live latest-commit fetch is rate-limited.
-  const commitHistoryRepoUrl = content.bundle
-    ? content.bundle.components
-        .map((c) => PRODUCT_CONTENT[c.handle]?.repoUrl)
-        .find((url): url is string => Boolean(url))
-    : activeRepoUrl;
   const mergedSpecs = mergeSpecs(content.specs, activeVariant?.specs);
   const mergedBox = [...content.inTheBox, ...(activeVariant?.inTheBox ?? [])];
 
@@ -1822,50 +1806,30 @@ export default function Product() {
               />
             </a>
           )}
-          {/* The latest commit rides in the same row as the resource cards —
-              streams in as a 4th card once the deferred GitHub fetch lands.
-              GitHub's unauthenticated API rate-limits the edge under load, so
-              when the fetch comes back empty we still render a 4th card: a
-              static link to the repo's commit history. The bubble is always
-              present, it just degrades from a live commit to a changelog link. */}
-          {commitHistoryRepoUrl ? (
-            <Suspense
-              fallback={<CommitHistoryCard repoUrl={commitHistoryRepoUrl} />}
-            >
-              <Await
-                resolve={latestCommits}
-                errorElement={
-                  <CommitHistoryCard repoUrl={commitHistoryRepoUrl} />
-                }
-              >
-                {(commits) => {
-                  // Bundles show one commit card per component repo; a single
-                  // product (incl. split-repo lines) prefers the selected tier's
-                  // repo so the card tracks the ladder. But the loader only
-                  // fetches the product-default repo (per-tier fetches blew the
-                  // 60/hr unauth rate limit), so on split-repo tiers no commit
-                  // matches activeRepoUrl — fall back to the fetched commit
-                  // rather than degrading to the static changelog card.
-                  const all = commits ?? [];
-                  const matched = all.filter(
-                    (c) => c.repoUrl === activeRepoUrl,
-                  );
-                  const shown = content.bundle
-                    ? all
-                    : matched.length
-                      ? matched
-                      : all;
-                  return shown.length ? (
-                    shown.map((c) => (
-                      <LatestCommitCard key={c.sha + c.repoUrl} commit={c} />
-                    ))
-                  ) : (
-                    <CommitHistoryCard repoUrl={commitHistoryRepoUrl} />
-                  );
-                }}
-              </Await>
-            </Suspense>
-          ) : null}
+          {/* The row's 4th card hands the reader to /contributing. It
+              replaced the changelog / latest-commit slot (2026-08-12): a
+              recruiting card beats a sha for the reader who got this far. */}
+          <Link
+            to="/contributing"
+            prefetch="viewport"
+            className="open-source-card open-source-card--help"
+          >
+            <Txt
+              id="product-chrome.os_card_help_label"
+              as="p"
+              className="open-source-card-label"
+            />
+            <Txt
+              id="product-chrome.os_card_help_title"
+              as="p"
+              className="open-source-card-title"
+            />
+            <Txt
+              id="product-chrome.os_card_help_sub"
+              as="p"
+              className="open-source-card-sub"
+            />
+          </Link>
         </div>
       </Chapter>
     ),

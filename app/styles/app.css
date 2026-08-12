@@ -7367,6 +7367,47 @@ html.light .firmware-logo--tile {
   mask-image: url(/logos/cern.svg);
 }
 
+/* "Wanna help?" card: the row's 4th bubble, an internal hand-off to
+   /contributing. A dimmed board render sits behind the text; the gradient
+   wash keeps the label side legible in both themes (bg-card is a token).
+   SWAP POINT: the intended background PNG never arrived. When it lands,
+   drop it in /public and change the url() in ::before below; the gradient
+   overlay in ::after stays as is. */
+.open-source-card--help {
+  position: relative;
+  overflow: hidden;
+}
+
+.open-source-card--help > p {
+  position: relative;
+  z-index: 1;
+}
+
+.open-source-card--help::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: url(/boards/openfc-lite/front.png);
+  background-repeat: no-repeat;
+  background-position: right -22% center;
+  background-size: auto 150%;
+  opacity: 0.18;
+  pointer-events: none;
+}
+
+.open-source-card--help::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    var(--color-bg-card) 10%,
+    color-mix(in srgb, var(--color-bg-card) 55%, transparent) 62%,
+    transparent 100%
+  );
+  pointer-events: none;
+}
+
 /* OSHWA-certified card — the license card upgraded when a product carries an
    OSHWA UID. Gold-accented so the certification reads as the headline credential
    (the CERN-OHL-S name moves to the sub-line). All tokens, so it themes for free. */
@@ -10368,11 +10409,12 @@ html.light .firmware-logo--tile {
    same dim tint as the hand-drawn emblems in either theme. */
 .section-art-logo {
   display: block;
-  width: 100%;
+  /* A filled logo carries far more ink than a stroke sketch: at the full
+     22rem figure width a square mark swallowed half the page, so cap it
+     well below the sketches' footprint and cut the opacity harder. */
+  width: min(100%, 13rem);
   background: currentColor;
-  /* A filled logo carries far more ink than a stroke sketch; halve it so
-     both kinds of margin art sit at the same visual weight. */
-  opacity: 0.5;
+  opacity: 0.3;
   -webkit-mask-size: contain;
   mask-size: contain;
   -webkit-mask-repeat: no-repeat;

@@ -3,6 +3,7 @@ import {useLoaderData} from 'react-router';
 import {buildSeoMeta} from '~/lib/seo';
 import {EditorialShell} from '~/components/EditorialShell';
 import {ContributorsWall} from '~/components/ContributorsWall';
+import {MarginArt, PartnerLogoArt} from '~/components/MarginArt';
 import {Txt} from '~/components/Txt';
 import {copyText} from '~/lib/copy';
 import {DISCORD_INVITE_URL} from '~/lib/company';
@@ -41,7 +42,23 @@ export async function loader({context}: Route.LoaderArgs) {
   return {contributors};
 }
 
-const SECTIONS = [1, 2, 3, 4];
+/**
+ * Section order and the mark each one carries, the same margin-art layer the
+ * open-source page runs (MarginArt + the reading cascade). Marks are the SVGs
+ * already shipped in public/logos/, rendered by PartnerLogoArt as dim
+ * currentColor masks so they stay subtle in both themes; `ratio` is each
+ * file's viewBox width/height.
+ */
+const SECTIONS = [
+  // 01 Report what broke: issues live on GitHub.
+  {n: 1, art: <PartnerLogoArt src="/logos/github.svg" ratio={1} />},
+  // 02 Change the design: certified open hardware.
+  {n: 2, art: <PartnerLogoArt src="/logos/oshwa.svg" ratio={549 / 357} />},
+  // 03 Improve the firmware: Betaflight is the flagship of the three.
+  {n: 3, art: <PartnerLogoArt src="/logos/betaflight.svg" ratio={854.1 / 159.2} />},
+  // 04 The repos: everything under CERN-OHL-S.
+  {n: 4, art: <PartnerLogoArt src="/logos/cern.svg" ratio={1} />},
+];
 
 export default function ContributingRoute() {
   const {contributors} = useLoaderData<typeof loader>();
@@ -55,13 +72,14 @@ export default function ContributingRoute() {
         <Txt id="contributing.lead" as="p" className="editorial-lead" />
       </header>
 
-      {SECTIONS.map((n) => (
+      {SECTIONS.map(({n, art}) => (
         <section className="editorial-section" key={n}>
           <Txt
             id={`contributing.s${n}_title`}
             as="h2"
             className="editorial-section-title"
           />
+          <MarginArt>{art}</MarginArt>
           <Txt id={`contributing.s${n}_body`} as="p" />
         </section>
       ))}
