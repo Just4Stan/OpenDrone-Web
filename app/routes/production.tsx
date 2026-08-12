@@ -3,7 +3,6 @@ import {Link} from 'react-router';
 import {buildSeoMeta} from '~/lib/seo';
 import {EditorialShell} from '~/components/EditorialShell';
 import {ProductionLadder} from '~/components/ProductionLadder';
-import {GoalsSection} from '~/components/GoalsSection';
 import {Txt} from '~/components/Txt';
 import {copyText} from '~/lib/copy';
 
@@ -50,7 +49,10 @@ export default function ProductionRoute() {
         <Txt id="production.s3_body" as="p" />
       </section>
 
-      <GoalsSection />
+      <section className="editorial-section">
+        <Txt id="roadmap.goals_title" as="h2" className="editorial-section-title" />
+        <Txt id="roadmap.goals_body" as="p" />
+      </section>
 
       <section className="editorial-cta">
         <Link
