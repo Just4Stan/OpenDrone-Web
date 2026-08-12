@@ -24,6 +24,7 @@ export function EditorialShell({
   aside,
   pageClassName,
   children,
+  rail = true,
 }: {
   /** This page's slug, matched against EDITORIAL_SERIES. */
   slug: string;
@@ -32,6 +33,9 @@ export function EditorialShell({
   /** Extra class on the prose column, e.g. timeline-page. */
   pageClassName?: string;
   children: ReactNode;
+  /** Render the series strip. Pages that place it themselves (the roadmap
+   *  puts it above its board band) pass false. */
+  rail?: boolean;
 }) {
   const shellRef = useRef<HTMLDivElement>(null);
 
@@ -84,7 +88,7 @@ export function EditorialShell({
         <EditorialNext slug={slug} />
       </div>
       {aside ? <aside className="editorial-aside">{aside}</aside> : null}
-      <SeriesRail slug={slug} />
+      {rail ? <SeriesRail slug={slug} /> : null}
     </div>
   );
 }
@@ -98,7 +102,7 @@ export function EditorialShell({
  * the end-of-page hand-off card; putting them in the rail made it a wall
  * of small text competing with the article.
  */
-function SeriesRail({slug}: {slug: string}) {
+export function SeriesRail({slug}: {slug: string}) {
   return (
     <nav className="series-rail" aria-label="Reading series">
       <ol className="series-rail-list">

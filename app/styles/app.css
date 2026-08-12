@@ -10010,7 +10010,10 @@ button.reset {
   width: var(--rail-width);
   max-width: 640px;
   margin: 0 auto;
-  padding: 4rem 0 6rem;
+  /* 1.25rem top below 1360 (restored to 4rem beside the sticky rail): the
+     4rem only existed to align with the rail head and otherwise stacked
+     dead space under the series strip. */
+  padding: 1.25rem 0 6rem;
   color: var(--color-text);
 }
 
@@ -10067,6 +10070,7 @@ button.reset {
 
 .editorial-section p {
   margin: 0 0 0.7rem;
+  max-width: 68ch;
 }
 
 .editorial-section strong {
@@ -10218,9 +10222,11 @@ html.light .editorial-watermark {
      the copy inside the section's own stacking context (the section carries
      position:relative + z-index:0 for exactly this). */
   left: calc(100% - 6rem);
-  top: -1.5rem;
+  top: 0;
+  bottom: 0;
+  margin: auto 0;
+  height: fit-content;
   width: 22rem;
-  margin: 0;
   z-index: -1;
   color: color-mix(in srgb, var(--color-text-muted) 45%, transparent);
   pointer-events: none;
@@ -10346,54 +10352,38 @@ html.light .editorial-watermark {
 }
 
 .series-rail {
-  /* Below the left-column breakpoint the index leads the page as one
-     compact horizontal strip: wayfinding belongs before the content, and
-     a nav list at the very bottom of the page read as fallen furniture. */
+  /* THE one placement, every editorial page, every width: a standalone
+     strip across the top, separated from the text by a hairline. It is
+     the site section's wayfinding, not part of the article. */
   order: -1;
-  margin-bottom: 0.25rem;
+  grid-column: 1 / -1;
+  padding: 0.4rem 0 0.9rem;
+  border-bottom: 1px solid color-mix(in srgb, var(--color-border) 70%, transparent);
+  margin-bottom: 1.5rem;
 }
 
 
 
-@media (min-width: 1360px) {
-  .editorial-shell {
-    grid-template-columns: 13rem minmax(0, 640px) minmax(0, 19rem);
-  }
 
+@media (min-width: 1120px) {
+  .editorial-shell,
   .editorial-shell.is-narrow {
-    grid-template-columns: 13rem minmax(0, 640px) minmax(0, 19rem);
+    grid-template-columns: minmax(0, 640px) minmax(0, 19rem);
+    justify-content: center;
+    align-items: start;
   }
 
-  .editorial-aside {
-    grid-column: 3;
-    position: sticky;
-    top: calc(var(--header-height) + 1.5rem);
-    /* Aligns the aside eyebrow with the page eyebrow (page padding-top). */
-    margin-top: 4rem;
-  }
-
-  .series-rail {
+  .editorial-page {
     grid-column: 1;
-    order: -1;
-    margin-bottom: 0;
-    position: sticky;
-    top: calc(var(--header-height) + 1.5rem);
-    /* Aligns the rail head with the page eyebrow (page padding-top).
-       Margin, not padding, so it does not eat into the max-height below. */
-    margin-top: 4rem;
-    /* The rail can outgrow the viewport once the series does; scroll it
-       rather than let it push the sticky top off screen. Thin, low-contrast
-       bar: this scrolls by a line or two, it should not read as a panel. */
-    max-height: calc(100vh - var(--header-height) - 4.5rem);
-    overflow-y: auto;
-    scrollbar-width: thin;
-    scrollbar-color: color-mix(in srgb, var(--color-border) 90%, transparent)
-      transparent;
   }
 
-  .series-rail-list {
-    display: grid;
-    gap: 0.3rem;
+  /* The page visual balances the text column: without it the left-weighted
+     prose against an empty right half read as lopsided. */
+  .editorial-aside {
+    grid-column: 2;
+    position: sticky;
+    top: calc(var(--header-height) + 1.5rem);
+    margin-top: 1.25rem;
   }
 }
 
@@ -10632,9 +10622,11 @@ html.light .editorial-watermark {
      the copy inside the section's own stacking context (the section carries
      position:relative + z-index:0 for exactly this). */
   left: calc(100% - 6rem);
-  top: -1.5rem;
+  top: 0;
+  bottom: 0;
+  margin: auto 0;
+  height: fit-content;
   width: 22rem;
-  margin: 0;
   z-index: -1;
   color: color-mix(in srgb, var(--color-text-muted) 45%, transparent);
   pointer-events: none;
@@ -10772,56 +10764,18 @@ html.light .editorial-watermark {
 }
 
 .series-rail {
-  /* Below the left-column breakpoint the index leads the page as one
-     compact horizontal strip: wayfinding belongs before the content, and
-     a nav list at the very bottom of the page read as fallen furniture. */
+  /* THE one placement, every editorial page, every width: a standalone
+     strip across the top, separated from the text by a hairline. It is
+     the site section's wayfinding, not part of the article. */
   order: -1;
-  margin-bottom: 0.25rem;
+  grid-column: 1 / -1;
+  padding: 0.4rem 0 0.9rem;
+  border-bottom: 1px solid color-mix(in srgb, var(--color-border) 70%, transparent);
+  margin-bottom: 1.5rem;
 }
 
 
 
-@media (min-width: 1360px) {
-  .editorial-shell {
-    grid-template-columns: 13rem minmax(0, 640px) minmax(0, 19rem);
-  }
-
-  .editorial-shell.is-narrow {
-    grid-template-columns: 13rem minmax(0, 640px) minmax(0, 19rem);
-  }
-
-  .editorial-aside {
-    grid-column: 3;
-    position: sticky;
-    top: calc(var(--header-height) + 1.5rem);
-    /* Aligns the aside eyebrow with the page eyebrow (page padding-top). */
-    margin-top: 4rem;
-  }
-
-  .series-rail {
-    grid-column: 1;
-    order: -1;
-    margin-bottom: 0;
-    position: sticky;
-    top: calc(var(--header-height) + 1.5rem);
-    /* Aligns the rail head with the page eyebrow (page padding-top).
-       Margin, not padding, so it does not eat into the max-height below. */
-    margin-top: 4rem;
-    /* The rail can outgrow the viewport once the series does; scroll it
-       rather than let it push the sticky top off screen. Thin, low-contrast
-       bar: this scrolls by a line or two, it should not read as a panel. */
-    max-height: calc(100vh - var(--header-height) - 4.5rem);
-    overflow-y: auto;
-    scrollbar-width: thin;
-    scrollbar-color: color-mix(in srgb, var(--color-border) 90%, transparent)
-      transparent;
-  }
-
-  .series-rail-list {
-    display: grid;
-    gap: 0.3rem;
-  }
-}
 
 /* Number + title rows, nothing else. No borders, no spine, no blurbs:
    whitespace is the container, and the current page is marked by a
@@ -11160,7 +11114,27 @@ html.light .editorial-watermark {
   display: flex;
   flex-direction: column;
   gap: 0.4rem;
-  margin-top: 1.75rem;
+  margin-top: 0.75rem;
+  /* Hard right bound: a stage with many boards wraps onto more card rows,
+     it never runs off the page. */
+  max-width: 100%;
+  /* THE SPINE: one continuous line down the whole board. Gates put their
+     arrowheads on it and stage heads put their dots on it, so the page
+     reads as a single path a design travels, top to bottom. */
+  position: relative;
+  padding-left: 1.75rem;
+}
+.kanban::before {
+  content: '';
+  position: absolute;
+  left: 4px;
+  top: 0.4rem;
+  bottom: 0.75rem;
+  width: 1px;
+  background: color-mix(in srgb, var(--color-gold) 45%, transparent);
+}
+.kanban-row-cards {
+  max-width: 100%;
 }
 .kanban-row-cards {
   display: flex;
@@ -11190,19 +11164,33 @@ html.light .editorial-watermark {
    row above, the pass criterion beside it. One text line of height, zero
    extra width. */
 .kanban-gate {
+  position: relative;
   display: flex;
   align-items: center;
-  gap: 0.6rem;
-  padding: 0.45rem 0 0.45rem 0.25rem;
+  padding: 0.4rem 0;
   color: color-mix(in srgb, var(--color-text-muted) 80%, transparent);
 }
 .kanban-gate-arrow {
-  width: 18px;
-  height: 18px;
-  flex: none;
-  stroke: color-mix(in srgb, var(--color-gold) 55%, transparent);
+  position: absolute;
+  /* Centered on the spine (line at 4px inside the board's 1.75rem inset). */
+  left: calc(-1.75rem + 4px - 5.5px);
+  width: 12px;
+  height: 12px;
+  stroke: color-mix(in srgb, var(--color-gold) 60%, transparent);
   stroke-width: 1.6;
+  fill: var(--color-bg);
 }
+.kanban-row {
+  position: relative;
+}
+.kanban-row > .kanban-col-head .kanban-dot {
+  position: absolute;
+  left: calc(-1.75rem + 4px - 3.5px);
+}
+.kanban-row > .kanban-col-head {
+  position: relative;
+}
+
 .kanban-gate-label {
   font-family: var(--font-mono);
   font-size: 10px;

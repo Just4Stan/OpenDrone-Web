@@ -29,7 +29,6 @@ export default function ContributingRoute() {
   return (
     <EditorialShell slug="contributing">
       <header className="editorial-hero">
-        <Txt id="contributing.eyebrow" as="p" className="editorial-eyebrow" />
         <Txt id="contributing.title" as="h1" className="editorial-title" />
         <Txt id="contributing.lead" as="p" className="editorial-lead" />
       </header>

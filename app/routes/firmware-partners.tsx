@@ -54,11 +54,6 @@ export default function FirmwarePartnersRoute() {
     <EditorialShell slug="firmware-partners">
       <header className="editorial-hero">
         <Txt
-          id="firmware-partners.eyebrow"
-          as="p"
-          className="editorial-eyebrow"
-        />
-        <Txt
           id="firmware-partners.title"
           as="h1"
           className="editorial-title"

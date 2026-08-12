@@ -47,7 +47,6 @@ export default function OpenSourceRoute() {
   return (
     <EditorialShell slug="open-source">
       <header className="editorial-hero">
-        <Txt id="open-source.eyebrow" as="p" className="editorial-eyebrow" />
         <Txt id="open-source.title" as="h1" className="editorial-title" />
         <Txt id="open-source.lead" as="p" className="editorial-lead" />
       </header>

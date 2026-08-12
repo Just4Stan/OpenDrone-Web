@@ -3,6 +3,7 @@ import {Link} from 'react-router';
 import {buildSeoMeta} from '~/lib/seo';
 import {EditorialShell} from '~/components/EditorialShell';
 import {ProductionLadder} from '~/components/ProductionLadder';
+import {GoalsSection} from '~/components/GoalsSection';
 import {Txt} from '~/components/Txt';
 import {copyText} from '~/lib/copy';
 
@@ -25,7 +26,6 @@ export default function ProductionRoute() {
   return (
     <EditorialShell slug="production" aside={<ProductionLadder />}>
       <header className="editorial-hero">
-        <Txt id="production.eyebrow" as="p" className="editorial-eyebrow" />
         <Txt id="production.title" as="h1" className="editorial-title" />
         <Txt id="production.lead" as="p" className="editorial-lead" />
       </header>
@@ -49,6 +49,8 @@ export default function ProductionRoute() {
         />
         <Txt id="production.s3_body" as="p" />
       </section>
+
+      <GoalsSection />
 
       <section className="editorial-cta">
         <Link

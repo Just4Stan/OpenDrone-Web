@@ -176,7 +176,6 @@ export default function TimelineRoute() {
   return (
     <EditorialShell slug="timeline" pageClassName="timeline-page">
       <header className="editorial-hero">
-        <Txt id="timeline.eyebrow" as="p" className="editorial-eyebrow" />
         <Txt id="timeline.title" as="h1" className="editorial-title" />
         <Txt id="timeline.lead" as="p" className="editorial-lead" />
         <div
