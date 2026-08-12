@@ -10237,7 +10237,7 @@ html.light .editorial-watermark {
   height: auto;
 }
 
-@media (min-width: 1280px) {
+@media (min-width: 1180px) {
   .section-art {
     display: block;
   }
@@ -10752,12 +10752,19 @@ html.light .editorial-watermark {
   position: absolute;
   left: 4px;
   top: 0.4rem;
-  bottom: 0.75rem;
+  bottom: 0;
   width: 1px;
-  background: color-mix(in srgb, var(--color-gold) 45%, transparent);
+  background: linear-gradient(
+    to bottom,
+    color-mix(in srgb, var(--color-gold) 45%, transparent) 0%,
+    color-mix(in srgb, var(--color-gold) 45%, transparent) 82%,
+    transparent 100%
+  );
 }
 .kanban-row-cards {
-  max-width: 100%;
+  /* Four boards per line at most: 4 x 10.5rem + 3 gaps. A long stage
+     stacks; it never becomes a horizon-wide strip. */
+  max-width: min(100%, 44.7rem);
 }
 .kanban-row-cards {
   display: flex;
@@ -10780,7 +10787,24 @@ html.light .editorial-watermark {
 .kanban-band {
   width: var(--rail-width);
   margin: 0 auto;
-  padding-top: var(--sp-5);
+  padding-top: 0;
+}
+/* The strip and the title sit exactly where they sit on every other
+   editorial page (the shell's content span, centered); only the board
+   breaks out to the full rail. Switching pages must not move the text. */
+.kanban-band > .series-rail,
+.kanban-band > .editorial-hero {
+  width: min(100%, calc(640px + var(--sp-7) + 19rem));
+  margin-inline: auto;
+}
+.kanban-band > .editorial-hero {
+  /* Match the shell pages exactly: their strip and prose are separated by
+     the grid's row gap plus the page's top padding; without both terms
+     the roadmap title floated visibly higher than every sibling page. */
+  /* +1.5rem: in this block layout the strip's bottom margin COLLAPSES
+     into this one (the shell's grid rows don't collapse), so the term
+     has to be re-added for the two pages to measure identical. */
+  margin-top: calc(var(--sp-7) + 1.25rem + 1.5rem);
 }
 
 /* The gate between two stage rows: a small curved arrow climbing into the
@@ -10795,13 +10819,17 @@ html.light .editorial-watermark {
 }
 .kanban-gate-arrow {
   position: absolute;
-  /* Centered on the spine (line at 4px inside the board's 1.75rem inset). */
-  left: calc(-1.75rem + 4px - 5.5px);
+  /* Dead-centered on the spine, vertically centered on its own row, and
+     punched through the line with page background. */
+  left: calc(-1.75rem + 4px - 6px);
+  top: 50%;
+  translate: 0 -50%;
   width: 12px;
   height: 12px;
-  stroke: color-mix(in srgb, var(--color-gold) 60%, transparent);
+  stroke: color-mix(in srgb, var(--color-gold) 70%, transparent);
   stroke-width: 1.6;
-  fill: var(--color-bg);
+  fill: none;
+  background: var(--color-bg);
 }
 .kanban-row {
   position: relative;
@@ -10809,6 +10837,11 @@ html.light .editorial-watermark {
 .kanban-row > .kanban-col-head .kanban-dot {
   position: absolute;
   left: calc(-1.75rem + 4px - 3.5px);
+  top: 50%;
+  translate: 0 -50%;
+  /* Page-background fill so the hollow stages punch through the spine
+     instead of letting it run visibly behind them. */
+  background: var(--color-bg);
 }
 .kanban-row > .kanban-col-head {
   position: relative;
@@ -10841,6 +10874,9 @@ html.light .editorial-watermark {
    still owns the first screen. */
 .kanban-hero {
   margin-bottom: 0;
+}
+.kanban-band > .kanban-lead {
+  margin-top: 0;
 }
 
 /* Spill into the free canvas right of the prose column when it exists. */

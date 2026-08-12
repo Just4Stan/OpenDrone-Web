@@ -97,7 +97,6 @@ export function ProductionLadder() {
         ))}
       </ol>
       <Txt id="production.ladder_note" as="p" className="ladder-note" />
-      <Txt id="roadmap.goals_foot" as="p" className="ladder-note" />
     </figure>
   );
 }
