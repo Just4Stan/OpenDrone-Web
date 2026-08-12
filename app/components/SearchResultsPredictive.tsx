@@ -7,7 +7,7 @@ import {
   type PredictiveSearchReturn,
 } from '~/lib/search';
 import {useAside} from './Aside';
-import {useComingSoon} from '~/lib/coming-soon';
+import {useProductStatusResolver} from '~/lib/coming-soon';
 import {isComingSoon} from '~/lib/product-content';
 
 type PredictiveSearchItems = PredictiveSearchReturn['result']['items'];
@@ -203,7 +203,7 @@ function SearchResultsPredictiveProducts({
   closeSearch,
 }: PartialPredictiveSearchResult<'products'>) {
   // Coming-soon products list but never show a price.
-  const globalComingSoon = useComingSoon();
+  const productStatus = useProductStatusResolver();
   if (!products.length) return null;
 
   return (
@@ -217,7 +217,7 @@ function SearchResultsPredictiveProducts({
             term: term.current,
           });
 
-          const soon = isComingSoon(product.handle, globalComingSoon);
+          const soon = productStatus(product.handle) !== 'live';
           const price = soon
             ? undefined
             : product?.selectedOrFirstAvailableVariant?.price;

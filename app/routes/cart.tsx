@@ -68,6 +68,8 @@ export async function action({request, context}: Route.ActionArgs) {
       const soonFlag = comingSoonFlag(context.env);
       const statusFlags = await fetchStatusFlagsFast(
         context.env.GITHUB_STATUS_TOKEN,
+        undefined,
+        context.waitUntil,
       );
       if (lines.length > 0 && anyComingSoonLocks(soonFlag, statusFlags)) {
         const {lockedIds} = await findLockedMerchandise(

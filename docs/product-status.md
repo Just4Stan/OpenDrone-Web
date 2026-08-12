@@ -65,9 +65,15 @@ within one request.
 
 ## Latency and failure model
 
-- Topic fetches are cached 10 minutes per worker isolate; loaders cap the
-  wait (400-600ms) and fall back to the static list, while the fetch fills
-  the cache for the next request. A flip lands within ~10 minutes.
+- Topic fetches are cached 10 minutes per worker isolate, with a single
+  shared in-flight fetch (concurrent cold requests never fan out twice).
+  Loaders cap the wait (400-600ms) and fall back to the static list while
+  the fetch finishes under `context.waitUntil` — always pass waitUntil
+  from loaders, or Oxygen cancels the losing fetch with the response and
+  the cache never fills. A flip lands within ~10 minutes.
+- The feeds' HTTP Cache-Control is capped at 600s for the same reason: a
+  response cached longer than the gating latency would keep serving a
+  price after a topic downgrade.
 - `GITHUB_STATUS_TOKEN` (fine-grained, public read only) must be set in
   Oxygen: without it the unauthenticated 60/h budget can rate-limit the
   fetch and pin the site to the static statuses.
@@ -88,6 +94,15 @@ in `roadmap-data.ts` in a follow-up PR.
 **Emergency lock:** set `"status": "development"` in
 `content/products/<handle>.json`, deploy (auto on merge). Then fix the
 topic at leisure.
+
+**Restock mails:** the back-in-stock webhook resolves with the live
+topics too, so a stock top-up right after a topic flip WILL fire the
+restock broadcast — coordinate it with the manual launch mail.
+
+**Vote tally:** `scripts/tally-votes.mjs` merges each run onto the
+per-order ballots recorded in `content/votes.json` (`ballots_by_order`);
+without the merge, the Admin API's 60-day order window would silently
+decay old ballots on every weekly recount. Do not delete that key.
 
 **Test buy flows in a dev worktree:** roadmap products ignore
 `PUBLIC_COMING_SOON=0` now. Temporarily set `"status": "live"` in the

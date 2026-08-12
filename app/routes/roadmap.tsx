@@ -41,7 +41,11 @@ export const meta: Route.MetaFunction = () =>
 // cache warms, instead of the whole page hanging on GitHub.
 export async function loader({context}: Route.LoaderArgs) {
   const env = context.env as unknown as Record<string, string | undefined>;
-  const flags = await fetchStatusFlagsFast(env.GITHUB_STATUS_TOKEN);
+  const flags = await fetchStatusFlagsFast(
+    env.GITHUB_STATUS_TOKEN,
+    undefined,
+    context.waitUntil,
+  );
   return {roadmap: resolveRoadmap(flags)};
 }
 
@@ -196,6 +200,9 @@ export default function RoadmapRoute({loaderData}: Route.ComponentProps) {
   return (
     <EditorialShell slug="roadmap">
       <section className="editorial-section kanban-lead">
+        {/* The board leads visually with no prose, but screen readers and
+            heading audits still get a section name above the card h3s. */}
+        <Txt id="roadmap.s2_title" as="h2" className="sr-only" />
         <div className="kanban">
           {columns.map((col) => (
             <div className="kanban-col" key={col.status}>

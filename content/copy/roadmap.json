@@ -10,7 +10,7 @@
   "s1_body": [
     "Everything starts as a conversation on [the OpenDrone Discord](@discord): what the market needs, which specs make sense, what can realistically be produced. Agreeing before anyone draws is the point. It stops two people building the same thing, and it kills bad ideas before someone spends weeks on a layout. When you want to do more than talk, [the contributing page](/contributing) is the manual."
   ],
-  "s2_title": "*01* · Where every product stands",
+  "s2_title": "Where every product stands",
   "s2_body": [
     "The same board we work from. Each product carries exactly one status flag, explained below. The flag is the status: the same value is set as a status-* topic on the product's GitHub repo, and nothing describes status in prose anywhere else."
   ],

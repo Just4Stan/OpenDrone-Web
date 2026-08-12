@@ -80,10 +80,24 @@ export function useComingSoon(handle?: string | null): boolean {
  * map) and sees only the static roadmap statuses.
  */
 export function useProductStatus(handle?: string | null): ProductStatus {
+  return useProductStatusResolver()(handle);
+}
+
+/**
+ * The same resolution as {@link useProductStatus}, as a plain function for
+ * components that resolve MANY handles in a loop (header pods, search
+ * rows, stack offers): call the hook once at the top, use the closure per
+ * item. Keeps every client surface on the root loader's live-topic map
+ * instead of quietly falling back to the static list.
+ */
+export function useProductStatusResolver(): (
+  handle?: string | null,
+) => ProductStatus {
   const data = useRouteLoaderData<RootLoader>('root');
-  const mapped = handle ? data?.productStatuses?.[handle] : undefined;
-  if (mapped) return mapped;
-  return resolveStatus(handle, data?.comingSoon ?? true);
+  const map = data?.productStatuses;
+  const globalFlag = data?.comingSoon ?? true;
+  return (handle) =>
+    (handle ? map?.[handle] : undefined) ?? resolveStatus(handle, globalFlag);
 }
 
 /**

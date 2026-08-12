@@ -141,7 +141,11 @@ async function loadCriticalData({context, params, request}: Route.LoaderArgs) {
   // Roadmap status for the chip near the title. The 600ms fast fetch races
   // the GitHub topic lookup against the static ROADMAP fallback, so a cold
   // cache or an API failure degrades to the checked-in status, never a 500.
-  const statusFlagsPromise = fetchStatusFlagsFast(context.env.GITHUB_STATUS_TOKEN);
+  const statusFlagsPromise = fetchStatusFlagsFast(
+    context.env.GITHUB_STATUS_TOKEN,
+    undefined,
+    context.waitUntil,
+  );
 
   const [{product}, ...partnerResults] = await Promise.all([
     storefront.query(PRODUCT_QUERY, {
@@ -2156,21 +2160,26 @@ export default function Product() {
               {(commits) => <CommitTimeline commits={commits} />}
             </Await>
           </Suspense>
-          <Suspense fallback={<ContributorGridSkeleton />}>
-            <Await
-              resolve={contributors}
-              errorElement={<ContributorGrid contributors={[]} />}
-            >
-              {(list) => <ContributorGrid contributors={list ?? []} />}
-            </Await>
-          </Suspense>
           {/* No prose above the grid; the how-and-why lives once, on the
-              contributing page, and this line carries the reader there. */}
-          <p className="provenance-links">
-            <Link prefetch="viewport" to="/contributing">
+              contributing page. The button sits to the grid's right — the
+              row of people ends in the door you walk through to join them. */}
+          <div className="contributors-row">
+            <Suspense fallback={<ContributorGridSkeleton />}>
+              <Await
+                resolve={contributors}
+                errorElement={<ContributorGrid contributors={[]} />}
+              >
+                {(list) => <ContributorGrid contributors={list ?? []} />}
+              </Await>
+            </Suspense>
+            <Link
+              prefetch="viewport"
+              to="/contributing"
+              className="contributors-cta-btn"
+            >
               <Txt id="product-chrome.contributors_link_contribute" />
             </Link>
-          </p>
+          </div>
         </Chapter>
     ),
     /**

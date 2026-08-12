@@ -58,7 +58,11 @@ export async function loader({request, context, params}: Route.LoaderArgs) {
   // agent/deep-link order path, so locked SKUs must be dropped here too.
   // Zero-cost when the shop is unlocked and nothing is override-locked.
   const soonFlag = comingSoonFlag(context.env);
-  const statusFlags = await fetchStatusFlagsFast(context.env.GITHUB_STATUS_TOKEN);
+  const statusFlags = await fetchStatusFlagsFast(
+    context.env.GITHUB_STATUS_TOKEN,
+    undefined,
+    context.waitUntil,
+  );
   if (anyComingSoonLocks(soonFlag, statusFlags)) {
     const {lockedIds, lockedHandles} = await findLockedMerchandise(
       context.storefront,
