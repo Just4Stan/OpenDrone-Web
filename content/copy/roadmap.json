@@ -6,11 +6,11 @@
   "eyebrow": "Roadmap",
   "title": "What we're building, in the open.",
   "lead": "The end goal is to cover every corner of the FPV hardware spectrum, foundational hardware first: stack, receiver, frame, motors, video. This page is the live state of that plan: where every project stands, what you voted for next, and what the money is building toward.",
-  "s1_title": "01 · How this works",
+  "s1_title": "*01* · How this works",
   "s1_body": [
     "Everything starts as a conversation on [the OpenDrone Discord](@discord): what the market needs, which specs make sense, what can realistically be produced. Agreeing before anyone draws is the point. It stops two people building the same thing, and it kills bad ideas before someone spends weeks on a layout. When you want to do more than talk, [the contributing page](/contributing) is the manual."
   ],
-  "s2_title": "02 · Where every product stands",
+  "s2_title": "*02* · Where every product stands",
   "s2_body": [
     "The same board we work from. Each product carries exactly one status flag, explained below. The flag is the status: the same value is set as a status-* topic on the product's GitHub repo, and nothing describes status in prose anywhere else."
   ],
@@ -39,7 +39,7 @@
   "item_openaio_note": "All-in-one boards, full-size and whoop.",
   "item_charger_name": "Charger",
   "item_charger_note": "LiPo charger.",
-  "s3_title": "03 · What the labels mean",
+  "s3_title": "*03* · What the labels mean",
   "status_launched_label": "Launched",
   "status_launched_legend": "In the shop and settled. The design has stopped moving; buy it and it will not change under you.",
   "status_beta_label": "Beta",
@@ -50,7 +50,7 @@
   "status_in-progress_legend": "A first design exists and prototypes may already be ordered, but nothing is under test yet.",
   "status_planned_label": "Planned",
   "status_planned_legend": "No design yet, on purpose. We name it early so the community can step in and help design the hardware they are interested in contributing to.",
-  "votes_title": "04 · What you want next",
+  "votes_title": "*04* · What you want next",
   "votes_body": "Every order carries an optional ballot: rank up to three of the in-progress and planned projects from your cart, and checkout files it with the order. This is how the queue below the betas gets its order. The vote steers our prioritisation; engineering reality can still overrule it, in the open.",
   "votes_empty": "No ballots counted yet. Voting ships with the shop: when you order, the cart carries a ranked ballot for what we should build next.",
   "votes_ballots_label": "ballots counted",
@@ -58,7 +58,7 @@
   "votes_added_prefix": "listed",
   "votes_graduated_title": "Voted up, already moving",
   "votes_method": "Ranked choice: 3 points for a first pick, 2 for a second, 1 for a third.",
-  "goals_title": "05 · Where the money goes",
+  "goals_title": "*05* · Where the money goes",
   "goals_body": "Shop profit goes to R&D and manufacturing, and we would rather show that than say it. So here is what we are saving for, one goal at a time. The meter is computed from sales on a weekly rhythm, in coarse 5% steps: deliberately approximate, never a live feed of our books.",
   "goals_status_done": "Done",
   "goals_status_current": "Saving for this",

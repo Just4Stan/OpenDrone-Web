@@ -9968,6 +9968,28 @@ button.reset {
   font-style: italic;
 }
 
+/* Chapter numbers ("01 ·") are emphasised in copy so they pick up the gold
+   above; upright, because italic mono in a letterspaced all-caps line reads
+   as a glitch, not as emphasis. */
+.editorial-section-title em {
+  font-style: normal;
+}
+
+/* Prose links read as actions: gold at rest, not only on hover. Scoped to
+   the editorial column so chrome and nav links keep their quiet default. */
+.editorial-section p a,
+.editorial-lead a {
+  color: var(--color-gold);
+  text-decoration: underline;
+  text-decoration-color: color-mix(in srgb, var(--color-gold) 45%, transparent);
+  text-underline-offset: 3px;
+}
+.editorial-section p a:hover,
+.editorial-lead a:hover {
+  color: var(--color-accent);
+  text-decoration-color: currentColor;
+}
+
 /* Margin art: one stroke-only drawing per section, floated into the free
    canvas right of the prose column and aligned with its section's top.
    Dim gray linework — it should register as a sketch in the margin, not
