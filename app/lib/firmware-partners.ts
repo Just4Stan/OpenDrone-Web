@@ -24,7 +24,9 @@ export const FIRMWARE_PARTNERS: FirmwarePartner[] = [
     id: 'betaflight',
     project: 'Betaflight',
     repoUrl: 'https://github.com/betaflight/betaflight',
-    donationUrl: 'https://opencollective.com/betaflight',
+    // Betaflight has no OpenCollective; they take donations via Patreon
+    // (and PayPal, linked from betaflight.com).
+    donationUrl: 'https://www.patreon.com/betaflight',
   },
   {
     id: 'am32',
