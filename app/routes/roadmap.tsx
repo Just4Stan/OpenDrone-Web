@@ -202,11 +202,6 @@ export default function RoadmapRoute({loaderData}: Route.ComponentProps) {
       </header>
 
       <section className="editorial-section">
-        <Txt id="roadmap.s1_title" as="h2" className="editorial-section-title" />
-        <Txt id="roadmap.s1_body" as="p" />
-      </section>
-
-      <section className="editorial-section">
         <Txt id="roadmap.s2_title" as="h2" className="editorial-section-title" />
         <Txt id="roadmap.s2_body" as="p" />
         <div className="kanban">
@@ -267,6 +262,11 @@ export default function RoadmapRoute({loaderData}: Route.ComponentProps) {
             </div>
           ))}
         </dl>
+      </section>
+
+      <section className="editorial-section">
+        <Txt id="roadmap.s1_title" as="h2" className="editorial-section-title" />
+        <Txt id="roadmap.s1_body" as="p" />
       </section>
 
       <VotesSection roadmap={loaderData.roadmap} />
