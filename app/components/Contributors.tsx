@@ -1,22 +1,19 @@
 import type {Contributor} from '~/lib/github';
 import {contributorColor} from '~/lib/contributor-colors';
+import {DISCORD_INVITE_URL} from '~/lib/company';
 import {Txt} from './Txt';
 import {copyText} from '~/lib/copy';
 
 /**
  * Contributor grid for the PDP "Built in the open" chapter: one tile per
  * GitHub account with commits on the product's repos, plus a standing
- * "+ you" tile that points at the repo's issues. The section renders even
- * when the GitHub API is rate-limited (empty list): the invitation tile
- * is the point, the avatars are the proof.
+ * "+ you" tile. The tile points at Discord, not the issue tracker: the
+ * contributing flow is talk-first (find the maintainer, agree on the change,
+ * then touch files), so the invitation must not skip that step. The section
+ * renders even when the GitHub API is rate-limited (empty list): the
+ * invitation tile is the point, the avatars are the proof.
  */
-export function ContributorGrid({
-  contributors,
-  issuesUrl,
-}: {
-  contributors: Contributor[];
-  issuesUrl: string;
-}) {
+export function ContributorGrid({contributors}: {contributors: Contributor[]}) {
   return (
     <ul className="contributor-grid">
       {contributors.map((c) => (
@@ -61,7 +58,7 @@ export function ContributorGrid({
       <li>
         <a
           className="contributor-tile contributor-tile--you"
-          href={issuesUrl}
+          href={DISCORD_INVITE_URL}
           target="_blank"
           rel="noopener noreferrer"
         >

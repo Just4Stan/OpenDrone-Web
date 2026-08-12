@@ -40,8 +40,6 @@ const SOCIAL_LINKS: Array<{href: string; copy: string}> = [
   {href: 'https://github.com/OpenDrone-hw', copy: 'nav_github'},
 ];
 
-// The company cell renders as two sub-columns (Stan, 2026-08-11): the story
-// pages on the left, the practical/legal trio on the right.
 const COMPANY_LINKS: Array<{to: string; copy: string}> = [
   {to: '/open-source', copy: 'nav_open_source_incutec'},
   {to: '/firmware-partners', copy: 'nav_firmware_partners'},
@@ -51,13 +49,12 @@ const COMPANY_LINKS: Array<{to: string; copy: string}> = [
   {to: '/production', copy: 'nav_production'},
 ];
 
-const COMPANY_META_LINKS: Array<{to: string; copy: string}> = [
+// Imprint, contact and security head the Legal column (Stan, 2026-08-12):
+// they are practical/legal reader destinations, not part of the company story.
+const LEGAL_LINKS: Array<{to: string; copy: string}> = [
   {to: '/legal', copy: 'nav_legal_imprint'},
   {to: '/support', copy: 'nav_contact'},
   {to: '/security', copy: 'nav_security'},
-];
-
-const LEGAL_LINKS: Array<{to: string; copy: string}> = [
   {to: '/algemene-voorwaarden', copy: 'nav_terms'},
   {to: '/privacy', copy: 'nav_privacy'},
   {to: '/cookies', copy: 'nav_cookies'},
@@ -179,22 +176,13 @@ export function Footer({
               ))}
             </nav>
             <ColumnHeading id="chrome.heading_company" />
-            <div className="grid grid-cols-2 gap-x-6">
-              <nav className="flex flex-col gap-1.5">
-                {COMPANY_LINKS.map((link) => (
-                  <FooterNavLink key={link.to} to={link.to}>
-                    <Txt id={`chrome.${link.copy}`} />
-                  </FooterNavLink>
-                ))}
-              </nav>
-              <nav className="flex flex-col gap-1.5">
-                {COMPANY_META_LINKS.map((link) => (
-                  <FooterNavLink key={link.to} to={link.to}>
-                    <Txt id={`chrome.${link.copy}`} />
-                  </FooterNavLink>
-                ))}
-              </nav>
-            </div>
+            <nav className="flex flex-col gap-1.5">
+              {COMPANY_LINKS.map((link) => (
+                <FooterNavLink key={link.to} to={link.to}>
+                  <Txt id={`chrome.${link.copy}`} />
+                </FooterNavLink>
+              ))}
+            </nav>
           </div>
 
           {/* Legal */}

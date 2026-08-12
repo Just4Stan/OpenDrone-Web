@@ -324,38 +324,6 @@ function DownloadsGrid({downloads}: {downloads: DownloadAsset[]}) {
 }
 
 /**
- * Intro line for the contributors chapter. It streams with the grid rather
- * than above it, because it can only promise avatars when there are avatars:
- * GitHub's unauthenticated API is 60 calls an hour per IP, so an empty list
- * is a normal outcome, not an error. The empty wording still says the work is
- * public and still invites, it just doesn't point at people who aren't there.
- */
-function ContributorsIntro({empty, title}: {empty?: boolean; title?: string}) {
-  if (empty || !title) {
-    return (
-      <Txt
-        id="product-chrome.contributors_intro_empty"
-        as="p"
-        className="chapter-body"
-      />
-    );
-  }
-  // The product's name is Shopify data, so the sentence marks its slot with
-  // `{product}` and is split around it here. One editable sentence beats
-  // shipping "These are the GitHub accounts behind" and "; the next tile is
-  // reserved." to the studio as two fragments nobody can read.
-  const id = 'product-chrome.contributors_intro';
-  const [before, after] = (copyText(id) ?? '').split('{product}');
-  return (
-    <p className="chapter-body" {...editAttrs(id)}>
-      {before}
-      {title}
-      {after}
-    </p>
-  );
-}
-
-/**
  * Merge a variant's spec deltas over the product's shared spec table,
  * matched by row key. A delta value of `null` hides the base row (e.g. the
  * cost-down Lite drops a sensor the standard board carries); a value
@@ -2158,8 +2126,8 @@ export default function Product() {
     /**
      * Who built it. GitHub accounts with commits on the product's repos,
      * streamed in deferred. The grid always closes with a "+ you" tile pointing
-     * at the issues page; when GitHub rate-limits the fetch the chapter still
-     * renders with just that invitation.
+     * at Discord (talk before touching files); when GitHub rate-limits the
+     * fetch the chapter still renders with just that invitation.
      */
     contributors: (n, title) => (
         <Chapter
@@ -2177,41 +2145,21 @@ export default function Product() {
               {(commits) => <CommitTimeline commits={commits} />}
             </Await>
           </Suspense>
-          {/* The intro has to stream with the grid, not ahead of it. GitHub's
-              unauthenticated API allows 60 calls an hour per IP, so an empty
-              list is routine, and "these are the accounts behind X" above a
-              lone "+ you?" tile reads as nobody having built the thing. */}
-          <Suspense
-            fallback={
-              <>
-                <ContributorsIntro empty />
-                <ContributorGridSkeleton />
-              </>
-            }
-          >
+          <Suspense fallback={<ContributorGridSkeleton />}>
             <Await
               resolve={contributors}
-              errorElement={
-                <>
-                  <ContributorsIntro empty />
-                  <ContributorGrid
-                    contributors={[]}
-                    issuesUrl={`${activeRepoUrl}/issues`}
-                  />
-                </>
-              }
+              errorElement={<ContributorGrid contributors={[]} />}
             >
-              {(list) => (
-                <>
-                  <ContributorsIntro empty={!list?.length} title={product.title} />
-                  <ContributorGrid
-                    contributors={list ?? []}
-                    issuesUrl={`${activeRepoUrl}/issues`}
-                  />
-                </>
-              )}
+              {(list) => <ContributorGrid contributors={list ?? []} />}
             </Await>
           </Suspense>
+          {/* No prose above the grid; the how-and-why lives once, on the
+              contributing page, and this line carries the reader there. */}
+          <p className="provenance-links">
+            <Link prefetch="viewport" to="/contributing">
+              <Txt id="product-chrome.contributors_link_contribute" />
+            </Link>
+          </p>
         </Chapter>
     ),
     /**
