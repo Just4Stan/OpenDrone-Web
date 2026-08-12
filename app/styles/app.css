@@ -8205,7 +8205,7 @@ html.light .firmware-logo--tile {
   color: var(--color-text-muted);
   font-family: var(--font-mono);
   font-size: 11px;
-  letter-spacing: 0.18em;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
   cursor: pointer;
   transition: color 0.2s ease, border-color 0.2s ease, background 0.2s ease;
@@ -10319,7 +10319,7 @@ html.light .firmware-logo--tile {
 .editorial-eyebrow {
   font-family: var(--font-mono);
   font-size: 12px;
-  letter-spacing: 0.25em;
+  letter-spacing: 0.2em;
   text-transform: uppercase;
   color: var(--color-gold);
   margin: 0 0 1rem;
@@ -10697,7 +10697,7 @@ html.light .editorial-watermark {
 .editorial-section-title {
   font-family: var(--font-mono);
   font-size: 12px;
-  letter-spacing: 0.25em;
+  letter-spacing: 0.2em;
   text-transform: uppercase;
   color: var(--color-text);
   margin: 0 0 1.1rem;
@@ -10728,15 +10728,15 @@ html.light .editorial-watermark {
 .editorial-cta-primary {
   display: inline-flex;
   align-items: center;
-  padding: 0.9rem 1.5rem;
+  padding: 0.75rem 1.5rem;
   background: var(--color-gold-fill);
   color: var(--color-on-accent);
   font-family: var(--font-mono);
   font-size: 12px;
   font-weight: 700;
-  letter-spacing: 0.14em;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
-  border-radius: var(--r-xs);
+  border-radius: 999px;
   transition: background-color 0.2s ease;
 }
 
@@ -10748,20 +10748,22 @@ html.light .editorial-watermark {
 .editorial-cta-secondary {
   display: inline-flex;
   align-items: center;
-  padding: 0.9rem 1.5rem;
-  border: 1px solid var(--color-border);
-  color: var(--color-text-muted);
+  padding: 0.75rem 1.5rem;
+  border: 1px solid color-mix(in srgb, var(--color-gold) 55%, transparent);
+  color: var(--color-gold);
   font-family: var(--font-mono);
   font-size: 12px;
-  letter-spacing: 0.14em;
+  font-weight: 600;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
-  border-radius: var(--r-xs);
-  transition: border-color 0.2s ease, color 0.2s ease;
+  border-radius: 999px;
+  transition: background 0.18s ease, color 0.18s ease, border-color 0.18s ease;
 }
 
 .editorial-cta-secondary:hover {
-  border-color: var(--color-gold);
-  color: var(--color-text);
+  background: var(--color-gold-fill);
+  border-color: var(--color-gold-fill);
+  color: var(--color-on-accent);
 }
 
 /* ═══════════════════════════════════════════════════════════════════════
@@ -10894,7 +10896,7 @@ html.light .editorial-watermark {
   margin-top: var(--sp-8);
   padding: 1.4rem 1.5rem;
   border: 1px solid color-mix(in srgb, var(--color-border) 80%, transparent);
-  border-radius: var(--r-xs);
+  border-radius: var(--r-md);
   font-family: var(--font-mono);
   transition: border-color 0.2s ease;
 }
@@ -10905,7 +10907,7 @@ html.light .editorial-watermark {
 
 .editorial-next-label {
   font-size: 10px;
-  letter-spacing: 0.22em;
+  letter-spacing: 0.2em;
   text-transform: uppercase;
   color: var(--color-gold);
 }
@@ -10926,7 +10928,7 @@ html.light .editorial-watermark {
 
 .editorial-next-min {
   font-size: 10px;
-  letter-spacing: 0.18em;
+  letter-spacing: 0.2em;
   text-transform: uppercase;
   color: var(--color-text-muted);
   margin-top: 0.35rem;
@@ -11056,7 +11058,7 @@ html.light .editorial-watermark {
 
 .aside-eyebrow {
   font-size: 11px;
-  letter-spacing: 0.22em;
+  letter-spacing: 0.2em;
   text-transform: uppercase;
   color: var(--color-gold);
 }
@@ -11415,7 +11417,7 @@ html.light .editorial-watermark {
 
 .kanban-card {
   border: 1px solid color-mix(in srgb, var(--color-border) 80%, transparent);
-  border-radius: var(--r-xs);
+  border-radius: var(--r-md);
   padding: 0.85rem 0.95rem;
   display: grid;
   gap: 0.55rem;
@@ -11479,7 +11481,7 @@ html.light .editorial-watermark {
   margin: 0;
   padding: 0.85rem 0.95rem;
   border: 1px dashed color-mix(in srgb, var(--color-border) 70%, transparent);
-  border-radius: var(--r-xs);
+  border-radius: var(--r-md);
   font-family: var(--font-mono);
   font-size: 10px;
   letter-spacing: 0.14em;
@@ -11578,7 +11580,7 @@ html.light .editorial-watermark {
   margin-top: 1.1rem;
   padding: 0.85rem 0.95rem;
   border: 1px solid color-mix(in srgb, var(--color-border) 70%, transparent);
-  border-radius: var(--r-xs);
+  border-radius: var(--r-md);
   font-family: var(--font-mono);
   font-size: 11px;
   letter-spacing: 0.06em;
@@ -11613,7 +11615,7 @@ html.light .editorial-watermark {
 .vote-empty {
   padding: 0.85rem 0.95rem;
   border: 1px dashed color-mix(in srgb, var(--color-border) 70%, transparent);
-  border-radius: var(--r-xs);
+  border-radius: var(--r-md);
 }
 
 /* Financial goals (/roadmap): one card per goal, meter + hand-set target.
@@ -11626,7 +11628,7 @@ html.light .editorial-watermark {
 
 .goal-card {
   border: 1px solid color-mix(in srgb, var(--color-border) 80%, transparent);
-  border-radius: var(--r-xs);
+  border-radius: var(--r-md);
   padding: 1rem 1.1rem;
   display: grid;
   gap: 0.55rem;

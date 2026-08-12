@@ -794,31 +794,36 @@ export function BoardArt({
       const activeSheet = stack.querySelector(
         '.board-sheet.is-active svg, .board-sheet.is-active img',
       );
-      // Repo-scope alignment: pin the VISIBLE board's top-right corner to the
-      // outline's padding-box top-right (Stan, 2026-08-12). The sheet svg is
-      // letterboxed inside its square stack (xMidYMid meet), so the drawn
-      // board's box comes from the sheet element box + the viewBox aspect.
-      // The translate property leaves the fly/swap transforms on the sheets
-      // untouched; the rail placement below measures AFTER the shift.
+      // Repo-scope alignment: pin the VISIBLE board's top-right corner just
+      // inside the outline's top-right border (Stan, 2026-08-12). Derived
+      // from the NEVER-TRANSLATING stack box plus the sheet's resting
+      // transform model, not from the transformed sheet element, so the
+      // value is correct BEFORE the fly-in finishes and the flight lands on
+      // the aligned spot with no post-animation jump. Model: the sheet is
+      // letterboxed in the square stack (viewBox aspect), then the active
+      // sheet rests at translateY(-11%) translateZ(120px) scale(1.05) under
+      // the stack's 1700px perspective, so it projects at
+      // 1.05 * 1700/(1700-120) about the stack centre.
       root.style.removeProperty('translate');
       const scope = root.closest('.chapter[data-repo-scope]');
-      if (scope && flyDone && activeSheet) {
-        const el = activeSheet.getBoundingClientRect();
-        const vb = (activeSheet as SVGSVGElement).viewBox?.baseVal;
+      const anySvg = stack.querySelector('.board-sheet svg');
+      if (scope && anySvg) {
+        const vb = (anySvg as SVGSVGElement).viewBox?.baseVal;
         const aspect = vb && vb.height ? vb.width / vb.height : 1;
-        if (el.width && el.height) {
-          const drawnW = Math.min(el.width, el.height * aspect);
+        const sr0 = stack.getBoundingClientRect();
+        if (sr0.width && sr0.height) {
+          const PROJ = 1700 / (1700 - 120);
+          const S = 1.05 * PROJ;
+          const cx = sr0.left + sr0.width / 2;
+          const cy = sr0.top + sr0.height / 2 - sr0.height * 0.11 * PROJ;
+          const drawnW = Math.min(sr0.width, sr0.height * aspect) * S;
           const drawnH = drawnW / aspect;
-          const drawnRight = el.left + el.width / 2 + drawnW / 2;
-          const drawnTop = el.top + el.height / 2 - drawnH / 2;
           const sc = scope.getBoundingClientRect();
-          const scs = getComputedStyle(scope);
-          const dx = sc.right - parseFloat(scs.paddingRight) - drawnRight;
-          const dy = sc.top + parseFloat(scs.paddingTop) - drawnTop;
+          const INSET = 12; // px inside the outline's border
+          const dx = sc.right - INSET - (cx + drawnW / 2);
+          const dy = sc.top + INSET - (cy - drawnH / 2);
           if (Number.isFinite(dx) && Number.isFinite(dy)) {
-            // Never push the board PAST the outline (dx only pulls right up
-            // to the border; dy only lifts, never sinks).
-            root.style.translate = `${Math.round(dx)}px ${Math.round(Math.min(dy, 0))}px`;
+            root.style.translate = `${Math.round(dx)}px ${Math.round(dy)}px`;
           }
         }
       }
