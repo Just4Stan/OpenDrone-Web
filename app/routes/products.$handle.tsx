@@ -1736,16 +1736,10 @@ export default function Product() {
               );
             })}
           </div>
-          <Txt
-            id="product-chrome.what_is_this_needs_label"
-            as="p"
-            className="what-needs-label"
-          />
-          <ul className="what-needs">
-            {wit.needs.map((line) => (
-              <li key={line}>{line}</li>
-            ))}
-          </ul>
+          {/* The "before this flies you also need" list moved out of the
+              chapter (Stan, 2026-08-12): that story belongs to a general
+              FPV intro page, planned. The data stays in whatIsThis.needs
+              for that page. */}
           {/* The homepage hero walks the whole machine part by part; this is
               the "zoom out" for the reader who wants the full picture. */}
           <Link prefetch="viewport" to="/" className="what-home-link">

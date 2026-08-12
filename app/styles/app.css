@@ -8046,37 +8046,7 @@ html.light .firmware-logo--tile {
    the shopping list borrows the in-the-box card idiom (same bubble, no qty
    column) so "what ships" and "what's still missing" read as siblings; the
    fit line + homepage link close it out. */
-.what-needs-label {
-  margin: var(--sp-5) 0 var(--sp-3);
-  font-family: var(--font-mono);
-  font-size: 11px;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--color-text-dim);
-}
 
-/* Needs as compact chips, not a tall card: this chapter is a quick
-   orientation, the depth lives in the video beside it. */
-.what-needs {
-  list-style: none;
-  padding: 0;
-  margin: 0 0 var(--sp-5);
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-  max-width: 40rem;
-}
-
-.what-needs li {
-  padding: 0.35rem 0.8rem;
-  border: 1px solid var(--color-border);
-  border-radius: var(--r-pill);
-  background: color-mix(in srgb, var(--color-text) 4%, transparent);
-  color: var(--color-text);
-  font-family: var(--font-mono);
-  font-size: 12px;
-  line-height: 1.45;
-}
 
 /* The signal chain, in hero-scroll order: this product's stage is lit gold,
    stages we sell link their boards. One glance places the part; the homepage
@@ -16946,6 +16916,39 @@ body:has(.buy-rail.is-pinned.is-mobile) .placeholder-banner {
   line-height: 1.55;
   color: var(--color-text-muted);
   margin: 0;
+}
+/* Beginner explainer block under the spec note: what the part does, a mono
+   "connects to" line, and the product link. Same panel, same tokens; the
+   panel is absolutely positioned so none of this shifts layout. */
+.hp-explain {
+  font-size: 0.95rem;
+  line-height: 1.55;
+  color: var(--color-text-muted);
+  margin: 0.6rem 0 0;
+}
+.hp-connect {
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 0.72rem;
+  line-height: 1.5;
+  letter-spacing: 0.04em;
+  color: var(--color-text-dim);
+  margin: 0.7rem 0 0;
+}
+.hp-copy-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-top: 0.75rem;
+  font-size: 0.85rem;
+  color: var(--color-accent);
+  text-decoration: none;
+}
+.hp-copy-link:hover,
+.hp-copy-link:focus-visible {
+  text-decoration: underline;
+}
+.hp-copy-link svg {
+  flex: none;
 }
 .hp-hint {
   position: absolute;

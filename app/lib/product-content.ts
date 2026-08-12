@@ -65,7 +65,9 @@ export type BoxItem = {qty?: string; item: string; note?: string};
 export type WhatIsThis = {
   /** ~100 words of plain language: what this part is and does. */
   intro: string;
-  /** "Before this flies you also need": one line per missing piece. */
+  /** "Before this flies you also need": one line per missing piece.
+   *  Not rendered on the PDP (2026-08-12): reserved for the planned
+   *  general FPV intro page. */
   needs: string[];
   /** One line: where the part sits in the drone's signal chain. Kept as
    *  data for the studio; the chapter now SHOWS the position via `chain`. */
