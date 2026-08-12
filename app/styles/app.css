@@ -4475,13 +4475,11 @@ button.reset {
   color: var(--color-text);
 }
 
+/* Word gaps between the headline spans come from the literal space in the
+   markup, never from margins: a real space collapses at a line wrap, a
+   margin does not, and the two together rendered a double-wide gap. */
 .product-hero-headline span {
   display: inline;
-  margin-right: 0.3em;
-}
-
-.product-hero-headline span:last-child {
-  margin-right: 0;
 }
 
 /* Drop the italic. The gold-italic middle-word is the AI-slop tell;
