@@ -9,20 +9,19 @@
   "nav.addresses": "Addresses",
   "nav.support": "Support",
   "nav.signout": "Sign out",
-
   "dash.meta_title": "Account",
   "dash.meta_description": "Your OpenDrone dashboard: orders, addresses, profile.",
   "dash.nudge_eyebrow": "You’re all set",
-  "dash.nudge_body": "Account created. Orders, addresses, and build notes show up here as you go.",
+  "dash.nudge_body": "Account created. Orders, addresses, and engineering notes show up here as you go.",
   "dash.nudge_dismiss": "Dismiss ×",
   "dash.greeting_morning": "Good morning,",
   "dash.greeting_afternoon": "Good afternoon,",
   "dash.greeting_evening": "Good evening,",
   "dash.name_fallback": "there",
   "dash.newsletter_eyebrow": "Newsletter · Engineering Essentials",
-  "dash.newsletter_title": "Build notes",
+  "dash.newsletter_title": "Engineering notes",
   "dash.newsletter_lede_subscribed": "Subscribed. New posts land in your inbox.",
-  "dash.newsletter_lede": "Get product releases and build notes by email.",
+  "dash.newsletter_lede": "Get product releases and engineering notes by email.",
   "dash.newsletter_saving": "Saving…",
   "dash.newsletter_unsubscribe": "Unsubscribe →",
   "dash.newsletter_subscribe": "Subscribe →",
@@ -52,7 +51,6 @@
   "dash.build_title": "Every board, on GitHub.",
   "dash.build_lede": "Schematics, firmware, Gerbers. Fork your own, submit a PR, or just read along to understand what’s flying in your drone.",
   "dash.build_cta": "Browse the repos →",
-
   "welcome.meta_title": "Welcome",
   "welcome.meta_description": "Finish setting up your OpenDrone account.",
   "welcome.eyebrow": "Pre-flight checks",
@@ -74,7 +72,6 @@
   "welcome.error_method": "Method not allowed",
   "welcome.error_update": "Customer update failed.",
   "welcome.error_generic": "Update failed.",
-
   "orders.meta_title": "Orders",
   "orders.meta_description": "View and filter your OpenDrone order history.",
   "orders.search_aria": "Search orders",
@@ -92,7 +89,6 @@
   "orders.empty_cta": "Start Shopping →",
   "orders.confirmation": "Confirmation: {number}",
   "orders.view_order": "View Order →",
-
   "order.meta_title": "Order",
   "order.meta_description": "Review order details, line items, and fulfillment status.",
   "order.eyebrow": "Order",
@@ -114,7 +110,6 @@
   "order.tracking": "Tracking",
   "order.track_parcel": "Track parcel",
   "order.view_status": "View Order Status →",
-
   "addresses.meta_title": "Addresses",
   "addresses.meta_description": "Manage saved shipping addresses for your OpenDrone account.",
   "addresses.title": "Addresses",
@@ -164,7 +159,6 @@
   "addresses.error_create": "Customer address create failed.",
   "addresses.error_update": "Customer address update failed.",
   "addresses.error_delete": "Customer address delete failed.",
-
   "profile.meta_title": "Profile",
   "profile.meta_description": "Update your OpenDrone account profile details.",
   "profile.title": "My profile",
@@ -180,7 +174,6 @@
   "profile.submit": "Update",
   "profile.error_method": "Method not allowed",
   "profile.error_update": "Customer profile update failed.",
-
   "support.meta_title": "Support tickets",
   "support.meta_description": "Your OpenDrone support history.",
   "support.eyebrow": "ACCOUNT · SUPPORT",

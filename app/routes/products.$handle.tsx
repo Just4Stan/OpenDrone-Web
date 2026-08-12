@@ -24,7 +24,8 @@ import {ProductPrice} from '~/components/ProductPrice';
 import {ProductGallery} from '~/components/ProductGallery';
 import {ProductForm} from '~/components/ProductForm';
 import {RelatedProducts} from '~/components/RelatedProducts';
-import {FirmwareSplit} from '~/components/FirmwareSplit';
+import {FirmwareSupport} from '~/components/FirmwareSupport';
+import {CommitTimeline} from '~/components/CommitTimeline';
 import {VariantLadder} from '~/components/VariantLadder';
 import {BoardArt} from '~/components/BoardArt';
 import {SchematicViewer} from '~/components/SchematicViewer';
@@ -43,7 +44,7 @@ import {
   type ChapterType,
 } from '~/lib/chapters';
 import {buildSeoMeta, buildProductJsonLd, SITE_ORIGIN} from '~/lib/seo';
-import {fetchContributors, fetchLatestCommits} from '~/lib/github';
+import {fetchCommitActivity, fetchContributors, fetchLatestCommits} from '~/lib/github';
 import {ContributorGrid, ContributorGridSkeleton} from '~/components/Contributors';
 import {
   fetchProductReviews,
@@ -63,6 +64,7 @@ import {
   isComingSoon,
 } from '~/lib/product-content';
 import {useProductStatus} from '~/lib/coming-soon';
+import {fetchStatusFlagsFast, statusForHandle} from '~/lib/roadmap-data';
 import {stackDiscountedPrice} from '~/lib/stack-discount';
 import {trackEvent} from '~/lib/growth/plausible';
 import {attributionSource} from '~/lib/growth/attribution';
@@ -136,6 +138,11 @@ async function loadCriticalData({context, params, request}: Route.LoaderArgs) {
   const stackHandles =
     PRODUCT_CONTENT[handle]?.stack?.partners.map((p) => p.handle) ?? [];
 
+  // Roadmap status for the chip near the title. The 600ms fast fetch races
+  // the GitHub topic lookup against the static ROADMAP fallback, so a cold
+  // cache or an API failure degrades to the checked-in status, never a 500.
+  const statusFlagsPromise = fetchStatusFlagsFast(context.env.GITHUB_STATUS_TOKEN);
+
   const [{product}, ...partnerResults] = await Promise.all([
     storefront.query(PRODUCT_QUERY, {
       variables: {handle, selectedOptions: getSelectedProductOptions(request)},
@@ -168,6 +175,10 @@ async function loadCriticalData({context, params, request}: Route.LoaderArgs) {
     product,
     bundleProducts,
     stackProducts,
+    // The roadmap status this page's boards carry (beta, alpha, ...), for
+    // the chip near the title. Undefined for products off the roadmap
+    // (accessories); the chip simply doesn't render.
+    roadmapStatus: statusForHandle(handle, await statusFlagsPromise),
     // Whether the review env vars are configured — the client can't see
     // env, so the loader answers. False hides every review surface even
     // when the synced metafields carry a count (feature fully dormant).
@@ -188,6 +199,7 @@ function loadDeferredData({context, params}: Route.LoaderArgs) {
     return {
       recommendations: Promise.resolve(null),
       latestCommits: Promise.resolve([]),
+      commitActivity: Promise.resolve([]),
       contributors: Promise.resolve([]),
       reviews: Promise.resolve(null),
     };
@@ -216,6 +228,10 @@ function loadDeferredData({context, params}: Route.LoaderArgs) {
   // hour; unset, both fetches degrade to their empty states.
   const ghToken = context.env.GITHUB_TOKEN;
   const latestCommits = fetchLatestCommits(repoUrls, ghToken).catch(() => []);
+
+  // Commit-activity texture for the contributors chapter, same repo set and
+  // the same best-effort rules: an empty array just means no strip.
+  const commitActivity = fetchCommitActivity(repoUrls, ghToken).catch(() => []);
 
   // Contributor grid: every repo in the line (tier repos included) so the
   // section credits people whichever mount they worked on. Same
@@ -269,7 +285,7 @@ function loadDeferredData({context, params}: Route.LoaderArgs) {
   // metafield aggregate (or, with no aggregate, renders nothing at all).
   const reviews = fetchProductReviews(context.env, handle);
 
-  return {recommendations, latestCommits, contributors, reviews};
+  return {recommendations, latestCommits, commitActivity, contributors, reviews};
 }
 
 const DOWNLOAD_ICONS: Record<DownloadKind, string> = {
@@ -314,38 +330,6 @@ function DownloadsGrid({downloads}: {downloads: DownloadAsset[]}) {
         </a>
       ))}
     </div>
-  );
-}
-
-/**
- * Intro line for the contributors chapter. It streams with the grid rather
- * than above it, because it can only promise avatars when there are avatars:
- * GitHub's unauthenticated API is 60 calls an hour per IP, so an empty list
- * is a normal outcome, not an error. The empty wording still says the work is
- * public and still invites, it just doesn't point at people who aren't there.
- */
-function ContributorsIntro({empty, title}: {empty?: boolean; title?: string}) {
-  if (empty || !title) {
-    return (
-      <Txt
-        id="product-chrome.contributors_intro_empty"
-        as="p"
-        className="chapter-body"
-      />
-    );
-  }
-  // The product's name is Shopify data, so the sentence marks its slot with
-  // `{product}` and is split around it here. One editable sentence beats
-  // shipping "These are the GitHub accounts behind" and "; the next tile is
-  // reserved." to the studio as two fragments nobody can read.
-  const id = 'product-chrome.contributors_intro';
-  const [before, after] = (copyText(id) ?? '').split('{product}');
-  return (
-    <p className="chapter-body" {...editAttrs(id)}>
-      {before}
-      {title}
-      {after}
-    </p>
   );
 }
 
@@ -574,9 +558,11 @@ export default function Product() {
     stackProducts,
     recommendations,
     latestCommits,
+    commitActivity,
     contributors,
     reviews,
     reviewsEnabled: reviewsOn,
+    roadmapStatus,
   } = useLoaderData<typeof loader>();
   useChapterReveal(product.handle);
 
@@ -1402,7 +1388,7 @@ export default function Product() {
   ).split('{project}');
   const bundleChipParts = (
     copyText('product-chrome.trust_chip_firmware_bundle') ?? ''
-  ).split(/\{count\}|\{firmwares\}/);
+  ).split('{firmwares}');
   const isBundle = Boolean(content.bundle);
   const buyPrice = isBundle ? bundlePrice : selectedVariant?.price;
   const buyAvailable = isBundle
@@ -1578,11 +1564,10 @@ export default function Product() {
         return content.inTheBox.length > 0 || Boolean(content.bundle);
       case 'downloads':
         return content.downloads.length > 0;
-      // The "€1" firmware split is priceless copy without a price — skip it
-      // while the product is coming soon.
+      // The firmware credit needs no price, so it shows even while the
+      // product is coming soon.
       case 'firmware':
         return (
-          !soon &&
           !content.bundle &&
           Boolean(content.firmware.project) &&
           content.firmware.project !== '—'
@@ -2118,11 +2103,11 @@ export default function Product() {
           <DownloadsGrid downloads={content.downloads} />
         </Chapter>
     ),
-    /** Where the €1 of every order goes. */
+    /** The open firmware the board runs, and how to support its devs. */
     firmware: (n, title) => (
         <Chapter
           number={n}
-          label="The €1"
+          label="Firmware"
           title={title}
           titleId="product-chrome.ch_firmware_title"
           media={
@@ -2143,8 +2128,7 @@ export default function Product() {
             ) : undefined
           }
         >
-          <FirmwareSplit
-            price={selectedVariant?.price}
+          <FirmwareSupport
             firmwareProject={content.firmware.project}
             firmwareUrl={content.firmware.projectUrl}
           />
@@ -2153,8 +2137,8 @@ export default function Product() {
     /**
      * Who built it. GitHub accounts with commits on the product's repos,
      * streamed in deferred. The grid always closes with a "+ you" tile pointing
-     * at the issues page; when GitHub rate-limits the fetch the chapter still
-     * renders with just that invitation.
+     * at Discord (talk before touching files); when GitHub rate-limits the
+     * fetch the chapter still renders with just that invitation.
      */
     contributors: (n, title) => (
         <Chapter
@@ -2164,41 +2148,29 @@ export default function Product() {
           titleId="product-chrome.ch_contributors_title"
           noMedia
         >
-          {/* The intro has to stream with the grid, not ahead of it. GitHub's
-              unauthenticated API allows 60 calls an hour per IP, so an empty
-              list is routine, and "these are the accounts behind X" above a
-              lone "+ you?" tile reads as nobody having built the thing. */}
-          <Suspense
-            fallback={
-              <>
-                <ContributorsIntro empty />
-                <ContributorGridSkeleton />
-              </>
-            }
-          >
-            <Await
-              resolve={contributors}
-              errorElement={
-                <>
-                  <ContributorsIntro empty />
-                  <ContributorGrid
-                    contributors={[]}
-                    issuesUrl={`${activeRepoUrl}/issues`}
-                  />
-                </>
-              }
-            >
-              {(list) => (
-                <>
-                  <ContributorsIntro empty={!list?.length} title={product.title} />
-                  <ContributorGrid
-                    contributors={list ?? []}
-                    issuesUrl={`${activeRepoUrl}/issues`}
-                  />
-                </>
-              )}
+          {/* Repo activity as engraving behind the text: one faint tick per
+              commit, streamed with the same best-effort GitHub budget as the
+              grid below. Null on failure, invisible on quiet repos. */}
+          <Suspense fallback={null}>
+            <Await resolve={commitActivity} errorElement={null}>
+              {(commits) => <CommitTimeline commits={commits} />}
             </Await>
           </Suspense>
+          <Suspense fallback={<ContributorGridSkeleton />}>
+            <Await
+              resolve={contributors}
+              errorElement={<ContributorGrid contributors={[]} />}
+            >
+              {(list) => <ContributorGrid contributors={list ?? []} />}
+            </Await>
+          </Suspense>
+          {/* No prose above the grid; the how-and-why lives once, on the
+              contributing page, and this line carries the reader there. */}
+          <p className="provenance-links">
+            <Link prefetch="viewport" to="/contributing">
+              <Txt id="product-chrome.contributors_link_contribute" />
+            </Link>
+          </p>
         </Chapter>
     ),
     /**
@@ -2300,6 +2272,18 @@ export default function Product() {
           <p className="product-hero-eyebrow">
             {copyText('product-chrome.hero_eyebrow_file')} {content.fileNumber} ·{' '}
             {content.family}
+            {roadmapStatus ? (
+              <Link
+                prefetch="viewport"
+                to="/roadmap"
+                className="product-status-chip"
+                data-status={roadmapStatus}
+                title={copyText(`roadmap.status_${roadmapStatus}_legend`)}
+              >
+                <span className="kanban-dot" aria-hidden="true" />
+                {copyText(`roadmap.status_${roadmapStatus}_label`)}
+              </Link>
+            ) : null}
           </p>
           {hasHeroCopy ? (
             <h1 className="product-hero-headline">
@@ -2375,10 +2359,8 @@ export default function Product() {
                   className="trust-chip trust-chip-gold trust-chip-link"
                 >
                   {bundleChipParts[0]}
-                  {content.bundle.components.length}
-                  {bundleChipParts[1]}
                   {content.bundle.components.map((c) => c.firmware).join(' + ')}
-                  {bundleChipParts[2]}
+                  {bundleChipParts[1]}
                 </Link>
               </li>
             ) : content.firmware.project && content.firmware.project !== '—' ? (

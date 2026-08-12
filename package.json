@@ -33,7 +33,9 @@
     "gen:schematics": "node scripts/export-schematics.mjs --all",
     "studio:tokens": "node scripts/studio-tokens.mjs",
     "studio:products": "node --experimental-strip-types scripts/migrate-product-content.mjs",
-    "studio:coverage": "node scripts/studio-coverage.mjs"
+    "studio:coverage": "node scripts/studio-coverage.mjs",
+    "votes:tally": "node scripts/tally-votes.mjs",
+    "goals:update": "node scripts/update-goals.mjs"
   },
   "prettier": "@shopify/prettier-config",
   "dependencies": {

@@ -4,6 +4,7 @@ import {Money, type OptimisticCart} from '@shopify/hydrogen';
 import {useEffect, useId, useRef, useState} from 'react';
 import {Link} from 'react-router';
 import {useAside} from '~/components/Aside';
+import {CartGoalMeter} from '~/components/CartGoalMeter';
 import {Txt} from '~/components/Txt';
 import {copyText} from '~/lib/copy';
 import {trackEvent} from '~/lib/growth/plausible';
@@ -109,6 +110,7 @@ export function CartSummary({cart, layout}: CartSummaryProps) {
       </div>
       <Txt id="cart.note_vat" as="p" className="cart-summary-note" />
       <Txt id="cart.note_terms" as="p" className="cart-summary-note" />
+      <CartGoalMeter />
     </div>
   );
 }

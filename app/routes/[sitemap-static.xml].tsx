@@ -18,9 +18,9 @@ const STATIC_PATHS = [
   '/open-source',
   '/production',
   '/roadmap',
+  '/contributing',
   '/timeline',
   '/firmware-partners',
-  '/wholesale',
   '/collections/all',
   '/newsletter',
 ];

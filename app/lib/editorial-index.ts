@@ -38,8 +38,14 @@ export const EDITORIAL_SERIES: EditorialEntry[] = [
   {
     slug: 'roadmap',
     title: 'Roadmap',
-    hook: 'What is being designed next, and how to take a piece of it.',
-    minutes: 4,
+    hook: 'Every product\'s status, the community vote, and where the money goes.',
+    minutes: 3,
+  },
+  {
+    slug: 'contributing',
+    title: 'Contributing',
+    hook: 'How to report a problem, change a design, and get credited for it.',
+    minutes: 2,
   },
   {
     slug: 'timeline',
@@ -50,7 +56,7 @@ export const EDITORIAL_SERIES: EditorialEntry[] = [
   {
     slug: 'firmware-partners',
     title: 'Firmware partners',
-    hook: 'Where the €1 per board goes, and to whom.',
+    hook: 'The projects our boards run on, and how to support them.',
     minutes: 1,
   },
 ];

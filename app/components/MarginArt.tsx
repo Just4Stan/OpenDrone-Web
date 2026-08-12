@@ -1,4 +1,5 @@
 import type {ReactNode} from 'react';
+import {useEffect, useRef} from 'react';
 
 /**
  * Margin illustrations: one stroke-only drawing per editorial section,
@@ -7,12 +8,54 @@ import type {ReactNode} from 'react';
  * optional dimmed group (strokeWidth 1, opacity 0.45) for secondary
  * linework, no text, no fills beyond tiny currentColor dots. The color
  * comes from CSS so the sketches stay subtle in both themes.
+ *
+ * Each drawing draws ITSELF when its section scrolls into view: every
+ * geometry element gets pathLength=1 so one dash rule covers them all,
+ * and a per-element index staggers the strokes so the sketch appears the
+ * way a plotter would lay it down. All of it is armed here at runtime:
+ * without JS (or with reduced motion, see the CSS) the art is simply
+ * visible, complete, from the first paint.
  */
 export function MarginArt({children}: {children: ReactNode}) {
+  const ref = useRef<HTMLElement>(null);
+  useEffect(() => {
+    const fig = ref.current;
+    if (!fig) return;
+    const parts = fig.querySelectorAll<SVGGeometryElement>(
+      'path, rect, circle, line, polyline, polygon',
+    );
+    parts.forEach((p, i) => {
+      p.setAttribute('pathLength', '1');
+      p.style.setProperty('--art-i', String(i));
+    });
+    fig.classList.add('will-draw');
+    // The draw cue (.is-drawn) comes from EditorialShell's reading cascade,
+    // so the sketch starts exactly when its section's text starts appearing.
+  }, []);
   return (
-    <figure className="section-art" aria-hidden="true">
+    <figure className="section-art" aria-hidden="true" ref={ref}>
       {children}
     </figure>
+  );
+}
+
+/**
+ * A partner's logo as margin art, for pages ABOUT that partner (the
+ * firmware-partners page): their mark, not our sketch. Rendered as a
+ * currentColor mask so it takes the same dim, theme-aware tint as the
+ * hand-drawn emblems; `ratio` is the artwork's width/height so the
+ * figure reserves the right box before the mask loads.
+ */
+export function PartnerLogoArt({src, ratio}: {src: string; ratio: number}) {
+  return (
+    <span
+      className="section-art-logo"
+      style={{
+        aspectRatio: String(ratio),
+        WebkitMaskImage: `url(${src})`,
+        maskImage: `url(${src})`,
+      }}
+    />
   );
 }
 

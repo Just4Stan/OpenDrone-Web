@@ -99,6 +99,60 @@ export async function fetchLatestCommits(
   return results.filter((c): c is LatestCommit => c !== null);
 }
 
+export type CommitTick = {
+  date: string;
+  /** GitHub login when the commit maps to an account, else null. */
+  author: string | null;
+};
+
+/**
+ * Date + author of a repo's last ~100 commits, oldest first. Feeds the
+ * commit strip under the PDP contributors chapter: activity as texture,
+ * synced from the repo with no hand upkeep, with each tick carrying its
+ * author so the strip can color per contributor (the tiles are the legend).
+ * No messages on purpose: that would make it a feed, not a texture.
+ */
+export async function fetchCommitActivity(
+  repoUrls: string[],
+  token?: string,
+): Promise<CommitTick[]> {
+  const unique = Array.from(new Set(repoUrls));
+  const all = await Promise.all(
+    unique.map(async (repoUrl) => {
+      const parsed = parseRepoUrl(repoUrl);
+      if (!parsed) return [] as CommitTick[];
+      try {
+        const url = `https://api.github.com/repos/${parsed.owner}/${parsed.repo}/commits?per_page=100`;
+        const res = await fetch(url, {
+          headers: ghHeaders(token),
+          signal: AbortSignal.timeout(4000),
+          // Edge-cache an hour: commit texture does not need to be fresher.
+          ...({cf: {cacheTtl: 3600, cacheEverything: true}} as RequestInit),
+        });
+        if (!res.ok) {
+          console.warn('[github] commits', parsed.repo, res.status);
+          return [] as CommitTick[];
+        }
+        const data = (await res.json()) as Array<{
+          commit?: {author?: {date?: string}};
+          author?: {login?: string} | null;
+        }>;
+        if (!Array.isArray(data)) return [] as CommitTick[];
+        return data
+          .filter((c) => Boolean(c.commit?.author?.date))
+          .map((c) => ({
+            date: c.commit!.author!.date!,
+            author: c.author?.login ?? null,
+          }));
+      } catch (err) {
+        console.warn('[github] commits fetch failed', repoUrl, err);
+        return [] as CommitTick[];
+      }
+    }),
+  );
+  return all.flat().sort((a, b) => a.date.localeCompare(b.date));
+}
+
 export type Contributor = {
   login: string;
   avatarUrl: string;

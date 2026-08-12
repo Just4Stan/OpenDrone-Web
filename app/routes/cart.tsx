@@ -11,6 +11,8 @@ import {
   comingSoonFlag,
   findLockedMerchandise,
 } from '~/lib/coming-soon';
+import {VOTE_ATTR_KEY, parseVoteRank, serializeVoteRank} from '~/lib/votes';
+import {fetchStatusFlagsFast, votableIds} from '~/lib/roadmap-data';
 
 export const meta: Route.MetaFunction = () =>
   buildSeoMeta({
@@ -35,6 +37,7 @@ const ATTRIBUTE_KEY_ALLOWLIST = new Set([
   '_utm_medium',
   '_utm_campaign',
   '_landing',
+  VOTE_ATTR_KEY,
 ]);
 const ATTRIBUTE_VALUE_MAX = 64;
 
@@ -63,13 +66,17 @@ export async function action({request, context}: Route.ActionArgs) {
       // override-locked — no extra query.
       let lines = inputs.lines ?? [];
       const soonFlag = comingSoonFlag(context.env);
-      if (lines.length > 0 && anyComingSoonLocks(soonFlag)) {
+      const statusFlags = await fetchStatusFlagsFast(
+        context.env.GITHUB_STATUS_TOKEN,
+      );
+      if (lines.length > 0 && anyComingSoonLocks(soonFlag, statusFlags)) {
         const {lockedIds} = await findLockedMerchandise(
           context.storefront,
           soonFlag,
           lines
             .map((l) => l.merchandiseId)
             .filter((id): id is string => Boolean(id)),
+          statusFlags,
         );
         if (lockedIds.size > 0) {
           const open = lines.filter(
@@ -169,6 +176,20 @@ export async function action({request, context}: Route.ActionArgs) {
           key: a.key,
           value: a.value.trim().slice(0, ATTRIBUTE_VALUE_MAX),
         }))
+        // The vote is re-encoded through the codec, not just length-capped:
+        // only known roadmap ids in a known format reach the order records
+        // the tally script will trust. Validated against ALL roadmap ids,
+        // not just today's candidates, so a ballot cast minutes before its
+        // project graduates still counts. An empty re-encode (all ids bogus)
+        // falls through to the length filter below, clearing the vote.
+        .map((a) =>
+          a.key === VOTE_ATTR_KEY
+            ? {
+                key: a.key,
+                value: serializeVoteRank(parseVoteRank(a.value, votableIds())),
+              }
+            : a,
+        )
         .filter((a) => a.value.length > 0);
       result = await cart.updateAttributes(attributes);
       break;

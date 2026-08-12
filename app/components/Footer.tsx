@@ -29,26 +29,32 @@ const SHOP_LINKS: Array<{to: string; copy: string}> = [
   {to: '/search', copy: 'nav_search'},
 ];
 
-const OPEN_SOURCE_LINKS: Array<{href: string; copy: string}> = [
+/**
+ * The community column: every place OpenDrone and Incutec are present, one
+ * link each. Per-repo links were removed on Stan's call (2026-08-11): the
+ * GitHub org covers them, and the site-source link lives in the bottom bar.
+ * Add new socials here as accounts go live; the label is a chrome.json key.
+ */
+const SOCIAL_LINKS: Array<{href: string; copy: string}> = [
   {href: DISCORD_INVITE_URL, copy: 'nav_discord'},
   {href: 'https://github.com/OpenDrone-hw', copy: 'nav_github'},
-  {href: 'https://github.com/OpenDrone-hw/OpenFC-Lite', copy: 'nav_openfc'},
-  {href: 'https://github.com/OpenDrone-hw/OpenESC-20x20', copy: 'nav_openesc'},
 ];
 
 const COMPANY_LINKS: Array<{to: string; copy: string}> = [
   {to: '/open-source', copy: 'nav_open_source_incutec'},
   {to: '/firmware-partners', copy: 'nav_firmware_partners'},
   {to: '/roadmap', copy: 'nav_roadmap'},
+  {to: '/contributing', copy: 'nav_contributing'},
   {to: '/timeline', copy: 'nav_timeline'},
   {to: '/production', copy: 'nav_production'},
-  {to: '/wholesale', copy: 'nav_wholesale'},
+];
+
+// Imprint, contact and security head the Legal column (Stan, 2026-08-12):
+// they are practical/legal reader destinations, not part of the company story.
+const LEGAL_LINKS: Array<{to: string; copy: string}> = [
   {to: '/legal', copy: 'nav_legal_imprint'},
   {to: '/support', copy: 'nav_contact'},
   {to: '/security', copy: 'nav_security'},
-];
-
-const LEGAL_LINKS: Array<{to: string; copy: string}> = [
   {to: '/algemene-voorwaarden', copy: 'nav_terms'},
   {to: '/privacy', copy: 'nav_privacy'},
   {to: '/cookies', copy: 'nav_cookies'},
@@ -157,7 +163,7 @@ export function Footer({
           <div>
             <ColumnHeading id="chrome.heading_open_source" />
             <nav className="flex flex-col gap-1.5 mb-6">
-              {OPEN_SOURCE_LINKS.map((link) => (
+              {SOCIAL_LINKS.map((link) => (
                 <a
                   key={link.href}
                   href={link.href}
@@ -199,7 +205,8 @@ export function Footer({
               licence sentence after them is editable. */}
           <p className="text-[12px] text-[var(--color-text-muted)] font-mono tracking-wide">
             &copy; {new Date().getFullYear()} {company.name}.{' '}
-            <Txt id="chrome.footer_licence_line" />
+            <Txt id="chrome.footer_licence_line" />{' '}
+            <Txt id="chrome.footer_site_source_line" />
           </p>
           <a
             href="https://github.com/OpenDrone-hw"

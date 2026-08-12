@@ -1,3 +1,4 @@
+import {Link} from 'react-router';
 import {Txt} from './Txt';
 import {copyText} from '~/lib/copy';
 
@@ -63,6 +64,16 @@ export function ProvenanceCard({
           </span>
         </li>
       </ul>
+      {/* The card states the facts; these carry the reader to the story
+          behind them: the production plan (EU line) and how to join in. */}
+      <p className="provenance-links">
+        <Link prefetch="viewport" to="/production">
+          <Txt id="product-chrome.provenance_link_production" />
+        </Link>
+        <Link prefetch="viewport" to="/contributing">
+          <Txt id="product-chrome.provenance_link_contribute" />
+        </Link>
+      </p>
     </section>
   );
 }

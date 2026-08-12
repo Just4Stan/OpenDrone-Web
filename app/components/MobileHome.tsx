@@ -30,7 +30,6 @@ const HOME_LEDGER: Array<{key: string; value?: string; countUp?: boolean}> = [
   },
   {key: 'licence'},
   {key: 'source_format'},
-  {key: 'firmware_split'},
   {key: 'designed_in'},
 ];
 

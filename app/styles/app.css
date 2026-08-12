@@ -156,13 +156,21 @@
   --aside-width: 400px;
 
   --rail-gutter: 1.25rem;
-  --rail-width: min(calc(100% - (2 * var(--rail-gutter))), 1520px);
+  /* The one content rail every full-width surface shares. The cap dropped
+     from 1520 to 1440: on a 16:9 monitor the old rail ran nearly edge to
+     edge and the pages read as a wall. Margins are part of the design —
+     they are where the eye rests and what makes the column the obvious
+     place to look. Change the rail here, never per page. */
+  --rail-width: min(calc(100% - (2 * var(--rail-gutter))), 1440px);
   --prose-width: 680px;
 }
 
 @media (min-width: 768px) {
   :root {
-    --rail-gutter: 2rem;
+    /* Gutters grow with the viewport (4vw, capped at 5rem) instead of
+       sitting fixed at 2rem, so laptop and 16:9 widths get real breathing
+       room at the sides rather than a token 32px. */
+    --rail-gutter: clamp(2rem, 4vw, 5rem);
   }
 }
 
@@ -520,6 +528,13 @@ html {
    the settled wordmark's midline: 2.5rem inset + half the wordmark height. */
 .homepage {
   --hero-strip-mid: calc(2.5rem + clamp(2.5rem, 5vw, 4.5rem) / 2);
+  /* Right edge of the bottom-left brand block: wordmark inset + wordmark width
+     (height x 5.29 aspect, same term .hero-github's `left` is built from) +
+     the 1.75rem gap + the 64px GitHub mark. The rail clamps against this so
+     the strip's three tenants never overlap on narrow or short-wide windows. */
+  --hero-brand-right: calc(
+    2.5rem + clamp(2.5rem, 5vw, 4.5rem) * 5.29 + 1.75rem + 64px
+  );
 }
 
 .hero-wordmark {
@@ -4249,6 +4264,43 @@ button.reset {
   }
 }
 
+/* Roadmap status chip on a product card: same vocabulary and dot colors as
+   the kanban and the PDP chip (the [data-status] rules), quiet pill on the
+   card corner. Not a link — the card is one; the listing header links the
+   legend once. */
+.product-card-status {
+  position: absolute;
+  top: 0.6rem;
+  right: 0.6rem;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45em;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 0.25rem 0.6rem;
+  border-radius: 999px;
+  color: var(--color-text-muted);
+  border: 1px solid color-mix(in srgb, var(--color-border) 85%, transparent);
+  background: var(--pod-bg-strong);
+}
+
+/* The one legend link per listing. */
+.collection-status-link {
+  display: inline-block;
+  margin-top: 0.6rem;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  color: var(--color-gold);
+}
+.collection-status-link:hover {
+  color: var(--color-accent);
+}
+
 /* Corner badge on a product card (New / Sale). */
 .product-card-badge {
   position: absolute;
@@ -4385,6 +4437,26 @@ button.reset {
   text-transform: uppercase;
   color: var(--color-text-dim);
   margin: 0;
+}
+
+/* Roadmap status chip beside the eyebrow. Same vocabulary as /roadmap: the
+   dot inherits the kanban's [data-status] coloring, the label is the same
+   copy key, and the chip links back to the board where the legend explains
+   what the word means. Status appears ONLY via this flag, never in prose. */
+.product-status-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45em;
+  margin-left: 0.9em;
+  padding: 0.2em 0.7em;
+  border: 1px solid color-mix(in srgb, var(--color-border) 85%, transparent);
+  border-radius: 999px;
+  color: var(--color-text-muted);
+  transition: border-color 0.15s ease, color 0.15s ease;
+}
+.product-status-chip:hover {
+  border-color: color-mix(in srgb, var(--color-gold) 55%, transparent);
+  color: var(--color-text);
 }
 
 /* Product name. Single block, refined display weight, restrained size.
@@ -7304,6 +7376,25 @@ button.reset {
   margin-top: var(--sp-5);
 }
 
+.provenance-links {
+  margin: 0.75rem 0 0;
+  display: flex;
+  gap: 1.4rem;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.provenance-links a {
+  color: var(--color-text-muted);
+  text-decoration: none;
+}
+
+.provenance-links a:hover {
+  color: var(--color-gold);
+}
+
 .provenance-label {
   display: inline-block;
   margin: 0 0 var(--sp-3);
@@ -7378,13 +7469,16 @@ button.reset {
   column-gap: 0.75rem;
   align-items: center;
   padding: var(--sp-3) 0 0;
-  border-top: 2px solid color-mix(in srgb, var(--color-gold) 45%, var(--color-border));
+  /* Per-contributor accent, hash-colored like their ticks on the commit
+     strip below; gold when no accent is set (skeleton, the "+ you" tile). */
+  border-top: 2px solid
+    color-mix(in srgb, var(--contrib-accent, var(--color-gold)) 55%, var(--color-border));
   color: var(--color-text);
   text-decoration: none;
   transition: border-color 0.2s ease;
 }
 .contributor-tile:hover {
-  border-top-color: var(--color-gold);
+  border-top-color: var(--contrib-accent, var(--color-gold));
 }
 .contributor-avatar {
   grid-row: 1 / span 2;
@@ -7658,11 +7752,9 @@ button.reset {
   text-align: right;
 }
 
-/* Firmware contribution split — 2-column grid so the big €N + €1 sits
-   left and the tagline + funded-project link fill the right side.
-   Avoids the empty right-half the old vertical layout created. */
-.firmware-split {
-  position: relative;
+/* Firmware credit — the project the board runs, with direct-donation links.
+   Replaced the price-split block when the per-board fee was cancelled. */
+.firmware-support {
   border: 1px solid var(--color-border);
   border-radius: var(--r-md);
   padding: 1.25rem 1.4rem;
@@ -7672,84 +7764,88 @@ button.reset {
       color-mix(in srgb, var(--color-accent) 10%, var(--color-bg-card)),
       var(--color-bg-card) 75%
     );
-  display: grid;
-  grid-template-columns: auto 1fr;
-  column-gap: 2.25rem;
-  row-gap: 0.5rem;
-  align-items: center;
 }
 
-.firmware-split-amounts {
-  grid-row: 1 / span 2;
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  font-family: var(--font-display);
-  font-weight: 700;
-  font-size: clamp(2rem, 5vw, 3rem);
-  letter-spacing: -0.01em;
-  line-height: 1;
+.firmware-support .chapter-body {
+  margin: 0 0 0.9rem;
+  max-width: 52ch;
+}
+
+.firmware-support-links {
   margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.4rem;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
 }
 
-@media (max-width: 640px) {
-  .firmware-split {
-    grid-template-columns: 1fr;
-  }
-  .firmware-split-amounts {
-    grid-row: auto;
-    margin-bottom: 0.5rem;
-  }
+.firmware-support-links a {
+  color: var(--color-text-muted);
+  text-decoration: none;
 }
 
-.firmware-split-board {
+.firmware-support-links a:hover {
   color: var(--color-gold);
 }
 
-.firmware-split-plus {
-  color: var(--color-text-muted);
-  font-weight: 500;
-}
-
-.firmware-split-contrib {
-  color: var(--color-accent-light);
-}
-
-.firmware-split-eq {
-  color: var(--color-text-muted);
-  font-weight: 500;
-}
-
-.firmware-split-total {
-  color: var(--color-text);
-}
-
-.firmware-split-tagline {
-  font-family: var(--font-display);
-  font-weight: 500;
-  font-size: var(--fs-lg);
-  line-height: 1.35;
-  letter-spacing: -0.01em;
-  color: var(--color-text);
-  margin: var(--sp-2) 0 0;
-  max-width: 38ch;
-}
-
-.firmware-split-tagline strong {
-  color: var(--color-text);
-  font-weight: 600;
-}
-
-.firmware-split-tagline a {
+.firmware-support-links a.firmware-support-donate {
   color: var(--color-gold);
-  text-decoration: underline;
-  text-decoration-color: color-mix(in srgb, var(--color-gold) 35%, transparent);
-  text-underline-offset: 3px;
-  transition: text-decoration-color 0.15s ease;
 }
 
-.firmware-split-tagline a:hover {
-  text-decoration-color: var(--color-gold);
+.firmware-support-nodonate {
+  color: color-mix(in srgb, var(--color-text-muted) 75%, transparent);
+  text-transform: none;
+  letter-spacing: 0.04em;
+}
+
+/* Commit timeline: repo activity as a discrete strip along the chapter's
+   bottom edge, clear of the text and the contributor tiles. The chapter's
+   content-visibility containment makes .chapter the containing block and a
+   stacking context, so z-index -1 keeps it tucked under any overlap. */
+.commit-timeline {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0.75rem;
+  height: 56px;
+  z-index: -1;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.commit-timeline-axis {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 14px;
+  height: 1px;
+  background: color-mix(in srgb, var(--color-border) 70%, transparent);
+}
+
+.commit-timeline-tick {
+  position: absolute;
+  bottom: 14px;
+  width: 1px;
+  background: color-mix(in srgb, var(--color-gold) 30%, transparent);
+}
+
+.commit-timeline-date {
+  position: absolute;
+  bottom: 0;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.14em;
+  color: color-mix(in srgb, var(--color-text-muted) 55%, transparent);
+}
+
+@media (max-width: 879px) {
+  /* On phones the text fills the section; texture under it is just noise. */
+  .commit-timeline {
+    display: none;
+  }
 }
 
 /* Category chips */
@@ -8485,6 +8581,133 @@ button.reset {
   color: var(--color-text-muted);
   font-size: 0.85rem;
   line-height: 1.6;
+}
+
+/* The goal meter line under the summary: one link to /roadmap carrying the
+   current goal and its approximate progress. Reuses .goal-meter. */
+.cart-goal {
+  display: block;
+  margin-top: 1rem;
+  padding-top: 0.85rem;
+  border-top: 1px solid color-mix(in srgb, var(--color-border) 80%, transparent);
+  text-decoration: none;
+}
+
+.cart-goal-line {
+  margin: 0 0 0.5rem;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  color: var(--color-text-muted);
+}
+
+.cart-goal-title {
+  color: var(--color-text);
+}
+
+.cart-goal:hover .cart-goal-title {
+  color: var(--color-gold);
+}
+
+/* The ranked ballot under the cart summary. Chips share the quiet mono
+   register of the secondary actions; a ranked chip earns the gold number. */
+.cart-ballot {
+  margin-top: 1.4rem;
+  padding-top: 1.1rem;
+  border-top: 1px solid color-mix(in srgb, var(--color-border) 80%, transparent);
+}
+
+.cart-ballot-title {
+  margin: 0 0 0.3rem;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 400;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--color-text);
+}
+
+.cart-ballot-hint {
+  margin: 0 0 0.75rem;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--color-text-muted);
+}
+
+.cart-ballot-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.cart-ballot-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.4rem 0.7rem;
+  border: 1px solid color-mix(in srgb, var(--color-border) 85%, transparent);
+  border-radius: var(--r-xs);
+  background: none;
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  letter-spacing: 0.05em;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  transition: border-color 0.15s ease, color 0.15s ease;
+}
+
+.cart-ballot-chip:hover:not(:disabled) {
+  border-color: var(--color-border-strong);
+  color: var(--color-text);
+}
+
+.cart-ballot-chip:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.cart-ballot-chip.is-ranked {
+  border-color: var(--color-gold);
+  color: var(--color-text);
+}
+
+.cart-ballot-rank {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.1rem;
+  height: 1.1rem;
+  border-radius: 50%;
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+}
+
+.cart-ballot-chip.is-ranked .cart-ballot-rank {
+  background: var(--color-gold);
+  color: var(--color-on-accent);
+}
+
+.cart-ballot-chip:not(.is-ranked) .cart-ballot-rank {
+  border: 1px dashed color-mix(in srgb, var(--color-text-muted) 45%, transparent);
+}
+
+.cart-ballot-foot {
+  margin: 0.75rem 0 0;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  color: color-mix(in srgb, var(--color-text-muted) 80%, transparent);
+}
+
+.cart-ballot-foot a {
+  color: var(--color-text-muted);
+}
+
+.cart-ballot-foot a:hover {
+  color: var(--color-gold);
 }
 
 /* Quiet secondary actions under the checkout CTA: keep-shopping escape +
@@ -9746,8 +9969,9 @@ button.reset {
 }
 
 .editorial-hero {
-  /* The title earns its presence from the air around it, not its size. */
-  margin-bottom: 4.5rem;
+  /* Air around the title, but not so much the page reads as gaps
+     (tightened twice on 2026-08-11 on Stan's call). */
+  margin-bottom: 2.25rem;
 }
 
 .editorial-eyebrow {
@@ -9788,7 +10012,7 @@ button.reset {
    the contrast is what reads as spacious. 4rem: our sections are short,
    the 6rem of the reference sites left them floating. */
 .editorial-section {
-  margin-top: 4rem;
+  margin-top: 2.25rem;
   font-family: var(--font-sans);
   font-size: 1rem;
   line-height: 1.6;
@@ -9796,7 +10020,7 @@ button.reset {
 }
 
 .editorial-section p {
-  margin: 0 0 0.85rem;
+  margin: 0 0 0.7rem;
 }
 
 .editorial-section strong {
@@ -9809,22 +10033,159 @@ button.reset {
   font-style: italic;
 }
 
+/* Chapter numbers ("01 ·") are emphasised in copy so they pick up the gold
+   above; upright, because italic mono in a letterspaced all-caps line reads
+   as a glitch, not as emphasis. */
+.editorial-section-title em {
+  font-style: normal;
+}
+
+/* Prose links read as actions: gold at rest, not only on hover. Scoped to
+   the editorial column so chrome and nav links keep their quiet default. */
+.editorial-section p a,
+.editorial-lead a {
+  color: var(--color-gold);
+  text-decoration: underline;
+  text-decoration-color: color-mix(in srgb, var(--color-gold) 45%, transparent);
+  text-underline-offset: 3px;
+}
+.editorial-section p a:hover,
+.editorial-lead a:hover {
+  color: var(--color-accent);
+  text-decoration-color: currentColor;
+}
+
+/* Partner logos as margin art: a currentColor mask so brand marks take the
+   same dim tint as the hand-drawn emblems in either theme. */
+.section-art-logo {
+  display: block;
+  width: 100%;
+  background: currentColor;
+  /* A filled logo carries far more ink than a stroke sketch; halve it so
+     both kinds of margin art sit at the same visual weight. */
+  opacity: 0.5;
+  -webkit-mask-size: contain;
+  mask-size: contain;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  mask-position: center;
+}
+
+/* The drawings earn their room: plate-sized where the viewport has real
+   whitespace to spend. */
+@media (min-width: 1480px) {
+  .section-art {
+    left: calc(100% - 7rem);
+    width: 28rem;
+  }
+}
+
+/* Reading cascade: blocks in the prose column arrive as the reader does.
+   The classes are armed by EditorialShell at runtime; --rv-d is the
+   block's slot in its viewport batch, so a fully visible page cascades
+   top to bottom instead of popping in at once. Reduced-motion readers
+   never get .reveal-item at all. */
+.reveal-item {
+  opacity: 0;
+  transform: translateY(16px);
+  transition:
+    opacity 0.7s ease,
+    transform 0.8s cubic-bezier(0.22, 1, 0.36, 1);
+  transition-delay: var(--rv-d, 0ms);
+}
+.reveal-item.is-revealed {
+  opacity: 1;
+  transform: none;
+}
+
+/* Draw-in: armed by MarginArt at runtime (pathLength=1 + --art-i on every
+   element, .will-draw on the figure), then .is-drawn fires the strokes in
+   plotter order when the section scrolls into view. No JS, no .will-draw:
+   the sketch is simply complete from first paint. */
+.section-art.will-draw svg :is(path, rect, circle, line, polyline, polygon) {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  fill-opacity: 0;
+}
+.section-art.is-drawn svg :is(path, rect, circle, line, polyline, polygon) {
+  animation: art-draw 0.9s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  /* Starts on the section's reading-cascade slot, then strokes in order. */
+  animation-delay: calc(var(--rv-d, 0ms) + var(--art-i, 0) * 70ms);
+}
+@keyframes art-draw {
+  0% {
+    stroke-dashoffset: 1;
+    fill-opacity: 0;
+  }
+  60% {
+    fill-opacity: 0;
+  }
+  100% {
+    stroke-dashoffset: 0;
+    fill-opacity: 1;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .section-art.will-draw svg :is(path, rect, circle, line, polyline, polygon) {
+    stroke-dasharray: none;
+    stroke-dashoffset: 0;
+    fill-opacity: 1;
+    animation: none;
+  }
+}
+
+/* The provenance watermark behind the editorial pages: both brand marks on
+   a 45 degree hatch, currentColor at paper-texture opacity. Fixed, so the
+   prose scrolls over it the way print runs over a watermarked sheet. */
+.editorial-watermark {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  color: var(--color-text);
+  /* Near-black amplifies small luminance steps: 1.4% is already a clearly
+     present texture in the dark theme. The mask thins the hatch under the
+     central prose column so the paper texture lives in the margins and
+     never competes with a line of text. */
+  opacity: 0.014;
+  mask-image: linear-gradient(
+    90deg,
+    rgb(0 0 0 / 0.9) 0%,
+    rgb(0 0 0 / 0.3) 34%,
+    rgb(0 0 0 / 0.3) 64%,
+    rgb(0 0 0 / 1) 82%
+  );
+}
+html.light .editorial-watermark {
+  opacity: 0.026;
+}
+
 /* Margin art: one stroke-only drawing per section, floated into the free
    canvas right of the prose column and aligned with its section's top.
    Dim gray linework — it should register as a sketch in the margin, not
    an image. Hidden when the viewport has no spare right margin. */
 .editorial-section {
   position: relative;
+  /* Stacking context so the sketch's z-index:-1 stays inside the section
+     instead of dropping behind the page background. */
+  z-index: 0;
 }
 
 .section-art {
   display: none;
   position: absolute;
-  left: calc(100% + 4.5rem);
-  top: -0.5rem;
-  width: 12rem;
+  /* Tucks under the prose column's right edge: the text floats over the
+     sketch, the sketch spills into the margin. z-index -1 keeps it behind
+     the copy inside the section's own stacking context (the section carries
+     position:relative + z-index:0 for exactly this). */
+  left: calc(100% - 6rem);
+  top: -1.5rem;
+  width: 22rem;
   margin: 0;
-  color: color-mix(in srgb, var(--color-text-muted) 55%, transparent);
+  z-index: -1;
+  color: color-mix(in srgb, var(--color-text-muted) 45%, transparent);
   pointer-events: none;
 }
 
@@ -9957,8 +10318,11 @@ button.reset {
     align-items: start;
   }
 
+  /* Same tracks as the aside layout, with the aside track left empty:
+     the shell must not re-center when a page has no aside, or the rail and
+     the prose visibly jump sideways on every page switch. */
   .editorial-shell.is-narrow {
-    grid-template-columns: minmax(0, 640px);
+    grid-template-columns: minmax(0, 640px) minmax(0, 19rem);
   }
 
   .editorial-aside {
@@ -9982,7 +10346,7 @@ button.reset {
   }
 
   .editorial-shell.is-narrow {
-    grid-template-columns: 13rem minmax(0, 640px);
+    grid-template-columns: 13rem minmax(0, 640px) minmax(0, 19rem);
   }
 
   .series-rail {
@@ -10101,30 +10465,17 @@ button.reset {
   font-family: var(--font-mono);
 }
 
-/* Drawn as a graphic, not a list: hairline spine, well-separated nodes
-   (gap ~4x the title size so the line reads as a drawn element), the next
-   rung marked by fill + ring, brightness stepping down toward the far
-   rungs, and the line fading out past the last node into the future. */
+/* Drawn as a graphic, not a list. Each rung owns the connector BELOW its
+   node, so the segment climbing into the speculative goal can be dotted
+   while the one to the funded goal stays solid. Node meaning: filled gold =
+   where we are now; hollow gold = the goal being saved for; dashed hollow =
+   the goal after that, openly speculative; filled muted = done. No dates
+   anywhere: the goals file carries no promises, so neither can this. */
 .ladder-rungs {
   list-style: none;
   margin: 0;
-  padding: 0 0 2.5rem 1.6rem;
+  padding: 0 0 0.5rem 1.6rem;
   position: relative;
-}
-
-.ladder-rungs::before {
-  content: '';
-  position: absolute;
-  left: 4px;
-  top: 0.45rem;
-  bottom: 0;
-  width: 1px;
-  background: linear-gradient(
-    to bottom,
-    color-mix(in srgb, var(--color-border) 90%, transparent)
-      calc(100% - 3rem),
-    transparent
-  );
 }
 
 .ladder-rung {
@@ -10136,6 +10487,24 @@ button.reset {
 
 .ladder-rung:last-child {
   padding-bottom: 0;
+}
+
+/* The connector from this node down to the next. */
+.ladder-rung[data-seg]::after {
+  content: '';
+  position: absolute;
+  left: calc(-1.6rem + 3px);
+  top: 1rem;
+  bottom: 0.15rem;
+  width: 0;
+}
+
+.ladder-rung[data-seg='solid']::after {
+  border-left: 1px solid color-mix(in srgb, var(--color-border) 90%, transparent);
+}
+
+.ladder-rung[data-seg='dashed']::after {
+  border-left: 1px dashed color-mix(in srgb, var(--color-text-muted) 45%, transparent);
 }
 
 /* Hollow node punched through the hairline: page-background fill so the
@@ -10152,15 +10521,34 @@ button.reset {
   border: 1px solid color-mix(in srgb, var(--color-text-muted) 55%, transparent);
 }
 
-/* The next rung up: filled, with a static glow ring. The one place the
-   accent appears inside the graphic. */
-.ladder-rung:first-child::before {
+/* Where we are: filled, with a static glow ring. */
+.ladder-rung[data-kind='now']::before {
   left: calc(-1.6rem - 1px);
   width: 9px;
   height: 9px;
   background: var(--color-gold);
   border-color: var(--color-gold);
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-gold) 25%, transparent);
+}
+
+/* The goal being saved for: hollow, gold rim — a target, not an arrival. */
+.ladder-rung[data-kind='current']::before {
+  border-color: var(--color-gold);
+}
+
+/* The speculative one: dashed rim, dimmed text. */
+.ladder-rung[data-kind='next']::before {
+  border-style: dashed;
+}
+
+.ladder-rung[data-kind='next'] {
+  opacity: 0.6;
+}
+
+/* Done goals: filled muted, a record rather than a promise. */
+.ladder-rung[data-kind='done']::before {
+  background: color-mix(in srgb, var(--color-text-muted) 55%, transparent);
+  border-color: color-mix(in srgb, var(--color-text-muted) 55%, transparent);
 }
 
 .ladder-when {
@@ -10170,6 +10558,10 @@ button.reset {
   color: color-mix(in srgb, var(--color-text-muted) 80%, transparent);
 }
 
+.ladder-when:empty {
+  display: none;
+}
+
 .ladder-title {
   font-size: 13px;
   letter-spacing: 0.14em;
@@ -10177,7 +10569,8 @@ button.reset {
   color: var(--color-text-muted);
 }
 
-.ladder-rung:first-child .ladder-title {
+.ladder-rung[data-kind='now'] .ladder-title,
+.ladder-rung[data-kind='current'] .ladder-title {
   color: var(--color-text);
 }
 
@@ -10196,16 +10589,24 @@ button.reset {
    an image. Hidden when the viewport has no spare right margin. */
 .editorial-section {
   position: relative;
+  /* Stacking context so the sketch's z-index:-1 stays inside the section
+     instead of dropping behind the page background. */
+  z-index: 0;
 }
 
 .section-art {
   display: none;
   position: absolute;
-  left: calc(100% + 4.5rem);
-  top: -0.5rem;
-  width: 12rem;
+  /* Tucks under the prose column's right edge: the text floats over the
+     sketch, the sketch spills into the margin. z-index -1 keeps it behind
+     the copy inside the section's own stacking context (the section carries
+     position:relative + z-index:0 for exactly this). */
+  left: calc(100% - 6rem);
+  top: -1.5rem;
+  width: 22rem;
   margin: 0;
-  color: color-mix(in srgb, var(--color-text-muted) 55%, transparent);
+  z-index: -1;
+  color: color-mix(in srgb, var(--color-text-muted) 45%, transparent);
   pointer-events: none;
 }
 
@@ -10338,8 +10739,11 @@ button.reset {
     align-items: start;
   }
 
+  /* Same tracks as the aside layout, with the aside track left empty:
+     the shell must not re-center when a page has no aside, or the rail and
+     the prose visibly jump sideways on every page switch. */
   .editorial-shell.is-narrow {
-    grid-template-columns: minmax(0, 640px);
+    grid-template-columns: minmax(0, 640px) minmax(0, 19rem);
   }
 
   .editorial-aside {
@@ -10363,7 +10767,7 @@ button.reset {
   }
 
   .editorial-shell.is-narrow {
-    grid-template-columns: 13rem minmax(0, 640px);
+    grid-template-columns: 13rem minmax(0, 640px) minmax(0, 19rem);
   }
 
   .series-rail {
@@ -10784,7 +11188,26 @@ button.reset {
   border-radius: var(--r-xs);
   padding: 0.85rem 0.95rem;
   display: grid;
-  gap: 0.4rem;
+  gap: 0.55rem;
+}
+/* The whole card is the link; the render is the content. */
+.kanban-card.is-linked {
+  transition: border-color 0.15s ease, transform 0.2s ease;
+}
+.kanban-card.is-linked:hover {
+  border-color: color-mix(in srgb, var(--color-gold) 55%, transparent);
+  transform: translateY(-2px);
+}
+.kanban-media {
+  display: block;
+  aspect-ratio: 1;
+  padding: 0.4rem;
+}
+.kanban-media img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
 }
 
 .kanban-name {
@@ -10855,6 +11278,209 @@ button.reset {
 
 .status-legend dd {
   margin: 0;
+}
+
+/* Community vote standings (/roadmap). Same mono register as the kanban:
+   a name, a hairline track, a share figure. The fill is gold because the
+   bars ARE the community's voice, the one loud element the section gets. */
+.vote-board {
+  margin-top: 1.5rem;
+  display: grid;
+  gap: 0.8rem;
+}
+
+.vote-row {
+  display: grid;
+  grid-template-columns: minmax(9rem, 14rem) 1fr minmax(6ch, auto);
+  align-items: center;
+  gap: 0.9rem;
+}
+
+.vote-name {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  color: var(--color-text);
+  overflow: hidden;
+}
+
+.vote-name > span:first-child {
+  display: block;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.vote-bar {
+  display: block;
+  height: 6px;
+  border-radius: 3px;
+  background: color-mix(in srgb, var(--color-border) 70%, transparent);
+  overflow: hidden;
+}
+
+.vote-bar-fill {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--color-gold);
+  transition: width 0.6s ease;
+}
+
+.vote-share {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--color-text-muted);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.vote-added,
+.vote-count {
+  display: block;
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  color: color-mix(in srgb, var(--color-text-muted) 65%, transparent);
+}
+
+.vote-graduated {
+  margin-top: 1.1rem;
+  padding: 0.85rem 0.95rem;
+  border: 1px solid color-mix(in srgb, var(--color-border) 70%, transparent);
+  border-radius: var(--r-xs);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  color: var(--color-text-muted);
+}
+
+.vote-graduated p {
+  margin: 0 0 0.4rem;
+  color: var(--color-gold);
+  text-transform: uppercase;
+  font-size: 10px;
+  letter-spacing: 0.14em;
+}
+
+.vote-graduated ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.3rem;
+}
+
+.vote-foot,
+.vote-empty {
+  margin: 0.9rem 0 0;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  color: color-mix(in srgb, var(--color-text-muted) 80%, transparent);
+}
+
+.vote-empty {
+  padding: 0.85rem 0.95rem;
+  border: 1px dashed color-mix(in srgb, var(--color-border) 70%, transparent);
+  border-radius: var(--r-xs);
+}
+
+/* Financial goals (/roadmap): one card per goal, meter + hand-set target.
+   The meter is reused in the cart summary (.cart-goal). */
+.goal-list {
+  margin-top: 1.5rem;
+  display: grid;
+  gap: 1rem;
+}
+
+.goal-card {
+  border: 1px solid color-mix(in srgb, var(--color-border) 80%, transparent);
+  border-radius: var(--r-xs);
+  padding: 1rem 1.1rem;
+  display: grid;
+  gap: 0.55rem;
+}
+
+.goal-card[data-goal-status='next'] {
+  opacity: 0.6;
+}
+
+.goal-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.goal-title {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 400;
+  letter-spacing: 0.06em;
+  color: var(--color-text);
+}
+
+.goal-status {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--color-gold);
+  white-space: nowrap;
+}
+
+.goal-card[data-goal-status='next'] .goal-status,
+.goal-card[data-goal-status='done'] .goal-status {
+  color: var(--color-text-muted);
+}
+
+.goal-body {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--color-text-muted);
+}
+
+.goal-meter-row {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  margin-top: 0.2rem;
+}
+
+.goal-meter {
+  display: block;
+  flex: 1;
+  height: 6px;
+  border-radius: 3px;
+  background: color-mix(in srgb, var(--color-border) 70%, transparent);
+  overflow: hidden;
+}
+
+.goal-meter-fill {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--color-gold);
+  transition: width 0.6s ease;
+}
+
+.goal-target {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  color: var(--color-text-muted);
+  white-space: nowrap;
+}
+
+.goal-foot {
+  margin: 0.9rem 0 0;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  color: color-mix(in srgb, var(--color-text-muted) 80%, transparent);
 }
 
 
@@ -15586,11 +16212,12 @@ button.reset {
    exploration launchpad. Visible in both the page and the drawer cart. */
 .cart-empty-explore {
   display: flex;
-  flex-wrap: wrap;
+  /* One row, always: Stan's call (2026-08-11). The chip list is short enough
+     that nowrap holds on phones too; chips shrink via padding, not wrap. */
+  flex-wrap: nowrap;
   justify-content: center;
   gap: 0.5rem;
   margin-top: 1.1rem;
-  max-width: 24rem;
 }
 .cart-empty-chip {
   display: inline-flex;
@@ -15899,11 +16526,27 @@ body:has(.buy-rail.is-pinned.is-mobile) .placeholder-banner {
    with both the size selector above it and the wordmark below. */
 .hp-rail {
   position: absolute;
-  left: 50%;
+  /* Width gives twice before position does: capped at 440px, then at 42vw,
+     then at the room actually left between the brand block (wordmark + GitHub
+     mark, --hero-brand-right) and the buy bubble's reserve on the right.
+     Centred while there is room; when the viewport narrows the centre is
+     pushed right just enough to clear the brand block instead of sliding
+     under it. */
+  /* 470px right reserve = the buy bubble's ~390px column + its 2.5rem inset,
+     measured at rest; the bubble keeps that width while cards are collapsed. */
+  --hp-rail-w: min(
+    440px,
+    42vw,
+    calc(100vw - var(--hero-brand-right, 513px) - 1.5rem - 470px)
+  );
+  left: max(
+    50%,
+    calc(var(--hero-brand-right, 513px) + 1.5rem + var(--hp-rail-w) / 2)
+  );
   /* Centred on the bottom strip's shared line (the 2px track straddles it). */
   bottom: calc(var(--hero-strip-mid, 93px) - 1px);
   transform: translateX(-50%);
-  width: min(440px, 42vw);
+  width: var(--hp-rail-w);
   height: 2px;
   background: color-mix(in srgb, var(--color-text-dim) 30%, transparent);
   border-radius: 2px;
@@ -16027,6 +16670,16 @@ body:has(.buy-rail.is-pinned.is-mobile) .placeholder-banner {
 .hp-fallback p { margin: 0; color: var(--color-text-muted); }
 .hp-dot { padding: 0; cursor: pointer; }
 .hp-dot:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 3px; }
+/* Between the 768px mobile switch and ~1040px the strip cannot hold all three
+   tenants (wordmark + GitHub, rail, buy bubble) at readable sizes: the width
+   formula above would starve the rail below ~140px. Drop the rail there; the
+   beat copy panel still names where you are, and scrolling still walks the
+   beats. */
+@media (max-width: 1040px) {
+  .hp-rail {
+    display: none;
+  }
+}
 
 /* Named load stage under the splash wordmark. The assembly arrives as several
    files and the drone visibly builds up behind this, so it reads as "the

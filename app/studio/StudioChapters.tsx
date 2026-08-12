@@ -32,7 +32,7 @@ const LABELS: Record<ChapterType, string> = {
   specs: 'Datasheet',
   inTheBox: 'In the box',
   downloads: 'Downloads',
-  firmware: 'The €1',
+  firmware: 'Firmware',
   contributors: 'Contributors',
   reviews: 'Reviews',
   prose: 'Free text',

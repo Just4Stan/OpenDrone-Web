@@ -1,32 +1,72 @@
 import {Txt} from '~/components/Txt';
+import {goals} from '~/lib/goals';
 
 /**
- * The production page's visual column: the capability ladder, drawn as a
- * dated climb rather than described in a paragraph.
+ * The production page's visual column: the capability climb, drawn from the
+ * SAME data as the financial goals (`content/goals.json`), so the ladder can
+ * never promise something the goals do not.
  *
- * Order is the argument. Each rung is bought with the revenue of the rung
- * below it, so the sequence runs cheapest-and-most-useful first (PCB
- * assembly) to hardest-and-most-capital (motors). The horizons are targets
- * we can miss, which is why the caveat is part of the graphic and not
- * small print somewhere else.
- *
- * Date and title only. The why and how of each rung is section 03 of the
- * prose; repeating it here turned the graphic into a second article.
- *
- * The rung order is structure and lives here; the dates and titles are copy
- * and live in `content/copy/production.json` as `ladder<n>_when` /
- * `ladder<n>_title`. Adding a rung is a code change, moving a date is not.
+ * Shape, per Stan (2026-08-11): the filled node is where we are today
+ * (inspect/flash/ship from Belgium), a SOLID line climbs to the goal being
+ * saved for, and a DOTTED line continues to the one after it, which is
+ * openly speculative. Nothing beyond that is drawn, and nothing carries a
+ * date. Completed goals stack above as a record.
  */
-const RUNGS = [1, 2, 3, 4];
+type Rung = {
+  key: string;
+  kind: 'done' | 'now' | 'current' | 'next';
+  /** Goal title, or undefined for the fixed "now" rung (copy-keyed). */
+  title?: string;
+};
 
 export function ProductionLadder() {
+  const list = goals();
+  const rungs: Rung[] = [
+    ...list
+      .filter((g) => g.status === 'done')
+      .map((g): Rung => ({key: g.id, kind: 'done', title: g.title})),
+    {key: 'now', kind: 'now'},
+    ...list
+      .filter((g) => g.status === 'current')
+      .slice(0, 1)
+      .map((g): Rung => ({key: g.id, kind: 'current', title: g.title})),
+    ...list
+      .filter((g) => g.status === 'next')
+      .slice(0, 1)
+      .map((g): Rung => ({key: g.id, kind: 'next', title: g.title})),
+  ];
+
   return (
     <figure className="ladder">
       <ol className="ladder-rungs">
-        {RUNGS.map((n) => (
-          <li key={n} className="ladder-rung">
-            <Txt id={`production.ladder${n}_when`} className="ladder-when" />
-            <Txt id={`production.ladder${n}_title`} className="ladder-title" />
+        {rungs.map((r, i) => (
+          <li
+            key={r.key}
+            className="ladder-rung"
+            data-kind={r.kind}
+            // The connector below this node: dotted when it climbs into the
+            // speculative rung, solid otherwise.
+            data-seg={
+              i === rungs.length - 1
+                ? undefined
+                : rungs[i + 1].kind === 'next'
+                  ? 'dashed'
+                  : 'solid'
+            }
+          >
+            <Txt
+              id={
+                r.kind === 'now'
+                  ? 'production.ladder_now_when'
+                  : `roadmap.goals_status_${r.kind === 'done' ? 'done' : r.kind === 'current' ? 'current' : 'next'}`
+              }
+              className="ladder-when"
+            />
+            {r.kind === 'now' ? (
+              <Txt id="production.ladder_now_title" className="ladder-title" />
+            ) : (
+              <span className="ladder-title">{r.title}</span>
+            )}
           </li>
         ))}
       </ol>

@@ -1,7 +1,7 @@
 import type {Route} from './+types/collections.all';
 import {useMemo} from 'react';
 import type {ReactNode} from 'react';
-import {useLoaderData, useSearchParams} from 'react-router';
+import {Link, useLoaderData, useSearchParams} from 'react-router';
 import type {MoneyV2} from '@shopify/hydrogen/storefront-api-types';
 import {ProductItem, type ProductQuickAdd} from '~/components/ProductItem';
 import type {StackOffer} from '~/components/StackQuickAdd';
@@ -397,6 +397,14 @@ export default function Collection() {
       <header className="page-header collection-header">
         <Txt id="collections-all.eyebrow" as="p" className="page-eyebrow" />
         <Txt id="collections-all.title" as="h1" className="page-title" />
+        {/* Every card carries its roadmap status chip; this is the one
+            place the listing links the vocabulary's explanation. */}
+        <Link prefetch="viewport" to="/roadmap" className="collection-status-link">
+          <Txt
+            id="collections-all.status_legend_link"
+            fallback="What the status labels mean →"
+          />
+        </Link>
       </header>
 
       {hasProducts ? (

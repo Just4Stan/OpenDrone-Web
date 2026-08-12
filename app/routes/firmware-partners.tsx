@@ -4,7 +4,8 @@ import {buildSeoMeta} from '~/lib/seo';
 import {EditorialShell} from '~/components/EditorialShell';
 import {Txt} from '~/components/Txt';
 import {copyText} from '~/lib/copy';
-import {MarginArt, SplitFlowArt, ChipsArt} from '~/components/MarginArt';
+import {MarginArt, PartnerLogoArt} from '~/components/MarginArt';
+import {FIRMWARE_PARTNERS} from '~/lib/firmware-partners';
 
 /**
  * Every word on this page comes from `content/copy/firmware-partners.json`,
@@ -20,13 +21,6 @@ export const meta: Route.MetaFunction = () =>
 export async function loader(_args: Route.LoaderArgs) {
   return {};
 }
-
-type Partner = {
-  /** Copy key stem: `partner_<id>_label` / `_project` / `_blurb`. */
-  id: string;
-  repoUrl: string;
-  donationUrl?: string; // where we forward funds (GitHub Sponsors, OpenCollective, bank)
-};
 
 type MergedPr = {
   project: string; // upstream project name
@@ -50,23 +44,10 @@ type MergedPr = {
  */
 const MERGED_PRS: MergedPr[] = [];
 
-/** Card order and the links each one carries. Copy is keyed off `id`. */
-const PARTNERS: Partner[] = [
-  {
-    id: 'betaflight',
-    repoUrl: 'https://github.com/betaflight/betaflight',
-    donationUrl: 'https://opencollective.com/betaflight',
-  },
-  {
-    id: 'am32',
-    repoUrl: 'https://github.com/am32-firmware/AM32',
-  },
-  {
-    id: 'expresslrs',
-    repoUrl: 'https://github.com/ExpressLRS/ExpressLRS',
-    donationUrl: 'https://opencollective.com/expresslrs',
-  },
-];
+// Card order and the links each one carries live in the shared lib, so the
+// PDP firmware chapter and this page can never disagree on a URL. Copy is
+// keyed off each partner's `id`.
+const PARTNERS = FIRMWARE_PARTNERS;
 
 export default function FirmwarePartnersRoute() {
   return (
@@ -91,7 +72,9 @@ export default function FirmwarePartnersRoute() {
           as="h2"
           className="editorial-section-title"
         />
-        <MarginArt><SplitFlowArt /></MarginArt>
+        <MarginArt>
+          <PartnerLogoArt src="/logos/betaflight.svg" ratio={854 / 159} />
+        </MarginArt>
         <Txt id="firmware-partners.s1_body" as="p" />
       </section>
 
@@ -101,7 +84,9 @@ export default function FirmwarePartnersRoute() {
           as="h2"
           className="editorial-section-title"
         />
-        <MarginArt><ChipsArt /></MarginArt>
+        <MarginArt>
+          <PartnerLogoArt src="/logos/expresslrs.svg" ratio={1} />
+        </MarginArt>
         <div className="partners-grid">
           {PARTNERS.map((p) => (
             <article key={p.id} className="partner-card">
@@ -149,6 +134,9 @@ export default function FirmwarePartnersRoute() {
           as="h2"
           className="editorial-section-title"
         />
+        <MarginArt>
+          <PartnerLogoArt src="/logos/am32.svg" ratio={1} />
+        </MarginArt>
         <Txt id="firmware-partners.s3_body" as="p" />
       </section>
 

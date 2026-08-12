@@ -49,6 +49,12 @@ declare global {
     // public repos need no scopes. Optional: unset, both degrade quietly.
     GITHUB_TOKEN?: string;
 
+    // Same idea for the status-* topic fetch (roadmap kanban, ballot
+    // candidates, PDP status chip). Optional: unset falls back to the
+    // static statuses in app/lib/roadmap-data.ts once the 60/hour
+    // unauthenticated budget runs out.
+    GITHUB_STATUS_TOKEN?: string;
+
     // Coming-soon kill switch: unset/anything ≠ '0' renders every product
     // as coming soon (no prices, notify-me signup instead of add-to-cart).
     // Set PUBLIC_COMING_SOON=0 in Oxygen the day orders open. Per-product

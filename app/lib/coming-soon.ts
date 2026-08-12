@@ -7,6 +7,55 @@ import {
   PRODUCT_CONTENT,
   type ProductStatus,
 } from '~/lib/product-content';
+import {
+  statusForHandle,
+  type ProductStatus as RoadmapStatus,
+} from '~/lib/roadmap-data';
+
+/**
+ * Every product handle's resolved tri-state, for the root loader: the
+ * client-side hooks read this map so live topic flags (server-fetched)
+ * reach every component without each one refetching.
+ */
+export function resolveAllStatuses(
+  globalFlag: boolean,
+  flags: Record<string, RoadmapStatus> = {},
+): Record<string, ProductStatus> {
+  const out: Record<string, ProductStatus> = {};
+  for (const handle of Object.keys(PRODUCT_CONTENT)) {
+    out[handle] = resolveStatus(handle, globalFlag, flags);
+  }
+  return out;
+}
+
+/**
+ * The five-stage roadmap word per handle (beta, alpha, ...), for the
+ * status chips on cards and PDPs — display vocabulary, not the buyability
+ * tri-state. Only roadmap handles appear in the map.
+ */
+export function roadmapStatusMap(
+  flags: Record<string, RoadmapStatus> = {},
+): Record<string, RoadmapStatus> {
+  const out: Record<string, RoadmapStatus> = {};
+  for (const handle of Object.keys(PRODUCT_CONTENT)) {
+    const s = statusForHandle(handle, flags);
+    if (s) out[handle] = s;
+  }
+  return out;
+}
+
+/**
+ * The roadmap word for one handle, from the root loader's live-resolved
+ * map; static fallback when root data is unavailable. Undefined for
+ * products off the roadmap (accessories).
+ */
+export function useRoadmapStatus(
+  handle?: string | null,
+): RoadmapStatus | undefined {
+  const data = useRouteLoaderData<RootLoader>('root');
+  if (!handle) return undefined;
+  return data?.roadmapStatuses?.[handle] ?? statusForHandle(handle);
+}
 
 /**
  * Coming-soon state for a product, resolved from the root loader's
@@ -16,17 +65,24 @@ import {
  * the flag's fail-closed default.
  */
 export function useComingSoon(handle?: string | null): boolean {
-  const data = useRouteLoaderData<RootLoader>('root');
-  return isComingSoon(handle, data?.comingSoon ?? true);
+  return useProductStatus(handle) !== 'live';
 }
 
 /**
  * Lifecycle status for a product, same resolution + fail-closed default
  * as {@link useComingSoon} (missing root data = 'development', never a
  * buyable state by accident).
+ *
+ * The root loader ships `productStatuses`, resolved server-side WITH the
+ * live GitHub topic flags; when the map has the handle it wins, so a topic
+ * flip reaches every card and buy module on the next request. The local
+ * resolution below is the fallback (error boundaries, handles off the
+ * map) and sees only the static roadmap statuses.
  */
 export function useProductStatus(handle?: string | null): ProductStatus {
   const data = useRouteLoaderData<RootLoader>('root');
+  const mapped = handle ? data?.productStatuses?.[handle] : undefined;
+  if (mapped) return mapped;
   return resolveStatus(handle, data?.comingSoon ?? true);
 }
 
@@ -47,10 +103,23 @@ export function comingSoonFlag(env: {PUBLIC_COMING_SOON?: string}): boolean {
  * gate and feeds skip their coming-soon work entirely, so the unlocked
  * shop pays nothing for the feature.
  */
-export function anyComingSoonLocks(globalFlag: boolean): boolean {
+export function anyComingSoonLocks(
+  globalFlag: boolean,
+  flags: Record<string, RoadmapStatus> = {},
+): boolean {
   if (globalFlag) return true;
-  return Object.values(PRODUCT_CONTENT).some(
-    (c) => c.comingSoon === true || c.status === 'idea' || c.status === 'development',
+  if (
+    Object.values(PRODUCT_CONTENT).some(
+      (c) =>
+        c.comingSoon === true || c.status === 'idea' || c.status === 'development',
+    )
+  ) {
+    return true;
+  }
+  // Roadmap-driven locks: any known handle that does not resolve to 'live'
+  // (an alpha board with a product page) keeps the cart gate armed.
+  return Object.keys(PRODUCT_CONTENT).some(
+    (h) => resolveStatus(h, globalFlag, flags) !== 'live',
   );
 }
 
@@ -83,6 +152,7 @@ export async function findLockedMerchandise(
   storefront: Storefront,
   globalFlag: boolean,
   merchandiseIds: string[],
+  flags: Record<string, RoadmapStatus> = {},
 ): Promise<{lockedIds: Set<string>; lockedHandles: string[]}> {
   const ids = [...new Set(merchandiseIds)].filter(Boolean);
   if (ids.length === 0) return {lockedIds: new Set(), lockedHandles: []};
@@ -95,7 +165,7 @@ export async function findLockedMerchandise(
     const lockedHandles = new Set<string>();
     for (const node of data.nodes ?? []) {
       const handle = node?.product?.handle;
-      if (node?.id && handle && isComingSoon(handle, globalFlag)) {
+      if (node?.id && handle && isComingSoon(handle, globalFlag, flags)) {
         lockedIds.add(node.id);
         lockedHandles.add(handle);
       }

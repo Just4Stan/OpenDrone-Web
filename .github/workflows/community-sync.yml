@@ -1,0 +1,73 @@
+# Weekly sync of the community-facing numbers that live as committed
+# content: the vote tally (content/votes.json, from order ballot
+# attributes) and the auto-mode financial goal meters (content/goals.json,
+# from order totals, floored to 5% steps so the public figure stays
+# approximate).
+#
+# Deliberately a PR, not a push: main is protected and auto-deploys, and
+# these numbers are committed content like any other edit, so the diff
+# gets a human look before it ships. Merging the PR is the review.
+#
+# Required repo secrets:
+#   SHOPIFY_ADMIN_API_TOKEN  custom-app Admin token WITH read_orders scope
+#   (PUBLIC_STORE_DOMAIN is not secret; set in the env block below)
+
+name: Community sync
+
+on:
+  schedule:
+    # 04:23 UTC every Monday, off-hours like the other scheduled jobs.
+    - cron: '23 4 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      # Both scripts are dependency-free: checkout + node is the whole setup.
+      - name: Tally votes and update goal meters
+        env:
+          PUBLIC_STORE_DOMAIN: ktjqug-jw.myshopify.com
+          SHOPIFY_ADMIN_API_TOKEN: ${{ secrets.SHOPIFY_ADMIN_API_TOKEN }}
+        run: |
+          if [ -z "$SHOPIFY_ADMIN_API_TOKEN" ]; then
+            echo "SHOPIFY_ADMIN_API_TOKEN is not set in repo secrets" >&2
+            exit 1
+          fi
+          node scripts/tally-votes.mjs --write
+          node scripts/update-goals.mjs --write
+
+      - name: Open or update the sync PR
+        uses: peter-evans/create-pull-request@v6
+        with:
+          branch: bot/community-sync
+          title: 'Community sync: vote tally + goal meters'
+          commit-message: |
+            Community sync: vote tally + goal meters
+
+            Automated weekly run of votes:tally and goals:update.
+
+            Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>
+          body: |
+            Weekly automated update of `content/votes.json` (ballot tally
+            from order attributes, 3/2/1 weighting) and the auto-mode goal
+            meters in `content/goals.json` (order totals since each goal's
+            `since`, allocation applied, floored to 5% steps).
+
+            Review the numbers, then merge to publish them. Correct anything
+            odd in the studio's Goals tab instead of editing JSON by hand.
+          add-paths: |
+            content/votes.json
+            content/goals.json
+          delete-branch: true

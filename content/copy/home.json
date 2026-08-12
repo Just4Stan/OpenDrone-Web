@@ -18,8 +18,6 @@
   "m_ledger_licence_value": "CERN-OHL-S 2.0",
   "m_ledger_source_format_label": "Source format",
   "m_ledger_source_format_value": "KiCad 10 · STEP · BOM",
-  "m_ledger_firmware_split_label": "Firmware split",
-  "m_ledger_firmware_split_value": "€1 / unit upstream",
   "m_ledger_designed_in_label": "Designed in",
   "m_ledger_designed_in_value": "Belgium",
   "m_browse": "Browse the full catalog"

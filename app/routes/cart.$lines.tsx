@@ -5,6 +5,7 @@ import {
   comingSoonFlag,
   findLockedMerchandise,
 } from '~/lib/coming-soon';
+import {fetchStatusFlagsFast} from '~/lib/roadmap-data';
 
 /**
  * Automatically creates a new cart based on the URL and redirects straight to checkout.
@@ -57,11 +58,13 @@ export async function loader({request, context, params}: Route.LoaderArgs) {
   // agent/deep-link order path, so locked SKUs must be dropped here too.
   // Zero-cost when the shop is unlocked and nothing is override-locked.
   const soonFlag = comingSoonFlag(context.env);
-  if (anyComingSoonLocks(soonFlag)) {
+  const statusFlags = await fetchStatusFlagsFast(context.env.GITHUB_STATUS_TOKEN);
+  if (anyComingSoonLocks(soonFlag, statusFlags)) {
     const {lockedIds, lockedHandles} = await findLockedMerchandise(
       context.storefront,
       soonFlag,
       linesMap.map((l) => l.merchandiseId),
+      statusFlags,
     );
     if (lockedIds.size > 0) {
       const open = linesMap.filter((l) => !lockedIds.has(l.merchandiseId));

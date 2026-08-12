@@ -5,6 +5,7 @@ import {useAutoAnimate} from '@formkit/auto-animate/react';
 import {useReducedMotion} from 'motion/react';
 import type {CartApiQueryFragment} from 'storefrontapi.generated';
 import {useAside} from '~/components/Aside';
+import {CartBallot} from '~/components/CartBallot';
 import {CartLineItem, type CartLine} from '~/components/CartLineItem';
 import {CartCompanion} from '~/components/CartCompanion';
 import {CartSummary} from './CartSummary';
@@ -124,6 +125,7 @@ export function CartMain({layout, cart: originalCart}: CartMainProps) {
           <CartCompanion lines={cart?.lines?.nodes ?? []} layout={layout} />
         ) : null}
         {cartHasItems && <CartSummary cart={cart} layout={layout} />}
+        {cartHasItems && <CartBallot cart={cart} layout={layout} />}
       </div>
     </section>
   );
@@ -201,7 +203,6 @@ function CartEmpty({
         </svg>
       </div>
       <Txt id="cart.empty_title" as="h2" className="cart-empty-title" />
-      <Txt id="cart.empty_body" as="p" className="cart-empty-body" />
       <Link
         to="/collections/all"
         onClick={close}

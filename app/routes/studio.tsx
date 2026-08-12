@@ -21,6 +21,7 @@ import type {MetaFunction} from 'react-router';
 import {PREVIEW_CSS, STUDIO_CSS} from '~/studio/studio-css';
 import {StudioTokens} from '~/studio/StudioTokens';
 import {StudioChapters} from '~/studio/StudioChapters';
+import {StudioGoals} from '~/studio/StudioGoals';
 import {StudioHero} from '~/studio/StudioHero';
 import {StudioMedia} from '~/studio/StudioMedia';
 import {StudioLegal} from '~/studio/StudioLegal';
@@ -35,7 +36,7 @@ export const meta: MetaFunction = () => [
 ];
 
 type CopyFile = Record<string, unknown>;
-type Tab = 'words' | 'chapters' | 'design' | 'media' | 'legal' | 'hero';
+type Tab = 'words' | 'chapters' | 'goals' | 'design' | 'media' | 'legal' | 'hero';
 
 /** Handles that have editorial content, so a chapter list means something. */
 const PRODUCT_HANDLES = Object.keys(PRODUCT_CONTENT).sort();
@@ -266,6 +267,13 @@ export default function Studio() {
           </button>
           <button
             type="button"
+            className={tab === 'goals' ? 'is-on' : undefined}
+            onClick={() => setTab('goals')}
+          >
+            Goals
+          </button>
+          <button
+            type="button"
             className={tab === 'design' ? 'is-on' : undefined}
             onClick={() => setTab('design')}
           >
@@ -323,6 +331,8 @@ export default function Studio() {
           handles={PRODUCT_HANDLES}
           setStatus={setStatus}
         />
+      ) : tab === 'goals' ? (
+        <StudioGoals setStatus={setStatus} />
       ) : (
         <div className="studio-grid">
           <aside className="studio-rail">

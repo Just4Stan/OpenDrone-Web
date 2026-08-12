@@ -18,6 +18,13 @@
  * `_fallback.json`.
  */
 
+// Relative import on purpose: the node:test suites run this module without
+// Vite, so the `~` alias is not available here.
+import {
+  statusForHandle,
+  type ProductStatus as RoadmapStatus,
+} from './roadmap-data.ts';
+
 export type ChapterPin = {
   ref: string;
   part: string;
@@ -216,7 +223,7 @@ export type ProductContent = {
   firmware: {
     project: string;            // "AM32" / "Betaflight" / "ExpressLRS" / null
     projectUrl?: string;
-    /** Optional project wordmark shown in the "The €1" chapter media slot
+    /** Optional project wordmark shown in the firmware chapter media slot
      *  (public path, e.g. `/logos/betaflight.svg`). Falls back to the
      *  geometric placeholder glyph when unset. */
     logo?: string;
@@ -480,21 +487,50 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> =
 export type ProductStatus = 'idea' | 'development' | 'live';
 
 /**
- * Resolve a product's lifecycle status. Explicit `status` wins; the
- * legacy per-product `comingSoon` boolean maps to development/live;
- * otherwise the global PUBLIC_COMING_SOON flag decides (set =
- * 'development', cleared = 'live'). Callers without a handle pass only
- * the flag.
+ * The roadmap's five-stage vocabulary collapsed to the page tri-state:
+ * launched and beta sell, alpha and in-progress present a locked page,
+ * planned presents the concept plate. Undefined for handles that are not
+ * on the roadmap (accessories).
+ */
+export function roadmapTriState(
+  handle: string,
+  flags: Record<string, RoadmapStatus> = {},
+): ProductStatus | undefined {
+  const s = statusForHandle(handle, flags);
+  if (!s) return undefined;
+  if (s === 'launched' || s === 'beta') return 'live';
+  if (s === 'planned') return 'idea';
+  return 'development';
+}
+
+/**
+ * Resolve a product's lifecycle status.
+ *
+ * Precedence: an explicit per-product `status` in content JSON (the manual
+ * kill-switch) > the legacy `comingSoon` boolean > the ROADMAP status (the
+ * `status-*` GitHub topic over the static list — pass `flags` from
+ * fetchStatusFlags* where the caller can) > the global flag.
+ *
+ * The roadmap status is the truth in BOTH directions: status-beta means
+ * the price is on the page and the board can be ordered (Shopify stock
+ * permitting), whatever PUBLIC_COMING_SOON says; status-alpha means the
+ * waitlist, even on an open shop. The topics are admin-only on the repos,
+ * so "flip to beta" is a deliberate release act by a maintainer, and the
+ * global flag remains only the default for products with no roadmap entry
+ * (accessories) plus the per-product JSON kill-switch above it.
  */
 export function resolveStatus(
   handle: string | null | undefined,
   globalFlag: boolean,
+  flags: Record<string, RoadmapStatus> = {},
 ): ProductStatus {
   const content = handle ? PRODUCT_CONTENT[handle] : undefined;
   if (content?.status) return content.status;
   if (content?.comingSoon !== undefined) {
     return content.comingSoon ? 'development' : 'live';
   }
+  const fromRoadmap = handle ? roadmapTriState(handle, flags) : undefined;
+  if (fromRoadmap) return fromRoadmap;
   return globalFlag ? 'development' : 'live';
 }
 
@@ -506,8 +542,9 @@ export function resolveStatus(
 export function isComingSoon(
   handle: string | null | undefined,
   globalFlag: boolean,
+  flags: Record<string, RoadmapStatus> = {},
 ): boolean {
-  return resolveStatus(handle, globalFlag) !== 'live';
+  return resolveStatus(handle, globalFlag, flags) !== 'live';
 }
 
 /**
