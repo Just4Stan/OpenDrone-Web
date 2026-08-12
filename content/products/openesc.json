@@ -15,7 +15,8 @@
       "A LiPo on the XT pigtail, with the included low-ESR capacitor across the battery pads",
       "A frame, props, receiver, radio; the usual rest of the drone"
     ],
-    "fit": "The layer between the flight controller's digital requests and the raw battery current that actually spins the props."
+    "fit": "The layer between the flight controller's digital requests and the raw battery current that actually spins the props.",
+    "chain": "esc"
   },
   "firmware": {
     "project": "AM32",

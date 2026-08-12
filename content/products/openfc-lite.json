@@ -16,7 +16,8 @@
       "A frame, props, and a 3-6S LiPo",
       "A radio and goggles on your side of the link"
     ],
-    "fit": "In the middle of the stack and in the middle of every signal path; everything the drone does passes through this board."
+    "fit": "In the middle of the stack and in the middle of every signal path; everything the drone does passes through this board.",
+    "chain": "fc"
   },
   "firmware": {
     "project": "Betaflight",

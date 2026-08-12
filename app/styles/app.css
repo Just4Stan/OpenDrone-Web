@@ -8055,46 +8055,76 @@ html.light .firmware-logo--tile {
   color: var(--color-text-dim);
 }
 
+/* Needs as compact chips, not a tall card: this chapter is a quick
+   orientation, the depth lives in the video beside it. */
 .what-needs {
   list-style: none;
-  padding: 0.35rem 1.1rem;
+  padding: 0;
   margin: 0 0 var(--sp-5);
-  width: fit-content;
-  min-width: min(24rem, 100%);
-  background: var(--color-bg-card);
-  border: 1px solid var(--color-border);
-  border-radius: var(--r-lg);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  max-width: 40rem;
 }
 
 .what-needs li {
-  padding: 0.6rem 0.1rem;
-  border-bottom: 1px solid var(--color-border);
+  padding: 0.35rem 0.8rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--r-pill);
+  background: color-mix(in srgb, var(--color-text) 4%, transparent);
   color: var(--color-text);
-  font-size: 0.9rem;
+  font-family: var(--font-mono);
+  font-size: 12px;
   line-height: 1.45;
-  max-width: 52ch;
 }
 
-.what-needs li:last-child {
-  border-bottom: none;
+/* The signal chain, in hero-scroll order: this product's stage is lit gold,
+   stages we sell link their boards. One glance places the part; the homepage
+   hero tells the same story as a scroll. */
+.what-chain {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.45rem 0;
+  margin: 0 0 var(--sp-5);
 }
 
-.what-fit {
-  max-width: 64ch;
-  margin: 0 0 var(--sp-4);
-  font-size: var(--fs-base);
-  line-height: 1.6;
-  color: var(--color-text-muted);
+.what-chain-step {
+  display: inline-flex;
+  align-items: center;
 }
 
-.what-fit-label {
+.what-chain-arrow {
+  margin: 0 0.5rem;
+  color: var(--color-text-dim);
+  font-size: 12px;
+}
+
+.what-chain-chip {
+  padding: 0.3rem 0.75rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--r-pill);
   font-family: var(--font-mono);
   font-size: 11px;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: var(--color-gold);
-  margin-right: 0.35rem;
+  color: var(--color-text-muted);
+  text-decoration: none;
+  transition: color 0.15s ease, border-color 0.15s ease;
 }
+
+a.what-chain-chip:hover {
+  color: var(--color-gold);
+  border-color: color-mix(in srgb, var(--color-gold) 55%, transparent);
+}
+
+.what-chain-chip.is-active {
+  background: var(--color-gold-fill);
+  border-color: var(--color-gold-fill);
+  color: var(--color-on-accent);
+  font-weight: 600;
+}
+
 
 .what-home-link {
   display: inline-block;

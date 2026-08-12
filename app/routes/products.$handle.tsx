@@ -1670,15 +1670,72 @@ export default function Product() {
     whatIsThis: (n, title) => {
       const wit = content.whatIsThis;
       if (!wit) return null;
+      // The signal chain, in hero-scroll order. The product's own stage is
+      // lit; stages we sell link their product page, the rest are plain.
+      // This strip is the interface to the homepage story: same parts, same
+      // order, one screen instead of one scroll.
+      const chain: Array<{id: string; copy: string; to?: string}> = [
+        {id: 'radio', copy: 'what_chain_radio'},
+        {id: 'rx', copy: 'what_chain_receiver', to: '/products/openrx'},
+        {id: 'fc', copy: 'what_chain_fc', to: '/products/openfc-lite'},
+        {id: 'esc', copy: 'what_chain_esc', to: '/products/openesc'},
+        {id: 'motors', copy: 'what_chain_motors'},
+        {id: 'frame', copy: 'what_chain_frame', to: '/products/openframe'},
+      ];
       return (
         <Chapter
           number={n}
           label="What is this"
           title={title}
           titleId="product-chrome.ch_what_is_this_title"
-          noMedia
+          noMedia={!content.video}
+          media={
+            content.video ? (
+              // The go-to source: the maintainer's own explainer video for
+              // this exact board type carries the depth; the chapter stays a
+              // quick orientation.
+              <WatchCard
+                videoId={content.video.id}
+                title={content.video.title}
+                channel={content.video.channel}
+              />
+            ) : undefined
+          }
         >
           <p className="chapter-body">{wit.intro}</p>
+          <div className="what-chain" aria-label={copyText('product-chrome.what_chain_aria')}>
+            {chain.map((c, i) => {
+              const active = wit.chain === c.id;
+              const chip =
+                c.to && !active ? (
+                  <Link
+                    key={c.id}
+                    prefetch="viewport"
+                    to={c.to}
+                    className="what-chain-chip"
+                  >
+                    <Txt id={`product-chrome.${c.copy}`} />
+                  </Link>
+                ) : (
+                  <span
+                    key={c.id}
+                    className={`what-chain-chip${active ? ' is-active' : ''}`}
+                  >
+                    <Txt id={`product-chrome.${c.copy}`} />
+                  </span>
+                );
+              return (
+                <span key={c.id} className="what-chain-step">
+                  {i > 0 ? (
+                    <span className="what-chain-arrow" aria-hidden="true">
+                      →
+                    </span>
+                  ) : null}
+                  {chip}
+                </span>
+              );
+            })}
+          </div>
           <Txt
             id="product-chrome.what_is_this_needs_label"
             as="p"
@@ -1689,14 +1746,6 @@ export default function Product() {
               <li key={line}>{line}</li>
             ))}
           </ul>
-          <p className="what-fit">
-            <Txt
-              id="product-chrome.what_is_this_fit_label"
-              as="span"
-              className="what-fit-label"
-            />{' '}
-            <span>{wit.fit}</span>
-          </p>
           {/* The homepage hero walks the whole machine part by part; this is
               the "zoom out" for the reader who wants the full picture. */}
           <Link prefetch="viewport" to="/" className="what-home-link">
@@ -1748,9 +1797,11 @@ export default function Product() {
             })
           ) : (
             <>
-              {/* Build-video bubble leads the row on products that have a film
-                  (FC, ESC); other products fall back to the issues card. */}
-              {content.video ? (
+              {/* Build-video bubble leads the row on products that have a
+                  film, UNLESS the What-does-this-do chapter above already
+                  plays it (no reason to sell the same video twice); those
+                  pages fall through to the issues card like film-less ones. */}
+              {content.video && !content.whatIsThis ? (
                 <WatchCard
                   videoId={content.video.id}
                   title={content.video.title}
@@ -1784,7 +1835,7 @@ export default function Product() {
                   className="open-source-card-sub"
                 />
               </a>
-              {content.video ? null : (
+              {content.video && !content.whatIsThis ? null : (
                 <a
                   href={`${activeRepoUrl}/issues`}
                   target="_blank"

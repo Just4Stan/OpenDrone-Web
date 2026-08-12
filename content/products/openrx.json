@@ -15,7 +15,8 @@
       "A flight controller with a free UART and a 5 V pad",
       "The rest of the drone: it only carries commands, it moves nothing"
     ],
-    "fit": "The drone's ear, the first stop for everything you do on the sticks."
+    "fit": "The drone's ear, the first stop for everything you do on the sticks.",
+    "chain": "rx"
   },
   "firmware": {
     "project": "ExpressLRS",

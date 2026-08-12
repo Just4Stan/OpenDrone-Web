@@ -67,8 +67,12 @@ export type WhatIsThis = {
   intro: string;
   /** "Before this flies you also need": one line per missing piece. */
   needs: string[];
-  /** One line: where the part sits in the drone's signal chain. */
+  /** One line: where the part sits in the drone's signal chain. Kept as
+   *  data for the studio; the chapter now SHOWS the position via `chain`. */
   fit: string;
+  /** Which signal-chain stage this product IS; the chapter's chain strip
+   *  lights it. Stages: radio, rx, fc, esc, motors, frame. */
+  chain?: 'radio' | 'rx' | 'fc' | 'esc' | 'motors' | 'frame';
 };
 
 /**

@@ -16,7 +16,8 @@
       "A LiPo and a battery strap",
       "A radio and goggles on the ground"
     ],
-    "fit": "Everything else mounts to it; it turns a bag of boards into an aircraft."
+    "fit": "Everything else mounts to it; it turns a bag of boards into an aircraft.",
+    "chain": "frame"
   },
   "firmware": {
     "project": "—"
