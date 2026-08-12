@@ -156,13 +156,21 @@
   --aside-width: 400px;
 
   --rail-gutter: 1.25rem;
-  --rail-width: min(calc(100% - (2 * var(--rail-gutter))), 1520px);
+  /* The one content rail every full-width surface shares. The cap dropped
+     from 1520 to 1440: on a 16:9 monitor the old rail ran nearly edge to
+     edge and the pages read as a wall. Margins are part of the design —
+     they are where the eye rests and what makes the column the obvious
+     place to look. Change the rail here, never per page. */
+  --rail-width: min(calc(100% - (2 * var(--rail-gutter))), 1440px);
   --prose-width: 680px;
 }
 
 @media (min-width: 768px) {
   :root {
-    --rail-gutter: 2rem;
+    /* Gutters grow with the viewport (4vw, capped at 5rem) instead of
+       sitting fixed at 2rem, so laptop and 16:9 widths get real breathing
+       room at the sides rather than a token 32px. */
+    --rail-gutter: clamp(2rem, 4vw, 5rem);
   }
 }
 
