@@ -1032,6 +1032,18 @@ export function HeroDroneScene({
       }
       const stopPos = (si: number) => STOPS[si].pos;
       const partStopIdx = (beat: number) => STOPS.findIndex((s) => s.part && s.beat === beat);
+      // The next PART stop in a direction. Wheel gestures commit to parts
+      // only: one confident scroll is one item of the walkthrough, and the
+      // rest between two parts plays out as the passage, not as a stop that
+      // costs its own gesture. (The first and last stops are always parts,
+      // so the walk always terminates.) Keyboard stepping still visits rests.
+      const nextPartIdx = (from: number, dir: number) => {
+        let i = from;
+        do {
+          i = Math.max(0, Math.min(STOPS.length - 1, i + dir));
+        } while (!STOPS[i].part && i > 0 && i < STOPS.length - 1);
+        return i;
+      };
       const nearestIdx = (x: number) => {
         let best = 0;
         let bd = Infinity;
@@ -1133,7 +1145,7 @@ export function HeroDroneScene({
         // ~48 px (3 lines) in Firefox, so 45 catches a single notch on both.
         const THRESH = cfg.scroll?.stepPx ?? 45;
         if (committed === null && Math.abs(gestureAccum) >= THRESH) {
-          const next = Math.max(first, Math.min(last, gestureFrom + Math.sign(gestureAccum)));
+          const next = nextPartIdx(gestureFrom, Math.sign(gestureAccum));
           committed = next;
           target = stopPos(next);
         }
@@ -1289,10 +1301,10 @@ export function HeroDroneScene({
             // Stops are no longer evenly spaced (rest-to-part is closer than
             // part-to-part), so the intent threshold is a fraction of THIS
             // gap, not of a beat length.
-            const nextIdx = Math.max(0, Math.min(STOPS.length - 1, gestureFrom + (gestureDir || 1)));
+            const nextIdx = nextPartIdx(gestureFrom, gestureDir || 1);
             const gap = Math.abs(stopPos(nextIdx) - fromPos) || dur();
             const advance = moved > gap * (cfg.scroll?.commitAt ?? 0.28) || Math.abs(vel) > dur() * 0.6;
-            committed = Math.max(0, Math.min(STOPS.length - 1, gestureFrom + (advance ? gestureDir || 1 : 0)));
+            committed = advance ? nextIdx : gestureFrom;
           }
           const snap = stopPos(committed);
           const settle = Math.min(1, (idle - 120) / 260);
