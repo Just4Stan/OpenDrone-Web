@@ -10324,32 +10324,35 @@ html.light .editorial-watermark {
   color: var(--color-on-accent);
 }
 
-/* Partner logo as the card's BACKGROUND presence: big, faint, bleeding off
-   the right edge behind the text — the same ghost treatment as the GitHub
-   mark on the PDP study card, not a badge in the layout. */
+/* Partner logo on the page's art layer — outside the card, in the right
+   margin like the section sketches — but pinned to ITS card: vertically
+   centered on the box that talks about that firmware. */
 .partner-card {
   position: relative;
-  overflow: hidden;
-}
-.partner-card > * {
-  position: relative;
+  overflow: visible;
 }
 .partner-card-logo {
+  display: none;
   position: absolute;
-  right: -1.75rem;
+  left: calc(100% + var(--sp-7));
   top: 50%;
   translate: 0 -50%;
-  width: 13rem;
+  width: 15rem;
   aspect-ratio: var(--logo-ratio, 4);
   background: currentColor;
-  color: color-mix(in srgb, var(--color-text-muted) 20%, transparent);
+  color: color-mix(in srgb, var(--color-text-muted) 45%, transparent);
   -webkit-mask-size: contain;
   mask-size: contain;
   -webkit-mask-repeat: no-repeat;
   mask-repeat: no-repeat;
-  -webkit-mask-position: right center;
-  mask-position: right center;
+  -webkit-mask-position: left center;
+  mask-position: left center;
   pointer-events: none;
+}
+@media (min-width: 1120px) {
+  .partner-card-logo {
+    display: block;
+  }
 }
 
 /* Plate-sized where the viewport has real whitespace to spend. */
