@@ -64,6 +64,7 @@ import {
   isComingSoon,
 } from '~/lib/product-content';
 import {useProductStatus} from '~/lib/coming-soon';
+import {fetchStatusFlagsFast, statusForHandle} from '~/lib/roadmap-data';
 import {stackDiscountedPrice} from '~/lib/stack-discount';
 import {trackEvent} from '~/lib/growth/plausible';
 import {attributionSource} from '~/lib/growth/attribution';
@@ -137,6 +138,11 @@ async function loadCriticalData({context, params, request}: Route.LoaderArgs) {
   const stackHandles =
     PRODUCT_CONTENT[handle]?.stack?.partners.map((p) => p.handle) ?? [];
 
+  // Roadmap status for the chip near the title. The 600ms fast fetch races
+  // the GitHub topic lookup against the static ROADMAP fallback, so a cold
+  // cache or an API failure degrades to the checked-in status, never a 500.
+  const statusFlagsPromise = fetchStatusFlagsFast(context.env.GITHUB_STATUS_TOKEN);
+
   const [{product}, ...partnerResults] = await Promise.all([
     storefront.query(PRODUCT_QUERY, {
       variables: {handle, selectedOptions: getSelectedProductOptions(request)},
@@ -169,6 +175,10 @@ async function loadCriticalData({context, params, request}: Route.LoaderArgs) {
     product,
     bundleProducts,
     stackProducts,
+    // The roadmap status this page's boards carry (beta, alpha, ...), for
+    // the chip near the title. Undefined for products off the roadmap
+    // (accessories); the chip simply doesn't render.
+    roadmapStatus: statusForHandle(handle, await statusFlagsPromise),
     // Whether the review env vars are configured — the client can't see
     // env, so the loader answers. False hides every review surface even
     // when the synced metafields carry a count (feature fully dormant).
@@ -552,6 +562,7 @@ export default function Product() {
     contributors,
     reviews,
     reviewsEnabled: reviewsOn,
+    roadmapStatus,
   } = useLoaderData<typeof loader>();
   useChapterReveal(product.handle);
 
@@ -2261,6 +2272,18 @@ export default function Product() {
           <p className="product-hero-eyebrow">
             {copyText('product-chrome.hero_eyebrow_file')} {content.fileNumber} ·{' '}
             {content.family}
+            {roadmapStatus ? (
+              <Link
+                prefetch="viewport"
+                to="/roadmap"
+                className="product-status-chip"
+                data-status={roadmapStatus}
+                title={copyText(`roadmap.status_${roadmapStatus}_legend`)}
+              >
+                <span className="kanban-dot" aria-hidden="true" />
+                {copyText(`roadmap.status_${roadmapStatus}_label`)}
+              </Link>
+            ) : null}
           </p>
           {hasHeroCopy ? (
             <h1 className="product-hero-headline">

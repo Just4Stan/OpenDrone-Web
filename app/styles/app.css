@@ -4394,6 +4394,26 @@ button.reset {
   margin: 0;
 }
 
+/* Roadmap status chip beside the eyebrow. Same vocabulary as /roadmap: the
+   dot inherits the kanban's [data-status] coloring, the label is the same
+   copy key, and the chip links back to the board where the legend explains
+   what the word means. Status appears ONLY via this flag, never in prose. */
+.product-status-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45em;
+  margin-left: 0.9em;
+  padding: 0.2em 0.7em;
+  border: 1px solid color-mix(in srgb, var(--color-border) 85%, transparent);
+  border-radius: 999px;
+  color: var(--color-text-muted);
+  transition: border-color 0.15s ease, color 0.15s ease;
+}
+.product-status-chip:hover {
+  border-color: color-mix(in srgb, var(--color-gold) 55%, transparent);
+  color: var(--color-text);
+}
+
 /* Product name. Single block, refined display weight, restrained size.
    The 3-line span pattern from product-content stays in the markup
    (no text change) but renders inline so it reads as one engineered

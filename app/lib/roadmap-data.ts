@@ -207,6 +207,29 @@ export function resolveRoadmap(
 }
 
 /**
+ * The status a PRODUCT PAGE should carry, keyed by its Shopify handle. The
+ * relation runs through `productPath` and is many-to-one (both OpenFC-Lite
+ * boards share one page, both ESCs share one page), so the page shows the
+ * furthest-along status among its boards: a page whose 30x30 is beta while
+ * the 20x20 is still alpha is a beta page.
+ */
+export function statusForHandle(
+  handle: string,
+  flags: Record<string, ProductStatus> = {},
+): ProductStatus | undefined {
+  const path = `/products/${handle}`;
+  const items = resolveRoadmap(flags).filter((r) => r.productPath === path);
+  if (!items.length) return undefined;
+  return items.reduce(
+    (best, r) =>
+      STATUS_ORDER.indexOf(r.status) < STATUS_ORDER.indexOf(best)
+        ? r.status
+        : best,
+    items[0].status,
+  );
+}
+
+/**
  * What the community can vote on: everything not yet buyable and not already
  * on the home straight. Alpha is excluded on purpose, a product with community
  * testers is being finished regardless of the vote.
