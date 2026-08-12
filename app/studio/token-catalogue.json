@@ -1,7 +1,7 @@
 {
   "$generated": "npm run studio:tokens — do not hand-edit",
   "$source": "app/styles/app.css @theme",
-  "count": 61,
+  "count": 70,
   "tokens": [
     {
       "name": "--color-bg",
@@ -427,6 +427,69 @@
       "light": null
     },
     {
+      "name": "--rail-max",
+      "value": "1440px",
+      "group": "layout",
+      "derivedFrom": [],
+      "light": null
+    },
+    {
+      "name": "--gutter-max",
+      "value": "7rem",
+      "group": "layout",
+      "derivedFrom": [],
+      "light": null
+    },
+    {
+      "name": "--prose-col",
+      "value": "640px",
+      "group": "layout",
+      "derivedFrom": [],
+      "light": null
+    },
+    {
+      "name": "--prose-measure",
+      "value": "68ch",
+      "group": "layout",
+      "derivedFrom": [],
+      "light": null
+    },
+    {
+      "name": "--aside-col",
+      "value": "19rem",
+      "group": "layout",
+      "derivedFrom": [],
+      "light": null
+    },
+    {
+      "name": "--kanban-card",
+      "value": "10.5rem",
+      "group": "layout",
+      "derivedFrom": [],
+      "light": null
+    },
+    {
+      "name": "--art-width",
+      "value": "22rem",
+      "group": "layout",
+      "derivedFrom": [],
+      "light": null
+    },
+    {
+      "name": "--art-width-wide",
+      "value": "28rem",
+      "group": "layout",
+      "derivedFrom": [],
+      "light": null
+    },
+    {
+      "name": "--chapter-air",
+      "value": "1.35",
+      "group": "layout",
+      "derivedFrom": [],
+      "light": null
+    },
+    {
       "name": "--rail-gutter",
       "value": "1.25rem",
       "group": "layout",
@@ -435,10 +498,11 @@
     },
     {
       "name": "--rail-width",
-      "value": "min(calc(100% - (2 * var(--rail-gutter))), 1520px)",
+      "value": "min(calc(100% - (2 * var(--rail-gutter))), var(--rail-max))",
       "group": "derived",
       "derivedFrom": [
-        "--rail-gutter"
+        "--rail-gutter",
+        "--rail-max"
       ],
       "light": null
     },

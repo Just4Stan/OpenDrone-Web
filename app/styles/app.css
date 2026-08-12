@@ -155,13 +155,26 @@
   --header-height: 56px;
   --aside-width: 400px;
 
+  /* ── Layout sizes: the margins and column widths the studio can move.
+     Every page-level width or measure below reads ONE of these; nothing
+     sets its own. ── */
+  --rail-max: 1440px;
+  --gutter-max: 7rem;
+  --prose-col: 640px;
+  --prose-measure: 68ch;
+  --aside-col: 19rem;
+  --kanban-card: 10.5rem;
+  --art-width: 22rem;
+  --art-width-wide: 28rem;
+  --chapter-air: 1.35;
+
   --rail-gutter: 1.25rem;
   /* The one content rail every full-width surface shares. The cap dropped
      from 1520 to 1440: on a 16:9 monitor the old rail ran nearly edge to
      edge and the pages read as a wall. Margins are part of the design —
      they are where the eye rests and what makes the column the obvious
      place to look. Change the rail here, never per page. */
-  --rail-width: min(calc(100% - (2 * var(--rail-gutter))), 1440px);
+  --rail-width: min(calc(100% - (2 * var(--rail-gutter))), var(--rail-max));
   --prose-width: 680px;
 }
 
@@ -171,7 +184,7 @@
        so laptop and 16:9 widths get real breathing room at the sides.
        5.5vw: ~60px at 1100, ~90px at 1600, capped at 7rem. Every surface
        shares this one number; page-level margins are never set locally. */
-    --rail-gutter: clamp(2.5rem, 5.5vw, 7rem);
+    --rail-gutter: clamp(2.5rem, 5.5vw, var(--gutter-max));
   }
 }
 
@@ -5631,7 +5644,7 @@ button.reset {
   /* 1.35x the old rhythm: chapters need to end before the next one starts.
      The gap between them is the pause that keeps a dense engineering page
      from reading as one wall. */
-  padding: calc(var(--sp-8) * 1.35) 0;
+  padding: calc(var(--sp-8) * var(--chapter-air)) 0;
   border-top: 1px solid var(--color-border);
   opacity: 1;
   transform: translateY(0);
@@ -5647,7 +5660,7 @@ button.reset {
    down the column instead of across a 900px line. Interactive full-width
    blocks (schematic, teardown, tables, card grids) are untouched. */
 .chapter p {
-  max-width: 68ch;
+  max-width: var(--prose-measure);
 }
 
 /* content-visibility's paint containment clips descendants at the chapter's
@@ -10008,7 +10021,7 @@ button.reset {
      for labels and data on these pages, never body prose, so the column
      no longer needs mono's extra width. */
   width: var(--rail-width);
-  max-width: 640px;
+  max-width: var(--prose-col);
   margin: 0 auto;
   /* 1.25rem top below 1360 (restored to 4rem beside the sticky rail): the
      4rem only existed to align with the rail head and otherwise stacked
@@ -10070,7 +10083,7 @@ button.reset {
 
 .editorial-section p {
   margin: 0 0 0.7rem;
-  max-width: 68ch;
+  max-width: var(--prose-measure);
 }
 
 .editorial-section strong {
@@ -10226,7 +10239,7 @@ html.light .editorial-watermark {
   bottom: 0;
   margin: auto 0;
   height: fit-content;
-  width: 22rem;
+  width: var(--art-width);
   z-index: -1;
   color: color-mix(in srgb, var(--color-text-muted) 45%, transparent);
   pointer-events: none;
@@ -10368,7 +10381,7 @@ html.light .editorial-watermark {
 @media (min-width: 1120px) {
   .editorial-shell,
   .editorial-shell.is-narrow {
-    grid-template-columns: minmax(0, 640px) minmax(0, 19rem);
+    grid-template-columns: minmax(0, var(--prose-col)) minmax(0, var(--aside-col));
     justify-content: center;
     align-items: start;
   }
@@ -10764,7 +10777,7 @@ html.light .editorial-watermark {
 .kanban-row-cards {
   /* Four boards per line at most: 4 x 10.5rem + 3 gaps. A long stage
      stacks; it never becomes a horizon-wide strip. */
-  max-width: min(100%, 44.7rem);
+  max-width: min(100%, calc(4 * var(--kanban-card) + 3 * 0.9rem));
 }
 .kanban-row-cards {
   display: flex;
@@ -10777,7 +10790,7 @@ html.light .editorial-watermark {
      wins over the width and the row refuses to wrap: eight alpha boards
      then run off the right edge as one uncut line. */
   flex: none;
-  width: 10.5rem;
+  width: var(--kanban-card);
   min-width: 0;
 }
 
@@ -10794,7 +10807,7 @@ html.light .editorial-watermark {
    breaks out to the full rail. Switching pages must not move the text. */
 .kanban-band > .series-rail,
 .kanban-band > .editorial-hero {
-  width: min(100%, calc(640px + var(--sp-7) + 19rem));
+  width: min(100%, calc(var(--prose-col) + var(--sp-7) + var(--aside-col)));
   margin-inline: auto;
 }
 .kanban-band > .editorial-hero {
