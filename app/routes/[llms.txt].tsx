@@ -1,6 +1,7 @@
 import type {Route} from './+types/[llms.txt]';
 import {PRODUCT_CONTENT, isComingSoon} from '~/lib/product-content';
 import {comingSoonFlag} from '~/lib/coming-soon';
+import {fetchStatusFlagsFast} from '~/lib/roadmap-data';
 
 /**
  * /llms.txt — the machine-readable front door for AI agents (llmstxt.org).
@@ -53,13 +54,16 @@ const numericId = (gid: string) => gid.split('/').pop() ?? gid;
  * feed hides prices, so it advertises no checkout discount either), so the
  * feed makes no claim the checkout won't honour.
  */
-function stackDiscountNote(globalSoon: boolean): string {
+function stackDiscountNote(
+  globalSoon: boolean,
+  statusFlags: Record<string, import('~/lib/roadmap-data').ProductStatus> = {},
+): string {
   for (const [hostHandle, c] of Object.entries(PRODUCT_CONTENT)) {
     const s = c.stack;
     if (!s?.discountPct || !s.discountedHandle) continue;
     if (
-      isComingSoon(hostHandle, globalSoon) ||
-      isComingSoon(s.discountedHandle, globalSoon)
+      isComingSoon(hostHandle, globalSoon, statusFlags) ||
+      isComingSoon(s.discountedHandle, globalSoon, statusFlags)
     )
       continue;
     // Word the claim from the side whose PARTNER is the discounted board;
@@ -84,6 +88,7 @@ function stackDiscountNote(globalSoon: boolean): string {
 export async function loader({context, request}: Route.LoaderArgs) {
   const origin = new URL(request.url).origin;
   const globalSoon = comingSoonFlag(context.env);
+  const statusFlags = await fetchStatusFlagsFast(context.env.GITHUB_STATUS_TOKEN);
   const data = await context.storefront.query(LLMS_CATALOG_QUERY, {
     variables: {count: 50},
     cache: context.storefront.CacheLong(),
@@ -95,7 +100,7 @@ export async function loader({context, request}: Route.LoaderArgs) {
       const desc = (p.description ?? '').replace(/\s+/g, ' ').slice(0, 160);
       // Locked products show "coming soon" instead of price + stock — this
       // feed must not leak what the PDP hides.
-      const locked = isComingSoon(p.handle, globalSoon);
+      const locked = isComingSoon(p.handle, globalSoon, statusFlags);
       const lines = (p.variants?.nodes ?? [])
         .map((v: LlmsVariant) => {
           const name = v.title === 'Default Title' ? p.title : v.title;
@@ -158,7 +163,7 @@ Multiple lines are comma-separated; an optional discount code goes in the query:
 
     ${origin}/cart/<variantId>:<qty>,<variantId>:<qty>?discount=CODE
 
-Example, a 20×20 flight stack (OpenFC Lite + OpenESC${stackDiscountNote(globalSoon)}):
+Example, a 20×20 flight stack (OpenFC Lite + OpenESC${stackDiscountNote(globalSoon, statusFlags)}):
 fetch the two 20×20 variant IDs from the catalog below
 and request ${origin}/cart/<fcId>:1,<escId>:1 — the response is a 302 to the
 Shopify checkout; hand that URL to the human to pay. Only the opendrone.store

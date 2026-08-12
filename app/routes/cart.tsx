@@ -12,7 +12,7 @@ import {
   findLockedMerchandise,
 } from '~/lib/coming-soon';
 import {VOTE_ATTR_KEY, parseVoteRank, serializeVoteRank} from '~/lib/votes';
-import {votableIds} from '~/lib/roadmap-data';
+import {fetchStatusFlagsFast, votableIds} from '~/lib/roadmap-data';
 
 export const meta: Route.MetaFunction = () =>
   buildSeoMeta({
@@ -66,13 +66,17 @@ export async function action({request, context}: Route.ActionArgs) {
       // override-locked — no extra query.
       let lines = inputs.lines ?? [];
       const soonFlag = comingSoonFlag(context.env);
-      if (lines.length > 0 && anyComingSoonLocks(soonFlag)) {
+      const statusFlags = await fetchStatusFlagsFast(
+        context.env.GITHUB_STATUS_TOKEN,
+      );
+      if (lines.length > 0 && anyComingSoonLocks(soonFlag, statusFlags)) {
         const {lockedIds} = await findLockedMerchandise(
           context.storefront,
           soonFlag,
           lines
             .map((l) => l.merchandiseId)
             .filter((id): id is string => Boolean(id)),
+          statusFlags,
         );
         if (lockedIds.size > 0) {
           const open = lines.filter(

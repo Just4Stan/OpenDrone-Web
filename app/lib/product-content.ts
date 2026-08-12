@@ -18,6 +18,13 @@
  * `_fallback.json`.
  */
 
+// Relative import on purpose: the node:test suites run this module without
+// Vite, so the `~` alias is not available here.
+import {
+  statusForHandle,
+  type ProductStatus as RoadmapStatus,
+} from './roadmap-data.ts';
+
 export type ChapterPin = {
   ref: string;
   part: string;
@@ -480,20 +487,50 @@ export const PRODUCT_CONTENT: Record<string, ProductContent> =
 export type ProductStatus = 'idea' | 'development' | 'live';
 
 /**
- * Resolve a product's lifecycle status. Explicit `status` wins; the
- * legacy per-product `comingSoon` boolean maps to development/live;
- * otherwise the global PUBLIC_COMING_SOON flag decides (set =
- * 'development', cleared = 'live'). Callers without a handle pass only
- * the flag.
+ * The roadmap's five-stage vocabulary collapsed to the page tri-state:
+ * launched and beta sell, alpha and in-progress present a locked page,
+ * planned presents the concept plate. Undefined for handles that are not
+ * on the roadmap (accessories).
+ */
+export function roadmapTriState(
+  handle: string,
+  flags: Record<string, RoadmapStatus> = {},
+): ProductStatus | undefined {
+  const s = statusForHandle(handle, flags);
+  if (!s) return undefined;
+  if (s === 'launched' || s === 'beta') return 'live';
+  if (s === 'planned') return 'idea';
+  return 'development';
+}
+
+/**
+ * Resolve a product's lifecycle status.
+ *
+ * Precedence: an explicit per-product `status` in content JSON (the manual
+ * kill-switch) > the legacy `comingSoon` boolean > the ROADMAP status (the
+ * `status-*` GitHub topic over the static list — pass `flags` from
+ * fetchStatusFlags* where the caller can) > the global flag.
+ *
+ * The global PUBLIC_COMING_SOON flag stays the master pre-launch gate:
+ * while it is set the roadmap can only shape the locked plate (concept vs
+ * coming-soon), never unlock a sale. Once the shop is open the roadmap
+ * decides per product — flipping a repo's topic to status-beta is what
+ * puts its price on the page.
  */
 export function resolveStatus(
   handle: string | null | undefined,
   globalFlag: boolean,
+  flags: Record<string, RoadmapStatus> = {},
 ): ProductStatus {
   const content = handle ? PRODUCT_CONTENT[handle] : undefined;
   if (content?.status) return content.status;
   if (content?.comingSoon !== undefined) {
     return content.comingSoon ? 'development' : 'live';
+  }
+  const fromRoadmap = handle ? roadmapTriState(handle, flags) : undefined;
+  if (fromRoadmap) {
+    if (globalFlag) return fromRoadmap === 'idea' ? 'idea' : 'development';
+    return fromRoadmap;
   }
   return globalFlag ? 'development' : 'live';
 }
@@ -506,8 +543,9 @@ export function resolveStatus(
 export function isComingSoon(
   handle: string | null | undefined,
   globalFlag: boolean,
+  flags: Record<string, RoadmapStatus> = {},
 ): boolean {
-  return resolveStatus(handle, globalFlag) !== 'live';
+  return resolveStatus(handle, globalFlag, flags) !== 'live';
 }
 
 /**

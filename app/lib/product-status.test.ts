@@ -15,6 +15,33 @@ describe('resolveStatus', () => {
     assert.equal(resolveStatus('openesc', false), 'live');
   });
 
+  it('lets the roadmap decide once the shop is open', () => {
+    // Static roadmap: both ESCs are beta -> live; OpenRX is alpha -> a
+    // locked page with the waitlist, even though the shop is open.
+    assert.equal(resolveStatus('openesc', false), 'live');
+    assert.equal(resolveStatus('openrx', false), 'development');
+  });
+
+  it('never lets the roadmap unlock a sale past the global gate', () => {
+    // Shop still pre-launch: a beta board presents as coming soon.
+    assert.equal(resolveStatus('openesc', true), 'development');
+    assert.equal(isComingSoon('openesc', true), true);
+  });
+
+  it('follows a live topic flag over the static status', () => {
+    // A repo topic moving OpenRX to beta puts its price on the page; the
+    // flag map is keyed by repo URL, as fetchStatusFlags returns it.
+    const flags = {
+      'https://github.com/OpenDrone-hw/OpenRX': 'beta',
+    } as const;
+    assert.equal(resolveStatus('openrx', false, flags), 'live');
+    // ...and moving it back down locks it again.
+    const down = {
+      'https://github.com/OpenDrone-hw/OpenRX': 'in-progress',
+    } as const;
+    assert.equal(resolveStatus('openrx', false, down), 'development');
+  });
+
   it('treats unknown handles like unset products', () => {
     assert.equal(resolveStatus('no-such-product', true), 'development');
     assert.equal(resolveStatus(null, false), 'live');

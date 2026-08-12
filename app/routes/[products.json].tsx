@@ -1,6 +1,7 @@
 import type {Route} from './+types/[products.json]';
 import {PRODUCT_CONTENT, isComingSoon} from '~/lib/product-content';
 import {comingSoonFlag} from '~/lib/coming-soon';
+import {fetchStatusFlagsFast} from '~/lib/roadmap-data';
 
 /**
  * /products.json — machine-readable catalog feed for agents and tooling.
@@ -48,6 +49,7 @@ const numericId = (gid: string) => gid.split('/').pop() ?? gid;
 export async function loader({context, request}: Route.LoaderArgs) {
   const origin = new URL(request.url).origin;
   const globalSoon = comingSoonFlag(context.env);
+  const statusFlags = await fetchStatusFlagsFast(context.env.GITHUB_STATUS_TOKEN);
   const data = await context.storefront.query(FEED_QUERY, {
     variables: {count: 50},
     cache: context.storefront.CacheLong(),
@@ -57,7 +59,7 @@ export async function loader({context, request}: Route.LoaderArgs) {
     const content = PRODUCT_CONTENT[p.handle];
     // Locked products expose no price and no cart permalink — this feed is
     // the most scrapeable surface, so it must match what the PDP shows.
-    const locked = isComingSoon(p.handle, globalSoon);
+    const locked = isComingSoon(p.handle, globalSoon, statusFlags);
     return {
       handle: p.handle,
       title: p.title,

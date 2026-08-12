@@ -15,6 +15,8 @@ import {
 import type {Route} from './+types/root';
 import favicon from '~/assets/favicon.svg';
 import {HEADER_QUERY, HEADER_PRODUCTS_QUERY} from '~/lib/fragments';
+import {resolveAllStatuses} from '~/lib/coming-soon';
+import {fetchStatusFlagsFast} from '~/lib/roadmap-data';
 import {CUSTOMER_NEWSLETTER_STATE_QUERY} from '~/graphql/customer-account/NewsletterStateQuery';
 import resetStyles from '~/styles/reset.css?url';
 import appStyles from '~/styles/app.css?url';
@@ -147,6 +149,14 @@ export async function loader(args: Route.LoaderArgs) {
   const urlLocale = localeFromPathname(new URL(args.request.url).pathname);
   const locale = urlLocale ? seoLocaleTag(urlLocale) : 'en_US';
 
+  // Live roadmap statuses (GitHub status-* topics over the static list),
+  // resolved once here so every card, buy module and feed sees the same
+  // answer. 400ms cap: cache warm resolves instantly, cache cold falls back
+  // to the static statuses while the fetch fills the cache for the next
+  // request.
+  const globalComingSoon = env.PUBLIC_COMING_SOON !== '0';
+  const statusFlags = await fetchStatusFlagsFast(env.GITHUB_STATUS_TOKEN, 400);
+
   return {
     ...deferredData,
     ...criticalData,
@@ -158,7 +168,10 @@ export async function loader(args: Route.LoaderArgs) {
     prelaunch: env.PUBLIC_PRELAUNCH !== '0',
     // Coming-soon kill switch: defaults ON; set PUBLIC_COMING_SOON=0 the day
     // orders open. Per-product overrides in product-content.ts win over this.
-    comingSoon: env.PUBLIC_COMING_SOON !== '0',
+    comingSoon: globalComingSoon,
+    // Per-handle tri-state resolved with the live topic flags; the
+    // useProductStatus/useComingSoon hooks read this map first.
+    productStatuses: resolveAllStatuses(globalComingSoon, statusFlags),
     turnstileSiteKey: env.TURNSTILE_SITE_KEY ?? null,
     shop: getShopAnalytics({
       storefront,
