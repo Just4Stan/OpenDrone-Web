@@ -19,6 +19,10 @@ import {EDITORIAL_SERIES, nextInSeries} from '~/lib/editorial-index';
  * rail moves under the prose as a "keep reading" list, and below 1120px the
  * aside stacks under the prose too. Nothing is display:none at any width.
  */
+// Client-side navigation survives module state; a hard refresh resets it,
+// which is exactly the lifetime the entrance animation should have.
+const seenSlugs = new Set<string>();
+
 export function EditorialShell({
   slug,
   aside,
@@ -50,6 +54,11 @@ export function EditorialShell({
     const root = shellRef.current;
     if (!root) return;
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    // One performance per page per session. Re-arming on every client-side
+    // navigation made already-read paragraphs vanish and fade back in when
+    // the reader returned to a page — the cascade is a greeting, not a tic.
+    if (seenSlugs.has(slug)) return;
+    seenSlugs.add(slug);
     const items = Array.from(
       root.querySelectorAll(
         '.editorial-hero > *, .editorial-section > *, .editorial-cta > *',

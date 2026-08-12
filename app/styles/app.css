@@ -10519,8 +10519,12 @@ html.light .editorial-watermark {
   .editorial-aside {
     grid-column: 2;
     position: sticky;
-    top: calc(var(--header-height) + 1.5rem);
+    /* Rides DOWN with the reader: it scrolls with the page until its top
+       reaches a comfortable line well below the header, then travels with
+       the scroll — never pinned at the page top getting its head clipped. */
+    top: clamp(5rem, 16vh, 10rem);
     margin-top: 1.25rem;
+    align-self: start;
   }
 }
 
