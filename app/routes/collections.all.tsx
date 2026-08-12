@@ -9,7 +9,7 @@ import type {CollectionItemFragment} from 'storefrontapi.generated';
 import {buildSeoMeta, SITE_ORIGIN} from '~/lib/seo';
 import {EmptyState} from '~/components/EmptyState';
 import {PRODUCT_CONTENT, isComingSoon} from '~/lib/product-content';
-import {useComingSoon} from '~/lib/coming-soon';
+import {useProductStatusResolver} from '~/lib/coming-soon';
 import {stackDiscountedPrice} from '~/lib/stack-discount';
 import {Txt} from '~/components/Txt';
 import {copyText, editAttrs} from '~/lib/copy';
@@ -170,7 +170,7 @@ export default function Collection() {
   // Expand each product into one card per purchasable model (skipping
   // coming-soon tiers); single products / bundles / accessories get one card.
   // Products arrive newest-first, so card order is newest-first by default.
-  const globalComingSoon = useComingSoon();
+  const productStatus = useProductStatusResolver();
   const cards = useMemo<Card[]>(() => {
     const out: Card[] = [];
     for (const p of products) {
@@ -190,7 +190,7 @@ export default function Collection() {
           ).flatMap((pc) => {
             // Unlaunched partners can't join a stack offer (their price
             // stays hidden everywhere).
-            if (isComingSoon(pc.handle, globalComingSoon)) return [];
+            if (productStatus(pc.handle) !== 'live') return [];
             const partner = products.find((pp) => pp.handle === pc.handle);
             if (!partner || !sv) return [];
             const pv = variantFor(
@@ -309,7 +309,7 @@ export default function Collection() {
       }
     }
     return out;
-  }, [products, globalComingSoon]);
+  }, [products, productStatus]);
 
   // Categories present in the catalog, in editorial order then any leftovers.
   const categories = useMemo(() => {

@@ -5,7 +5,7 @@ import type {CartApiQueryFragment} from 'storefrontapi.generated';
 import type {CartLayout} from '~/components/CartMain';
 import {Txt} from '~/components/Txt';
 import {copyText} from '~/lib/copy';
-import {voteCandidates} from '~/lib/roadmap-data';
+import {voteCandidates, votableIds} from '~/lib/roadmap-data';
 
 type Candidate = {id: string; added?: string | null};
 import {
@@ -96,8 +96,18 @@ export function CartBallot({
 
   const submitRank = (ids: string[]) => {
     const others = attributes.filter((a) => a.key !== VOTE_ATTR_KEY);
-    const next = ids.length
-      ? [...others, {key: VOTE_ATTR_KEY, value: serializeVoteRank(ids)}]
+    // Preserve ranked ids that have since GRADUATED off the candidate list:
+    // the cart action and the tally deliberately keep counting them, so an
+    // edit to the remaining choices must not silently erase that vote. They
+    // ride along after the user's current picks (the serializer caps the
+    // total), and drop only when the user fills every slot with new picks.
+    const saved = attributes.find((a) => a.key === VOTE_ATTR_KEY);
+    const graduated = parseVoteRank(saved?.value, votableIds()).filter(
+      (id) => !candidateIds.includes(id),
+    );
+    const keep = [...ids, ...graduated.filter((id) => !ids.includes(id))];
+    const next = keep.length
+      ? [...others, {key: VOTE_ATTR_KEY, value: serializeVoteRank(keep)}]
       : others;
     void fetcher.submit(
       {

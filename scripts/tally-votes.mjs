@@ -125,11 +125,24 @@ function parseVoteRank(value) {
   return out;
 }
 
+// MERGE, never recount from scratch: without read_all_orders the Admin API
+// only returns the last 60 days, so a full recount would silently drop
+// every older ballot on each weekly run. Ballots are therefore persisted
+// per order name in votes.json (ballots_by_order) and each run overlays
+// the fetch window onto that record: orders inside the window update or
+// (when cancelled/cleared) remove their entry, orders outside it keep the
+// recorded ballot forever.
+let prior = {};
+try {
+  prior =
+    JSON.parse(fs.readFileSync(VOTES_FILE, 'utf8')).ballots_by_order ?? {};
+} catch {
+  // First run, or a pre-merge votes.json: start from nothing recorded.
+}
+
 let cursor = null;
-let ballots = 0;
 let orders = 0;
-const points = {};
-const mentions = {};
+const merged = {...prior};
 
 for (;;) {
   const data = await adminGraphql(ORDERS_QUERY, {cursor});
@@ -137,18 +150,25 @@ for (;;) {
   if (!page) break;
   for (const order of page.nodes) {
     orders += 1;
-    if (order.cancelledAt) continue;
     const attr = order.customAttributes?.find((a) => a.key === VOTE_ATTR_KEY);
-    const rank = parseVoteRank(attr?.value);
-    if (!rank.length) continue;
-    ballots += 1;
-    rank.forEach((id, i) => {
-      points[id] = (points[id] ?? 0) + WEIGHTS[i];
-      mentions[id] = (mentions[id] ?? 0) + 1;
-    });
+    const rank = order.cancelledAt ? [] : parseVoteRank(attr?.value);
+    if (rank.length) merged[order.name] = rank;
+    else delete merged[order.name];
   }
   if (!page.pageInfo.hasNextPage) break;
   cursor = page.pageInfo.endCursor;
+}
+
+let ballots = 0;
+const points = {};
+const mentions = {};
+for (const rank of Object.values(merged)) {
+  ballots += 1;
+  rank.forEach((id, i) => {
+    if (!ROADMAP_IDS.has(id)) return;
+    points[id] = (points[id] ?? 0) + WEIGHTS[i];
+    mentions[id] = (mentions[id] ?? 0) + 1;
+  });
 }
 
 const tally = {
@@ -162,6 +182,9 @@ const tally = {
   mentions: Object.fromEntries(
     Object.entries(mentions).sort(([, a], [, b]) => b - a),
   ),
+  // The per-order record the merge above overlays onto. Keep it in the
+  // file: deleting it turns the next run back into a 60-day recount.
+  ballots_by_order: merged,
 };
 
 console.log(`${orders} orders scanned, ${ballots} ballots`);

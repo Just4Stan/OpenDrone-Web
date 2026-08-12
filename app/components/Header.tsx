@@ -23,7 +23,7 @@ import {
 import {Txt} from '~/components/Txt';
 import {copyText} from '~/lib/copy';
 import {INCUTEC_HINT_SEEN_KEY} from '~/lib/incutec-hint';
-import {useComingSoon} from '~/lib/coming-soon';
+import {useProductStatusResolver} from '~/lib/coming-soon';
 import {isComingSoon, PRODUCT_CONTENT} from '~/lib/product-content';
 import {stackDiscountedPrice} from '~/lib/stack-discount';
 
@@ -248,7 +248,7 @@ function FamilyNav({
   const {open: openCartAside} = useAside();
   // Global coming-soon flag; per-product overrides resolve in isComingSoon()
   // below so unlaunched SKUs list without price or buy cell.
-  const globalComingSoon = useComingSoon();
+  const productStatus = useProductStatusResolver();
 
   // Close the hover dropdown on any navigation — otherwise clicking a SKU drops
   // you on the page with the menu still stuck open (mouseleave never fires when
@@ -319,7 +319,7 @@ function FamilyNav({
         : undefined;
     const options = cfg.flatMap(({handle: h, short}) => {
       // Unlaunched partners can't cascade into a stack add.
-      if (isComingSoon(h, globalComingSoon)) return [];
+      if (productStatus(h) !== 'live') return [];
       const partner = (products ?? []).find((p) => p.handle === h);
       const pv = partner?.variants?.nodes?.find((pvv) =>
         pvv.selectedOptions?.some(
@@ -381,7 +381,7 @@ function FamilyNav({
       .flatMap((p) => {
         // Coming-soon products list (the dropdown is navigation) but carry
         // no price and no buy cell — the PDP hosts the notify signup.
-        const soon = isComingSoon(p.handle, globalComingSoon);
+        const soon = productStatus(p.handle) !== 'live';
         // Real, distinguishable variants (drop the single "Default Title").
         const variants = (p.variants?.nodes ?? []).filter(
           (v) => v.title && v.title !== 'Default Title',

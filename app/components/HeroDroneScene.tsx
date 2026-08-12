@@ -1098,7 +1098,16 @@ export function HeroDroneScene({
 
         const now = performance.now();
         if (now - lastWheel > GESTURE_GAP_MS) {
-          gestureFrom = nearestIdx(pos);
+          // Open the new gesture from the stop the timeline is HEADED TO,
+          // not from wherever the spring happens to be mid-flight. Without
+          // this, a wheel tick during a rail-dot or keyboard jump reopens
+          // from the fly-over position and re-commits relative to it,
+          // silently discarding the clicked destination.
+          gestureFrom =
+            committed !== null &&
+            Math.abs(pos - stopPos(committed)) > dur() * 0.06
+              ? committed
+              : nearestIdx(pos);
           gestureDir = 0;
           gestureAccum = 0;
           committed = null;

@@ -7,7 +7,7 @@
 import {Link} from 'react-router';
 import {Image, Money, Pagination} from '@shopify/hydrogen';
 import {urlWithTrackingParams, type RegularSearchReturn} from '~/lib/search';
-import {useComingSoon} from '~/lib/coming-soon';
+import {useProductStatusResolver} from '~/lib/coming-soon';
 import {isComingSoon} from '~/lib/product-content';
 import {Txt} from '~/components/Txt';
 import {copyText} from '~/lib/copy';
@@ -106,7 +106,7 @@ function SearchResultsProducts({
   products,
 }: PartialSearchResult<'products'>) {
   // Coming-soon products list but never show a price.
-  const globalComingSoon = useComingSoon();
+  const productStatus = useProductStatusResolver();
   if (!products?.nodes.length) {
     return null;
   }
@@ -123,7 +123,7 @@ function SearchResultsProducts({
               term,
             });
 
-            const soon = isComingSoon(product.handle, globalComingSoon);
+            const soon = productStatus(product.handle) !== 'live';
             const price = soon
               ? undefined
               : product?.selectedOrFirstAvailableVariant?.price;

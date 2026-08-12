@@ -88,7 +88,11 @@ function stackDiscountNote(
 export async function loader({context, request}: Route.LoaderArgs) {
   const origin = new URL(request.url).origin;
   const globalSoon = comingSoonFlag(context.env);
-  const statusFlags = await fetchStatusFlagsFast(context.env.GITHUB_STATUS_TOKEN);
+  const statusFlags = await fetchStatusFlagsFast(
+    context.env.GITHUB_STATUS_TOKEN,
+    undefined,
+    context.waitUntil,
+  );
   const data = await context.storefront.query(LLMS_CATALOG_QUERY, {
     variables: {count: 50},
     cache: context.storefront.CacheLong(),
@@ -214,7 +218,9 @@ infer status from prose anywhere else.
     status: 200,
     headers: {
       'Content-Type': 'text/plain; charset=utf-8',
-      'Cache-Control': 'max-age=3600',
+      // 600, not 3600: prices in this feed are status-gated with a
+      // 10-minute worker cache; the HTTP TTL must not outlive it.
+      'Cache-Control': 'max-age=600',
     },
   });
 }

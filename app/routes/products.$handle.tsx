@@ -141,7 +141,11 @@ async function loadCriticalData({context, params, request}: Route.LoaderArgs) {
   // Roadmap status for the chip near the title. The 600ms fast fetch races
   // the GitHub topic lookup against the static ROADMAP fallback, so a cold
   // cache or an API failure degrades to the checked-in status, never a 500.
-  const statusFlagsPromise = fetchStatusFlagsFast(context.env.GITHUB_STATUS_TOKEN);
+  const statusFlagsPromise = fetchStatusFlagsFast(
+    context.env.GITHUB_STATUS_TOKEN,
+    undefined,
+    context.waitUntil,
+  );
 
   const [{product}, ...partnerResults] = await Promise.all([
     storefront.query(PRODUCT_QUERY, {

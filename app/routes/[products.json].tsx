@@ -49,7 +49,11 @@ const numericId = (gid: string) => gid.split('/').pop() ?? gid;
 export async function loader({context, request}: Route.LoaderArgs) {
   const origin = new URL(request.url).origin;
   const globalSoon = comingSoonFlag(context.env);
-  const statusFlags = await fetchStatusFlagsFast(context.env.GITHUB_STATUS_TOKEN);
+  const statusFlags = await fetchStatusFlagsFast(
+    context.env.GITHUB_STATUS_TOKEN,
+    undefined,
+    context.waitUntil,
+  );
   const data = await context.storefront.query(FEED_QUERY, {
     variables: {count: 50},
     cache: context.storefront.CacheLong(),
@@ -108,7 +112,10 @@ export async function loader({context, request}: Route.LoaderArgs) {
         // (5 min) so flipping PUBLIC_COMING_SOON on launch day doesn't leave
         // agents reading a stale "coming soon" catalog for a full hour.
         // Unlocked shop → the catalog is stable, cache the full hour.
-        'Cache-Control': globalSoon ? 'max-age=300' : 'max-age=3600',
+        // 600, not 3600: roadmap topics gate SALES with a 10-minute worker
+        // cache, and a response cached longer than that would keep serving a
+        // price after a topic downgrade (see docs/product-status.md).
+        'Cache-Control': globalSoon ? 'max-age=300' : 'max-age=600',
       },
     },
   );

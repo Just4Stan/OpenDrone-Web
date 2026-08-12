@@ -10106,15 +10106,6 @@ button.reset {
   mask-position: center;
 }
 
-/* The drawings earn their room: plate-sized where the viewport has real
-   whitespace to spend. */
-@media (min-width: 1480px) {
-  .section-art {
-    left: calc(100% - 7rem);
-    width: 28rem;
-  }
-}
-
 /* Reading cascade: blocks in the prose column arrive as the reader does.
    The classes are armed by EditorialShell at runtime; --rv-d is the
    block's slot in its viewport batch, so a fully visible page cascades
@@ -10647,6 +10638,18 @@ html.light .editorial-watermark {
 .section-art svg {
   width: 100%;
   height: auto;
+}
+
+/* The drawings earn their room: plate-sized where the viewport has real
+   whitespace to spend. Placed AFTER the last .section-art base rule on
+   purpose: the editorial layout block exists twice in this file, and a
+   media override written before the second copy loses the cascade and
+   goes dead (found the hard way in review). */
+@media (min-width: 1480px) {
+  .section-art {
+    left: calc(100% - 7rem);
+    width: 28rem;
+  }
 }
 
 @media (min-width: 1280px) {
@@ -16566,16 +16569,18 @@ body:has(.buy-rail.is-pinned.is-mobile) .placeholder-banner {
      Centred while there is room; when the viewport narrows the centre is
      pushed right just enough to clear the brand block instead of sliding
      under it. */
-  /* 470px right reserve = the buy bubble's ~390px column + its 2.5rem inset,
-     measured at rest; the bubble keeps that width while cards are collapsed. */
+  /* 29.5rem right reserve = the buy bubble's ~24.5rem column + its 2.5rem
+     inset + breathing room, measured at rest. Rem, not px: the bubble's
+     width tracks the user's font size, so a px reserve under-reserves the
+     moment a visitor bumps their browser font scaling. */
   --hp-rail-w: min(
-    440px,
+    27.5rem,
     42vw,
-    calc(100vw - var(--hero-brand-right, 513px) - 1.5rem - 470px)
+    calc(100vw - var(--hero-brand-right, 32rem) - 1.5rem - 29.5rem)
   );
   left: max(
     50%,
-    calc(var(--hero-brand-right, 513px) + 1.5rem + var(--hp-rail-w) / 2)
+    calc(var(--hero-brand-right, 32rem) + 1.5rem + var(--hp-rail-w) / 2)
   );
   /* Centred on the bottom strip's shared line (the 2px track straddles it). */
   bottom: calc(var(--hero-strip-mid, 93px) - 1px);
@@ -16709,7 +16714,9 @@ body:has(.buy-rail.is-pinned.is-mobile) .placeholder-banner {
    formula above would starve the rail below ~140px. Drop the rail there; the
    beat copy panel still names where you are, and scrolling still walks the
    beats. */
-@media (max-width: 1040px) {
+/* 65em, not 1040px: the strip's tenants are rem-sized, so the point where
+   they stop fitting scales with the font size. */
+@media (max-width: 65em) {
   .hp-rail {
     display: none;
   }

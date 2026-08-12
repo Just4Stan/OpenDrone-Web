@@ -155,7 +155,11 @@ export async function loader(args: Route.LoaderArgs) {
   // to the static statuses while the fetch fills the cache for the next
   // request.
   const globalComingSoon = env.PUBLIC_COMING_SOON !== '0';
-  const statusFlags = await fetchStatusFlagsFast(env.GITHUB_STATUS_TOKEN, 400);
+  const statusFlags = await fetchStatusFlagsFast(
+    env.GITHUB_STATUS_TOKEN,
+    400,
+    args.context.waitUntil,
+  );
 
   return {
     ...deferredData,

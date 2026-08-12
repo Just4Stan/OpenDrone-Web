@@ -161,13 +161,30 @@ export const STATUS_ORDER: ProductStatus[] = [
  * up, update the static value in the release PR that follows, not before.
  */
 let topicCache: {at: number; map: Record<string, ProductStatus>} | null = null;
+// One fan-out at a time per isolate: concurrent cold callers (a link burst,
+// or root + PDP loader inside one document request) share the same in-flight
+// fetch instead of each firing the full per-repo fan-out — without this, four
+// concurrent cold requests could burn the whole unauthenticated hourly budget
+// in a second.
+let topicInflight: Promise<Record<string, ProductStatus>> | null = null;
 
-export async function fetchStatusFlags(
+export function fetchStatusFlags(
   token?: string,
 ): Promise<Record<string, ProductStatus>> {
   if (topicCache && Date.now() - topicCache.at < 600_000) {
-    return topicCache.map;
+    return Promise.resolve(topicCache.map);
   }
+  if (!topicInflight) {
+    topicInflight = fetchStatusFlagsUncached(token).finally(() => {
+      topicInflight = null;
+    });
+  }
+  return topicInflight;
+}
+
+async function fetchStatusFlagsUncached(
+  token?: string,
+): Promise<Record<string, ProductStatus>> {
   const map: Record<string, ProductStatus> = {};
   await Promise.all(
     ROADMAP.filter((r) => r.link).map(async (r) => {
@@ -209,14 +226,22 @@ export async function fetchStatusFlags(
  * and fills the cache for the next request. A roadmap that is milliseconds
  * fresh beats one that is seconds slow: the statuses move on the scale of
  * weeks.
+ *
+ * PASS `waitUntil` FROM LOADERS (context.waitUntil). On Oxygen, work still
+ * pending when the response finishes is cancelled unless it is registered
+ * with waitUntil — without it, the losing fetch here dies with the
+ * response, the cache never fills, and every sequential request re-pays
+ * the deadline plus the whole GitHub fan-out.
  */
 export async function fetchStatusFlagsFast(
   token?: string,
   ms = 600,
+  waitUntil?: (p: Promise<unknown>) => void,
 ): Promise<Record<string, ProductStatus>> {
   const fetchPromise = fetchStatusFlags(token).catch(
     () => ({}) as Record<string, ProductStatus>,
   );
+  waitUntil?.(fetchPromise);
   const deadline = new Promise<Record<string, ProductStatus>>((resolve) =>
     setTimeout(() => resolve({}), ms),
   );

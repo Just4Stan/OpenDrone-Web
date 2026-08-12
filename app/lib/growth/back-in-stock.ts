@@ -26,6 +26,7 @@
 
 import {isComingSoon} from '~/lib/product-content';
 import {comingSoonFlag} from '~/lib/coming-soon';
+import {fetchStatusFlags} from '~/lib/roadmap-data';
 import {adminApiAvailable, resolveInventoryItemProduct} from '~/lib/shopify-admin';
 import {sendBackInStockBroadcast} from '~/lib/growth/resend';
 import {deleteKey, setIfAbsentTtl, type UpstashEnv} from '~/lib/support/upstash';
@@ -41,6 +42,7 @@ type BackInStockEnv = UpstashEnv &
   Parameters<typeof resolveInventoryItemProduct>[0] &
   Parameters<typeof sendBackInStockBroadcast>[0] & {
     PUBLIC_COMING_SOON?: string;
+    GITHUB_STATUS_TOKEN?: string;
   };
 
 /**
@@ -62,7 +64,17 @@ export async function handleRestock(
     );
     if (!product) return;
     if (product.status !== 'ACTIVE') return;
-    if (isComingSoon(product.handle, comingSoonFlag(env))) {
+    // Resolve with the LIVE topic flags, like every other server surface:
+    // with static-only resolution the mandated static-lags-topic discipline
+    // would misread a freshly released (topic-beta, static-alpha) board as
+    // pre-launch and silently kill its restock mail. The webhook runs in
+    // waitUntil, so the full fetch's latency is free here. Note for the
+    // release runbook: a stock top-up right after a topic flip will fire
+    // this blast — coordinate it with the manual launch mail.
+    const statusFlags = await fetchStatusFlags(env.GITHUB_STATUS_TOKEN).catch(
+      () => ({}),
+    );
+    if (isComingSoon(product.handle, comingSoonFlag(env), statusFlags)) {
       // Pre-launch products: interest is answered by the launch blast,
       // not a restock mail.
       return;
