@@ -11,7 +11,7 @@
     "Every product page names the firmware its board runs and links both the project and its donation page, so our sales traffic lands on their doorstep, not just ours.",
     "On our side: we pay the regular sums that come with certifying our hardware for their projects, and we make public donations when the numbers allow it."
   ],
-  "s2_title": "*02* · The projects",
+  "s2_title": "*01* · The projects",
   "partner_betaflight_label": "Runs on · OpenFC-Lite",
   "partner_betaflight_project": "Betaflight",
   "partner_betaflight_blurb": "Betaflight is the flight controller firmware used in most mini-quad freestyle builds. OpenFC-Lite is a Betaflight-target board; the RP2354 target work is developed on a public fork and has not been submitted upstream yet.",
@@ -23,11 +23,11 @@
   "partner_expresslrs_blurb": "ExpressLRS is the open long-range 2.4 GHz / sub-GHz radio protocol. OpenRX targets are upstream (Unified_ESP32C3_2400_RX for Lite, Unified_ESP32C3_LR1121_RX for Mono/Gemini) so you flash with the standard ExpressLRS configurator.",
   "partner_link_source": "Source ↗",
   "partner_link_donate": "Donate directly ↗",
-  "s3_title": "*03* · Giving directly",
+  "s3_title": "*02* · Giving directly",
   "s3_body": [
     "The most direct support is yours. Where a project runs a public donation page, its card above links to it; giving directly means no payment-processor detour, so what you send reaches them. AM32 runs no donation page: contributing code and testing is the way in there."
   ],
-  "s4_title": "*04* · Merged upstream",
+  "s4_title": "*03* · Merged upstream",
   "s4_body": [
     "Money is one half; patches are the other. These are our changes that upstream actually merged: every link goes to the real PR."
   ],

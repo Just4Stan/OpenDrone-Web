@@ -10237,6 +10237,109 @@ html.light .editorial-watermark {
   height: auto;
 }
 
+/* ── Contributors wall (contributing page aside) ─────────────────────────
+   Coins on a loose honeycomb: odd coins ride up, every third dips, all
+   deterministic off the index so SSR and client agree. Leads carry names;
+   the crowd shows on hover; the tail folds behind the +N button. */
+.contrib-wall {
+  margin: 0;
+  font-family: var(--font-mono);
+}
+.contrib-wall-head {
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+  margin-bottom: 1rem;
+}
+.contrib-wall-leads {
+  list-style: none;
+  margin: 0 0 1.25rem;
+  padding: 0;
+  display: grid;
+  gap: 0.55rem;
+}
+.contrib-wall-leads a {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  color: var(--color-text-muted);
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  transition: color 0.15s ease;
+}
+.contrib-wall-leads a:hover {
+  color: var(--color-text);
+}
+.contrib-wall-leads img {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 1px solid color-mix(in srgb, var(--color-border) 85%, transparent);
+}
+.contrib-wall-crowd {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+.contrib-wall-crowd li {
+  /* The honeycomb wobble: deterministic per index. */
+  translate: 0 calc((mod(var(--i, 0), 2) * 6px) - 3px);
+  rotate: calc((mod(var(--i, 0), 3) - 1) * 4deg);
+  transition: rotate 0.2s ease, translate 0.2s ease;
+}
+.contrib-wall-crowd li:hover {
+  rotate: 0deg;
+  translate: 0 -2px;
+}
+.contrib-wall-crowd img {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: 1px solid color-mix(in srgb, var(--color-border) 85%, transparent);
+  transition: border-color 0.15s ease;
+}
+.contrib-wall-crowd a:hover img {
+  border-color: var(--color-gold);
+}
+.contrib-wall-more {
+  margin-top: 1rem;
+  padding: 0.45rem 0.9rem;
+  border: 1px solid color-mix(in srgb, var(--color-gold) 45%, transparent);
+  border-radius: 999px;
+  background: none;
+  color: var(--color-gold);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+.contrib-wall-more:hover {
+  background: var(--color-gold-fill);
+  color: var(--color-on-accent);
+}
+
+/* Partner logo centered above its own card, not floated in the margin. */
+.partner-card-logo {
+  display: block;
+  width: min(9.5rem, 70%);
+  aspect-ratio: var(--logo-ratio, 4);
+  margin: 0 auto 1rem;
+  background: currentColor;
+  color: color-mix(in srgb, var(--color-text-muted) 70%, transparent);
+  -webkit-mask-size: contain;
+  mask-size: contain;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  mask-position: center;
+}
+
 /* Plate-sized where the viewport has real whitespace to spend. */
 @media (min-width: 1480px) {
   .section-art {
@@ -10812,7 +10915,8 @@ html.light .editorial-watermark {
    editorial page (the shell's content span, centered); only the board
    breaks out to the full rail. Switching pages must not move the text. */
 .kanban-band > .series-rail,
-.kanban-band > .editorial-hero {
+.kanban-band > .editorial-hero,
+.kanban-band > .kanban-lead {
   width: min(100%, calc(640px + var(--sp-7) + 19rem));
   margin-inline: auto;
 }
