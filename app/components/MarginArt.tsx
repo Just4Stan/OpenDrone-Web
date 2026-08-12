@@ -39,6 +39,26 @@ export function MarginArt({children}: {children: ReactNode}) {
   );
 }
 
+/**
+ * A partner's logo as margin art, for pages ABOUT that partner (the
+ * firmware-partners page): their mark, not our sketch. Rendered as a
+ * currentColor mask so it takes the same dim, theme-aware tint as the
+ * hand-drawn emblems; `ratio` is the artwork's width/height so the
+ * figure reserves the right box before the mask loads.
+ */
+export function PartnerLogoArt({src, ratio}: {src: string; ratio: number}) {
+  return (
+    <span
+      className="section-art-logo"
+      style={{
+        aspectRatio: String(ratio),
+        WebkitMaskImage: `url(${src})`,
+        maskImage: `url(${src})`,
+      }}
+    />
+  );
+}
+
 /* ── Wholesale ─────────────────────────────────────────────────────────── */
 
 /** Storefront with awning: who this is for. */

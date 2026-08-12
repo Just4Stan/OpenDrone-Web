@@ -4,7 +4,7 @@ import {buildSeoMeta} from '~/lib/seo';
 import {EditorialShell} from '~/components/EditorialShell';
 import {Txt} from '~/components/Txt';
 import {copyText} from '~/lib/copy';
-import {MarginArt, SplitFlowArt, ChipsArt} from '~/components/MarginArt';
+import {MarginArt, PartnerLogoArt} from '~/components/MarginArt';
 import {FIRMWARE_PARTNERS} from '~/lib/firmware-partners';
 
 /**
@@ -72,7 +72,9 @@ export default function FirmwarePartnersRoute() {
           as="h2"
           className="editorial-section-title"
         />
-        <MarginArt><SplitFlowArt /></MarginArt>
+        <MarginArt>
+          <PartnerLogoArt src="/logos/betaflight.svg" ratio={854 / 159} />
+        </MarginArt>
         <Txt id="firmware-partners.s1_body" as="p" />
       </section>
 
@@ -82,7 +84,9 @@ export default function FirmwarePartnersRoute() {
           as="h2"
           className="editorial-section-title"
         />
-        <MarginArt><ChipsArt /></MarginArt>
+        <MarginArt>
+          <PartnerLogoArt src="/logos/expresslrs.svg" ratio={1} />
+        </MarginArt>
         <div className="partners-grid">
           {PARTNERS.map((p) => (
             <article key={p.id} className="partner-card">
@@ -130,6 +134,9 @@ export default function FirmwarePartnersRoute() {
           as="h2"
           className="editorial-section-title"
         />
+        <MarginArt>
+          <PartnerLogoArt src="/logos/am32.svg" ratio={1} />
+        </MarginArt>
         <Txt id="firmware-partners.s3_body" as="p" />
       </section>
 

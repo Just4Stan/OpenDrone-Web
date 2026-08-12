@@ -10010,6 +10010,23 @@ button.reset {
   text-decoration-color: currentColor;
 }
 
+/* Partner logos as margin art: a currentColor mask so brand marks take the
+   same dim tint as the hand-drawn emblems in either theme. */
+.section-art-logo {
+  display: block;
+  width: 100%;
+  background: currentColor;
+  /* A filled logo carries far more ink than a stroke sketch; halve it so
+     both kinds of margin art sit at the same visual weight. */
+  opacity: 0.5;
+  -webkit-mask-size: contain;
+  mask-size: contain;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  mask-position: center;
+}
+
 /* The drawings earn their room: plate-sized where the viewport has real
    whitespace to spend. */
 @media (min-width: 1480px) {
