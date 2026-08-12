@@ -520,6 +520,13 @@ html {
    the settled wordmark's midline: 2.5rem inset + half the wordmark height. */
 .homepage {
   --hero-strip-mid: calc(2.5rem + clamp(2.5rem, 5vw, 4.5rem) / 2);
+  /* Right edge of the bottom-left brand block: wordmark inset + wordmark width
+     (height x 5.29 aspect, same term .hero-github's `left` is built from) +
+     the 1.75rem gap + the 64px GitHub mark. The rail clamps against this so
+     the strip's three tenants never overlap on narrow or short-wide windows. */
+  --hero-brand-right: calc(
+    2.5rem + clamp(2.5rem, 5vw, 4.5rem) * 5.29 + 1.75rem + 64px
+  );
 }
 
 .hero-wordmark {
@@ -16290,11 +16297,27 @@ body:has(.buy-rail.is-pinned.is-mobile) .placeholder-banner {
    with both the size selector above it and the wordmark below. */
 .hp-rail {
   position: absolute;
-  left: 50%;
+  /* Width gives twice before position does: capped at 440px, then at 42vw,
+     then at the room actually left between the brand block (wordmark + GitHub
+     mark, --hero-brand-right) and the buy bubble's reserve on the right.
+     Centred while there is room; when the viewport narrows the centre is
+     pushed right just enough to clear the brand block instead of sliding
+     under it. */
+  /* 470px right reserve = the buy bubble's ~390px column + its 2.5rem inset,
+     measured at rest; the bubble keeps that width while cards are collapsed. */
+  --hp-rail-w: min(
+    440px,
+    42vw,
+    calc(100vw - var(--hero-brand-right, 513px) - 1.5rem - 470px)
+  );
+  left: max(
+    50%,
+    calc(var(--hero-brand-right, 513px) + 1.5rem + var(--hp-rail-w) / 2)
+  );
   /* Centred on the bottom strip's shared line (the 2px track straddles it). */
   bottom: calc(var(--hero-strip-mid, 93px) - 1px);
   transform: translateX(-50%);
-  width: min(440px, 42vw);
+  width: var(--hp-rail-w);
   height: 2px;
   background: color-mix(in srgb, var(--color-text-dim) 30%, transparent);
   border-radius: 2px;
@@ -16418,6 +16441,16 @@ body:has(.buy-rail.is-pinned.is-mobile) .placeholder-banner {
 .hp-fallback p { margin: 0; color: var(--color-text-muted); }
 .hp-dot { padding: 0; cursor: pointer; }
 .hp-dot:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 3px; }
+/* Between the 768px mobile switch and ~1040px the strip cannot hold all three
+   tenants (wordmark + GitHub, rail, buy bubble) at readable sizes: the width
+   formula above would starve the rail below ~140px. Drop the rail there; the
+   beat copy panel still names where you are, and scrolling still walks the
+   beats. */
+@media (max-width: 1040px) {
+  .hp-rail {
+    display: none;
+  }
+}
 
 /* Named load stage under the splash wordmark. The assembly arrives as several
    files and the drone visibly builds up behind this, so it reads as "the
