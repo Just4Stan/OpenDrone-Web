@@ -44,16 +44,16 @@ export function BrandWatermark() {
         </g>
         <pattern
           id="bwm-hatch"
-          width="640"
-          height="300"
+          width="460"
+          height="216"
           patternUnits="userSpaceOnUse"
           patternTransform="rotate(-45)"
         >
           {/* Two rows, half-dropped, brands alternating along each diagonal. */}
-          <use href="#bwm-od" x="30" y="52" />
-          <use href="#bwm-inc" x="360" y="48" />
-          <use href="#bwm-inc" x="60" y="198" />
-          <use href="#bwm-od" x="330" y="202" />
+          <use href="#bwm-od" x="16" y="34" />
+          <use href="#bwm-inc" x="266" y="30" />
+          <use href="#bwm-inc" x="40" y="140" />
+          <use href="#bwm-od" x="240" y="144" />
         </pattern>
       </defs>
       <rect width="100%" height="100%" fill="url(#bwm-hatch)" />

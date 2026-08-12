@@ -1,4 +1,5 @@
 import type {ReactNode} from 'react';
+import {useEffect, useRef} from 'react';
 import {Link} from 'react-router';
 import {BrandWatermark} from '~/components/BrandWatermark';
 import {EDITORIAL_SERIES, nextInSeries} from '~/lib/editorial-index';
@@ -32,8 +33,51 @@ export function EditorialShell({
   pageClassName?: string;
   children: ReactNode;
 }) {
+  const shellRef = useRef<HTMLDivElement>(null);
+
+  // Reading cascade. Every block in the prose column reveals as the reader
+  // reaches it: blocks that enter the viewport together (a whole page on a
+  // tall screen) stagger top-to-bottom at reading pace, blocks that arrive
+  // by scrolling appear on cue. The margin sketch of a section starts its
+  // stroke draw on the same cue, so drawing and reading share a clock.
+  // Armed entirely at runtime: without JS everything is simply visible, and
+  // reduced-motion readers never enter the system at all.
+  useEffect(() => {
+    const root = shellRef.current;
+    if (!root) return;
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const items = Array.from(
+      root.querySelectorAll(
+        '.editorial-hero > *, .editorial-section > *, .editorial-cta > *',
+      ),
+    );
+    const io = new IntersectionObserver(
+      (entries) => {
+        const entering = entries
+          .filter((e) => e.isIntersecting)
+          .map((e) => e.target as HTMLElement)
+          .sort(
+            (a, b) =>
+              a.getBoundingClientRect().top - b.getBoundingClientRect().top,
+          );
+        entering.forEach((el, i) => {
+          el.style.setProperty('--rv-d', `${Math.min(i, 14) * 110}ms`);
+          el.classList.add('is-revealed');
+          if (el.classList.contains('section-art')) el.classList.add('is-drawn');
+          io.unobserve(el);
+        });
+      },
+      {rootMargin: '0px 0px -8% 0px'},
+    );
+    for (const el of items) {
+      el.classList.add('reveal-item');
+      io.observe(el);
+    }
+    return () => io.disconnect();
+  }, [slug]);
+
   return (
-    <div className={`editorial-shell${aside ? '' : ' is-narrow'}`}>
+    <div className={`editorial-shell${aside ? '' : ' is-narrow'}`} ref={shellRef}>
       <BrandWatermark />
       <div className={`editorial-page${pageClassName ? ` ${pageClassName}` : ''}`}>
         {children}

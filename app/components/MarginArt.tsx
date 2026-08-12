@@ -29,17 +29,8 @@ export function MarginArt({children}: {children: ReactNode}) {
       p.style.setProperty('--art-i', String(i));
     });
     fig.classList.add('will-draw');
-    const io = new IntersectionObserver(
-      (es) => {
-        if (es[0]?.isIntersecting) {
-          fig.classList.add('is-drawn');
-          io.disconnect();
-        }
-      },
-      {threshold: 0.4},
-    );
-    io.observe(fig);
-    return () => io.disconnect();
+    // The draw cue (.is-drawn) comes from EditorialShell's reading cascade,
+    // so the sketch starts exactly when its section's text starts appearing.
   }, []);
   return (
     <figure className="section-art" aria-hidden="true" ref={ref}>
