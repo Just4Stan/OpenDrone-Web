@@ -5752,14 +5752,15 @@ button.reset {
     top: 0;
     right: 0;
   }
-  /* Repo scope (the teardown): one subtle outline around the pin tables,
-     the layer explorer and the schematic viewer, with the repo link riding
-     the border — the visual claim that everything inside is the contents
-     of the product's GitHub repo. Negative margins keep the body column's
-     left edge aligned with the other chapters. */
+  /* Repo scope (the teardown): one outline around the pin tables, the layer
+     explorer and the schematic viewer, tied by the lead line to the
+     GitHub-repo card in the chapter above — the lines alone carry the claim
+     that everything inside is the contents of the product's GitHub repo
+     (the border tag was dropped, Stan 2026-08-12). Negative margins keep
+     the body column's left edge aligned with the other chapters. */
   .chapter[data-repo-scope] {
     position: relative;
-    border: 1px solid color-mix(in srgb, var(--color-gold) 22%, transparent);
+    border: 2px solid color-mix(in srgb, var(--color-gold) 30%, transparent);
     border-radius: var(--r-lg);
     padding: var(--sp-7) var(--sp-6) var(--sp-6);
     margin-inline: calc(-1 * var(--sp-6));
@@ -5785,45 +5786,16 @@ button.reset {
     position: absolute;
     bottom: 100%;
     left: var(--repo-lead-x, 50%);
-    width: 1px;
+    width: 2px;
     height: var(--repo-lead-h, 0px);
     background: linear-gradient(
       180deg,
-      color-mix(in srgb, var(--color-gold) 40%, transparent),
-      color-mix(in srgb, var(--color-gold) 24%, transparent)
+      color-mix(in srgb, var(--color-gold) 50%, transparent),
+      color-mix(in srgb, var(--color-gold) 30%, transparent)
     );
-  }
-  .chapter-repo-tag {
-    position: absolute;
-    top: 0;
-    right: var(--sp-6);
-    translate: 0 -50%;
-    padding: 0.35rem 0.9rem;
-    background: var(--color-bg);
-    border: 1px solid color-mix(in srgb, var(--color-gold) 40%, transparent);
-    border-radius: var(--r-pill);
-    font-family: var(--font-mono);
-    font-size: 11px;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    color: var(--color-gold);
-    text-decoration: none;
-    transition: background 0.18s ease, color 0.18s ease;
-  }
-  .chapter-repo-tag:hover {
-    background: var(--color-gold-fill);
-    border-color: var(--color-gold-fill);
-    color: var(--color-on-accent);
   }
   .chapter-wide {
     grid-column: 1 / -1;
-  }
-}
-/* The outline is a desktop idiom; on mobile the tag chip has no border to
-   sit on, so it drops. The schematic (in .chapter-wide) stays in flow. */
-@media (max-width: 879px) {
-  .chapter-repo-tag {
-    display: none;
   }
 }
 

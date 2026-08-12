@@ -456,7 +456,7 @@ function Chapter({
   textReveal,
   id,
   wide,
-  repoHref,
+  repoScope,
 }: {
   number: string;
   label: string;
@@ -466,9 +466,10 @@ function Chapter({
    *  schematic viewer). Plain flow on mobile, spans both tracks on desktop. */
   wide?: React.ReactNode;
   /** When set, the chapter draws the repo-scope outline around everything it
-   *  contains, tagged with this GitHub URL — the visual claim that the whole
-   *  chapter is the contents of the product's repo. */
-  repoHref?: string;
+   *  contains — the visual claim (together with the lead line from the
+   *  GitHub-repo card above) that the whole chapter is the contents of the
+   *  product's repo. */
+  repoScope?: boolean;
   /**
    * The designed title, as a copy id. Rendered straight into the `<h2>` so the
    * heading carries its own studio annotation and its inline `*emphasis*`
@@ -505,20 +506,10 @@ function Chapter({
       data-backdrop={backdrop ? '' : undefined}
       data-wide-media={wideMedia ? '' : undefined}
       data-no-media={noMedia ? '' : undefined}
-      data-repo-scope={repoHref ? '' : undefined}
+      data-repo-scope={repoScope ? '' : undefined}
       data-text-pending={textReveal === false ? '' : undefined}
     >
       {backdrop ? <div className="chapter-backdrop">{backdrop}</div> : null}
-      {repoHref ? (
-        <a
-          className="chapter-repo-tag"
-          href={repoHref}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          {copyText('product-chrome.teardown_repo_tag')}
-        </a>
-      ) : null}
       <div className="chapter-body-col">
         {title ? (
           <h2 className="chapter-title">{title}</h2>
@@ -1883,9 +1874,9 @@ export default function Product() {
           }
           textReveal={frameViewer ? undefined : textIn}
           // Board explorer + schematic viewer share one repo-scope outline,
-          // tagged with the repo link: the chapter IS the repo's contents.
-          // The frame (backdrop viewer, no schematic) opts out.
-          repoHref={frameViewer ? undefined : activeRepoUrl}
+          // tied by the lead line to the GitHub-repo card above: the chapter
+          // IS the repo's contents. The frame (backdrop, no schematic) opts out.
+          repoScope={!frameViewer}
           wide={
             schematicHandle ? (
               // No key: keep the viewer mounted across tier switches so it
