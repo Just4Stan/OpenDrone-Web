@@ -57,8 +57,16 @@ export function EditorialShell({
     // One performance per page per session. Re-arming on every client-side
     // navigation made already-read paragraphs vanish and fade back in when
     // the reader returned to a page — the cascade is a greeting, not a tic.
-    if (seenSlugs.has(slug)) return;
-    seenSlugs.add(slug);
+    // On a seen page, force-reveal instead of merely skipping: the DOM may
+    // still carry armed (hidden) items from a previous effect run of this
+    // same mount (StrictMode re-runs effects without rebuilding the DOM,
+    // which left whole pages invisible).
+    if (seenSlugs.has(slug)) {
+      root
+        .querySelectorAll('.reveal-item')
+        .forEach((el) => el.classList.add('is-revealed', 'is-drawn'));
+      return;
+    }
     const items = Array.from(
       root.querySelectorAll(
         '.editorial-hero > *, .editorial-section > *, .editorial-cta > *',
@@ -73,6 +81,10 @@ export function EditorialShell({
             (a, b) =>
               a.getBoundingClientRect().top - b.getBoundingClientRect().top,
           );
+        // The page counts as SEEN once the first reveal actually plays for
+        // the user — not at arm time, or a re-run of this effect (dev
+        // StrictMode) would skip before anything ever showed.
+        if (entering.length > 0) seenSlugs.add(slug);
         entering.forEach((el, i) => {
           el.style.setProperty('--rv-d', `${Math.min(i, 14) * 110}ms`);
           el.classList.add('is-revealed');
@@ -104,6 +116,10 @@ export function EditorialShell({
     return () => {
       window.removeEventListener('scroll', armLater);
       io.disconnect();
+      // Leave no one hidden behind: if this effect armed elements and the
+      // next run decides to skip (seen page), stale .reveal-item classes
+      // would keep them at opacity 0 forever.
+      for (const el of items) el.classList.remove('reveal-item');
     };
   }, [slug]);
 
