@@ -25,7 +25,6 @@ export default function ProductionRoute() {
   return (
     <EditorialShell slug="production" aside={<ProductionLadder />}>
       <header className="editorial-hero">
-        <Txt id="production.eyebrow" as="p" className="editorial-eyebrow" />
         <Txt id="production.title" as="h1" className="editorial-title" />
         <Txt id="production.lead" as="p" className="editorial-lead" />
       </header>
@@ -48,6 +47,11 @@ export default function ProductionRoute() {
           className="editorial-section-title"
         />
         <Txt id="production.s3_body" as="p" />
+      </section>
+
+      <section className="editorial-section">
+        <Txt id="roadmap.goals_title" as="h2" className="editorial-section-title" />
+        <Txt id="roadmap.goals_body" as="p" />
       </section>
 
       <section className="editorial-cta">

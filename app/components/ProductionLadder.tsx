@@ -12,11 +12,13 @@ import {goals} from '~/lib/goals';
  * openly speculative. Nothing beyond that is drawn, and nothing carries a
  * date. Completed goals stack above as a record.
  */
+import type {Goal} from '~/lib/goals';
+
 type Rung = {
   key: string;
   kind: 'done' | 'now' | 'current' | 'next';
-  /** Goal title, or undefined for the fixed "now" rung (copy-keyed). */
-  title?: string;
+  /** The goal behind this rung, or undefined for the fixed "now" rung. */
+  goal?: Goal;
 };
 
 export function ProductionLadder() {
@@ -24,16 +26,16 @@ export function ProductionLadder() {
   const rungs: Rung[] = [
     ...list
       .filter((g) => g.status === 'done')
-      .map((g): Rung => ({key: g.id, kind: 'done', title: g.title})),
+      .map((g): Rung => ({key: g.id, kind: 'done', goal: g})),
     {key: 'now', kind: 'now'},
     ...list
       .filter((g) => g.status === 'current')
       .slice(0, 1)
-      .map((g): Rung => ({key: g.id, kind: 'current', title: g.title})),
+      .map((g): Rung => ({key: g.id, kind: 'current', goal: g})),
     ...list
       .filter((g) => g.status === 'next')
       .slice(0, 1)
-      .map((g): Rung => ({key: g.id, kind: 'next', title: g.title})),
+      .map((g): Rung => ({key: g.id, kind: 'next', goal: g})),
   ];
 
   return (
@@ -65,8 +67,32 @@ export function ProductionLadder() {
             {r.kind === 'now' ? (
               <Txt id="production.ladder_now_title" className="ladder-title" />
             ) : (
-              <span className="ladder-title">{r.title}</span>
+              <span className="ladder-title">{r.goal?.title}</span>
             )}
+            {/* The rung explains itself: what this capability unlocks, how
+                far the saving is, what it roughly costs. Same goals.json the
+                studio edits, so the ladder updates as the plan does — new
+                goals become new rungs, finished ones stack above as record. */}
+            {r.goal && (r.kind === 'current' || r.kind === 'next') ? (
+              <>
+                <p className="ladder-body">{r.goal.body}</p>
+                <div className="goal-meter-row ladder-meter-row">
+                  <span
+                    className="goal-meter"
+                    role="img"
+                    aria-label={`${r.goal.progress_pct}%`}
+                  >
+                    <span
+                      className="goal-meter-fill"
+                      style={{width: `${r.goal.progress_pct}%`}}
+                    />
+                  </span>
+                  <span className="goal-target">
+                    <Txt id="roadmap.goals_target_prefix" /> {r.goal.target_label}
+                  </span>
+                </div>
+              </>
+            ) : null}
           </li>
         ))}
       </ol>

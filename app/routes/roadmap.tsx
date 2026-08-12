@@ -1,7 +1,8 @@
 import type {Route} from './+types/roadmap';
+import {Fragment} from 'react';
 import {Link} from 'react-router';
 import {buildSeoMeta} from '~/lib/seo';
-import {EditorialShell} from '~/components/EditorialShell';
+import {EditorialShell, SeriesRail} from '~/components/EditorialShell';
 import {Txt} from '~/components/Txt';
 import {copyText} from '~/lib/copy';
 import {DISCORD_INVITE_URL} from '~/lib/company';
@@ -12,7 +13,6 @@ import {
   voteCandidates,
   type RoadmapItem,
 } from '~/lib/roadmap-data';
-import {goals} from '~/lib/goals';
 import {voteShares, voteTally} from '~/lib/votes';
 
 /**
@@ -143,77 +143,76 @@ function VotesSection({roadmap}: {roadmap: RoadmapItem[]}) {
   );
 }
 
-/**
- * Incutec's financial goals, from `content/goals.json` (edited in the
- * studio's Goals tab). Titles and bodies come from the goals file itself
- * rather than the copy store; the section heading and labels are copy.
- */
-function GoalsSection() {
-  const list = goals();
-  if (list.length === 0) return null;
-
-  return (
-    <section className="editorial-section">
-      <Txt id="roadmap.goals_title" as="h2" className="editorial-section-title" />
-      <Txt id="roadmap.goals_body" as="p" />
-      <div className="goal-list">
-        {list.map((g) => (
-          <article className="goal-card" key={g.id} data-goal-status={g.status}>
-            <header className="goal-head">
-              <h3 className="goal-title">{g.title}</h3>
-              <Txt
-                id={`roadmap.goals_status_${g.status}`}
-                as="span"
-                className="goal-status"
-              />
-            </header>
-            <p className="goal-body">{g.body}</p>
-            <div className="goal-meter-row">
-              <span
-                className="goal-meter"
-                role="img"
-                aria-label={`${g.status === 'done' ? 100 : g.progress_pct}%`}
-              >
-                <span
-                  className="goal-meter-fill"
-                  style={{width: `${g.status === 'done' ? 100 : g.progress_pct}%`}}
-                />
-              </span>
-              <span className="goal-target">
-                <Txt id="roadmap.goals_target_prefix" /> {g.target_label}
-              </span>
-            </div>
-          </article>
-        ))}
-      </div>
-      <Txt id="roadmap.goals_foot" as="p" className="goal-foot" />
-    </section>
-  );
-}
 
 export default function RoadmapRoute({loaderData}: Route.ComponentProps) {
-  const columns = STATUS_ORDER.map((status) => ({
+  // Board reads top-to-bottom as the product's LIFE reads: planned first,
+  // launched last. Products flow DOWN the page through the gates.
+  const columns = [...STATUS_ORDER].reverse().map((status) => ({
     status,
     items: loaderData.roadmap.filter((r) => r.status === status),
   }));
 
+  // The community vote, ON the board: votable cards carry their share bar
+  // so the standings live where the projects do. (Same tally the section
+  // below explains; empty tally shows nothing.)
+  const tally = voteTally();
+  const voteCandidateIds = voteCandidates(loaderData.roadmap).map((c) => c.id);
+  const shares = voteShares(tally, voteCandidateIds);
+
   return (
-    <EditorialShell slug="roadmap">
+    <>
+      {/* The board is a full-width band ABOVE the editorial shell: inside
+          the prose measure it could never show all five stages at once and
+          clipped with an invisible scrollbar on 16:9 screens. Out here it
+          gets the full shared rail (up to 1440px) and the whole pipeline
+          fits on a desktop viewport. */}
+      <div className="kanban-band">
+      <SeriesRail slug="roadmap" />
+      <header className="editorial-hero kanban-hero">
+        <Txt id="roadmap.title" as="h1" className="editorial-title" />
+        <Txt id="roadmap.lead" as="p" className="editorial-lead kanban-intro" />
+      </header>
+
       <section className="editorial-section kanban-lead">
-        {/* The board leads visually with no prose, but screen readers and
-            heading audits still get a section name above the card h3s. */}
-        <Txt id="roadmap.s2_title" as="h2" className="sr-only" />
         <div className="kanban">
           {columns.map((col) => (
-            <div className="kanban-col" key={col.status}>
-              <p className="kanban-col-head" data-status={col.status}>
+            <Fragment key={col.status}>
+            {/* The gate INTO this stage sits above it: the curved arrow
+                descends into the row below and names what a design must
+                earn to pass. The first gate (above planned) is the door
+                onto the board itself. */}
+            <div className="kanban-gate">
+              <svg
+                className="kanban-gate-arrow"
+                viewBox="0 0 24 24"
+                aria-hidden="true"
+              >
+                <path d="M21 3 C11 3 7 8 7 17" fill="none" />
+                <path d="M3.5 14 L7 19 L10.5 14" fill="none" />
+              </svg>
+              <Txt
+                id={`roadmap.gate_${col.status}`}
+                as="span"
+                className="kanban-gate-label"
+              />
+            </div>
+            <section className="kanban-row" data-status={col.status}>
+              <h2 className="kanban-col-head" data-status={col.status}>
                 <span className="kanban-dot" />
                 <Txt id={`roadmap.status_${col.status}_label`} />
                 <span className="kanban-count">
                   {/* Boards, not entries: OpenRX is one entry, four boards. */}
                   {col.items.reduce((n, r) => n + (r.variants?.length ?? 1), 0)}
                 </span>
-              </p>
+              </h2>
+              {/* The stage explains itself: same copy the legend chapter
+                  used to hold, now inline where the reader actually is. */}
+              <Txt
+                id={`roadmap.status_${col.status}_legend`}
+                as="p"
+                className="kanban-stage-note"
+              />
+              <div className="kanban-row-cards">
               {col.items.length === 0 ? (
                 <Txt id="roadmap.kanban_empty" as="p" className="kanban-empty" />
               ) : (
@@ -246,6 +245,19 @@ export default function RoadmapRoute({loaderData}: Route.ComponentProps) {
                           as="h3"
                           className="kanban-name"
                         />
+                        {tally.ballots > 0 &&
+                        voteCandidateIds.includes(r.id) &&
+                        (tally.mentions[r.id] ?? 0) > 0 ? (
+                          <span className="kanban-vote">
+                            <span className="kanban-vote-bar" aria-hidden="true">
+                              <span
+                                className="kanban-vote-fill"
+                                style={{width: `${shares[r.id] ?? 0}%`}}
+                              />
+                            </span>
+                            {shares[r.id] ?? 0}%
+                          </span>
+                        ) : null}
                       </>
                     );
                     if (toProduct) {
@@ -281,40 +293,21 @@ export default function RoadmapRoute({loaderData}: Route.ComponentProps) {
                   });
                 })
               )}
-            </div>
+              </div>
+            </section>
+            </Fragment>
           ))}
         </div>
       </section>
+      </div>
 
-      <header className="editorial-hero">
-        <Txt id="roadmap.eyebrow" as="p" className="editorial-eyebrow" />
-        <Txt id="roadmap.title" as="h1" className="editorial-title" />
-        <Txt id="roadmap.lead" as="p" className="editorial-lead" />
-      </header>
-
-      <section className="editorial-section">
-        <Txt id="roadmap.s3_title" as="h2" className="editorial-section-title" />
-        <dl className="status-legend">
-          {STATUS_ORDER.map((status) => (
-            <div key={status}>
-              <dt data-status={status}>
-                <span className="kanban-dot" />
-                <Txt id={`roadmap.status_${status}_label`} />
-              </dt>
-              <Txt id={`roadmap.status_${status}_legend`} as="dd" />
-            </div>
-          ))}
-        </dl>
-      </section>
-
+    <EditorialShell slug="roadmap" rail={false}>
       <section className="editorial-section">
         <Txt id="roadmap.s1_title" as="h2" className="editorial-section-title" />
         <Txt id="roadmap.s1_body" as="p" />
       </section>
 
       <VotesSection roadmap={loaderData.roadmap} />
-
-      <GoalsSection />
 
       {/* The how-to-contribute sections moved to /contributing (2026-08-11);
           the roadmap is the status board, votes and goals. */}
@@ -337,5 +330,6 @@ export default function RoadmapRoute({loaderData}: Route.ComponentProps) {
         </a>
       </section>
     </EditorialShell>
+    </>
   );
 }

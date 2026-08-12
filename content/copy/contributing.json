@@ -26,5 +26,7 @@
     "Every product links its source where one is public. The hardware is KiCad, latest stable version, one repo per board, all under [github.com/OpenDrone-hw](https://github.com/OpenDrone-hw). Issues and pull requests are open on all of them."
   ],
   "cta_primary": "Join the Discord ↗",
-  "cta_secondary": "Watch the repos on GitHub ↗"
+  "cta_secondary": "Watch the repos on GitHub ↗",
+  "wall_count_label": "people so far",
+  "wall_more_label": "more"
 }

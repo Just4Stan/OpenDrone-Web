@@ -167,10 +167,11 @@
 
 @media (min-width: 768px) {
   :root {
-    /* Gutters grow with the viewport (4vw, capped at 5rem) instead of
-       sitting fixed at 2rem, so laptop and 16:9 widths get real breathing
-       room at the sides rather than a token 32px. */
-    --rail-gutter: clamp(2rem, 4vw, 5rem);
+    /* Gutters grow with the viewport instead of sitting fixed at 2rem,
+       so laptop and 16:9 widths get real breathing room at the sides.
+       5.5vw: ~60px at 1100, ~90px at 1600, capped at 7rem. Every surface
+       shares this one number; page-level margins are never set locally. */
+    --rail-gutter: clamp(2.5rem, 5.5vw, 7rem);
   }
 }
 
@@ -5627,7 +5628,10 @@ button.reset {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   gap: var(--sp-7);
-  padding: var(--sp-8) 0;
+  /* 1.35x the old rhythm: chapters need to end before the next one starts.
+     The gap between them is the pause that keeps a dense engineering page
+     from reading as one wall. */
+  padding: calc(var(--sp-8) * 1.35) 0;
   border-top: 1px solid var(--color-border);
   opacity: 1;
   transform: translateY(0);
@@ -5638,6 +5642,14 @@ button.reset {
   content-visibility: auto;
   contain-intrinsic-size: auto 640px;
 }
+/* Reading measure: chapter paragraphs never run the full rail. The
+   whitespace right of the text is deliberate — it is what directs the eye
+   down the column instead of across a 900px line. Interactive full-width
+   blocks (schematic, teardown, tables, card grids) are untouched. */
+.chapter p {
+  max-width: 68ch;
+}
+
 /* content-visibility's paint containment clips descendants at the chapter's
    box — but the teardown board art bleeds past its media column into the page
    margin, and the frame-viewer backdrop over-bleeds into the neighbouring
@@ -9998,7 +10010,10 @@ button.reset {
   width: var(--rail-width);
   max-width: 640px;
   margin: 0 auto;
-  padding: 4rem 0 6rem;
+  /* 1.25rem top below 1360 (restored to 4rem beside the sticky rail): the
+     4rem only existed to align with the rail head and otherwise stacked
+     dead space under the series strip. */
+  padding: 1.25rem 0 6rem;
   color: var(--color-text);
 }
 
@@ -10055,6 +10070,7 @@ button.reset {
 
 .editorial-section p {
   margin: 0 0 0.7rem;
+  max-width: 68ch;
 }
 
 .editorial-section strong {
@@ -10206,9 +10222,11 @@ html.light .editorial-watermark {
      the copy inside the section's own stacking context (the section carries
      position:relative + z-index:0 for exactly this). */
   left: calc(100% - 6rem);
-  top: -1.5rem;
+  top: 0;
+  bottom: 0;
+  margin: auto 0;
+  height: fit-content;
   width: 22rem;
-  margin: 0;
   z-index: -1;
   color: color-mix(in srgb, var(--color-text-muted) 45%, transparent);
   pointer-events: none;
@@ -10219,432 +10237,125 @@ html.light .editorial-watermark {
   height: auto;
 }
 
-@media (min-width: 1280px) {
-  .section-art {
+/* ── Contributors wall (contributing page aside) ─────────────────────────
+   Coins on a loose honeycomb: odd coins ride up, every third dips, all
+   deterministic off the index so SSR and client agree. Leads carry names;
+   the crowd shows on hover; the tail folds behind the +N button. */
+.contrib-wall {
+  margin: 0;
+  font-family: var(--font-mono);
+}
+.contrib-wall-head {
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+  margin-bottom: 1rem;
+}
+.contrib-wall-leads {
+  list-style: none;
+  margin: 0 0 1.25rem;
+  padding: 0;
+  display: grid;
+  gap: 0.55rem;
+}
+.contrib-wall-leads a {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  color: var(--color-text-muted);
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  transition: color 0.15s ease;
+}
+.contrib-wall-leads a:hover {
+  color: var(--color-text);
+}
+.contrib-wall-leads img {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 1px solid color-mix(in srgb, var(--color-border) 85%, transparent);
+}
+.contrib-wall-crowd {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+.contrib-wall-crowd li {
+  /* The honeycomb wobble: deterministic per index. */
+  translate: 0 calc((mod(var(--i, 0), 2) * 6px) - 3px);
+  rotate: calc((mod(var(--i, 0), 3) - 1) * 4deg);
+  transition: rotate 0.2s ease, translate 0.2s ease;
+}
+.contrib-wall-crowd li:hover {
+  rotate: 0deg;
+  translate: 0 -2px;
+}
+.contrib-wall-crowd img {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: 1px solid color-mix(in srgb, var(--color-border) 85%, transparent);
+  transition: border-color 0.15s ease;
+}
+.contrib-wall-crowd a:hover img {
+  border-color: var(--color-gold);
+}
+.contrib-wall-more {
+  margin-top: 1rem;
+  padding: 0.45rem 0.9rem;
+  border: 1px solid color-mix(in srgb, var(--color-gold) 45%, transparent);
+  border-radius: 999px;
+  background: none;
+  color: var(--color-gold);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+.contrib-wall-more:hover {
+  background: var(--color-gold-fill);
+  color: var(--color-on-accent);
+}
+
+/* Partner logo on the page's art layer — outside the card, in the right
+   margin like the section sketches — but pinned to ITS card: vertically
+   centered on the box that talks about that firmware. */
+.partner-card {
+  position: relative;
+  overflow: visible;
+}
+.partner-card-logo {
+  display: none;
+  position: absolute;
+  left: calc(100% + var(--sp-7));
+  top: 50%;
+  translate: 0 -50%;
+  width: 15rem;
+  aspect-ratio: var(--logo-ratio, 4);
+  background: currentColor;
+  color: color-mix(in srgb, var(--color-text-muted) 45%, transparent);
+  -webkit-mask-size: contain;
+  mask-size: contain;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-position: left center;
+  mask-position: left center;
+  pointer-events: none;
+}
+@media (min-width: 1120px) {
+  .partner-card-logo {
     display: block;
   }
 }
 
-/* Bonded to its section: generous air above, little below (>=3:1), so
-   the gap itself draws the section boundaries. */
-.editorial-section-title {
-  font-family: var(--font-mono);
-  font-size: 12px;
-  letter-spacing: 0.25em;
-  text-transform: uppercase;
-  color: var(--color-text);
-  margin: 0 0 1.1rem;
-}
-
-.editorial-list {
-  list-style: none;
-  padding: 0;
-  margin: 0 0 0.5rem;
-}
-
-.editorial-list li {
-  padding: 0.6rem 0;
-  border-bottom: 1px solid color-mix(in srgb, var(--color-border) 80%, transparent);
-}
-
-.editorial-list li:last-child {
-  border-bottom: none;
-}
-
-.editorial-cta {
-  margin-top: 3rem;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.75rem;
-}
-
-.editorial-cta-primary {
-  display: inline-flex;
-  align-items: center;
-  padding: 0.9rem 1.5rem;
-  background: var(--color-gold-fill);
-  color: var(--color-on-accent);
-  font-family: var(--font-mono);
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  border-radius: var(--r-xs);
-  transition: background-color 0.2s ease;
-}
-
-.editorial-cta-primary:hover {
-  background: var(--color-gold-fill-hover);
-  color: var(--color-on-accent);
-}
-
-.editorial-cta-secondary {
-  display: inline-flex;
-  align-items: center;
-  padding: 0.9rem 1.5rem;
-  border: 1px solid var(--color-border);
-  color: var(--color-text-muted);
-  font-family: var(--font-mono);
-  font-size: 12px;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  border-radius: var(--r-xs);
-  transition: border-color 0.2s ease, color 0.2s ease;
-}
-
-.editorial-cta-secondary:hover {
-  border-color: var(--color-gold);
-  color: var(--color-text);
-}
-
-/* ═══════════════════════════════════════════════════════════════════════
-   Editorial shell — series rail | prose | page visual
-
-   The long-form pages read as one series, so every page carries the index
-   of the whole series and a picture of its own argument. `.editorial-page`
-   is untouched inside here: it still owns the 720px measure, which is why
-   a page can adopt the shell without a word of its copy reflowing.
-
-   Column budget at the 1360px breakpoint: 13rem rail + 640 prose + 19rem
-   aside + two 3rem gaps = 1208px, inside the rail gutters. Below that the
-   rail drops under the prose; below 1120px the aside does too. Nothing is
-   display:none at any width — the rail IS the navigation for the series.
-   ═══════════════════════════════════════════════════════════════════════ */
-.editorial-shell {
-  width: var(--rail-width);
-  margin: 0 auto;
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  justify-content: center;
-  gap: var(--sp-7);
-}
-
-/* The prose column already centres itself; inside the grid the track does
-   that job, so drop its own width rule or --rail-width re-resolves against
-   the (narrower) grid area and shrinks the measure. */
-.editorial-shell > .editorial-page {
-  width: auto;
-  margin: 0;
-}
-
-/* Aside before rail when both are stacked: the picture belongs to this
-   page, the index belongs to the series and can wait until the end. */
-.editorial-aside {
-  order: 1;
-}
-
-.series-rail {
-  order: 2;
-}
-
-@media (min-width: 1120px) {
-  .editorial-shell {
-    grid-template-columns: minmax(0, 640px) minmax(0, 19rem);
-    align-items: start;
-  }
-
-  /* Same tracks as the aside layout, with the aside track left empty:
-     the shell must not re-center when a page has no aside, or the rail and
-     the prose visibly jump sideways on every page switch. */
-  .editorial-shell.is-narrow {
-    grid-template-columns: minmax(0, 640px) minmax(0, 19rem);
-  }
-
-  .editorial-aside {
-    position: sticky;
-    top: calc(var(--header-height) + 1.5rem);
-    /* Aligns the aside eyebrow with the page eyebrow (page padding-top). */
-    margin-top: 4rem;
-  }
-
-  /* Under the prose, in the prose column only. Spanning to the far edge
-     would run the rail underneath the sticky aside, which keeps rendering
-     beside it after the article ends. */
-  .series-rail {
-    grid-column: 1;
-  }
-}
-
-@media (min-width: 1360px) {
-  .editorial-shell {
-    grid-template-columns: 13rem minmax(0, 640px) minmax(0, 19rem);
-  }
-
-  .editorial-shell.is-narrow {
-    grid-template-columns: 13rem minmax(0, 640px) minmax(0, 19rem);
-  }
-
-  .series-rail {
-    grid-column: 1;
-    order: -1;
-    position: sticky;
-    top: calc(var(--header-height) + 1.5rem);
-    /* Aligns the rail head with the page eyebrow (page padding-top).
-       Margin, not padding, so it does not eat into the max-height below. */
-    margin-top: 4rem;
-    /* The rail can outgrow the viewport once the series does; scroll it
-       rather than let it push the sticky top off screen. Thin, low-contrast
-       bar: this scrolls by a line or two, it should not read as a panel. */
-    max-height: calc(100vh - var(--header-height) - 4.5rem);
-    overflow-y: auto;
-    scrollbar-width: thin;
-    scrollbar-color: color-mix(in srgb, var(--color-border) 90%, transparent)
-      transparent;
-  }
-}
-
-/* Number + title rows, nothing else. No borders, no spine, no blurbs:
-   whitespace is the container, and the current page is marked by a
-   contrast flip (muted -> full text color), the way Linear's chapter
-   rails do it. The rail should read as texture next to the article. */
-.series-rail-list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: grid;
-  gap: 0.3rem;
-}
-
-.series-rail-list a {
-  display: flex;
-  align-items: baseline;
-  gap: 0.8rem;
-  padding: 0.35rem 0;
-  color: color-mix(in srgb, var(--color-text-muted) 80%, transparent);
-  font-family: var(--font-mono);
-  transition: color 0.2s ease;
-}
-
-.series-rail-list a:hover {
-  color: var(--color-text);
-}
-
-.series-rail-num {
-  font-size: 10px;
-  letter-spacing: 0.1em;
-  color: color-mix(in srgb, var(--color-text-muted) 55%, transparent);
-}
-
-.series-rail-title {
-  font-size: 12px;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-}
-
-.series-rail-list li.is-current a {
-  color: var(--color-text);
-}
-
-.series-rail-list li.is-current .series-rail-num {
-  color: var(--color-gold);
-}
-
-/* End-of-page hand-off */
-.editorial-next {
-  display: grid;
-  gap: 0.3rem;
-  margin-top: var(--sp-8);
-  padding: 1.4rem 1.5rem;
-  border: 1px solid color-mix(in srgb, var(--color-border) 80%, transparent);
-  border-radius: var(--r-xs);
-  font-family: var(--font-mono);
-  transition: border-color 0.2s ease;
-}
-
-.editorial-next:hover {
-  border-color: var(--color-gold);
-}
-
-.editorial-next-label {
-  font-size: 10px;
-  letter-spacing: 0.22em;
-  text-transform: uppercase;
-  color: var(--color-gold);
-}
-
-.editorial-next-title {
-  font-family: var(--font-display);
-  font-size: 1.35rem;
-  font-weight: 700;
-  letter-spacing: -0.01em;
-  color: var(--color-text);
-}
-
-.editorial-next-hook {
-  font-size: 0.85rem;
-  line-height: 1.6;
-  color: var(--color-text-muted);
-}
-
-.editorial-next-min {
-  font-size: 10px;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  color: var(--color-text-muted);
-  margin-top: 0.35rem;
-}
-
-/* ── Capability ladder (production page aside) ────────────────────────── */
-.ladder {
-  margin: 0;
-  font-family: var(--font-mono);
-}
-
-/* Drawn as a graphic, not a list. Each rung owns the connector BELOW its
-   node, so the segment climbing into the speculative goal can be dotted
-   while the one to the funded goal stays solid. Node meaning: filled gold =
-   where we are now; hollow gold = the goal being saved for; dashed hollow =
-   the goal after that, openly speculative; filled muted = done. No dates
-   anywhere: the goals file carries no promises, so neither can this. */
-.ladder-rungs {
-  list-style: none;
-  margin: 0;
-  padding: 0 0 0.5rem 1.6rem;
-  position: relative;
-}
-
-.ladder-rung {
-  position: relative;
-  display: grid;
-  gap: 0.35rem;
-  padding-bottom: 3.5rem;
-}
-
-.ladder-rung:last-child {
-  padding-bottom: 0;
-}
-
-/* The connector from this node down to the next. */
-.ladder-rung[data-seg]::after {
-  content: '';
-  position: absolute;
-  left: calc(-1.6rem + 3px);
-  top: 1rem;
-  bottom: 0.15rem;
-  width: 0;
-}
-
-.ladder-rung[data-seg='solid']::after {
-  border-left: 1px solid color-mix(in srgb, var(--color-border) 90%, transparent);
-}
-
-.ladder-rung[data-seg='dashed']::after {
-  border-left: 1px dashed color-mix(in srgb, var(--color-text-muted) 45%, transparent);
-}
-
-/* Hollow node punched through the hairline: page-background fill so the
-   line does not run through it. */
-.ladder-rung::before {
-  content: '';
-  position: absolute;
-  left: -1.6rem;
-  top: 0.35rem;
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: var(--color-bg);
-  border: 1px solid color-mix(in srgb, var(--color-text-muted) 55%, transparent);
-}
-
-/* Where we are: filled, with a static glow ring. */
-.ladder-rung[data-kind='now']::before {
-  left: calc(-1.6rem - 1px);
-  width: 9px;
-  height: 9px;
-  background: var(--color-gold);
-  border-color: var(--color-gold);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-gold) 25%, transparent);
-}
-
-/* The goal being saved for: hollow, gold rim — a target, not an arrival. */
-.ladder-rung[data-kind='current']::before {
-  border-color: var(--color-gold);
-}
-
-/* The speculative one: dashed rim, dimmed text. */
-.ladder-rung[data-kind='next']::before {
-  border-style: dashed;
-}
-
-.ladder-rung[data-kind='next'] {
-  opacity: 0.6;
-}
-
-/* Done goals: filled muted, a record rather than a promise. */
-.ladder-rung[data-kind='done']::before {
-  background: color-mix(in srgb, var(--color-text-muted) 55%, transparent);
-  border-color: color-mix(in srgb, var(--color-text-muted) 55%, transparent);
-}
-
-.ladder-when {
-  font-size: 10px;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-  color: color-mix(in srgb, var(--color-text-muted) 80%, transparent);
-}
-
-.ladder-when:empty {
-  display: none;
-}
-
-.ladder-title {
-  font-size: 13px;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--color-text-muted);
-}
-
-.ladder-rung[data-kind='now'] .ladder-title,
-.ladder-rung[data-kind='current'] .ladder-title {
-  color: var(--color-text);
-}
-
-.ladder-note {
-  margin: 1.4rem 0 0;
-  padding-top: 1rem;
-  border-top: 1px solid color-mix(in srgb, var(--color-border) 70%, transparent);
-  font-size: 10px;
-  line-height: 1.7;
-  color: color-mix(in srgb, var(--color-text-muted) 80%, transparent);
-}
-
-/* Margin art: one stroke-only drawing per section, floated into the free
-   canvas right of the prose column and aligned with its section's top.
-   Dim gray linework — it should register as a sketch in the margin, not
-   an image. Hidden when the viewport has no spare right margin. */
-.editorial-section {
-  position: relative;
-  /* Stacking context so the sketch's z-index:-1 stays inside the section
-     instead of dropping behind the page background. */
-  z-index: 0;
-}
-
-.section-art {
-  display: none;
-  position: absolute;
-  /* Tucks under the prose column's right edge: the text floats over the
-     sketch, the sketch spills into the margin. z-index -1 keeps it behind
-     the copy inside the section's own stacking context (the section carries
-     position:relative + z-index:0 for exactly this). */
-  left: calc(100% - 6rem);
-  top: -1.5rem;
-  width: 22rem;
-  margin: 0;
-  z-index: -1;
-  color: color-mix(in srgb, var(--color-text-muted) 45%, transparent);
-  pointer-events: none;
-}
-
-.section-art svg {
-  width: 100%;
-  height: auto;
-}
-
-/* The drawings earn their room: plate-sized where the viewport has real
-   whitespace to spend. Placed AFTER the last .section-art base rule on
-   purpose: the editorial layout block exists twice in this file, and a
-   media override written before the second copy loses the cascade and
-   goes dead (found the hard way in review). */
+/* Plate-sized where the viewport has real whitespace to spend. */
 @media (min-width: 1480px) {
   .section-art {
     left: calc(100% - 7rem);
@@ -10652,7 +10363,18 @@ html.light .editorial-watermark {
   }
 }
 
-@media (min-width: 1280px) {
+/* Pages WITHOUT a side visual (open-source and friends): the sketches ARE
+   the right column. They move fully clear of the prose into the reserved
+   aside track, so the text is balanced by the drawing instead of
+   overlapped by it. */
+@media (min-width: 1120px) {
+  .editorial-shell.is-narrow .section-art {
+    left: calc(100% + var(--sp-7));
+    width: 19rem;
+  }
+}
+
+@media (min-width: 1180px) {
   .section-art {
     display: block;
   }
@@ -10767,62 +10489,42 @@ html.light .editorial-watermark {
 }
 
 .series-rail {
-  order: 2;
+  /* THE one placement, every editorial page, every width: a standalone
+     strip across the top, separated from the text by a hairline. It is
+     the site section's wayfinding, not part of the article. */
+  order: -1;
+  grid-column: 1 / -1;
+  padding: 0.4rem 0 0.9rem;
+  border-bottom: 1px solid color-mix(in srgb, var(--color-border) 70%, transparent);
+  margin-bottom: 1.5rem;
 }
 
+
+
+
 @media (min-width: 1120px) {
-  .editorial-shell {
+  .editorial-shell,
+  .editorial-shell.is-narrow {
     grid-template-columns: minmax(0, 640px) minmax(0, 19rem);
+    justify-content: center;
     align-items: start;
   }
 
-  /* Same tracks as the aside layout, with the aside track left empty:
-     the shell must not re-center when a page has no aside, or the rail and
-     the prose visibly jump sideways on every page switch. */
-  .editorial-shell.is-narrow {
-    grid-template-columns: minmax(0, 640px) minmax(0, 19rem);
+  .editorial-page {
+    grid-column: 1;
   }
 
+  /* The page visual balances the text column: without it the left-weighted
+     prose against an empty right half read as lopsided. */
   .editorial-aside {
+    grid-column: 2;
     position: sticky;
-    top: calc(var(--header-height) + 1.5rem);
-    /* Aligns the aside eyebrow with the page eyebrow (page padding-top). */
-    margin-top: 4rem;
-  }
-
-  /* Under the prose, in the prose column only. Spanning to the far edge
-     would run the rail underneath the sticky aside, which keeps rendering
-     beside it after the article ends. */
-  .series-rail {
-    grid-column: 1;
-  }
-}
-
-@media (min-width: 1360px) {
-  .editorial-shell {
-    grid-template-columns: 13rem minmax(0, 640px) minmax(0, 19rem);
-  }
-
-  .editorial-shell.is-narrow {
-    grid-template-columns: 13rem minmax(0, 640px) minmax(0, 19rem);
-  }
-
-  .series-rail {
-    grid-column: 1;
-    order: -1;
-    position: sticky;
-    top: calc(var(--header-height) + 1.5rem);
-    /* Aligns the rail head with the page eyebrow (page padding-top).
-       Margin, not padding, so it does not eat into the max-height below. */
-    margin-top: 4rem;
-    /* The rail can outgrow the viewport once the series does; scroll it
-       rather than let it push the sticky top off screen. Thin, low-contrast
-       bar: this scrolls by a line or two, it should not read as a panel. */
-    max-height: calc(100vh - var(--header-height) - 4.5rem);
-    overflow-y: auto;
-    scrollbar-width: thin;
-    scrollbar-color: color-mix(in srgb, var(--color-border) 90%, transparent)
-      transparent;
+    /* Rides DOWN with the reader: it scrolls with the page until its top
+       reaches a comfortable line well below the header, then travels with
+       the scroll — never pinned at the page top getting its head clipped. */
+    top: clamp(5rem, 16vh, 10rem);
+    margin-top: 1.25rem;
+    align-self: start;
   }
 }
 
@@ -10834,8 +10536,9 @@ html.light .editorial-watermark {
   list-style: none;
   margin: 0;
   padding: 0;
-  display: grid;
-  gap: 0.3rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.15rem 1.5rem;
 }
 
 .series-rail-list a {
@@ -11003,6 +10706,19 @@ html.light .editorial-watermark {
   color: var(--color-text);
 }
 
+.ladder-body {
+  margin: 0.35rem 0 0.5rem;
+  font-size: 0.83rem;
+  line-height: 1.55;
+  color: color-mix(in srgb, var(--color-text-muted) 90%, transparent);
+}
+.ladder-meter-row {
+  margin: 0 0 0.25rem;
+}
+.ladder-rung[data-kind='next'] .goal-meter-fill {
+  opacity: 0.45;
+}
+
 .ladder-note {
   margin: 1.4rem 0 0;
   padding-top: 1rem;
@@ -11154,17 +10870,177 @@ html.light .editorial-watermark {
    vocabulary: buyable states filled (beta additionally ringed), alpha a
    ring, the rest hollow. Columns scroll horizontally when the viewport
    cannot hold five. */
+/* Vertical board: each stage is a full-width ROW and its products wrap
+   inside it, so the board never scrolls horizontally, adds nothing when a
+   stage is empty, and grows downward card by card as the catalog does.
+   Products climb upward; the gates between rows carry the criteria. */
 .kanban {
-  display: grid;
-  grid-auto-flow: column;
-  grid-auto-columns: minmax(10.5rem, 1fr);
-  gap: 1.25rem;
-  margin-top: 1.75rem;
-  overflow-x: auto;
-  padding-bottom: 0.75rem;
-  scrollbar-width: thin;
-  scrollbar-color: color-mix(in srgb, var(--color-border) 90%, transparent)
-    transparent;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  margin-top: 0.75rem;
+  /* Hard right bound: a stage with many boards wraps onto more card rows,
+     it never runs off the page. */
+  max-width: 100%;
+  /* THE SPINE: one continuous line down the whole board. Gates put their
+     arrowheads on it and stage heads put their dots on it, so the page
+     reads as a single path a design travels, top to bottom. */
+  position: relative;
+  padding-left: 1.75rem;
+}
+.kanban::before {
+  content: '';
+  position: absolute;
+  left: 4px;
+  top: 0.4rem;
+  bottom: 0;
+  width: 1px;
+  background: linear-gradient(
+    to bottom,
+    color-mix(in srgb, var(--color-gold) 45%, transparent) 0%,
+    color-mix(in srgb, var(--color-gold) 45%, transparent) 82%,
+    transparent 100%
+  );
+}
+.kanban-row-cards {
+  /* Four boards per line at most: 4 x 10.5rem + 3 gaps. A long stage
+     stacks; it never becomes a horizon-wide strip. */
+  max-width: min(100%, 44.7rem);
+}
+.kanban-row-cards {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.9rem;
+  margin-top: 0.75rem;
+}
+.kanban-row-cards > .kanban-card {
+  /* flex:none + min-width:0, or the card image's intrinsic min-content
+     wins over the width and the row refuses to wrap: eight alpha boards
+     then run off the right edge as one uncut line. */
+  flex: none;
+  width: 10.5rem;
+  min-width: 0;
+}
+
+/* The board band: the roadmap's kanban lives OUTSIDE the editorial shell,
+   on the full shared rail, so all five stages and their gates fit on a
+   desktop viewport instead of clipping inside the prose measure. */
+.kanban-band {
+  width: var(--rail-width);
+  margin: 0 auto;
+  padding-top: 0;
+}
+/* The strip and the title sit exactly where they sit on every other
+   editorial page (the shell's content span, centered); only the board
+   breaks out to the full rail. Switching pages must not move the text. */
+.kanban-band > .series-rail,
+.kanban-band > .editorial-hero,
+.kanban-band > .kanban-lead {
+  width: min(100%, calc(640px + var(--sp-7) + 19rem));
+  margin-inline: auto;
+}
+.kanban-band > .editorial-hero {
+  /* Match the shell pages exactly: their strip and prose are separated by
+     the grid's row gap plus the page's top padding; without both terms
+     the roadmap title floated visibly higher than every sibling page. */
+  /* +1.5rem: in this block layout the strip's bottom margin COLLAPSES
+     into this one (the shell's grid rows don't collapse), so the term
+     has to be re-added for the two pages to measure identical. */
+  margin-top: calc(var(--sp-7) + 1.25rem + 1.5rem);
+}
+
+/* The gate between two stage rows: a small curved arrow climbing into the
+   row above, the pass criterion beside it. One text line of height, zero
+   extra width. */
+.kanban-gate {
+  position: relative;
+  display: flex;
+  align-items: center;
+  padding: 0.4rem 0;
+  color: color-mix(in srgb, var(--color-text-muted) 80%, transparent);
+}
+.kanban-gate-arrow {
+  position: absolute;
+  /* Dead-centered on the spine, vertically centered on its own row, and
+     punched through the line with page background. */
+  left: calc(-1.75rem + 4px - 6px);
+  top: 50%;
+  translate: 0 -50%;
+  width: 12px;
+  height: 12px;
+  stroke: color-mix(in srgb, var(--color-gold) 70%, transparent);
+  stroke-width: 1.6;
+  fill: none;
+  background: var(--color-bg);
+}
+.kanban-row {
+  position: relative;
+}
+.kanban-row > .kanban-col-head .kanban-dot {
+  position: absolute;
+  left: calc(-1.75rem + 4px - 3.5px);
+  top: 50%;
+  translate: 0 -50%;
+  /* Page-background fill so the hollow stages punch through the spine
+     instead of letting it run visibly behind them. */
+  background: var(--color-bg);
+}
+.kanban-row > .kanban-col-head {
+  position: relative;
+}
+
+.kanban-intro {
+  margin-top: 1rem;
+  max-width: 62ch;
+}
+
+/* The stage's own one-line explanation, straight under its head: the board
+   carries the legend, there is no separate chapter to cross-reference. */
+.kanban-stage-note {
+  margin: 0.4rem 0 0;
+  max-width: 58ch;
+  font-size: 0.875rem;
+  line-height: 1.55;
+  color: color-mix(in srgb, var(--color-text-muted) 90%, transparent);
+}
+
+.kanban-vote {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.45rem;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--color-text-muted);
+}
+.kanban-vote-bar {
+  flex: 1;
+  height: 3px;
+  border-radius: 2px;
+  background: color-mix(in srgb, var(--color-border) 80%, transparent);
+  overflow: hidden;
+}
+.kanban-vote-fill {
+  display: block;
+  height: 100%;
+  background: var(--color-gold);
+}
+
+.kanban-gate-label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  line-height: 1.4;
+}
+
+/* The board-first hero: just the eyebrow and title, tightened so the board
+   still owns the first screen. */
+.kanban-hero {
+  margin-bottom: 0;
+}
+.kanban-band > .kanban-lead {
+  margin-top: 0;
 }
 
 /* Spill into the free canvas right of the prose column when it exists. */
