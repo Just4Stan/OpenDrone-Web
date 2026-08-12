@@ -7,6 +7,17 @@
     "line3": "mounts to.",
     "lead": "CNC carbon-fibre freestyle frame on a 30.5×30.5 stack pattern. Designed in-house, OEM-machined. OpenFC Lite and OpenESC drop in without spacers."
   },
+  "whatIsThis": {
+    "intro": "The frame is the skeleton: the one part with no electrons in it, and the one that takes the crashes. T700 carbon plates and arms, a 226 mm wheelbase for 5-inch props, 30.5 and 20 mm stack mounting in the middle, 16x16 motor mounts at the arm tips, and an aluminium camera mount at the nose. It decides what fits: stack height, camera width, prop size. Less obviously, it decides what your gyro feels. Every arm has a resonant frequency, and flex and vibration land straight in the flight controller's filters, so stiffness is a flight characteristic, not a cosmetic one. OpenFC Lite and OpenESC drop in without spacers.",
+    "needs": [
+      "A flight controller and ESC stack bolted in the middle",
+      "Four motors and props at the arm tips",
+      "A receiver, camera and VTX",
+      "A LiPo and a battery strap",
+      "A radio and goggles on the ground"
+    ],
+    "fit": "Everything else mounts to it; it turns a bag of boards into an aircraft."
+  },
   "firmware": {
     "project": "—"
   },

@@ -8042,6 +8042,72 @@ html.light .firmware-logo--tile {
   color: var(--color-text-muted);
 }
 
+/* "What does this do?" — the beginner chapter. Intro is plain .chapter-body;
+   the shopping list borrows the in-the-box card idiom (same bubble, no qty
+   column) so "what ships" and "what's still missing" read as siblings; the
+   fit line + homepage link close it out. */
+.what-needs-label {
+  margin: var(--sp-5) 0 var(--sp-3);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--color-text-dim);
+}
+
+.what-needs {
+  list-style: none;
+  padding: 0.35rem 1.1rem;
+  margin: 0 0 var(--sp-5);
+  width: fit-content;
+  min-width: min(24rem, 100%);
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--r-lg);
+}
+
+.what-needs li {
+  padding: 0.6rem 0.1rem;
+  border-bottom: 1px solid var(--color-border);
+  color: var(--color-text);
+  font-size: 0.9rem;
+  line-height: 1.45;
+  max-width: 52ch;
+}
+
+.what-needs li:last-child {
+  border-bottom: none;
+}
+
+.what-fit {
+  max-width: 64ch;
+  margin: 0 0 var(--sp-4);
+  font-size: var(--fs-base);
+  line-height: 1.6;
+  color: var(--color-text-muted);
+}
+
+.what-fit-label {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--color-gold);
+  margin-right: 0.35rem;
+}
+
+.what-home-link {
+  display: inline-block;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  color: var(--color-gold);
+}
+
+.what-home-link:hover {
+  color: var(--color-accent);
+}
+
 /* Spec table */
 .spec-table {
   display: grid;

@@ -177,6 +177,23 @@ describe('product content shape', () => {
         assertDownloads(content.downloads, handle);
       });
 
+      it('has a complete whatIsThis when present', () => {
+        const wit = content.whatIsThis;
+        if (!wit) return;
+        assert.equal(typeof wit.intro, 'string', `${handle}: whatIsThis.intro`);
+        assert.notEqual(wit.intro, '', `${handle}: whatIsThis.intro is empty`);
+        assert.equal(typeof wit.fit, 'string', `${handle}: whatIsThis.fit`);
+        assert.notEqual(wit.fit, '', `${handle}: whatIsThis.fit is empty`);
+        assert.ok(
+          Array.isArray(wit.needs) && wit.needs.length > 0,
+          `${handle}: whatIsThis.needs must be a non-empty array`,
+        );
+        for (const [i, line] of wit.needs.entries()) {
+          assert.equal(typeof line, 'string', `${handle}: needs[${i}]`);
+          assert.notEqual(line, '', `${handle}: needs[${i}] is empty`);
+        }
+      });
+
       it('has a coherent teardown', () => {
         if (!content.teardown) return;
         assertPins(content.teardown.pins, handle);

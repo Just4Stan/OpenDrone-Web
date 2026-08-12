@@ -1603,6 +1603,10 @@ export default function Product() {
    */
   const present = (type: ChapterType, entry: ChapterEntry): boolean => {
     switch (type) {
+      // Only when the product's JSON carries the beginner copy: accessories
+      // and bundles have no `whatIsThis` block and skip the chapter cleanly.
+      case 'whatIsThis':
+        return Boolean(content.whatIsThis);
       // Accessories (fallback content) aren't open-hardware products — no
       // "Open for learning" chapter, and no chapter number burnt on it.
       case 'openSource':
@@ -1655,6 +1659,52 @@ export default function Product() {
       (n: string, title?: string, id?: string) => React.ReactNode
     >
   > = {
+    /**
+     * Beginner orientation. What the part IS in plain language, what else a
+     * first build needs before it flies, and where it sits in the whole
+     * drone. Per-product words live in `content/products/<handle>.json`
+     * (`whatIsThis`); the framing strings are product-chrome copy. noMedia:
+     * this chapter is a calm read, not a showpiece, and the placeholder
+     * glyph would out-shout the words.
+     */
+    whatIsThis: (n, title) => {
+      const wit = content.whatIsThis;
+      if (!wit) return null;
+      return (
+        <Chapter
+          number={n}
+          label="What is this"
+          title={title}
+          titleId="product-chrome.ch_what_is_this_title"
+          noMedia
+        >
+          <p className="chapter-body">{wit.intro}</p>
+          <Txt
+            id="product-chrome.what_is_this_needs_label"
+            as="p"
+            className="what-needs-label"
+          />
+          <ul className="what-needs">
+            {wit.needs.map((line) => (
+              <li key={line}>{line}</li>
+            ))}
+          </ul>
+          <p className="what-fit">
+            <Txt
+              id="product-chrome.what_is_this_fit_label"
+              as="span"
+              className="what-fit-label"
+            />{' '}
+            <span>{wit.fit}</span>
+          </p>
+          {/* The homepage hero walks the whole machine part by part; this is
+              the "zoom out" for the reader who wants the full picture. */}
+          <Link prefetch="viewport" to="/" className="what-home-link">
+            <Txt id="product-chrome.what_is_this_link_home" />
+          </Link>
+        </Chapter>
+      );
+    },
     /** What the board is published as: repos, license, latest commit. */
     openSource: (n, title) => (
       <Chapter

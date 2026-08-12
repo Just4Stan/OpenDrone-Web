@@ -55,6 +55,23 @@ export type ChapterPin = {
 export type BoxItem = {qty?: string; item: string; note?: string};
 
 /**
+ * The beginner chapter ("What does this do?"), rendered first on the PDP.
+ * Written for someone who has never built a drone: what the part IS, what
+ * else a first build needs before it flies, and where it sits in the whole
+ * machine. A professional scrolls past without losing anything. Absent =
+ * the chapter does not render (accessories, bundles until written).
+ * Keep the copy tier-neutral on lines whose tiers share one file.
+ */
+export type WhatIsThis = {
+  /** ~100 words of plain language: what this part is and does. */
+  intro: string;
+  /** "Before this flies you also need": one line per missing piece. */
+  needs: string[];
+  /** One line: where the part sits in the drone's signal chain. */
+  fit: string;
+};
+
+/**
  * Downloadable asset rendered in the Downloads chapter. `kind` picks
  * the icon/label family; `href` can point anywhere — usually a file
  * in the product's GitHub repo (raw or releases), occasionally a
@@ -269,6 +286,8 @@ export type ProductContent = {
      *  teardown renders FrameViewer instead of BoardArt. */
     frameViewer?: {src: string; inspectUrl?: string};
   };
+  /** Beginner orientation chapter. See {@link WhatIsThis}. */
+  whatIsThis?: WhatIsThis;
   inTheBox: BoxItem[];          // physical items shipped
   /** Schematic PDFs, STEP files, manuals, etc. Each SKU also carries its
    *  EU Declaration of Conformity here (kind: 'doc') once CE closes —

@@ -7,6 +7,17 @@
     "line3": "what you don’t need.",
     "lead": "An RP2354 dual-core M33 running Betaflight on a 6-layer board: a 6-axis IMU, microSD blackbox, PIO-driven analog OSD, and a switchable 10 V VTX rail. No barometer, no onboard radio. Bring your own RX over UART and keep the board small and cheap."
   },
+  "whatIsThis": {
+    "intro": "The flight controller is the drone's computer. This one runs Betaflight on an RP2354, a dual-core chip from the Raspberry Pi Pico family, reading a 6-axis IMU thousands of times per second and correcting all four motors to follow your sticks. It records every flight to a microSD card (blackbox, for tuning and crash forensics), draws telemetry over your analog video feed (OSD), and has a switchable 10 V rail so you can power your VTX from it and reboot it from your radio. There is no receiver on board, on purpose: you wire your own over a UART, keep the board cheap, and pick your own radio link.",
+    "needs": [
+      "A 4-in-1 ESC and four motors (OpenESC pairs directly, one plug)",
+      "A receiver wired to a UART (OpenRX, CRSF)",
+      "A camera and VTX if you want to fly FPV",
+      "A frame, props, and a 3-6S LiPo",
+      "A radio and goggles on your side of the link"
+    ],
+    "fit": "In the middle of the stack and in the middle of every signal path; everything the drone does passes through this board."
+  },
   "firmware": {
     "project": "Betaflight",
     "projectUrl": "https://github.com/betaflight/betaflight",
