@@ -152,6 +152,13 @@ export default function RoadmapRoute({loaderData}: Route.ComponentProps) {
     items: loaderData.roadmap.filter((r) => r.status === status),
   }));
 
+  // The community vote, ON the board: votable cards carry their share bar
+  // so the standings live where the projects do. (Same tally the section
+  // below explains; empty tally shows nothing.)
+  const tally = voteTally();
+  const voteCandidateIds = voteCandidates(loaderData.roadmap).map((c) => c.id);
+  const shares = voteShares(tally, voteCandidateIds);
+
   return (
     <>
       {/* The board is a full-width band ABOVE the editorial shell: inside
@@ -238,6 +245,19 @@ export default function RoadmapRoute({loaderData}: Route.ComponentProps) {
                           as="h3"
                           className="kanban-name"
                         />
+                        {tally.ballots > 0 &&
+                        voteCandidateIds.includes(r.id) &&
+                        (tally.mentions[r.id] ?? 0) > 0 ? (
+                          <span className="kanban-vote">
+                            <span className="kanban-vote-bar" aria-hidden="true">
+                              <span
+                                className="kanban-vote-fill"
+                                style={{width: `${shares[r.id] ?? 0}%`}}
+                              />
+                            </span>
+                            {shares[r.id] ?? 0}%
+                          </span>
+                        ) : null}
                       </>
                     );
                     if (toProduct) {

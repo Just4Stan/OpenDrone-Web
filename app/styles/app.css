@@ -11000,6 +11000,28 @@ html.light .editorial-watermark {
   color: color-mix(in srgb, var(--color-text-muted) 90%, transparent);
 }
 
+.kanban-vote {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.45rem;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--color-text-muted);
+}
+.kanban-vote-bar {
+  flex: 1;
+  height: 3px;
+  border-radius: 2px;
+  background: color-mix(in srgb, var(--color-border) 80%, transparent);
+  overflow: hidden;
+}
+.kanban-vote-fill {
+  display: block;
+  height: 100%;
+  background: var(--color-gold);
+}
+
 .kanban-gate-label {
   font-family: var(--font-mono);
   font-size: 10px;
