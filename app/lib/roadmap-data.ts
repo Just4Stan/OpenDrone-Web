@@ -34,6 +34,14 @@ export type RoadmapItem = {
   productPath?: string;
   /** Public design source. Omit when nothing public exists. */
   link?: string;
+  /** Board render for the kanban card, from public/boards/. */
+  image?: string;
+  /**
+   * One kanban card per physical board. OpenRX is one roadmap entry (one
+   * repo, one status topic, one vote identity) but four boards; the board
+   * shows each. Items without variants are their own single card.
+   */
+  variants?: {id: string; image?: string}[];
   /**
    * ISO date the entry joined this list. Shown on the vote standings so a
    * newcomer's low count reads as "new", not "unpopular". Set it when adding
@@ -48,30 +56,40 @@ export const ROADMAP: RoadmapItem[] = [
     status: 'beta',
     productPath: '/products/openfc-lite',
     link: 'https://github.com/OpenDrone-hw/OpenFC-Lite',
+    image: '/boards/openfc-lite/front.png',
   },
   {
     id: 'openfc_lite_mini_20',
     status: 'beta',
     productPath: '/products/openfc-lite',
     link: 'https://github.com/OpenDrone-hw/OpenFC-Lite-Mini',
+    image: '/boards/openfc-lite-mini/front.png',
   },
   {
     id: 'openesc_20',
     status: 'beta',
     productPath: '/products/openesc',
     link: 'https://github.com/OpenDrone-hw/OpenESC-20x20',
+    image: '/boards/openesc/front.png',
   },
   {
     id: 'openesc_30',
     status: 'beta',
     productPath: '/products/openesc',
     link: 'https://github.com/OpenDrone-hw/OpenESC-30x30',
+    image: '/boards/openesc-30x30/front.png',
   },
   {
     id: 'openrx',
     status: 'alpha',
     productPath: '/products/openrx',
     link: 'https://github.com/OpenDrone-hw/OpenRX',
+    variants: [
+      {id: 'openrx_lite', image: '/boards/openrx-lite/front.png'},
+      {id: 'openrx_lite_ufl', image: '/boards/openrx-lite-ufl/front.png'},
+      {id: 'openrx_gemini', image: '/boards/openrx-gemini/front.png'},
+      {id: 'openrx_mono', image: '/boards/openrx-mono/front.png'},
+    ],
   },
   {
     id: 'openframe',

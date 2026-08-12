@@ -11126,7 +11126,26 @@ html.light .editorial-watermark {
   border-radius: var(--r-xs);
   padding: 0.85rem 0.95rem;
   display: grid;
-  gap: 0.4rem;
+  gap: 0.55rem;
+}
+/* The whole card is the link; the render is the content. */
+.kanban-card.is-linked {
+  transition: border-color 0.15s ease, transform 0.2s ease;
+}
+.kanban-card.is-linked:hover {
+  border-color: color-mix(in srgb, var(--color-gold) 55%, transparent);
+  transform: translateY(-2px);
+}
+.kanban-media {
+  display: block;
+  aspect-ratio: 1;
+  padding: 0.4rem;
+}
+.kanban-media img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
 }
 
 .kanban-name {

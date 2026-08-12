@@ -210,39 +210,77 @@ export default function RoadmapRoute({loaderData}: Route.ComponentProps) {
               <p className="kanban-col-head" data-status={col.status}>
                 <span className="kanban-dot" />
                 <Txt id={`roadmap.status_${col.status}_label`} />
-                <span className="kanban-count">{col.items.length}</span>
+                <span className="kanban-count">
+                  {/* Boards, not entries: OpenRX is one entry, four boards. */}
+                  {col.items.reduce((n, r) => n + (r.variants?.length ?? 1), 0)}
+                </span>
               </p>
               {col.items.length === 0 ? (
                 <Txt id="roadmap.kanban_empty" as="p" className="kanban-empty" />
               ) : (
-                col.items.map((r) => (
-                  <article className="kanban-card" key={r.id}>
-                    <Txt
-                      id={`roadmap.item_${r.id}_name`}
-                      as="h3"
-                      className="kanban-name"
-                    />
-                    <Txt
-                      id={`roadmap.item_${r.id}_note`}
-                      as="p"
-                      className="kanban-note"
-                    />
-                    {r.productPath || r.link ? (
-                      <p className="kanban-links">
-                        {r.productPath ? (
-                          <Link prefetch="viewport" to={r.productPath}>
-                            <Txt id="roadmap.kanban_product_link" />
-                          </Link>
+                col.items.flatMap((r) => {
+                  // One card per BOARD: an entry with variants (OpenRX) fans
+                  // out, everything else is its own card. Visual first: the
+                  // render is the card, the name is the caption, and the whole
+                  // card is the link. From alpha on there is a product page
+                  // worth landing on; before that the design source is the
+                  // truth, so the card goes to GitHub.
+                  const toProduct =
+                    STATUS_ORDER.indexOf(r.status) <=
+                      STATUS_ORDER.indexOf('alpha') && r.productPath;
+                  const cards = r.variants ?? [{id: r.id, image: r.image}];
+                  return cards.map((card) => {
+                    const body = (
+                      <>
+                        {card.image ? (
+                          <span className="kanban-media">
+                            <img
+                              src={card.image}
+                              alt=""
+                              loading="lazy"
+                              decoding="async"
+                            />
+                          </span>
                         ) : null}
-                        {r.link ? (
-                          <a href={r.link} target="_blank" rel="noopener noreferrer">
-                            <Txt id="roadmap.kanban_source_link" />
-                          </a>
-                        ) : null}
-                      </p>
-                    ) : null}
-                  </article>
-                ))
+                        <Txt
+                          id={`roadmap.item_${card.id}_name`}
+                          as="h3"
+                          className="kanban-name"
+                        />
+                      </>
+                    );
+                    if (toProduct) {
+                      return (
+                        <Link
+                          prefetch="viewport"
+                          to={r.productPath as string}
+                          className="kanban-card is-linked"
+                          key={card.id}
+                        >
+                          {body}
+                        </Link>
+                      );
+                    }
+                    if (r.link) {
+                      return (
+                        <a
+                          href={r.link}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="kanban-card is-linked"
+                          key={card.id}
+                        >
+                          {body}
+                        </a>
+                      );
+                    }
+                    return (
+                      <article className="kanban-card" key={card.id}>
+                        {body}
+                      </article>
+                    );
+                  });
+                })
               )}
             </div>
           ))}
