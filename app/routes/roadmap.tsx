@@ -163,12 +163,10 @@ export default function RoadmapRoute({loaderData}: Route.ComponentProps) {
       <SeriesRail slug="roadmap" />
       <header className="editorial-hero kanban-hero">
         <Txt id="roadmap.title" as="h1" className="editorial-title" />
+        <Txt id="roadmap.lead" as="p" className="editorial-lead kanban-intro" />
       </header>
 
       <section className="editorial-section kanban-lead">
-        {/* The h1 above names the page; this names the board for screen
-            readers and heading audits without adding visible prose. */}
-        <Txt id="roadmap.s2_title" as="h2" className="sr-only" />
         <div className="kanban">
           {columns.map((col) => (
             <Fragment key={col.status}>
@@ -192,14 +190,21 @@ export default function RoadmapRoute({loaderData}: Route.ComponentProps) {
               />
             </div>
             <section className="kanban-row" data-status={col.status}>
-              <p className="kanban-col-head" data-status={col.status}>
+              <h2 className="kanban-col-head" data-status={col.status}>
                 <span className="kanban-dot" />
                 <Txt id={`roadmap.status_${col.status}_label`} />
                 <span className="kanban-count">
                   {/* Boards, not entries: OpenRX is one entry, four boards. */}
                   {col.items.reduce((n, r) => n + (r.variants?.length ?? 1), 0)}
                 </span>
-              </p>
+              </h2>
+              {/* The stage explains itself: same copy the legend chapter
+                  used to hold, now inline where the reader actually is. */}
+              <Txt
+                id={`roadmap.status_${col.status}_legend`}
+                as="p"
+                className="kanban-stage-note"
+              />
               <div className="kanban-row-cards">
               {col.items.length === 0 ? (
                 <Txt id="roadmap.kanban_empty" as="p" className="kanban-empty" />
@@ -277,25 +282,6 @@ export default function RoadmapRoute({loaderData}: Route.ComponentProps) {
       </div>
 
     <EditorialShell slug="roadmap" rail={false}>
-      <section className="editorial-section">
-        <Txt id="roadmap.lead" as="p" className="editorial-lead" />
-      </section>
-
-      <section className="editorial-section">
-        <Txt id="roadmap.s3_title" as="h2" className="editorial-section-title" />
-        <dl className="status-legend">
-          {STATUS_ORDER.map((status) => (
-            <div key={status}>
-              <dt data-status={status}>
-                <span className="kanban-dot" />
-                <Txt id={`roadmap.status_${status}_label`} />
-              </dt>
-              <Txt id={`roadmap.status_${status}_legend`} as="dd" />
-            </div>
-          ))}
-        </dl>
-      </section>
-
       <section className="editorial-section">
         <Txt id="roadmap.s1_title" as="h2" className="editorial-section-title" />
         <Txt id="roadmap.s1_body" as="p" />

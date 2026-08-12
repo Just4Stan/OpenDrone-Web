@@ -11191,6 +11191,21 @@ html.light .editorial-watermark {
   position: relative;
 }
 
+.kanban-intro {
+  margin-top: 1rem;
+  max-width: 62ch;
+}
+
+/* The stage's own one-line explanation, straight under its head: the board
+   carries the legend, there is no separate chapter to cross-reference. */
+.kanban-stage-note {
+  margin: 0.4rem 0 0;
+  max-width: 58ch;
+  font-size: 0.875rem;
+  line-height: 1.55;
+  color: color-mix(in srgb, var(--color-text-muted) 90%, transparent);
+}
+
 .kanban-gate-label {
   font-family: var(--font-mono);
   font-size: 10px;
