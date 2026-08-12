@@ -455,11 +455,20 @@ function Chapter({
   noMedia,
   textReveal,
   id,
+  wide,
+  repoHref,
 }: {
   number: string;
   label: string;
   /** Optional anchor id so in-page links (buy-area stars) can target it. */
   id?: string;
+  /** Full-width slot rendered below the body + media columns (the teardown's
+   *  schematic viewer). Plain flow on mobile, spans both tracks on desktop. */
+  wide?: React.ReactNode;
+  /** When set, the chapter draws the repo-scope outline around everything it
+   *  contains, tagged with this GitHub URL — the visual claim that the whole
+   *  chapter is the contents of the product's repo. */
+  repoHref?: string;
   /**
    * The designed title, as a copy id. Rendered straight into the `<h2>` so the
    * heading carries its own studio annotation and its inline `*emphasis*`
@@ -496,9 +505,20 @@ function Chapter({
       data-backdrop={backdrop ? '' : undefined}
       data-wide-media={wideMedia ? '' : undefined}
       data-no-media={noMedia ? '' : undefined}
+      data-repo-scope={repoHref ? '' : undefined}
       data-text-pending={textReveal === false ? '' : undefined}
     >
       {backdrop ? <div className="chapter-backdrop">{backdrop}</div> : null}
+      {repoHref ? (
+        <a
+          className="chapter-repo-tag"
+          href={repoHref}
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          {copyText('product-chrome.teardown_repo_tag')}
+        </a>
+      ) : null}
       <div className="chapter-body-col">
         {title ? (
           <h2 className="chapter-title">{title}</h2>
@@ -518,6 +538,7 @@ function Chapter({
           )}
         </aside>
       )}
+      {wide ? <div className="chapter-wide">{wide}</div> : null}
     </section>
   );
 }
@@ -569,6 +590,49 @@ export default function Product() {
     roadmapStatus,
   } = useLoaderData<typeof loader>();
   useChapterReveal(product.handle);
+
+  // Lead line: ties the GitHub-repo study card to the repo-scope outline in
+  // the chapter below it (Stan, 2026-08-12). Measured rather than pure CSS
+  // because the card's column shifts with which cards a product shows, and
+  // the card clips its own pseudo-elements (overflow: hidden). Written as
+  // CSS vars on the scope chapter; the ::before there draws the line.
+  // Re-measured on resize and once the scope scrolls into view (the reveal
+  // translate shifts boxes ~16px until chapters settle).
+  useEffect(() => {
+    const measure = () => {
+      const scope = document.querySelector<HTMLElement>(
+        '.chapter[data-repo-scope]',
+      );
+      const card = document.querySelector('.open-source-card--github');
+      if (!scope) return;
+      const s = scope.getBoundingClientRect();
+      const c = card?.getBoundingClientRect();
+      const x = c ? c.left + c.width / 2 - s.left : -1;
+      const h = c ? s.top - c.bottom : 0;
+      if (c && h > 8 && h < 400 && x > 0 && x < s.width) {
+        scope.style.setProperty('--repo-lead-x', `${Math.round(x)}px`);
+        scope.style.setProperty('--repo-lead-h', `${Math.round(h)}px`);
+      } else {
+        scope.style.removeProperty('--repo-lead-x');
+        scope.style.removeProperty('--repo-lead-h');
+      }
+    };
+    const t = setTimeout(measure, 900);
+    const scope = document.querySelector('.chapter[data-repo-scope]');
+    let io: IntersectionObserver | undefined;
+    if (scope && typeof IntersectionObserver !== 'undefined') {
+      io = new IntersectionObserver(([e]) => {
+        if (e.isIntersecting) setTimeout(measure, 700);
+      });
+      io.observe(scope);
+    }
+    window.addEventListener('resize', measure);
+    return () => {
+      clearTimeout(t);
+      io?.disconnect();
+      window.removeEventListener('resize', measure);
+    };
+  }, [product.handle]);
 
   // Funnel step 1: one `PDP View` per product per navigation, carrying the
   // product handle + first-touch channel props that aggregate pageviews
@@ -1615,21 +1679,12 @@ export default function Product() {
         label="Open for learning"
         title={title}
         titleId="product-chrome.ch_open_source_title"
+        // The schematic viewer moved into the teardown chapter (2026-08-12,
+        // Stan: both viewers live under one repo-scope outline). wideMedia
+        // keeps the 4-across card-row layout; noMedia stops the empty media
+        // slot from rendering the placeholder glyph.
         wideMedia={!!schematicHandle}
-        media={
-          schematicHandle ? (
-            // No key: keep the viewer mounted across tier switches so it swaps
-            // between warmed manifests + sheets instantly instead of remounting
-            // and refetching. `handles` lets it preload every tier up front.
-            <SchematicViewer
-              handle={schematicHandle}
-              handles={schematicHandles}
-              inspectUrl={
-                activeBoardArt?.schematicUrl ?? activeBoardArt?.inspectUrl
-              }
-            />
-          ) : undefined
-        }
+        noMedia={!!schematicHandle}
       >
         <div className="open-source-cards">
           {content.bundle ? (
@@ -1827,6 +1882,24 @@ export default function Product() {
               : 'product-chrome.ch_teardown_title'
           }
           textReveal={frameViewer ? undefined : textIn}
+          // Board explorer + schematic viewer share one repo-scope outline,
+          // tagged with the repo link: the chapter IS the repo's contents.
+          // The frame (backdrop viewer, no schematic) opts out.
+          repoHref={frameViewer ? undefined : activeRepoUrl}
+          wide={
+            schematicHandle ? (
+              // No key: keep the viewer mounted across tier switches so it
+              // swaps between warmed manifests + sheets instantly instead of
+              // remounting and refetching. `handles` preloads every tier.
+              <SchematicViewer
+                handle={schematicHandle}
+                handles={schematicHandles}
+                inspectUrl={
+                  activeBoardArt?.schematicUrl ?? activeBoardArt?.inspectUrl
+                }
+              />
+            ) : undefined
+          }
           backdrop={
             frameViewer ? (
               // No key on src: keep the canvas mounted across tier switches so

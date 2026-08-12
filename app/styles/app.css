@@ -5714,6 +5714,33 @@ button.reset {
   .chapter:has(.firmware-support) .firmware-logo {
     margin-left: 0;
   }
+  /* The logo tracks the chapter's own height and hugs the right edge
+     (Stan, 2026-08-12): square tile marks (AM32, ExpressLRS) take the
+     full row height; Betaflight's wide transparent mark keeps its
+     width-driven size, right-aligned and vertically centred. The tile is
+     absolutely positioned so its 100% height reads the text column's
+     height instead of feeding back into the row's own sizing. */
+  .chapter:has(.firmware-support) .chapter-media {
+    align-self: stretch;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+  }
+  /* The frame wrapper stays static so the tile's height: 100% resolves
+     against the stretched aside, not the collapsed frame box. */
+  .chapter:has(.firmware-support) .chapter-media-frame {
+    position: static;
+  }
+  .chapter:has(.firmware-support) .firmware-logo--tile {
+    position: absolute;
+    top: 0;
+    right: 0;
+    height: 100%;
+    width: auto;
+    max-width: none;
+    margin-inline: 0;
+  }
   /* Contributors chapter: the join button rides the title line (top right),
      not the grid row (Stan, 2026-08-12). The one-line title leaves that
      corner free at every desktop width. */
@@ -5724,6 +5751,79 @@ button.reset {
     position: absolute;
     top: 0;
     right: 0;
+  }
+  /* Repo scope (the teardown): one subtle outline around the pin tables,
+     the layer explorer and the schematic viewer, with the repo link riding
+     the border — the visual claim that everything inside is the contents
+     of the product's GitHub repo. Negative margins keep the body column's
+     left edge aligned with the other chapters. */
+  .chapter[data-repo-scope] {
+    position: relative;
+    border: 1px solid color-mix(in srgb, var(--color-gold) 22%, transparent);
+    border-radius: var(--r-lg);
+    padding: var(--sp-7) var(--sp-6) var(--sp-6);
+    margin-inline: calc(-1 * var(--sp-6));
+  }
+  /* Keep the board inside the outline: pin its right edge to its column
+     (not the default 125% overshoot); it still grows leftward into the
+     open gutter. */
+  .chapter[data-repo-scope] .board-art {
+    margin-left: calc(100% - var(--board-w));
+  }
+  /* No sticky media inside the scope: the schematic row below gives a
+     sticky board ~700px of travel, which slid it straight over the
+     schematic. Static keeps it beside the pin tables. */
+  .chapter[data-repo-scope] .chapter-media {
+    position: static;
+  }
+  /* The lead line from the GitHub-repo study card in the chapter above down
+     to this outline. Coordinates come from the measuring effect in
+     products.$handle.tsx (--repo-lead-x/-h); with no measurement the height
+     is 0 and nothing draws. */
+  .chapter[data-repo-scope]::before {
+    content: '';
+    position: absolute;
+    bottom: 100%;
+    left: var(--repo-lead-x, 50%);
+    width: 1px;
+    height: var(--repo-lead-h, 0px);
+    background: linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--color-gold) 40%, transparent),
+      color-mix(in srgb, var(--color-gold) 24%, transparent)
+    );
+  }
+  .chapter-repo-tag {
+    position: absolute;
+    top: 0;
+    right: var(--sp-6);
+    translate: 0 -50%;
+    padding: 0.35rem 0.9rem;
+    background: var(--color-bg);
+    border: 1px solid color-mix(in srgb, var(--color-gold) 40%, transparent);
+    border-radius: var(--r-pill);
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--color-gold);
+    text-decoration: none;
+    transition: background 0.18s ease, color 0.18s ease;
+  }
+  .chapter-repo-tag:hover {
+    background: var(--color-gold-fill);
+    border-color: var(--color-gold-fill);
+    color: var(--color-on-accent);
+  }
+  .chapter-wide {
+    grid-column: 1 / -1;
+  }
+}
+/* The outline is a desktop idiom; on mobile the tag chip has no border to
+   sit on, so it drops. The schematic (in .chapter-wide) stays in flow. */
+@media (max-width: 879px) {
+  .chapter-repo-tag {
+    display: none;
   }
 }
 
