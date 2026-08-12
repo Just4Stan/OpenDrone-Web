@@ -511,11 +511,13 @@ export function roadmapTriState(
  * `status-*` GitHub topic over the static list — pass `flags` from
  * fetchStatusFlags* where the caller can) > the global flag.
  *
- * The global PUBLIC_COMING_SOON flag stays the master pre-launch gate:
- * while it is set the roadmap can only shape the locked plate (concept vs
- * coming-soon), never unlock a sale. Once the shop is open the roadmap
- * decides per product — flipping a repo's topic to status-beta is what
- * puts its price on the page.
+ * The roadmap status is the truth in BOTH directions: status-beta means
+ * the price is on the page and the board can be ordered (Shopify stock
+ * permitting), whatever PUBLIC_COMING_SOON says; status-alpha means the
+ * waitlist, even on an open shop. The topics are admin-only on the repos,
+ * so "flip to beta" is a deliberate release act by a maintainer, and the
+ * global flag remains only the default for products with no roadmap entry
+ * (accessories) plus the per-product JSON kill-switch above it.
  */
 export function resolveStatus(
   handle: string | null | undefined,
@@ -528,10 +530,7 @@ export function resolveStatus(
     return content.comingSoon ? 'development' : 'live';
   }
   const fromRoadmap = handle ? roadmapTriState(handle, flags) : undefined;
-  if (fromRoadmap) {
-    if (globalFlag) return fromRoadmap === 'idea' ? 'idea' : 'development';
-    return fromRoadmap;
-  }
+  if (fromRoadmap) return fromRoadmap;
   return globalFlag ? 'development' : 'live';
 }
 

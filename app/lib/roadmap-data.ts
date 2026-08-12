@@ -53,28 +53,28 @@ export type RoadmapItem = {
 export const ROADMAP: RoadmapItem[] = [
   {
     id: 'openfc_lite_30',
-    status: 'beta',
+    status: 'alpha',
     productPath: '/products/openfc-lite',
     link: 'https://github.com/OpenDrone-hw/OpenFC-Lite',
     image: '/boards/openfc-lite/front.png',
   },
   {
     id: 'openfc_lite_mini_20',
-    status: 'beta',
+    status: 'alpha',
     productPath: '/products/openfc-lite',
     link: 'https://github.com/OpenDrone-hw/OpenFC-Lite-Mini',
     image: '/boards/openfc-lite-mini/front.png',
   },
   {
     id: 'openesc_20',
-    status: 'beta',
+    status: 'alpha',
     productPath: '/products/openesc',
     link: 'https://github.com/OpenDrone-hw/OpenESC-20x20',
     image: '/boards/openesc/front.png',
   },
   {
     id: 'openesc_30',
-    status: 'beta',
+    status: 'alpha',
     productPath: '/products/openesc',
     link: 'https://github.com/OpenDrone-hw/OpenESC-30x30',
     image: '/boards/openesc-30x30/front.png',
@@ -148,16 +148,24 @@ export const STATUS_ORDER: ProductStatus[] = [
  * (see hardware/README.md in the working container). This pulls the topics
  * at request time so every consumer (kanban, ballot, standings) mirrors the
  * repos; the static status in ROADMAP is the fallback for products without a
- * public repo and for API failures. In-memory cache, 1 hour per worker
- * isolate, which also keeps unauthenticated API usage far under the rate
- * limit.
+ * public repo and for API failures. In-memory cache, 10 minutes per worker
+ * isolate: statuses now gate SALES (see docs/product-status.md), so a flip
+ * must land within minutes, not an hour. With GITHUB_STATUS_TOKEN set the
+ * rate budget is 5000/h; without it, stay aware that 11 repos every 10
+ * minutes approaches the unauthenticated 60/h ceiling.
+ *
+ * FALLBACK DISCIPLINE: the static status in ROADMAP must LAG the repo
+ * topic, never lead it. If the API is unreachable the static value stands
+ * in, so a static status that is ahead of the repo (beta while the repo
+ * says alpha) would leak prices on an API failure. When flipping a topic
+ * up, update the static value in the release PR that follows, not before.
  */
 let topicCache: {at: number; map: Record<string, ProductStatus>} | null = null;
 
 export async function fetchStatusFlags(
   token?: string,
 ): Promise<Record<string, ProductStatus>> {
-  if (topicCache && Date.now() - topicCache.at < 3_600_000) {
+  if (topicCache && Date.now() - topicCache.at < 600_000) {
     return topicCache.map;
   }
   const map: Record<string, ProductStatus> = {};
