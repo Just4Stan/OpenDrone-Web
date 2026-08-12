@@ -395,7 +395,7 @@
       "highlights": [
         [
           "Band",
-          "2.4 GHz + sub-GHz"
+          "2.4 GHz + 900 MHz"
         ],
         [
           "Antenna",
@@ -405,7 +405,7 @@
       "specs": [
         [
           "Band",
-          "2.4 GHz + sub-GHz, one antenna"
+          "2.4 GHz + 900 MHz, one antenna"
         ],
         [
           "Antenna",
@@ -500,7 +500,7 @@
       "highlights": [
         [
           "Band",
-          "2.4 GHz + sub-GHz, diversity"
+          "2.4 GHz + 900 MHz, diversity"
         ],
         [
           "Antenna",
@@ -510,7 +510,7 @@
       "specs": [
         [
           "Band",
-          "2.4 GHz + sub-GHz, two radio chains"
+          "2.4 GHz + 900 MHz, two radio chains"
         ],
         [
           "Antenna",

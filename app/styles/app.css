@@ -10324,20 +10324,32 @@ html.light .editorial-watermark {
   color: var(--color-on-accent);
 }
 
-/* Partner logo centered above its own card, not floated in the margin. */
+/* Partner logo as the card's BACKGROUND presence: big, faint, bleeding off
+   the right edge behind the text — the same ghost treatment as the GitHub
+   mark on the PDP study card, not a badge in the layout. */
+.partner-card {
+  position: relative;
+  overflow: hidden;
+}
+.partner-card > * {
+  position: relative;
+}
 .partner-card-logo {
-  display: block;
-  width: min(9.5rem, 70%);
+  position: absolute;
+  right: -1.75rem;
+  top: 50%;
+  translate: 0 -50%;
+  width: 13rem;
   aspect-ratio: var(--logo-ratio, 4);
-  margin: 0 auto 1rem;
   background: currentColor;
-  color: color-mix(in srgb, var(--color-text-muted) 70%, transparent);
+  color: color-mix(in srgb, var(--color-text-muted) 20%, transparent);
   -webkit-mask-size: contain;
   mask-size: contain;
   -webkit-mask-repeat: no-repeat;
   mask-repeat: no-repeat;
-  -webkit-mask-position: center;
-  mask-position: center;
+  -webkit-mask-position: right center;
+  mask-position: right center;
+  pointer-events: none;
 }
 
 /* Plate-sized where the viewport has real whitespace to spend. */
