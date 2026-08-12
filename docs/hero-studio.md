@@ -103,8 +103,10 @@ cost, filterable, with anything unclaimed flagged in red. Check this reads
 0 orphans before you call a design done.
 
 **Beats.** Pick a beat and the view jumps to it and holds, so you edit what you
-are looking at. Its caption, its stop captions, and the numbers (`fade`,
-`partSize`, each stop's `at`) are editable. `fade` and `partSize` each have a
+are looking at. Its caption, its stop captions, the beginner explainer fields
+(`caption`, `hint`, `href`, on the beat and on each stop; an active stop's set
+replaces the beat's on the site), and the numbers (`fade`, `partSize`, each
+stop's `at`) are editable. `fade` and `partSize` each have a
 tick box: unticked means the key is absent and the beat inherits
 `spotlight.darkenRest` and `sequence.partSize`.
 
@@ -275,6 +277,10 @@ items are struck through in intent; open ones are real and unaddressed.
   the rail dots are real buttons with `aria-current`.
 - **No reduced-motion or small-screen gate.** Now matches the policy the rest of
   the site already uses: no 3D under 768px or under `prefers-reduced-motion`.
+- **`stops` was parsed and never used**, so the second caption of the airframe
+  beat ("Video module") never appeared even though the choreography ran. The
+  site now honours stops the same way the studio does: the copy panel switches
+  to the active stop's title, note, caption, hint and href mid-hold.
 
 ### Still open
 
@@ -284,10 +290,6 @@ items are struck through in intent; open ones are real and unaddressed.
 - **The 3D is hardcoded dark** and does not follow the site's light/dark toggle.
   Hemisphere and beam colours are literals, and `darkenRest: 1.0` would drive
   non-focused parts to black on a white page.
-- **`stops` is parsed and never used**, so the second caption of the airframe
-  beat ("Video module") never appears even though the choreography runs. The
-  studio both honours and edits stops, so a caption tuned there will look right
-  in the panel and never show on the site until this is fixed.
 - **No tiered loading.** The 6 MB GLB blocks the first frame.
 - **The shader warm-up was not carried over** from the studio, so the first
   spotlight compiles shaders during the reader's first scroll.
