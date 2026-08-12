@@ -2080,15 +2080,7 @@ export default function Product() {
               ))}
             </div>
           ) : null}
-          <ProvenanceCard
-            designNote={
-              // The frame is a CAD product — "schematic, PCB, BOM" is PCB
-              // wording that doesn't apply to carbon plates.
-              content.teardown?.frameViewer
-                ? copyText('product-chrome.provenance_design_note_cad')
-                : undefined
-            }
-          />
+          <ProvenanceCard />
         </Chapter>
     ),
     /** The files themselves. */

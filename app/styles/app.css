@@ -4349,13 +4349,14 @@ button.reset {
    was dropped and the hero is the opening statement. */
 /* Product pages run a tighter rail than the shared 1520px one. At full rail
    width the chapters reach nearly edge to edge on a large display and the
-   page reads as a wall; pulling the cap in gives roughly 180px of margin
-   either side at 1728px. Scoped here on purpose: --rail-width is shared with
-   the footer and the other routes, and narrowing it globally is the site
-   lane's call, not this one's. Below the cap the shared responsive gutter
-   still governs, so nothing changes on a laptop or a phone. */
+   page reads as a wall. 1224px (2026-08-12, Stan: ~10% narrower than the old
+   1360px cap) matches the shrink-wrapped chapter cards, which no longer need
+   the width. Scoped here on purpose: --rail-width is shared with the footer
+   and the other routes, and narrowing it globally is the site lane's call,
+   not this one's. Below the cap the shared responsive gutter still governs,
+   so nothing changes on a laptop or a phone. */
 .product-page {
-  width: min(var(--rail-width), 1360px);
+  width: min(var(--rail-width), 1224px);
   margin: 0 auto;
   padding: var(--sp-5) 0 var(--sp-7);
 }
@@ -5673,6 +5674,32 @@ button.reset {
   .chapter-index {
     grid-column: 1 / -1;
   }
+  /* Except a chapter that declares no media at all (the datasheet): its
+     table spans both tracks so the specs use the full rail width. */
+  .chapter[data-no-media] .chapter-body-col {
+    grid-column: 1 / -1;
+    max-width: none;
+  }
+  /* In-the-box chapter: the cards shrink-wrap, so the freed width goes to
+     the box photo — the body column hugs the widest card and the media
+     track takes the rest. Both cards stretch to the column width, keeping
+     their edges aligned. */
+  .chapter:has(.in-the-box) {
+    grid-template-columns: fit-content(34rem) minmax(0, 1fr);
+  }
+  .chapter:has(.in-the-box) .in-the-box,
+  .chapter:has(.in-the-box) .provenance-card {
+    min-width: 100%;
+  }
+  /* Firmware chapter, same idea: the support card shrink-wraps, the project
+     logo grows into the freed width. The wide slot drops the logo's leftward
+     gutter bleed so it can't reach the card. */
+  .chapter:has(.firmware-support) {
+    grid-template-columns: fit-content(38rem) minmax(0, 1fr);
+  }
+  .chapter:has(.firmware-support) .firmware-logo {
+    margin-left: 0;
+  }
 }
 
 /* Media placeholder. Sits in the right column, sticky relative to
@@ -5853,7 +5880,7 @@ button.reset {
  * square tile leaves dead vertical space next to the short price block. */
 .firmware-logo--tile {
   width: 78%;
-  max-width: 260px;
+  max-width: 340px;
   margin-inline: auto;
   aspect-ratio: 1 / 1;
   object-fit: contain;
@@ -6246,7 +6273,10 @@ button.reset {
    plane", "Signal · 5V"), so the rail is a wider column than the schematic's.
    Size scales with the board across aspect ratios. */
 .board-folder-rail {
-  width: clamp(150px, 13vw, 200px);
+  /* Size to the longest layer label (capped) instead of a fixed column, so
+     the tabs don't trail empty width past "Signal + components". */
+  width: max-content;
+  max-width: clamp(150px, 13vw, 200px);
   /* Fade in once the fly is done (the is-armed rule holds it at opacity 0 during
      the entrance). NO transform transition here — place() measures this box to
      position it, and a transitioned transform makes that read a mid-glide value
@@ -6314,7 +6344,8 @@ button.reset {
   letter-spacing: 0.14em;
   text-transform: uppercase;
   text-align: center;
-  color: var(--color-text-muted);
+  /* Full text colour: the muted grey read as low-contrast (Stan, 2026-08-12). */
+  color: var(--color-text);
   padding: 0.48em 0.4em;
   /* Standardised viewer-pill radius (schematic sheets + PCB layers share it). */
   border-radius: var(--r-lg);
@@ -6773,9 +6804,11 @@ button.reset {
   max-width: none;
 }
 
+/* Emphasis segments keep the title colour (2026-08-12, Stan: gold highlights
+   in chapter heads read as cheesy); the markup keeps its <em> semantics. */
 .chapter-title em {
   font-style: normal;
-  color: var(--color-gold);
+  color: inherit;
   font-weight: 600;
 }
 
@@ -6798,10 +6831,14 @@ button.reset {
 }
 
 /* Two side "bubbles" (Top / Bottom), each a mini-table of component rows. The
-   gradient + inset top-light give the card some depth instead of a flat slab. */
+   gradient + inset top-light give the card some depth instead of a flat slab.
+   width: fit-content shrink-wraps the PAIR to its widest row (the I/O chip
+   row opts out of that measure below), and both bubbles stretch to the same
+   track, so they stay equal width and aligned with no dead width. */
 .teardown-sides {
   display: grid;
   gap: 0.85rem;
+  width: fit-content;
   max-width: 30rem;
 }
 /* Locked while the board fly-in animates — a hover mustn't fight the animation. */
@@ -6935,12 +6972,17 @@ button.reset {
   border-bottom-color: transparent;
 }
 
-/* I/O chip row: one row holding a horizontal set of hoverable pad-group chips. */
+/* I/O chip row: one row holding a horizontal set of hoverable pad-group chips.
+   width: 0 + min-width: 100% keeps this row out of the bubble's intrinsic
+   width (a full chip set unwrapped is ~415px and used to force the whole
+   bubble that wide); the text rows set the width and the chips wrap to it. */
 .teardown-pins li.teardown-io-row {
   display: flex;
   align-items: center;
   gap: 0.6rem;
   flex-wrap: wrap;
+  width: 0;
+  min-width: 100%;
 }
 .teardown-io-tag {
   flex: none;
@@ -7382,16 +7424,24 @@ button.reset {
 /* Provenance card — Designed / Assembled / Next. Pinned inside the
    In-the-box chapter so "where is this made" sits next to the parts
    list, not buried in the legal footer. */
-/* De-boxed: the provenance rows are a spec table, not a card. The only gold
-   left is a short underline under the label. */
+/* Its own card (Stan, 2026-08-12), in the in-the-box table idiom: label as
+   the header, hairline-divided rows, the story links as buttons along the
+   bottom. Shrink-wrapped like the other chapter cards. */
 .provenance-card {
   margin-top: var(--sp-5);
+  width: fit-content;
+  min-width: min(24rem, 100%);
+  padding: 1rem 1.2rem 1.2rem;
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--r-lg);
 }
 
 .provenance-links {
-  margin: 0.75rem 0 0;
+  margin: 1rem 0 0;
   display: flex;
-  gap: 1.4rem;
+  flex-wrap: wrap;
+  gap: 0.6rem;
   font-family: var(--font-mono);
   font-size: 11px;
   letter-spacing: 0.1em;
@@ -7432,13 +7482,24 @@ button.reset {
   color: var(--color-on-accent);
 }
 
+/* Same button treatment as the contributors CTA, one size down, so the two
+   story links read as actions instead of body-text asides. */
 .provenance-links a {
-  color: var(--color-text-muted);
+  display: inline-flex;
+  align-items: center;
+  padding: 0.55rem 1.1rem;
+  border: 1px solid color-mix(in srgb, var(--color-gold) 55%, transparent);
+  border-radius: 999px;
+  font-weight: 600;
+  color: var(--color-gold);
   text-decoration: none;
+  transition: background 0.18s ease, color 0.18s ease, border-color 0.18s ease;
 }
 
 .provenance-links a:hover {
-  color: var(--color-gold);
+  background: var(--color-gold-fill);
+  border-color: var(--color-gold-fill);
+  color: var(--color-on-accent);
 }
 
 .provenance-label {
@@ -7458,14 +7519,20 @@ button.reset {
   padding: 0;
   margin: 0;
   display: grid;
-  gap: 0.6rem;
+  gap: 0;
 }
 
 .provenance-rows li {
   display: grid;
   grid-template-columns: 5.5rem 1fr;
-  column-gap: 0.75rem;
+  column-gap: 0.9rem;
   align-items: baseline;
+  padding: 0.6rem 0;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.provenance-rows li:last-child {
+  border-bottom: none;
 }
 
 .provenance-row-label {
@@ -7480,12 +7547,6 @@ button.reset {
   color: var(--color-text);
   font-size: 0.92rem;
   line-height: 1.5;
-}
-
-.provenance-row-note {
-  color: color-mix(in srgb, var(--color-text) 62%, var(--color-text-muted));
-  font-family: var(--font-mono);
-  font-size: 12px;
 }
 
 .provenance-foot {
@@ -7708,6 +7769,11 @@ button.reset {
   margin: 0 0 1.5rem;
   display: grid;
   gap: 0;
+  /* Hug the longest row instead of spanning the ~980px body column: the card
+     used to carry ~470px of empty width past the note text. fit-content still
+     caps at the column, so long notes wrap as before on narrow screens. */
+  width: fit-content;
+  min-width: min(24rem, 100%);
   background: var(--color-bg-card);
   border: 1px solid var(--color-border);
   border-radius: var(--r-lg);
@@ -7804,6 +7870,12 @@ button.reset {
   border: 1px solid var(--color-border);
   border-radius: var(--r-md);
   padding: 1.25rem 1.4rem;
+  /* Hug the 52ch body text instead of spanning the full body column; the
+     card otherwise trails ~450px of empty gradient past the copy. The cap
+     keeps a long one-line links row (e.g. AM32's no-donate note) from
+     dragging the card wide; it wraps instead. */
+  width: fit-content;
+  max-width: 36rem;
   background:
     linear-gradient(
       180deg,

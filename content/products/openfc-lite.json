@@ -210,8 +210,7 @@
     },
     {
       "qty": "1×",
-      "item": "Build card",
-      "note": "batch ID, QC initials, firmware flash command, GitHub rev"
+      "item": "Quickstart guide"
     }
   ],
   "downloads": [],

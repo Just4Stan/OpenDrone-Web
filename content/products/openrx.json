@@ -9,7 +9,9 @@
   },
   "firmware": {
     "project": "ExpressLRS",
-    "projectUrl": "https://github.com/ExpressLRS/ExpressLRS"
+    "projectUrl": "https://github.com/ExpressLRS/ExpressLRS",
+    "logo": "/logos/expresslrs.svg",
+    "logoDark": true
   },
   "repoUrl": "https://github.com/OpenDrone-hw/OpenRX",
   "video": {
