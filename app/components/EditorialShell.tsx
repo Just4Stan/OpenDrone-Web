@@ -73,11 +73,29 @@ export function EditorialShell({
       },
       {rootMargin: '0px 0px -8% 0px'},
     );
+    // Only the hero and the FIRST chapter greet the reader; everything
+    // below arms when scrolling starts. A tall viewport otherwise floods
+    // the whole page in at once, and the page should unfold as it is read.
+    const firstSection = root.querySelector('.editorial-section');
+    const immediate: Element[] = [];
+    const later: Element[] = [];
     for (const el of items) {
-      el.classList.add('reveal-item');
-      io.observe(el);
+      const parent = el.parentElement;
+      (parent?.classList.contains('editorial-hero') || parent === firstSection
+        ? immediate
+        : later
+      ).push(el);
     }
-    return () => io.disconnect();
+    for (const el of items) el.classList.add('reveal-item');
+    for (const el of immediate) io.observe(el);
+    const armLater = () => {
+      for (const el of later) io.observe(el);
+    };
+    window.addEventListener('scroll', armLater, {passive: true, once: true});
+    return () => {
+      window.removeEventListener('scroll', armLater);
+      io.disconnect();
+    };
   }, [slug]);
 
   return (

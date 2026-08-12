@@ -10237,6 +10237,25 @@ html.light .editorial-watermark {
   height: auto;
 }
 
+/* Plate-sized where the viewport has real whitespace to spend. */
+@media (min-width: 1480px) {
+  .section-art {
+    left: calc(100% - 7rem);
+    width: 28rem;
+  }
+}
+
+/* Pages WITHOUT a side visual (open-source and friends): the sketches ARE
+   the right column. They move fully clear of the prose into the reserved
+   aside track, so the text is balanced by the drawing instead of
+   overlapped by it. */
+@media (min-width: 1120px) {
+  .editorial-shell.is-narrow .section-art {
+    left: calc(100% + var(--sp-7));
+    width: 19rem;
+  }
+}
+
 @media (min-width: 1180px) {
   .section-art {
     display: block;
