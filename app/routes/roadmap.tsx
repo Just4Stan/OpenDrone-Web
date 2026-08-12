@@ -195,15 +195,7 @@ export default function RoadmapRoute({loaderData}: Route.ComponentProps) {
 
   return (
     <EditorialShell slug="roadmap">
-      <header className="editorial-hero">
-        <Txt id="roadmap.eyebrow" as="p" className="editorial-eyebrow" />
-        <Txt id="roadmap.title" as="h1" className="editorial-title" />
-        <Txt id="roadmap.lead" as="p" className="editorial-lead" />
-      </header>
-
-      <section className="editorial-section">
-        <Txt id="roadmap.s2_title" as="h2" className="editorial-section-title" />
-        <Txt id="roadmap.s2_body" as="p" />
+      <section className="editorial-section kanban-lead">
         <div className="kanban">
           {columns.map((col) => (
             <div className="kanban-col" key={col.status}>
@@ -286,6 +278,12 @@ export default function RoadmapRoute({loaderData}: Route.ComponentProps) {
           ))}
         </div>
       </section>
+
+      <header className="editorial-hero">
+        <Txt id="roadmap.eyebrow" as="p" className="editorial-eyebrow" />
+        <Txt id="roadmap.title" as="h1" className="editorial-title" />
+        <Txt id="roadmap.lead" as="p" className="editorial-lead" />
+      </header>
 
       <section className="editorial-section">
         <Txt id="roadmap.s3_title" as="h2" className="editorial-section-title" />
