@@ -1,5 +1,6 @@
 import type {ReactNode} from 'react';
 import {Link} from 'react-router';
+import {BrandWatermark} from '~/components/BrandWatermark';
 import {EDITORIAL_SERIES, nextInSeries} from '~/lib/editorial-index';
 
 /**
@@ -33,6 +34,7 @@ export function EditorialShell({
 }) {
   return (
     <div className={`editorial-shell${aside ? '' : ' is-narrow'}`}>
+      <BrandWatermark />
       <div className={`editorial-page${pageClassName ? ` ${pageClassName}` : ''}`}>
         {children}
         <EditorialNext slug={slug} />

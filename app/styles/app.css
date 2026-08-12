@@ -9990,6 +9990,77 @@ button.reset {
   text-decoration-color: currentColor;
 }
 
+/* The drawings earn their room: sketch-sized where the margin is tight,
+   plate-sized where the viewport has real whitespace to spend. */
+@media (min-width: 1480px) {
+  .section-art {
+    left: calc(100% + 3.5rem);
+    width: 17rem;
+  }
+}
+
+/* Draw-in: armed by MarginArt at runtime (pathLength=1 + --art-i on every
+   element, .will-draw on the figure), then .is-drawn fires the strokes in
+   plotter order when the section scrolls into view. No JS, no .will-draw:
+   the sketch is simply complete from first paint. */
+.section-art.will-draw svg :is(path, rect, circle, line, polyline, polygon) {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  fill-opacity: 0;
+}
+.section-art.is-drawn svg :is(path, rect, circle, line, polyline, polygon) {
+  animation: art-draw 0.9s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  animation-delay: calc(var(--art-i, 0) * 70ms);
+}
+@keyframes art-draw {
+  0% {
+    stroke-dashoffset: 1;
+    fill-opacity: 0;
+  }
+  60% {
+    fill-opacity: 0;
+  }
+  100% {
+    stroke-dashoffset: 0;
+    fill-opacity: 1;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .section-art.will-draw svg :is(path, rect, circle, line, polyline, polygon) {
+    stroke-dasharray: none;
+    stroke-dashoffset: 0;
+    fill-opacity: 1;
+    animation: none;
+  }
+}
+
+/* The provenance watermark behind the editorial pages: both brand marks on
+   a 45 degree hatch, currentColor at paper-texture opacity. Fixed, so the
+   prose scrolls over it the way print runs over a watermarked sheet. */
+.editorial-watermark {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  color: var(--color-text);
+  /* Near-black amplifies small luminance steps: 1.4% is already a clearly
+     present texture in the dark theme. The mask thins the hatch under the
+     central prose column so the paper texture lives in the margins and
+     never competes with a line of text. */
+  opacity: 0.014;
+  mask-image: linear-gradient(
+    90deg,
+    rgb(0 0 0 / 0.9) 0%,
+    rgb(0 0 0 / 0.3) 34%,
+    rgb(0 0 0 / 0.3) 64%,
+    rgb(0 0 0 / 1) 82%
+  );
+}
+html.light .editorial-watermark {
+  opacity: 0.026;
+}
+
 /* Margin art: one stroke-only drawing per section, floated into the free
    canvas right of the prose column and aligned with its section's top.
    Dim gray linework — it should register as a sketch in the margin, not
@@ -10001,11 +10072,11 @@ button.reset {
 .section-art {
   display: none;
   position: absolute;
-  left: calc(100% + 4.5rem);
-  top: -0.5rem;
-  width: 12rem;
+  left: calc(100% + 3rem);
+  top: -1rem;
+  width: 13rem;
   margin: 0;
-  color: color-mix(in srgb, var(--color-text-muted) 55%, transparent);
+  color: color-mix(in srgb, var(--color-text-muted) 62%, transparent);
   pointer-events: none;
 }
 
@@ -10414,11 +10485,11 @@ button.reset {
 .section-art {
   display: none;
   position: absolute;
-  left: calc(100% + 4.5rem);
-  top: -0.5rem;
-  width: 12rem;
+  left: calc(100% + 3rem);
+  top: -1rem;
+  width: 13rem;
   margin: 0;
-  color: color-mix(in srgb, var(--color-text-muted) 55%, transparent);
+  color: color-mix(in srgb, var(--color-text-muted) 62%, transparent);
   pointer-events: none;
 }
 
