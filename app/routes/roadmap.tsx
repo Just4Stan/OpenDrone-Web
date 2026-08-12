@@ -311,17 +311,19 @@ export default function RoadmapRoute({loaderData}: Route.ComponentProps) {
 
       {/* The how-to-contribute sections moved to /contributing (2026-08-11);
           the roadmap is the status board, votes and goals. */}
+      {/* Not the Discord+GitHub pair: that is /contributing's closing move,
+          and the two pages sit next to each other in the series (audit
+          2026-08-12). The roadmap hands off to the manual instead. */}
       <section className="editorial-cta">
-        <a
-          href={DISCORD_INVITE_URL}
-          target="_blank"
-          rel="noopener noreferrer"
+        <Link
+          prefetch="viewport"
+          to="/contributing"
           className="editorial-cta-primary"
         >
           <Txt id="roadmap.cta_primary" />
-        </a>
+        </Link>
         <a
-          href="https://github.com/OpenDrone-hw"
+          href={DISCORD_INVITE_URL}
           target="_blank"
           rel="noopener noreferrer"
           className="editorial-cta-secondary"
