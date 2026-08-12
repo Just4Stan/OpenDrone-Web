@@ -1831,6 +1831,14 @@ export default function Product() {
             />
           </Link>
         </div>
+        {/* One quiet mono link under the card row: the why behind the cards
+            lives once, on /open-source, same idiom as the firmware chapter's
+            "All firmware partners →". */}
+        <p className="open-source-story-link">
+          <Link prefetch="viewport" to="/open-source">
+            <Txt id="product-chrome.os_link_story" />
+          </Link>
+        </p>
       </Chapter>
     ),
     /** What it is made of: board art or exploded frame, plus the pin map. */

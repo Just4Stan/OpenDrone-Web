@@ -117,15 +117,6 @@ export default function FirmwarePartnersRoute() {
         </div>
       </section>
 
-      <section className="editorial-section">
-        <Txt
-          id="firmware-partners.s3_title"
-          as="h2"
-          className="editorial-section-title"
-        />
-        <Txt id="firmware-partners.s3_body" as="p" />
-      </section>
-
       {MERGED_PRS.length > 0 ? (
         <section className="editorial-section">
           <Txt

@@ -50,12 +50,37 @@ export async function loader({context}: Route.LoaderArgs) {
  * file's viewBox width/height.
  */
 const SECTIONS = [
-  // 01 Report what broke: issues live on GitHub.
-  {n: 1, art: <PartnerLogoArt src="/logos/github.svg" ratio={1} />},
-  // 02 Change the design: certified open hardware.
-  {n: 2, art: <PartnerLogoArt src="/logos/oshwa.svg" ratio={549 / 357} />},
-  // 03 Improve the firmware: Betaflight is the flagship of the three.
-  {n: 3, art: <PartnerLogoArt src="/logos/betaflight.svg" ratio={854.1 / 159.2} />},
+  // 01 Report what broke: the conversation starts on Discord, issues on GitHub.
+  {
+    n: 1,
+    art: (
+      <>
+        <PartnerLogoArt src="/logos/discord.svg" ratio={127.14 / 96.36} />
+        <PartnerLogoArt src="/logos/github.svg" ratio={1} />
+      </>
+    ),
+  },
+  // 02 Change the design: OpenDrone's own boards, certified open hardware.
+  {
+    n: 2,
+    art: (
+      <>
+        <PartnerLogoArt src="/opendrone-wordmark.svg" ratio={2400 / 433} />
+        <PartnerLogoArt src="/logos/oshwa.svg" ratio={549 / 357} />
+      </>
+    ),
+  },
+  // 03 Improve the firmware: all three upstream projects the boards run.
+  {
+    n: 3,
+    art: (
+      <>
+        <PartnerLogoArt src="/logos/betaflight.svg" ratio={854.1 / 159.2} />
+        <PartnerLogoArt src="/logos/expresslrs.svg" ratio={1} />
+        <PartnerLogoArt src="/logos/am32.svg" ratio={1} />
+      </>
+    ),
+  },
   // 04 The repos: everything under CERN-OHL-S.
   {n: 4, art: <PartnerLogoArt src="/logos/cern.svg" ratio={1} />},
 ];

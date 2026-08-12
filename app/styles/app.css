@@ -6532,22 +6532,9 @@ html.light .firmware-logo--tile {
 .board-folder-tabs button.is-active .board-folder-tab-fn {
   color: color-mix(in srgb, var(--color-on-accent) 72%, transparent);
 }
-/* Compact rail — toggled by BoardArt's placement effect when the board has to
-   sit tight enough that the rail must overlay it. Dropping the function blurbs
-   and narrowing to names-only keeps the selector legible while covering as
-   little of the board as possible. */
-.board-folder-rail.is-compact {
-  width: clamp(86px, 7.5vw, 120px);
-}
-.board-folder-rail.is-compact .board-folder-tab-fn {
-  display: none;
-}
-.board-folder-rail.is-compact .board-folder-tabs button {
-  flex-direction: row;
-  align-items: center;
-  border-radius: var(--r-pill);
-  padding: 0.5em 0.8em;
-}
+/* The names-only compact rail variant was removed 2026-08-12 (Stan): its
+   tight-gutter trigger misfired under the repo-scope layout and a wrapped
+   names-only pill read worse than the full rail overlapping slightly. */
 /* The rail sizes to its longest label, so normal sheet names stay on one line.
    Tighter tracking keeps it compact, and wrapping (rather than nowrap) is the
    safety net for a very long sheet name (e.g. the OpenRX single sheet) — it
@@ -7272,6 +7259,25 @@ html.light .firmware-logo--tile {
    the row needs to land clearly after the head, not under it. */
 .open-source-cards {
   margin-top: var(--sp-8);
+}
+
+/* One quiet mono link under the card row, pointing at /open-source. Same
+   voice as .firmware-support-links: muted at rest, gold on hover. */
+.open-source-story-link {
+  margin: var(--sp-3) 0 0;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.open-source-story-link a {
+  color: var(--color-text-muted);
+  text-decoration: none;
+}
+
+.open-source-story-link a:hover {
+  color: var(--color-gold);
 }
 
 
@@ -10422,6 +10428,11 @@ html.light .firmware-logo--tile {
   -webkit-mask-position: center;
   mask-position: center;
 }
+/* Sections can stack several marks (Discord over GitHub, the firmware trio);
+   air between them keeps the column reading as texture, not a logo wall. */
+.section-art-logo + .section-art-logo {
+  margin-top: 2.5rem;
+}
 
 /* Reading cascade: blocks in the prose column arrive as the reader does.
    The classes are armed by EditorialShell at runtime; --rv-d is the
@@ -11128,6 +11139,11 @@ html.light .editorial-watermark {
   color: var(--color-gold);
   margin: 0 0 0.4rem;
 }
+
+/* The board name in the eyebrow links its product page. No rule of its own:
+   `.editorial-section p a` already gives it the site's prose-link treatment
+   (gold, tinted underline at rest, full gold on hover) in the eyebrow's own
+   mono type. */
 
 .partner-project {
   font-family: var(--font-display);
@@ -16692,6 +16708,17 @@ body:has(.buy-rail.is-pinned.is-mobile) .placeholder-banner {
   font-size: var(--fs-sm);
   color: var(--color-text-dim);
   line-height: 1.55;
+}
+/* Board names in detail lines link their product pages; same gold-tinted
+   underline vocabulary as the receipt link in .tl-title a. */
+.tl-detail a {
+  color: inherit;
+  text-decoration: none;
+  border-bottom: 1px solid color-mix(in srgb, var(--color-gold) 45%, transparent);
+}
+.tl-detail a:hover {
+  color: var(--color-text);
+  border-bottom-color: var(--color-gold);
 }
 .tl-empty {
   font-family: var(--font-mono);
