@@ -7,18 +7,8 @@ import {copyText} from '~/lib/copy';
  * Belgium, first runs assembled in Shenzhen, EU assembly on the roadmap.
  * Kept static for now; the batch ID on the build card is the live link
  * between a given unit and its factory.
- *
- * `designNote` customises the "Designed" annotation per product family —
- * the PCB default ("schematic, PCB, BOM…") is nonsense on the carbon
- * frame, which passes its own CAD wording. Both strings live in
- * `content/copy/product-chrome.json`; the prop is which one to use, not
- * the words themselves.
  */
-export function ProvenanceCard({
-  designNote = copyText('product-chrome.provenance_design_note'),
-}: {
-  designNote?: string;
-} = {}) {
+export function ProvenanceCard() {
   return (
     <section
       className="provenance-card"
@@ -33,8 +23,7 @@ export function ProvenanceCard({
             className="provenance-row-label"
           />
           <span className="provenance-row-value">
-            {copyText('product-chrome.provenance_designed_value')}{' '}
-            <span className="provenance-row-note">· {designNote}</span>
+            {copyText('product-chrome.provenance_designed_value')}
           </span>
         </li>
         <li>
@@ -44,10 +33,7 @@ export function ProvenanceCard({
             className="provenance-row-label"
           />
           <span className="provenance-row-value">
-            {copyText('product-chrome.provenance_assembled_value')}{' '}
-            <span className="provenance-row-note">
-              · {copyText('product-chrome.provenance_assembled_note')}
-            </span>
+            {copyText('product-chrome.provenance_assembled_value')}
           </span>
         </li>
         <li>
@@ -57,10 +43,7 @@ export function ProvenanceCard({
             className="provenance-row-label"
           />
           <span className="provenance-row-value">
-            {copyText('product-chrome.provenance_next_value')}{' '}
-            <span className="provenance-row-note">
-              · {copyText('product-chrome.provenance_next_note')}
-            </span>
+            {copyText('product-chrome.provenance_next_value')}
           </span>
         </li>
       </ul>

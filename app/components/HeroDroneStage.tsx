@@ -12,11 +12,13 @@
  * instead of being visually hidden.
  */
 import {useCallback, useEffect, useRef, useState} from 'react';
+import {Link} from 'react-router';
 import type {
   HeroBeat,
   HeroDroneSceneProps,
   HeroLoadState,
 } from '~/components/HeroDroneScene';
+import {Txt} from '~/components/Txt';
 
 function shouldLoad3D() {
   if (typeof window === 'undefined') return false;
@@ -82,10 +84,15 @@ export function HeroDroneStage({
 
   const [beats, setBeats] = useState<HeroBeat[]>([]);
   const [active, setActive] = useState(0);
+  // The copy the scene is presenting RIGHT NOW: the beat's, or an active
+  // mid-hold stop's (same shape, different id). The panel renders this rather
+  // than looking the beat up in `beats`, or a stop's caption change could
+  // never show.
+  const [shown, setShown] = useState<HeroBeat | null>(null);
   // True while the drone rests whole between parts (the scene reports beat
   // null). The copy panel clears; the rail keeps the last part's dot lit.
-  // Starts true: the sequence opens on the whole drone, which carries no
-  // caption, and the scene only reports once a part is presented.
+  // Starts true: the scene only reports once something is presented (the
+  // opening whole-drone hold reports too, carrying the beginner intro).
   const [resting, setResting] = useState(true);
   const seek = useRef<((i: number) => void) | null>(null);
   const fillRef = useRef<HTMLDivElement>(null);
@@ -93,6 +100,7 @@ export function HeroDroneStage({
   const handleBeat = useCallback(
     (b: HeroBeat | null, i: number) => {
       setResting(!b);
+      if (b) setShown(b);
       if (b && i >= 0) setActive(i);
       onBeat?.(b, i);
     },
@@ -117,8 +125,6 @@ export function HeroDroneStage({
     },
     [onProgress],
   );
-
-  const beat = beats[active];
 
   return (
     <div className="hp-stage">
@@ -154,14 +160,32 @@ export function HeroDroneStage({
       {/* The spotlight cuts as a part leaves; that is the cue for this.
           During a rest the panel clears entirely: the whole drone is the
           content, and a caption would race ahead of the next part. */}
-      {use3D && !resting ? (
-        <div className="hp-copy" key={beat?.id} aria-live="polite">
+      {use3D && !resting && shown ? (
+        <div className="hp-copy" key={shown.id} aria-live="polite">
           {/* No step counter: the rail's dots already say where you are. */}
-          {beat ? (
-            <>
-              <h2 className="hp-title">{beat.title}</h2>
-              <p className="hp-note">{beat.note}</p>
-            </>
+          <h2 className="hp-title">{shown.title}</h2>
+          <p className="hp-note">{shown.note}</p>
+          {/* Beginner explainer: what the part does, one line of how it
+              connects, and the product page when we sell it. Strings come
+              from studio.json with the rest of the beat copy. */}
+          {shown.caption ? <p className="hp-explain">{shown.caption}</p> : null}
+          {shown.hint ? <p className="hp-connect">{shown.hint}</p> : null}
+          {shown.href ? (
+            <Link className="hp-copy-link" to={shown.href} prefetch="intent">
+              <Txt id="home.walkthrough_link" fallback="See the product" />
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                aria-hidden="true"
+              >
+                <line x1="5" y1="12" x2="19" y2="12" />
+                <polyline points="12 5 19 12 12 19" />
+              </svg>
+            </Link>
           ) : null}
         </div>
       ) : null}
@@ -170,12 +194,27 @@ export function HeroDroneStage({
           exists only in JS state: invisible to crawlers, to screen readers, and
           to anyone whose device never loads the scene. */}
       <ul className="hp-fallback">
-        {beats.map((b) => (
-          <li key={b.id}>
-            <h3>{b.title}</h3>
-            <p>{b.note}</p>
-          </li>
-        ))}
+        {beats.map((b) => {
+          // A beat with mid-hold stops carries its copy on the stops (the
+          // beat-level title/note duplicate the first stop), so render those
+          // instead of the beat's own.
+          const entries = b.stops?.length
+            ? b.stops.map((s, j) => ({...s, id: `${b.id}:${j}`}))
+            : [{...b, id: b.id}];
+          return entries.map((e) => (
+            <li key={e.id}>
+              <h3>{e.title}</h3>
+              <p>{e.note}</p>
+              {e.caption ? <p>{e.caption}</p> : null}
+              {e.hint ? <p>{e.hint}</p> : null}
+              {e.href ? (
+                <Link to={e.href}>
+                  <Txt id="home.walkthrough_link" fallback="See the product" />
+                </Link>
+              ) : null}
+            </li>
+          ));
+        })}
       </ul>
     </div>
   );

@@ -18,7 +18,26 @@ import {MeshoptDecoder} from 'three/addons/libs/meshopt_decoder.module.js';
 import {RoomEnvironment} from 'three/addons/environments/RoomEnvironment.js';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 
-export type HeroBeat = {id: string; title: string; note: string};
+export type HeroBeat = {
+  id: string;
+  title: string;
+  note: string;
+  /** Beginner explainer shown under the note (studio-editable, studio.json). */
+  caption?: string;
+  /** One-line "connects to" hint below the caption. */
+  hint?: string;
+  /** Product page for this part, when we sell it. */
+  href?: string;
+  /** Mid-hold caption changes, in hold order. Only the fallback DOM renders
+   *  these as a list; live, the reported beat IS the active stop's copy. */
+  stops?: Array<{
+    title: string;
+    note: string;
+    caption?: string;
+    hint?: string;
+    href?: string;
+  }>;
+};
 
 /** One streamed piece of the assembly, as written by build-hero.mjs --split. */
 type Chunk = {id: string; label: string; file: string; bytes: number};
@@ -736,13 +755,26 @@ export function HeroDroneScene({
         id: string;
         title: string;
         note: string;
+        caption?: string;
+        hint?: string;
+        href?: string;
         faceOn?: boolean;
         fade?: number;
         /** Per-beat override of sequence.partSize: how much of the viewport
          *  height the part fills under the spotlight. >0.9 deliberately
          *  crops (the airframe reads better close, top plate off screen). */
         partSize?: number;
-        stops?: Array<{at: number; title: string; note: string}>;
+        /** Caption changes partway through the hold, at that fraction of it.
+         *  An active stop's copy REPLACES the beat's wholesale (caption, hint
+         *  and href included), so a stop with no href renders no link. */
+        stops?: Array<{
+          at: number;
+          title: string;
+          note: string;
+          caption?: string;
+          hint?: string;
+          href?: string;
+        }>;
         choreo?: string;
         nodes: Node[];
         centre?: THREE.Vector3;
@@ -800,6 +832,9 @@ export function HeroDroneScene({
           id: b.id,
           title: b.title,
           note: b.note,
+          caption: b.caption,
+          hint: b.hint,
+          href: b.href,
           fade: b.fade,
           partSize: b.partSize,
           stops: b.stops,
@@ -846,7 +881,37 @@ export function HeroDroneScene({
         }
         return beat;
       });
-      onBeats?.(BEATS.map((b) => ({id: b.id, title: b.title, note: b.note})));
+      // The reported copy payload. With a stop index, the stop's copy replaces
+      // the beat's wholesale (a stop with no href gets no link), and the id is
+      // suffixed so the copy panel re-animates on the mid-hold caption change.
+      const toHeroBeat = (b: Beat, stopIdx = -1): HeroBeat => {
+        const st = stopIdx >= 0 ? b.stops?.[stopIdx] : undefined;
+        if (st)
+          return {
+            id: `${b.id}:${stopIdx}`,
+            title: st.title,
+            note: st.note,
+            caption: st.caption,
+            hint: st.hint,
+            href: st.href,
+          };
+        return {
+          id: b.id,
+          title: b.title,
+          note: b.note,
+          caption: b.caption,
+          hint: b.hint,
+          href: b.href,
+          stops: b.stops?.map((s) => ({
+            title: s.title,
+            note: s.note,
+            caption: s.caption,
+            hint: s.hint,
+            href: s.href,
+          })),
+        };
+      };
+      onBeats?.(BEATS.map((b) => toHeroBeat(b)));
 
       /* --------------------------------------------- dim everything else */
       const twin = new Map<THREE.Material, THREE.MeshStandardMaterial>();
@@ -1370,13 +1435,27 @@ export function HeroDroneScene({
         // The copy panel follows the SPOTLIGHT, not the timeline: it shows a
         // part while that part is out (k high) and clears during travel and
         // rests, so a rest reads as the whole drone with no caption racing
-        // ahead to the next part. Whole-drone beats get no caption at all:
+        // ahead to the next part. A whole-drone beat shows its copy on the
+        // same envelope when it carries a caption (the establishing hold is
+        // where the beginner intro reads); without one it stays silent, since
         // the size tab already names what is on screen.
         {
-          const display = b.nodes.length && kRaw > 0.3 ? beatIdx : -1;
-          if (display !== lastBeat) {
-            lastBeat = display;
-            onBeat?.(display >= 0 ? {id: b.id, title: b.title, note: b.note} : null, display);
+          const display =
+            (b.nodes.length || b.caption) && kRaw > 0.3 ? beatIdx : -1;
+          // Which mid-hold stop is active, matching the studio's activeStop():
+          // the last stop whose `at` the hold progress has passed. This is the
+          // wiring that used to be missing: `stops` was parsed and ignored, so
+          // a caption tuned in the studio never showed on the site.
+          let stopIdx = -1;
+          if (display >= 0 && b.stops?.length) {
+            const holdT = THREE.MathUtils.clamp((t - TRAVEL) / Math.max(HOLD, 1e-3), 0, 1);
+            for (let i = 0; i < b.stops.length; i++) if (holdT >= b.stops[i].at) stopIdx = i;
+          }
+          // One change key covers both beat and stop transitions.
+          const shown = display < 0 ? -1 : display * 100 + stopIdx + 1;
+          if (shown !== lastBeat) {
+            lastBeat = shown;
+            onBeat?.(display >= 0 ? toHeroBeat(b, stopIdx) : null, display);
           }
         }
 

@@ -38,6 +38,7 @@
   #stage{position:fixed;left:20px;bottom:18px;z-index:5;color:var(--dim);max-width:42ch}
   #stage b{color:var(--ink);font-size:18px;display:block;font-weight:600}
   #stage i{font-style:normal;color:var(--gold);font-size:11px}
+  #stage .cap{display:block;color:var(--dim);font-size:12px;margin-top:4px}
   #load{position:fixed;left:20px;top:18px;z-index:5;color:var(--dim)}
   #bar{width:190px;height:2px;background:#222;margin-top:6px}
   #bar>i{display:block;height:100%;width:0;background:var(--gold);transition:width .25s}
@@ -920,9 +921,10 @@ function ready() {
 const restore = (b) => { if (b.nodes) for (const p of b.nodes) {
   p.node.position.copy(p.pos); p.node.quaternion.copy(p.quat); p.node.scale.copy(p.scl); } };
 
-// Which sub-stop of a multi-part beat we are in.
+// Which sub-stop of a multi-part beat we are in. Returns the beat itself when
+// it has none, so callers read title/note/caption/hint off one shape.
 function activeStop(b, holdT) {
-  if (!b.stops || !b.stops.length) return {at: 0, title: b.title, note: b.note};
+  if (!b.stops || !b.stops.length) return b;
   let cur = b.stops[0];
   for (const st of b.stops) if (holdT >= st.at) cur = st;
   return cur;
@@ -1219,7 +1221,11 @@ function syncUI(){
   const b = BEATS[beat];
   const holdT = THREE.MathUtils.clamp((t - TRAVEL) / Math.max(HOLD, 1e-3), 0, 1);
   const st = b.stops ? activeStop(b, holdT) : b;
-  const caption = `<b>${st.title}</b><i>${st.note}</i>`;
+  // Mirrors the site's panel: title, note, then the beginner caption and the
+  // "connects to" hint, so the copy is judged here at its real length.
+  const caption = `<b>${st.title}</b><i>${st.note}</i>`
+    + (st.caption ? `<i class="cap">${st.caption}</i>` : '')
+    + (st.hint ? `<i class="cap">${st.hint}</i>` : '');
   if (caption !== lastCaption) { stage.innerHTML = caption; lastCaption = caption; }
   if (b.id !== lastJump) { document.getElementById('jump').value = b.id; lastJump = b.id; }
 }
@@ -1447,6 +1453,10 @@ function renderBeatEditor() {
   host.innerHTML =
     `<div class="row"><label>title</label><input type="text" id="b_title"></div>` +
     `<div class="row"><label>note</label><input type="text" id="b_note"></div>` +
+    `<div class="row"><label>caption</label><input type="text" id="b_caption"></div>` +
+    `<div class="row"><label>hint</label><input type="text" id="b_hint"></div>` +
+    `<div class="row"><label>href</label><input type="text" id="b_href"></div>` +
+    `<div class="hint">caption is the beginner explainer under the note, hint the one-line "connects to", href the product page. Empty means the key is not written.</div>` +
     `<div class="row"><label>fade</label><input type="checkbox" id="b_fadeon">` +
       `<input type="range" id="b_fade" min="0" max="1" step="0.005"><span class="val" id="b_fadev"></span></div>` +
     `<div class="row"><label>part size</label><input type="checkbox" id="b_pson">` +
@@ -1457,8 +1467,11 @@ function renderBeatEditor() {
       `<div class="row"><label>at</label><input type="range" id="b_s${j}_at" min="0" max="1" step="0.01">` +
         `<span class="val" id="b_s${j}_atv"></span></div>` +
       `<div class="row"><label>title</label><input type="text" id="b_s${j}_title"></div>` +
-      `<div class="row"><label>note</label><input type="text" id="b_s${j}_note"></div>`).join('') +
-    (stops.length ? `<div class="hint">a stop is a caption change partway through the hold, at that fraction of it</div>` : '');
+      `<div class="row"><label>note</label><input type="text" id="b_s${j}_note"></div>` +
+      `<div class="row"><label>caption</label><input type="text" id="b_s${j}_caption"></div>` +
+      `<div class="row"><label>hint</label><input type="text" id="b_s${j}_hint"></div>` +
+      `<div class="row"><label>href</label><input type="text" id="b_s${j}_href"></div>`).join('') +
+    (stops.length ? `<div class="hint">a stop is a caption change partway through the hold, at that fraction of it. While a stop is active the site shows the stop's caption, hint and href INSTEAD of the beat's.</div>` : '');
 
   const el = (id) => document.getElementById(id);
   const show = (id, v) => { el(id).textContent = (+v).toFixed(2); };
@@ -1467,6 +1480,17 @@ function renderBeatEditor() {
   el('b_title').oninput = (e) => { b.title = e.target.value; refreshBeatLabels(); };
   el('b_note').value = b.note ?? '';
   el('b_note').oninput = (e) => { b.note = e.target.value; refreshBeatLabels(); };
+  // Optional strings: empty input means the key is absent from the file.
+  const optText = (id, obj, key) => {
+    el(id).value = obj[key] ?? '';
+    el(id).oninput = (e) => {
+      obj[key] = e.target.value || undefined;
+      refreshBeatLabels();
+    };
+  };
+  optText('b_caption', b, 'caption');
+  optText('b_hint', b, 'hint');
+  optText('b_href', b, 'href');
 
   // An optional per-beat override is two controls: present or not, and the
   // value. Unticked means the key is absent from the file, not zero.
@@ -1497,6 +1521,9 @@ function renderBeatEditor() {
     el(`b_s${j}_title`).oninput = (e) => { s.title = e.target.value; refreshBeatLabels(); };
     el(`b_s${j}_note`).value = s.note ?? '';
     el(`b_s${j}_note`).oninput = (e) => { s.note = e.target.value; refreshBeatLabels(); };
+    optText(`b_s${j}_caption`, s, 'caption');
+    optText(`b_s${j}_hint`, s, 'hint');
+    optText(`b_s${j}_href`, s, 'href');
   });
 }
 beatSel.onchange = () => {
@@ -1635,15 +1662,24 @@ function collect() {
   // Beats: captions and the numbers, written back onto the loaded entry so
   // `select`, `choreo`, `id` and anything else in the file survive. An
   // override the panel has unticked is deleted rather than written as a value.
+  // Optional per-beat strings: an emptied box deletes the key, same rule as
+  // the unticked numeric overrides.
+  const optStr = (o, b, key) => {
+    if (b[key]) o[key] = b[key]; else delete o[key];
+  };
   out.beats = BEAT_SRC.map((src, i) => {
     const b = BEATS[i];
     if (!b) return src;
     const o = {...src, title: b.title, note: b.note};
+    optStr(o, b, 'caption'); optStr(o, b, 'hint'); optStr(o, b, 'href');
     if (b.fade === undefined) delete o.fade; else o.fade = num(b.fade);
     if (b.partSize === undefined) delete o.partSize; else o.partSize = num(b.partSize);
     if (b.stops) {
-      o.stops = b.stops.map((s, j) =>
-        ({...(src.stops?.[j] ?? {}), at: num(s.at), title: s.title, note: s.note}));
+      o.stops = b.stops.map((s, j) => {
+        const so = {...(src.stops?.[j] ?? {}), at: num(s.at), title: s.title, note: s.note};
+        optStr(so, s, 'caption'); optStr(so, s, 'hint'); optStr(so, s, 'href');
+        return so;
+      });
     }
     return o;
   });
@@ -1657,8 +1693,10 @@ function collect() {
   out._status = 'WIRED BOTH WAYS. app/components/HeroDroneScene.tsx reads this file at runtime. '
     + 'public/models/od3/_studio.html loads it on open, including the beat timeline, so every '
     + 'control starts on the value the site renders, and its save button POSTs the whole file back '
-    + 'through the dev-only /__studio/write endpoint. The panel edits beat titles, notes, fade, '
-    + 'partSize and stops, but not the shape of the timeline: adding, deleting and reordering beats, '
+    + 'through the dev-only /__studio/write endpoint. The panel edits beat titles, notes, captions, '
+    + 'hints, hrefs, fade, partSize and stops (each stop with its own caption, hint and href, which '
+    + 'replace the beat-level ones while the stop is active), but not the shape of the timeline: '
+    + 'adding, deleting and reordering beats, '
     + 'and every `select` and `choreo`, are file edits. Also carried through untouched on save: '
     + 'name, model, boards, boardExclude, videoModule, notFrame, scroll.minDwellS, '
     + 'spotlight.beamGain (which the panel renderer has no equivalent for), and each material id, '

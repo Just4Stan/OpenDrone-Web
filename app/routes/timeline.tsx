@@ -252,7 +252,9 @@ export default function TimelineRoute() {
         </Link>
         <Link
           prefetch="viewport"
-          to="/roadmap"
+          // "Put yourself on this timeline" is a contributing pitch, not a
+          // second roadmap link (audit 2026-08-12).
+          to="/contributing"
           className="editorial-cta-secondary"
         >
           <Txt id="timeline.cta_secondary" />

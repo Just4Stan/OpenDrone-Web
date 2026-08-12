@@ -717,7 +717,6 @@ export function BoardArt({
   //   1. Full rail centred in the gutter, clear of both copy and board (the
   //      roomy default — wide screens).
   //   2. When the gutter is too tight for the full pill, drop the rail to
-  //      names-only (`is-compact`) and centre that in the gutter instead.
   //   3. When even the names-only pill can't fit, floor it at the copy (so it
   //      never crosses the text) and let it overlay the board's edge — the
   //      last-resort overlay.
@@ -731,7 +730,7 @@ export function BoardArt({
     if (!rail || !body || !root) return;
     const GAP = 18; // clearance between the rail and the board's left edge
     const MARGIN = 22; // clearance between the rail and the text content
-    const DEFAULT_W = 2.45; // board blow-up factor at full size (matches CSS)
+    const DEFAULT_W = 2.2; // board blow-up factor at full size (matches CSS)
     const chapter = root.closest('.chapter');
     const leftOf = (el: Element) => el.getBoundingClientRect().left;
     const widthOf = (el: Element) => el.getBoundingClientRect().width;
@@ -767,18 +766,17 @@ export function BoardArt({
     const place = () => {
       // Below the breakpoint the rail is a full-width top bar — reset both.
       if (!window.matchMedia('(min-width: 1025px)').matches) {
-        rail.classList.remove('is-compact');
         rail.style.transform = '';
         root.style.removeProperty('--board-w');
+        root.style.removeProperty('translate');
         return;
       }
       // Mid variant-swap: leave the rail exactly where it is. The board is flying
       // in (translated), so any measurement now would mis-place it; placeNonce
       // re-runs this once the swap settles and the board's box is stable again.
       if (swapActiveRef.current) return;
-      rail.classList.remove('is-compact');
       rail.style.transform = '';
-      setBoardW(DEFAULT_W); // keep the board at full size; compact the rail if tight
+      setBoardW(DEFAULT_W); // the board stays at full size; the rail takes what is left
       // Scope to the LIVE stack — never the outgoing (.board-swap-out) one, whose
       // box is mid-flight and would mis-place the rail during a swap.
       const stack = body.querySelector('[data-role="live"]');
@@ -796,6 +794,39 @@ export function BoardArt({
       const activeSheet = stack.querySelector(
         '.board-sheet.is-active svg, .board-sheet.is-active img',
       );
+      // Repo-scope alignment: pin the VISIBLE board's top-right corner just
+      // inside the outline's top-right border (Stan, 2026-08-12). Derived
+      // from the NEVER-TRANSLATING stack box plus the sheet's resting
+      // transform model, not from the transformed sheet element, so the
+      // value is correct BEFORE the fly-in finishes and the flight lands on
+      // the aligned spot with no post-animation jump. Model: the sheet is
+      // letterboxed in the square stack (viewBox aspect), then the active
+      // sheet rests at translateY(-11%) translateZ(120px) scale(1.05) under
+      // the stack's 1700px perspective, so it projects at
+      // 1.05 * 1700/(1700-120) about the stack centre.
+      root.style.removeProperty('translate');
+      const scope = root.closest('.chapter[data-repo-scope]');
+      const anySvg = stack.querySelector('.board-sheet svg');
+      if (scope && anySvg) {
+        const vb = (anySvg as SVGSVGElement).viewBox?.baseVal;
+        const aspect = vb && vb.height ? vb.width / vb.height : 1;
+        const sr0 = stack.getBoundingClientRect();
+        if (sr0.width && sr0.height) {
+          const PROJ = 1700 / (1700 - 120);
+          const S = 1.05 * PROJ;
+          const cx = sr0.left + sr0.width / 2;
+          const cy = sr0.top + sr0.height / 2 - sr0.height * 0.11 * PROJ;
+          const drawnW = Math.min(sr0.width, sr0.height * aspect) * S;
+          const drawnH = drawnW / aspect;
+          const sc = scope.getBoundingClientRect();
+          const INSET = 12; // px inside the outline's border
+          const dx = sc.right - INSET - (cx + drawnW / 2);
+          const dy = sc.top + INSET - (cy - drawnH / 2);
+          if (Number.isFinite(dx) && Number.isFinite(dy)) {
+            root.style.translate = `${Math.round(dx)}px ${Math.round(dy)}px`;
+          }
+        }
+      }
       const sheetRect = flyDone ? activeSheet?.getBoundingClientRect() : null;
       const boardLeft =
         sheetRect && sheetRect.width
@@ -825,14 +856,11 @@ export function BoardArt({
           Math.max(gutterStart, gutterEnd - w),
         );
       };
-      let target: number;
-      if (gutterEnd - gutterStart >= railFull) {
-        target = placeWidth(railFull); // full rail fits, centred in the gutter
-      } else {
-        // Too tight for the full pill — drop to names-only and re-fit.
-        rail.classList.add('is-compact');
-        target = placeWidth(widthOf(rail));
-      }
+      // Always the full rail (names + function blurbs): the names-only
+      // is-compact fallback was dropped 2026-08-12 (Stan) — under the
+      // repo-scope layout its tight-gutter trigger misfired on tall boards
+      // and a wrapping names-only pill reads worse than a slight overlap.
+      const target = placeWidth(railFull);
       rail.style.transform = `translateX(${target - leftOf(rail)}px)`;
     };
     // Coalesce resize bursts into one placement per frame — `place` forces a

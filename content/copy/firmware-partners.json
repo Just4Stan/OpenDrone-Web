@@ -12,21 +12,17 @@
     "On our side: we pay the regular sums that come with certifying our hardware for their projects, and we make public donations when the numbers allow it."
   ],
   "s2_title": "*01* · The projects",
-  "partner_betaflight_label": "Runs on · OpenFC-Lite",
+  "partner_betaflight_label": "Runs on · [OpenFC-Lite](/products/openfc-lite)",
   "partner_betaflight_project": "Betaflight",
-  "partner_betaflight_blurb": "Betaflight is the flight controller firmware used in most mini-quad freestyle builds.",
-  "partner_am32_label": "Runs on · OpenESC",
+  "partner_betaflight_blurb": "Betaflight is the flight controller firmware used in most fpv drones.",
+  "partner_am32_label": "Runs on · [OpenESC](/products/openesc)",
   "partner_am32_project": "AM32",
-  "partner_am32_blurb": "AM32 is a multi-MCU ESC firmware alternative to BLHeli, GPL-3.0 licensed. OpenESC runs AM32 on AT32F421 channels: the same firmware as other AM32 ESCs, no custom fork, no vendor lock-in.",
-  "partner_expresslrs_label": "Runs on · OpenRX",
+  "partner_am32_blurb": "AM32 is a multi-MCU ESC firmware alternative to BLHeli.",
+  "partner_expresslrs_label": "Runs on · [OpenRX](/products/openrx)",
   "partner_expresslrs_project": "ExpressLRS",
   "partner_expresslrs_blurb": "ExpressLRS is the open long-range 2.4 GHz / 900 MHz radio protocol.",
   "partner_link_source": "Source ↗",
   "partner_link_donate": "Donate directly ↗",
-  "s3_title": "*02* · Giving directly",
-  "s3_body": [
-    "The most direct support is yours. Where a project runs a public donation page, its card above links to it; giving directly means no payment-processor detour, so what you send reaches them. AM32 runs no donation page: contributing code and testing is the way in there."
-  ],
   "s4_title": "*03* · Merged upstream",
   "s4_body": [
     "Money is one half; patches are the other. These are our changes that upstream actually merged: every link goes to the real PR."

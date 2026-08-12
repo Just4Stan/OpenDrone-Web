@@ -4349,13 +4349,14 @@ button.reset {
    was dropped and the hero is the opening statement. */
 /* Product pages run a tighter rail than the shared 1520px one. At full rail
    width the chapters reach nearly edge to edge on a large display and the
-   page reads as a wall; pulling the cap in gives roughly 180px of margin
-   either side at 1728px. Scoped here on purpose: --rail-width is shared with
-   the footer and the other routes, and narrowing it globally is the site
-   lane's call, not this one's. Below the cap the shared responsive gutter
-   still governs, so nothing changes on a laptop or a phone. */
+   page reads as a wall. 1102px (2026-08-12, Stan: two 10% trims off the old
+   1360px cap) matches the shrink-wrapped chapter cards, which no longer need
+   the width. Scoped here on purpose: --rail-width is shared with the footer
+   and the other routes, and narrowing it globally is the site lane's call,
+   not this one's. Below the cap the shared responsive gutter still governs,
+   so nothing changes on a laptop or a phone. */
 .product-page {
-  width: min(var(--rail-width), 1360px);
+  width: min(var(--rail-width), 1102px);
   margin: 0 auto;
   padding: var(--sp-5) 0 var(--sp-7);
 }
@@ -4474,13 +4475,11 @@ button.reset {
   color: var(--color-text);
 }
 
+/* Word gaps between the headline spans come from the literal space in the
+   markup, never from margins: a real space collapses at a line wrap, a
+   margin does not, and the two together rendered a double-wide gap. */
 .product-hero-headline span {
   display: inline;
-  margin-right: 0.3em;
-}
-
-.product-hero-headline span:last-child {
-  margin-right: 0;
 }
 
 /* Drop the italic. The gold-italic middle-word is the AI-slop tell;
@@ -5673,6 +5672,157 @@ button.reset {
   .chapter-index {
     grid-column: 1 / -1;
   }
+  /* Except a chapter that declares no media at all (the datasheet): its
+     table spans both tracks so the specs use the full rail width. */
+  .chapter[data-no-media] .chapter-body-col {
+    grid-column: 1 / -1;
+    max-width: none;
+  }
+  /* In-the-box chapter: the cards shrink-wrap, so the freed width goes to
+     the box photo — the body column hugs the widest card and the media
+     track takes the rest. Both cards stretch to the column width, keeping
+     their edges aligned. */
+  .chapter:has(.in-the-box) {
+    grid-template-columns: fit-content(34rem) minmax(0, 1fr);
+  }
+  .chapter:has(.in-the-box) .in-the-box,
+  .chapter:has(.in-the-box) .provenance-card {
+    min-width: 100%;
+  }
+  /* The box photo tracks the height of the two cards: the media column
+     stretches to the row, the top padding skips past the one-line chapter
+     title (its 1.1 line box + margin) so the frame's top edge sits level
+     with the parts card, and the frame gives up its square ratio to end
+     level with the provenance card. */
+  .chapter:has(.in-the-box) .chapter-media {
+    position: static;
+    align-self: stretch;
+    padding-top: calc(1.1 * var(--fs-2xl) + var(--sp-6));
+  }
+  .chapter:has(.in-the-box) .chapter-media-frame {
+    height: 100%;
+    aspect-ratio: auto;
+  }
+  /* Firmware chapter, same idea: the support card shrink-wraps, the project
+     logo grows into the freed width. The wide slot drops the logo's leftward
+     gutter bleed so it can't reach the card. */
+  .chapter:has(.firmware-support) {
+    grid-template-columns: fit-content(38rem) minmax(0, 1fr);
+  }
+  .chapter:has(.firmware-support) .firmware-logo {
+    margin-left: 0;
+  }
+  /* The logo tracks the chapter's own height and hugs the right edge
+     (Stan, 2026-08-12): square tile marks (AM32, ExpressLRS) take the
+     full row height; Betaflight's wide transparent mark keeps its
+     width-driven size, right-aligned and vertically centred. The tile is
+     absolutely positioned so its 100% height reads the text column's
+     height instead of feeding back into the row's own sizing. */
+  .chapter:has(.firmware-support) .chapter-media {
+    align-self: stretch;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+  }
+  /* The frame wrapper stays static so the tile's height: 100% resolves
+     against the stretched aside, not the collapsed frame box. */
+  .chapter:has(.firmware-support) .chapter-media-frame {
+    position: static;
+  }
+  .chapter:has(.firmware-support) .firmware-logo--tile {
+    position: absolute;
+    top: 0;
+    right: 0;
+    height: 100%;
+    width: auto;
+    max-width: none;
+    margin-inline: 0;
+  }
+  /* Contributors chapter: the join button rides the title line (top right),
+     not the grid row (Stan, 2026-08-12). The one-line title leaves that
+     corner free at every desktop width. */
+  .chapter:has(.contributors-row) .chapter-body-col {
+    position: relative;
+  }
+  .chapter:has(.contributors-row) .contributors-cta-btn {
+    position: absolute;
+    top: 0;
+    right: 0;
+  }
+  /* Repo scope (the teardown): one outline around the pin tables, the layer
+     explorer and the schematic viewer, tied by the lead line to the
+     GitHub-repo card in the chapter above — the lines alone carry the claim
+     that everything inside is the contents of the product's GitHub repo
+     (the border tag was dropped, Stan 2026-08-12). Negative margins keep
+     the body column's left edge aligned with the other chapters. */
+  .chapter[data-repo-scope] {
+    position: relative;
+    border: 2px solid color-mix(in srgb, var(--color-gold) 30%, transparent);
+    border-radius: var(--r-lg);
+    padding: var(--sp-7) var(--sp-6) var(--sp-6);
+    margin-inline: calc(-1 * var(--sp-6));
+  }
+  /* Keep the board inside the outline: pin its right edge to its column
+     (not the default 125% overshoot); it still grows leftward into the
+     open gutter. */
+  .chapter[data-repo-scope] .board-art {
+    margin-left: calc(100% - var(--board-w));
+  }
+  /* No sticky media inside the scope: the schematic row below gives a
+     sticky board ~700px of travel, which slid it straight over the
+     schematic. Static keeps it beside the pin tables. */
+  .chapter[data-repo-scope] .chapter-media {
+    position: static;
+  }
+  /* The lead line from the GitHub-repo study card in the chapter above down
+     to this outline. Coordinates come from the measuring effect in
+     products.$handle.tsx (--repo-lead-x/-h); with no measurement the height
+     is 0 and nothing draws. */
+  .chapter[data-repo-scope]::before {
+    content: '';
+    position: absolute;
+    bottom: 100%;
+    left: var(--repo-lead-x, 50%);
+    width: 2px;
+    height: var(--repo-lead-h, 0px);
+    background: linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--color-gold) 50%, transparent),
+      color-mix(in srgb, var(--color-gold) 30%, transparent)
+    );
+  }
+  /* The GitHub-repo study card wears the same gold outline as the scope it
+     leads into: card, line and chapter read as one repo statement. Guarded
+     on the outline existing (the frame page has none). */
+  .product-page:has(.chapter[data-repo-scope]) .open-source-card--github {
+    border: 2px solid color-mix(in srgb, var(--color-gold) 30%, transparent);
+  }
+  /* Label riding the outline's top border, left side: names what the gold
+     scope IS (a live view of the KiCad designs from the repo). */
+  .chapter-scope-tag {
+    position: absolute;
+    top: 0;
+    left: var(--sp-6);
+    translate: 0 -50%;
+    padding: 0.35rem 0.9rem;
+    background: var(--color-bg);
+    border: 1px solid color-mix(in srgb, var(--color-gold) 40%, transparent);
+    border-radius: var(--r-pill);
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--color-gold);
+  }
+  .chapter-wide {
+    grid-column: 1 / -1;
+  }
+  /* Pull the schematic up toward the board so the scope reads as one
+     screenful rather than two stacked blocks. */
+  .chapter[data-repo-scope] .chapter-wide {
+    margin-top: calc(-1 * var(--sp-5));
+  }
 }
 
 /* Media placeholder. Sits in the right column, sticky relative to
@@ -5853,7 +6003,7 @@ button.reset {
  * square tile leaves dead vertical space next to the short price block. */
 .firmware-logo--tile {
   width: 78%;
-  max-width: 260px;
+  max-width: 340px;
   margin-inline: auto;
   aspect-ratio: 1 / 1;
   object-fit: contain;
@@ -5863,16 +6013,26 @@ button.reset {
   padding: clamp(1.5rem, 7%, 3rem);
 }
 
+/* Light mode: a near-black slab reads far too heavy (Stan, 2026-08-12), so
+   drop the tile and invert the white-on-transparent mark to near-black on
+   the page, mirroring how a multi-colour mark sits transparent. filter
+   would invert a background/border too, hence transparent and none. */
+html.light .firmware-logo--tile {
+  background: transparent;
+  border: none;
+  filter: invert(1);
+}
+
 .board-art {
   position: relative;
   /* Blow the block up well past its (capped) media column so the rail + stack
      fill the chapter's height; margin-left grows it leftward into the empty
      gutter rather than overflowing the page to the right. `--board-w` is the
-     blow-up factor: 245% by default, dialled down by BoardArt's placement
+     blow-up factor: 220% by default, dialled down by BoardArt's placement
      effect when the gutter is too tight to hold the full layer rail (the board
      gives up size to keep the menu legible). The matching margin keeps the
      board's right edge pinned (width + margin = 125%) as it scales. */
-  --board-w: 245%;
+  --board-w: 220%;
   width: var(--board-w);
   margin-left: calc(125% - var(--board-w));
 }
@@ -6246,7 +6406,10 @@ button.reset {
    plane", "Signal · 5V"), so the rail is a wider column than the schematic's.
    Size scales with the board across aspect ratios. */
 .board-folder-rail {
-  width: clamp(150px, 13vw, 200px);
+  /* Size to the longest layer label (capped) instead of a fixed column, so
+     the tabs don't trail empty width past "Signal + components". */
+  width: max-content;
+  max-width: clamp(150px, 13vw, 200px);
   /* Fade in once the fly is done (the is-armed rule holds it at opacity 0 during
      the entrance). NO transform transition here — place() measures this box to
      position it, and a transitioned transform makes that read a mid-glide value
@@ -6314,7 +6477,8 @@ button.reset {
   letter-spacing: 0.14em;
   text-transform: uppercase;
   text-align: center;
-  color: var(--color-text-muted);
+  /* Full text colour: the muted grey read as low-contrast (Stan, 2026-08-12). */
+  color: var(--color-text);
   padding: 0.48em 0.4em;
   /* Standardised viewer-pill radius (schematic sheets + PCB layers share it). */
   border-radius: var(--r-lg);
@@ -6366,22 +6530,9 @@ button.reset {
 .board-folder-tabs button.is-active .board-folder-tab-fn {
   color: color-mix(in srgb, var(--color-on-accent) 72%, transparent);
 }
-/* Compact rail — toggled by BoardArt's placement effect when the board has to
-   sit tight enough that the rail must overlay it. Dropping the function blurbs
-   and narrowing to names-only keeps the selector legible while covering as
-   little of the board as possible. */
-.board-folder-rail.is-compact {
-  width: clamp(86px, 7.5vw, 120px);
-}
-.board-folder-rail.is-compact .board-folder-tab-fn {
-  display: none;
-}
-.board-folder-rail.is-compact .board-folder-tabs button {
-  flex-direction: row;
-  align-items: center;
-  border-radius: var(--r-pill);
-  padding: 0.5em 0.8em;
-}
+/* The names-only compact rail variant was removed 2026-08-12 (Stan): its
+   tight-gutter trigger misfired under the repo-scope layout and a wrapped
+   names-only pill read worse than the full rail overlapping slightly. */
 /* The rail sizes to its longest label, so normal sheet names stay on one line.
    Tighter tracking keeps it compact, and wrapping (rather than nowrap) is the
    safety net for a very long sheet name (e.g. the OpenRX single sheet) — it
@@ -6465,6 +6616,10 @@ button.reset {
 .schematic-viewer {
   width: 100%;
   margin-left: 0;
+  /* The lazy-load gate IntersectionObserves this box with a 0.01 threshold,
+     which NEVER fires on a zero-area target — and before the manifest loads
+     the viewer is empty. The floor gives the observer something to hit. */
+  min-height: 160px;
 }
 /* Rail + sheet sit side by side, mirroring the board folder: the rail takes a
    fixed column on the left, the sheet fills the rest, centred vertically. */
@@ -6480,7 +6635,16 @@ button.reset {
   position: relative;
   flex: 1 1 auto;
   min-width: 0;
-  height: min(72vh, 700px);
+  /* Short enough that pins + board + schematic read as one screenful
+     (72vh/700px pushed the schematic below the fold; Stan, 2026-08-12). */
+  height: min(58vh, 560px);
+}
+/* The sheet rail rides the schematic's RIGHT edge on desktop, mirroring the
+   layer rail sitting left of the board above it. Mobile keeps the top bar. */
+@media (min-width: 1025px) {
+  .schematic-rail {
+    order: 2;
+  }
 }
 .schematic-sheet {
   position: absolute;
@@ -6501,6 +6665,32 @@ button.reset {
    opaque. Desktop pages by crossfading active↔active. */
 .schematic-sheet.is-active.is-loaded {
   opacity: 1;
+}
+/* Component spotlight: gold boxes over the hovered teardown part. The svg
+   shares the sheet's viewBox and letterboxes exactly like the imgs
+   (object-fit: contain ≡ xMidYMid meet), so boxes land on the symbols at
+   any size. Boxes come from the invisible <text> metadata in the export. */
+.schematic-hl {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+.schematic-hl rect {
+  fill: color-mix(in srgb, var(--color-gold) 20%, transparent);
+  stroke: var(--color-gold);
+  stroke-width: 2px;
+  vector-effect: non-scaling-stroke;
+  animation: schematic-hl-in 0.16s ease both;
+}
+@keyframes schematic-hl-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 /* Scroll-back reveal: when a SKU was switched while the schematic was off-screen
    (the wipe was skipped), fade the new active sheet in once it comes into view —
@@ -6773,9 +6963,11 @@ button.reset {
   max-width: none;
 }
 
+/* Emphasis segments keep the title colour (2026-08-12, Stan: gold highlights
+   in chapter heads read as cheesy); the markup keeps its <em> semantics. */
 .chapter-title em {
   font-style: normal;
-  color: var(--color-gold);
+  color: inherit;
   font-weight: 600;
 }
 
@@ -6798,10 +6990,14 @@ button.reset {
 }
 
 /* Two side "bubbles" (Top / Bottom), each a mini-table of component rows. The
-   gradient + inset top-light give the card some depth instead of a flat slab. */
+   gradient + inset top-light give the card some depth instead of a flat slab.
+   width: fit-content shrink-wraps the PAIR to its widest row (the I/O chip
+   row opts out of that measure below), and both bubbles stretch to the same
+   track, so they stay equal width and aligned with no dead width. */
 .teardown-sides {
   display: grid;
   gap: 0.85rem;
+  width: fit-content;
   max-width: 30rem;
 }
 /* Locked while the board fly-in animates — a hover mustn't fight the animation. */
@@ -6935,12 +7131,17 @@ button.reset {
   border-bottom-color: transparent;
 }
 
-/* I/O chip row: one row holding a horizontal set of hoverable pad-group chips. */
+/* I/O chip row: one row holding a horizontal set of hoverable pad-group chips.
+   width: 0 + min-width: 100% keeps this row out of the bubble's intrinsic
+   width (a full chip set unwrapped is ~415px and used to force the whole
+   bubble that wide); the text rows set the width and the chips wrap to it. */
 .teardown-pins li.teardown-io-row {
   display: flex;
   align-items: center;
   gap: 0.6rem;
   flex-wrap: wrap;
+  width: 0;
+  min-width: 100%;
 }
 .teardown-io-tag {
   flex: none;
@@ -7058,6 +7259,25 @@ button.reset {
   margin-top: var(--sp-8);
 }
 
+/* One quiet mono link under the card row, pointing at /open-source. Same
+   voice as .firmware-support-links: muted at rest, gold on hover. */
+.open-source-story-link {
+  margin: var(--sp-3) 0 0;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.open-source-story-link a {
+  color: var(--color-text-muted);
+  text-decoration: none;
+}
+
+.open-source-story-link a:hover {
+  color: var(--color-gold);
+}
+
 
 /* Subtle bubble — same quiet card as the latest-commit cards beside it so the
    row reads as one consistent set (a bare top-hairline left the text floating).
@@ -7149,6 +7369,47 @@ button.reset {
 .open-source-card--cern::after {
   -webkit-mask-image: url(/logos/cern.svg);
   mask-image: url(/logos/cern.svg);
+}
+
+/* "Wanna help?" card: the row's 4th bubble, an internal hand-off to
+   /contributing. A dimmed board render sits behind the text; the gradient
+   wash keeps the label side legible in both themes (bg-card is a token).
+   SWAP POINT: the intended background PNG never arrived. When it lands,
+   drop it in /public and change the url() in ::before below; the gradient
+   overlay in ::after stays as is. */
+.open-source-card--help {
+  position: relative;
+  overflow: hidden;
+}
+
+.open-source-card--help > p {
+  position: relative;
+  z-index: 1;
+}
+
+.open-source-card--help::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: url(/boards/openfc-lite/front.png);
+  background-repeat: no-repeat;
+  background-position: right -22% center;
+  background-size: auto 150%;
+  opacity: 0.18;
+  pointer-events: none;
+}
+
+.open-source-card--help::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    var(--color-bg-card) 10%,
+    color-mix(in srgb, var(--color-bg-card) 55%, transparent) 62%,
+    transparent 100%
+  );
+  pointer-events: none;
 }
 
 /* OSHWA-certified card — the license card upgraded when a product carries an
@@ -7382,16 +7643,24 @@ button.reset {
 /* Provenance card — Designed / Assembled / Next. Pinned inside the
    In-the-box chapter so "where is this made" sits next to the parts
    list, not buried in the legal footer. */
-/* De-boxed: the provenance rows are a spec table, not a card. The only gold
-   left is a short underline under the label. */
+/* Its own card (Stan, 2026-08-12), in the in-the-box table idiom: label as
+   the header, hairline-divided rows, the story links as buttons along the
+   bottom. Shrink-wrapped like the other chapter cards. */
 .provenance-card {
   margin-top: var(--sp-5);
+  width: fit-content;
+  min-width: min(24rem, 100%);
+  padding: 1rem 1.2rem 1.2rem;
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--r-lg);
 }
 
 .provenance-links {
-  margin: 0.75rem 0 0;
+  margin: 1rem 0 0;
   display: flex;
-  gap: 1.4rem;
+  flex-wrap: wrap;
+  gap: 0.6rem;
   font-family: var(--font-mono);
   font-size: 11px;
   letter-spacing: 0.1em;
@@ -7432,13 +7701,24 @@ button.reset {
   color: var(--color-on-accent);
 }
 
+/* Same button treatment as the contributors CTA, one size down, so the two
+   story links read as actions instead of body-text asides. */
 .provenance-links a {
-  color: var(--color-text-muted);
+  display: inline-flex;
+  align-items: center;
+  padding: 0.55rem 1.1rem;
+  border: 1px solid color-mix(in srgb, var(--color-gold) 55%, transparent);
+  border-radius: 999px;
+  font-weight: 600;
+  color: var(--color-gold);
   text-decoration: none;
+  transition: background 0.18s ease, color 0.18s ease, border-color 0.18s ease;
 }
 
 .provenance-links a:hover {
-  color: var(--color-gold);
+  background: var(--color-gold-fill);
+  border-color: var(--color-gold-fill);
+  color: var(--color-on-accent);
 }
 
 .provenance-label {
@@ -7458,14 +7738,20 @@ button.reset {
   padding: 0;
   margin: 0;
   display: grid;
-  gap: 0.6rem;
+  gap: 0;
 }
 
 .provenance-rows li {
   display: grid;
   grid-template-columns: 5.5rem 1fr;
-  column-gap: 0.75rem;
+  column-gap: 0.9rem;
   align-items: baseline;
+  padding: 0.6rem 0;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.provenance-rows li:last-child {
+  border-bottom: none;
 }
 
 .provenance-row-label {
@@ -7480,12 +7766,6 @@ button.reset {
   color: var(--color-text);
   font-size: 0.92rem;
   line-height: 1.5;
-}
-
-.provenance-row-note {
-  color: color-mix(in srgb, var(--color-text) 62%, var(--color-text-muted));
-  font-family: var(--font-mono);
-  font-size: 12px;
 }
 
 .provenance-foot {
@@ -7708,6 +7988,11 @@ button.reset {
   margin: 0 0 1.5rem;
   display: grid;
   gap: 0;
+  /* Hug the longest row instead of spanning the ~980px body column: the card
+     used to carry ~470px of empty width past the note text. fit-content still
+     caps at the column, so long notes wrap as before on narrow screens. */
+  width: fit-content;
+  min-width: min(24rem, 100%);
   background: var(--color-bg-card);
   border: 1px solid var(--color-border);
   border-radius: var(--r-lg);
@@ -7757,6 +8042,72 @@ button.reset {
   color: var(--color-text-muted);
 }
 
+/* "What does this do?" — the beginner chapter. Intro is plain .chapter-body;
+   the shopping list borrows the in-the-box card idiom (same bubble, no qty
+   column) so "what ships" and "what's still missing" read as siblings; the
+   fit line + homepage link close it out. */
+
+
+/* The signal chain, in hero-scroll order: this product's stage is lit gold,
+   stages we sell link their boards. One glance places the part; the homepage
+   hero tells the same story as a scroll. */
+.what-chain {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.45rem 0;
+  margin: 0 0 var(--sp-5);
+}
+
+.what-chain-step {
+  display: inline-flex;
+  align-items: center;
+}
+
+.what-chain-arrow {
+  margin: 0 0.5rem;
+  color: var(--color-text-dim);
+  font-size: 12px;
+}
+
+.what-chain-chip {
+  padding: 0.3rem 0.75rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--r-pill);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+  text-decoration: none;
+  transition: color 0.15s ease, border-color 0.15s ease;
+}
+
+a.what-chain-chip:hover {
+  color: var(--color-gold);
+  border-color: color-mix(in srgb, var(--color-gold) 55%, transparent);
+}
+
+.what-chain-chip.is-active {
+  background: var(--color-gold-fill);
+  border-color: var(--color-gold-fill);
+  color: var(--color-on-accent);
+  font-weight: 600;
+}
+
+
+.what-home-link {
+  display: inline-block;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  color: var(--color-gold);
+}
+
+.what-home-link:hover {
+  color: var(--color-accent);
+}
+
 /* Spec table */
 .spec-table {
   display: grid;
@@ -7804,6 +8155,12 @@ button.reset {
   border: 1px solid var(--color-border);
   border-radius: var(--r-md);
   padding: 1.25rem 1.4rem;
+  /* Hug the 52ch body text instead of spanning the full body column; the
+     card otherwise trails ~450px of empty gradient past the copy. The cap
+     keeps a long one-line links row (e.g. AM32's no-donate note) from
+     dragging the card wide; it wraps instead. */
+  width: fit-content;
+  max-width: 36rem;
   background:
     linear-gradient(
       180deg,
@@ -7912,7 +8269,7 @@ button.reset {
   color: var(--color-text-muted);
   font-family: var(--font-mono);
   font-size: 11px;
-  letter-spacing: 0.18em;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
   cursor: pointer;
   transition: color 0.2s ease, border-color 0.2s ease, background 0.2s ease;
@@ -10026,7 +10383,7 @@ button.reset {
 .editorial-eyebrow {
   font-family: var(--font-mono);
   font-size: 12px;
-  letter-spacing: 0.25em;
+  letter-spacing: 0.2em;
   text-transform: uppercase;
   color: var(--color-gold);
   margin: 0 0 1rem;
@@ -10039,6 +10396,19 @@ button.reset {
   line-height: 1.05;
   letter-spacing: -0.02em;
   margin: 0 0 1.25rem;
+}
+
+/* Keep the head on ONE line where the viewport allows (Stan, 2026-08-12,
+   all six public-infrastructure pages): the title alone may run past the
+   640px reading column into the shell's empty right margin. The cap is
+   the distance from the centred column's left edge to the viewport gutter,
+   so it can never cause horizontal scroll; below 1100px the head wraps in
+   the column as before. */
+@media (min-width: 1100px) {
+  .editorial-title {
+    width: max-content;
+    max-width: calc(50vw + 320px - var(--rail-gutter));
+  }
 }
 
 .editorial-title em {
@@ -10109,17 +10479,23 @@ button.reset {
    same dim tint as the hand-drawn emblems in either theme. */
 .section-art-logo {
   display: block;
-  width: 100%;
+  /* A filled logo carries far more ink than a stroke sketch: at the full
+     22rem figure width a square mark swallowed half the page, so cap it
+     well below the sketches' footprint and cut the opacity harder. */
+  width: min(100%, 13rem);
   background: currentColor;
-  /* A filled logo carries far more ink than a stroke sketch; halve it so
-     both kinds of margin art sit at the same visual weight. */
-  opacity: 0.5;
+  opacity: 0.3;
   -webkit-mask-size: contain;
   mask-size: contain;
   -webkit-mask-repeat: no-repeat;
   mask-repeat: no-repeat;
   -webkit-mask-position: center;
   mask-position: center;
+}
+/* Sections can stack several marks (Discord over GitHub, the firmware trio);
+   air between them keeps the column reading as texture, not a logo wall. */
+.section-art-logo + .section-art-logo {
+  margin-top: 2.5rem;
 }
 
 /* Reading cascade: blocks in the prose column arrive as the reader does.
@@ -10385,7 +10761,7 @@ html.light .editorial-watermark {
 .editorial-section-title {
   font-family: var(--font-mono);
   font-size: 12px;
-  letter-spacing: 0.25em;
+  letter-spacing: 0.2em;
   text-transform: uppercase;
   color: var(--color-text);
   margin: 0 0 1.1rem;
@@ -10416,15 +10792,15 @@ html.light .editorial-watermark {
 .editorial-cta-primary {
   display: inline-flex;
   align-items: center;
-  padding: 0.9rem 1.5rem;
+  padding: 0.75rem 1.5rem;
   background: var(--color-gold-fill);
   color: var(--color-on-accent);
   font-family: var(--font-mono);
   font-size: 12px;
   font-weight: 700;
-  letter-spacing: 0.14em;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
-  border-radius: var(--r-xs);
+  border-radius: 999px;
   transition: background-color 0.2s ease;
 }
 
@@ -10436,20 +10812,22 @@ html.light .editorial-watermark {
 .editorial-cta-secondary {
   display: inline-flex;
   align-items: center;
-  padding: 0.9rem 1.5rem;
-  border: 1px solid var(--color-border);
-  color: var(--color-text-muted);
+  padding: 0.75rem 1.5rem;
+  border: 1px solid color-mix(in srgb, var(--color-gold) 55%, transparent);
+  color: var(--color-gold);
   font-family: var(--font-mono);
   font-size: 12px;
-  letter-spacing: 0.14em;
+  font-weight: 600;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
-  border-radius: var(--r-xs);
-  transition: border-color 0.2s ease, color 0.2s ease;
+  border-radius: 999px;
+  transition: background 0.18s ease, color 0.18s ease, border-color 0.18s ease;
 }
 
 .editorial-cta-secondary:hover {
-  border-color: var(--color-gold);
-  color: var(--color-text);
+  background: var(--color-gold-fill);
+  border-color: var(--color-gold-fill);
+  color: var(--color-on-accent);
 }
 
 /* ═══════════════════════════════════════════════════════════════════════
@@ -10582,7 +10960,7 @@ html.light .editorial-watermark {
   margin-top: var(--sp-8);
   padding: 1.4rem 1.5rem;
   border: 1px solid color-mix(in srgb, var(--color-border) 80%, transparent);
-  border-radius: var(--r-xs);
+  border-radius: var(--r-md);
   font-family: var(--font-mono);
   transition: border-color 0.2s ease;
 }
@@ -10593,7 +10971,7 @@ html.light .editorial-watermark {
 
 .editorial-next-label {
   font-size: 10px;
-  letter-spacing: 0.22em;
+  letter-spacing: 0.2em;
   text-transform: uppercase;
   color: var(--color-gold);
 }
@@ -10614,7 +10992,7 @@ html.light .editorial-watermark {
 
 .editorial-next-min {
   font-size: 10px;
-  letter-spacing: 0.18em;
+  letter-spacing: 0.2em;
   text-transform: uppercase;
   color: var(--color-text-muted);
   margin-top: 0.35rem;
@@ -10744,7 +11122,7 @@ html.light .editorial-watermark {
 
 .aside-eyebrow {
   font-size: 11px;
-  letter-spacing: 0.22em;
+  letter-spacing: 0.2em;
   text-transform: uppercase;
   color: var(--color-gold);
 }
@@ -10827,6 +11205,11 @@ html.light .editorial-watermark {
   color: var(--color-gold);
   margin: 0 0 0.4rem;
 }
+
+/* The board name in the eyebrow links its product page. No rule of its own:
+   `.editorial-section p a` already gives it the site's prose-link treatment
+   (gold, tinted underline at rest, full gold on hover) in the eyebrow's own
+   mono type. */
 
 .partner-project {
   font-family: var(--font-display);
@@ -11098,7 +11481,7 @@ html.light .editorial-watermark {
 
 .kanban-card {
   border: 1px solid color-mix(in srgb, var(--color-border) 80%, transparent);
-  border-radius: var(--r-xs);
+  border-radius: var(--r-md);
   padding: 0.85rem 0.95rem;
   display: grid;
   gap: 0.55rem;
@@ -11162,7 +11545,7 @@ html.light .editorial-watermark {
   margin: 0;
   padding: 0.85rem 0.95rem;
   border: 1px dashed color-mix(in srgb, var(--color-border) 70%, transparent);
-  border-radius: var(--r-xs);
+  border-radius: var(--r-md);
   font-family: var(--font-mono);
   font-size: 10px;
   letter-spacing: 0.14em;
@@ -11261,7 +11644,7 @@ html.light .editorial-watermark {
   margin-top: 1.1rem;
   padding: 0.85rem 0.95rem;
   border: 1px solid color-mix(in srgb, var(--color-border) 70%, transparent);
-  border-radius: var(--r-xs);
+  border-radius: var(--r-md);
   font-family: var(--font-mono);
   font-size: 11px;
   letter-spacing: 0.06em;
@@ -11296,7 +11679,7 @@ html.light .editorial-watermark {
 .vote-empty {
   padding: 0.85rem 0.95rem;
   border: 1px dashed color-mix(in srgb, var(--color-border) 70%, transparent);
-  border-radius: var(--r-xs);
+  border-radius: var(--r-md);
 }
 
 /* Financial goals (/roadmap): one card per goal, meter + hand-set target.
@@ -11309,7 +11692,7 @@ html.light .editorial-watermark {
 
 .goal-card {
   border: 1px solid color-mix(in srgb, var(--color-border) 80%, transparent);
-  border-radius: var(--r-xs);
+  border-radius: var(--r-md);
   padding: 1rem 1.1rem;
   display: grid;
   gap: 0.55rem;
@@ -16392,6 +16775,17 @@ body:has(.buy-rail.is-pinned.is-mobile) .placeholder-banner {
   color: var(--color-text-dim);
   line-height: 1.55;
 }
+/* Board names in detail lines link their product pages; same gold-tinted
+   underline vocabulary as the receipt link in .tl-title a. */
+.tl-detail a {
+  color: inherit;
+  text-decoration: none;
+  border-bottom: 1px solid color-mix(in srgb, var(--color-gold) 45%, transparent);
+}
+.tl-detail a:hover {
+  color: var(--color-text);
+  border-bottom-color: var(--color-gold);
+}
 .tl-empty {
   font-family: var(--font-mono);
   color: var(--color-text-dim);
@@ -16504,7 +16898,9 @@ body:has(.buy-rail.is-pinned.is-mobile) .placeholder-banner {
   position: absolute;
   right: clamp(20px, 5vw, 96px);
   top: clamp(120px, 19vh, 210px);
-  max-width: min(34ch, 32vw);
+  /* Wider measure (2026-08-12, Stan): the copy owns this side of the stage,
+     let it breathe instead of wrapping tight at 34ch. */
+  max-width: min(46ch, 38vw);
   animation: hp-in 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 @keyframes hp-in {
@@ -16516,12 +16912,48 @@ body:has(.buy-rail.is-pinned.is-mobile) .placeholder-banner {
   line-height: 1.08;
   margin: 0 0 0.7rem;
   color: var(--color-text);
+  /* Product names read as one line, always (OpenFC-Lite-Mini must not
+     break); the widened panel above gives them the room. */
+  white-space: nowrap;
 }
 .hp-note {
   font-size: 0.95rem;
   line-height: 1.55;
   color: var(--color-text-muted);
   margin: 0;
+}
+/* Beginner explainer block under the spec note: what the part does, a mono
+   "connects to" line, and the product link. Same panel, same tokens; the
+   panel is absolutely positioned so none of this shifts layout. */
+.hp-explain {
+  font-size: 1rem;
+  line-height: 1.6;
+  color: var(--color-text-muted);
+  margin: 0.7rem 0 0;
+}
+.hp-connect {
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 0.72rem;
+  line-height: 1.5;
+  letter-spacing: 0.04em;
+  color: var(--color-text-dim);
+  margin: 0.7rem 0 0;
+}
+.hp-copy-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-top: 0.75rem;
+  font-size: 0.85rem;
+  color: var(--color-accent);
+  text-decoration: none;
+}
+.hp-copy-link:hover,
+.hp-copy-link:focus-visible {
+  text-decoration: underline;
+}
+.hp-copy-link svg {
+  flex: none;
 }
 .hp-hint {
   position: absolute;
@@ -16659,4 +17091,11 @@ body:has(.buy-rail.is-pinned.is-mobile) .placeholder-banner {
 @media (prefers-reduced-motion: reduce) {
   .hero-load-manifest { animation: none; }
   .hero-load-piece.is-active .hero-load-piece__mark { animation: none; }
+}
+
+/* The outline (and thus its label) is a desktop idiom. */
+@media (max-width: 879px) {
+  .chapter-scope-tag {
+    display: none;
+  }
 }

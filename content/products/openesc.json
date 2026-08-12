@@ -7,6 +7,17 @@
     "line3": "",
     "lead": "6 mosfets per motor, 2 for each phase. Driven by a gate driver, controlled by a microcontroller. Duplicate that 4 times et voila, 'An ESC'."
   },
+  "whatIsThis": {
+    "intro": "An ESC turns battery power into motion. A brushless motor is three coils, and spinning it means switching current through them in exactly the right sequence, at exactly the motor's own speed. This board does that four times over: per motor a microcontroller running AM32, a gate driver, and six MOSFETs doing the power switching, 40 A continuous each on the 20x20 board. It listens for throttle commands from the flight controller over DShot and reports motor RPM back on the same wire, which Betaflight uses to filter gyro noise at exactly the motors' frequencies. Current sensing is on board, so your OSD knows what you are burning.",
+    "needs": [
+      "A flight controller to command it (OpenFC Lite, one 8-pin cable, in the box)",
+      "Four brushless motors soldered to the pads",
+      "A LiPo on the XT pigtail, with the included low-ESR capacitor across the battery pads",
+      "A frame, props, receiver, radio; the usual rest of the drone"
+    ],
+    "fit": "The layer between the flight controller's digital requests and the raw battery current that actually spins the props.",
+    "chain": "esc"
+  },
   "firmware": {
     "project": "AM32",
     "projectUrl": "https://github.com/am32-firmware/AM32",

@@ -262,7 +262,7 @@
   "boardExclude": "(screw|hex nut|pressnut|press nut|washer|softmount|Standoff|20mmx4mm|Casing|^Arm$|^Cross$|^Base-|^Top$|DJI|VTX-Mount|Bumper|AirTag|Boot-|Admi|BM6B|^[0-9]+$)",
   "videoModule": "^(Top Casing|Bottom Casing|DJI|VTX-Mount|USB C|Body|Lens|BM6B)",
   "notFrame": "^(Admi|prop-pivot|[0-9]+$)",
-  "_beatNote": "select is one of: {board}, {names}, {cluster} one spatial cluster, {complement} everything not in another beat. choreo names a built-in behaviour.",
+  "_beatNote": "select is one of: {board}, {names}, {cluster} one spatial cluster, {complement} everything not in another beat. choreo names a built-in behaviour. caption is the beginner explainer under the note, hint is a one-line 'connects to', href links the beat to its product page; a stop that is active shows its own caption/hint/href, not the beat's. Copy baseline: drafts/beginner-narrative.md.",
   "beats": [
     {
       "id": "whole",
@@ -276,6 +276,9 @@
       "id": "fc",
       "title": "OpenFC-Lite-Mini",
       "note": "RP2354B flight controller",
+      "caption": "The brain. Reads the gyro 8,000 times a second, compares it to your sticks, and corrects every motor before you notice anything drifted.",
+      "hint": "Receiver in, ESC out: everything passes through it.",
+      "href": "/products/openfc-lite",
       "select": {
         "board": "OpenFC"
       }
@@ -284,6 +287,9 @@
       "id": "esc",
       "title": "OpenESC-20x20",
       "note": "4-in-1 AM32 ESC",
+      "caption": "Four motor drivers on one board. 24 MOSFETs switching battery current through the windings, thousands of times a second.",
+      "hint": "Between the flight controller's requests and a hundred amps of battery current.",
+      "href": "/products/openesc",
       "select": {
         "board": "4in1-mini"
       }
@@ -320,7 +326,10 @@
         {
           "at": 0,
           "title": "Airframe",
-          "note": "T700 carbon, standoffs, hardware, camera cage"
+          "note": "T700 carbon, standoffs, hardware, camera cage",
+          "caption": "Carbon plates and arms, the body everything else mounts to. Stiffness is not cosmetic: the gyro feels every bit of flex.",
+          "hint": "Holds the stack in the middle and a motor at each arm tip.",
+          "href": "/products/openframe"
         },
         {
           "at": 0.62,
@@ -338,7 +347,7 @@
     "lift": 0.24
   },
   "_saved": "2026-08-08, saved from the studio panel",
-  "_status": "WIRED BOTH WAYS. app/components/HeroDroneScene.tsx reads this file at runtime. public/models/od3/_studio.html loads it on open, including the beat timeline, so every control starts on the value the site renders, and its save button POSTs the whole file back through the dev-only /__studio/write endpoint. The panel edits beat titles, notes, fade, partSize and stops, but not the shape of the timeline: adding, deleting and reordering beats, and every `select` and `choreo`, are file edits. Also carried through untouched on save: name, model, boards, boardExclude, videoModule, notFrame, scroll.minDwellS, spotlight.beamGain (which the panel renderer has no equivalent for), and each material id, label and match.",
+  "_status": "WIRED BOTH WAYS. app/components/HeroDroneScene.tsx reads this file at runtime. public/models/od3/_studio.html loads it on open, including the beat timeline, so every control starts on the value the site renders, and its save button POSTs the whole file back through the dev-only /__studio/write endpoint. The panel edits beat titles, notes, captions, hints, hrefs, fade, partSize and stops (each stop with its own caption, hint and href, which replace the beat-level ones while the stop is active), but not the shape of the timeline: adding, deleting and reordering beats, and every `select` and `choreo`, are file edits. Also carried through untouched on save: name, model, boards, boardExclude, videoModule, notFrame, scroll.minDwellS, spotlight.beamGain (which the panel renderer has no equivalent for), and each material id, label and match.",
   "scroll": {
     "_note": "Weight comes from springHz: it is a critically damped spring, so a lower frequency reads as more mass.  commitAt how much of a stop-to-stop move a gesture must cover before it counts as intent to advance.",
     "springHz": 0.55,

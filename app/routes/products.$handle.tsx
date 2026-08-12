@@ -33,7 +33,6 @@ import type {FrameViewerProps} from '~/components/FrameViewer';
 import {SceneErrorBoundary} from '~/components/SceneErrorBoundary';
 import {ProvenanceCard} from '~/components/ProvenanceCard';
 import {BrandName} from '~/components/BrandName';
-import {CommitHistoryCard, LatestCommitCard} from '~/components/LatestCommit';
 import {AnimatedNumber} from '~/components/AnimatedNumber';
 import {WatchCard} from '~/components/WatchCard';
 import {redirectIfHandleIsLocalized} from '~/lib/redirect';
@@ -44,7 +43,7 @@ import {
   type ChapterType,
 } from '~/lib/chapters';
 import {buildSeoMeta, buildProductJsonLd, SITE_ORIGIN} from '~/lib/seo';
-import {fetchCommitActivity, fetchContributors, fetchLatestCommits} from '~/lib/github';
+import {fetchCommitActivity, fetchContributors} from '~/lib/github';
 import {ContributorGrid, ContributorGridSkeleton} from '~/components/Contributors';
 import {
   fetchProductReviews,
@@ -202,16 +201,15 @@ function loadDeferredData({context, params}: Route.LoaderArgs) {
   if (!handle) {
     return {
       recommendations: Promise.resolve(null),
-      latestCommits: Promise.resolve([]),
       commitActivity: Promise.resolve([]),
       contributors: Promise.resolve([]),
       reviews: Promise.resolve(null),
     };
   }
 
-  // Latest-commit fetch is best-effort: if GitHub rate-limits us or
-  // a repo moves, we render the PDP without the card rather than
-  // failing the page.
+  // Repo set for the contributors chapter's commit-activity strip. Only the
+  // primary repo per product: fetching every tier's repo too tripled the
+  // unauthenticated GitHub API calls per page and blew the 60/hr rate limit.
   const content = PRODUCT_CONTENT[handle];
   const repoUrls: string[] = [];
   if (content) {
@@ -221,20 +219,15 @@ function loadDeferredData({context, params}: Route.LoaderArgs) {
         if (sub?.repoUrl) repoUrls.push(sub.repoUrl);
       }
     } else if (content.repoUrl) {
-      // Only the primary repo — fetching every tier's repo too tripled the
-      // unauthenticated GitHub API calls per page and blew the 60/hr rate
-      // limit, so the live commit fell back to the static card. The card's
-      // resilient fallback still shows this commit for every tier.
       repoUrls.push(content.repoUrl);
     }
   }
   // Optional GITHUB_TOKEN lifts the API ceiling from 60 to 5000 calls an
   // hour; unset, both fetches degrade to their empty states.
   const ghToken = context.env.GITHUB_TOKEN;
-  const latestCommits = fetchLatestCommits(repoUrls, ghToken).catch(() => []);
 
-  // Commit-activity texture for the contributors chapter, same repo set and
-  // the same best-effort rules: an empty array just means no strip.
+  // Commit-activity texture for the contributors chapter, best-effort: an
+  // empty array just means no strip.
   const commitActivity = fetchCommitActivity(repoUrls, ghToken).catch(() => []);
 
   // Contributor grid: every repo in the line (tier repos included) so the
@@ -289,7 +282,7 @@ function loadDeferredData({context, params}: Route.LoaderArgs) {
   // metafield aggregate (or, with no aggregate, renders nothing at all).
   const reviews = fetchProductReviews(context.env, handle);
 
-  return {recommendations, latestCommits, commitActivity, contributors, reviews};
+  return {recommendations, commitActivity, contributors, reviews};
 }
 
 const DOWNLOAD_ICONS: Record<DownloadKind, string> = {
@@ -455,11 +448,21 @@ function Chapter({
   noMedia,
   textReveal,
   id,
+  wide,
+  repoScope,
 }: {
   number: string;
   label: string;
   /** Optional anchor id so in-page links (buy-area stars) can target it. */
   id?: string;
+  /** Full-width slot rendered below the body + media columns (the teardown's
+   *  schematic viewer). Plain flow on mobile, spans both tracks on desktop. */
+  wide?: React.ReactNode;
+  /** When set, the chapter draws the repo-scope outline around everything it
+   *  contains — the visual claim (together with the lead line from the
+   *  GitHub-repo card above) that the whole chapter is the contents of the
+   *  product's repo. */
+  repoScope?: boolean;
   /**
    * The designed title, as a copy id. Rendered straight into the `<h2>` so the
    * heading carries its own studio annotation and its inline `*emphasis*`
@@ -496,9 +499,18 @@ function Chapter({
       data-backdrop={backdrop ? '' : undefined}
       data-wide-media={wideMedia ? '' : undefined}
       data-no-media={noMedia ? '' : undefined}
+      data-repo-scope={repoScope ? '' : undefined}
       data-text-pending={textReveal === false ? '' : undefined}
     >
       {backdrop ? <div className="chapter-backdrop">{backdrop}</div> : null}
+      {repoScope ? (
+        <Txt
+          id="product-chrome.teardown_scope_tag"
+          as="span"
+          className="chapter-scope-tag"
+          aria-hidden="true"
+        />
+      ) : null}
       <div className="chapter-body-col">
         {title ? (
           <h2 className="chapter-title">{title}</h2>
@@ -518,6 +530,7 @@ function Chapter({
           )}
         </aside>
       )}
+      {wide ? <div className="chapter-wide">{wide}</div> : null}
     </section>
   );
 }
@@ -561,7 +574,6 @@ export default function Product() {
     bundleProducts,
     stackProducts,
     recommendations,
-    latestCommits,
     commitActivity,
     contributors,
     reviews,
@@ -569,6 +581,49 @@ export default function Product() {
     roadmapStatus,
   } = useLoaderData<typeof loader>();
   useChapterReveal(product.handle);
+
+  // Lead line: ties the GitHub-repo study card to the repo-scope outline in
+  // the chapter below it (Stan, 2026-08-12). Measured rather than pure CSS
+  // because the card's column shifts with which cards a product shows, and
+  // the card clips its own pseudo-elements (overflow: hidden). Written as
+  // CSS vars on the scope chapter; the ::before there draws the line.
+  // Re-measured on resize and once the scope scrolls into view (the reveal
+  // translate shifts boxes ~16px until chapters settle).
+  useEffect(() => {
+    const measure = () => {
+      const scope = document.querySelector<HTMLElement>(
+        '.chapter[data-repo-scope]',
+      );
+      const card = document.querySelector('.open-source-card--github');
+      if (!scope) return;
+      const s = scope.getBoundingClientRect();
+      const c = card?.getBoundingClientRect();
+      const x = c ? c.left + c.width / 2 - s.left : -1;
+      const h = c ? s.top - c.bottom : 0;
+      if (c && h > 8 && h < 400 && x > 0 && x < s.width) {
+        scope.style.setProperty('--repo-lead-x', `${Math.round(x)}px`);
+        scope.style.setProperty('--repo-lead-h', `${Math.round(h)}px`);
+      } else {
+        scope.style.removeProperty('--repo-lead-x');
+        scope.style.removeProperty('--repo-lead-h');
+      }
+    };
+    const t = setTimeout(measure, 900);
+    const scope = document.querySelector('.chapter[data-repo-scope]');
+    let io: IntersectionObserver | undefined;
+    if (scope && typeof IntersectionObserver !== 'undefined') {
+      io = new IntersectionObserver(([e]) => {
+        if (e.isIntersecting) setTimeout(measure, 700);
+      });
+      io.observe(scope);
+    }
+    window.addEventListener('resize', measure);
+    return () => {
+      clearTimeout(t);
+      io?.disconnect();
+      window.removeEventListener('resize', measure);
+    };
+  }, [product.handle]);
 
   // Funnel step 1: one `PDP View` per product per navigation, carrying the
   // product handle + first-touch channel props that aggregate pageviews
@@ -728,14 +783,6 @@ export default function Product() {
   // OSHWA certification follows the selected tier — each certified board has its
   // own UID, so the chip links to the directory page for the active variant.
   const activeOshwaUid = activeVariant?.oshwaUid ?? content.oshwaUid;
-  // Repo whose commit history backs the "Open for learning" row's 4th card —
-  // the bundle's first component repo, else the selected tier's repo. Used as
-  // the fallback link when the live latest-commit fetch is rate-limited.
-  const commitHistoryRepoUrl = content.bundle
-    ? content.bundle.components
-        .map((c) => PRODUCT_CONTENT[c.handle]?.repoUrl)
-        .find((url): url is string => Boolean(url))
-    : activeRepoUrl;
   const mergedSpecs = mergeSpecs(content.specs, activeVariant?.specs);
   const mergedBox = [...content.inTheBox, ...(activeVariant?.inTheBox ?? [])];
 
@@ -1556,6 +1603,10 @@ export default function Product() {
    */
   const present = (type: ChapterType, entry: ChapterEntry): boolean => {
     switch (type) {
+      // Only when the product's JSON carries the beginner copy: accessories
+      // and bundles have no `whatIsThis` block and skip the chapter cleanly.
+      case 'whatIsThis':
+        return Boolean(content.whatIsThis);
       // Accessories (fallback content) aren't open-hardware products — no
       // "Open for learning" chapter, and no chapter number burnt on it.
       case 'openSource':
@@ -1608,6 +1659,95 @@ export default function Product() {
       (n: string, title?: string, id?: string) => React.ReactNode
     >
   > = {
+    /**
+     * Beginner orientation. What the part IS in plain language, what else a
+     * first build needs before it flies, and where it sits in the whole
+     * drone. Per-product words live in `content/products/<handle>.json`
+     * (`whatIsThis`); the framing strings are product-chrome copy. noMedia:
+     * this chapter is a calm read, not a showpiece, and the placeholder
+     * glyph would out-shout the words.
+     */
+    whatIsThis: (n, title) => {
+      const wit = content.whatIsThis;
+      if (!wit) return null;
+      // The signal chain, in hero-scroll order. The product's own stage is
+      // lit; stages we sell link their product page, the rest are plain.
+      // This strip is the interface to the homepage story: same parts, same
+      // order, one screen instead of one scroll.
+      const chain: Array<{id: string; copy: string; to?: string}> = [
+        {id: 'radio', copy: 'what_chain_radio'},
+        {id: 'rx', copy: 'what_chain_receiver', to: '/products/openrx'},
+        {id: 'fc', copy: 'what_chain_fc', to: '/products/openfc-lite'},
+        {id: 'esc', copy: 'what_chain_esc', to: '/products/openesc'},
+        {id: 'motors', copy: 'what_chain_motors'},
+        {id: 'frame', copy: 'what_chain_frame', to: '/products/openframe'},
+      ];
+      return (
+        <Chapter
+          number={n}
+          label="What is this"
+          title={title}
+          titleId="product-chrome.ch_what_is_this_title"
+          noMedia={!content.video}
+          media={
+            content.video ? (
+              // The go-to source: the maintainer's own explainer video for
+              // this exact board type carries the depth; the chapter stays a
+              // quick orientation.
+              <WatchCard
+                videoId={content.video.id}
+                title={content.video.title}
+                channel={content.video.channel}
+              />
+            ) : undefined
+          }
+        >
+          <p className="chapter-body">{wit.intro}</p>
+          <div className="what-chain" aria-label={copyText('product-chrome.what_chain_aria')}>
+            {chain.map((c, i) => {
+              const active = wit.chain === c.id;
+              const chip =
+                c.to && !active ? (
+                  <Link
+                    key={c.id}
+                    prefetch="viewport"
+                    to={c.to}
+                    className="what-chain-chip"
+                  >
+                    <Txt id={`product-chrome.${c.copy}`} />
+                  </Link>
+                ) : (
+                  <span
+                    key={c.id}
+                    className={`what-chain-chip${active ? ' is-active' : ''}`}
+                  >
+                    <Txt id={`product-chrome.${c.copy}`} />
+                  </span>
+                );
+              return (
+                <span key={c.id} className="what-chain-step">
+                  {i > 0 ? (
+                    <span className="what-chain-arrow" aria-hidden="true">
+                      →
+                    </span>
+                  ) : null}
+                  {chip}
+                </span>
+              );
+            })}
+          </div>
+          {/* The "before this flies you also need" list moved out of the
+              chapter (Stan, 2026-08-12): that story belongs to a general
+              FPV intro page, planned. The data stays in whatIsThis.needs
+              for that page. */}
+          {/* The homepage hero walks the whole machine part by part; this is
+              the "zoom out" for the reader who wants the full picture. */}
+          <Link prefetch="viewport" to="/" className="what-home-link">
+            <Txt id="product-chrome.what_is_this_link_home" />
+          </Link>
+        </Chapter>
+      );
+    },
     /** What the board is published as: repos, license, latest commit. */
     openSource: (n, title) => (
       <Chapter
@@ -1615,21 +1755,12 @@ export default function Product() {
         label="Open for learning"
         title={title}
         titleId="product-chrome.ch_open_source_title"
+        // The schematic viewer moved into the teardown chapter (2026-08-12,
+        // Stan: both viewers live under one repo-scope outline). wideMedia
+        // keeps the 4-across card-row layout; noMedia stops the empty media
+        // slot from rendering the placeholder glyph.
         wideMedia={!!schematicHandle}
-        media={
-          schematicHandle ? (
-            // No key: keep the viewer mounted across tier switches so it swaps
-            // between warmed manifests + sheets instantly instead of remounting
-            // and refetching. `handles` lets it preload every tier up front.
-            <SchematicViewer
-              handle={schematicHandle}
-              handles={schematicHandles}
-              inspectUrl={
-                activeBoardArt?.schematicUrl ?? activeBoardArt?.inspectUrl
-              }
-            />
-          ) : undefined
-        }
+        noMedia={!!schematicHandle}
       >
         <div className="open-source-cards">
           {content.bundle ? (
@@ -1660,9 +1791,11 @@ export default function Product() {
             })
           ) : (
             <>
-              {/* Build-video bubble leads the row on products that have a film
-                  (FC, ESC); other products fall back to the issues card. */}
-              {content.video ? (
+              {/* Build-video bubble leads the row on products that have a
+                  film, UNLESS the What-does-this-do chapter above already
+                  plays it (no reason to sell the same video twice); those
+                  pages fall through to the issues card like film-less ones. */}
+              {content.video && !content.whatIsThis ? (
                 <WatchCard
                   videoId={content.video.id}
                   title={content.video.title}
@@ -1696,7 +1829,7 @@ export default function Product() {
                   className="open-source-card-sub"
                 />
               </a>
-              {content.video ? null : (
+              {content.video && !content.whatIsThis ? null : (
                 <a
                   href={`${activeRepoUrl}/issues`}
                   target="_blank"
@@ -1768,51 +1901,39 @@ export default function Product() {
               />
             </a>
           )}
-          {/* The latest commit rides in the same row as the resource cards —
-              streams in as a 4th card once the deferred GitHub fetch lands.
-              GitHub's unauthenticated API rate-limits the edge under load, so
-              when the fetch comes back empty we still render a 4th card: a
-              static link to the repo's commit history. The bubble is always
-              present, it just degrades from a live commit to a changelog link. */}
-          {commitHistoryRepoUrl ? (
-            <Suspense
-              fallback={<CommitHistoryCard repoUrl={commitHistoryRepoUrl} />}
-            >
-              <Await
-                resolve={latestCommits}
-                errorElement={
-                  <CommitHistoryCard repoUrl={commitHistoryRepoUrl} />
-                }
-              >
-                {(commits) => {
-                  // Bundles show one commit card per component repo; a single
-                  // product (incl. split-repo lines) prefers the selected tier's
-                  // repo so the card tracks the ladder. But the loader only
-                  // fetches the product-default repo (per-tier fetches blew the
-                  // 60/hr unauth rate limit), so on split-repo tiers no commit
-                  // matches activeRepoUrl — fall back to the fetched commit
-                  // rather than degrading to the static changelog card.
-                  const all = commits ?? [];
-                  const matched = all.filter(
-                    (c) => c.repoUrl === activeRepoUrl,
-                  );
-                  const shown = content.bundle
-                    ? all
-                    : matched.length
-                      ? matched
-                      : all;
-                  return shown.length ? (
-                    shown.map((c) => (
-                      <LatestCommitCard key={c.sha + c.repoUrl} commit={c} />
-                    ))
-                  ) : (
-                    <CommitHistoryCard repoUrl={commitHistoryRepoUrl} />
-                  );
-                }}
-              </Await>
-            </Suspense>
-          ) : null}
+          {/* The row's 4th card hands the reader to /contributing. It
+              replaced the changelog / latest-commit slot (2026-08-12): a
+              recruiting card beats a sha for the reader who got this far. */}
+          <Link
+            to="/contributing"
+            prefetch="viewport"
+            className="open-source-card open-source-card--help"
+          >
+            <Txt
+              id="product-chrome.os_card_help_label"
+              as="p"
+              className="open-source-card-label"
+            />
+            <Txt
+              id="product-chrome.os_card_help_title"
+              as="p"
+              className="open-source-card-title"
+            />
+            <Txt
+              id="product-chrome.os_card_help_sub"
+              as="p"
+              className="open-source-card-sub"
+            />
+          </Link>
         </div>
+        {/* One quiet mono link under the card row: the why behind the cards
+            lives once, on /open-source, same idiom as the firmware chapter's
+            "All firmware partners →". */}
+        <p className="open-source-story-link">
+          <Link prefetch="viewport" to="/open-source">
+            <Txt id="product-chrome.os_link_story" />
+          </Link>
+        </p>
       </Chapter>
     ),
     /** What it is made of: board art or exploded frame, plus the pin map. */
@@ -1827,6 +1948,27 @@ export default function Product() {
               : 'product-chrome.ch_teardown_title'
           }
           textReveal={frameViewer ? undefined : textIn}
+          // Board explorer + schematic viewer share one repo-scope outline,
+          // tied by the lead line to the GitHub-repo card above: the chapter
+          // IS the repo's contents. The frame (backdrop, no schematic) opts out.
+          repoScope={!frameViewer}
+          wide={
+            schematicHandle ? (
+              // No key: keep the viewer mounted across tier switches so it
+              // swaps between warmed manifests + sheets instantly instead of
+              // remounting and refetching. `handles` preloads every tier.
+              <SchematicViewer
+                handle={schematicHandle}
+                handles={schematicHandles}
+                inspectUrl={
+                  activeBoardArt?.schematicUrl ?? activeBoardArt?.inspectUrl
+                }
+                // The teardown's hovered part lights up on the schematic too;
+                // the viewer pages to the sheet that carries the symbol.
+                highlightRefs={hoveredRefs}
+              />
+            ) : undefined
+          }
           backdrop={
             frameViewer ? (
               // No key on src: keep the canvas mounted across tier switches so
@@ -2080,15 +2222,7 @@ export default function Product() {
               ))}
             </div>
           ) : null}
-          <ProvenanceCard
-            designNote={
-              // The frame is a CAD product — "schematic, PCB, BOM" is PCB
-              // wording that doesn't apply to carbon plates.
-              content.teardown?.frameViewer
-                ? copyText('product-chrome.provenance_design_note_cad')
-                : undefined
-            }
-          />
+          <ProvenanceCard />
         </Chapter>
     ),
     /** The files themselves. */
