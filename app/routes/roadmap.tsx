@@ -193,7 +193,9 @@ function GoalsSection() {
 }
 
 export default function RoadmapRoute({loaderData}: Route.ComponentProps) {
-  const columns = STATUS_ORDER.map((status) => ({
+  // Board reads top-to-bottom as the product's LIFE reads: planned first,
+  // launched last. Products flow DOWN the page through the gates.
+  const columns = [...STATUS_ORDER].reverse().map((status) => ({
     status,
     items: loaderData.roadmap.filter((r) => r.status === status),
   }));
@@ -218,6 +220,25 @@ export default function RoadmapRoute({loaderData}: Route.ComponentProps) {
         <div className="kanban">
           {columns.map((col) => (
             <Fragment key={col.status}>
+            {/* The gate INTO this stage sits above it: the curved arrow
+                descends into the row below and names what a design must
+                earn to pass. The first gate (above planned) is the door
+                onto the board itself. */}
+            <div className="kanban-gate">
+              <svg
+                className="kanban-gate-arrow"
+                viewBox="0 0 24 24"
+                aria-hidden="true"
+              >
+                <path d="M21 3 C11 3 7 8 7 17" fill="none" />
+                <path d="M3.5 14 L7 19 L10.5 14" fill="none" />
+              </svg>
+              <Txt
+                id={`roadmap.gate_${col.status}`}
+                as="span"
+                className="kanban-gate-label"
+              />
+            </div>
             <section className="kanban-row" data-status={col.status}>
               <p className="kanban-col-head" data-status={col.status}>
                 <span className="kanban-dot" />
@@ -297,26 +318,6 @@ export default function RoadmapRoute({loaderData}: Route.ComponentProps) {
               )}
               </div>
             </section>
-            {/* The gate INTO this stage: products climb the board upward,
-                and the curved arrow names what a design must earn to pass
-                into the row above. The last gate (under planned) is the
-                door onto the board itself. Costs a text line of height and
-                zero width. */}
-            <div className="kanban-gate">
-              <svg
-                className="kanban-gate-arrow"
-                viewBox="0 0 24 24"
-                aria-hidden="true"
-              >
-                <path d="M21 21 C11 21 7 16 7 7" fill="none" />
-                <path d="M3.5 10 L7 5 L10.5 10" fill="none" />
-              </svg>
-              <Txt
-                id={`roadmap.gate_${col.status}`}
-                as="span"
-                className="kanban-gate-label"
-              />
-            </div>
             </Fragment>
           ))}
         </div>

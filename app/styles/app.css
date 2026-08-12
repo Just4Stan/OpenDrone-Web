@@ -167,10 +167,11 @@
 
 @media (min-width: 768px) {
   :root {
-    /* Gutters grow with the viewport (4vw, capped at 5rem) instead of
-       sitting fixed at 2rem, so laptop and 16:9 widths get real breathing
-       room at the sides rather than a token 32px. */
-    --rail-gutter: clamp(2rem, 4vw, 5rem);
+    /* Gutters grow with the viewport instead of sitting fixed at 2rem,
+       so laptop and 16:9 widths get real breathing room at the sides.
+       5.5vw: ~60px at 1100, ~90px at 1600, capped at 7rem. Every surface
+       shares this one number; page-level margins are never set locally. */
+    --rail-gutter: clamp(2.5rem, 5.5vw, 7rem);
   }
 }
 
@@ -5751,13 +5752,6 @@ button.reset {
   }
 }
 
-/* Four abreast returns only where four cards get real room. */
-@media (min-width: 1500px) {
-  .chapter[data-wide-media] .open-source-cards {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-  }
-}
-
 /* Header for the schematic chapter: the title reads at the same width as every
  * other chapter title, the resource cards run as a full-width row beneath it,
  * and the full-width schematic drops below that. Squeezing the title into a
@@ -5770,11 +5764,10 @@ button.reset {
     grid-column: 1 / -1;
     max-width: none;
   }
-  /* Resource cards two-up by default: four abreast only exists where four
-   * cards genuinely get room (1500px+); below that the row read as a
-   * cramped strip and set the density tone for the whole page. */
+  /* Resource cards + the latest-commit card abreast, filling the row;
+   * a gold edge + lift on hover gives them a bit of life. */
   .chapter[data-wide-media] .open-source-cards {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: var(--sp-5);
   }
   /* Four cards and a dense schematic in one chapter: the densest block on the
@@ -11176,7 +11169,12 @@ html.light .editorial-watermark {
   margin-top: 0.75rem;
 }
 .kanban-row-cards > .kanban-card {
+  /* flex:none + min-width:0, or the card image's intrinsic min-content
+     wins over the width and the row refuses to wrap: eight alpha boards
+     then run off the right edge as one uncut line. */
+  flex: none;
   width: 10.5rem;
+  min-width: 0;
 }
 
 /* The board band: the roadmap's kanban lives OUTSIDE the editorial shell,
