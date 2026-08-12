@@ -10148,6 +10148,19 @@ html.light .firmware-logo--tile {
   margin: 0 0 1.25rem;
 }
 
+/* Keep the head on ONE line where the viewport allows (Stan, 2026-08-12,
+   all six public-infrastructure pages): the title alone may run past the
+   640px reading column into the shell's empty right margin. The cap is
+   the distance from the centred column's left edge to the viewport gutter,
+   so it can never cause horizontal scroll; below 1100px the head wraps in
+   the column as before. */
+@media (min-width: 1100px) {
+  .editorial-title {
+    width: max-content;
+    max-width: calc(50vw + 320px - var(--rail-gutter));
+  }
+}
+
 .editorial-title em {
   font-style: normal;
   color: inherit;
