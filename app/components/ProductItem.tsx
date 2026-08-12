@@ -9,7 +9,7 @@ import type {
   CollectionItemFragment,
 } from 'storefrontapi.generated';
 import {useVariantUrl} from '~/lib/variants';
-import {useProductStatus} from '~/lib/coming-soon';
+import {useProductStatus, useRoadmapStatus} from '~/lib/coming-soon';
 import {AddToCartButton} from './AddToCartButton';
 import {StackQuickAdd, type StackOffer} from './StackQuickAdd';
 import {useAside} from './Aside';
@@ -110,6 +110,7 @@ export function ProductItem({
   // card stays clickable — the PDP hosts the notify-at-launch signup — but
   // shows no price and no quick-add.
   const status = useProductStatus(product.handle);
+  const roadmapStatus = useRoadmapStatus(product.handle);
   const launchPending = status !== 'live';
   const showPrice = !launchPending;
 
@@ -137,7 +138,20 @@ export function ProductItem({
       </div>
     ) : null;
 
-  const badge = comingSoon || launchPending ? (
+  // Roadmap products carry their status word on the card, same vocabulary
+  // and dot as the kanban and the PDP chip. A span, not a link: the whole
+  // card is already an anchor, and nested anchors are invalid — the
+  // "what the labels mean" link lives once per listing, in the grid header.
+  const badge = roadmapStatus ? (
+    <span
+      className="product-card-status"
+      data-status={roadmapStatus}
+      title={copyText(`roadmap.status_${roadmapStatus}_legend`)}
+    >
+      <span className="kanban-dot" aria-hidden="true" />
+      {copyText(`roadmap.status_${roadmapStatus}_label`)}
+    </span>
+  ) : comingSoon || launchPending ? (
     <span className="product-card-badge is-soon">
       {copyText(
         status === 'idea'

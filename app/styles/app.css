@@ -4264,6 +4264,43 @@ button.reset {
   }
 }
 
+/* Roadmap status chip on a product card: same vocabulary and dot colors as
+   the kanban and the PDP chip (the [data-status] rules), quiet pill on the
+   card corner. Not a link — the card is one; the listing header links the
+   legend once. */
+.product-card-status {
+  position: absolute;
+  top: 0.6rem;
+  right: 0.6rem;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45em;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 0.25rem 0.6rem;
+  border-radius: 999px;
+  color: var(--color-text-muted);
+  border: 1px solid color-mix(in srgb, var(--color-border) 85%, transparent);
+  background: var(--pod-bg-strong);
+}
+
+/* The one legend link per listing. */
+.collection-status-link {
+  display: inline-block;
+  margin-top: 0.6rem;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  color: var(--color-gold);
+}
+.collection-status-link:hover {
+  color: var(--color-accent);
+}
+
 /* Corner badge on a product card (New / Sale). */
 .product-card-badge {
   position: absolute;

@@ -29,5 +29,6 @@
   "empty_filters_cta": "Show all",
   "empty_catalog_title": "Catalog is being stocked",
   "empty_catalog_body": "Products are not yet listed. Follow along on GitHub for hardware progress.",
-  "empty_catalog_secondary": "GitHub"
+  "empty_catalog_secondary": "GitHub",
+  "status_legend_link": "What the status labels mean →"
 }

@@ -7,7 +7,10 @@ import {
   PRODUCT_CONTENT,
   type ProductStatus,
 } from '~/lib/product-content';
-import type {ProductStatus as RoadmapStatus} from '~/lib/roadmap-data';
+import {
+  statusForHandle,
+  type ProductStatus as RoadmapStatus,
+} from '~/lib/roadmap-data';
 
 /**
  * Every product handle's resolved tri-state, for the root loader: the
@@ -23,6 +26,35 @@ export function resolveAllStatuses(
     out[handle] = resolveStatus(handle, globalFlag, flags);
   }
   return out;
+}
+
+/**
+ * The five-stage roadmap word per handle (beta, alpha, ...), for the
+ * status chips on cards and PDPs — display vocabulary, not the buyability
+ * tri-state. Only roadmap handles appear in the map.
+ */
+export function roadmapStatusMap(
+  flags: Record<string, RoadmapStatus> = {},
+): Record<string, RoadmapStatus> {
+  const out: Record<string, RoadmapStatus> = {};
+  for (const handle of Object.keys(PRODUCT_CONTENT)) {
+    const s = statusForHandle(handle, flags);
+    if (s) out[handle] = s;
+  }
+  return out;
+}
+
+/**
+ * The roadmap word for one handle, from the root loader's live-resolved
+ * map; static fallback when root data is unavailable. Undefined for
+ * products off the roadmap (accessories).
+ */
+export function useRoadmapStatus(
+  handle?: string | null,
+): RoadmapStatus | undefined {
+  const data = useRouteLoaderData<RootLoader>('root');
+  if (!handle) return undefined;
+  return data?.roadmapStatuses?.[handle] ?? statusForHandle(handle);
 }
 
 /**

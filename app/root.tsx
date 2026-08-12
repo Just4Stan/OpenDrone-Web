@@ -15,7 +15,7 @@ import {
 import type {Route} from './+types/root';
 import favicon from '~/assets/favicon.svg';
 import {HEADER_QUERY, HEADER_PRODUCTS_QUERY} from '~/lib/fragments';
-import {resolveAllStatuses} from '~/lib/coming-soon';
+import {resolveAllStatuses, roadmapStatusMap} from '~/lib/coming-soon';
 import {fetchStatusFlagsFast} from '~/lib/roadmap-data';
 import {CUSTOMER_NEWSLETTER_STATE_QUERY} from '~/graphql/customer-account/NewsletterStateQuery';
 import resetStyles from '~/styles/reset.css?url';
@@ -172,6 +172,9 @@ export async function loader(args: Route.LoaderArgs) {
     // Per-handle tri-state resolved with the live topic flags; the
     // useProductStatus/useComingSoon hooks read this map first.
     productStatuses: resolveAllStatuses(globalComingSoon, statusFlags),
+    // The five-stage roadmap word per handle, for status chips on cards
+    // and listings (display vocabulary; buyability is the map above).
+    roadmapStatuses: roadmapStatusMap(statusFlags),
     turnstileSiteKey: env.TURNSTILE_SITE_KEY ?? null,
     shop: getShopAnalytics({
       storefront,
