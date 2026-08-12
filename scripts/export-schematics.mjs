@@ -255,6 +255,28 @@ function buildSchematic(schPath, handle) {
       slug, label, file, w: +w.toFixed(2), h: +h.toFixed(2),
     }));
     writeFileSync(join(outDir, 'manifest.json'), JSON.stringify({handle, sheets}, null, 2));
+    // Whole-symbol bounding boxes per sheet (schematic-components.py), for the
+    // PDP hover highlight. Same coordinate space as the sheet SVGs; filtered to
+    // the sheets the manifest actually ships.
+    try {
+      const raw = execFileSync('python3', [join(here, 'schematic-components.py'), schPath], {
+        maxBuffer: 64 * 1024 * 1024,
+      });
+      const all = JSON.parse(raw.toString());
+      const kept = {};
+      for (const s of sheets) {
+        if (!all.sheets[s.slug]) continue;
+        // Each sheet's cropped viewBox rides along so the viewer can draw the
+        // boxes into the exact SVG coordinate window without fetching the SVG.
+        const vb = /viewBox="([^"]+)"/.exec(
+          descs.find((d) => d.slug === s.slug)?.svg ?? '',
+        )?.[1];
+        kept[s.slug] = {viewBox: vb, ...all.sheets[s.slug]};
+      }
+      writeFileSync(join(outDir, 'components.json'), JSON.stringify({handle, sheets: kept}));
+    } catch (e) {
+      console.warn(`  - ${handle}: schematic components skipped (${e.message})`);
+    }
     const kb = descs.reduce((n, d) => n + Buffer.byteLength(d.svg), 0) / 1024;
     console.log(
       `Wrote ${outDir} — ${sheets.length} sheets (${(kb / 1024).toFixed(2)} MB): ${sheets.map((s) => s.label).join(', ')}`,
@@ -280,7 +302,7 @@ function writeVersionFile() {
     const dir = join(base, handle);
     if (!statSync(dir).isDirectory()) continue;
     for (const f of readdirSync(dir).sort()) {
-      if (f.endsWith('.svg') || f === 'manifest.json') files.push(join(dir, f));
+      if (f.endsWith('.svg') || f.endsWith('.json')) files.push(join(dir, f));
     }
   }
   for (const f of files) h.update(readFileSync(f));

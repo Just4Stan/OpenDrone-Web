@@ -1,5 +1,10 @@
 import {useEffect, useMemo, useRef, useState} from 'react';
-import {fetchJsonCached, peekJson, prefetchImage} from '~/lib/asset-prefetch';
+import {
+  fetchJsonCached,
+  fetchTextCached,
+  peekJson,
+  prefetchImage,
+} from '~/lib/asset-prefetch';
 import {SCHEMATICS_VERSION} from '~/data/schematics-version';
 import {useIsMobile} from '~/lib/use-media-query';
 import {useLayerSwipe} from '~/lib/use-layer-swipe';
@@ -14,6 +19,10 @@ export type SchematicViewerProps = {
   handles?: string[];
   /** Optional deep-dive link (e.g. KiCanvas hosted schematic). */
   inspectUrl?: string;
+  /** Reference designators to spotlight (the teardown's hovered component).
+   *  Matching symbols get a gold box; if none sit on the active sheet, the
+   *  viewer pages to the first sheet that has one. */
+  highlightRefs?: string[];
 };
 
 type Sheet = {
@@ -33,6 +42,65 @@ const manifestUrl = (h: string) =>
 const sheetUrl = (h: string, file: string) =>
   `/schematics/${h}/${file}?v=${SCHEMATICS_VERSION}`;
 
+type TextBox = {x: number; y: number; w: number; h: number};
+type SheetIndex = {viewBox: string; texts: Map<string, TextBox[]>};
+type ComponentsFile = {
+  sheets?: Record<
+    string,
+    {viewBox?: string; components?: Record<string, number[][]>}
+  >;
+};
+const componentsUrl = (h: string) =>
+  `/schematics/${h}/components.json?v=${SCHEMATICS_VERSION}`;
+
+/**
+ * Per-sheet index of every text label in the exported SVG. kicad-cli draws
+ * visible text as strokes but ALSO emits an invisible real `<text>` per label
+ * (opacity 0) carrying exact x/y/textLength/font-size in viewBox units — so a
+ * refdes can be located precisely with a regex, no DOM mounting or getBBox.
+ * Keyed by sheet URL; the SVG text ride the same fetchTextCached cache the
+ * rest of the asset pipeline uses.
+ */
+const sheetIndexCache = new Map<string, Promise<SheetIndex>>();
+function sheetIndex(url: string): Promise<SheetIndex> {
+  let hit = sheetIndexCache.get(url);
+  if (!hit) {
+    hit = fetchTextCached(url).then((svg) => {
+      const viewBox = /viewBox="([^"]+)"/.exec(svg)?.[1] ?? '';
+      const texts = new Map<string, TextBox[]>();
+      const re =
+        /<text ([^>]*)>([^<]*)<\/text>/g;
+      const attr = (s: string, name: string) => {
+        const m = new RegExp(`${name}="([-\\d.]+)"`).exec(s);
+        return m ? parseFloat(m[1]) : undefined;
+      };
+      for (const m of svg.matchAll(re)) {
+        const label = m[2].trim();
+        if (!label) continue;
+        const x = attr(m[1], 'x');
+        const y = attr(m[1], 'y');
+        const fs = attr(m[1], 'font-size') ?? 1.7;
+        if (x == null || y == null) continue;
+        const w = attr(m[1], 'textLength') ?? label.length * fs * 0.62;
+        const anchorMiddle = m[1].includes('text-anchor="middle"');
+        const box: TextBox = {
+          x: anchorMiddle ? x - w / 2 : x,
+          // y is the baseline; the glyph box sits one font-size above it.
+          y: y - fs,
+          w,
+          h: fs * 1.25,
+        };
+        const list = texts.get(label);
+        if (list) list.push(box);
+        else texts.set(label, [box]);
+      }
+      return {viewBox, texts};
+    });
+    sheetIndexCache.set(url, hit);
+  }
+  return hit;
+}
+
 /**
  * Paged viewer for a multi-sheet KiCad schematic — the schematic analogue of
  * {@link BoardArt}. Reads /schematics/<handle>/manifest.json (written by
@@ -49,6 +117,7 @@ export function SchematicViewer({
   handle,
   handles,
   inspectUrl,
+  highlightRefs,
 }: SchematicViewerProps) {
   const ref = useRef<HTMLDivElement | null>(null);
   // The board currently on screen (handle + its sheets). Seed from cache so a
@@ -242,6 +311,74 @@ export function SchematicViewer({
       Math.min((sheets?.length ?? 1) - 1, Math.max(0, i + delta)),
     );
 
+  // Component spotlight: boxes for the hovered refs on the active sheet. If
+  // the active sheet has none but another sheet does, page there (debounced,
+  // so a cursor walking the teardown's part list doesn't thrash the pager).
+  const [hl, setHl] = useState<{
+    key: string;
+    viewBox: string;
+    boxes: TextBox[];
+  } | null>(null);
+  useEffect(() => {
+    const refs = highlightRefs ?? [];
+    if (!refs.length || !sheets?.length) {
+      setHl(null);
+      return;
+    }
+    let alive = true;
+    let jump: ReturnType<typeof setTimeout> | undefined;
+    // Whole-symbol boxes (components.json, written at export time) first;
+    // the invisible-text index of the sheet SVG is the fallback for anything
+    // the extractor missed. Both are in the sheet's viewBox coordinates.
+    const boxesOn = async (i: number) => {
+      const slug = sheets[i].slug;
+      const comp = await fetchJsonCached<ComponentsFile>(
+        componentsUrl(dh),
+      ).catch(() => null);
+      const sheet = comp?.sheets?.[slug];
+      if (sheet?.components && sheet.viewBox) {
+        const boxes = refs.flatMap((r) =>
+          (sheet.components?.[r] ?? []).map(([x, y, w, h]) => ({x, y, w, h})),
+        );
+        if (boxes.length) return {viewBox: sheet.viewBox, boxes};
+      }
+      const idx = await sheetIndex(sheetUrl(dh, sheets[i].file));
+      return {
+        viewBox: sheet?.viewBox ?? idx.viewBox,
+        boxes: refs.flatMap((r) => idx.texts.get(r) ?? []),
+      };
+    };
+    void (async () => {
+      try {
+        const {viewBox, boxes} = await boxesOn(active);
+        if (!alive) return;
+        if (boxes.length) {
+          setHl({key: `${dh}:${sheets[active].slug}`, viewBox, boxes});
+          return;
+        }
+        setHl(null);
+        // Not on this sheet: find the first sheet that has it, then page over.
+        for (let i = 0; i < sheets.length; i++) {
+          if (i === active) continue;
+          const other = await boxesOn(i);
+          if (!alive) return;
+          if (other.boxes.length) {
+            jump = setTimeout(() => {
+              if (alive) setActive(i);
+            }, 220);
+            return;
+          }
+        }
+      } catch {
+        if (alive) setHl(null);
+      }
+    })();
+    return () => {
+      alive = false;
+      if (jump) clearTimeout(jump);
+    };
+  }, [highlightRefs, sheets, active, dh]);
+
   // Touch: drag the sheet ←/→ to page through the schematic — the same peel as
   // the board explorer (active sheet slides out under the finger, the next/prev
   // chases in behind it). Vertical is left to the page; only horizontal is
@@ -363,6 +500,28 @@ export function SchematicViewer({
                   />
                 );
               })}
+              {/* Component spotlight: gold boxes over the hovered refs, drawn
+                  in the sheet's own viewBox space so they track any scaling.
+                  Keyed to the active sheet — never painted over the wrong one. */}
+              {hl && current && hl.key === `${dh}:${current.slug}` ? (
+                <svg
+                  className="schematic-hl"
+                  viewBox={hl.viewBox}
+                  preserveAspectRatio="xMidYMid meet"
+                  aria-hidden="true"
+                >
+                  {hl.boxes.map((b, i) => (
+                    <rect
+                      key={i}
+                      x={b.x - 1.6}
+                      y={b.y - 1.6}
+                      width={b.w + 3.2}
+                      height={b.h + 3.2}
+                      rx={0.9}
+                    />
+                  ))}
+                </svg>
+              ) : null}
               {/* The diagonal line that flies across to swap the boards. */}
               {outgoing ? (
                 <span className="schematic-swap-line" aria-hidden="true" />

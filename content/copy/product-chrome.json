@@ -53,6 +53,7 @@
   "teardown_side_bottom_aria": "Bottom-side components",
   "teardown_io_tag": "I/O",
   "teardown_inspect_cta": "Inspect interactively ↗",
+  "teardown_scope_tag": "Visualisation of the KiCad designs",
   "in_the_box_bundle_body": "The bundle is just OpenFC-Lite and OpenESC shipped together. No combined SKU, no tied hardware: each board is the same one you can buy on its own. What you save is courier-and-handling.",
   "bundle_component_firmware_label": "Firmware ·",
   "bundle_component_more": "View the board →",

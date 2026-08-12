@@ -5794,8 +5794,36 @@ button.reset {
       color-mix(in srgb, var(--color-gold) 30%, transparent)
     );
   }
+  /* The GitHub-repo study card wears the same gold outline as the scope it
+     leads into: card, line and chapter read as one repo statement. Guarded
+     on the outline existing (the frame page has none). */
+  .product-page:has(.chapter[data-repo-scope]) .open-source-card--github {
+    border: 2px solid color-mix(in srgb, var(--color-gold) 30%, transparent);
+  }
+  /* Label riding the outline's top border, left side: names what the gold
+     scope IS (a live view of the KiCad designs from the repo). */
+  .chapter-scope-tag {
+    position: absolute;
+    top: 0;
+    left: var(--sp-6);
+    translate: 0 -50%;
+    padding: 0.35rem 0.9rem;
+    background: var(--color-bg);
+    border: 1px solid color-mix(in srgb, var(--color-gold) 40%, transparent);
+    border-radius: var(--r-pill);
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--color-gold);
+  }
   .chapter-wide {
     grid-column: 1 / -1;
+  }
+  /* Pull the schematic up toward the board so the scope reads as one
+     screenful rather than two stacked blocks. */
+  .chapter[data-repo-scope] .chapter-wide {
+    margin-top: calc(-1 * var(--sp-5));
   }
 }
 
@@ -6603,6 +6631,10 @@ html.light .firmware-logo--tile {
 .schematic-viewer {
   width: 100%;
   margin-left: 0;
+  /* The lazy-load gate IntersectionObserves this box with a 0.01 threshold,
+     which NEVER fires on a zero-area target — and before the manifest loads
+     the viewer is empty. The floor gives the observer something to hit. */
+  min-height: 160px;
 }
 /* Rail + sheet sit side by side, mirroring the board folder: the rail takes a
    fixed column on the left, the sheet fills the rest, centred vertically. */
@@ -6618,7 +6650,16 @@ html.light .firmware-logo--tile {
   position: relative;
   flex: 1 1 auto;
   min-width: 0;
-  height: min(72vh, 700px);
+  /* Short enough that pins + board + schematic read as one screenful
+     (72vh/700px pushed the schematic below the fold; Stan, 2026-08-12). */
+  height: min(58vh, 560px);
+}
+/* The sheet rail rides the schematic's RIGHT edge on desktop, mirroring the
+   layer rail sitting left of the board above it. Mobile keeps the top bar. */
+@media (min-width: 1025px) {
+  .schematic-rail {
+    order: 2;
+  }
 }
 .schematic-sheet {
   position: absolute;
@@ -6639,6 +6680,32 @@ html.light .firmware-logo--tile {
    opaque. Desktop pages by crossfading active↔active. */
 .schematic-sheet.is-active.is-loaded {
   opacity: 1;
+}
+/* Component spotlight: gold boxes over the hovered teardown part. The svg
+   shares the sheet's viewBox and letterboxes exactly like the imgs
+   (object-fit: contain ≡ xMidYMid meet), so boxes land on the symbols at
+   any size. Boxes come from the invisible <text> metadata in the export. */
+.schematic-hl {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+.schematic-hl rect {
+  fill: color-mix(in srgb, var(--color-gold) 20%, transparent);
+  stroke: var(--color-gold);
+  stroke-width: 2px;
+  vector-effect: non-scaling-stroke;
+  animation: schematic-hl-in 0.16s ease both;
+}
+@keyframes schematic-hl-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 /* Scroll-back reveal: when a SKU was switched while the schematic was off-screen
    (the wipe was skipped), fade the new active sheet in once it comes into view —
@@ -16851,4 +16918,11 @@ body:has(.buy-rail.is-pinned.is-mobile) .placeholder-banner {
 @media (prefers-reduced-motion: reduce) {
   .hero-load-manifest { animation: none; }
   .hero-load-piece.is-active .hero-load-piece__mark { animation: none; }
+}
+
+/* The outline (and thus its label) is a desktop idiom. */
+@media (max-width: 879px) {
+  .chapter-scope-tag {
+    display: none;
+  }
 }

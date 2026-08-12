@@ -510,6 +510,14 @@ function Chapter({
       data-text-pending={textReveal === false ? '' : undefined}
     >
       {backdrop ? <div className="chapter-backdrop">{backdrop}</div> : null}
+      {repoScope ? (
+        <Txt
+          id="product-chrome.teardown_scope_tag"
+          as="span"
+          className="chapter-scope-tag"
+          aria-hidden="true"
+        />
+      ) : null}
       <div className="chapter-body-col">
         {title ? (
           <h2 className="chapter-title">{title}</h2>
@@ -1888,6 +1896,9 @@ export default function Product() {
                 inspectUrl={
                   activeBoardArt?.schematicUrl ?? activeBoardArt?.inspectUrl
                 }
+                // The teardown's hovered part lights up on the schematic too;
+                // the viewer pages to the sheet that carries the symbol.
+                highlightRefs={hoveredRefs}
               />
             ) : undefined
           }
