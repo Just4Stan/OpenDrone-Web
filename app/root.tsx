@@ -307,6 +307,21 @@ export function Layout({children}: {children?: React.ReactNode}) {
           suppressHydrationWarning
           dangerouslySetInnerHTML={{__html: THEME_INIT_SCRIPT}}
         />
+        {/* Pre-paint blanket for the reading cascade: injected BY script,
+            so its very existence is the js-gate — a no-JS reader never gets
+            it and sees the whole page. Hides everything below the first
+            chapter from the first frame (no flash of content that then
+            vanishes and re-reveals); EditorialShell lifts it by adding
+            .cascade-armed the moment the per-element reveal system is
+            armed. Inline in head so it runs before first paint; hydration
+            wiped class/attribute markers off <html>, which is why this is
+            a style node and not a selector gate. */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html:
+              "var s=document.createElement('style');s.textContent='@media (prefers-reduced-motion: no-preference){.editorial-shell:not(.cascade-armed) .editorial-section:not(:first-of-type)>*,.editorial-shell:not(.cascade-armed) .editorial-cta>*{visibility:hidden}}';document.head.appendChild(s)",
+          }}
+        />
         {/* Pause all CSS animations while the window is unfocused or the tab is
             hidden — the ambient infinite animations (wordmark sheen, banner
             ping, etc.) otherwise keep the GPU compositing every frame even when

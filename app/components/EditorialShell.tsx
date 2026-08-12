@@ -1,5 +1,12 @@
 import type {ReactNode} from 'react';
-import {useEffect, useRef} from 'react';
+import {useEffect, useLayoutEffect, useRef} from 'react';
+
+// Arm the cascade BEFORE the browser paints the post-hydration frame:
+// hydration strips the pre-paint blanket style, and a plain useEffect
+// would leave one visible frame between that and the arming. On the
+// server (no layout), fall back so React doesn't warn.
+const useBeforePaint =
+  typeof window !== 'undefined' ? useLayoutEffect : useEffect;
 import {Link} from 'react-router';
 import {BrandWatermark} from '~/components/BrandWatermark';
 import {EDITORIAL_SERIES, nextInSeries} from '~/lib/editorial-index';
@@ -50,7 +57,7 @@ export function EditorialShell({
   // stroke draw on the same cue, so drawing and reading share a clock.
   // Armed entirely at runtime: without JS everything is simply visible, and
   // reduced-motion readers never enter the system at all.
-  useEffect(() => {
+  useBeforePaint(() => {
     const root = shellRef.current;
     if (!root) return;
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
@@ -65,6 +72,7 @@ export function EditorialShell({
       root
         .querySelectorAll('.reveal-item')
         .forEach((el) => el.classList.add('is-revealed', 'is-drawn'));
+      root.classList.add('cascade-armed');
       return;
     }
     const items = Array.from(
@@ -108,6 +116,10 @@ export function EditorialShell({
       ).push(el);
     }
     for (const el of items) el.classList.add('reveal-item');
+    // The per-element opacity system has the page now; lift the pre-paint
+    // CSS blanket that hid the below-first-chapter content (see the
+    // html.js rules in app.css) in the same frame.
+    root.classList.add('cascade-armed');
     for (const el of immediate) io.observe(el);
     const armLater = () => {
       for (const el of later) io.observe(el);
@@ -120,6 +132,7 @@ export function EditorialShell({
       // next run decides to skip (seen page), stale .reveal-item classes
       // would keep them at opacity 0 forever.
       for (const el of items) el.classList.remove('reveal-item');
+      root.classList.remove('cascade-armed');
     };
   }, [slug]);
 
