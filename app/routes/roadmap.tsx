@@ -1,4 +1,5 @@
 import type {Route} from './+types/roadmap';
+import {Fragment} from 'react';
 import {Link} from 'react-router';
 import {buildSeoMeta} from '~/lib/seo';
 import {EditorialShell} from '~/components/EditorialShell';
@@ -198,14 +199,26 @@ export default function RoadmapRoute({loaderData}: Route.ComponentProps) {
   }));
 
   return (
-    <EditorialShell slug="roadmap">
+    <>
+      {/* The board is a full-width band ABOVE the editorial shell: inside
+          the prose measure it could never show all five stages at once and
+          clipped with an invisible scrollbar on 16:9 screens. Out here it
+          gets the full shared rail (up to 1440px) and the whole pipeline
+          fits on a desktop viewport. */}
+      <div className="kanban-band">
+      <header className="editorial-hero kanban-hero">
+        <Txt id="roadmap.eyebrow" as="p" className="editorial-eyebrow" />
+        <Txt id="roadmap.title" as="h1" className="editorial-title" />
+      </header>
+
       <section className="editorial-section kanban-lead">
-        {/* The board leads visually with no prose, but screen readers and
-            heading audits still get a section name above the card h3s. */}
+        {/* The h1 above names the page; this names the board for screen
+            readers and heading audits without adding visible prose. */}
         <Txt id="roadmap.s2_title" as="h2" className="sr-only" />
         <div className="kanban">
           {columns.map((col) => (
-            <div className="kanban-col" key={col.status}>
+            <Fragment key={col.status}>
+            <div className="kanban-col">
               <p className="kanban-col-head" data-status={col.status}>
                 <span className="kanban-dot" />
                 <Txt id={`roadmap.status_${col.status}_label`} />
@@ -282,15 +295,35 @@ export default function RoadmapRoute({loaderData}: Route.ComponentProps) {
                 })
               )}
             </div>
+            {/* The gate INTO this column: products move right to left, and
+                the arrow names what a design must earn to pass. The last
+                gate (after planned) is the door onto the board itself. */}
+            <div className="kanban-gate">
+              <svg
+                className="kanban-gate-arrow"
+                viewBox="0 0 64 10"
+                preserveAspectRatio="none"
+                aria-hidden="true"
+              >
+                <line x1="64" y1="5" x2="5" y2="5" />
+                <path d="M11 1.5 L4 5 L11 8.5" fill="none" />
+              </svg>
+              <Txt
+                id={`roadmap.gate_${col.status}`}
+                as="span"
+                className="kanban-gate-label"
+              />
+            </div>
+            </Fragment>
           ))}
         </div>
       </section>
+      </div>
 
-      <header className="editorial-hero">
-        <Txt id="roadmap.eyebrow" as="p" className="editorial-eyebrow" />
-        <Txt id="roadmap.title" as="h1" className="editorial-title" />
+    <EditorialShell slug="roadmap">
+      <section className="editorial-section">
         <Txt id="roadmap.lead" as="p" className="editorial-lead" />
-      </header>
+      </section>
 
       <section className="editorial-section">
         <Txt id="roadmap.s3_title" as="h2" className="editorial-section-title" />
@@ -337,5 +370,6 @@ export default function RoadmapRoute({loaderData}: Route.ComponentProps) {
         </a>
       </section>
     </EditorialShell>
+    </>
   );
 }

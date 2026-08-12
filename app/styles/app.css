@@ -10337,31 +10337,39 @@ html.light .editorial-watermark {
   order: 2;
 }
 
-@media (min-width: 1120px) {
+@media (min-width: 980px) {
   .editorial-shell {
-    grid-template-columns: minmax(0, 640px) minmax(0, 19rem);
+    grid-template-columns: 13rem minmax(0, 640px);
     align-items: start;
   }
 
-  /* Same tracks as the aside layout, with the aside track left empty:
-     the shell must not re-center when a page has no aside, or the rail and
-     the prose visibly jump sideways on every page switch. */
+  /* Same tracks with the aside stacking under the prose: the shell must
+     not re-center when a page has no aside, or the rail and the prose
+     visibly jump sideways on every page switch. */
   .editorial-shell.is-narrow {
-    grid-template-columns: minmax(0, 640px) minmax(0, 19rem);
+    grid-template-columns: 13rem minmax(0, 640px);
+  }
+
+  /* The rail is the page's wayfinding: it holds the left column from
+     tablet width up instead of falling to the bottom of the page (where
+     it read as a bug, not as navigation). The aside stacks under the
+     prose in this band and returns beside it only when the third column
+     genuinely fits (1360px). */
+  .series-rail {
+    grid-column: 1;
+    order: -1;
+    position: sticky;
+    top: calc(var(--header-height) + 1.5rem);
+    margin-top: 4rem;
+    align-self: start;
+  }
+
+  .editorial-page {
+    grid-column: 2;
   }
 
   .editorial-aside {
-    position: sticky;
-    top: calc(var(--header-height) + 1.5rem);
-    /* Aligns the aside eyebrow with the page eyebrow (page padding-top). */
-    margin-top: 4rem;
-  }
-
-  /* Under the prose, in the prose column only. Spanning to the far edge
-     would run the rail underneath the sticky aside, which keeps rendering
-     beside it after the article ends. */
-  .series-rail {
-    grid-column: 1;
+    grid-column: 2;
   }
 }
 
@@ -10372,6 +10380,14 @@ html.light .editorial-watermark {
 
   .editorial-shell.is-narrow {
     grid-template-columns: 13rem minmax(0, 640px) minmax(0, 19rem);
+  }
+
+  .editorial-aside {
+    grid-column: 3;
+    position: sticky;
+    top: calc(var(--header-height) + 1.5rem);
+    /* Aligns the aside eyebrow with the page eyebrow (page padding-top). */
+    margin-top: 4rem;
   }
 
   .series-rail {
@@ -10770,31 +10786,39 @@ html.light .editorial-watermark {
   order: 2;
 }
 
-@media (min-width: 1120px) {
+@media (min-width: 980px) {
   .editorial-shell {
-    grid-template-columns: minmax(0, 640px) minmax(0, 19rem);
+    grid-template-columns: 13rem minmax(0, 640px);
     align-items: start;
   }
 
-  /* Same tracks as the aside layout, with the aside track left empty:
-     the shell must not re-center when a page has no aside, or the rail and
-     the prose visibly jump sideways on every page switch. */
+  /* Same tracks with the aside stacking under the prose: the shell must
+     not re-center when a page has no aside, or the rail and the prose
+     visibly jump sideways on every page switch. */
   .editorial-shell.is-narrow {
-    grid-template-columns: minmax(0, 640px) minmax(0, 19rem);
+    grid-template-columns: 13rem minmax(0, 640px);
+  }
+
+  /* The rail is the page's wayfinding: it holds the left column from
+     tablet width up instead of falling to the bottom of the page (where
+     it read as a bug, not as navigation). The aside stacks under the
+     prose in this band and returns beside it only when the third column
+     genuinely fits (1360px). */
+  .series-rail {
+    grid-column: 1;
+    order: -1;
+    position: sticky;
+    top: calc(var(--header-height) + 1.5rem);
+    margin-top: 4rem;
+    align-self: start;
+  }
+
+  .editorial-page {
+    grid-column: 2;
   }
 
   .editorial-aside {
-    position: sticky;
-    top: calc(var(--header-height) + 1.5rem);
-    /* Aligns the aside eyebrow with the page eyebrow (page padding-top). */
-    margin-top: 4rem;
-  }
-
-  /* Under the prose, in the prose column only. Spanning to the far edge
-     would run the rail underneath the sticky aside, which keeps rendering
-     beside it after the article ends. */
-  .series-rail {
-    grid-column: 1;
+    grid-column: 2;
   }
 }
 
@@ -10805,6 +10829,14 @@ html.light .editorial-watermark {
 
   .editorial-shell.is-narrow {
     grid-template-columns: 13rem minmax(0, 640px) minmax(0, 19rem);
+  }
+
+  .editorial-aside {
+    grid-column: 3;
+    position: sticky;
+    top: calc(var(--header-height) + 1.5rem);
+    /* Aligns the aside eyebrow with the page eyebrow (page padding-top). */
+    margin-top: 4rem;
   }
 
   .series-rail {
@@ -11154,17 +11186,67 @@ html.light .editorial-watermark {
    vocabulary: buyable states filled (beta additionally ringed), alpha a
    ring, the rest hollow. Columns scroll horizontally when the viewport
    cannot hold five. */
+/* Flex, not grid-auto-columns: the stage GATES between columns need their
+   own narrow track, and a grid's implicit columns are all one size. */
 .kanban {
-  display: grid;
-  grid-auto-flow: column;
-  grid-auto-columns: minmax(10.5rem, 1fr);
-  gap: 1.25rem;
+  display: flex;
+  gap: 0.9rem;
   margin-top: 1.75rem;
   overflow-x: auto;
   padding-bottom: 0.75rem;
   scrollbar-width: thin;
   scrollbar-color: color-mix(in srgb, var(--color-border) 90%, transparent)
     transparent;
+}
+.kanban-col {
+  flex: 1 1 10.5rem;
+  /* Shrinks to 8.5rem before the board resorts to horizontal scroll, so
+     the whole five-stage pipeline stays visible on ordinary laptops. */
+  min-width: 8.5rem;
+}
+
+/* The board band: the roadmap's kanban lives OUTSIDE the editorial shell,
+   on the full shared rail, so all five stages and their gates fit on a
+   desktop viewport instead of clipping inside the prose measure. */
+.kanban-band {
+  width: var(--rail-width);
+  margin: 0 auto;
+  padding-top: var(--sp-5);
+}
+
+/* The gate between two stages: an arrow pointing INTO the more advanced
+   column (products move right to left here) with the pass criterion under
+   it in the smallest mono. Aligned with the column-head row so the arrows
+   read as one lane across the top of the board. */
+.kanban-gate {
+  flex: 0 0 clamp(3.25rem, 4vw, 4.5rem);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.4rem;
+  padding-top: 0.35rem;
+  color: color-mix(in srgb, var(--color-text-muted) 80%, transparent);
+}
+.kanban-gate-arrow {
+  width: 100%;
+  height: 10px;
+  flex: none;
+  stroke: color-mix(in srgb, var(--color-gold) 55%, transparent);
+  stroke-width: 1.2;
+}
+.kanban-gate-label {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  text-align: center;
+  line-height: 1.5;
+}
+
+/* The board-first hero: just the eyebrow and title, tightened so the board
+   still owns the first screen. */
+.kanban-hero {
+  margin-bottom: 0;
 }
 
 /* Spill into the free canvas right of the prose column when it exists. */
