@@ -2156,21 +2156,26 @@ export default function Product() {
               {(commits) => <CommitTimeline commits={commits} />}
             </Await>
           </Suspense>
-          <Suspense fallback={<ContributorGridSkeleton />}>
-            <Await
-              resolve={contributors}
-              errorElement={<ContributorGrid contributors={[]} />}
-            >
-              {(list) => <ContributorGrid contributors={list ?? []} />}
-            </Await>
-          </Suspense>
           {/* No prose above the grid; the how-and-why lives once, on the
-              contributing page, and this line carries the reader there. */}
-          <p className="provenance-links">
-            <Link prefetch="viewport" to="/contributing">
+              contributing page. The button sits to the grid's right — the
+              row of people ends in the door you walk through to join them. */}
+          <div className="contributors-row">
+            <Suspense fallback={<ContributorGridSkeleton />}>
+              <Await
+                resolve={contributors}
+                errorElement={<ContributorGrid contributors={[]} />}
+              >
+                {(list) => <ContributorGrid contributors={list ?? []} />}
+              </Await>
+            </Suspense>
+            <Link
+              prefetch="viewport"
+              to="/contributing"
+              className="contributors-cta-btn"
+            >
               <Txt id="product-chrome.contributors_link_contribute" />
             </Link>
-          </p>
+          </div>
         </Chapter>
     ),
     /**

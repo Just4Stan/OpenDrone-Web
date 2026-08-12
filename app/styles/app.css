@@ -7386,6 +7386,40 @@ button.reset {
   text-transform: uppercase;
 }
 
+/* Contributor grid + the join button on one line: the grid takes the room,
+   the button holds the right edge. Wraps below the grid when the row runs
+   out of width. */
+.contributors-row {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem 2.5rem;
+  flex-wrap: wrap;
+}
+.contributors-row > *:first-child {
+  flex: 1 1 24rem;
+  min-width: 0;
+}
+.contributors-cta-btn {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  padding: 0.75rem 1.5rem;
+  border: 1px solid color-mix(in srgb, var(--color-gold) 55%, transparent);
+  border-radius: 999px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--color-gold);
+  transition: background 0.18s ease, color 0.18s ease, border-color 0.18s ease;
+}
+.contributors-cta-btn:hover {
+  background: var(--color-gold-fill);
+  border-color: var(--color-gold-fill);
+  color: var(--color-on-accent);
+}
+
 .provenance-links a {
   color: var(--color-text-muted);
   text-decoration: none;
