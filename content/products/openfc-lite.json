@@ -65,18 +65,18 @@
         "ref": "⑤",
         "part": "Switchable VTX / 5 V buck",
         "refs": [
-          "U3",
-          "U4"
+          "U6",
+          "U16"
         ],
         "boxGroups": [
           [
-            "U3",
+            "U6",
             "L2",
             "C22",
             "C24"
           ],
           [
-            "U4",
+            "U16",
             "L3",
             "C23",
             "C25"
@@ -87,7 +87,7 @@
         "ref": "⑥",
         "part": "Gyro 1.8 V LDO",
         "refs": [
-          "U6"
+          "U15"
         ]
       },
       {
@@ -99,10 +99,11 @@
       },
       {
         "ref": "⑦",
-        "part": "USB-C + power mux",
+        "part": "USB-C + USB/battery diode-OR",
         "refs": [
           "USB1",
-          "U5"
+          "D6",
+          "D10"
         ]
       },
       {
@@ -186,14 +187,12 @@
           {
             "label": "CAM",
             "refs": [
-              "J2",
               "J32"
             ]
           },
           {
             "label": "VTX",
             "refs": [
-              "J33",
               "J34"
             ]
           },
@@ -201,6 +200,13 @@
             "label": "BUZZER",
             "refs": [
               "J21"
+            ]
+          },
+          {
+            "label": "ADC",
+            "refs": [
+              "J2",
+              "J33"
             ]
           }
         ]
@@ -383,7 +389,7 @@
           "ref": "⑥",
           "part": "Gyro 1.8 V LDO",
           "refs": [
-            "U6"
+            "U12"
           ]
         },
         {
@@ -395,10 +401,11 @@
         },
         {
           "ref": "⑦",
-          "part": "USB-C + power mux",
+          "part": "USB-C + USB/battery diode-OR",
           "refs": [
             "USB1",
-            "U5"
+            "D6",
+            "D10"
           ]
         },
         {
@@ -476,7 +483,6 @@
             {
               "label": "VTX",
               "refs": [
-                "J33",
                 "J34"
               ]
             },
@@ -484,6 +490,12 @@
               "label": "BUZZER",
               "refs": [
                 "J21"
+              ]
+            },
+            {
+              "label": "ADC",
+              "refs": [
+                "J33"
               ]
             }
           ]

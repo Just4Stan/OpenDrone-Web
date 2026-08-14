@@ -1,12 +1,7 @@
 import {useEffect, useState} from 'react';
 import {AnimatePresence, motion} from 'motion/react';
 import {DURATION, EASE} from '~/lib/motion';
-import {
-  applyTheme,
-  getActiveTheme,
-  THEME_STORAGE_KEY,
-  type Theme,
-} from '~/lib/theme';
+import {applyTheme, getActiveTheme, type Theme} from '~/lib/theme';
 import {safeStartViewTransition} from '~/lib/view-transition';
 
 const MOON = (
@@ -27,9 +22,12 @@ const SUN = (
  *
  * The button starts in a deterministic state ('dark') so SSR and the first
  * client render agree; a mount effect then syncs it to whatever the inline
- * head script already applied (stored choice or OS preference). Until mount
- * we render aria-hidden, neutral chrome — the page is already themed
- * correctly by the head script, this only catches the toggle's own state up.
+ * head script already applied (the stored choice, else dark). Until mount we
+ * render aria-hidden, neutral chrome — the page is already themed correctly
+ * by the head script, this only catches the toggle's own state up.
+ *
+ * The OS `prefers-color-scheme` is not consulted, here or in the head script:
+ * dark is the default for everyone, light is an explicit choice.
  */
 export function ThemeToggle({className}: {className?: string}) {
   const [theme, setTheme] = useState<Theme>('dark');
@@ -38,32 +36,6 @@ export function ThemeToggle({className}: {className?: string}) {
   useEffect(() => {
     setTheme(getActiveTheme());
     setMounted(true);
-
-    // Follow the OS preference live — but only until the visitor makes an
-    // explicit choice via the toggle (which writes localStorage). After that
-    // their choice sticks regardless of OS changes.
-    const mq = window.matchMedia('(prefers-color-scheme: light)');
-    const onChange = (e: MediaQueryListEvent) => {
-      let stored: string | null = null;
-      try {
-        stored = localStorage.getItem(THEME_STORAGE_KEY);
-      } catch {
-        // ignore
-      }
-      if (stored === 'light' || stored === 'dark') return;
-      const next: Theme = e.matches ? 'light' : 'dark';
-      applyTheme(next);
-      setTheme(next);
-      // applyTheme persists; an OS-driven change shouldn't count as an
-      // explicit choice, so clear the key it just wrote.
-      try {
-        localStorage.removeItem(THEME_STORAGE_KEY);
-      } catch {
-        // ignore
-      }
-    };
-    mq.addEventListener('change', onChange);
-    return () => mq.removeEventListener('change', onChange);
   }, []);
 
   function toggle(e?: React.MouseEvent) {

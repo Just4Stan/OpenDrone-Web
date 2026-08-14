@@ -54,6 +54,14 @@
   --color-text: #e5e5e5;
   --color-text-muted: #9a9a9a;
   --color-text-dim: #6a6a6a;
+  /* Ink for the hand-drawn margin sketches and the masked partner logos.
+     Dark needs a brighter, more opaque line than light: 38% of #e5e5e5 on
+     #0d0d10 gives ~3.2:1, enough for a 1.5px stroke to register without the
+     drawing competing with the prose it sits behind. */
+  --art-ink: color-mix(in srgb, var(--color-text) 38%, transparent);
+  /* A filled logo carries far more ink than a stroke sketch, so it tints
+     lighter than --art-ink and still holds its shape. */
+  --art-logo-ink: color-mix(in srgb, var(--color-text) 26%, transparent);
   /* ONE gold, both themes, no exceptions (maintainer 2026-08-14).
 
      Source of truth is OpenDrone-Brand/tokens.json, which carries the reasoning,
@@ -203,6 +211,10 @@ html.light {
   --color-text: #1a1a1e;
   --color-text-muted: #57575c;
   --color-text-dim: #86868c;
+  /* Pencil on paper: dark ink at low opacity already reads on the warm
+     off-white, so light keeps the softer muted grey. */
+  --art-ink: color-mix(in srgb, var(--color-text-muted) 45%, transparent);
+  --art-logo-ink: color-mix(in srgb, var(--color-text-muted) 14%, transparent);
   /* Light-mode gold (maintainer 2026-08-14): there is no light-mode gold any
      more. The 2026-07-12 pass unified the two themes on #c89d2e and accepted
      ~2.6:1 for gold text on white; this pass keeps that decision and fixes the
@@ -10488,8 +10500,7 @@ a.what-chain-chip:hover {
      22rem figure width a square mark swallowed half the page, so cap it
      well below the sketches' footprint and cut the opacity harder. */
   width: min(100%, 13rem);
-  background: currentColor;
-  opacity: 0.3;
+  background: var(--art-logo-ink);
   -webkit-mask-size: contain;
   mask-size: contain;
   -webkit-mask-repeat: no-repeat;
@@ -10609,7 +10620,11 @@ html.light .editorial-watermark {
   height: fit-content;
   width: 22rem;
   z-index: -1;
-  color: color-mix(in srgb, var(--color-text-muted) 45%, transparent);
+  /* Tint via --art-ink, not a fixed mix: 45% of the muted grey reads as a
+     pencil line on paper, but on the dark page the same mix lands at 2.2:1
+     against the background and the sketches disappear. Dark therefore tints
+     off --color-text; light keeps the muted grey. */
+  color: var(--art-ink);
   pointer-events: none;
 }
 
