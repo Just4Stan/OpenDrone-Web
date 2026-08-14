@@ -1,9 +1,10 @@
 /**
  * Theme plumbing for the light/dark split.
  *
- * The site ships dark by default (the brand look). Light mode is opt-in via
- * the header toggle, persisted in localStorage, and falls back to the OS
- * `prefers-color-scheme` when the visitor hasn't chosen yet.
+ * The site is dark, always, until the visitor says otherwise. Light mode is
+ * opt-in via the header toggle and persisted in localStorage. The OS
+ * `prefers-color-scheme` is deliberately ignored: dark is the brand look, and
+ * light is a choice someone makes here, not one their laptop makes for them.
  *
  * The actual palette lives in app.css: dark values are the `@theme`
  * defaults, light values override them under `html.light`. Everything the UI
@@ -24,20 +25,15 @@ export const THEME_COLORS: Record<Theme, string> = {
 /**
  * Inline, render-blocking script injected into <head> before the stylesheet.
  * Resolves the theme and writes the class onto <html> synchronously so the
- * first paint is already correct — no dark→light flash on a light-mode
- * visitor. Kept dependency-free and tiny; runs once, before hydration.
+ * first paint is already correct — no dark→light flash for a visitor who
+ * chose light. Kept dependency-free and tiny; runs once, before hydration.
  */
 export const THEME_INIT_SCRIPT = `
 (function () {
   try {
     var key = ${JSON.stringify(THEME_STORAGE_KEY)};
     var stored = localStorage.getItem(key);
-    var theme =
-      stored === 'light' || stored === 'dark'
-        ? stored
-        : window.matchMedia('(prefers-color-scheme: light)').matches
-          ? 'light'
-          : 'dark';
+    var theme = stored === 'light' ? 'light' : 'dark';
     var root = document.documentElement;
     root.classList.remove('light', 'dark');
     root.classList.add(theme);
