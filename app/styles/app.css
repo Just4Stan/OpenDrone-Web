@@ -104,8 +104,10 @@
   /* Ground under a gold chip. On dark the elevated surface already gives
      gold 9:1. On light, gold on any light surface is ~1.5:1, so the chip
      carries its own warm dark ground instead of the gold being darkened.
-     Kept a warm taupe rather than near-black: the 2026-07-12 pass removed
-     black chips from light pages because they read as broken holes. */
+     Stan 2026-08-14: a dark chip read as a hole, so the light value keeps
+     the gold-tinted character and only lifts gold from 1.48:1 to 2.00:1.
+     Deliberately below the 3:1 bar: these are decorative chips, and the
+     label inside them is not the only route to any of these pages. */
   --color-chip-ground: var(--color-bg-elevated);
   --color-chip-border: var(--color-border);
 
@@ -220,7 +222,7 @@ html.light {
      --color-text-muted, and focus rings use --color-focus. */
   --color-gold-soft: color-mix(in srgb, var(--color-gold) 14%, transparent);
   --color-focus: var(--color-text);
-  --color-chip-ground: #413d36;   /* gold 6.18:1, white 10.79:1 */
+  --color-chip-ground: #98876a;   /* gold 2.00:1, ink 4.96:1 (Stan: keep the gold tint, just lift it off 1.48) */
   --color-chip-border: #56504668;
   /* Emerald PCB/brand green, AA 5.4:1 on white. --color-green-deep and
      --color-stock (= var(--color-green)) inherit from @theme and re-theme
@@ -10660,6 +10662,30 @@ html.light .editorial-watermark {
 }
 .contrib-wall-leads a:hover {
   color: var(--color-text);
+}
+/* Name takes the slack so the count always lands on the right edge, which
+   makes the leads read as a credit list rather than a ragged row. */
+.contrib-wall-leads .contrib-wall-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.contrib-wall-leads .contrib-wall-count {
+  flex: none;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text-dim);
+  padding: 1px 6px;
+  border-radius: var(--r-pill);
+  background: var(--color-bg-elevated);
+  border: 1px solid var(--color-border);
+}
+.contrib-wall-leads a:hover .contrib-wall-count {
+  color: var(--color-gold);
+  border-color: color-mix(in srgb, var(--color-gold) 45%, transparent);
 }
 .contrib-wall-leads img {
   width: 34px;
