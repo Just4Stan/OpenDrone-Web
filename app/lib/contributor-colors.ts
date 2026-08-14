@@ -9,11 +9,12 @@
  * 12 contributors). Collisions are possible and fine; this is attribution
  * texture, not an identifier.
  *
- * Muted engineering hues at even lightness so they read on both themes and
- * none of them out-shouts the house gold.
+ * Engineering hues that read on both themes. The first entry is the house
+ * gold and it is deliberately the loudest of the eight: it is the brand
+ * colour, so a contributor tinted with it should look like the house.
  */
 const PALETTE = [
-  '#c89d2e', // house gold
+  '#ffb700', // house gold
   '#5a9e6f', // moss
   '#5b84b1', // slate blue
   '#b56d5a', // clay

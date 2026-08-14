@@ -266,9 +266,9 @@ export async function sendBackInStockBroadcast(
       <p>Hi,</p>
       <p><strong>${escapeHtml(opts.productTitle)}</strong> is back in stock.</p>
       <p style="margin:24px 0 32px">
-        <a href="${escapeAttr(productUrl)}" style="display:inline-block;background:#b8922e;color:#0a0a0a;text-decoration:none;font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:0.14em;text-transform:uppercase;font-weight:700;padding:12px 18px;border-radius:2px">View product →</a>
+        <a href="${escapeAttr(productUrl)}" style="display:inline-block;background:#ffb700;color:#0a0a0a;text-decoration:none;font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:0.14em;text-transform:uppercase;font-weight:700;padding:12px 18px;border-radius:2px">View product →</a>
       </p>
-      <p style="color:#737373;font-size:13px;line-height:1.6">You get this because you asked to be notified about this product. <a href="{{{RESEND_UNSUBSCRIBE_URL}}}" style="color:#b8922e">Unsubscribe</a>.</p>
+      <p style="color:#737373;font-size:13px;line-height:1.6">You get this because you asked to be notified about this product. <a href="{{{RESEND_UNSUBSCRIBE_URL}}}" style="color:#ffb700">Unsubscribe</a>.</p>
     `,
     });
     const res = await api(env, 'POST', '/broadcasts', {
@@ -404,7 +404,7 @@ function renderWelcome(opts: {
           ? `You're on the launch list for <strong>${escapeHtml(product)}</strong>. One email when it goes on sale, plus the occasional engineering note. Nothing else.`
           : `You're subscribed to Engineering Essentials: engineering notes, hardware releases, and write-ups. Only when there's something to ship.`
       }</p>
-      <p style="color:#737373;font-size:13px;line-height:1.6;margin-top:28px">${escapeHtml(contextLine)} Not you, or changed your mind? <a href="${escapeAttr(unsubscribeUrl)}" style="color:#b8922e">Unsubscribe</a> with one click, or write <a href="mailto:${escapeAttr(supportEmail)}" style="color:#b8922e">${escapeHtml(supportEmail)}</a>.</p>
+      <p style="color:#737373;font-size:13px;line-height:1.6;margin-top:28px">${escapeHtml(contextLine)} Not you, or changed your mind? <a href="${escapeAttr(unsubscribeUrl)}" style="color:#ffb700">Unsubscribe</a> with one click, or write <a href="mailto:${escapeAttr(supportEmail)}" style="color:#ffb700">${escapeHtml(supportEmail)}</a>.</p>
     `,
   });
 

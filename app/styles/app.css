@@ -54,21 +54,34 @@
   --color-text: #e5e5e5;
   --color-text-muted: #9a9a9a;
   --color-text-dim: #6a6a6a;
-  --color-gold: #c89d2e;
-  --color-gold-hover: #dab040;
-  /* Brand gold at full brightness — the physical product color (motor
-     bells, print) is #fdb600. Highest-luminance gold in the ramp; reach
-     for it when gold text/icons/accents sit on a dark or photographic
-     surface (hero, dark cards, imagery) where the muted --color-gold
-     washes out. ~10.7:1 on near-black. Do NOT use it as text on white
-     (~1.6:1) — that's what --color-gold is for. */
-  --color-gold-bright: #fdb600;
-  --color-gold-soft: rgba(200, 157, 46, 0.12);
-  /* Gold for FILLED surfaces (buttons, badges, active sleds, wordmark) —
-     always carries --color-on-accent dark ink on top. Kept distinct from
-     text gold so a fill can stay bright without dragging text contrast. */
-  --color-gold-fill: #c89d2e;
-  --color-gold-fill-hover: #dab040;
+  /* ONE gold, both themes, no exceptions (maintainer 2026-08-14). It is the
+     only gold hex in this file; every other gold below is mixed from it.
+
+     #ffb700 is hue 80.25 sitting exactly on the sRGB chroma ceiling — the most
+     gold a screen can be. Chroma COLLAPSES above this lightness (0.171 -> 0.146
+     at L 0.85), so there is no brighter gold to reach for and "brightening" it
+     only makes it chalky. The old pair (#c89d2e light / #fdb600 dark) split by
+     0.112 in OKLab with a 6 degree hue drift toward green, which is why the
+     light-theme gold read brown. Fixing the hue was free; the split was not.
+
+     The cost, accepted deliberately: 11.11:1 on --color-bg, but only 1.62:1 on
+     the light surface. Logos are exempt from contrast rules and this is the
+     identity colour. Gold TEXT on light is a brand accent, never body copy,
+     and gold is not a safe choice for a focus ring on light — see the
+     :focus-visible rules further down, which no longer use it. */
+  --color-gold: #ffb700;
+  /* Interaction states, mixed from the one gold rather than hand-picked, so
+     there is nothing to keep in sync. Hover LIFTS toward white because the
+     base is already at the chroma ceiling and cannot go brighter. */
+  --color-gold-hover: color-mix(in oklab, var(--color-gold) 82%, white);
+  --color-gold-soft: color-mix(in srgb, var(--color-gold) 12%, transparent);
+  /* Kept as an alias so the four existing call sites still resolve. There is
+     no longer a separate bright gold; prefer --color-gold in new code. */
+  --color-gold-bright: var(--color-gold);
+  /* Filled surfaces (buttons, badges, active sleds) carry --color-on-accent
+     dark ink on top. Same gold as text now, so these are plain aliases. */
+  --color-gold-fill: var(--color-gold);
+  --color-gold-fill-hover: var(--color-gold-hover);
 
   /* Brand / PCB green. --color-green is the emerald brand green — a
      physical product color (#147A31, used on the motors). Rendered
@@ -90,6 +103,10 @@
      Decoupled from --color-bg so light mode can flip the page background
      without dragging on-accent text light with it. */
   --color-on-accent: #0d0d10;
+  /* Focus ring. WCAG 1.4.11 wants 3:1 for focus indicators and, unlike a
+     logo, a focus ring gets no exemption. Gold is 11.11:1 here on dark so
+     it stays; html.light swaps it for ink, where gold would be 1.62:1. */
+  --color-focus: var(--color-gold);
 
   /* Legacy alias map — collapses the old dual gold/green CTA system
      into a single gold accent. Any CSS still referencing the old
@@ -192,22 +209,16 @@ html.light {
   --color-text: #1a1a1e;
   --color-text-muted: #57575c;
   --color-text-dim: #86868c;
-  /* Light-mode gold (maintainer 2026-07-12): gold text sits DIRECTLY on the
-     light background now — the old "gold is always on a black chip" rule
-     is gone (it scattered near-black boxes across light pages and read as
-     broken). A true gold can't reach AA on white without turning brown,
-     which we refuse; so gold text on white is a deliberate ~2.6:1 brand
-     accent (labels/eyebrows/accents), never body copy. Base gold is
-     unified with dark mode (#c89d2e) — as legible as a vibrant gold gets
-     on white — and brightens to #dab040 on hover. For gold on a DARK
-     surface inside a light page (dark cards, hero imagery) use
-     --color-gold-bright (#fdb600); it carries over from @theme unchanged. */
-  --color-gold: #c89d2e;
-  --color-gold-hover: #dab040;
-  --color-gold-soft: rgba(200, 157, 46, 0.14);
-  /* Fill stays bright — dark ink (--color-on-accent) rides on top. */
-  --color-gold-fill: #dab040;
-  --color-gold-fill-hover: #c89d2e;
+  /* Light-mode gold (maintainer 2026-08-14): there is no light-mode gold any
+     more. The 2026-07-12 pass unified the two themes on #c89d2e and accepted
+     ~2.6:1 for gold text on white; this pass keeps that decision and fixes the
+     colour it was made with. Every gold token now inherits from @theme
+     unchanged, so nothing is overridden here — deleting these overrides IS the
+     change. Gold text on light is now 1.62:1, which is a brand accent only.
+     Anything that must stay legible on light uses --color-text or
+     --color-text-muted, and focus rings use --color-focus. */
+  --color-gold-soft: color-mix(in srgb, var(--color-gold) 14%, transparent);
+  --color-focus: var(--color-text);
   /* Emerald PCB/brand green, AA 5.4:1 on white. --color-green-deep and
      --color-stock (= var(--color-green)) inherit from @theme and re-theme
      through this value automatically. */
@@ -440,7 +451,7 @@ html {
     var(--color-gold-fill) 55%
   );
   box-shadow:
-    0 2px 10px -2px rgba(184, 146, 46, 0.55),
+    0 2px 10px -2px color-mix(in srgb, var(--color-gold) 55%, transparent),
     inset 0 1px 0 rgba(255, 255, 255, 0.35);
   cursor: grab;
   touch-action: none;
@@ -511,12 +522,12 @@ html {
 }
 
 .hero-size-slider__opt:focus-visible {
-  outline: 2px solid var(--color-gold);
+  outline: 2px solid var(--color-focus);
   outline-offset: 3px;
 }
 
 .hero-size-slider__opt:focus-visible {
-  outline: 2px solid var(--color-gold);
+  outline: 2px solid var(--color-focus);
   outline-offset: 3px;
 }
 
@@ -1295,7 +1306,7 @@ a:hover {
    keyboard users always see where focus lives, even on elements that
    never grew a custom focus style. */
 :where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
-  outline: 2px solid var(--color-gold, #b8922e);
+  outline: 2px solid var(--color-focus);
   outline-offset: 2px;
 }
 
@@ -13038,7 +13049,7 @@ html.light .editorial-watermark {
 }
 .od-tile-gold {
   border-color: var(--od-pcb-gold);
-  background: rgba(184, 146, 46, 0.04);
+  background: color-mix(in srgb, var(--color-gold) 4%, transparent);
 }
 .od-tile h2 {
   font-family: var(--font-display);
@@ -13154,7 +13165,7 @@ html.light .editorial-watermark {
 }
 .od-status.is-open {
   color: var(--od-pcb-gold-2);
-  background: rgba(184, 146, 46, 0.1);
+  background: color-mix(in srgb, var(--color-gold) 10%, transparent);
   border: 1px solid var(--od-pcb-gold);
 }
 .od-status.is-awaiting {
@@ -13164,7 +13175,7 @@ html.light .editorial-watermark {
 }
 .od-status.is-progress {
   color: var(--od-pcb-gold-2);
-  background: rgba(184, 146, 46, 0.06);
+  background: color-mix(in srgb, var(--color-gold) 6%, transparent);
   border: 1px dashed var(--od-pcb-gold);
 }
 .od-status.is-resolved {
@@ -13338,7 +13349,7 @@ html.light .editorial-watermark {
   gap: 18px;
   padding: 16px 22px;
   margin-bottom: 22px;
-  background: rgba(184, 146, 46, 0.06);
+  background: color-mix(in srgb, var(--color-gold) 6%, transparent);
   border: 1.5px solid var(--od-pcb-gold);
   border-radius: var(--r-xs);
 }
@@ -13598,7 +13609,7 @@ html.light .editorial-watermark {
   border-radius: var(--r-xs);
 }
 .support-thread-log[data-dropzone-active="true"] {
-  background: rgba(184, 146, 46, 0.04);
+  background: color-mix(in srgb, var(--color-gold) 4%, transparent);
   outline: 1.5px dashed var(--od-pcb-gold);
   outline-offset: -8px;
 }
@@ -13646,7 +13657,7 @@ html.light .editorial-watermark {
   border: 1px solid var(--od-pcb-green-2);
 }
 .support-thread .support-msg.is-user .support-msg-avatar {
-  background: rgba(184, 146, 46, 0.15);
+  background: color-mix(in srgb, var(--color-gold) 15%, transparent);
   color: var(--od-pcb-gold-2);
   border: 1px solid var(--od-pcb-gold);
 }
@@ -13680,7 +13691,7 @@ html.light .editorial-watermark {
   word-break: break-word;
 }
 .support-thread .support-msg.is-user .support-msg-bubble {
-  background: rgba(184, 146, 46, 0.06);
+  background: color-mix(in srgb, var(--color-gold) 6%, transparent);
   border-color: var(--od-pcb-gold);
 }
 .support-thread .support-msg.is-staff .support-msg-bubble {
@@ -13983,7 +13994,7 @@ html.light .editorial-watermark {
 }
 .feedback-rating-dot:hover {border-color: var(--od-ink-dim); color: var(--od-ink);}
 .feedback-rating-dot.is-on {
-  background: rgba(184, 146, 46, 0.1);
+  background: color-mix(in srgb, var(--color-gold) 10%, transparent);
   border-color: var(--od-pcb-gold);
   color: var(--od-pcb-gold-2);
 }
@@ -14060,7 +14071,7 @@ html.light .editorial-watermark {
 }
 .account-ticket-row:hover {background: rgba(255, 255, 255, 0.02);}
 .account-ticket-row.is-active {
-  background: rgba(184, 146, 46, 0.05);
+  background: color-mix(in srgb, var(--color-gold) 5%, transparent);
   border-left: 3px solid var(--od-pcb-gold);
   padding-left: 15px;
 }
@@ -14542,7 +14553,7 @@ html.light .editorial-watermark {
    ========================================================= */
 
 :root {
-  --rn-gold-tint: rgba(184, 146, 46, 0.06);
+  --rn-gold-tint: color-mix(in srgb, var(--color-gold) 6%, transparent);
   --rn-copper: var(--od-pcb-copper);
 }
 

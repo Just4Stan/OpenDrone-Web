@@ -47,45 +47,45 @@
     },
     {
       "name": "--color-gold",
-      "value": "#c89d2e",
+      "value": "#ffb700",
       "group": "colour",
       "derivedFrom": [],
-      "light": "#c89d2e"
+      "light": "#ffb700"
     },
     {
       "name": "--color-gold-hover",
-      "value": "#dab040",
+      "value": "color-mix(in oklab, var(--color-gold) 82%, white)",
       "group": "colour",
       "derivedFrom": [],
-      "light": "#dab040"
+      "light": "color-mix(in oklab, var(--color-gold) 82%, white)"
     },
     {
       "name": "--color-gold-bright",
-      "value": "#fdb600",
+      "value": "var(--color-gold)",
       "group": "colour",
       "derivedFrom": [],
       "light": null
     },
     {
       "name": "--color-gold-soft",
-      "value": "rgba(200, 157, 46, 0.12)",
+      "value": "color-mix(in srgb, var(--color-gold) 12%, transparent)",
       "group": "colour",
       "derivedFrom": [],
-      "light": "rgba(200, 157, 46, 0.14)"
+      "light": "color-mix(in srgb, var(--color-gold) 14%, transparent)"
     },
     {
       "name": "--color-gold-fill",
-      "value": "#c89d2e",
+      "value": "var(--color-gold)",
       "group": "colour",
       "derivedFrom": [],
-      "light": "#dab040"
+      "light": "var(--color-gold)"
     },
     {
       "name": "--color-gold-fill-hover",
-      "value": "#dab040",
+      "value": "var(--color-gold-hover)",
       "group": "colour",
       "derivedFrom": [],
-      "light": "#c89d2e"
+      "light": "var(--color-gold-hover)"
     },
     {
       "name": "--color-green",

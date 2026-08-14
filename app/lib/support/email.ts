@@ -96,7 +96,7 @@ export async function sendResumeLink(
         <strong>${escapeHtml(opts.subject)}</strong>
       </p>
       <p style="margin:16px 0 32px">
-        <a href="${escapeAttr(opts.resumeUrl)}" style="display:inline-block;background:#b8922e;color:#0a0a0a;text-decoration:none;font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:0.14em;text-transform:uppercase;font-weight:700;padding:12px 18px;border-radius:2px">Resume chat →</a>
+        <a href="${escapeAttr(opts.resumeUrl)}" style="display:inline-block;background:#ffb700;color:#0a0a0a;text-decoration:none;font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:0.14em;text-transform:uppercase;font-weight:700;padding:12px 18px;border-radius:2px">Resume chat →</a>
       </p>
       <p style="color:#737373;font-size:13px;line-height:1.6">If you didn't open this ticket, just ignore this message. The link only works if you actually started the chat.</p>
     `,
@@ -155,7 +155,7 @@ export async function sendReplyNotification(
       const label = single
         ? ''
         : `<strong style="color:#e5e5e5">${escapeHtml(r.staffFirstName)}</strong><br>`;
-      return `<blockquote style="margin:12px 0 0;padding:10px 14px;border-left:2px solid #b8922e;background:#141417;color:#cfcfcf;font-size:13px;line-height:1.6">${label}${preview}</blockquote>`;
+      return `<blockquote style="margin:12px 0 0;padding:10px 14px;border-left:2px solid #ffb700;background:#141417;color:#cfcfcf;font-size:13px;line-height:1.6">${label}${preview}</blockquote>`;
     })
     .join('');
 
@@ -174,7 +174,7 @@ export async function sendReplyNotification(
           : ''
       }
       <p style="margin:24px 0 32px">
-        <a href="${escapeAttr(opts.resumeUrl)}" style="display:inline-block;background:#b8922e;color:#0a0a0a;text-decoration:none;font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:0.14em;text-transform:uppercase;font-weight:700;padding:12px 18px;border-radius:2px">Continue chat →</a>
+        <a href="${escapeAttr(opts.resumeUrl)}" style="display:inline-block;background:#ffb700;color:#0a0a0a;text-decoration:none;font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:0.14em;text-transform:uppercase;font-weight:700;padding:12px 18px;border-radius:2px">Continue chat →</a>
       </p>
       <p style="color:#737373;font-size:13px;line-height:1.6">You're receiving this because you opened a support ticket with us. The link above restores your conversation from any device.</p>
     `,
@@ -217,7 +217,7 @@ export async function sendTicketIndex(
         `<li style="margin:12px 0">
           <div style="font-weight:600">${escapeHtml(t.subject)}</div>
           <div style="color:#737373;font-size:13px;margin:2px 0 6px">opened ${escapeHtml(t.openedAt)}</div>
-          <a href="${escapeAttr(t.resumeUrl)}" style="color:#b8922e;text-decoration:underline;font-family:'JetBrains Mono',monospace;font-size:12px">Resume chat →</a>
+          <a href="${escapeAttr(t.resumeUrl)}" style="color:#ffb700;text-decoration:underline;font-family:'JetBrains Mono',monospace;font-size:12px">Resume chat →</a>
         </li>`,
     )
     .join('');

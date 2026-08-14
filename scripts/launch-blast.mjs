@@ -226,16 +226,16 @@ function renderBlast(handle) {
     <tr><td align="center" style="padding:32px 16px">
       <table role="presentation" width="560" cellpadding="0" cellspacing="0" style="max-width:560px;background:#141417;border:1px solid #1a241a;border-radius:3px">
         <tr><td style="padding:28px 28px 0">
-          <p style="font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:0.22em;text-transform:uppercase;color:#b8922e;margin:0 0 6px">OpenDrone</p>
+          <p style="font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:0.22em;text-transform:uppercase;color:#ffb700;margin:0 0 6px">OpenDrone</p>
           <h1 style="font-family:Helvetica,Arial,sans-serif;font-size:22px;letter-spacing:-0.01em;margin:0;color:#e5e5e5">It&rsquo;s live.</h1>
         </td></tr>
         <tr><td style="padding:18px 28px 28px;color:#e5e5e5;font-size:15px">
           <p>Hi,</p>
           <p>You asked to be notified when <strong>${handle}</strong> launches &mdash; it&rsquo;s on sale now.</p>
           <p style="margin:24px 0 32px">
-            <a href="${url}" style="display:inline-block;background:#b8922e;color:#0a0a0a;text-decoration:none;font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:0.14em;text-transform:uppercase;font-weight:700;padding:12px 18px;border-radius:2px">View product &rarr;</a>
+            <a href="${url}" style="display:inline-block;background:#ffb700;color:#0a0a0a;text-decoration:none;font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:0.14em;text-transform:uppercase;font-weight:700;padding:12px 18px;border-radius:2px">View product &rarr;</a>
           </p>
-          <p style="color:#737373;font-size:13px;line-height:1.6">You get this because you signed up for launch updates at opendrone.store. <a href="{{{RESEND_UNSUBSCRIBE_URL}}}" style="color:#b8922e">Unsubscribe</a>.</p>
+          <p style="color:#737373;font-size:13px;line-height:1.6">You get this because you signed up for launch updates at opendrone.store. <a href="{{{RESEND_UNSUBSCRIBE_URL}}}" style="color:#ffb700">Unsubscribe</a>.</p>
         </td></tr>
       </table>
     </td></tr>
