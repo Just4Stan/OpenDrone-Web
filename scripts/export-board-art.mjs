@@ -49,6 +49,14 @@
  * CSS drives the entrance reveal and the gold glow, and the Top/Bottom
  * toggle simply shows one copper group at a time.
  *
+ * Everything here is written in the look-through frame (straight down through
+ * the board), which is why the back render is mirrored on the way in: it keeps
+ * back-side parts at the XY the copper and components.json use. The BOTTOM
+ * face is then flipped back for display by `.board-sheet-svg-back` in
+ * app.css, so a viewer sees the board turned over, with its silkscreen the
+ * right way round, and the highlight boxes ride along inside that same <svg>.
+ * Change one without the other and the bottom view reads mirrored again.
+ *
  * One handle per physical PCB. Product lines (OpenESC, OpenFC, OpenRX) are
  * one Shopify product with several boards behind a variant axis, so each
  * tier gets its own handle (openesc + openesc-30x30, openfc + openfc-lite,

@@ -6232,6 +6232,20 @@ html.light .firmware-logo--tile {
   width: 100%;
   height: 100%;
 }
+/* Turn the board over for the bottom face.
+   The copper sheets are an X-ray stack: every one of them is drawn looking
+   straight down through the board, which is why a back-side part sits at its
+   true XY under the layer above it. The photoreal BOTTOM face inherits that
+   frame, and the result was a board whose silkscreen read backwards — REV3.1
+   mirrored, the wordmark mirrored, the USB on the wrong edge. Nobody reads a
+   component side that way; they flip the board.
+   Flipping the whole sheet takes the highlight boxes with it, because
+   BoardArt draws them inside this same <svg>, so the parts stay boxed. Only
+   the realistic face flips; BOTTOM CU and the inner layers stay look-through,
+   so the stack still reads as one descent through the board. */
+.board-sheet-svg-back {
+  transform: scaleX(-1);
+}
 /* The board silhouette under each layer — a faint engraved sheet edge. */
 .board-sheet-edge {
   fill: none;
