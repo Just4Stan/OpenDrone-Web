@@ -276,7 +276,7 @@ The complete annotated list is [`.env.example`](.env.example). Groups:
 - **Support bridge**: Discord bot + channels, Turnstile, Resend, Upstash,
   moderation gate. All optional; the bridge degrades gracefully.
 - **Publishing**: `SHOPIFY_ADMIN_API_TOKEN` for `publish:post` and the
-  `scripts/shopify-infra/` setup scripts.
+  `scripts/shopify-infra/` inspectors.
 - **Ops**: `SUPPORT_CLEANUP_SECRET` (cron auth), `COMPLIANCE_SRC` (legal sync
   override), `GITHUB_STATUS_TOKEN` (roadmap API headroom).
 

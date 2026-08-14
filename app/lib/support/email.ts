@@ -96,7 +96,7 @@ export async function sendResumeLink(
         <strong>${escapeHtml(opts.subject)}</strong>
       </p>
       <p style="margin:16px 0 32px">
-        <a href="${escapeAttr(opts.resumeUrl)}" style="display:inline-block;background:#b8922e;color:#0a0a0a;text-decoration:none;font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:0.14em;text-transform:uppercase;font-weight:700;padding:12px 18px;border-radius:2px">Resume chat →</a>
+        <a href="${escapeAttr(opts.resumeUrl)}" style="display:inline-block;background:#ffb700;color:#0a0a0a;text-decoration:none;font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:0.14em;text-transform:uppercase;font-weight:700;padding:12px 18px;border-radius:2px">Resume chat →</a>
       </p>
       <p style="color:#737373;font-size:13px;line-height:1.6">If you didn't open this ticket, just ignore this message. The link only works if you actually started the chat.</p>
     `,
@@ -155,7 +155,7 @@ export async function sendReplyNotification(
       const label = single
         ? ''
         : `<strong style="color:#e5e5e5">${escapeHtml(r.staffFirstName)}</strong><br>`;
-      return `<blockquote style="margin:12px 0 0;padding:10px 14px;border-left:2px solid #b8922e;background:#141417;color:#cfcfcf;font-size:13px;line-height:1.6">${label}${preview}</blockquote>`;
+      return `<blockquote style="margin:12px 0 0;padding:10px 14px;border-left:2px solid #ffb700;background:#141417;color:#cfcfcf;font-size:13px;line-height:1.6">${label}${preview}</blockquote>`;
     })
     .join('');
 
@@ -174,7 +174,7 @@ export async function sendReplyNotification(
           : ''
       }
       <p style="margin:24px 0 32px">
-        <a href="${escapeAttr(opts.resumeUrl)}" style="display:inline-block;background:#b8922e;color:#0a0a0a;text-decoration:none;font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:0.14em;text-transform:uppercase;font-weight:700;padding:12px 18px;border-radius:2px">Continue chat →</a>
+        <a href="${escapeAttr(opts.resumeUrl)}" style="display:inline-block;background:#ffb700;color:#0a0a0a;text-decoration:none;font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:0.14em;text-transform:uppercase;font-weight:700;padding:12px 18px;border-radius:2px">Continue chat →</a>
       </p>
       <p style="color:#737373;font-size:13px;line-height:1.6">You're receiving this because you opened a support ticket with us. The link above restores your conversation from any device.</p>
     `,
@@ -217,7 +217,7 @@ export async function sendTicketIndex(
         `<li style="margin:12px 0">
           <div style="font-weight:600">${escapeHtml(t.subject)}</div>
           <div style="color:#737373;font-size:13px;margin:2px 0 6px">opened ${escapeHtml(t.openedAt)}</div>
-          <a href="${escapeAttr(t.resumeUrl)}" style="color:#b8922e;text-decoration:underline;font-family:'JetBrains Mono',monospace;font-size:12px">Resume chat →</a>
+          <a href="${escapeAttr(t.resumeUrl)}" style="color:#ffb700;text-decoration:underline;font-family:'JetBrains Mono',monospace;font-size:12px">Resume chat →</a>
         </li>`,
     )
     .join('');
@@ -244,7 +244,7 @@ function renderEmail({heading, body}: {heading: string; body: string}): string {
     <tr><td align="center" style="padding:32px 16px">
       <table role="presentation" width="560" cellpadding="0" cellspacing="0" style="max-width:560px;background:#141417;border:1px solid #1a241a;border-radius:3px">
         <tr><td bgcolor="#ffffff" style="padding:16px 28px;background:#ffffff">
-          <img src="https://cdn.shopify.com/s/files/1/1032/6641/9033/files/opendrone-wordmark-email-blackgold.png?v=1784400536" alt="OpenDrone" width="160" height="30" style="display:block;border:0;height:30px;width:160px" />
+          <img src="https://cdn.shopify.com/s/files/1/1032/6641/9033/files/opendrone-wordmark-email-blackgold_39eb37d0-777f-4a31-b2f3-eb25965c97d7.png?v=1786703416" alt="OpenDrone" width="160" height="39" style="display:block;border:0;height:39px;width:160px" />
         </td></tr>
         <tr><td style="padding:24px 28px 0">
           <h1 style="font-family:Helvetica,Arial,sans-serif;font-size:22px;letter-spacing:-0.01em;margin:0;color:#e5e5e5">${escapeHtml(heading)}</h1>

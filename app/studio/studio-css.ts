@@ -45,7 +45,7 @@ export const STUDIO_CSS = `
   background: #101014;
 }
 .studio-brand { font-size: 13px; letter-spacing: 0.02em; color: #9a9aa4; }
-.studio-brand b { color: #c89d2e; font-weight: 600; }
+.studio-brand b { color: #ffb700; font-weight: 600; }
 
 .studio-tabs { display: flex; gap: 2px; }
 .studio-tabs button {
@@ -56,7 +56,7 @@ export const STUDIO_CSS = `
   border-radius: 6px;
 }
 .studio-tabs button:hover { color: #e8e8ea; background: #1a1a20; }
-.studio-tabs button.is-on { color: #0b0b0e; background: #c89d2e; font-weight: 600; }
+.studio-tabs button.is-on { color: #0b0b0e; background: #ffb700; font-weight: 600; }
 
 .studio-status {
   flex: 1;
@@ -79,12 +79,12 @@ export const STUDIO_CSS = `
 .studio-actions button:hover:not(:disabled) { background: #23232a; }
 .studio-actions button:disabled { opacity: 0.4; cursor: default; }
 .studio-actions .is-primary {
-  background: #c89d2e;
-  border-color: #c89d2e;
+  background: #ffb700;
+  border-color: #ffb700;
   color: #0b0b0e;
   font-weight: 600;
 }
-.studio-actions .is-primary:hover:not(:disabled) { background: #dab040; }
+.studio-actions .is-primary:hover:not(:disabled) { background: #ffc559; }
 
 /* ---- three columns ---- */
 .studio-grid {
@@ -120,7 +120,7 @@ export const STUDIO_CSS = `
 .studio-pages button.is-on, .studio-keys button.is-on {
   background: #1d1d24;
   color: #fff;
-  box-shadow: inset 2px 0 0 #c89d2e;
+  box-shadow: inset 2px 0 0 #ffb700;
 }
 .studio-keys .studio-key {
   display: block;
@@ -128,7 +128,7 @@ export const STUDIO_CSS = `
   font-size: 11px;
   color: #9a9aa4;
 }
-.studio-keys button.is-on .studio-key { color: #c89d2e; }
+.studio-keys button.is-on .studio-key { color: #ffb700; }
 .studio-keys .studio-peek,
 .studio-pages .studio-peek {
   display: block;
@@ -142,7 +142,7 @@ export const STUDIO_CSS = `
    at a glance what is about to be written. */
 .studio-keys button.is-dirty .studio-key::after {
   content: " ●";
-  color: #c89d2e;
+  color: #ffb700;
 }
 
 /* ---- preview ---- */
@@ -165,7 +165,7 @@ export const STUDIO_CSS = `
   font-family: ui-monospace, Menlo, monospace;
   font-size: 12px;
 }
-.studio-urlbar input:focus { outline: none; border-color: #c89d2e; }
+.studio-urlbar input:focus { outline: none; border-color: #ffb700; }
 .studio-urlbar button {
   background: #1a1a20;
   border: 1px solid #2b2b33;
@@ -188,13 +188,13 @@ export const STUDIO_CSS = `
   font: inherit;
   line-height: 1.6;
 }
-.studio-inspector textarea:focus { outline: none; border-color: #c89d2e; }
+.studio-inspector textarea:focus { outline: none; border-color: #ffb700; }
 .studio-inspector h2 {
   font-family: ui-monospace, Menlo, monospace;
   text-transform: none;
   letter-spacing: 0;
   font-size: 12px;
-  color: #c89d2e;
+  color: #ffb700;
 }
 .studio-hint { color: #63636c; font-size: 11px; margin: 0 0 10px; }
 .studio-empty { color: #63636c; font-size: 12px; line-height: 1.6; }
@@ -243,7 +243,7 @@ export const STUDIO_CSS = `
   overflow: hidden;
   text-overflow: ellipsis;
 }
-.studio-token.is-changed label { color: #c89d2e; }
+.studio-token.is-changed label { color: #ffb700; }
 .studio-token-controls { display: flex; gap: 5px; align-items: center; }
 .studio-token input[type='color'] {
   width: 26px;
@@ -264,7 +264,7 @@ export const STUDIO_CSS = `
   font-family: ui-monospace, Menlo, monospace;
   font-size: 11px;
 }
-.studio-token input[type='text']:focus { outline: none; border-color: #c89d2e; }
+.studio-token input[type='text']:focus { outline: none; border-color: #ffb700; }
 .studio-token-reset {
   background: none;
   border: 0;
@@ -273,7 +273,7 @@ export const STUDIO_CSS = `
   font-size: 14px;
   line-height: 1;
 }
-.studio-token-reset:hover { color: #c89d2e; }
+.studio-token-reset:hover { color: #ffb700; }
 .studio-tokens iframe { width: 100%; height: 100%; border: 0; background: #0d0d10; }
 .studio-token-note {
   color: #63636c;
@@ -347,7 +347,7 @@ export const STUDIO_CSS = `
   min-width: 0;
 }
 .studio-media-item:hover { border-color: #3a3a44; }
-.studio-media-item.is-on { border-color: #c89d2e; background: #1a1a20; }
+.studio-media-item.is-on { border-color: #ffb700; background: #1a1a20; }
 /* A checker under the thumb, so a transparent PNG is obviously transparent
    rather than looking like it has a dark background baked in. */
 .studio-media-thumb {
@@ -418,7 +418,7 @@ export const STUDIO_CSS = `
   font-size: 12px;
 }
 .studio-hero-bar button:hover { background: #23232a; }
-.studio-hero-bar a { color: #c89d2e; font-size: 12px; text-decoration: none; }
+.studio-hero-bar a { color: #ffb700; font-size: 12px; text-decoration: none; }
 .studio-hero-bar a:hover { text-decoration: underline; }
 .studio-hero-note {
   margin-left: auto;
@@ -453,7 +453,7 @@ export const STUDIO_CSS = `
   border-radius: 6px;
   font-size: 11px;
 }
-.studio-scope button.is-on { background: #c89d2e; border-color: #c89d2e; color: #0b0b0e; font-weight: 600; }
+.studio-scope button.is-on { background: #ffb700; border-color: #ffb700; color: #0b0b0e; font-weight: 600; }
 
 .studio-chapters { list-style: none; margin: 0; padding: 0; }
 .studio-chapter {
@@ -469,12 +469,12 @@ export const STUDIO_CSS = `
 .studio-chapter:hover { background: #14141a; border-color: #23232a; }
 /* A dragged row dims rather than disappears, so the list length stays readable
    while you are deciding where to drop it. */
-.studio-chapter.is-dragging { opacity: 0.4; border-style: dashed; border-color: #c89d2e; }
+.studio-chapter.is-dragging { opacity: 0.4; border-style: dashed; border-color: #ffb700; }
 .studio-chapter.is-off { opacity: 0.45; }
 .studio-chapter-num {
   font-family: ui-monospace, Menlo, monospace;
   font-size: 11px;
-  color: #c89d2e;
+  color: #ffb700;
   text-align: right;
 }
 .studio-chapter.is-off .studio-chapter-num { color: #55555e; }
@@ -490,7 +490,7 @@ export const STUDIO_CSS = `
   padding: 1px 0;
 }
 .studio-chapter-main input:hover { border-bottom-color: #2b2b33; }
-.studio-chapter-main input:focus { outline: none; border-bottom-color: #c89d2e; }
+.studio-chapter-main input:focus { outline: none; border-bottom-color: #ffb700; }
 .studio-chapter-main input::placeholder { color: #7d7d86; }
 .studio-chapter-type {
   display: block;
@@ -510,7 +510,7 @@ export const STUDIO_CSS = `
   line-height: 1;
   border-radius: 4px;
 }
-.studio-chapter-btns button:hover { color: #c89d2e; background: #1d1d24; }
+.studio-chapter-btns button:hover { color: #ffb700; background: #1d1d24; }
 
 .studio-add { display: flex; flex-wrap: wrap; gap: 5px; }
 .studio-add button {
@@ -521,7 +521,7 @@ export const STUDIO_CSS = `
   border-radius: 6px;
   font-size: 11px;
 }
-.studio-add button:hover { color: #c89d2e; border-color: #c89d2e; border-style: solid; }
+.studio-add button:hover { color: #ffb700; border-color: #ffb700; border-style: solid; }
 
 /* Goals tab: labelled form fields in the inspector. */
 .studio-goal-field {
@@ -546,8 +546,8 @@ export const STUDIO_CSS = `
 .studio-goal-field textarea { min-height: 110px; resize: vertical; }
 .studio-goal-field input:focus,
 .studio-goal-field select:focus,
-.studio-goal-field textarea:focus { outline: none; border-color: #c89d2e; }
-.studio-goal-field input[type='range'] { padding: 0; accent-color: #c89d2e; }
+.studio-goal-field textarea:focus { outline: none; border-color: #ffb700; }
+.studio-goal-field input[type='range'] { padding: 0; accent-color: #ffb700; }
 
 `;
 
@@ -562,12 +562,12 @@ export const STUDIO_CSS = `
 export const PREVIEW_CSS = `
 .studio-preview [data-edit] { cursor: text; }
 .studio-preview .studio-editable {
-  outline: 1px dashed rgba(200, 157, 46, 0.35);
+  outline: 1px dashed rgba(255, 183, 0, 0.35);
   outline-offset: 2px;
   transition: outline-color 0.12s, background-color 0.12s;
 }
 .studio-preview .studio-editable:hover {
-  outline: 1px solid #c89d2e;
-  background-color: rgba(200, 157, 46, 0.09);
+  outline: 1px solid #ffb700;
+  background-color: rgba(255, 183, 0, 0.09);
 }
 `;
