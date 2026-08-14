@@ -84,7 +84,7 @@ export const STUDIO_CSS = `
   color: #0b0b0e;
   font-weight: 600;
 }
-.studio-actions .is-primary:hover:not(:disabled) { background: #ffc94a; }
+.studio-actions .is-primary:hover:not(:disabled) { background: #ffc559; }
 
 /* ---- three columns ---- */
 .studio-grid {
