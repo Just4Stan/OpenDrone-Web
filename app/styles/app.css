@@ -54,21 +54,15 @@
   --color-text: #e5e5e5;
   --color-text-muted: #9a9a9a;
   --color-text-dim: #6a6a6a;
-  /* ONE gold, both themes, no exceptions (maintainer 2026-08-14). It is the
-     only gold hex in this file; every other gold below is mixed from it.
+  /* ONE gold, both themes, no exceptions (maintainer 2026-08-14).
 
-     #ffb700 is hue 80.25 sitting exactly on the sRGB chroma ceiling — the most
-     gold a screen can be. Chroma COLLAPSES above this lightness (0.171 -> 0.146
-     at L 0.85), so there is no brighter gold to reach for and "brightening" it
-     only makes it chalky. The old pair (#c89d2e light / #fdb600 dark) split by
-     0.112 in OKLab with a 6 degree hue drift toward green, which is why the
-     light-theme gold read brown. Fixing the hue was free; the split was not.
+     Source of truth is OpenDrone-Brand/tokens.json, which carries the reasoning,
+     the contrast numbers, the retired hexes and the physical Pantone master.
+     Do not restate any of that here; this is the only gold literal in the file
+     and every token below is mixed from it.
 
-     The cost, accepted deliberately: 11.11:1 on --color-bg, but only 1.62:1 on
-     the light surface. Logos are exempt from contrast rules and this is the
-     identity colour. Gold TEXT on light is a brand accent, never body copy,
-     and gold is not a safe choice for a focus ring on light — see the
-     :focus-visible rules further down, which no longer use it. */
+     11.11:1 on --color-bg, 1.62:1 on the light surface. The low one is
+     deliberate: gold is identity, never body copy, never a focus ring. */
   --color-gold: #ffb700;
   /* Interaction states, mixed from the one gold rather than hand-picked, so
      there is nothing to keep in sync. Hover LIFTS toward white because the
@@ -107,6 +101,13 @@
      logo, a focus ring gets no exemption. Gold is 11.11:1 here on dark so
      it stays; html.light swaps it for ink, where gold would be 1.62:1. */
   --color-focus: var(--color-gold);
+  /* Ground under a gold chip. On dark the elevated surface already gives
+     gold 9:1. On light, gold on any light surface is ~1.5:1, so the chip
+     carries its own warm dark ground instead of the gold being darkened.
+     Kept a warm taupe rather than near-black: the 2026-07-12 pass removed
+     black chips from light pages because they read as broken holes. */
+  --color-chip-ground: var(--color-bg-elevated);
+  --color-chip-border: var(--color-border);
 
   /* Legacy alias map — collapses the old dual gold/green CTA system
      into a single gold accent. Any CSS still referencing the old
@@ -219,6 +220,8 @@ html.light {
      --color-text-muted, and focus rings use --color-focus. */
   --color-gold-soft: color-mix(in srgb, var(--color-gold) 14%, transparent);
   --color-focus: var(--color-text);
+  --color-chip-ground: #413d36;   /* gold 6.18:1, white 10.79:1 */
+  --color-chip-border: #56504668;
   /* Emerald PCB/brand green, AA 5.4:1 on white. --color-green-deep and
      --color-stock (= var(--color-green)) inherit from @theme and re-theme
      through this value automatically. */
@@ -2081,8 +2084,8 @@ html.light .header-cat-pod {
   gap: 0.2rem;
   padding: 0.25rem;
   border-radius: var(--r-pill);
-  background: var(--color-bg-elevated);
-  border: 1px solid var(--color-border);
+  background: var(--color-chip-ground);
+  border: 1px solid var(--color-chip-border);
 }
 .site-header-categories .site-header-cat-group a {
   padding: 0.36em 0.82em;
@@ -2115,19 +2118,19 @@ html.light .header-cat-pod {
 .site-header-categories .site-header-cat-all {
   padding: 0.42em 0.95em;
   border-radius: var(--r-pill);
-  background: var(--color-gold-soft);
+  background: color-mix(in srgb, var(--color-gold) 14%, var(--color-chip-ground));
   border: 1px solid color-mix(in srgb, var(--color-gold) 50%, transparent);
   color: var(--color-gold);
   opacity: 1;
 }
 .site-header-categories .site-header-cat-all:hover {
-  background: color-mix(in srgb, var(--color-gold) 20%, transparent);
+  background: color-mix(in srgb, var(--color-gold) 20%, var(--color-chip-ground));
   border-color: var(--color-gold);
   color: var(--color-gold-hover);
 }
 .site-header-categories .site-header-cat-all.active,
 .site-header-categories .site-header-cat-all[aria-current='page'] {
-  background: color-mix(in srgb, var(--color-gold) 24%, transparent);
+  background: color-mix(in srgb, var(--color-gold) 24%, var(--color-chip-ground));
   border-color: var(--color-gold);
   color: var(--color-gold-hover);
   font-weight: 600;

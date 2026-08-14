@@ -28,29 +28,14 @@ an empty diff.
 
 ## Colour
 
-**There is one gold: `#ffb700`.** Both themes, every surface, no exceptions.
+**Do not look for the values here.** They live in
+[`tokens.json`](https://github.com/OpenDrone-hw/OpenDrone-Brand/blob/main/tokens.json)
+in OpenDrone-Brand, which is the source of truth for screen and physical colour
+alike, along with the reasoning, the contrast numbers, the retired hexes and the
+Pantone master. This file used to restate all of it, which is exactly how six
+different golds ended up in this repo.
 
-It is hue 80.25 sitting exactly on the sRGB chroma ceiling, which is the most
-gold a screen can be. Chroma *falls* above that lightness, so there is no
-brighter gold to reach for and lightening it only turns it chalky.
-
-The old system had two, `#c89d2e` on light and `#fdb600` on dark. They were
-0.112 apart in OKLab with the light one drifting 6 degrees toward green, which
-is exactly why it read brown on white. The hue drift and the missing chroma were
-free to fix. The lightness gap was the part doing real work, and giving it up is
-a deliberate trade:
-
-| Ground | Contrast |
-|---|---|
-| `--color-bg` `#0d0d10` | 11.11:1 |
-| light surface `#f7f6f3` | 1.62:1 |
-| pure white `#ffffff` | 1.75:1 |
-
-So: **gold is an identity colour and a brand accent, never body copy on light.**
-Logos are exempt from contrast rules, which is what makes this defensible for
-the mark and the wordmark. It is not defensible for anything a user has to read
-or operate, so those use `--color-text`, `--color-text-muted`, or
-`--color-focus`.
+What is true *here*, and nowhere else, is how the site consumes it:
 
 `#ffb700` is the only gold literal in `app/styles/app.css`. Every other gold
 token is mixed from it, so there is nothing to keep in sync:
@@ -63,24 +48,24 @@ token is mixed from it, so there is nothing to keep in sync:
 --color-gold-fill:       var(--color-gold);
 --color-gold-fill-hover: var(--color-gold-hover);
 --color-focus:           var(--color-gold);   /* html.light: var(--color-text) */
+--color-chip-ground:     var(--color-bg-elevated); /* html.light: #413d36 */
 ```
 
-Full token list and the other ramps: `drafts/theming.md`.
+Two site-specific consequences of one gold, both deliberate:
 
-### Print
-
-The old CMYK and Pantone mapping is gone rather than updated, because it was
-derived from `#c89d2e` and is wrong for the new gold. `#ffb700` at that chroma
-sits **outside CMYK gamut** and cannot be reproduced in process colour at all,
-so packaging needs a spot colour chosen against a physical guide. Nobody has
-done that yet. Do not guess one.
+- **Gold is 1.62:1 on the light surface.** Fine for the mark and the wordmark,
+  which are exempt from contrast rules. Anything a user has to read or operate
+  uses `--color-text`, `--color-text-muted`, or `--color-focus`. Gold chips on
+  light carry their own dark ground, `--color-chip-ground`, rather than the gold
+  being darkened.
+- **Focus rings never use gold.** WCAG 1.4.11 wants 3:1 and gives focus
+  indicators no logo exemption, so `--color-focus` is ink on light.
 
 ### Email
 
-Transactional and marketing email cannot use CSS variables, so the gold is
-inlined as a literal in `app/lib/growth/resend.ts`, `app/lib/support/email.ts`,
-`scripts/launch-blast.mjs`, `scripts/newsletter-template.html` and
-`scripts/shopify-templates/`. Those are the only places a gold hex is allowed to
-appear outside the stylesheet. Buttons are fine, dark ink on a gold fill. **Gold
-link text in email is 1.75:1 on a white client background**, which is worse than
-what it replaced; it is a known cost of one gold, not an oversight.
+Email cannot use CSS variables, so the gold is inlined as a literal in
+`app/lib/growth/resend.ts`, `app/lib/support/email.ts`, `scripts/launch-blast.mjs`,
+`scripts/newsletter-template.html` and `scripts/shopify-templates/`. Those are
+the only places a gold hex may appear outside the stylesheet. Buttons are fine,
+dark ink on a gold fill. Gold link text in email is 1.75:1 on a white client,
+which is a known cost of one gold rather than an oversight.
