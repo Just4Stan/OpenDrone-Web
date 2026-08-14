@@ -7854,6 +7854,20 @@ html.light .firmware-logo--tile {
   font-size: var(--fs-xs);
   color: var(--color-text-dim);
 }
+/* The maintainer's tile. Commit counts used to fill this slot and read as a
+   ranking, which credited whoever churned the most files; the one fact worth
+   stating is who holds the board. Gold rule at full strength, gold label. */
+.contributor-tile--lead {
+  border-top-color: var(--color-gold);
+}
+.contributor-role {
+  align-self: start;
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-gold);
+}
 .contributor-tile.is-skeleton {
   pointer-events: none;
 }

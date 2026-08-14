@@ -256,6 +256,13 @@ export type ProductContent = {
     logoDark?: boolean;
   };
   repoUrl: string;
+  /** Who developed this product, in the order the contributor wall lists them,
+   *  by GitHub login. The first is the maintainer and their tile says so.
+   *  Authored, not derived: commit counts credit whoever churned the most
+   *  files, which on OpenRX put the docs ahead of the boards. Logins not in
+   *  the roster are ignored; contributors not listed here follow, so a new
+   *  name still appears without an edit. Unset means the API's own order. */
+  credits?: string[];
   /** A "build video" for the product — the JustFPV teardown films. When set, the
    *  "Open for learning" chapter swaps its second card from the GitHub-issues
    *  bubble to a Watch card (real YouTube thumbnail + in-page lightbox player).

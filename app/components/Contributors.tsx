@@ -12,14 +12,29 @@ import {copyText} from '~/lib/copy';
  * then touch files), so the invitation must not skip that step. The section
  * renders even when the GitHub API is rate-limited (empty list): the
  * invitation tile is the point, the avatars are the proof.
+ *
+ * No commit counts. A count reads as a ranking and gets the credit backwards:
+ * on OpenRX it put 153 doc and scaffolding commits ahead of the 8 that are
+ * the boards. Order comes from `credits` in the product's content JSON where
+ * it is set (see orderByCredits in app/lib/contributors-snapshot.ts), and the
+ * first name there is the maintainer, marked as such on their tile.
  */
-export function ContributorGrid({contributors}: {contributors: Contributor[]}) {
+export function ContributorGrid({
+  contributors,
+  lead,
+}: {
+  contributors: Contributor[];
+  /** GitHub login of the product's maintainer; their tile carries the mark. */
+  lead?: string;
+}) {
   return (
     <ul className="contributor-grid">
       {contributors.map((c) => (
         <li key={c.login}>
           <a
-            className="contributor-tile"
+            className={`contributor-tile${
+              c.login === lead ? ' contributor-tile--lead' : ''
+            }`}
             href={c.htmlUrl}
             target="_blank"
             rel="noopener noreferrer"
@@ -44,14 +59,11 @@ export function ContributorGrid({contributors}: {contributors: Contributor[]}) {
               decoding="async"
             />
             <span className="contributor-login">{c.login}</span>
-            <span className="contributor-count">
-              {c.contributions}{' '}
-              {copyText(
-                c.contributions === 1
-                  ? 'product-chrome.contributor_commits_one'
-                  : 'product-chrome.contributor_commits_many',
-              )}
-            </span>
+            {c.login === lead ? (
+              <span className="contributor-role">
+                {copyText('product-chrome.contributor_maintainer')}
+              </span>
+            ) : null}
           </a>
         </li>
       ))}

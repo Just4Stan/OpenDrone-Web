@@ -25,6 +25,10 @@
     "logoDark": true
   },
   "repoUrl": "https://github.com/OpenDrone-hw/OpenRX",
+  "credits": [
+    "bastian2001",
+    "Just4Stan"
+  ],
   "video": {
     "id": "ssmQkRkXE84",
     "title": "How LoRa (ExpressLRS) Receivers Work"
@@ -121,6 +125,10 @@
       "2.4 GHz"
     ],
     [
+      "Radio",
+      "SX1281"
+    ],
+    [
       "Antenna",
       "On-board ceramic"
     ],
@@ -158,7 +166,7 @@
     ],
     [
       "PCB",
-      "6-layer, 1.0 mm"
+      "6-layer"
     ]
   ],
   "optionAxis": "Model",
@@ -370,6 +378,10 @@
           "2.4 GHz + 900 MHz, one antenna"
         ],
         [
+          "Radio",
+          "LR1121"
+        ],
+        [
           "Antenna",
           "U.FL, both bands through one RF switch"
         ],
@@ -473,6 +485,10 @@
         [
           "Band",
           "2.4 GHz + 900 MHz, two radio chains"
+        ],
+        [
+          "Radio",
+          "2× LR1121"
         ],
         [
           "Antenna",
