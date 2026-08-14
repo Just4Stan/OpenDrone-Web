@@ -48,16 +48,15 @@ token is mixed from it, so there is nothing to keep in sync:
 --color-gold-fill:       var(--color-gold);
 --color-gold-fill-hover: var(--color-gold-hover);
 --color-focus:           var(--color-gold);   /* html.light: var(--color-text) */
---color-chip-ground:     var(--color-bg-elevated); /* html.light: #413d36 */
 ```
 
 Two site-specific consequences of one gold, both deliberate:
 
 - **Gold is 1.62:1 on the light surface.** Fine for the mark and the wordmark,
-  which are exempt from contrast rules. Anything a user has to read or operate
-  uses `--color-text`, `--color-text-muted`, or `--color-focus`. Gold chips on
-  light carry their own dark ground, `--color-chip-ground`, rather than the gold
-  being darkened.
+  which are exempt from contrast rules. Gold chips and eyebrows on light sit at
+  roughly that too, which is a deliberate brand accent, not an oversight
+  (Stan, 2026-08-14). Anything a user has to *read* rather than recognise uses
+  `--color-text` or `--color-text-muted`.
 - **Focus rings never use gold.** WCAG 1.4.11 wants 3:1 and gives focus
   indicators no logo exemption, so `--color-focus` is ink on light.
 

@@ -101,15 +101,6 @@
      logo, a focus ring gets no exemption. Gold is 11.11:1 here on dark so
      it stays; html.light swaps it for ink, where gold would be 1.62:1. */
   --color-focus: var(--color-gold);
-  /* Ground under a gold chip. On dark the elevated surface already gives
-     gold 9:1. On light, gold on any light surface is ~1.5:1, so the chip
-     carries its own warm dark ground instead of the gold being darkened.
-     Stan 2026-08-14: a dark chip read as a hole, so the light value keeps
-     the gold-tinted character and only lifts gold from 1.48:1 to 2.00:1.
-     Deliberately below the 3:1 bar: these are decorative chips, and the
-     label inside them is not the only route to any of these pages. */
-  --color-chip-ground: var(--color-bg-elevated);
-  --color-chip-border: var(--color-border);
 
   /* Legacy alias map — collapses the old dual gold/green CTA system
      into a single gold accent. Any CSS still referencing the old
@@ -222,8 +213,6 @@ html.light {
      --color-text-muted, and focus rings use --color-focus. */
   --color-gold-soft: color-mix(in srgb, var(--color-gold) 14%, transparent);
   --color-focus: var(--color-text);
-  --color-chip-ground: #98876a;   /* gold 2.00:1, ink 4.96:1 (Stan: keep the gold tint, just lift it off 1.48) */
-  --color-chip-border: #56504668;
   /* Emerald PCB/brand green, AA 5.4:1 on white. --color-green-deep and
      --color-stock (= var(--color-green)) inherit from @theme and re-theme
      through this value automatically. */
@@ -2086,8 +2075,8 @@ html.light .header-cat-pod {
   gap: 0.2rem;
   padding: 0.25rem;
   border-radius: var(--r-pill);
-  background: var(--color-chip-ground);
-  border: 1px solid var(--color-chip-border);
+  background: var(--color-bg-elevated);
+  border: 1px solid var(--color-border);
 }
 .site-header-categories .site-header-cat-group a {
   padding: 0.36em 0.82em;
@@ -2120,19 +2109,19 @@ html.light .header-cat-pod {
 .site-header-categories .site-header-cat-all {
   padding: 0.42em 0.95em;
   border-radius: var(--r-pill);
-  background: color-mix(in srgb, var(--color-gold) 14%, var(--color-chip-ground));
+  background: var(--color-gold-soft);
   border: 1px solid color-mix(in srgb, var(--color-gold) 50%, transparent);
   color: var(--color-gold);
   opacity: 1;
 }
 .site-header-categories .site-header-cat-all:hover {
-  background: color-mix(in srgb, var(--color-gold) 20%, var(--color-chip-ground));
+  background: color-mix(in srgb, var(--color-gold) 20%, transparent);
   border-color: var(--color-gold);
   color: var(--color-gold-hover);
 }
 .site-header-categories .site-header-cat-all.active,
 .site-header-categories .site-header-cat-all[aria-current='page'] {
-  background: color-mix(in srgb, var(--color-gold) 24%, var(--color-chip-ground));
+  background: color-mix(in srgb, var(--color-gold) 24%, transparent);
   border-color: var(--color-gold);
   color: var(--color-gold-hover);
   font-weight: 600;
