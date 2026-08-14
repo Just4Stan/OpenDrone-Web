@@ -44,6 +44,7 @@ import {
 } from '~/lib/chapters';
 import {buildSeoMeta, buildProductJsonLd, SITE_ORIGIN} from '~/lib/seo';
 import {fetchCommitActivity, fetchContributors} from '~/lib/github';
+import {orderByCredits, snapshotContributors} from '~/lib/contributors-snapshot';
 import {ContributorGrid, ContributorGridSkeleton} from '~/components/Contributors';
 import {
   fetchProductReviews,
@@ -249,9 +250,15 @@ function loadDeferredData({context, params}: Route.LoaderArgs) {
       }
     }
   }
-  const contributors = fetchContributors(contributorRepoUrls, 12, ghToken).catch(
-    () => [],
-  );
+  // Oxygen's egress IP is shared, so the unauthenticated GitHub budget is
+  // usually spent before a visitor arrives and the fetch 403s. The committed
+  // roster (content/contributors.json, weekly sync) is the floor under that:
+  // live data still wins, an empty or failed fetch falls back to it instead
+  // of leaving the wall with nothing but its invitation tile.
+  const recorded = snapshotContributors(handle);
+  const contributors = fetchContributors(contributorRepoUrls, 12, ghToken)
+    .then((list) => (list.length ? list : recorded))
+    .catch(() => recorded);
 
   // Shopify's productRecommendations returns [] for new stores with no
   // purchase history. Fall back to "other products from the catalog" so
@@ -2303,7 +2310,12 @@ export default function Product() {
                 resolve={contributors}
                 errorElement={<ContributorGrid contributors={[]} />}
               >
-                {(list) => <ContributorGrid contributors={list ?? []} />}
+                {(list) => (
+                  <ContributorGrid
+                    contributors={orderByCredits(list ?? [], content.credits)}
+                    lead={content.credits?.[0]}
+                  />
+                )}
               </Await>
             </Suspense>
             <Link

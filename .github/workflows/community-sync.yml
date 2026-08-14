@@ -1,8 +1,8 @@
-# Weekly sync of the community-facing numbers that live as committed
-# content: the vote tally (content/votes.json, from order ballot
-# attributes) and the auto-mode financial goal meters (content/goals.json,
-# from order totals, floored to 5% steps so the public figure stays
-# approximate).
+# Weekly sync of the community-facing data that lives as committed content:
+# the vote tally (content/votes.json, from order ballot attributes), the
+# auto-mode financial goal meters (content/goals.json, from order totals,
+# floored to 5% steps so the public figure stays approximate), and the PDP
+# contributor roster (content/contributors.json, from the GitHub API).
 #
 # Deliberately a PR, not a push: main is protected and auto-deploys, and
 # these numbers are committed content like any other edit, so the diff
@@ -48,15 +48,25 @@ jobs:
           node scripts/tally-votes.mjs --write
           node scripts/update-goals.mjs --write
 
+      # The PDP fetches contributors live, but Oxygen's shared egress IP burns
+      # the unauthenticated GitHub budget, so the wall needs a committed floor.
+      # GITHUB_TOKEN is the job's own token: public repos, read-only, no secret
+      # to provision. Private repos are skipped by the script.
+      - name: Sync the contributor roster
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: node scripts/sync-contributors.mjs --write
+
       - name: Open or update the sync PR
         uses: peter-evans/create-pull-request@v8
         with:
           branch: bot/community-sync
-          title: 'Community sync: vote tally + goal meters'
+          title: 'Community sync: vote tally + goal meters + contributors'
           commit-message: |
-            Community sync: vote tally + goal meters
+            Community sync: vote tally + goal meters + contributors
 
-            Automated weekly run of votes:tally and goals:update.
+            Automated weekly run of votes:tally, goals:update and
+            sync:contributors.
 
             Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>
           body: |
@@ -65,9 +75,14 @@ jobs:
             meters in `content/goals.json` (order totals since each goal's
             `since`, allocation applied, floored to 5% steps).
 
+            Also refreshes `content/contributors.json`, the roster the PDP
+            contributor wall falls back to when the live GitHub fetch is
+            rate-limited.
+
             Review the numbers, then merge to publish them. Correct anything
             odd in the studio's Goals tab instead of editing JSON by hand.
           add-paths: |
             content/votes.json
             content/goals.json
+            content/contributors.json
           delete-branch: true

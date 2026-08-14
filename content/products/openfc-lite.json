@@ -25,6 +25,10 @@
     "logo": "/logos/betaflight.svg"
   },
   "repoUrl": "https://github.com/OpenDrone-hw/OpenFC-Lite",
+  "credits": [
+    "Just4Stan",
+    "bastian2001"
+  ],
   "video": {
     "id": "XDYZoMRJFeQ",
     "title": "How Flight Controllers Work (so I built my own)"

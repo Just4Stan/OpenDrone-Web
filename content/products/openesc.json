@@ -25,6 +25,10 @@
     "logoDark": true
   },
   "repoUrl": "https://github.com/OpenDrone-hw/OpenESC-20x20",
+  "credits": [
+    "Just4Stan",
+    "Vishal01Mehra"
+  ],
   "video": {
     "id": "TwAmmPxOpTM",
     "title": "How Drone ESCs Work (so I built my own)"
