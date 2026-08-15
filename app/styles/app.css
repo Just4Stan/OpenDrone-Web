@@ -40,21 +40,6 @@
   font-display: swap;
   src: url("../assets/fonts/jetbrains-mono-Bold.woff2") format("woff2");
 }
-/* Tokyo — the brand face (Graphicxell). Used ONLY for product/brand name
-   tokens (OpenStack, OpenFC, OpenESC, OpenFrame, …), never for body copy.
-   A condensed all-caps display face shipping a single upright Regular, so
-   the "lean" is a synthetic oblique applied in .brand (font-style: italic
-   over the upright face). The weight range is declared wide so a name
-   inside a bold heading maps to the same file instead of falling back.
-   font-display: swap → the display fallback paints first. */
-@font-face {
-  font-family: "Tokyo";
-  font-style: normal;
-  font-weight: 400 800;
-  font-display: swap;
-  src: url("../assets/fonts/tokyo-regular.woff2") format("woff2");
-}
-
 /* Metric-matched fallbacks. font-display: swap paints the system face first;
    without these the swap to Inter / JetBrains Mono reflowed every line and
    moved everything below (CLS 0.22 on the mobile home over slow 4G, all of it
@@ -160,10 +145,6 @@
     system-ui, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   --font-mono: "JetBrains Mono", "JetBrains Mono Fallback", ui-monospace, Menlo, Monaco, "SF Mono",
     "Cascadia Mono", "Segoe UI Mono", Consolas, monospace;
-
-  /* Brand face for product/brand name tokens. Falls back to the display
-     stack until Tokyo loads, so names never disappear. */
-  --font-brand: "Tokyo", var(--font-display);
 
   /* Type scale. Capped so display doesn't balloon on ultrawide. */
   --fs-xs: 0.6875rem;     /* 11px */
@@ -357,17 +338,6 @@ html.light .schematic-sheet {
   font-family: var(--font-display);
 }
 
-/* Brand name token — the <BrandName> component wraps each OpenX product
-   name in this span so it leans into Tokyo. Tokyo is a condensed all-caps
-   display face: legible only at heading scale, so it's reserved for the
-   PDP product H1 (here) and the home hero labels (.hero-component-label a
-   below). Small UI keeps the normal font. Tokyo ships upright only, so the
-   gentle lean is a synthetic oblique. */
-.brand {
-  font-family: var(--font-brand);
-  font-style: oblique 6deg;
-}
-
 /* Base styles. Set font-family explicitly to Inter — Tailwind v4
    defines its own --font-sans default which would otherwise win
    against our @theme override at the html selector. */
@@ -407,49 +377,6 @@ html {
 
 .scene-dim.is-hidden {
   opacity: 0;
-}
-
-/* Hero component labels — each label is absolutely positioned at 0,0
-   and HeroScene writes `transform: translate(x, y)` per frame to glue
-   it beneath the projected screen position of the matching 3D board.
-   The container supplies opacity + the scroll push-up; children own
-   their transform so we don't fight the per-frame writes. */
-.hero-component-labels {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  transition: opacity 0.3s ease-out;
-}
-
-.hero-component-label {
-  position: absolute;
-  top: 0;
-  left: 0;
-  margin-top: 0.75rem;
-  will-change: transform;
-  pointer-events: auto;
-}
-
-.hero-component-label a {
-  display: inline-block;
-  /* Tokyo brand face — display scale, gentle synthetic lean. */
-  font-family: var(--font-brand);
-  font-style: oblique 6deg;
-  font-weight: 700;
-  font-size: clamp(1.75rem, 3.2vw, 3.25rem);
-  line-height: 1;
-  letter-spacing: 0;
-  color: var(--color-text);
-  white-space: nowrap;
-  transition: color 0.15s ease;
-}
-
-.hero-component-label a:hover {
-  color: var(--color-gold);
-}
-
-.hero-component-label span {
-  color: var(--color-gold);
 }
 
 /* Airframe size toggle — segmented 5"/3" switch centered above the hero. */
