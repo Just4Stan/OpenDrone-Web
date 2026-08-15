@@ -1,5 +1,6 @@
 import type {Route} from './+types/[llms.txt]';
 import {PRODUCT_CONTENT, isComingSoon} from '~/lib/product-content';
+import {isConceptHandle} from '~/lib/roadmap-data';
 import {comingSoonFlag} from '~/lib/coming-soon';
 import {fetchStatusFlagsFast} from '~/lib/roadmap-data';
 
@@ -99,6 +100,8 @@ export async function loader({context, request}: Route.LoaderArgs) {
   });
 
   const catalog = (data.products?.nodes ?? [])
+    // Concept products (planned / in-progress) are not catalog.
+    .filter((p) => !isConceptHandle(p.handle, statusFlags))
     .map((p) => {
       const repo = PRODUCT_CONTENT[p.handle]?.repoUrl;
       const desc = (p.description ?? '').replace(/\s+/g, ' ').slice(0, 160);

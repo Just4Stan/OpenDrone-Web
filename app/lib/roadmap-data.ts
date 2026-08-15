@@ -329,3 +329,13 @@ export function isConceptStatus(
 ): status is 'planned' | 'in-progress' {
   return status === 'planned' || status === 'in-progress';
 }
+
+/** Whether a handle is a concept product (planned / in-progress) under the
+ *  given live flags: hidden from every listing surface (catalog, header
+ *  pods, related, feeds), reachable only via /roadmap and its plate. */
+export function isConceptHandle(
+  handle: string,
+  flags: Record<string, ProductStatus> = {},
+): boolean {
+  return isConceptStatus(statusForHandle(handle, flags));
+}

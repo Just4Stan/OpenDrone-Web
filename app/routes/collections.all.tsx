@@ -15,7 +15,8 @@ import {EmptyState} from '~/components/EmptyState';
 import {SearchForm} from '~/components/SearchForm';
 import {SearchResults} from '~/components/SearchResults';
 import {PRODUCT_CONTENT} from '~/lib/product-content';
-import {useProductStatusResolver} from '~/lib/coming-soon';
+import {useProductStatusResolver, useRoadmapStatusResolver} from '~/lib/coming-soon';
+import {isConceptStatus} from '~/lib/roadmap-data';
 import {stackDiscountedPrice} from '~/lib/stack-discount';
 import {Txt} from '~/components/Txt';
 import {copyText, editAttrs} from '~/lib/copy';
@@ -223,9 +224,13 @@ export default function Collection() {
   // coming-soon tiers); single products / bundles / accessories get one card.
   // Products arrive newest-first, so card order is newest-first by default.
   const productStatus = useProductStatusResolver();
+  const roadmapStatus = useRoadmapStatusResolver();
   const cards = useMemo<Card[]>(() => {
     const out: Card[] = [];
     for (const p of products) {
+      // Planned / in-progress products have no settled tiers or renders to
+      // list; they live on /roadmap and their concept plate only.
+      if (isConceptStatus(roadmapStatus(p.handle))) continue;
       const content = PRODUCT_CONTENT[p.handle];
       const axis = content?.optionAxis;
       const allTiers =
@@ -363,7 +368,7 @@ export default function Collection() {
       }
     }
     return out;
-  }, [products, productStatus]);
+  }, [products, productStatus, roadmapStatus]);
 
   // Categories present in the catalog, in editorial order then any leftovers.
   const categories = useMemo(() => {
