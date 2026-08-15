@@ -4,6 +4,8 @@ import {getPaginationVariables, Analytics} from '@shopify/hydrogen';
 import {PaginatedResourceSection} from '~/components/PaginatedResourceSection';
 import {redirectIfHandleIsLocalized} from '~/lib/redirect';
 import {ProductItem} from '~/components/ProductItem';
+import {useRoadmapStatusResolver} from '~/lib/coming-soon';
+import {isConceptStatus} from '~/lib/roadmap-data';
 import type {ProductItemFragment} from 'storefrontapi.generated';
 import {buildSeoMeta, SITE_ORIGIN} from '~/lib/seo';
 import {Breadcrumb} from '~/components/Breadcrumb';
@@ -91,6 +93,7 @@ function loadDeferredData({context}: Route.LoaderArgs) {
 
 export default function Collection() {
   const {collection} = useLoaderData<typeof loader>();
+  const roadmapStatus = useRoadmapStatusResolver();
   const hasProducts = collection.products.nodes.length > 0;
 
   return (
@@ -119,13 +122,16 @@ export default function Collection() {
           connection={collection.products}
           resourcesClassName="products-grid"
         >
-          {({node: product, index}) => (
-            <ProductItem
-              key={product.id}
-              product={product}
-              loading={index < 8 ? 'eager' : undefined}
-            />
-          )}
+          {({node: product, index}) =>
+            // Concept products (planned / in-progress) never list.
+            isConceptStatus(roadmapStatus(product.handle)) ? null : (
+              <ProductItem
+                key={product.id}
+                product={product}
+                loading={index < 8 ? 'eager' : undefined}
+              />
+            )
+          }
         </PaginatedResourceSection>
       ) : (
         <EmptyState

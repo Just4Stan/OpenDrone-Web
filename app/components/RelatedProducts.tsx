@@ -6,7 +6,8 @@ import type {OptimisticCartLineInput} from '@shopify/hydrogen';
 import {SmoothImage} from '~/components/SmoothImage';
 import {AddToCartButton} from '~/components/AddToCartButton';
 import {useAside} from '~/components/Aside';
-import {useComingSoon} from '~/lib/coming-soon';
+import {useComingSoon, useRoadmapStatusResolver} from '~/lib/coming-soon';
+import {isConceptStatus} from '~/lib/roadmap-data';
 import {PRODUCT_CONTENT} from '~/lib/product-content';
 
 /** The slice of a product the related strip needs — matches what the
@@ -78,16 +79,21 @@ export function RelatedProducts({
 }: {
   recommendations: Promise<RelatedProduct[] | null>;
 }) {
+  const roadmapStatus = useRoadmapStatusResolver();
   return (
     <section className="related-products" aria-label="Related products">
       <h2 className="section-heading">Related hardware</h2>
       <Suspense fallback={<RelatedSkeleton />}>
         <Await resolve={recommendations} errorElement={null}>
           {(items) => {
-            if (!items || items.length === 0) return null;
+            // Concept products (planned / in-progress) never list.
+            const listed = (items ?? []).filter(
+              (p) => !isConceptStatus(roadmapStatus(p.handle)),
+            );
+            if (listed.length === 0) return null;
             return (
               <div className="related-grid">
-                {items.slice(0, 4).map((product) => (
+                {listed.slice(0, 4).map((product) => (
                   <RelatedCard key={product.id} product={product} />
                 ))}
               </div>

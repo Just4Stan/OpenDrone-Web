@@ -7,6 +7,8 @@ import {ProductItem} from '~/components/ProductItem';
 import {AnimatedNumber} from '~/components/AnimatedNumber';
 import {Txt} from '~/components/Txt';
 import {PRODUCT_CONTENT} from '~/lib/product-content';
+import {useRoadmapStatusResolver} from '~/lib/coming-soon';
+import {isConceptStatus} from '~/lib/roadmap-data';
 import {BOARD_ART_VERSION} from '~/data/board-art-version';
 import {assetUrl} from '~/lib/asset-url';
 
@@ -232,7 +234,10 @@ export function MobileHome({
   );
 }
 
-function FeaturedGrid({items}: {items: CollectionItemFragment[]}) {
+function FeaturedGrid({items: all}: {items: CollectionItemFragment[]}) {
+  // Concept products (planned / in-progress) never list.
+  const roadmapStatus = useRoadmapStatusResolver();
+  const items = all.filter((p) => !isConceptStatus(roadmapStatus(p.handle)));
   if (items.length === 0) return null;
   return (
     <section className="home-mobile-featured">

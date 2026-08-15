@@ -15,7 +15,8 @@ import type {CollectionItemFragment} from 'storefrontapi.generated';
 import type {MoneyV2} from '@shopify/hydrogen/storefront-api-types';
 import {INCUTEC_HINT_SEEN_KEY} from '~/lib/incutec-hint';
 import {buildSeoMeta, SITE_ORIGIN} from '~/lib/seo';
-import {useProductStatusResolver} from '~/lib/coming-soon';
+import {useProductStatusResolver, useRoadmapStatusResolver} from '~/lib/coming-soon';
+import {isConceptStatus} from '~/lib/roadmap-data';
 import {isComingSoon} from '~/lib/product-content';
 import {HeroDroneStage} from '~/components/HeroDroneStage';
 import type {HeroLoadState} from '~/components/HeroDroneScene';
@@ -300,6 +301,7 @@ function DesktopHome({heroStacks}: {heroStacks: Promise<HeroStacks>}) {
   // Coming-soon reveal cards keep their link + title but swap the price
   // for a Soon tag (per-card handle resolved server-side on the card).
   const productStatus = useProductStatusResolver();
+  const roadmapStatus = useRoadmapStatusResolver();
   const scrollRef = useRef(0);
   const rafId = useRef(0);
   // Scroll progress reaches the DOM two ways:
@@ -971,6 +973,12 @@ function DesktopHome({heroStacks}: {heroStacks: Promise<HeroStacks>}) {
                             const setSpot = (v: HeroBoardKey | null) => {
                               heroSpotlightRef.current = v;
                             };
+                            // A concept product (planned / in-progress) has
+                            // no settled render or name to preview; its slot
+                            // stays empty so the other cards keep their
+                            // reveal windows.
+                            if (isConceptStatus(roadmapStatus(card.handle)))
+                              return null;
                             return (
                               <Link
                                 key={card.boardKey}

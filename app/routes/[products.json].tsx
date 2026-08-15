@@ -1,5 +1,6 @@
 import type {Route} from './+types/[products.json]';
 import {PRODUCT_CONTENT, isComingSoon} from '~/lib/product-content';
+import {isConceptHandle} from '~/lib/roadmap-data';
 import {comingSoonFlag} from '~/lib/coming-soon';
 import {fetchStatusFlagsFast} from '~/lib/roadmap-data';
 
@@ -59,41 +60,45 @@ export async function loader({context, request}: Route.LoaderArgs) {
     cache: context.storefront.CacheLong(),
   });
 
-  const products = (data.products?.nodes ?? []).map((p) => {
-    const content = PRODUCT_CONTENT[p.handle];
-    // Locked products expose no price and no cart permalink — this feed is
-    // the most scrapeable surface, so it must match what the PDP shows.
-    const locked = isComingSoon(p.handle, globalSoon, statusFlags);
-    return {
-      handle: p.handle,
-      title: p.title,
-      description: p.description,
-      product_type: p.productType || null,
-      url: `${origin}/products/${p.handle}`,
-      image: p.featuredImage?.url ?? null,
-      license: content ? 'CERN-OHL-S-2.0' : null,
-      design_source:
-        content?.repoUrl && content.repoUrl !== 'https://github.com/OpenDrone-hw'
-          ? content.repoUrl
-          : null,
-      ...(locked ? {coming_soon: true} : null),
-      variants: (p.variants?.nodes ?? []).map((v) => {
-        const id = numericId(v.id);
-        return {
-          id,
-          sku: v.sku || null,
-          title: v.title,
-          options: Object.fromEntries(
-            (v.selectedOptions ?? []).map((o) => [o.name, o.value]),
-          ),
-          available: locked ? false : v.availableForSale,
-          price: locked ? null : v.price.amount,
-          currency: locked ? null : v.price.currencyCode,
-          ...(locked ? null : {cart_permalink: `${origin}/cart/${id}:1`}),
-        };
-      }),
-    };
-  });
+  const products = (data.products?.nodes ?? [])
+    // Concept products (planned / in-progress) are not catalog.
+    .filter((p) => !isConceptHandle(p.handle, statusFlags))
+    .map((p) => {
+      const content = PRODUCT_CONTENT[p.handle];
+      // Locked products expose no price and no cart permalink — this feed is
+      // the most scrapeable surface, so it must match what the PDP shows.
+      const locked = isComingSoon(p.handle, globalSoon, statusFlags);
+      return {
+        handle: p.handle,
+        title: p.title,
+        description: p.description,
+        product_type: p.productType || null,
+        url: `${origin}/products/${p.handle}`,
+        image: p.featuredImage?.url ?? null,
+        license: content ? 'CERN-OHL-S-2.0' : null,
+        design_source:
+          content?.repoUrl &&
+          content.repoUrl !== 'https://github.com/OpenDrone-hw'
+            ? content.repoUrl
+            : null,
+        ...(locked ? {coming_soon: true} : null),
+        variants: (p.variants?.nodes ?? []).map((v) => {
+          const id = numericId(v.id);
+          return {
+            id,
+            sku: v.sku || null,
+            title: v.title,
+            options: Object.fromEntries(
+              (v.selectedOptions ?? []).map((o) => [o.name, o.value]),
+            ),
+            available: locked ? false : v.availableForSale,
+            price: locked ? null : v.price.amount,
+            currency: locked ? null : v.price.currencyCode,
+            ...(locked ? null : {cart_permalink: `${origin}/cart/${id}:1`}),
+          };
+        }),
+      };
+    });
 
   return new Response(
     JSON.stringify(
