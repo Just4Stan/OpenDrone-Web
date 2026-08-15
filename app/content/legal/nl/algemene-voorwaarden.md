@@ -13,12 +13,11 @@
 |---|---|
 | Naam | Incutec BV |
 | Zetel | Stapelhuisstraat 15, 3000 Leuven |
-| Ondernemingsnummer | wordt gepubliceerd na oprichting (KBO) |
-| BTW-nummer | wordt gepubliceerd na oprichting |
+| Ondernemingsnummer | 1038.934.039 (KBO, RPR Leuven) |
+| BTW-nummer | BE 1038.934.039 |
 | E-mail | contact@opendrone.be |
-| Telefoon | wordt gepubliceerd na oprichting |
-| Website | incutec.eu |
-| IBAN | wordt gepubliceerd na oprichting |
+| Website | opendrone.be (webshop) · incutec.eu |
+| IBAN | BE94 7310 7599 3714 (KBC) |
 
 ### Artikel 2: Toepassingsgebied
 
@@ -52,13 +51,15 @@
 
 5.3. Tijdens de bedenktijd zal de consument zorgvuldig omgaan met het product en de verpakking. Hij zal het product slechts uitpakken of gebruiken in de mate die nodig is om de aard, de kenmerken en de werking van het product vast te stellen.
 
-5.4. De consument oefent zijn herroepingsrecht uit door het modelformulier voor herroeping (bijlage) in te vullen, of door een andere ondubbelzinnige verklaring aan Incutec BV te richten.
+5.4. De consument oefent zijn herroepingsrecht uit door het modelformulier voor herroeping (bijlage) in te vullen, via het onlineformulier op opendrone.be/herroepingsrecht, of door een andere ondubbelzinnige verklaring aan Incutec BV te richten. De consument zendt het product terug binnen 14 dagen na de herroepingsverklaring.
 
 5.5. Terugzendkosten zijn voor rekening van de consument.
 
-5.6. Incutec BV vergoedt alle betalingen van de consument, inclusief eventuele leveringskosten, uiterlijk **14 dagen** nadat Incutec BV het product heeft terugontvangen of de consument heeft aangetoond dat hij het product heeft teruggezonden.
+5.6. Incutec BV vergoedt alle betalingen van de consument, inclusief de standaard leveringskosten (niet de meerkost van een door de consument gekozen duurdere leveringswijze), uiterlijk **14 dagen** nadat Incutec BV het product heeft terugontvangen of de consument heeft aangetoond dat hij het product heeft teruggezonden.
 
 5.7. Terugbetaling geschiedt via hetzelfde betaalmiddel als bij de oorspronkelijke transactie, tenzij de consument uitdrukkelijk met een ander betaalmiddel instemt.
+
+5.8. **Waardevermindering.** De consument is aansprakelijk voor de waardevermindering van het product die het gevolg is van gebruik dat verder gaat dan nodig om de aard, de kenmerken en de werking ervan vast te stellen (Art. VI.51 §2 WER). Voor elektronicacomponenten geldt in het bijzonder: solderen aan het product, montage in een systeem, het aansluiten van batterijvoeding of motoren, het flashen van andere firmware en vlieggebruik gaan verder dan die beoordeling; het aansluiten via USB om de werking te controleren niet. De waardevermindering wordt door Incutec BV gemotiveerd en op basis van de werkelijke restwaarde begroot en op de terugbetaling ingehouden; enkel wanneer het product geen restwaarde meer heeft, kan zij het volledige aankoopbedrag bedragen. Het herroepingsrecht zelf vervalt hierdoor niet.
 
 ### Artikel 6: Uitsluiting herroepingsrecht
 
@@ -76,7 +77,7 @@
 
 7.3. Het risico van beschadiging en/of vermissing van producten berust tot het moment van bezorging aan de consument bij Incutec BV.
 
-7.4. Incutec BV biedt ten minste **twee leveringswijzen** aan (Art. VI.45/2 WER: Wet van 9 februari 2024, van toepassing sinds 21 september 2024 voor alle Belgische webshops). De twee methoden moeten wezenlijk verschillend zijn (bijv. thuislevering + pakketpunt; twee vervoerders met enkel thuislevering volstaat niet).
+7.4. Incutec BV biedt ten minste **twee wezenlijk verschillende leveringswijzen** aan (Art. VI.45/2 WER).
 
 ### Artikel 8: Betaling
 
@@ -92,23 +93,39 @@
 
 9.2bis. **Goederen met digitale elementen:** De producten van Incutec BV bevatten firmware (digitale elementen) die noodzakelijk is voor de werking ervan, in de zin van Richtlijn (EU) 2019/771 Art. 2(5b). Incutec BV zorgt ervoor dat de consument in kennis wordt gesteld van beschikbare firmware-updates die nodig zijn om de conformiteit van het product te behouden gedurende de garantieperiode van 2 jaar. Firmware-updates worden beschikbaar gesteld via de open source projecten waarop de producten gebaseerd zijn (Betaflight, AM32, ExpressLRS). Incutec BV onderhoudt de hardware-specifieke ondersteuning (board target definitions) die nodig is om deze updates te installeren.
 
-9.2ter. **Volgorde van remedies:** Bij gebrek aan overeenstemming heeft de consument het recht om naar keuze herstelling of vervanging van het product te vragen. Alleen wanneer herstelling en vervanging onmogelijk of onevenredig zijn, kan de consument een prijsvermindering of ontbinding van de overeenkomst vragen (Art. 1649quinquies oud BW).
+9.2ter. **Volgorde van remedies:** Bij gebrek aan overeenstemming heeft de consument het recht om naar keuze herstelling of vervanging van het product te vragen. De consument kan een prijsvermindering of ontbinding van de overeenkomst vragen wanneer herstelling of vervanging onmogelijk of onevenredig is, wanneer Incutec BV de herstelling of vervanging niet, niet kosteloos, niet binnen een redelijke termijn of niet zonder ernstige overlast heeft uitgevoerd of geweigerd heeft, wanneer het gebrek ondanks een poging tot herstel opnieuw optreedt, of wanneer het gebrek zo ernstig is dat onmiddellijke prijsvermindering of ontbinding gerechtvaardigd is (Art. 1649quinquies oud BW; Richtlijn (EU) 2019/771 Art. 13(4)).
 
-9.3. Garantie dekt geen schade veroorzaakt door:
-- Verkeerd gebruik of installatie (afwijking van de gebruikshandleiding)
+9.3. De wettelijke garantie dekt geen gebrek dat is veroorzaakt door:
+- Verkeerd gebruik of verkeerde installatie (afwijking van de gebruikshandleiding), in de mate dat het gebrek daardoor is veroorzaakt
 - Normale slijtage
-- Wijzigingen aangebracht door de consument
-- Externe oorzaken (waterschade, bliksem, stroompieken buiten specificaties)
+- Wijzigingen of herprogrammering door de consument, in de mate dat het gebrek daardoor is veroorzaakt. Het wijzigen van open-source firmware of hardware sluit de garantie niet uit voor gebreken die er geen verband mee houden (zie de garantiepagina)
+- Externe oorzaken (waterschade, bliksem, spanning of stroom buiten de specificaties), in de mate dat het gebrek daardoor is veroorzaakt
+
+9.4. **Onderzoek bij een garantieclaim.** Bij een claim onderzoekt Incutec BV het teruggestuurde product en deelt het de bevindingen met de consument (foto's en meetresultaten waar relevant). Sporen van oorzaken buiten de conformiteit, zoals soldeerschade aan pads of connectoren, omgepoolde of te hoge voedingsspanning, mechanische schade of waterschade, kunnen als tegenbewijs dienen dat het gebrek niet bij levering bestond, of aantonen dat het wettelijke vermoeden onverenigbaar is met de aard van het gebrek (Art. 1649quater §4 oud BW). Terugzending, herstelling en vervanging onder de wettelijke garantie zijn kosteloos voor de consument. Dit artikel beperkt de wettelijke garantie niet; het beschrijft hoe claims worden beoordeeld.
+
+9.5. **Geen commerciële garantie.** Incutec BV biedt geen commerciële garantie bovenop de wettelijke conformiteitsgarantie. Elke verwijzing naar "garantie" op de website of in productdocumentatie betreft de wettelijke garantie van Art. 9.2.
 
 ### Artikel 10: Aansprakelijkheid
 
-10.1. De aansprakelijkheid van Incutec BV voor indirecte of gevolgschade is beperkt tot het factuurbedrag van de betreffende bestelling, onverminderd de wettelijke garantie (Art. 9) en productaansprakelijkheid. Deze beperking doet geen afbreuk aan de rechten van de consument op grond van de wettelijke garantie of enige andere dwingende wettelijke bepaling.
+10.1. Behoudens opzet of grove schuld van Incutec BV of haar aangestelden, en behoudens de niet-uitvoering van een essentiële verbintenis anders dan door overmacht, is de aansprakelijkheid van Incutec BV voor indirecte of gevolgschade beperkt tot het factuurbedrag van de betreffende bestelling, onverminderd de wettelijke garantie (Art. 9) en productaansprakelijkheid. Deze beperking doet geen afbreuk aan de rechten van de consument op grond van de wettelijke garantie of enige andere dwingende wettelijke bepaling.
 
-10.2. De beperking in art. 10.1 doet geen afbreuk aan de wettelijke productaansprakelijkheid van de fabrikant (Richtlijn (EU) 2024/2853) noch aan de rechten van de consument op grond van de wettelijke garantie (Richtlijn (EU) 2019/771). Aansprakelijkheid voor lichamelijke schade kan niet contractueel worden beperkt (Art. VI.83, 32° WER).
+10.2. De beperking in art. 10.1 doet geen afbreuk aan de wettelijke productaansprakelijkheid van de fabrikant (Wet van 25 februari 1991; na de omzetting Richtlijn (EU) 2024/2853) noch aan de rechten van de consument op grond van de wettelijke garantie (Richtlijn (EU) 2019/771). Aansprakelijkheid voor overlijden of lichamelijk letsel kan niet worden uitgesloten of beperkt (Art. VI.83, 25° WER).
 
 10.3. Incutec BV is niet aansprakelijk voor schade voortvloeiend uit het gebruik van het product in strijd met de gebruikshandleiding of buiten de specificaties.
 
 10.4. De producten van Incutec BV zijn componenten, bedoeld voor inbouw in door de klant zelf samengestelde systemen. Incutec BV is niet aansprakelijk voor het eindproduct van de klant.
+
+### Artikel 10bis: Zelfbouw, drones en verantwoordelijkheid van de gebruiker
+
+10bis.1. **Zelfgebouwde drones.** De producten van Incutec BV zijn losse componenten en zijn geen onbemand luchtvaartuigsysteem (UAS) in de zin van Verordening (EU) 2019/945; zij dragen geen klasselabel (C0–C6). De producten worden afzonderlijk verkocht en niet als kant-en-klare bouwset voor een compleet toestel. Wie afzonderlijk gekochte componenten assembleert tot een drone voor eigen gebruik, bouwt een "privately built UAS" in de zin van Verordening (EU) 2019/947 Art. 2(16) en is zelf bouwer en exploitant van dat luchtvaartuig. Alle verplichtingen die daaruit voortvloeien, waaronder registratie als exploitant, naleving van de categorie- en subcategorieregels (voor zelfbouw: subcategorie A1 enkel onder 250 g, anders A3 of de specifieke categorie), luchtwaardigheid van het samengestelde toestel en wettelijk vereiste verzekeringen, rusten op de klant, niet op Incutec BV.
+
+10bis.2. **Radioconfiguratie.** Producten met een radiozender worden geleverd met firmware waarvan de instelbare zendparameters binnen de EU-limieten blijven; zoals geleverd voldoet het product aan de toepasselijke regelgeving. Het wijzigen van het regelgevingsdomein, het overschrijden van de EU-limieten voor zendvermogen of het gebruik buiten de EU met EU-instellingen is een wijziging door de gebruiker (Art. 9.3); de klant is verantwoordelijk voor de naleving van de regelgeving van het land waar het product wordt gebruikt.
+
+10bis.3. **Geen veiligheidskritisch gebruik.** De producten zijn ontworpen voor onbemande recreatieve en professionele multirotors en modelluchtvaart. Zij zijn niet ontworpen, getest of toegelaten voor bemande luchtvaart, medische toepassingen, nucleaire installaties, militaire toepassingen, of enige andere toepassing waarin het falen van een component redelijkerwijs kan leiden tot lichamelijk letsel of aanzienlijke schade. Dergelijk gebruik is uitdrukkelijk buiten het beoogde gebruik.
+
+10bis.4. **Open-source firmware.** De producten werken met open-source firmware (o.a. AM32, Betaflight, ExpressLRS). Het herflashen of aanpassen van firmware door de klant is technisch mogelijk en door het open karakter van de producten voorzien; het gedrag en de regelgevingsconformiteit van het product met gewijzigde firmware vallen onder de verantwoordelijkheid van de klant (zie ook Art. 9.3 en de garantiepagina). De softwarelicenties (GPL, MIT) betreffen de firmware als software en doen geen afbreuk aan de wettelijke rechten van de consument met betrekking tot het gekochte product.
+
+10bis.5. **Geen speelgoed.** De producten zijn geen speelgoed en niet bestemd voor personen jonger dan 14 jaar. Assemblage en gebruik door minderjarigen alleen onder toezicht van een volwassene. LiPo-batterijen, draaiende propellers en soldeerwerk brengen reële risico's mee; de veiligheidsinformatie bij het product moet vóór gebruik worden gelezen.
 
 ### Artikel 11: Intellectuele eigendom
 
@@ -118,13 +135,13 @@
 
 ### Artikel 12: Persoonsgegevens
 
-12.1. Incutec BV verwerkt persoonsgegevens in overeenstemming met de Algemene Verordening Gegevensbescherming (AVG/GDPR). Zie het Privacybeleid op opendrone.store/privacy.
+12.1. Incutec BV verwerkt persoonsgegevens in overeenstemming met de Algemene Verordening Gegevensbescherming (AVG/GDPR). Zie het Privacybeleid op opendrone.be/privacy.
 
 ### Artikel 13: Klachten
 
-13.1. De consument wordt verzocht Incutec BV zo snel mogelijk op de hoogte te brengen van elk conformiteitsgebrek. De consument kan zijn rechten onder de wettelijke garantie uitoefenen gedurende de volledige garantieperiode van 2 jaar.
+13.1. De consument brengt Incutec BV binnen twee maanden na vaststelling van een conformiteitsgebrek op de hoogte (Art. 1649quater §2 oud BW). De wettelijke garantie geldt gedurende 2 jaar na levering.
 
-13.2. Incutec BV reageert binnen **14 dagen** op klachten.
+13.2. Incutec BV bevestigt ontvangst van een klacht binnen 5 werkdagen en reageert inhoudelijk binnen **14 dagen**.
 
 13.3. Indien de consument van oordeel is dat een product een veiligheidsrisico vormt, kan dit gemeld worden via contact@opendrone.be. Incutec BV onderzoekt elke veiligheidsmelding en neemt zo nodig corrigerende maatregelen.
 
@@ -142,11 +159,15 @@
 
 ### Artikel 16: Professionele klanten (B2B)
 
-16.1. Voor transacties met ondernemingen (professionele klanten die handelen in het kader van hun beroepsactiviteit) zijn de artikelen 5, 6, 9 en 13 van deze voorwaarden niet van toepassing. In dat geval gelden de bepalingen van het Burgerlijk Wetboek.
+16.1. Voor transacties met ondernemingen (professionele klanten die handelen in het kader van hun beroepsactiviteit) zijn de artikelen 5, 6, 9 en 13 van deze voorwaarden niet van toepassing. In dat geval gelden de bepalingen van het Burgerlijk Wetboek. Een klant die bij bestelling een ondernemingsnummer of BTW-nummer opgeeft, wordt geacht als onderneming te handelen.
 
 16.2. Voor B2B-transacties is de ondernemingsrechtbank Leuven exclusief bevoegd.
 
 16.3. Facturen aan professionele klanten worden opgesteld via de wettelijk vereiste gestructureerde elektronische facturatiekanalen wanneer Belgisch recht dit vereist. In andere gevallen kan Incutec BV een andere wettelijk toegelaten factuurvorm gebruiken.
+
+16.4. **Aansprakelijkheid B2B.** Behoudens opzet of zware fout van Incutec BV, en behoudens schade door aantasting van het leven of de fysieke integriteit, is de aansprakelijkheid van Incutec BV jegens professionele klanten per schadegeval en in totaal beperkt tot het factuurbedrag van de betrokken bestelling, en is aansprakelijkheid voor indirecte schade en gevolgschade, waaronder winstderving, productieverlies en schade aan andere apparatuur, uitgesloten. Zichtbare gebreken en niet-conforme levering worden op straffe van verval schriftelijk gemeld binnen 8 dagen na levering; verborgen gebreken binnen 14 dagen na ontdekking en uiterlijk 12 maanden na levering (Art. 1648 oud BW). Herstel of vervanging geschiedt naar keuze van Incutec BV.
+
+16.5. **Bewijs B2B.** Tussen Incutec BV en professionele klanten gelden elektronische registraties (bestelgegevens, logbestanden, productie- en testrecords) als bewijs, behoudens tegenbewijs.
 
 ### Artikel 17: Overmacht
 
@@ -158,13 +179,19 @@
 
 18.1. Door een bestelling te plaatsen, aanvaardt de klant het Incutec End-Use beleid gepubliceerd op /end-use, en garandeert hij dat de goederen niet zullen worden gebruikt voor enig uitgesloten eindgebruik zoals beschreven in §3 van dat beleid. Schending van deze garantie vormt een wezenlijke contractbreuk en geeft Incutec BV het recht de bestelling te annuleren, de levering te weigeren, en elk rechtsmiddel uit te oefenen dat beschikbaar is onder Belgisch recht en de toepasselijke EU-verordeningen.
 
+18.2. **Geen wederuitvoer naar Rusland of Belarus.** De klant verbindt zich ertoe de goederen niet direct of indirect te verkopen, uit te voeren of weder uit te voeren naar de Russische Federatie of Belarus, of voor gebruik aldaar (Art. 12g Verordening (EU) 833/2014; Art. 8g Verordening (EG) 765/2006). Deze verbintenis geldt als een essentieel element van de overeenkomst. De klant stelt Incutec BV onmiddellijk in kennis van elke schending; bij schending kan Incutec BV de overeenkomst ontbinden en schadevergoeding vorderen. Incutec BV weigert levering wanneer er aanwijzingen zijn van omzeiling van deze bepaling.
+
 ### Artikel 19: Taal
 
-19.1. De Nederlandstalige versie van deze voorwaarden is de authentieke tekst. Vertalingen in het Frans, Engels of andere talen zijn informatief en niet bindend.
+19.1. Bij tegenstrijdigheid tussen de taalversies van deze voorwaarden geldt de Nederlandse tekst, behalve tegenover consumenten, voor wie de voor hen gunstigste lezing geldt (Art. VI.37 §2 WER).
+
+### Artikel 20: Deelbaarheid
+
+20.1. Indien een bepaling van deze voorwaarden geheel of gedeeltelijk nietig of niet-afdwingbaar blijkt, blijven de overige bepalingen onverminderd van kracht. Tussen ondernemingen wordt de nietige bepaling vervangen door een geldige bepaling die de oorspronkelijke bedoeling zo dicht mogelijk benadert.
 
 ---
 
-*Versie: 2.0*
+*Versie: 2.1 — laatst bijgewerkt 2026-08-15*
 
 ---
 
@@ -197,12 +224,12 @@ Exception that MAY apply: Art. VI.53, 5°: "goederen die na levering door hun aa
 - Cannot be shortened contractually for consumers
 - does not apply to B2B sales (different regime under Burgerlijk Wetboek: commercial guarantee clauses allowed)
 
-Source: https://www.eccbelgium.be/themes/guarantee-and-warranty
+Art. 9.2 states the full 2-year reversal correctly (fixed; Belgian implementation went further than the EU minimum). Source: https://www.eccbelgium.be/themes/guarantee-and-warranty
 
 ### GPSR (Reg 2023/988): applicable since 13 Dec 2024
 Incutec is "manufacturer" under GPSR. For every product listing the webshop must display:
 
-**GPSR pre-sale listing requirements (Art. 19 GPSR):**
+**GPSR pre-sale listing requirements (Art. 19 GPSR)** — every product listing must display:
 - Manufacturer name + registered trade name + postal address + electronic contact (per product page OR global "manufacturer info" link)
 - For Incutec products: "Manufacturer: Incutec BV, Stapelhuisstraat 15, 3000 Leuven, Belgium: contact@opendrone.be"
 - If selling 3rd-party products where Incutec is importer: also show "Importer: Incutec BV, [address]"
@@ -220,7 +247,7 @@ Don't link to ec.europa.eu/consumers/odr anymore. The ODR link requirement under
 **Replacement in Art. 14 AV:** Keep Consumentenombudsdienst reference (https://consumentenombudsdienst.be). Remove any ODR-platform link if present. Belgian consumers can also contact ECC Belgium (https://www.eccbelgium.be) for cross-border disputes. Source: https://eur-lex.europa.eu/eli/reg/2024/3228/oj
 
 ### NACEBEL 2025 codes for Incutec BV (declare at KBO via boekhouder/Acerta)
-Based on Incutec's activities (designing + manufacturing + selling FPV electronics, webshop, R&D and engineering consulting, education). NACE-BEL 2025 uses 5-digit subclasses (`XX.XXX`) and retail is classified by product, not sales channel.
+Based on Incutec's activities (designing + manufacturing + selling FPV electronics, webshop, R&D and engineering consulting, education). Verified against the official NACE-BEL 2025 classification 2026-06-09 — the earlier draft used obsolete 2008-format codes (`XX.XX.XX`); 2025 uses 5-digit subclasses (`XX.XXX`) and retail is classified by product, not sales channel.
 
 **Primary:**
 - **26.300**: Vervaardiging van communicatieapparatuur (radio TX/RX: VTX/VRX, ELRS receivers) — 7-digit detail: 26.30002
@@ -260,7 +287,7 @@ Key changes relevant for Incutec:
 - 10-year liability period (extended to 25 years for latent injuries from non-obvious defects)
 - Burden of proof relaxed for claimants (presumption of defect in technically complex cases)
 
-**Carry product liability insurance. €2-5M coverage is market-standard for small EU electronics sellers.** Belgian brokers: Vanbreda, Cobema, Allianz, AXA. Budget ~€500-1500/year for this coverage tier at Incutec's volume. See [`../company/insurance-requirements.md`](../company/insurance-requirements.md) and re-verify quotes at launch.
+**Carry product liability insurance. €2-5M coverage is market-standard for small EU electronics sellers.** Belgian brokers: Vanbreda, Cobema, Allianz, AXA. Budget €2.000-5.000/year for this coverage tier at Incutec's volume (€2.250 budgeted; see [`../company/insurance-requirements.md`](../company/insurance-requirements.md) and FINANCES.md) and re-verify quotes at launch.
 
 ### Must-add articles to AV before launch
 - **Art. 3bis: Prijsaanduidingen:** conform Art. VI.4 WER: totaalprijs incl. BTW + "exclusief verzendkosten" OR include free shipping threshold

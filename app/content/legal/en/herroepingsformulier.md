@@ -52,7 +52,7 @@ ____________________
 5. **Return costs** are borne by you.
 6. Incutec BV reimburses all payments (including standard delivery costs) no later than **14 days** after we have received the product back or after you have provided proof of return, whichever is the earlier.
 7. Reimbursement is made using the same means of payment as your original purchase.
-8. The product must be returned in its original condition. A reduction in value due to use beyond what is necessary to establish the nature, characteristics and functioning of the product may be deducted.
+8. You may unpack and test the product as you would in a shop; only the diminished value from handling beyond that is deducted. For electronics components, soldering, mounting, connecting battery power or motors, flashing other firmware and flight use go beyond that assessment; checking via USB does not (see Terms and Conditions Art. 5.8).
 
 ---
 

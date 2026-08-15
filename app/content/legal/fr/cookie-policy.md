@@ -20,13 +20,13 @@ Les cookies sont de petits fichiers texte placés sur votre appareil par un site
 |--------|---------|-----------|
 | `cart`, `cart_sig`, `cart_ts`, `_secure_session_id`, `_shopify_tm` | Gestion du panier et de la session (Shopify) | Session |
 | `_tracking_consent`, `_cmp_a` | Mémoriser vos préférences de cookies (Shopify Customer Privacy API) | 6 mois |
-| `__stripe_mid`, `__stripe_sid` | Prévention de la fraude au paiement — placés **uniquement sur les pages de paiement hébergées par Shopify**, pas sur cette boutique (Stripe, Art. 129 §1 LCE — Loi du 13 juin 2005, deuxième tiret : strictement nécessaire à la fourniture du service expressément demandé ; Directive ePrivacy 2002/58/CE) | 1 an / session |
+| `__stripe_mid`, `__stripe_sid` | Prévention de la fraude au paiement — placés **uniquement sur les pages de paiement hébergées par Shopify**, pas sur cette boutique (Stripe, art. 10/2 de la loi du 30 juillet 2018 (inséré par la loi du 21 décembre 2021), strictement nécessaire au service expressément demandé; Directive ePrivacy 2002/58/CE) | 1 an / session |
 
 #### Analyse
 
-Nous utilisons **Plausible Analytics** (hébergé dans l’UE, sans cookies). Plausible ne place aucun cookie et ne traite aucune donnée personnelle nécessitant un consentement. C’est pourquoi nous n’affichons pas de bandeau de consentement pour l’analyse.
+Nous utilisons **Plausible Analytics** (hébergé dans l’UE, sans cookies). Plausible ne place aucun cookie et ne conserve aucun identifiant persistant ; l’adresse IP est hachée et non conservée. Ce traitement échappe à l’exigence de consentement ePrivacy et repose sur notre intérêt légitime (art. 6.1.f RGPD). C’est pourquoi nous n’affichons pas de bandeau de consentement pour l’analyse.
 
-Les cookies d’analyse intégrés de Shopify (`_shopify_s`, `_shopify_y`) sont désactivés sauf si vous donnez votre consentement explicite.
+Les cookies d’analyse intégrés de Shopify (`_shopify_s`, `_shopify_y`) ne sont pas activés et ne sont pas déposés sur cette boutique.
 
 #### Cookies marketing
 

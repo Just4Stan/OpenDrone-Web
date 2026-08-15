@@ -15,7 +15,7 @@
 |---|---|
 | Nom | Incutec BV |
 | Siège social | Stapelhuisstraat 15, 3000 Louvain |
-| Numéro d’entreprise | Publié après constitution (BCE) |
+| Numéro d’entreprise | 1038.934.039 (BCE, RPM Louvain) |
 | Courriel | contact@opendrone.be |
 
 Incutec BV n’a pas désigné de Délégué à la Protection des Données (DPD) car cela n’est pas obligatoire pour ses activités actuelles (Art. 37 RGPD).
@@ -39,7 +39,7 @@ Incutec BV n’a pas désigné de Délégué à la Protection des Données (DPD)
 | Traitement du paiement | Nécessaire à l’exécution du contrat (Art. 6.1.b) |
 | Facturation et comptabilité | Obligation légale (Art. 6.1.c : législation TVA, droit comptable) |
 | Service client | Intérêt légitime (Art. 6.1.f) |
-| Analyse du site web | Intérêt légitime (Art. 6.1.f) ou consentement (Art. 6.1.a) |
+| Analyse du site web | Intérêt légitime (Art. 6.1.f) ; sans cookies, sans identifiant persistant |
 | Newsletter | Consentement (Art. 6.1.a) |
 | Prévention de la fraude / des abus | Intérêt légitime (Art. 6.1.f) |
 
@@ -82,7 +82,7 @@ Vous avez le droit :
 - **De rectification** de données inexactes (Art. 16)
 - **À l’effacement** de vos données (« droit à l’oubli ») (Art. 17)
 - **À la limitation** du traitement (Art. 18)
-- **D’opposition** au traitement fondé sur un intérêt légitime (Art. 21)
+- **D’opposition** au traitement fondé sur un intérêt légitime (Art. 21). Vous pouvez vous opposer à tout moment et gratuitement au traitement à des fins de marketing direct ; nous y mettons alors fin immédiatement (Art. 21.2-21.3)
 - **À la portabilité** de vos données (Art. 20)
 - **De retirer** votre consentement (Art. 7.3)
 
@@ -112,9 +112,11 @@ Incutec BV prend des mesures techniques et organisationnelles appropriées pour 
 
 ### 9. Décision automatisée
 
-Incutec BV n’utilise pas de prise de décision automatisée ni de profilage produisant des effets juridiques vous concernant ou vous affectant de manière significative de façon similaire, au sens de l’Art. 22 RGPD.
+Lors de la passation d'une commande, la détection de fraude de la plateforme (Shopify Fraud Analysis) évalue automatiquement des signaux tels que les données de paiement, l'adresse de livraison, l'adresse IP et le schéma de commande, et attribue un score de risque. Une commande à score élevé peut être refusée automatiquement. Il s'agit d'une décision automatisée au sens de l'art. 22 RGPD, nécessaire à la conclusion et à l'exécution du contrat (art. 22.2.a). Vous avez le droit d'obtenir une intervention humaine, d'exprimer votre point de vue et de contester la décision : contactez contact@opendrone.be et un collaborateur réexaminera la commande. Aucune autre décision automatisée ni aucun profilage n'a lieu.
 
-Les systèmes automatisés de détection de fraude de Shopify (Shopify Protect / Fraud Analysis) peuvent entraîner le refus ou le signalement de commandes. Il s’agit d’une décision automatisée qui affecte le traitement de votre commande. Vous pouvez contacter Incutec BV pour une révision humaine d’une commande refusée.
+**Caractère obligatoire des données.** Le nom, l'adresse, l'e-mail et les données de paiement sont nécessaires pour exécuter une commande ; sans eux, aucun contrat ne peut être conclu. Les données de facturation doivent être conservées légalement. Toutes les autres données (numéro de téléphone, newsletter, données de compte) sont facultatives.
+
+**Copie des garanties.** Une copie des clauses contractuelles types ou de la certification DPF couvrant les transferts du point 5 peut être demandée via privacy@opendrone.be.
 
 ### 10. Violations de données
 
@@ -122,4 +124,4 @@ En cas de violation de données présentant un risque pour vos droits et libert�
 
 ### 11. Modifications
 
-Incutec BV peut modifier cette politique de confidentialité. La version la plus récente est toujours disponible sur opendrone.store/privacy. En cas de modifications substantielles, vous serez informé par courriel.
+Incutec BV peut modifier cette politique de confidentialité. La version la plus récente est toujours disponible sur opendrone.be/privacy. Les clients et abonnés à la newsletter sont informés par courriel des modifications substantielles.

@@ -1,68 +1,66 @@
 ---
 type: compliance
-status: draft
+status: final
 owner: incutec
-last_updated: 2026-04-28
+last_updated: 2026-08-15
 tags: [policy, end-use, export-control]
 ---
 
-# End-Use Policy
+# Eindgebruiksbeleid
 
-> **Nederlandse vertaling volgt.** De Engelse versie is gezaghebbend; de tekst hieronder wordt vervangen door de Nederlandse vertaling zodra die beschikbaar is.
+**Uitgever:** Incutec BV
+**Van kracht:** 8 juni 2026 (oprichtingsdatum van Incutec BV)
+**Herziening:** Jaarlijks, of bij een wezenlijke wijziging van het productaanbod, het regelgevend kader of de distributiekanalen.
 
-**Issuer:** Incutec BV
-**Effective:** Date of incorporation, mid-May 2026
-**Review:** Annual; or upon material change to product scope, regulatory environment, or distribution channels.
+## 1. Toepassingsgebied
 
-## 1. Scope
+Dit beleid regelt de verkoop, levering en distributie van alle goederen die door Incutec BV worden ontworpen, vervaardigd of doorverkocht, met inbegrip van maar niet beperkt tot de OpenDrone-productlijn.
 
-This policy governs the sale, supply, and distribution of all goods designed, manufactured, or resold by Incutec BV, including but not limited to the OpenDrone product line.
+## 2. Toegestaan eindgebruik
 
-## 2. Permitted End-Use
+Incutec BV ontwerpt en levert civiele hobby- en commerciële elektronica. De goederen zijn bestemd voor gebruik in:
 
-Incutec BV designs and supplies civilian hobby and commercial electronics. Goods are intended for use in:
+- hobby- en recreatieve consumententoepassingen;
+- educatieve, onderzoeks- en makercontexten;
+- niet-defensiegebonden commerciële toepassingen, waaronder industriële besturing, robotica en prototyping.
 
-- consumer hobby and recreational applications;
-- educational, research, and maker contexts;
-- non-defence commercial applications, including industrial control, robotics, and prototyping.
+## 3. Uitgesloten eindgebruik
 
-## 3. Excluded End-Use
+Incutec BV verkoopt, levert of distribueert niet bewust goederen voor gebruik in:
 
-Incutec BV does not knowingly sell, supply, or distribute goods for use in:
+1. gewapende conflictzones waarin civiele componenten voor onbemande luchtvaartuigen aantoonbaar worden ingezet in kinetische, loitering- of inlichtingen-, surveillance- en verkenningsrollen;
+2. bewapende onbemande luchtvaartsystemen, met inbegrip van systemen die letale of sub-letale ladingen dragen;
+3. militaire aankoopprogramma's, defensieministeries, defensiehoofdaannemers of hun rechtstreekse onderaannemers wanneer het eindgebruik van het contract militair is;
+4. paramilitaire eindgebruikers, huurlingen of private militaire ondernemingen;
+5. elk eindgebruik dat in strijd is met Verordening (EU) 2021/821 (tweeërlei gebruik), Verordening (EU) 833/2014 (beperkende maatregelen Rusland), Verordening (EG) 765/2006 (beperkende maatregelen Belarus) of enig opvolgend instrument.
 
-1. armed conflict zones in which civilian unmanned aerial vehicle components are demonstrably used in kinetic, loitering, or intelligence-surveillance-reconnaissance roles;
-2. weaponized unmanned aerial systems, including those carrying lethal or sub-lethal payloads;
-3. military procurement programmes, defence ministries, defence prime contractors, or their direct subcontractors where the contract end-use is military;
-4. paramilitary, mercenary, or private military company end-users;
-5. any end-use that contravenes EU Regulation 2021/821 (dual-use), EU Regulation 833/2014 (Russia restrictive measures), EU Regulation 765/2006 (Belarus restrictive measures), or any successor instruments.
+## 4. Operationele uitvoering
 
-## 4. Operational Implementation
+### 4.1 Geografische beperkingen
+De webshop past beperkingen per land toe die overeenstemmen met (a) bestemmingen die onderworpen zijn aan beperkende maatregelen van de EU en de VN, en (b) bestemmingen op de Active-Conflict Block-lijst die wordt bijgehouden in `compliance/export-sanctions/sanctions-screening.md`. De Active-Conflict Block-lijst wordt driemaandelijks getoetst aan het Armed Conflict Location & Event Data Project (ACLED) en het Uppsala Conflict Data Program (UCDP).
 
-### 4.1 Geographic restrictions
-The webshop applies country-level restrictions corresponding to (a) destinations subject to EU and UN restrictive measures, and (b) destinations on the Active-Conflict Block list maintained in `compliance/export-sanctions/sanctions-screening.md`. The Active-Conflict Block list is reviewed quarterly against the Armed Conflict Location & Event Data Project (ACLED) and the Uppsala Conflict Data Program (UCDP).
+### 4.2 Klantenscreening
+Bestellingen van consumenten worden gescreend tegen de geconsolideerde sanctielijsten van de EU. Zakelijke bestellingen worden bijkomend onderworpen aan een eindgebruikscontrole en, waar van toepassing, aan de clausule van niet-wederuitvoer naar Rusland vereist door artikel 12g van Verordening (EU) 833/2014.
 
-### 4.2 Customer screening
-Direct-to-consumer orders are screened against EU consolidated sanctions lists. Business-to-business orders are additionally subject to end-use review and, where applicable, the no-re-export-to-Russia clause required by Article 12g of EU Regulation 833/2014.
+### 4.3 Clausule aanvaardbaar eindgebruik
+Het plaatsen van een bestelling op de Incutec-webshop geldt als aanvaarding van de clausule Aanvaardbaar eindgebruik in de Algemene Voorwaarden (`compliance/webshop/algemene-voorwaarden.md`).
 
-### 4.3 Acceptable end-use clause
-Order placement on the Incutec webshop constitutes acceptance of the Acceptable End-Use clause set out in the General Terms and Conditions (`compliance/webshop/algemene-voorwaarden.md`).
+### 4.4 Doorverkoop
+Dit beleid is van toepassing op rechtstreekse verkoop door Incutec BV. Doorverkoop door in de Europese Unie gevestigde zakelijke klanten wordt beheerst door de contractuele clausule van niet-wederuitvoer bedoeld in §4.2 en is niet onderworpen aan bijkomende auditverplichtingen opgelegd door Incutec.
 
-### 4.4 Downstream resale
-This policy applies to direct sales by Incutec BV. Resale by commercial customers established in the European Union is governed by the contractual no-re-export clause referenced in §4.2 and is not subject to additional audit obligations imposed by Incutec.
+## 5. Beperkingen
 
-## 5. Limitations
+Dit beleid:
+- kwalificeert geen enkele partij bij een conflict; de geografische beperkingen in §4.1 gelden uniform voor gebieden met actieve conflicten, ongeacht de politieke status van de betrokken partijen;
+- beperkt geen aankopen door personen die werkzaam zijn bij defensiegerelateerde entiteiten en die goederen in privéhoedanigheid aankopen voor niet-militair gebruik;
+- vormt geen verklaring dat door Incutec BV geleverde goederen niet, via wegen buiten de controle van Incutec BV, een beperkt eindgebruik kunnen bereiken;
+- belet werknemers, contractanten of aandeelhouders van Incutec BV niet om in persoonlijke hoedanigheid humanitaire of maatschappelijke doelen te steunen.
 
-This policy:
-- does not classify any party to a conflict; the geographic restrictions in §4.1 apply uniformly to active-conflict territories regardless of the political status of the parties involved;
-- does not restrict purchases by individuals who are employed by defence-related entities and who purchase goods in a private capacity for non-military use;
-- does not constitute a representation that goods supplied by Incutec BV will not, through means outside the control of Incutec BV, reach restricted end-uses;
-- does not preclude employees, contractors, or shareholders of Incutec BV from supporting humanitarian or civil-society causes in their personal capacity.
+## 6. Referenties
 
-## 6. References
-
-- EU Regulation 2021/821 (dual-use): https://eur-lex.europa.eu/eli/reg/2021/821/oj/eng
-- EU Regulation 833/2014 (Russia): https://eur-lex.europa.eu/eli/reg/2014/833/oj
-- EU Regulation 765/2006 (Belarus): https://eur-lex.europa.eu/eli/reg/2006/765/oj
+- Verordening (EU) 2021/821 (tweeërlei gebruik): https://eur-lex.europa.eu/eli/reg/2021/821/oj/eng
+- Verordening (EU) 833/2014 (Rusland): https://eur-lex.europa.eu/eli/reg/2014/833/oj
+- Verordening (EG) 765/2006 (Belarus): https://eur-lex.europa.eu/eli/reg/2006/765/oj
 - ACLED: https://acleddata.com/
 - UCDP: https://ucdp.uu.se/
 - `compliance/export-sanctions/sanctions-screening.md`
@@ -70,5 +68,5 @@ This policy:
 
 ---
 
-**Signed for Incutec BV:**
-De bestuurder
+**Ondertekend voor Incutec BV:**
+Stan Coene, Bestuurder
