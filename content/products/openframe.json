@@ -22,7 +22,7 @@
   "firmware": {
     "project": "—"
   },
-  "repoUrl": "https://github.com/OpenDrone-hw",
+  "repoUrl": "https://github.com/OpenDrone-hw/OpenFrame",
   "teardown": {
     "pins": [
       {

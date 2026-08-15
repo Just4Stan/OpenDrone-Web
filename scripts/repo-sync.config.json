@@ -1,0 +1,13 @@
+{
+  "$comment": "Repo -> product spec mapping for scripts/import-specs.mjs. The board repo READMEs are the canonical spec source (drafts/repo-sync-plan.md); this file says which repo feeds which variant of which product JSON. The FIRST variant listed for a product is the base: its README table becomes the shared `specs` array, the other variants become per-tier overrides. OpenRX is deliberately absent: one repo, four boards, hand-maintained exception (Stan, 2026-08-15).",
+  "root": "~/OpenDrone/hardware",
+  "products": [
+    {
+      "handle": "openesc",
+      "variants": [
+        {"tier": "20×20", "repo": "OpenESC-20x20"},
+        {"tier": "30×30", "repo": "OpenESC-30x30"}
+      ]
+    }
+  ]
+}
