@@ -23,7 +23,11 @@ import {
 import {Txt} from '~/components/Txt';
 import {copyText} from '~/lib/copy';
 import {INCUTEC_HINT_SEEN_KEY} from '~/lib/incutec-hint';
-import {useProductStatusResolver} from '~/lib/coming-soon';
+import {
+  useProductStatusResolver,
+  useRoadmapStatusResolver,
+} from '~/lib/coming-soon';
+import {isConceptStatus} from '~/lib/roadmap-data';
 import {isComingSoon, PRODUCT_CONTENT} from '~/lib/product-content';
 import {stackDiscountedPrice} from '~/lib/stack-discount';
 
@@ -249,6 +253,7 @@ function FamilyNav({
   // Global coming-soon flag; per-product overrides resolve in isComingSoon()
   // below so unlaunched SKUs list without price or buy cell.
   const productStatus = useProductStatusResolver();
+  const roadmapStatus = useRoadmapStatusResolver();
 
   // Close the hover dropdown on any navigation — otherwise clicking a SKU drops
   // you on the page with the menu still stuck open (mouseleave never fires when
@@ -378,6 +383,10 @@ function FamilyNav({
   function itemsFor(type: string): ProductPodItem[] {
     return (products ?? [])
       .filter((p) => (p.productType || '') === type)
+      // Planned / in-progress products have no settled tiers, images or
+      // names to preview: the chip itself links to their concept plate and
+      // the pod stays closed (docs/product-status.md).
+      .filter((p) => !isConceptStatus(roadmapStatus(p.handle)))
       .flatMap((p) => {
         // Coming-soon products list (the dropdown is navigation) but carry
         // no price and no buy cell — the PDP hosts the notify signup.
