@@ -1150,7 +1150,14 @@ export function HeroDroneScene({
       let gestureStepped = false;  // this gesture already emitted its one step
       let steppedAt = 0;           // when it did, for re-flick detection
       let lastAbsD = 0;            // previous event's |delta|, for re-flick detection
-      let queuedStep: 0 | 1 | -1 = 0;  // one advance banked while the beat plays
+      let queuedStep: 0 | 1 | -1 = 0;  // direction banked while the beat plays
+      // How many flicks are banked in queuedStep's direction. Every confident
+      // flick counts as one part (Stan, 2026-08-15: one flick, one subject),
+      // so a burst of three plays three parts in turn instead of two. Capped
+      // so a runaway scroll cannot queue the whole walkthrough; a flick the
+      // other way empties the bank and turns around.
+      let queuedCount = 0;
+      const QUEUE_MAX = 3;
       // Continuation owed because a move parked at a rest mid-passage. Kept
       // apart from queuedStep so a scroll banked during the first half of a
       // passage is not swallowed by the passage's own onward move.
@@ -1268,7 +1275,11 @@ export function HeroDroneScene({
         // + dwell of every stop, i.e. many scrolls per part.
         const cur = committed ?? nearestIdx(pos);
         if (settledAt !== cur) {
-          queuedStep = dir;
+          if (queuedStep === dir) queuedCount = Math.min(QUEUE_MAX, queuedCount + 1);
+          else {
+            queuedStep = dir;
+            queuedCount = 1;
+          }
           return;
         }
         // Move ONE stop, rests included. Landing on a rest owes a
@@ -1278,6 +1289,7 @@ export function HeroDroneScene({
         // where the old part flew home.
         const next = stepStop(gestureFrom, dir);
         queuedStep = 0;
+        queuedCount = 0;
         routeDir = STOPS[next].part ? 0 : dir;
         committed = next;
         target = stopPos(next);
@@ -1347,6 +1359,7 @@ export function HeroDroneScene({
         gestureFrom = idx;
         gestureDir = 0;
         queuedStep = 0;   // an explicit jump supersedes a banked wheel step
+        queuedCount = 0;
         routeDir = 0;
         committed = idx;
         everScrolled = true;
@@ -1494,11 +1507,23 @@ export function HeroDroneScene({
         // to read as the whole drone for a moment.
         {
           const cur = committed ?? nearestIdx(pos);
-          const atStop = Math.abs(pos - stopPos(cur)) < dur() * 0.06;
+          // 10% of a beat, not 6%: a critically damped spring spends its
+          // last few percent crawling, and that crawl was ~0.3 s of dead
+          // time per leg where the picture had visibly arrived but input
+          // still could not apply. Retargeting from 10% out is seamless.
+          const atStop = Math.abs(pos - stopPos(cur)) < dur() * 0.1;
           if (atStop) {
             dwell += dt;
+            // A rest is a breath between two parts. When the reader has
+            // already asked for the next part (a bank is waiting) the
+            // breath is skipped: the flight home still plays, the hold at
+            // the whole drone does not. An unseen part is never shortened.
             const need =
-              STOPS[cur].part && !seenStops.has(cur) ? MIN_DWELL_S : REST_DWELL_S;
+              STOPS[cur].part && !seenStops.has(cur)
+                ? MIN_DWELL_S
+                : !STOPS[cur].part && queuedStep
+                  ? 0
+                  : REST_DWELL_S;
             if (dwell > need) {
               settledAt = cur;
               seenStops.add(cur);
@@ -1510,14 +1535,17 @@ export function HeroDroneScene({
               // At a part, a banked scroll starts the next passage.
               const contDir = !STOPS[cur].part ? routeDir : 0;
               let dirQ: 0 | 1 | -1 = 0;
-              if (contDir && queuedStep && queuedStep !== contDir) {
+              const takeBank = () => {
                 dirQ = queuedStep;
-                queuedStep = 0;
+                queuedCount = Math.max(0, queuedCount - 1);
+                if (!queuedCount) queuedStep = 0;
+              };
+              if (contDir && queuedStep && queuedStep !== contDir) {
+                takeBank();
               } else if (contDir) {
                 dirQ = contDir;
               } else if (queuedStep) {
-                dirQ = queuedStep;
-                queuedStep = 0;
+                takeBank();
               }
               routeDir = 0;
               if (dirQ) {
