@@ -85,6 +85,13 @@
         ]
       },
       {
+        "ref": "⑨",
+        "part": "WS2812B · RGB status LED",
+        "refs": [
+          "D1"
+        ]
+      },
+      {
         "ref": "⑧",
         "part": "Solder pad I/O · CRSF UART",
         "refs": [
@@ -245,6 +252,13 @@
           ]
         },
         {
+          "ref": "⑨",
+          "part": "WS2812B · RGB status LED",
+          "refs": [
+            "D1"
+          ]
+        },
+        {
           "ref": "⑧",
           "part": "Solder pads, boot pad",
           "refs": [
@@ -339,6 +353,13 @@
           "part": "TLV75533 · 3.3 V LDO",
           "refs": [
             "U2"
+          ]
+        },
+        {
+          "ref": "⑨",
+          "part": "WS2812B · RGB status LED",
+          "refs": [
+            "D1"
           ]
         },
         {
@@ -448,6 +469,13 @@
           "part": "32 MHz TCXO",
           "refs": [
             "OSC1"
+          ]
+        },
+        {
+          "ref": "⑨",
+          "part": "WS2812B · RGB status LED",
+          "refs": [
+            "D1"
           ]
         },
         {
@@ -566,6 +594,20 @@
           "part": "32 MHz radio TCXO",
           "refs": [
             "OSC1"
+          ]
+        },
+        {
+          "ref": "⑨",
+          "part": "WS2812B · RGB status LED",
+          "refs": [
+            "D1"
+          ]
+        },
+        {
+          "ref": "⑩",
+          "part": "TS2306A · boot button",
+          "refs": [
+            "U9"
           ]
         },
         {
