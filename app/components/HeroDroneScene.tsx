@@ -1132,6 +1132,8 @@ export function HeroDroneScene({
       let gestureFrom = 0;
       let gestureDir = 0;
       let gestureAccum = 0;
+      let gestureStepped = false;  // this gesture already emitted its one step
+      let queuedStep: 0 | 1 | -1 = 0;  // one advance banked while the beat plays
       let committed: number | null = null;
       const GESTURE_GAP_MS = 220;
       const MIN_DWELL_S = cfg.scroll?.minDwellS ?? 1.4;    // seconds a part must be presented before you can move on
@@ -1162,7 +1164,21 @@ export function HeroDroneScene({
         if (e.ctrlKey) return;
 
         const now = performance.now();
-        if (now - lastWheel > GESTURE_GAP_MS) {
+        // Firefox reports lines, not pixels; Chrome reports pixels; some mice
+        // report pages. Normalise before scaling or Firefox scrolls ~20x slower.
+        const unit = e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? el.clientHeight : 1;
+        const d = e.deltaY * unit;
+
+        // Gesture segmentation. A gesture normally opens after a silence, but
+        // a detented mouse scrolled steadily never goes silent: its notches
+        // arrive as isolated large deltas tens of ms apart, under the gap.
+        // Treat such a notch as its own gesture, or steady mouse scrolling
+        // counts as ONE gesture and can only ever advance one stop total.
+        // Trackpads stream events every ~16 ms, so a finger push never
+        // force-opens mid-stream, and a momentum tail (small decaying deltas,
+        // no gaps) stays inside its gesture and stays inert.
+        const sinceLast = now - lastWheel;
+        if (sinceLast > GESTURE_GAP_MS || (sinceLast >= 80 && Math.abs(d) >= 40)) {
           // Open the new gesture from the stop the timeline is HEADED TO,
           // not from wherever the spring happens to be mid-flight. Without
           // this, a wheel tick during a rail-dot or keyboard jump reopens
@@ -1175,7 +1191,7 @@ export function HeroDroneScene({
               : nearestIdx(pos);
           gestureDir = 0;
           gestureAccum = 0;
-          committed = null;
+          gestureStepped = false;
         }
 
         // Release the page at the ends, with a margin. Keyed off which stop the
@@ -1190,39 +1206,35 @@ export function HeroDroneScene({
 
         e.preventDefault();
         everScrolled = true;
-
-        // Absorb everything until the current beat has been seen. Without this,
-        // repeated flicks (or one long momentum tail broken into several
-        // gestures) walk straight through the sequence.
-        const cur = committed ?? nearestIdx(pos);
-        if (settledAt !== cur) {
-          lastWheel = now;
-          return;
-        }
-
         if (e.deltaY !== 0) gestureDir = Math.sign(e.deltaY);
         lastWheel = now;
+        gestureAccum += d;
 
-        // Firefox reports lines, not pixels; Chrome reports pixels; some mice
-        // report pages. Normalise before scaling or Firefox scrolls ~20x slower.
-        const unit = e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? el.clientHeight : 1;
-        gestureAccum += e.deltaY * unit;
-
-        // One confident gesture is one stop. The old model scaled the target
-        // by scroll distance, which took five to ten wheel notches per stop;
-        // now a single decisive notch or flick, crossing stepPx of intent,
-        // commits the whole move and the spring plays it out. Momentum tails
-        // and extra notches inside the same gesture cannot chain: committed is
-        // already set, and a new gesture only opens after GESTURE_GAP_MS of
-        // silence, by which point the dwell rule absorbs input anyway until
-        // the beat has been seen. One wheel notch is ~100 px in Chrome and
+        // One confident gesture is one stop: crossing stepPx of intent emits
+        // the gesture's single step, and the rest of the gesture (momentum
+        // tail included) is spent. One wheel notch is ~100 px in Chrome and
         // ~48 px (3 lines) in Firefox, so 45 catches a single notch on both.
         const THRESH = cfg.scroll?.stepPx ?? 45;
-        if (committed === null && Math.abs(gestureAccum) >= THRESH) {
-          const next = nextPartIdx(gestureFrom, Math.sign(gestureAccum));
-          committed = next;
-          target = stopPos(next);
+        if (gestureStepped || Math.abs(gestureAccum) < THRESH) return;
+        gestureStepped = true;
+        const dir = (Math.sign(gestureAccum) || 1) as 1 | -1;
+
+        // Pacing: the beat on screen must be seen before the move happens (a
+        // beat stays unskippable), but the intent is never thrown away. While
+        // the sequence is still travelling or dwelling, the step is BANKED,
+        // one at most, latest direction wins, and applied the moment the
+        // current stop has been presented. The old model discarded that
+        // input, which read as "scrolling does nothing" for the whole travel
+        // + dwell of every stop, i.e. many scrolls per part.
+        const cur = committed ?? nearestIdx(pos);
+        if (settledAt !== cur) {
+          queuedStep = dir;
+          return;
         }
+        queuedStep = 0;
+        const next = nextPartIdx(gestureFrom, dir);
+        committed = next;
+        target = stopPos(next);
       };
       el.addEventListener('wheel', onWheel, {passive: false});
       cleanup.push(() => el.removeEventListener('wheel', onWheel));
@@ -1288,6 +1300,7 @@ export function HeroDroneScene({
         const idx = Math.max(0, Math.min(STOPS.length - 1, si));
         gestureFrom = idx;
         gestureDir = 0;
+        queuedStep = 0;   // an explicit jump supersedes a banked wheel step
         committed = idx;
         everScrolled = true;
         lastWheel = performance.now() - 2000;
@@ -1423,6 +1436,19 @@ export function HeroDroneScene({
             if (dwell > need) {
               settledAt = cur;
               seenStops.add(cur);
+              // A step banked mid-play fires the moment the stop has been
+              // presented: the pacing rule holds (this stop got its dwell),
+              // and the scroll that arrived during the travel is honoured
+              // instead of dying. Steady scrolling therefore walks the
+              // sequence part by part at the animation's own pace.
+              if (queuedStep) {
+                const next = nextPartIdx(cur, queuedStep);
+                queuedStep = 0;
+                if (next !== cur) {
+                  committed = next;
+                  target = stopPos(next);
+                }
+              }
             }
           } else if (settledAt !== cur) {
             dwell = 0;
