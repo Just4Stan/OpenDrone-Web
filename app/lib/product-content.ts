@@ -75,7 +75,28 @@ export type WhatIsThis = {
   /** Which signal-chain stage this product IS; the chapter's chain strip
    *  lights it. Stages: radio, rx, fc, esc, motors, frame. */
   chain?: 'radio' | 'rx' | 'fc' | 'esc' | 'motors' | 'frame';
+  /** Optional hero-length line for the homepage walkthrough caption. When
+   *  absent, the caption derives from `intro` (heroCaption below), so the
+   *  hero and the PDP's What-does-this-do chapter cannot drift apart. */
+  hero?: string;
 };
+
+/**
+ * The homepage hero caption for a product: `whatIsThis.hero` when set,
+ * otherwise the intro's first two sentences (first one only when two run
+ * past 200 characters, hero copy is a caption, not a chapter). One
+ * derivation, used by the homepage loader, so the hero explainers are the
+ * What-does-this-do words by construction (Stan, 2026-08-15).
+ */
+export function heroCaption(handle: string): string | undefined {
+  const wit = PRODUCT_CONTENT[handle]?.whatIsThis;
+  if (!wit) return undefined;
+  if (wit.hero) return wit.hero;
+  const sentences = wit.intro.match(/[^.!?]+[.!?]+(?:\s|$)/g);
+  if (!sentences?.length) return wit.intro || undefined;
+  const two = sentences.slice(0, 2).join('').trim();
+  return two.length > 200 ? sentences[0].trim() : two;
+}
 
 /**
  * Downloadable asset rendered in the Downloads chapter. `kind` picks

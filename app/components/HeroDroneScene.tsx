@@ -17,6 +17,7 @@ import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {MeshoptDecoder} from 'three/addons/libs/meshopt_decoder.module.js';
 import {RoomEnvironment} from 'three/addons/environments/RoomEnvironment.js';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
+import {heroCaption} from '~/lib/product-content';
 
 export type HeroBeat = {
   id: string;
@@ -835,7 +836,12 @@ export function HeroDroneScene({
           id: b.id,
           title: b.title,
           note: b.note,
-          caption: b.caption,
+          // A beat naming a product handle takes its caption from that
+          // product's What-does-this-do content (whatIsThis.hero, else the
+          // intro's opening), so the homepage and the PDP explain a part
+          // with one voice (Stan, 2026-08-15). Beats without a handle keep
+          // their studio.json caption.
+          caption: (b.handle && heroCaption(b.handle)) || b.caption,
           hint: b.hint,
           href: b.href,
           fade: b.fade,
@@ -1326,6 +1332,25 @@ export function HeroDroneScene({
       };
       const goTo = (i: number) =>
         goToStop(partStopIdx(Math.max(0, Math.min(BEATS.length - 1, i))));
+      // Deep link: /#esc (also fc, rx, frame, motors) opens the walkthrough
+      // ON that part, so the PDP's "see how the whole drone works" lands on
+      // the component in the assembly instead of the top of the sequence.
+      // `motors` is the PDP chain's plural; the beat id is singular. The
+      // position snaps (no cross-sequence flight), then dwell rules apply
+      // as if the reader had arrived by scrolling.
+      {
+        const hash =
+          typeof location !== 'undefined'
+            ? location.hash.slice(1).toLowerCase()
+            : '';
+        const wantId = hash === 'motors' ? 'motor' : hash;
+        const bi = wantId ? BEATS.findIndex((bb) => bb.id === wantId) : -1;
+        if (bi >= 0) {
+          goTo(bi);
+          pos = target;
+          vel = 0;
+        }
+      }
       const onKey = (e: KeyboardEvent) => {
         const cur = nearestIdx(target);
         let next: number | null = null;
