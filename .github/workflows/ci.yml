@@ -64,6 +64,21 @@ jobs:
           node-version: "22"
       - run: npm run check:registry
 
+  # Static status fallbacks in app/lib/roadmap-data.ts must never sit ahead
+  # of the status-* topic on the board repo (docs/product-status.md). Reads
+  # public topics with the job's own token; no secret to provision.
+  status:
+    name: Status fallback
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "22"
+      - run: npm run check:status
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
   build:
     name: Build
     runs-on: ubuntu-latest

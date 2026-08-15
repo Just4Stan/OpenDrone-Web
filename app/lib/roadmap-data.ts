@@ -94,8 +94,12 @@ export const ROADMAP: RoadmapItem[] = [
   {
     id: 'openframe',
     added: '2026-08-11',
-    status: 'in-progress',
+    status: 'planned',
     productPath: '/products/openframe',
+    // OpenDrone-hw/OpenFrame carries status-planned but is still a private
+    // repo (purged supplier quotes remain reachable through refs/pull/8), so
+    // it has no public link yet and its topic cannot be fetched. Add the link
+    // the day the repo goes public; until then the static value IS the status.
   },
   {
     id: 'motors',
