@@ -302,8 +302,9 @@ Tests are plain `node:test` suites next to the code (`app/**/*.test.ts`), no
 framework dependency. `scripts/smoke.mjs` hits 25+ routes against any base URL
 and asserts status plus content invariants.
 
-**CI and protection**: every PR runs Lint, Typecheck, Test, Build, and a registry
-invariants check; `main` is protected (linear history, no force-push) and every
+**CI and protection**: every PR runs Lint, Typecheck, Test, Build, a registry
+invariants check, and a status fallback check (`npm run check:status`: no static
+roadmap status may sit ahead of its repo's `status-*` topic); `main` is protected (linear history, no force-push) and every
 merge is a squash. **Every push to `main` auto-deploys to opendrone.be** in about
 two minutes, so local-only commits do not exist as far as the site is concerned:
 push after every commit. Dependabot runs weekly, grouped, no major bumps.

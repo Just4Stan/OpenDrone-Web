@@ -81,7 +81,13 @@ within one request.
   topic, never lead it.** If the API is down, the static value stands in; a
   static `beta` while the repo says `alpha` would leak prices exactly when
   nobody is looking. Flip the topic first, then update the static value in
-  a follow-up PR once the flip is live.
+  a follow-up PR once the flip is live. `npm run check:status`
+  (`scripts/check-status-fallback.mjs`, run by CI on every PR) fetches the
+  live topics and fails when a static value is ahead of its repo, when a
+  linked repo is unreachable, or when it carries no `status-*` topic.
+- An entry without a `link` is not checked and never fetched: its static
+  value IS its status. Today that is OpenFrame (repo still private) and
+  motors (no repo).
 
 ## Runbooks
 
