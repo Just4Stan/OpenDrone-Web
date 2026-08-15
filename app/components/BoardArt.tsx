@@ -22,6 +22,7 @@ import {
   peekText,
 } from '~/lib/asset-prefetch';
 import {BOARD_ART_VERSION} from '~/data/board-art-version';
+import {assetUrl} from '~/lib/asset-url';
 import {useIsMobile} from '~/lib/use-media-query';
 import {useLayerSwipe} from '~/lib/use-layer-swipe';
 import {
@@ -247,13 +248,14 @@ function parseSheets(raw: string): Sheet[] {
     // rasters) so a re-render busts their immutable cache too — the same
     // content hash as the svg fetch, so markup and bitmaps refetch together.
     // Done on the parsed DOM before serialization. sizedHref also picks the
-    // WebP face and the raster width for the screen.
+    // WebP face and the raster width for the screen, and assetUrl points the
+    // bitmap at the CDN (the site origin re-encodes bitmaps as PNG).
     const small = smallStack();
     const lite = Boolean(svg.querySelector('image[href*="-w1280.webp"]'));
     for (const img of Array.from(svg.querySelectorAll('image'))) {
       const href = img.getAttribute('href') ?? img.getAttribute('xlink:href');
       if (href && !href.includes('?v=')) {
-        const v = versioned(sizedHref(href, small, lite));
+        const v = assetUrl(versioned(sizedHref(href, small, lite)));
         if (img.hasAttribute('href')) img.setAttribute('href', v);
         if (img.hasAttribute('xlink:href')) img.setAttribute('xlink:href', v);
       }
@@ -1701,7 +1703,7 @@ export function BoardArt({
             // The dimmed 800 px thumbnail (export-board-art.mjs derivative),
             // not the 1568 px PNG: it is a blurred backdrop, and the full face
             // fetched here on top of the stack's own face was 394 KB twice.
-            src={versioned(src.replace(/board\.svg$/, 'front-w800.webp'))}
+            src={assetUrl(versioned(src.replace(/board\.svg$/, 'front-w800.webp')))}
             alt=""
             loading="lazy"
             decoding="async"
