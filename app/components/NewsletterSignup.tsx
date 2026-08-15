@@ -284,7 +284,7 @@ export function NewsletterSignup({
             <Check size={13} strokeWidth={2.5} aria-hidden="true" />
             <Txt id="newsletter.signup_subscribed_badge" />
           </p>
-          <p className="text-[12px] text-[var(--color-text-muted)] leading-snug">
+          <p className="text-[12px] text-[var(--color-text-muted)] leading-snug md:whitespace-nowrap">
             <Txt id="newsletter.signup_subscribed_body" />{' '}
             <a
               href="/account"
