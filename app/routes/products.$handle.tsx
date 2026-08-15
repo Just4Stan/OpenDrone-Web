@@ -610,6 +610,18 @@ export default function Product() {
   return <ProductPage />;
 }
 
+/** Document-space layout box via the offsetParent chain: unaffected by CSS
+ *  transforms, unlike getBoundingClientRect. */
+function layoutBox(el: HTMLElement) {
+  let top = 0;
+  let left = 0;
+  for (let n: HTMLElement | null = el; n; n = n.offsetParent as HTMLElement | null) {
+    top += n.offsetTop;
+    left += n.offsetLeft;
+  }
+  return {top, left, width: el.offsetWidth, height: el.offsetHeight};
+}
+
 function ProductPage() {
   const {
     product,
@@ -636,12 +648,19 @@ function ProductPage() {
       const scope = document.querySelector<HTMLElement>(
         '.chapter[data-repo-scope]',
       );
-      const card = document.querySelector('.open-source-card--github');
+      const card = document.querySelector<HTMLElement>(
+        '.open-source-card--github',
+      );
       if (!scope) return;
-      const s = scope.getBoundingClientRect();
-      const c = card?.getBoundingClientRect();
+      // Layout boxes, not getBoundingClientRect: the chapter reveal
+      // translates both the card's chapter and the scope, and a rect read
+      // mid-transition left the line short or long depending on when the
+      // measure ran. offsetTop/offsetLeft ignore transforms entirely, so
+      // the timing of the reveal no longer matters.
+      const s = layoutBox(scope);
+      const c = card ? layoutBox(card) : null;
       const x = c ? c.left + c.width / 2 - s.left : -1;
-      const h = c ? s.top - c.bottom : 0;
+      const h = c ? s.top - (c.top + c.height) : 0;
       if (c && h > 8 && h < 400 && x > 0 && x < s.width) {
         scope.style.setProperty('--repo-lead-x', `${Math.round(x)}px`);
         scope.style.setProperty('--repo-lead-h', `${Math.round(h)}px`);
