@@ -235,14 +235,7 @@
       "item": "Quickstart guide"
     }
   ],
-  "downloads": [
-    {
-      "kind": "doc",
-      "label": "EU Declaration of Conformity",
-      "href": "/doc",
-      "note": "published per hardware revision once its evidence set is complete"
-    }
-  ],
+  "downloads": [],
   "specs": [
     [
       "Firmware",

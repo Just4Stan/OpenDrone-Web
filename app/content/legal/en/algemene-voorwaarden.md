@@ -59,6 +59,8 @@
 
 5.7. Reimbursement is made using the same means of payment as the original transaction, unless the consumer expressly agrees to a different means of payment.
 
+5.8. **Diminished value.** The consumer is liable for any diminished value of the product resulting from handling beyond what is necessary to establish its nature, characteristics and functioning (Art. VI.51 §2 WER). For electronics components this specifically means: soldering to the product, mounting it in a system, connecting power or motors, flashing other firmware and flight use go beyond that assessment. The resulting diminished value is deducted from the refund and, where the product can no longer be sold as new, can amount to the full purchase price. The right of withdrawal itself is not lost.
+
 ### Article 6: Exclusion of the right of withdrawal
 
 6.1. The right of withdrawal does not apply to:
@@ -98,6 +100,8 @@
 - Normal wear and tear
 - Modifications or reprogramming by the consumer, to the extent the defect was caused by them. Modifying open-source firmware or hardware does not void the warranty for defects unrelated to the modification (see the warranty page)
 - External causes (water damage, lightning, voltage or current outside specifications), to the extent the defect was caused by them
+
+9.4. **Inspection on a warranty claim.** On a claim, Incutec BV examines the returned product and shares its findings with the consumer (photos and measurements where relevant). Traces of causes outside conformity, such as soldering damage to pads or connectors, reversed or excessive supply voltage, mechanical damage or water damage, can rebut the legal presumption that the defect existed at delivery where they are incompatible with the nature of the defect (Art. 1649quater §4 old Civil Code). This article does not limit the legal warranty; it describes how claims are assessed.
 
 ### Article 10: Liability
 

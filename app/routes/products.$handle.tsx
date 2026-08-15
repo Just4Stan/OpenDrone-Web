@@ -2387,7 +2387,6 @@ export default function Product() {
             downloads={content.downloads}
             editBase={`${product.handle}.downloads`}
           />
-          {rootData?.company ? <GpsrBlock company={rootData.company} /> : null}
         </Chapter>
     ),
     /** The open firmware the board runs, and how to support its devs. */
@@ -2722,6 +2721,10 @@ export default function Product() {
       ))}
 
       <RelatedProducts recommendations={recommendations} />
+
+      {/* GPSR Art. 19 listing information: kept out of the product story,
+          rendered as a quiet compliance strip at the very end of the page. */}
+      {rootData?.company ? <GpsrBlock company={rootData.company} /> : null}
       <Analytics.ProductView
         data={{
           products: [

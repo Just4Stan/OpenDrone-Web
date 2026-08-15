@@ -59,6 +59,8 @@
 
 5.7. Le remboursement est effectué selon le même moyen de paiement que la transaction initiale, sauf si le consommateur accepte expressément un moyen de paiement différent.
 
+5.8. **Dépréciation.** Le consommateur est responsable de la dépréciation du produit résultant de manipulations allant au-delà de ce qui est nécessaire pour établir sa nature, ses caractéristiques et son fonctionnement (art. VI.51 §2 WER). Pour des composants électroniques, cela signifie en particulier : souder sur le produit, le monter dans un système, raccorder une alimentation ou des moteurs, flasher un autre firmware et l'utiliser en vol vont au-delà de cette évaluation. La dépréciation qui en résulte est déduite du remboursement et peut, lorsque le produit ne peut plus être vendu comme neuf, atteindre le prix d'achat intégral. Le droit de rétractation lui-même n'est pas perdu.
+
 ### Article 6 : Exclusion du droit de rétractation
 
 6.1. Le droit de rétractation ne s’applique pas aux :
@@ -98,6 +100,8 @@
 - L’usure normale
 - Des modifications ou reprogrammations effectuées par le consommateur, dans la mesure où le défaut en résulte. La modification de firmware open source ou du matériel n’exclut pas la garantie pour les défauts sans lien avec cette modification (voir la page garantie)
 - Des causes externes (dégâts des eaux, foudre, tension ou courant hors spécifications), dans la mesure où le défaut en résulte
+
+9.4. **Examen lors d'une réclamation de garantie.** En cas de réclamation, Incutec BV examine le produit retourné et partage ses constatations avec le consommateur (photos et mesures le cas échéant). Des traces de causes étrangères à la conformité, telles que des dommages de soudure aux pastilles ou connecteurs, une tension d'alimentation inversée ou excessive, des dommages mécaniques ou des dégâts des eaux, peuvent renverser la présomption légale selon laquelle le défaut existait à la livraison lorsqu'elles sont incompatibles avec la nature du défaut (art. 1649quater §4 ancien Code civil). Cet article ne limite pas la garantie légale ; il décrit la manière dont les réclamations sont évaluées.
 
 ### Article 10 : Responsabilité
 

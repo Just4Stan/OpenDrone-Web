@@ -59,6 +59,8 @@
 
 5.7. Terugbetaling geschiedt via hetzelfde betaalmiddel als bij de oorspronkelijke transactie, tenzij de consument uitdrukkelijk met een ander betaalmiddel instemt.
 
+5.8. **Waardevermindering.** De consument is aansprakelijk voor de waardevermindering van het product die het gevolg is van gebruik dat verder gaat dan nodig om de aard, de kenmerken en de werking ervan vast te stellen (Art. VI.51 §2 WER). Voor elektronicacomponenten geldt in het bijzonder: solderen aan het product, montage in een systeem, het aansluiten van voeding of motoren, het flashen van andere firmware en vlieggebruik gaan verder dan die beoordeling. De daaruit volgende waardevermindering wordt op de terugbetaling ingehouden en kan, wanneer het product daardoor niet meer als nieuw verkoopbaar is, oplopen tot het volledige aankoopbedrag. Het herroepingsrecht zelf vervalt hierdoor niet.
+
 ### Artikel 6: Uitsluiting herroepingsrecht
 
 6.1. Het herroepingsrecht is uitgesloten voor:
@@ -98,6 +100,8 @@
 - Normale slijtage
 - Wijzigingen of herprogrammering door de consument, in de mate dat het gebrek daardoor is veroorzaakt. Het wijzigen van open-source firmware of hardware sluit de garantie niet uit voor gebreken die er geen verband mee houden (zie de garantiepagina)
 - Externe oorzaken (waterschade, bliksem, spanning of stroom buiten de specificaties), in de mate dat het gebrek daardoor is veroorzaakt
+
+9.4. **Onderzoek bij een garantieclaim.** Bij een claim onderzoekt Incutec BV het teruggestuurde product en deelt het de bevindingen met de consument (foto's en meetresultaten waar relevant). Sporen van oorzaken buiten de conformiteit, zoals soldeerschade aan pads of connectoren, omgepoolde of te hoge voedingsspanning, mechanische schade of waterschade, kunnen het wettelijke vermoeden weerleggen dat het gebrek bij levering bestond, wanneer zij onverenigbaar zijn met de aard van het gebrek (Art. 1649quater §4 oud BW). Dit artikel beperkt de wettelijke garantie niet; het beschrijft hoe claims worden beoordeeld.
 
 ### Artikel 10: Aansprakelijkheid
 
