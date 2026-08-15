@@ -58,7 +58,6 @@ import {
 } from '~/components/ProductReviews';
 import {OshwaMark} from '~/components/OshwaMark';
 import {useNoHover, useIsMobile} from '~/lib/use-media-query';
-import {GpsrBlock} from '~/components/GpsrBlock';
 import {
   PRODUCT_CONTENT,
   PRODUCT_CONTENT_FALLBACK,
@@ -2750,9 +2749,6 @@ export default function Product() {
 
       <RelatedProducts recommendations={recommendations} />
 
-      {/* GPSR Art. 19 listing information: kept out of the product story,
-          rendered as a quiet compliance strip at the very end of the page. */}
-      {rootData?.company ? <GpsrBlock company={rootData.company} /> : null}
       <Analytics.ProductView
         data={{
           products: [
