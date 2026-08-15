@@ -57,7 +57,7 @@ const HOME_LEDGER: Array<{key: string; value?: string; countUp?: boolean}> = [
 export function MobileHome({
   featured,
 }: {
-  featured: Promise<CollectionItemFragment[]>;
+  featured: CollectionItemFragment[] | Promise<CollectionItemFragment[]>;
 }) {
   const reduce = useReducedMotion();
 
