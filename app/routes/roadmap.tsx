@@ -5,7 +5,7 @@ import {buildSeoMeta} from '~/lib/seo';
 import {EditorialShell, SeriesRail} from '~/components/EditorialShell';
 import {Txt} from '~/components/Txt';
 import {copyText} from '~/lib/copy';
-import {DISCORD_INVITE_URL} from '~/lib/company';
+import {DISCORD_INVITE_URL, CONTRIBUTING_URL} from '~/lib/company';
 import {
   STATUS_ORDER,
   fetchStatusFlagsFast,
@@ -327,13 +327,14 @@ export default function RoadmapRoute({loaderData}: Route.ComponentProps) {
           and the two pages sit next to each other in the series (audit
           2026-08-12). The roadmap hands off to the manual instead. */}
       <section className="editorial-cta">
-        <Link
-          prefetch="viewport"
-          to="/contributing"
+        <a
+          href={CONTRIBUTING_URL}
+          target="_blank"
+          rel="noopener noreferrer"
           className="editorial-cta-primary"
         >
           <Txt id="roadmap.cta_primary" />
-        </Link>
+        </a>
         <a
           href={DISCORD_INVITE_URL}
           target="_blank"

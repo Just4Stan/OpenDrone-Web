@@ -23,6 +23,7 @@ import {Txt} from '~/components/Txt';
 import {ConceptPlate} from '~/components/ConceptPlate';
 import {isConceptStatus} from '~/lib/roadmap-data';
 import {WHAT_IS_THIS_ID} from '~/lib/product-content';
+import {CONTRIBUTING_URL} from '~/lib/company';
 import {ProductPrice} from '~/components/ProductPrice';
 import {ProductGallery} from '~/components/ProductGallery';
 import {ProductForm} from '~/components/ProductForm';
@@ -1974,7 +1975,14 @@ function ProductPage() {
                   href={`${activeRepoUrl}/issues`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="open-source-card"
+                  // Watermark of the tool the design is iterated in: KiCad
+                  // for boards, Onshape for the frame, same treatment as the
+                  // GitHub and CERN cards.
+                  className={`open-source-card ${
+                    frameViewer
+                      ? 'open-source-card--onshape'
+                      : 'open-source-card--kicad'
+                  }`}
                 >
                   <Txt
                     id="product-chrome.os_card_issues_label"
@@ -2041,12 +2049,14 @@ function ProductPage() {
               />
             </a>
           )}
-          {/* The row's 4th card hands the reader to /contributing. It
-              replaced the changelog / latest-commit slot (2026-08-12): a
-              recruiting card beats a sha for the reader who got this far. */}
-          <Link
-            to="/contributing"
-            prefetch="viewport"
+          {/* The row's 4th card hands the reader to the org's contributing
+              guide. It replaced the changelog / latest-commit slot
+              (2026-08-12): a recruiting card beats a sha for the reader who
+              got this far. */}
+          <a
+            href={CONTRIBUTING_URL}
+            target="_blank"
+            rel="noopener noreferrer"
             className="open-source-card open-source-card--help"
           >
             <Txt
@@ -2064,7 +2074,7 @@ function ProductPage() {
               as="p"
               className="open-source-card-sub"
             />
-          </Link>
+          </a>
         </div>
         {/* One quiet mono link under the card row: the why behind the cards
             lives once, on /open-source, same idiom as the firmware chapter's
@@ -2477,7 +2487,7 @@ function ProductPage() {
           noMedia
         >
           {/* No prose above the grid; the how-and-why lives once, on the
-              contributing page. The button sits to the grid's right — the
+              org contributing guide. The button sits to the grid's right — the
               row of people ends in the door you walk through to join them. */}
           <div className="contributors-row">
             <Suspense fallback={<ContributorGridSkeleton />}>
@@ -2493,13 +2503,14 @@ function ProductPage() {
                 )}
               </Await>
             </Suspense>
-            <Link
-              prefetch="viewport"
-              to="/contributing"
+            <a
+              href={CONTRIBUTING_URL}
+              target="_blank"
+              rel="noopener noreferrer"
               className="contributors-cta-btn"
             >
               <Txt id="product-chrome.contributors_link_contribute" />
-            </Link>
+            </a>
           </div>
         </Chapter>
     ),

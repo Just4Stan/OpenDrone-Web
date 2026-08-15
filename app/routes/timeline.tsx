@@ -4,6 +4,7 @@ import type {Route} from './+types/timeline';
 import {buildSeoMeta} from '~/lib/seo';
 import {EditorialShell} from '~/components/EditorialShell';
 import {Txt} from '~/components/Txt';
+import {CONTRIBUTING_URL} from '~/lib/company';
 import {copyText} from '~/lib/copy';
 
 /**
@@ -250,15 +251,16 @@ export default function TimelineRoute() {
         <Link prefetch="viewport" to="/roadmap" className="editorial-cta-primary">
           <Txt id="timeline.cta_primary" />
         </Link>
-        <Link
-          prefetch="viewport"
+        <a
           // "Put yourself on this timeline" is a contributing pitch, not a
           // second roadmap link (audit 2026-08-12).
-          to="/contributing"
+          href={CONTRIBUTING_URL}
+          target="_blank"
+          rel="noopener noreferrer"
           className="editorial-cta-secondary"
         >
           <Txt id="timeline.cta_secondary" />
-        </Link>
+        </a>
       </section>
     </EditorialShell>
   );

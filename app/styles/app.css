@@ -4386,8 +4386,22 @@ button.reset {
 }
 .catalog-search .search-form-row {
   margin-bottom: 0;
-  max-width: 46rem;
+  max-width: 54rem;
   flex-wrap: nowrap;
+}
+/* One radius across the row: input, submit and roadmap button are all pills. */
+.catalog-search .search-input,
+.catalog-search .search-submit {
+  border-radius: 999px;
+}
+.catalog-search .search-input {
+  padding-inline: 1.25rem;
+}
+.catalog-search .search-submit {
+  padding-inline: 1.4rem;
+}
+.catalog-roadmap-btn {
+  white-space: nowrap;
 }
 @media (max-width: 767px) {
   .catalog-search .search-form-row {
@@ -7502,19 +7516,25 @@ html.light .firmware-logo--tile {
    the theme (painted with the text colour at low opacity) rather than baking a
    fixed fill into the SVG. */
 .open-source-card--github,
-.open-source-card--cern {
+.open-source-card--cern,
+.open-source-card--kicad,
+.open-source-card--onshape {
   position: relative;
   overflow: hidden;
 }
 
 .open-source-card--github > p,
-.open-source-card--cern > p {
+.open-source-card--cern > p,
+.open-source-card--kicad > p,
+.open-source-card--onshape > p {
   position: relative;
   z-index: 1;
 }
 
 .open-source-card--github::after,
-.open-source-card--cern::after {
+.open-source-card--cern::after,
+.open-source-card--kicad::after,
+.open-source-card--onshape::after {
   content: '';
   position: absolute;
   right: -8%;
@@ -7540,6 +7560,21 @@ html.light .firmware-logo--tile {
 .open-source-card--cern::after {
   -webkit-mask-image: url(/logos/cern.svg);
   mask-image: url(/logos/cern.svg);
+}
+
+/* Iterate card: the design tool's wordmark. Wordmarks are wide, so the
+   mask box takes more of the card width than the square marks do. */
+.open-source-card--kicad::after,
+.open-source-card--onshape::after {
+  width: 82%;
+}
+.open-source-card--kicad::after {
+  -webkit-mask-image: url(/logos/kicad.svg);
+  mask-image: url(/logos/kicad.svg);
+}
+.open-source-card--onshape::after {
+  -webkit-mask-image: url(/logos/onshape.svg);
+  mask-image: url(/logos/onshape.svg);
 }
 
 /* "Wanna help?" card: the row's 4th bubble, an internal hand-off to

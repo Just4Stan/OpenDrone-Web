@@ -1,3 +1,4 @@
+import {CONTRIBUTING_URL} from '~/lib/company';
 import {Link} from 'react-router';
 import {Txt} from './Txt';
 import {copyText} from '~/lib/copy';
@@ -53,9 +54,9 @@ export function ProvenanceCard() {
         <Link prefetch="viewport" to="/production">
           <Txt id="product-chrome.provenance_link_production" />
         </Link>
-        <Link prefetch="viewport" to="/contributing">
+        <a href={CONTRIBUTING_URL} target="_blank" rel="noopener noreferrer">
           <Txt id="product-chrome.provenance_link_contribute" />
-        </Link>
+        </a>
       </p>
     </section>
   );
