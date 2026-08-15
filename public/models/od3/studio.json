@@ -276,23 +276,23 @@
       "id": "fc",
       "title": "OpenFC-Lite-Mini",
       "note": "RP2354B flight controller",
-      "caption": "The brain. Reads the gyro 8,000 times a second, compares it to your sticks, and corrects every motor before you notice anything drifted.",
       "hint": "Receiver in, ESC out: everything passes through it.",
       "href": "/products/openfc-lite",
       "select": {
         "board": "OpenFC"
-      }
+      },
+      "handle": "openfc-lite"
     },
     {
       "id": "esc",
       "title": "OpenESC-20x20",
       "note": "4-in-1 AM32 ESC",
-      "caption": "Four motor drivers on one board. 24 MOSFETs switching battery current through the windings, thousands of times a second.",
       "hint": "Between the flight controller's requests and a hundred amps of battery current.",
       "href": "/products/openesc",
       "select": {
         "board": "4in1-mini"
-      }
+      },
+      "handle": "openesc"
     },
     {
       "id": "rx",
@@ -300,7 +300,8 @@
       "note": "ELRS receiver lineup. Lite-UFL fits a 3 inch; Mono's 900 MHz antenna wants a bigger frame.",
       "select": {
         "board": "OpenRX-Lite-UFL"
-      }
+      },
+      "handle": "openrx"
     },
     {
       "id": "motor",
@@ -336,7 +337,8 @@
           "title": "Video module",
           "note": "air unit, antennas and camera lift out as one"
         }
-      ]
+      ],
+      "handle": "openframe"
     }
   ],
   "camera": {

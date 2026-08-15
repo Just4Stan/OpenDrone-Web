@@ -1848,8 +1848,14 @@ export default function Product() {
               FPV intro page, planned. The data stays in whatIsThis.needs
               for that page. */}
           {/* The homepage hero walks the whole machine part by part; this is
-              the "zoom out" for the reader who wants the full picture. */}
-          <Link prefetch="viewport" to="/" className="what-home-link">
+              the "zoom out" for the reader who wants the full picture. The
+              hash opens the walkthrough ON this product's part (the hero
+              maps `motors` to its singular beat id). */}
+          <Link
+            prefetch="viewport"
+            to={wit.chain ? `/#${wit.chain}` : '/'}
+            className="what-home-link"
+          >
             <Txt id="product-chrome.what_is_this_link_home" />
           </Link>
         </Chapter>
