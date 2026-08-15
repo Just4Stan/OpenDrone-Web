@@ -88,6 +88,17 @@ export type WhatIsThis = {
  * derivation, used by the homepage loader, so the hero explainers are the
  * What-does-this-do words by construction (Stan, 2026-08-15).
  */
+/** DOM id of the "What does this do?" chapter on a product page; the
+ *  homepage walkthrough links each part straight to it. */
+export const WHAT_IS_THIS_ID = 'what-is-this';
+
+/** `/products/<handle>#what-is-this`, when the product has that chapter. */
+export function whatIsThisHref(handle: string): string | undefined {
+  return PRODUCT_CONTENT[handle]?.whatIsThis
+    ? `/products/${handle}#${WHAT_IS_THIS_ID}`
+    : undefined;
+}
+
 export function heroCaption(handle: string): string | undefined {
   const wit = PRODUCT_CONTENT[handle]?.whatIsThis;
   if (!wit) return undefined;

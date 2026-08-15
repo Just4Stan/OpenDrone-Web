@@ -19,6 +19,7 @@ import type {
   HeroLoadState,
 } from '~/components/HeroDroneScene';
 import {Txt} from '~/components/Txt';
+import {WHAT_IS_THIS_ID} from '~/lib/product-content';
 
 function shouldLoad3D() {
   if (typeof window === 'undefined') return false;
@@ -35,6 +36,16 @@ const scenePromise =
   typeof window !== 'undefined' && shouldLoad3D()
     ? import('~/components/HeroDroneScene')
     : null;
+
+/** Link label for a beat: the chapter's own title when the href points at
+ *  the What-does-this-do chapter, the generic product link otherwise. */
+function BeatLinkLabel({href}: {href: string}) {
+  return href.endsWith(`#${WHAT_IS_THIS_ID}`) ? (
+    <Txt id="product-chrome.ch_what_is_this_title" fallback="What does this do?" />
+  ) : (
+    <Txt id="home.walkthrough_link" fallback="See the product" />
+  );
+}
 
 export function HeroDroneStage({
   model,
@@ -172,7 +183,7 @@ export function HeroDroneStage({
           {shown.hint ? <p className="hp-connect">{shown.hint}</p> : null}
           {shown.href ? (
             <Link className="hp-copy-link" to={shown.href} prefetch="intent">
-              <Txt id="home.walkthrough_link" fallback="See the product" />
+              <BeatLinkLabel href={shown.href} />
               <svg
                 width="14"
                 height="14"
@@ -209,7 +220,7 @@ export function HeroDroneStage({
               {e.hint ? <p>{e.hint}</p> : null}
               {e.href ? (
                 <Link to={e.href}>
-                  <Txt id="home.walkthrough_link" fallback="See the product" />
+                  <BeatLinkLabel href={e.href} />
                 </Link>
               ) : null}
             </li>

@@ -22,6 +22,7 @@ import {useAside} from '~/components/Aside';
 import {Txt} from '~/components/Txt';
 import {ConceptPlate} from '~/components/ConceptPlate';
 import {isConceptStatus} from '~/lib/roadmap-data';
+import {WHAT_IS_THIS_ID} from '~/lib/product-content';
 import {ProductPrice} from '~/components/ProductPrice';
 import {ProductGallery} from '~/components/ProductGallery';
 import {ProductForm} from '~/components/ProductForm';
@@ -1816,6 +1817,7 @@ function ProductPage() {
       ];
       return (
         <Chapter
+          id={WHAT_IS_THIS_ID}
           number={n}
           label="What is this"
           title={title}
