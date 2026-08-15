@@ -8,8 +8,7 @@
 # Sources: Inter Variable (rsms.me/inter, ships as InterVariable.woff2: rename
 # it to inter-var.woff2 in <dir>), JetBrains Mono static weights
 # (github.com/JetBrains/JetBrainsMono releases, JetBrainsMono-Regular.woff2 etc:
-# rename to jetbrains-mono-Regular.woff2 etc). Tokyo is already tiny (7 KB) and
-# is not subset.
+# rename to jetbrains-mono-Regular.woff2 etc).
 #
 # Coverage: Basic Latin, Latin-1, Latin Extended-A, the four Greek letters the
 # copy uses (Δ Ω μ π), general punctuation, currency, letterlike, arrows,

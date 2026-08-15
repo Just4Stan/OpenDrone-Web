@@ -1,7 +1,7 @@
 {
   "$generated": "npm run studio:tokens — do not hand-edit",
   "$source": "app/styles/app.css @theme",
-  "count": 61,
+  "count": 63,
   "tokens": [
     {
       "name": "--color-bg",
@@ -46,46 +46,74 @@
       "light": "#86868c"
     },
     {
+      "name": "--art-ink",
+      "value": "color-mix(in srgb, var(--color-text) 38%, transparent)",
+      "group": "other",
+      "derivedFrom": [
+        "--color-text"
+      ],
+      "light": "color-mix(in srgb, var(--color-text-muted) 45%, transparent)"
+    },
+    {
+      "name": "--art-logo-ink",
+      "value": "color-mix(in srgb, var(--color-text) 26%, transparent)",
+      "group": "other",
+      "derivedFrom": [
+        "--color-text"
+      ],
+      "light": "color-mix(in srgb, var(--color-text-muted) 14%, transparent)"
+    },
+    {
       "name": "--color-gold",
       "value": "#ffb700",
-      "group": "colour",
-      "derivedFrom": [],
-      "light": "#ffb700"
-    },
-    {
-      "name": "--color-gold-hover",
-      "value": "color-mix(in oklab, var(--color-gold) 82%, white)",
-      "group": "colour",
-      "derivedFrom": [],
-      "light": "color-mix(in oklab, var(--color-gold) 82%, white)"
-    },
-    {
-      "name": "--color-gold-bright",
-      "value": "var(--color-gold)",
       "group": "colour",
       "derivedFrom": [],
       "light": null
     },
     {
+      "name": "--color-gold-hover",
+      "value": "color-mix(in oklab, var(--color-gold) 82%, white)",
+      "group": "other",
+      "derivedFrom": [
+        "--color-gold"
+      ],
+      "light": null
+    },
+    {
       "name": "--color-gold-soft",
       "value": "color-mix(in srgb, var(--color-gold) 12%, transparent)",
-      "group": "colour",
-      "derivedFrom": [],
+      "group": "other",
+      "derivedFrom": [
+        "--color-gold"
+      ],
       "light": "color-mix(in srgb, var(--color-gold) 14%, transparent)"
+    },
+    {
+      "name": "--color-gold-bright",
+      "value": "var(--color-gold)",
+      "group": "derived",
+      "derivedFrom": [
+        "--color-gold"
+      ],
+      "light": null
     },
     {
       "name": "--color-gold-fill",
       "value": "var(--color-gold)",
-      "group": "colour",
-      "derivedFrom": [],
-      "light": "var(--color-gold)"
+      "group": "derived",
+      "derivedFrom": [
+        "--color-gold"
+      ],
+      "light": null
     },
     {
       "name": "--color-gold-fill-hover",
       "value": "var(--color-gold-hover)",
-      "group": "colour",
-      "derivedFrom": [],
-      "light": "var(--color-gold-hover)"
+      "group": "derived",
+      "derivedFrom": [
+        "--color-gold-hover"
+      ],
+      "light": null
     },
     {
       "name": "--color-green",
@@ -139,6 +167,15 @@
       "light": null
     },
     {
+      "name": "--color-focus",
+      "value": "var(--color-gold)",
+      "group": "derived",
+      "derivedFrom": [
+        "--color-gold"
+      ],
+      "light": "var(--color-text)"
+    },
+    {
       "name": "--color-accent",
       "value": "var(--color-gold)",
       "group": "derived",
@@ -176,32 +213,23 @@
     },
     {
       "name": "--font-display",
-      "value": "\"Inter\", -apple-system, BlinkMacSystemFont, ui-sans-serif, system-ui, \"Segoe UI\", Roboto, Helvetica, Arial, sans-serif",
+      "value": "\"Inter\", \"Inter Fallback\", -apple-system, BlinkMacSystemFont, ui-sans-serif, system-ui, \"Segoe UI\", Roboto, Helvetica, Arial, sans-serif",
       "group": "font",
       "derivedFrom": [],
       "light": null
     },
     {
       "name": "--font-sans",
-      "value": "\"Inter\", -apple-system, BlinkMacSystemFont, ui-sans-serif, system-ui, \"Segoe UI\", Roboto, Helvetica, Arial, sans-serif",
+      "value": "\"Inter\", \"Inter Fallback\", -apple-system, BlinkMacSystemFont, ui-sans-serif, system-ui, \"Segoe UI\", Roboto, Helvetica, Arial, sans-serif",
       "group": "font",
       "derivedFrom": [],
       "light": null
     },
     {
       "name": "--font-mono",
-      "value": "\"JetBrains Mono\", ui-monospace, Menlo, Monaco, \"SF Mono\", \"Cascadia Mono\", \"Segoe UI Mono\", Consolas, monospace",
+      "value": "\"JetBrains Mono\", \"JetBrains Mono Fallback\", ui-monospace, Menlo, Monaco, \"SF Mono\", \"Cascadia Mono\", \"Segoe UI Mono\", Consolas, monospace",
       "group": "font",
       "derivedFrom": [],
-      "light": null
-    },
-    {
-      "name": "--font-brand",
-      "value": "\"Tokyo\", var(--font-display)",
-      "group": "font",
-      "derivedFrom": [
-        "--font-display"
-      ],
       "light": null
     },
     {
@@ -435,7 +463,7 @@
     },
     {
       "name": "--rail-width",
-      "value": "min(calc(100% - (2 * var(--rail-gutter))), 1520px)",
+      "value": "min(calc(100% - (2 * var(--rail-gutter))), 1440px)",
       "group": "derived",
       "derivedFrom": [
         "--rail-gutter"

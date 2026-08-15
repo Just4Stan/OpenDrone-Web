@@ -35,7 +35,6 @@ import {SchematicViewer} from '~/components/SchematicViewer';
 import type {FrameViewerProps} from '~/components/FrameViewer';
 import {SceneErrorBoundary} from '~/components/SceneErrorBoundary';
 import {ProvenanceCard} from '~/components/ProvenanceCard';
-import {BrandName} from '~/components/BrandName';
 import {AnimatedNumber} from '~/components/AnimatedNumber';
 import {WatchCard} from '~/components/WatchCard';
 import {redirectIfHandleIsLocalized} from '~/lib/redirect';
@@ -2648,9 +2647,7 @@ function ProductPage() {
             </h1>
           ) : (
             <h1 className="product-hero-headline">
-              <span>
-                <BrandName>{title}</BrandName>
-              </span>
+              <span>{title}</span>
             </h1>
           )}
           {content.hero.lead ? (

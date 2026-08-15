@@ -16,7 +16,6 @@ import type {Route} from './+types/root';
 import favicon from '~/assets/favicon.svg';
 import interVarWoff2 from '~/assets/fonts/inter-var.woff2';
 import jetbrainsMonoWoff2 from '~/assets/fonts/jetbrains-mono-Regular.woff2';
-import tokyoWoff2 from '~/assets/fonts/tokyo-regular.woff2';
 import {HEADER_QUERY, HEADER_PRODUCTS_QUERY} from '~/lib/fragments';
 import {resolveAllStatuses, roadmapStatusMap} from '~/lib/coming-soon';
 import {fetchStatusFlagsFast} from '~/lib/roadmap-data';
@@ -108,7 +107,6 @@ export function links() {
     // - Inter: body text.
     // - JetBrains Mono: NOT just spec tables — it renders the header nav,
     //   prices and SKUs sitewide, all above the fold.
-    // - Tokyo (7.4 KB): every brand/product wordmark.
     {
       rel: 'preload',
       href: interVarWoff2,
@@ -119,13 +117,6 @@ export function links() {
     {
       rel: 'preload',
       href: jetbrainsMonoWoff2,
-      as: 'font',
-      type: 'font/woff2',
-      crossOrigin: 'anonymous',
-    },
-    {
-      rel: 'preload',
-      href: tokyoWoff2,
       as: 'font',
       type: 'font/woff2',
       crossOrigin: 'anonymous',
