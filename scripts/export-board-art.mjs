@@ -859,7 +859,7 @@ function writeFaceDerivatives() {
 // (measured 1280-2560 px viewports), so 1280 px covers a 2x desktop with the
 // active sheet's 1.05 scale. Lossless: lossy WebP/AVIF is bigger on
 // this flat-colour, hard-edged content and would smear the traces.
-// Faces get 1280 / 1024 px lossy WebPs too (photoreal render, q90) for the
+// Faces get 1280 / 1024 px lossy WebPs too (photoreal render, q95) for the
 // same swap.
 const LAYER_RASTER_WIDTHS = [1280, 1024];
 const COPPER_SLUG_RE = /^(f|b|in\d+)$/;
@@ -940,7 +940,7 @@ async function writeLayerRasters(onlyHandle) {
         for (const W of LAYER_RASTER_WIDTHS) {
           execFileSync(
             'cwebp',
-            ['-quiet', '-q', '90', '-alpha_q', '100', '-m', '6', '-sharp_yuv', '-resize', String(W), '0', src, '-o', join(dir, `${face}-w${W}.webp`)],
+            ['-quiet', '-q', '95', '-alpha_q', '100', '-m', '6', '-sharp_yuv', '-resize', String(W), '0', src, '-o', join(dir, `${face}-w${W}.webp`)],
             {stdio: 'pipe'},
           );
         }
