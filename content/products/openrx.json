@@ -8,7 +8,7 @@
     "lead": "Four board designs, one firmware. Lite runs SX1281 on 2.4 GHz with a ceramic antenna. Lite-UFL swaps to a U.FL pigtail. Mono steps up to a single LR1121 for multi-band. Gemini runs dual LR1121 in ExpressLRS Xrossband mode for frequency-diverse links."
   },
   "whatIsThis": {
-    "intro": "A receiver has one job: catch your stick and switch positions off the air and hand them to the flight controller. OpenRX runs ExpressLRS, which uses LoRa modulation: the signal is a frequency chirp that the receiver can decode even when it is buried below the radio noise floor. That processing gain is why a receiver this small, at 20 mW telemetry power, holds a link kilometres out while Wi-Fi on the same 2.4 GHz band dies across the house. It speaks CRSF to the flight controller over one UART wire, is powered from a 5 V pad, and flashes over Wi-Fi or Betaflight passthrough. Four variants, from ceramic antenna Lite to dual-radio Gemini.",
+    "intro": "A receiver has one job: get your commands off the air and hand them to the flight controller. OpenRX runs ExpressLRS, which uses LoRa modulation: the signal is a frequency chirp. That is why a receiver this small, but still holds a link kilometres out while Wi-Fi on the same 2.4 GHz band dies across the house. It speaks CRSF to the flight controller over one UART wire, is powered from a 5V pad, and flashes over Wi-Fi or Betaflight passthrough. Four variants, from ceramic antenna Lite to dual-radio Gemini.",
     "needs": [
       "A radio with an ExpressLRS transmitter, internal or module, on 2.4 GHz",
       "The same binding phrase flashed on both ends",
@@ -101,12 +101,12 @@
     {
       "qty": "1×",
       "item": "OpenRX board",
-      "note": "tier selected at checkout"
+      "note": ""
     },
     {
       "qty": "1×",
-      "item": "CRSF servo cable",
-      "note": "3-pin JST-SH1.0, pre-crimped, 10 cm"
+      "item": "Sillicone cables",
+      "note": ""
     },
     {
       "qty": "1×",
@@ -114,8 +114,8 @@
     },
     {
       "qty": "1×",
-      "item": "Build card",
-      "note": "batch ID, QC initials, ExpressLRS flash target, GitHub rev"
+      "item": "Quickstart guide",
+      "note": ""
     }
   ],
   "downloads": [],
@@ -204,35 +204,35 @@
         },
         {
           "ref": "②",
-          "part": "ESP32-C3 · Wi-Fi MCU",
+          "part": "ESP32-C3 · MCU",
           "refs": [
             "U1"
           ]
         },
         {
           "ref": "③",
-          "part": "2.4 GHz SAW band-pass filter",
+          "part": "2.4 GHz band-pass filter",
           "refs": [
             "FL1"
           ]
         },
         {
           "ref": "④",
-          "part": "ELRS link antenna (Molex 47948)",
+          "part": "ELRS link antenna",
           "refs": [
             "AE2"
           ]
         },
         {
           "ref": "⑤",
-          "part": "Wi-Fi antenna (ESP32-C3)",
+          "part": "Wi-Fi antenna",
           "refs": [
             "AE1"
           ]
         },
         {
           "ref": "⑥",
-          "part": "52 MHz radio TCXO",
+          "part": "52 MHz TCXO",
           "refs": [
             "OSC1"
           ]
@@ -246,7 +246,7 @@
         },
         {
           "ref": "⑧",
-          "part": "Solder pad I/O · CRSF UART",
+          "part": "Solder pads, boot pad",
           "refs": [
             "TP1",
             "TP2",
@@ -301,35 +301,35 @@
         },
         {
           "ref": "②",
-          "part": "ESP32-C3 · Wi-Fi MCU",
+          "part": "ESP32-C3 · MCU",
           "refs": [
             "U1"
           ]
         },
         {
           "ref": "③",
-          "part": "2.4 GHz SAW band-pass filter",
+          "part": "2.4 GHz band-pass filter",
           "refs": [
             "FL1"
           ]
         },
         {
           "ref": "④",
-          "part": "ELRS link antenna · U.FL connector",
+          "part": "U.FL connector",
           "refs": [
             "J1"
           ]
         },
         {
           "ref": "⑤",
-          "part": "Wi-Fi antenna (on-board ceramic)",
+          "part": "Wi-Fi antenna",
           "refs": [
             "AE1"
           ]
         },
         {
           "ref": "⑥",
-          "part": "52 MHz radio TCXO",
+          "part": "52 MHz TCXO",
           "refs": [
             "OSC1"
           ]
@@ -343,7 +343,7 @@
         },
         {
           "ref": "⑧",
-          "part": "Solder pad I/O · CRSF UART",
+          "part": "Solder pads, boot pad",
           "refs": [
             "TP1",
             "TP2",
@@ -410,7 +410,7 @@
         },
         {
           "ref": "②",
-          "part": "ESP32-C3 · Wi-Fi MCU",
+          "part": "ESP32-C3 · MCU",
           "refs": [
             "U1"
           ]
@@ -431,28 +431,28 @@
         },
         {
           "ref": "⑤",
-          "part": "ELRS link antenna · U.FL connector",
+          "part": "U.FL connector",
           "refs": [
             "J1"
           ]
         },
         {
           "ref": "⑥",
-          "part": "Wi-Fi antenna (on-board ceramic)",
+          "part": "Wi-Fi antenna",
           "refs": [
             "AE1"
           ]
         },
         {
           "ref": "⑦",
-          "part": "32 MHz radio TCXO",
+          "part": "32 MHz TCXO",
           "refs": [
             "OSC1"
           ]
         },
         {
           "ref": "⑧",
-          "part": "Solder pad I/O · CRSF UART (BOOT pad on back)",
+          "part": "Solder pads, boot pad",
           "refs": [
             "TP1",
             "TP2",
@@ -522,7 +522,7 @@
         },
         {
           "ref": "②",
-          "part": "ESP32-C3 · Wi-Fi MCU",
+          "part": "ESP32-C3 · MCU",
           "refs": [
             "U1"
           ]
@@ -547,7 +547,7 @@
         },
         {
           "ref": "⑤",
-          "part": "ELRS link antennas · U.FL",
+          "part": "U.FL Connectors",
           "cost": "×2",
           "refs": [
             "J1",
@@ -556,7 +556,7 @@
         },
         {
           "ref": "⑥",
-          "part": "Wi-Fi antenna (on-board ceramic)",
+          "part": "Wi-Fi antenna",
           "refs": [
             "AE1"
           ]
@@ -570,7 +570,7 @@
         },
         {
           "ref": "⑧",
-          "part": "Solder pad I/O · CRSF UART",
+          "part": "Solder pads",
           "refs": [
             "TP1",
             "TP2",
