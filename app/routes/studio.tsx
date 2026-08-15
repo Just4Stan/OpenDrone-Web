@@ -62,6 +62,9 @@ export default function Studio() {
   const [status, setStatus] = useState<string>('');
   const [route, setRoute] = useState('/');
   const frame = useRef<HTMLIFrameElement>(null);
+  // Watches the preview DOM for tagged nodes that appear after load; one
+  // observer per loaded document, replaced on every iframe load.
+  const previewObserver = useRef<MutationObserver | null>(null);
 
   /**
    * Everything editable, in two groups.
@@ -149,8 +152,11 @@ export default function Studio() {
         doc.head.appendChild(s);
       }
       doc.body.classList.add('studio-preview');
-      const nodes = doc.querySelectorAll<HTMLElement>('[data-edit]');
-      nodes.forEach((el) => {
+      const wireNode = (el: HTMLElement) => {
+        // The class doubles as the "already wired" marker, so re-runs are
+        // idempotent and a React re-render (which produces a fresh node
+        // without the class) gets wired again.
+        if (el.classList.contains('studio-editable')) return;
         el.classList.add('studio-editable');
         el.addEventListener('click', (ev) => {
           ev.preventDefault();
@@ -169,7 +175,18 @@ export default function Studio() {
           if (target && target !== page) setPage(target);
           setSelected(key);
         });
-      });
+      };
+      const wireAll = () =>
+        doc.querySelectorAll<HTMLElement>('[data-edit]').forEach(wireNode);
+      wireAll();
+      // Wiring once at load left every later-rendered tag dead: the teardown
+      // list re-renders when its components.json arrives, the cart drawer and
+      // newsletter form mount on demand, and a tier switch recreates rows.
+      // Watch the document and wire tagged nodes as they appear.
+      previewObserver.current?.disconnect();
+      previewObserver.current = new MutationObserver(wireAll);
+      previewObserver.current.observe(doc.body, {childList: true, subtree: true});
+      const nodes = doc.querySelectorAll<HTMLElement>('[data-edit]');
       setStatus(
         nodes.length
           ? `${nodes.length} editable ${nodes.length === 1 ? 'string' : 'strings'} on this page`
@@ -179,6 +196,22 @@ export default function Studio() {
       setStatus(`Preview not reachable: ${(e as Error).message}`);
     }
   }, [page, files]);
+
+  // Drop the preview observer with the component.
+  useEffect(() => () => previewObserver.current?.disconnect(), []);
+
+  // A preview click can select a key hundreds of rows deep in a product
+  // file's list; bring the highlighted row into view or the click looks
+  // like it did nothing.
+  // `data` is a dependency on purpose: a preview click on another file sets
+  // `selected` before that file's keys have loaded, so the scroll must also
+  // run when the list itself arrives.
+  useEffect(() => {
+    if (!selected) return;
+    document
+      .querySelector('.studio-keys button.is-on')
+      ?.scrollIntoView({block: 'nearest'});
+  }, [selected, data]);
 
   /**
    * Every editable string in the file, addressed by path.
