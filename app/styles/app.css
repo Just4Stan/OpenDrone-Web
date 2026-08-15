@@ -4389,10 +4389,19 @@ button.reset {
   max-width: 54rem;
   flex-wrap: nowrap;
 }
-/* One radius across the row: input, submit and roadmap button are all pills. */
+/* One radius and one height across the row: input, submit and roadmap
+   button are all 3rem pills, centred on the same line. */
+.catalog-search .search-form-row {
+  align-items: center;
+}
 .catalog-search .search-input,
-.catalog-search .search-submit {
+.catalog-search .search-submit,
+.catalog-roadmap-btn {
+  box-sizing: border-box;
+  height: 3rem;
+  padding-block: 0;
   border-radius: 999px;
+  line-height: 1;
 }
 .catalog-search .search-input {
   padding-inline: 1.25rem;
@@ -4402,6 +4411,8 @@ button.reset {
 }
 .catalog-roadmap-btn {
   white-space: nowrap;
+  padding-inline: 1.4rem;
+  margin-left: 0;
 }
 @media (max-width: 767px) {
   .catalog-search .search-form-row {
