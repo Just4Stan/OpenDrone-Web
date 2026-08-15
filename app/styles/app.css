@@ -8286,12 +8286,12 @@ a.what-chain-chip:hover {
   border: 1px solid var(--color-border);
   border-radius: var(--r-md);
   padding: 1.25rem 1.4rem;
-  /* Hug the 52ch body text instead of spanning the full body column; the
-     card otherwise trails ~450px of empty gradient past the copy. The cap
-     keeps a long one-line links row (e.g. AM32's no-donate note) from
-     dragging the card wide; it wraps instead. */
+  /* Hug the content instead of spanning the full body column; the card
+     otherwise trails ~450px of empty gradient past the copy. The links row
+     below is one horizontal line by design and sets the width when it is
+     wider than the 52ch body. */
   width: fit-content;
-  max-width: 36rem;
+  max-width: 100%;
   background:
     linear-gradient(
       180deg,
@@ -8308,7 +8308,8 @@ a.what-chain-chip:hover {
 .firmware-support-links {
   margin: 0;
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
+  white-space: nowrap;
   gap: 0.5rem 1.4rem;
   font-family: var(--font-mono);
   font-size: 11px;
