@@ -15,7 +15,7 @@
 |---|---|
 | Name | Incutec BV |
 | Registered office | Stapelhuisstraat 15, 3000 Leuven |
-| Company number | Published after incorporation (KBO) |
+| Company number | 1038.934.039 (KBO, RPR Leuven) |
 | Email | contact@opendrone.be |
 
 Incutec BV has not appointed a Data Protection Officer (DPO) because this is not mandatory for its current activities (Art. 37 GDPR).

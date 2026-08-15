@@ -26,7 +26,7 @@ Cookies are small text files placed on your device by a website when you visit i
 
 We use **Plausible Analytics** (EU-hosted, cookieless). Plausible sets no cookies and processes no personal data requiring consent. That is why we do not show a consent banner for analytics.
 
-Shopify's built-in analytics cookies (`_shopify_s`, `_shopify_y`) are disabled unless you explicitly opt in.
+Shopify's built-in analytics cookies (`_shopify_s`, `_shopify_y`) are not activated and are not set on this storefront.
 
 #### Marketing cookies
 

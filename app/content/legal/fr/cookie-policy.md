@@ -26,7 +26,7 @@ Les cookies sont de petits fichiers texte placés sur votre appareil par un site
 
 Nous utilisons **Plausible Analytics** (hébergé dans l’UE, sans cookies). Plausible ne place aucun cookie et ne traite aucune donnée personnelle nécessitant un consentement. C’est pourquoi nous n’affichons pas de bandeau de consentement pour l’analyse.
 
-Les cookies d’analyse intégrés de Shopify (`_shopify_s`, `_shopify_y`) sont désactivés sauf si vous donnez votre consentement explicite.
+Les cookies d’analyse intégrés de Shopify (`_shopify_s`, `_shopify_y`) ne sont pas activés et ne sont pas déposés sur cette boutique.
 
 #### Cookies marketing
 

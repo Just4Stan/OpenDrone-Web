@@ -13,12 +13,11 @@
 |---|---|
 | Name | Incutec BV |
 | Registered office | Stapelhuisstraat 15, 3000 Leuven |
-| Company number | Published after incorporation (KBO) |
-| VAT number | Published after incorporation |
+| Company number | 1038.934.039 (KBO, RPR Leuven) |
+| VAT number | BE 1038.934.039 |
 | Email | contact@opendrone.be |
-| Phone | Published after incorporation |
-| Website | incutec.eu |
-| IBAN | Published after incorporation |
+| Website | opendrone.be (webshop) · incutec.eu |
+| IBAN | BE94 7310 7599 3714 (KBC) |
 
 ### Article 2: Scope
 
@@ -94,11 +93,11 @@
 
 9.2ter. **Hierarchy of remedies:** In the event of a lack of conformity the consumer has the right to request, at their choice, repair or replacement of the product. Only where repair and replacement are impossible or disproportionate may the consumer request a price reduction or rescission of the contract (Art. 1649quinquies of the old Civil Code, as inserted by the Act of 20 March 2022 transposing Directive (EU) 2019/771).
 
-9.3. The warranty does not cover damage caused by:
-- Improper use or installation (deviation from the user manual)
+9.3. The legal warranty does not cover a defect caused by:
+- Improper use or installation (deviation from the user manual), to the extent the defect was caused by it
 - Normal wear and tear
-- Modifications made by the consumer
-- External causes (water damage, lightning, power surges outside specifications)
+- Modifications or reprogramming by the consumer, to the extent the defect was caused by them. Modifying open-source firmware or hardware does not void the warranty for defects unrelated to the modification (see the warranty page)
+- External causes (water damage, lightning, voltage or current outside specifications), to the extent the defect was caused by them
 
 ### Article 10: Liability
 
@@ -109,6 +108,18 @@
 10.3. Incutec BV is not liable for damage arising from the use of the product in breach of the user manual or outside the specifications.
 
 10.4. Incutec BV's products are components intended to be integrated into systems assembled by the customer. Incutec BV is not liable for the customer's end product.
+
+### Article 10bis: Self-builds, drones and user responsibility
+
+10bis.1. **Self-built drones.** Incutec BV's products are individual components and are not an unmanned aircraft system (UAS) within the meaning of Regulation (EU) 2019/945; they carry no class label (C0-C6). Anyone who assembles components into a drone for their own use builds a "privately built UAS" within the meaning of Regulation (EU) 2019/947 Art. 2(16) and is themselves the builder and operator of that aircraft. All obligations arising from this, including operator registration, compliance with the category and subcategory rules (including A1/A3 for self-builds), airworthiness of the assembled aircraft and legally required insurance, rest on the customer, not on Incutec BV.
+
+10bis.2. **Radio configuration.** Products with a radio transmitter have user-adjustable transmission parameters (including transmit power, frequency band, regulatory domain). The customer is responsible for a configuration that complies with the regulations of the country where the product is used. Incutec BV's declaration of conformity applies exclusively to the delivered configuration and the firmware version recorded in it.
+
+10bis.3. **No safety-critical use.** The products are designed for unmanned recreational and professional multirotors and model aviation. They are not designed, tested or approved for manned aviation, medical applications, nuclear installations, military applications, or any other application in which the failure of a component could reasonably lead to personal injury or significant damage. Such use is expressly outside the intended use.
+
+10bis.4. **Open-source firmware.** The products run open-source firmware (including AM32, Betaflight, ExpressLRS). Reflashing or modifying firmware by the customer is technically possible and anticipated by the open nature of the products; the behaviour and regulatory conformity of the product with modified firmware are the customer's responsibility (see also Art. 9.3 and the warranty page). The software licences (GPL, MIT) concern the firmware as software and do not affect the consumer's statutory rights in respect of the purchased product.
+
+10bis.5. **Not a toy.** The products are not toys and are not intended for persons under 14 years of age. Assembly and use by minors only under adult supervision. LiPo batteries, spinning propellers and soldering carry real risks; the safety information supplied with the product must be read before use.
 
 ### Article 11: Intellectual property
 
@@ -158,10 +169,12 @@
 
 18.1. By placing an order, the Customer accepts the Incutec End-Use Policy published at /end-use, and warrants that the goods will not be used for any of the excluded end-uses set out in §3 of that policy. Breach of this warranty constitutes a material breach of contract and entitles Incutec BV to cancel the order, refuse delivery, and pursue any remedy available under Belgian law and applicable EU regulations.
 
+18.2. **No re-export to Russia or Belarus.** The Customer undertakes not to sell, export or re-export the goods, directly or indirectly, to the Russian Federation or Belarus, or for use there (Art. 12g Regulation (EU) 833/2014; Art. 8g Regulation (EC) 765/2006). This undertaking constitutes an essential element of the contract. Incutec BV refuses delivery where there are indications of circumvention of this provision.
+
 ### Article 19: Language
 
 19.1. The Dutch-language version of these terms is the authentic text. Translations into French, English or other languages are informative and not binding.
 
 ---
 
-*Version: 2.0*
+*Version: 2.1, last updated 2026-08-15*

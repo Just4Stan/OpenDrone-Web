@@ -13,12 +13,11 @@
 |---|---|
 | Nom | Incutec BV |
 | Siège social | Stapelhuisstraat 15, 3000 Louvain |
-| Numéro d’entreprise | Publié après constitution (BCE) |
-| Numéro de TVA | Publié après constitution |
+| Numéro d’entreprise | 1038.934.039 (BCE, RPM Louvain) |
+| Numéro de TVA | BE 1038.934.039 |
 | Courriel | contact@opendrone.be |
-| Téléphone | Publié après constitution |
-| Site web | incutec.eu |
-| IBAN | Publié après constitution |
+| Site web | opendrone.be (boutique) · incutec.eu |
+| IBAN | BE94 7310 7599 3714 (KBC) |
 
 ### Article 2 : Champ d’application
 
@@ -94,11 +93,11 @@
 
 9.2ter. **Hiérarchie des remèdes :** En cas de défaut de conformité, le consommateur a le droit de demander, à son choix, la réparation ou le remplacement du produit. Ce n’est que lorsque la réparation et le remplacement sont impossibles ou disproportionnés que le consommateur peut demander une réduction de prix ou la résolution du contrat (art. 1649quinquies de l’ancien Code civil, inséré par la Loi du 20 mars 2022 transposant la Directive (UE) 2019/771).
 
-9.3. La garantie ne couvre pas les dommages causés par :
-- Une utilisation ou installation incorrecte (dérogation au manuel d’utilisation)
+9.3. La garantie légale ne couvre pas un défaut causé par :
+- Une utilisation ou installation incorrecte (dérogation au manuel d’utilisation), dans la mesure où le défaut en résulte
 - L’usure normale
-- Des modifications effectuées par le consommateur
-- Des causes externes (dégâts des eaux, foudre, surtensions hors spécifications)
+- Des modifications ou reprogrammations effectuées par le consommateur, dans la mesure où le défaut en résulte. La modification de firmware open source ou du matériel n’exclut pas la garantie pour les défauts sans lien avec cette modification (voir la page garantie)
+- Des causes externes (dégâts des eaux, foudre, tension ou courant hors spécifications), dans la mesure où le défaut en résulte
 
 ### Article 10 : Responsabilité
 
@@ -109,6 +108,18 @@
 10.3. Incutec BV n’est pas responsable des dommages résultant de l’utilisation du produit en violation du manuel d’utilisation ou en dehors des spécifications.
 
 10.4. Les produits d’Incutec BV sont des composants destinés à être intégrés dans des systèmes assemblés par le client. Incutec BV n’est pas responsable du produit final du client.
+
+### Article 10bis : Auto-construction, drones et responsabilité de l’utilisateur
+
+10bis.1. **Drones auto-construits.** Les produits d’Incutec BV sont des composants individuels et ne constituent pas un système d’aéronef sans équipage (UAS) au sens du Règlement (UE) 2019/945 ; ils ne portent aucun label de classe (C0-C6). Quiconque assemble des composants en un drone pour son propre usage construit un « UAS construit à titre privé » au sens de l’article 2(16) du Règlement (UE) 2019/947 et est lui-même le constructeur et l’exploitant de cet aéronef. Toutes les obligations qui en découlent, y compris l’enregistrement en tant qu’exploitant, le respect des règles de catégorie et de sous-catégorie (notamment A1/A3 pour l’auto-construction), la navigabilité de l’aéronef assemblé et les assurances légalement requises, incombent au client et non à Incutec BV.
+
+10bis.2. **Configuration radio.** Les produits équipés d’un émetteur radio ont des paramètres d’émission réglables par l’utilisateur (notamment la puissance d’émission, la bande de fréquences, le domaine réglementaire). Le client est responsable d’une configuration conforme à la réglementation du pays d’utilisation. La déclaration de conformité d’Incutec BV s’applique exclusivement à la configuration livrée et à la version de firmware qui y est consignée.
+
+10bis.3. **Aucune utilisation critique pour la sécurité.** Les produits sont conçus pour des multirotors récréatifs et professionnels sans équipage et pour l’aéromodélisme. Ils ne sont pas conçus, testés ou approuvés pour l’aviation habitée, les applications médicales, les installations nucléaires, les applications militaires, ni toute autre application dans laquelle la défaillance d’un composant pourrait raisonnablement entraîner des blessures ou des dommages importants. Une telle utilisation est expressément exclue de l’usage prévu.
+
+10bis.4. **Firmware open source.** Les produits fonctionnent avec des firmwares open source (notamment AM32, Betaflight, ExpressLRS). Le reflashage ou la modification du firmware par le client est techniquement possible et prévu par le caractère ouvert des produits ; le comportement et la conformité réglementaire du produit avec un firmware modifié relèvent de la responsabilité du client (voir aussi l’art. 9.3 et la page garantie). Les licences logicielles (GPL, MIT) concernent le firmware en tant que logiciel et ne portent pas atteinte aux droits légaux du consommateur relatifs au produit acheté.
+
+10bis.5. **Pas un jouet.** Les produits ne sont pas des jouets et ne sont pas destinés aux personnes de moins de 14 ans. Assemblage et utilisation par des mineurs uniquement sous la surveillance d’un adulte. Les batteries LiPo, les hélices en rotation et le soudage comportent des risques réels ; les informations de sécurité fournies avec le produit doivent être lues avant utilisation.
 
 ### Article 11 : Propriété intellectuelle
 
@@ -158,10 +169,12 @@
 
 18.1. En passant une commande, le Client accepte la Politique d’usage final d’Incutec publiée sur /end-use et garantit que les biens ne seront pas utilisés pour l’un des usages finaux exclus énoncés au §3 de cette politique. La violation de cette garantie constitue un manquement essentiel au contrat et autorise Incutec BV à annuler la commande, refuser la livraison et exercer tout recours disponible en vertu du droit belge et des règlements de l’UE applicables.
 
+18.2. **Pas de réexportation vers la Russie ou le Bélarus.** Le Client s’engage à ne pas vendre, exporter ou réexporter les biens, directement ou indirectement, vers la Fédération de Russie ou le Bélarus, ou en vue d’une utilisation dans ces pays (art. 12g du Règlement (UE) 833/2014 ; art. 8g du Règlement (CE) 765/2006). Cet engagement constitue un élément essentiel du contrat. Incutec BV refuse la livraison en cas d’indices de contournement de cette disposition.
+
 ### Article 19 : Langue
 
 19.1. La version en langue néerlandaise des présentes conditions est le texte authentique. Les traductions en français, anglais ou autres langues sont informatives et non contraignantes.
 
 ---
 
-*Version : 2.0*
+*Version : 2.1, dernière mise à jour 2026-08-15*
