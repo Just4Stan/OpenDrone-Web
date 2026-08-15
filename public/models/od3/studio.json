@@ -353,6 +353,7 @@
     "springHz": 0.55,
     "magnet": 0.11,
     "commitAt": 0.24,
-    "minDwellS": 0.5
+    "minDwellS": 0.5,
+    "restDwellS": 0.7
   }
 }
