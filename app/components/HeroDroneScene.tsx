@@ -114,6 +114,9 @@ type StudioConfig = {
     magnet?: number;
     commitAt?: number;
     minDwellS?: number;
+    /** Seconds the whole drone holds at a rest stop mid-passage, so the
+     *  reader sees where the last part flew home before the next pulls out. */
+    restDwellS?: number;
     /** Pixels of wheel intent that commit a one-stop move. */
     stepPx?: number;
   };
@@ -1097,11 +1100,12 @@ export function HeroDroneScene({
       }
       const stopPos = (si: number) => STOPS[si].pos;
       const partStopIdx = (beat: number) => STOPS.findIndex((s) => s.part && s.beat === beat);
-      // The next PART stop in a direction. Wheel gestures commit to parts
-      // only: one confident scroll is one item of the walkthrough, and the
-      // rest between two parts plays out as the passage, not as a stop that
-      // costs its own gesture. (The first and last stops are always parts,
-      // so the walk always terminates.) Keyboard stepping still visits rests.
+      // The next PART stop in a direction. One confident scroll is one item
+      // of the walkthrough: the rest between two parts never costs its own
+      // gesture. It is not skipped either: a wheel step ROUTES through it
+      // (stepStop below) and holds for REST_DWELL_S, so the reader sees the
+      // old part sitting in the assembled drone before the next pulls out
+      // (Stan, 2026-08-15). Keyboard stepping still visits rests one by one.
       const nextPartIdx = (from: number, dir: number) => {
         let i = from;
         do {
@@ -1109,6 +1113,9 @@ export function HeroDroneScene({
         } while (!STOPS[i].part && i > 0 && i < STOPS.length - 1);
         return i;
       };
+      // One stop over, rests included: the unit a wheel step actually moves.
+      const stepStop = (from: number, dir: number) =>
+        Math.max(0, Math.min(STOPS.length - 1, from + dir));
       const nearestIdx = (x: number) => {
         let best = 0;
         let bd = Infinity;
@@ -1134,10 +1141,14 @@ export function HeroDroneScene({
       let gestureAccum = 0;
       let gestureStepped = false;  // this gesture already emitted its one step
       let queuedStep: 0 | 1 | -1 = 0;  // one advance banked while the beat plays
+      // Continuation owed because a move parked at a rest mid-passage. Kept
+      // apart from queuedStep so a scroll banked during the first half of a
+      // passage is not swallowed by the passage's own onward move.
+      let routeDir: 0 | 1 | -1 = 0;
       let committed: number | null = null;
       const GESTURE_GAP_MS = 220;
       const MIN_DWELL_S = cfg.scroll?.minDwellS ?? 1.4;    // seconds a part must be presented before you can move on
-      const REST_DWELL_S = 0.45;                           // a rest is a breath, not a chapter
+      const REST_DWELL_S = cfg.scroll?.restDwellS ?? 0.45; // a rest is a breath, not a chapter
       // A beat is unskippable. Once committed, input is absorbed until the part
       // has arrived AND its hold has run, so nobody can flick past a product
       // without its spotlight moment. This is the "plays at its own pace" rule:
@@ -1231,8 +1242,14 @@ export function HeroDroneScene({
           queuedStep = dir;
           return;
         }
+        // Move ONE stop, rests included. Landing on a rest owes a
+        // continuation (routeDir), so after the rest's short dwell the move
+        // carries on to the part by itself: one scroll still reads as one
+        // part, but the passage holds at the whole drone long enough to see
+        // where the old part flew home.
+        const next = stepStop(gestureFrom, dir);
         queuedStep = 0;
-        const next = nextPartIdx(gestureFrom, dir);
+        routeDir = STOPS[next].part ? 0 : dir;
         committed = next;
         target = stopPos(next);
       };
@@ -1301,6 +1318,7 @@ export function HeroDroneScene({
         gestureFrom = idx;
         gestureDir = 0;
         queuedStep = 0;   // an explicit jump supersedes a banked wheel step
+        routeDir = 0;
         committed = idx;
         everScrolled = true;
         lastWheel = performance.now() - 2000;
@@ -1436,17 +1454,30 @@ export function HeroDroneScene({
             if (dwell > need) {
               settledAt = cur;
               seenStops.add(cur);
-              // A step banked mid-play fires the moment the stop has been
-              // presented: the pacing rule holds (this stop got its dwell),
-              // and the scroll that arrived during the travel is honoured
-              // instead of dying. Steady scrolling therefore walks the
-              // sequence part by part at the animation's own pace.
-              if (queuedStep) {
-                const next = nextPartIdx(cur, queuedStep);
+              // Fire the owed continuation and/or the banked step, one stop
+              // at a time, the moment this stop has been presented. At a
+              // rest the passage carries on by itself (routeDir); a bank in
+              // the SAME direction rides along and fires at the next part,
+              // a bank in the OPPOSITE direction turns the passage around.
+              // At a part, a banked scroll starts the next passage.
+              const contDir = !STOPS[cur].part ? routeDir : 0;
+              let dirQ: 0 | 1 | -1 = 0;
+              if (contDir && queuedStep && queuedStep !== contDir) {
+                dirQ = queuedStep;
                 queuedStep = 0;
+              } else if (contDir) {
+                dirQ = contDir;
+              } else if (queuedStep) {
+                dirQ = queuedStep;
+                queuedStep = 0;
+              }
+              routeDir = 0;
+              if (dirQ) {
+                const next = stepStop(cur, dirQ);
                 if (next !== cur) {
                   committed = next;
                   target = stopPos(next);
+                  if (!STOPS[next].part) routeDir = dirQ;
                 }
               }
             }
