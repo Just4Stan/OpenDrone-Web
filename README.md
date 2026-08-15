@@ -162,7 +162,9 @@ drawer with predictive results.
 
 ### The invisible pages
 
-`robots.txt`, a paginated `sitemap.xml` plus a static child sitemap for the
+`/api/status/<Repo>.json` is a shields.io endpoint badge: the board repo READMEs
+render their status badge from it, so the badge, the roadmap and the shop all
+resolve the same `status-*` topic. `robots.txt`, a paginated `sitemap.xml` plus a static child sitemap for the
 codebase-only routes, RSS feeds, RFC 9116 `security.txt`, `healthz`, and
 `llms.txt`: a machine-readable catalog for AI agents, generated live from the
 Storefront API so prices and variant IDs can never drift from the shop. Old URLs
