@@ -407,8 +407,15 @@ const scenarios = {
     const dots = page.locator('.product-gallery-deck .board-deck-dot');
     const n = await dots.count();
     report.images = n;
-    let imgFetches = 0;
-    const onReq = (req) => { if (req.resourceType() === 'image' && /cdn\.shopify\.com\/s\/files/.test(req.url())) imgFetches += 1; };
+    // Count REFETCHES: a photo URL requested a second time. Fresh neighbour
+    // warms are not refetches and are ignored.
+    const seen = new Set();
+    let refetches = 0;
+    const onReq = (req) => {
+      if (req.resourceType() !== 'image' || !/cdn\.shopify\.com\/s\/files/.test(req.url())) return;
+      if (seen.has(req.url())) refetches += 1;
+      else seen.add(req.url());
+    };
     page.on('request', onReq);
     const go = async (i) => {
       const dot = dots.nth(i);
@@ -417,9 +424,9 @@ const scenarios = {
       await idle(page, 600);
     };
     report.steps.push(await measure(page, 'step-forward', async () => { for (let i = 1; i < n; i++) await go(i); }, Math.max(2000, n * 650)));
-    const before = imgFetches;
+    const before = refetches;
     report.steps.push(await measure(page, 'step-back', async () => { for (let i = n - 2; i >= 0; i--) await go(i); }, Math.max(2000, n * 650)));
-    report.steps[report.steps.length - 1].imageFetchesOnRevisit = imgFetches - before;
+    report.steps[report.steps.length - 1].imageRefetchesOnRevisit = refetches - before;
     page.off('request', onReq);
   },
 

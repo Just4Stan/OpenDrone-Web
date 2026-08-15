@@ -5,9 +5,11 @@
 #        jetbrains-mono-{Regular,Medium,Bold}.woff2>
 # Needs: python3 with fonttools + brotli (pip install fonttools brotli).
 #
-# Sources: Inter Variable (rsms.me/inter, "InterVariable.woff2"), JetBrains
-# Mono static weights (github.com/JetBrains/JetBrainsMono releases). Tokyo is
-# already tiny (7 KB) and is not subset.
+# Sources: Inter Variable (rsms.me/inter, ships as InterVariable.woff2: rename
+# it to inter-var.woff2 in <dir>), JetBrains Mono static weights
+# (github.com/JetBrains/JetBrainsMono releases, JetBrainsMono-Regular.woff2 etc:
+# rename to jetbrains-mono-Regular.woff2 etc). Tokyo is already tiny (7 KB) and
+# is not subset.
 #
 # Coverage: Basic Latin, Latin-1, Latin Extended-A, the four Greek letters the
 # copy uses (Δ Ω μ π), general punctuation, currency, letterlike, arrows,

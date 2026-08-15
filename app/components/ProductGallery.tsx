@@ -53,29 +53,21 @@ export function ProductGallery({
   // a swipe lands on a decoded image; anything further out waits until it is
   // visited, so a long deck does not download every photo up front.
   const visited = useRef<Set<string>>(new Set());
-  // Neighbours join only once the page has loaded and gone idle: at page load
-  // the active photo is the LCP element and two more full-size fetches next
-  // to it pushed it out (measured +350 KB before LCP on the PDP).
+  // Neighbours join only after the visitor first touches the gallery (a
+  // pointer over it, a touch, a focus on its controls). Mounting them at
+  // load fetched two more full-size photos (+650 KB per phone view) that
+  // most visitors never step to, and competed with the LCP photo. Skipped
+  // entirely under data-saver or a sub-4G link.
   const [warmNeighbours, setWarmNeighbours] = useState(false);
-  useEffect(() => {
-    if (images.length < 2) return;
-    let id: number | undefined;
-    const arm = () => {
-      id =
-        typeof requestIdleCallback !== 'undefined'
-          ? requestIdleCallback(() => setWarmNeighbours(true), {timeout: 4000})
-          : window.setTimeout(() => setWarmNeighbours(true), 2500);
-    };
-    if (document.readyState === 'complete') arm();
-    else window.addEventListener('load', arm, {once: true});
-    return () => {
-      window.removeEventListener('load', arm);
-      if (id !== undefined) {
-        if (typeof cancelIdleCallback !== 'undefined') cancelIdleCallback(id);
-        clearTimeout(id);
-      }
-    };
-  }, [images.length]);
+  const armNeighbours = () => {
+    if (warmNeighbours) return;
+    const conn = (
+      navigator as {connection?: {saveData?: boolean; effectiveType?: string}}
+    ).connection;
+    if (conn?.saveData) return;
+    if (/(^|\b)(slow-)?[23]g\b/.test(String(conn?.effectiveType ?? ''))) return;
+    setWarmNeighbours(true);
+  };
   const mounted = useMemo(() => {
     const keys = images.map((img) => img.id ?? img.url);
     visited.current.add(keys[index]);
@@ -100,6 +92,7 @@ export function ProductGallery({
   }
 
   const setIndex = (n: number) => {
+    armNeighbours();
     const next = new URLSearchParams(searchParams);
     if (n === 0) next.delete(IMAGE_PARAM);
     else next.set(IMAGE_PARAM, String(n));
@@ -135,8 +128,13 @@ export function ProductGallery({
         className="product-gallery-main"
         role="group"
         aria-label={copyText('product-chrome.gallery_aria')}
-        onTouchStart={onTouchStart}
+        onTouchStart={(e) => {
+          armNeighbours();
+          onTouchStart(e);
+        }}
         onTouchEnd={onTouchEnd}
+        onPointerEnter={armNeighbours}
+        onFocus={armNeighbours}
       >
         {images.map((img, i) => {
           const key = img.id ?? img.url;

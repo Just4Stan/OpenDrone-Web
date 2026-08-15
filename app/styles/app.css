@@ -7477,7 +7477,7 @@ html.light .firmware-logo--tile {
   content: '';
   position: absolute;
   inset: 0;
-  background-image: url(/boards/openfc-lite/front.png);
+  background-image: url(/boards/openfc-lite/front-w800.webp);
   background-repeat: no-repeat;
   background-position: right -22% center;
   background-size: auto 150%;

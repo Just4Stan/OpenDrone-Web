@@ -819,13 +819,18 @@ export default function Product() {
     // "lite-ufl"), leaving an empty gallery. An image belongs to the
     // longest tier key its filename contains; keep it when that's the
     // active tier or when it names no tier at all.
+    // Alt text is free prose ("OpenRX Lite UFL, top"), so its match also
+    // ignores hyphens and underscores on both sides; filenames keep the
+    // hyphenated key (openesc-20x20-back.png).
+    const loose = (v: string) => v.replace(/[-_]/g, '');
+    const looseKeys = keys.map(loose);
     const featuredId = selectedVariant?.image?.id ?? null;
     return deduped.filter((img) => {
       if (featuredId && img.id === featuredId) return true;
       const name = img.url.split('?')[0].toLowerCase();
-      const alt = norm(img.altText ?? '');
+      const alt = loose(norm(img.altText ?? ''));
       const best = keys
-        .filter((k) => name.includes(k) || alt.includes(k))
+        .filter((k, i) => name.includes(k) || alt.includes(looseKeys[i]))
         .sort((a, b) => b.length - a.length)[0];
       return !best || best === active;
     });
