@@ -49,6 +49,9 @@ scripts/.post-uploads.json
 
 # mobile audit screenshots (local only)
 .mobile-audit/
+# perf lab reports (scripts/lh-audit.mjs, scripts/perf-audit.mjs --out)
+.lh/
+.perf/
 
 # Obsidian vault config — local note-taking, not part of the app
 .obsidian/

@@ -1,0 +1,134 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="100.0607 100.7536 10 11.5" width="10.0000mm" height="11.5000mm" preserveAspectRatio="xMidYMid meet" overflow="hidden" data-board="openrx-lite">
+  <defs>
+    <clipPath id="board-clip-openrx-lite" clipPathUnits="userSpaceOnUse">
+      <path d="M 109.6402 100.7541 L 109.6986 100.7618 L 109.7555 100.7770 L 109.8099 100.7996 L 109.8610 100.8290 L 109.9077 100.8649 L 109.9494 100.9066 L 109.9853 100.9533 L 110.0147 101.0044 L 110.0373 101.0588 L 110.0525 101.1157 L 110.0602 101.1741 L 110.0607 101.2036 L 110.0607 111.8036 L 110.0602 111.8331 L 110.0525 111.8915 L 110.0373 111.9484 L 110.0147 112.0028 L 109.9853 112.0539 L 109.9494 112.1006 L 109.9077 112.1423 L 109.8610 112.1782 L 109.8099 112.2076 L 109.7555 112.2302 L 109.6986 112.2454 L 109.6402 112.2531 L 109.6107 112.2536 L 100.5107 112.2536 L 100.4812 112.2531 L 100.4228 112.2454 L 100.3659 112.2302 L 100.3115 112.2076 L 100.2604 112.1782 L 100.2137 112.1423 L 100.1720 112.1006 L 100.1361 112.0539 L 100.1067 112.0028 L 100.0841 111.9484 L 100.0689 111.8915 L 100.0612 111.8331 L 100.0607 111.8036 L 100.0607 101.2036 L 100.0612 101.1741 L 100.0689 101.1157 L 100.0841 101.0588 L 100.1067 101.0044 L 100.1361 100.9533 L 100.1720 100.9066 L 100.2137 100.8649 L 100.2604 100.8290 L 100.3115 100.7996 L 100.3659 100.7770 L 100.4228 100.7618 L 100.4812 100.7541 L 100.5107 100.7536 L 109.6107 100.7536 Z" clip-rule="evenodd"/>
+    </clipPath>
+  </defs>
+  <g id="layer-back" class="board-layer board-layer-back">
+    <image href="/boards/openrx-lite/back.png" x="99.305" y="100.7536" width="11.504" height="11.5" preserveAspectRatio="none" image-rendering="optimizeQuality"/>
+  </g>
+  <g id="layer-edge-cuts" class="board-layer board-layer-edge-cuts">
+<g style="fill:#000000; fill-opacity:1.0000;stroke:#000000; stroke-opacity:1.0000;
+stroke-linecap:round; stroke-linejoin:round;"
+ transform="translate(0 0) scale(1 1)">
+<path style="fill:none; 
+stroke:#D0D2CD; stroke-width:0.0500; stroke-opacity:1; 
+stroke-linecap:round; stroke-linejoin:round;fill:none"
+d="M 100.0607,101.2036
+100.0612,101.1741
+100.0689,101.1157
+100.0841,101.0588
+100.1067,101.0044
+100.1362,100.9533
+100.1720,100.9066
+100.2137,100.8649
+100.2604,100.8290
+100.3115,100.7996
+100.3659,100.7770
+100.4228,100.7618
+100.4813,100.7541
+100.5107,100.7536
+109.6107,100.7536
+109.6402,100.7541
+109.6986,100.7618
+109.7555,100.7770
+109.8100,100.7996
+109.8610,100.8290
+109.9077,100.8649
+109.9494,100.9066
+109.9853,100.9533
+110.0147,101.0044
+110.0373,101.0588
+110.0525,101.1157
+110.0602,101.1741
+110.0607,101.2036
+110.0607,111.8036
+110.0602,111.8331
+110.0525,111.8915
+110.0373,111.9484
+110.0147,112.0028
+109.9853,112.0539
+109.9494,112.1006
+109.9077,112.1423
+109.8610,112.1782
+109.8100,112.2076
+109.7555,112.2302
+109.6986,112.2454
+109.6402,112.2531
+109.6107,112.2536
+100.5107,112.2536
+100.4813,112.2531
+100.4228,112.2454
+100.3659,112.2302
+100.3115,112.2076
+100.2604,112.1782
+100.2137,112.1423
+100.1720,112.1006
+100.1362,112.0539
+100.1067,112.0028
+100.0841,111.9484
+100.0689,111.8915
+100.0612,111.8331
+100.0607,111.8036
+Z" /> 
+</g>
+<g style="fill:#000000; fill-opacity:1.0000; stroke:none;">
+<circle cx="108.3707" cy="111.0536" r="0.2000" /> 
+<circle cx="108.3707" cy="113.4536" r="0.2000" /> 
+<circle cx="108.8707" cy="112.2536" r="0.5000" /> 
+<circle cx="109.3707" cy="111.0536" r="0.2000" /> 
+<circle cx="109.3707" cy="113.4536" r="0.2000" /> 
+<circle cx="0.6857" cy="2.4786" r="0.2000" /> 
+<circle cx="0.6857" cy="4.8786" r="0.2000" /> 
+<circle cx="1.1857" cy="3.6786" r="0.5000" /> 
+<circle cx="1.6857" cy="2.4786" r="0.2000" /> 
+<circle cx="1.6857" cy="4.8786" r="0.2000" /> 
+<circle cx="3.9357" cy="2.4786" r="0.2000" /> 
+<circle cx="3.9357" cy="4.8786" r="0.2000" /> 
+<circle cx="4.4357" cy="3.6786" r="0.5000" /> 
+<circle cx="4.9357" cy="2.4786" r="0.2000" /> 
+<circle cx="4.9357" cy="4.8786" r="0.2000" /> 
+<circle cx="103.2848" cy="111.0536" r="0.2000" /> 
+<circle cx="103.2848" cy="113.4536" r="0.2000" /> 
+<circle cx="103.7848" cy="112.2536" r="0.5000" /> 
+<circle cx="104.2848" cy="111.0536" r="0.2000" /> 
+<circle cx="104.2848" cy="113.4536" r="0.2000" /> 
+<circle cx="100.7448" cy="111.0536" r="0.2000" /> 
+<circle cx="100.7448" cy="113.4536" r="0.2000" /> 
+<circle cx="101.2448" cy="112.2536" r="0.5000" /> 
+<circle cx="101.7448" cy="111.0536" r="0.2000" /> 
+<circle cx="101.7448" cy="113.4536" r="0.2000" /> 
+<circle cx="105.8307" cy="111.0536" r="0.2000" /> 
+<circle cx="105.8307" cy="113.4536" r="0.2000" /> 
+<circle cx="106.3307" cy="112.2536" r="0.5000" /> 
+<circle cx="106.8307" cy="111.0536" r="0.2000" /> 
+<circle cx="106.8307" cy="113.4536" r="0.2000" /> 
+<circle cx="7.1857" cy="2.4786" r="0.2000" /> 
+<circle cx="7.1857" cy="4.8786" r="0.2000" /> 
+<circle cx="7.6857" cy="3.6786" r="0.5000" /> 
+<circle cx="8.1857" cy="2.4786" r="0.2000" /> 
+<circle cx="8.1857" cy="4.8786" r="0.2000" /> 
+</g>
+  </g>
+  <g id="layer-f" class="board-layer board-layer-f">
+    <image href="/boards/openrx-lite/layer-f-w1280.webp" x="100.0607" y="100.7536" width="10" height="11.5" preserveAspectRatio="none"/>
+  </g>
+  <g id="layer-in1" class="board-layer board-layer-in1">
+    <image href="/boards/openrx-lite/layer-in1-w1280.webp" x="100.0607" y="100.7536" width="10" height="11.5" preserveAspectRatio="none"/>
+  </g>
+  <g id="layer-in2" class="board-layer board-layer-in2">
+    <image href="/boards/openrx-lite/layer-in2-w1280.webp" x="100.0607" y="100.7536" width="10" height="11.5" preserveAspectRatio="none"/>
+  </g>
+  <g id="layer-in3" class="board-layer board-layer-in3">
+    <image href="/boards/openrx-lite/layer-in3-w1280.webp" x="100.0607" y="100.7536" width="10" height="11.5" preserveAspectRatio="none"/>
+  </g>
+  <g id="layer-in4" class="board-layer board-layer-in4">
+    <image href="/boards/openrx-lite/layer-in4-w1280.webp" x="100.0607" y="100.7536" width="10" height="11.5" preserveAspectRatio="none"/>
+  </g>
+  <g id="layer-b" class="board-layer board-layer-b">
+    <image href="/boards/openrx-lite/layer-b-w1280.webp" x="100.0607" y="100.7536" width="10" height="11.5" preserveAspectRatio="none"/>
+  </g>
+  <g id="layer-front" class="board-layer board-layer-front">
+    <image href="/boards/openrx-lite/front.png" x="99.3124" y="100.7536" width="11.504" height="11.5" preserveAspectRatio="none" image-rendering="optimizeQuality"/>
+  </g>
+</svg>

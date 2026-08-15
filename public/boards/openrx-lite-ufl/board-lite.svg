@@ -1,0 +1,119 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0.6512 0.075 10 11.5" width="10.0000mm" height="11.5000mm" preserveAspectRatio="xMidYMid meet" overflow="hidden" data-board="openrx-lite-ufl">
+  <defs>
+    <clipPath id="board-clip-openrx-lite-ufl" clipPathUnits="userSpaceOnUse">
+      <path d="M 10.2307 0.0755 L 10.2891 0.0832 L 10.3460 0.0984 L 10.4004 0.1210 L 10.4515 0.1504 L 10.4982 0.1863 L 10.5399 0.2280 L 10.5758 0.2747 L 10.6052 0.3258 L 10.6278 0.3802 L 10.6430 0.4371 L 10.6507 0.4955 L 10.6512 0.5250 L 10.6512 11.1250 L 10.6507 11.1545 L 10.6430 11.2129 L 10.6278 11.2698 L 10.6052 11.3242 L 10.5758 11.3753 L 10.5399 11.4220 L 10.4982 11.4637 L 10.4515 11.4996 L 10.4004 11.5290 L 10.3460 11.5516 L 10.2891 11.5668 L 10.2307 11.5745 L 10.2012 11.5750 L 1.1012 11.5750 L 1.0717 11.5745 L 1.0133 11.5668 L 0.9564 11.5516 L 0.9020 11.5290 L 0.8509 11.4996 L 0.8042 11.4637 L 0.7625 11.4220 L 0.7266 11.3753 L 0.6972 11.3242 L 0.6746 11.2698 L 0.6594 11.2129 L 0.6517 11.1545 L 0.6512 11.1250 L 0.6512 0.5250 L 0.6517 0.4955 L 0.6594 0.4371 L 0.6746 0.3802 L 0.6972 0.3258 L 0.7266 0.2747 L 0.7625 0.2280 L 0.8042 0.1863 L 0.8509 0.1504 L 0.9020 0.1210 L 0.9564 0.0984 L 1.0133 0.0832 L 1.0717 0.0755 L 1.1012 0.0750 L 10.2012 0.0750 Z" clip-rule="evenodd"/>
+    </clipPath>
+  </defs>
+  <g id="layer-back" class="board-layer board-layer-back">
+    <image href="/boards/openrx-lite-ufl/back.png" x="-0.1045" y="0.075" width="11.504" height="11.5" preserveAspectRatio="none" image-rendering="optimizeQuality"/>
+  </g>
+  <g id="layer-edge-cuts" class="board-layer board-layer-edge-cuts">
+<g style="fill:#000000; fill-opacity:1.0000;stroke:#000000; stroke-opacity:1.0000;
+stroke-linecap:round; stroke-linejoin:round;"
+ transform="translate(0 0) scale(1 1)">
+<path style="fill:none; 
+stroke:#D0D2CD; stroke-width:0.0500; stroke-opacity:1; 
+stroke-linecap:round; stroke-linejoin:round;fill:none"
+d="M 0.6512,0.5250
+0.6517,0.4955
+0.6594,0.4371
+0.6746,0.3802
+0.6972,0.3258
+0.7266,0.2747
+0.7625,0.2280
+0.8042,0.1863
+0.8509,0.1504
+0.9019,0.1210
+0.9564,0.0984
+1.0133,0.0832
+1.0717,0.0755
+1.1012,0.0750
+10.2012,0.0750
+10.2307,0.0755
+10.2891,0.0832
+10.3460,0.0984
+10.4004,0.1210
+10.4515,0.1504
+10.4982,0.1863
+10.5399,0.2280
+10.5758,0.2747
+10.6052,0.3258
+10.6278,0.3802
+10.6430,0.4371
+10.6507,0.4955
+10.6512,0.5250
+10.6512,11.1250
+10.6507,11.1545
+10.6430,11.2129
+10.6278,11.2698
+10.6052,11.3242
+10.5758,11.3753
+10.5399,11.4220
+10.4982,11.4637
+10.4515,11.4996
+10.4004,11.5290
+10.3460,11.5516
+10.2891,11.5668
+10.2307,11.5745
+10.2012,11.5750
+1.1012,11.5750
+1.0717,11.5745
+1.0133,11.5668
+0.9564,11.5516
+0.9019,11.5290
+0.8509,11.4996
+0.8042,11.4637
+0.7625,11.4220
+0.7266,11.3753
+0.6972,11.3242
+0.6746,11.2698
+0.6594,11.2129
+0.6517,11.1545
+0.6512,11.1250
+Z" /> 
+</g>
+<g style="fill:#000000; fill-opacity:1.0000; stroke:none;">
+<circle cx="6.4212" cy="10.3750" r="0.2000" /> 
+<circle cx="6.4212" cy="12.7750" r="0.2000" /> 
+<circle cx="6.9212" cy="11.5750" r="0.5000" /> 
+<circle cx="7.4212" cy="10.3750" r="0.2000" /> 
+<circle cx="7.4212" cy="12.7750" r="0.2000" /> 
+<circle cx="8.9612" cy="10.3750" r="0.2000" /> 
+<circle cx="8.9612" cy="12.7750" r="0.2000" /> 
+<circle cx="9.4612" cy="11.5750" r="0.5000" /> 
+<circle cx="9.9612" cy="10.3750" r="0.2000" /> 
+<circle cx="9.9612" cy="12.7750" r="0.2000" /> 
+<circle cx="3.8752" cy="10.3750" r="0.2000" /> 
+<circle cx="3.8752" cy="12.7750" r="0.2000" /> 
+<circle cx="4.3752" cy="11.5750" r="0.5000" /> 
+<circle cx="4.8752" cy="10.3750" r="0.2000" /> 
+<circle cx="4.8752" cy="12.7750" r="0.2000" /> 
+<circle cx="1.3352" cy="10.3750" r="0.2000" /> 
+<circle cx="1.3352" cy="12.7750" r="0.2000" /> 
+<circle cx="1.8352" cy="11.5750" r="0.5000" /> 
+<circle cx="2.3352" cy="10.3750" r="0.2000" /> 
+<circle cx="2.3352" cy="12.7750" r="0.2000" /> 
+</g>
+  </g>
+  <g id="layer-f" class="board-layer board-layer-f">
+    <image href="/boards/openrx-lite-ufl/layer-f-w1280.webp" x="0.6512" y="0.075" width="10" height="11.5" preserveAspectRatio="none"/>
+  </g>
+  <g id="layer-in1" class="board-layer board-layer-in1">
+    <image href="/boards/openrx-lite-ufl/layer-in1-w1280.webp" x="0.6512" y="0.075" width="10" height="11.5" preserveAspectRatio="none"/>
+  </g>
+  <g id="layer-in2" class="board-layer board-layer-in2">
+    <image href="/boards/openrx-lite-ufl/layer-in2-w1280.webp" x="0.6512" y="0.075" width="10" height="11.5" preserveAspectRatio="none"/>
+  </g>
+  <g id="layer-in3" class="board-layer board-layer-in3">
+    <image href="/boards/openrx-lite-ufl/layer-in3-w1280.webp" x="0.6512" y="0.075" width="10" height="11.5" preserveAspectRatio="none"/>
+  </g>
+  <g id="layer-in4" class="board-layer board-layer-in4">
+    <image href="/boards/openrx-lite-ufl/layer-in4-w1280.webp" x="0.6512" y="0.075" width="10" height="11.5" preserveAspectRatio="none"/>
+  </g>
+  <g id="layer-b" class="board-layer board-layer-b">
+    <image href="/boards/openrx-lite-ufl/layer-b-w1280.webp" x="0.6512" y="0.075" width="10" height="11.5" preserveAspectRatio="none"/>
+  </g>
+  <g id="layer-front" class="board-layer board-layer-front">
+    <image href="/boards/openrx-lite-ufl/front.png" x="-0.0971" y="0.075" width="11.504" height="11.5" preserveAspectRatio="none" image-rendering="optimizeQuality"/>
+  </g>
+</svg>

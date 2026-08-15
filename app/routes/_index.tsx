@@ -200,8 +200,16 @@ export async function loader({request, context}: Route.LoaderArgs) {
     })
     .catch(() => ({featured: [], heroStacks: emptyHeroStacks()}));
 
-  const featured = home.then((h) => h.featured);
   const heroStacks = home.then((h) => h.heroStacks);
+  // On a phone the featured cards are the first thing under the hero and the
+  // section's arrival used to shift everything below it (CLS 0.22) and delay
+  // the LCP image until the deferred chunk streamed in. The query is
+  // CacheLong, so awaiting it costs a few ms of TTFB at the edge and puts the
+  // cards, and the first card's image, in the initial HTML. Desktop keeps the
+  // deferred promise: it never renders these cards.
+  const featured = isMobileHint
+    ? await home.then((h) => h.featured)
+    : home.then((h) => h.featured);
 
   return {isMobileHint, featured, heroStacks};
 }

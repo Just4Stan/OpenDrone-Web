@@ -29,6 +29,8 @@
     "publish:post": "node scripts/publish-post.mjs",
     "gen:shopify-templates": "node scripts/shopify-templates/gen.mjs",
     "audit:mobile": "node scripts/mobile-shots.mjs",
+    "audit:perf": "node scripts/perf-audit.mjs",
+    "audit:lh": "node scripts/lh-audit.mjs",
     "gen:board-art": "node scripts/export-board-art.mjs --all",
     "gen:components": "node scripts/export-board-art.mjs --all --components-only",
     "gen:schematics": "node scripts/export-schematics.mjs --all",

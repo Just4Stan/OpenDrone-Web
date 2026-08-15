@@ -7,6 +7,17 @@ import {ProductItem} from '~/components/ProductItem';
 import {AnimatedNumber} from '~/components/AnimatedNumber';
 import {Txt} from '~/components/Txt';
 import {PRODUCT_CONTENT} from '~/lib/product-content';
+import {BOARD_ART_VERSION} from '~/data/board-art-version';
+
+// Downscaled WebP thumbnails written by scripts/export-board-art.mjs next to
+// front.png. The stage slot is at most 264 CSS px, so 528 (2x) and 800 (3x)
+// cover every phone at a tenth of the 1568 px PNG. Same ?v= cache-bust as
+// BoardArt so a regenerated render is refetched.
+const boardThumb = (handle: string, w: 528 | 800) =>
+  `/boards/${handle}/front-w${w}.webp${BOARD_ART_VERSION ? `?v=${BOARD_ART_VERSION}` : ''}`;
+// Mirrors .home-mobile-board: width clamp(178px, 54vw, 264px).
+const BOARD_THUMB_SIZES = '(min-width: 489px) 264px, 54vw';
+
 
 /* Below-fold "index" band — the open-hardware ledger in the PDP's
  * spec-table language. Every row is a fact already published elsewhere on
@@ -46,7 +57,7 @@ const HOME_LEDGER: Array<{key: string; value?: string; countUp?: boolean}> = [
 export function MobileHome({
   featured,
 }: {
-  featured: Promise<CollectionItemFragment[]>;
+  featured: CollectionItemFragment[] | Promise<CollectionItemFragment[]>;
 }) {
   const reduce = useReducedMotion();
 
@@ -79,22 +90,28 @@ export function MobileHome({
           <span className="home-mobile-board-float home-mobile-board-float--rear">
             <img
               className="home-mobile-board"
-              src="/boards/openesc/front.png"
+              src={boardThumb('openesc', 800)}
+              srcSet={`${boardThumb('openesc', 528)} 528w, ${boardThumb('openesc', 800)} 800w`}
+              sizes={BOARD_THUMB_SIZES}
               alt=""
               width={520}
               height={520}
               loading="eager"
+              fetchPriority="low"
               decoding="async"
             />
           </span>
           <span className="home-mobile-board-float home-mobile-board-float--front">
             <img
               className="home-mobile-board"
-              src="/boards/openfc-lite/front.png"
+              src={boardThumb('openfc-lite', 800)}
+              srcSet={`${boardThumb('openfc-lite', 528)} 528w, ${boardThumb('openfc-lite', 800)} 800w`}
+              sizes={BOARD_THUMB_SIZES}
               alt=""
               width={520}
               height={520}
               loading="eager"
+              fetchPriority="high"
               decoding="async"
             />
           </span>
@@ -151,30 +168,21 @@ export function MobileHome({
         </motion.div>
       </section>
 
-      <Suspense fallback={null}>
-        <Await resolve={featured} errorElement={null}>
-          {(items) =>
-            items.length > 0 ? (
-              <section className="home-mobile-featured">
-                <Txt
-                  id="home.m_featured_label"
-                  as="p"
-                  className="section-label"
-                />
-                <div className="home-mobile-grid">
-                  {items.map((product, i) => (
-                    <ProductItem
-                      key={product.id}
-                      product={product}
-                      loading={i === 0 ? 'eager' : 'lazy'}
-                    />
-                  ))}
-                </div>
-              </section>
-            ) : null
-          }
-        </Await>
-      </Suspense>
+      {/* The loader resolves `featured` for a mobile UA, so the cards render
+          in the shell here with no Suspense boundary: React's streaming
+          renderer outlines any boundary once the shell passes its progressive
+          chunk size, so a resolved value inside <Await> still arrived as a
+          late chunk and shifted the ledger below (CLS 0.22). A promise (the
+          desktop-first path resized down to a phone) still streams. */}
+      {Array.isArray(featured) ? (
+        <FeaturedGrid items={featured} />
+      ) : (
+        <Suspense fallback={null}>
+          <Await resolve={featured} errorElement={null}>
+            {(items) => <FeaturedGrid items={items} />}
+          </Await>
+        </Suspense>
+      )}
 
       {/* Open-hardware index — spec-table rows (hairline rules, mono keys,
           right-aligned values) with count-ups on the numerals. Reuses the
@@ -218,5 +226,23 @@ export function MobileHome({
         </svg>
       </Link>
     </div>
+  );
+}
+
+function FeaturedGrid({items}: {items: CollectionItemFragment[]}) {
+  if (items.length === 0) return null;
+  return (
+    <section className="home-mobile-featured">
+      <Txt id="home.m_featured_label" as="p" className="section-label" />
+      <div className="home-mobile-grid">
+        {items.map((product, i) => (
+          <ProductItem
+            key={product.id}
+            product={product}
+            loading={i === 0 ? 'eager' : 'lazy'}
+          />
+        ))}
+      </div>
+    </section>
   );
 }

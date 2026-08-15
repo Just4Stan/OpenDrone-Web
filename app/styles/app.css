@@ -3,34 +3,42 @@
 /* Self-hosted typefaces. Inter Variable covers 100-900 in a single
    file; JetBrains Mono ships as three static weights for spec tables,
    prices, SKUs, and any technical readout. font-display: swap so the
-   system fallback paints first and the woff2 hot-swaps when ready. */
+   system fallback paints first and the woff2 hot-swaps when ready.
+   The files live in app/assets/fonts and are imported through Vite so the
+   stylesheet and the preloads in root.tsx resolve to the SAME hashed CDN
+   URL: a root-relative /fonts/ path here resolved against cdn.shopify.com
+   (where this stylesheet is served from) while the preload hit the site
+   origin, and every font downloaded twice. They are also subset to Latin,
+   Latin Extended-A and the engineering symbols the copy uses (see
+   scripts/subset-fonts.sh); every OpenType feature and both Inter axes are
+   kept, so rendering is unchanged. */
 @font-face {
   font-family: "Inter";
   font-style: normal;
   font-weight: 100 900;
   font-display: swap;
-  src: url("/fonts/inter-var.woff2") format("woff2-variations");
+  src: url("../assets/fonts/inter-var.woff2") format("woff2-variations");
 }
 @font-face {
   font-family: "JetBrains Mono";
   font-style: normal;
   font-weight: 400;
   font-display: swap;
-  src: url("/fonts/jetbrains-mono-Regular.woff2") format("woff2");
+  src: url("../assets/fonts/jetbrains-mono-Regular.woff2") format("woff2");
 }
 @font-face {
   font-family: "JetBrains Mono";
   font-style: normal;
   font-weight: 500;
   font-display: swap;
-  src: url("/fonts/jetbrains-mono-Medium.woff2") format("woff2");
+  src: url("../assets/fonts/jetbrains-mono-Medium.woff2") format("woff2");
 }
 @font-face {
   font-family: "JetBrains Mono";
   font-style: normal;
   font-weight: 700;
   font-display: swap;
-  src: url("/fonts/jetbrains-mono-Bold.woff2") format("woff2");
+  src: url("../assets/fonts/jetbrains-mono-Bold.woff2") format("woff2");
 }
 /* Tokyo — the brand face (Graphicxell). Used ONLY for product/brand name
    tokens (OpenStack, OpenFC, OpenESC, OpenFrame, …), never for body copy.
@@ -44,7 +52,32 @@
   font-style: normal;
   font-weight: 400 800;
   font-display: swap;
-  src: url("/fonts/tokyo-regular.woff2") format("woff2");
+  src: url("../assets/fonts/tokyo-regular.woff2") format("woff2");
+}
+
+/* Metric-matched fallbacks. font-display: swap paints the system face first;
+   without these the swap to Inter / JetBrains Mono reflowed every line and
+   moved everything below (CLS 0.22 on the mobile home over slow 4G, all of it
+   the ledger sliding). size-adjust and the ascent/descent overrides make the
+   local face occupy the same advance width and line box as the web font, so
+   the swap changes glyph shapes only. Values computed from the real font
+   files with fontTools (average advance over site copy, hhea metrics); Roboto
+   (Android) is close enough to Arial to share its numbers. */
+@font-face {
+  font-family: "Inter Fallback";
+  src: local("Arial"), local("Roboto"), local("Helvetica");
+  size-adjust: 105.6%;
+  ascent-override: 91.75%;
+  descent-override: 22.84%;
+  line-gap-override: 0%;
+}
+@font-face {
+  font-family: "JetBrains Mono Fallback";
+  src: local("Menlo"), local("Consolas"), local("Courier New");
+  size-adjust: 99.7%;
+  ascent-override: 102.3%;
+  descent-override: 30%;
+  line-gap-override: 0%;
 }
 
 @theme {
@@ -121,11 +154,11 @@
   /* Brand typography. Inter for display + body, JetBrains Mono for
      technical readouts (prices, specs, SKUs, version tags). System
      fallbacks paint immediately while the woff2 swap completes. */
-  --font-display: "Inter", -apple-system, BlinkMacSystemFont, ui-sans-serif,
+  --font-display: "Inter", "Inter Fallback", -apple-system, BlinkMacSystemFont, ui-sans-serif,
     system-ui, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-  --font-sans: "Inter", -apple-system, BlinkMacSystemFont, ui-sans-serif,
+  --font-sans: "Inter", "Inter Fallback", -apple-system, BlinkMacSystemFont, ui-sans-serif,
     system-ui, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-  --font-mono: "JetBrains Mono", ui-monospace, Menlo, Monaco, "SF Mono",
+  --font-mono: "JetBrains Mono", "JetBrains Mono Fallback", ui-monospace, Menlo, Monaco, "SF Mono",
     "Cascadia Mono", "Segoe UI Mono", Consolas, monospace;
 
   /* Brand face for product/brand name tokens. Falls back to the display
@@ -341,7 +374,7 @@ html.light .schematic-sheet {
 html {
   background-color: var(--color-bg);
   color: var(--color-text);
-  font-family: "Inter", -apple-system, BlinkMacSystemFont, ui-sans-serif,
+  font-family: "Inter", "Inter Fallback", -apple-system, BlinkMacSystemFont, ui-sans-serif,
     system-ui, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   font-size: var(--fs-base);
   line-height: 1.5;
@@ -3694,6 +3727,18 @@ button.reset {
   aspect-ratio: 1 / 1;
   overflow: hidden;
   border-radius: var(--r-md);
+}
+
+/* Slide track: every mounted photo fills the square; only the active one is
+   visible. visibility (not display) keeps hidden slides decoded so stepping
+   back to one is instant with no blur-up. */
+.product-gallery-slide {
+  position: absolute;
+  inset: 0;
+}
+.product-gallery-slide:not(.is-active) {
+  visibility: hidden;
+  pointer-events: none;
 }
 
 .product-gallery-main:focus-visible {
@@ -7432,7 +7477,7 @@ html.light .firmware-logo--tile {
   content: '';
   position: absolute;
   inset: 0;
-  background-image: url(/boards/openfc-lite/front.png);
+  background-image: url(/boards/openfc-lite/front-w800.webp);
   background-repeat: no-repeat;
   background-position: right -22% center;
   background-size: auto 150%;

@@ -32,13 +32,63 @@ import {
 } from '~/lib/board-swap-timing';
 
 // `?v=` busts Oxygen's 1-year immutable cache when board art is regenerated in
-// place — the token is the content hash of every board.svg + front/back PNG,
-// baked into the bundle by scripts/export-board-art.mjs. We version BOTH the
-// board.svg fetch URL AND the face <image> hrefs (front.png/back.png) it
-// references, so a re-render (e.g. an IC-less → IC-full face) refetches both the
-// markup and the bitmaps instead of serving the stale cached render forever.
+// place — the token is the content hash of every board.svg, board-lite.svg,
+// front/back PNG and derived WebP under public/boards, baked into the bundle
+// by scripts/export-board-art.mjs. We version BOTH the svg fetch URL AND every
+// <image> href it references, so a re-render (e.g. an IC-less → IC-full face,
+// or a raster re-export) refetches both the markup and the bitmaps instead of
+// serving the stale cached render forever.
 const versioned = (url: string) =>
   BOARD_ART_VERSION ? `${url}?v=${BOARD_ART_VERSION}` : url;
+
+// The stack renders board-lite.svg, not board.svg: same layer groups, but each
+// copper layer's thousands of vector paths are replaced by ONE <image> of a
+// lossless WebP raster that scripts/export-board-art.mjs pre-rendered with
+// headless Chromium. Six vector sheets behind CSS filters and transform
+// transitions re-rasterised on every frame of the layer sweep and stuttered on
+// phones; a bitmap sheet is decoded once and just composited. board.svg stays
+// the fallback for a board that has not been re-exported with rasters.
+const liteSrc = (src: string) => src.replace(/board\.svg$/, 'board-lite.svg');
+async function fetchBoardText(src: string): Promise<string> {
+  const lite = liteSrc(src);
+  if (lite === src) return fetchTextCached(versioned(src));
+  try {
+    return await fetchTextCached(versioned(lite));
+  } catch {
+    return fetchTextCached(versioned(src));
+  }
+}
+// Rasters ship at 1280 px (desktop) and 1024 px (phones); the faces at 1568 px
+// PNG (desktop) and 1024 px WebP (phones). A phone stack is under 400 CSS px,
+// so 1024 px is still 2.5x oversampled there while decoding a quarter of the
+// pixels. Decided once per parse (the parsed sheets are cached per src), so a
+// window resized across the threshold keeps its first choice until reload.
+const SMALL_STACK_QUERY = '(max-width: 900px)';
+function smallStack(): boolean {
+  return (
+    typeof window !== 'undefined' &&
+    typeof window.matchMedia === 'function' &&
+    window.matchMedia(SMALL_STACK_QUERY).matches
+  );
+}
+function sizedHref(href: string, small: boolean, lite: boolean): string {
+  // The WebP faces are written by the same export step as the rasters, so
+  // only a board that HAS board-lite.svg has them; the board.svg fallback
+  // keeps its full-size PNG faces. Desktop takes the 1280 px lossy WebP face
+  // (the stack is at most ~590 CSS px, 2x = 1180 px) instead of the 1568 px
+  // PNG (394 + 684 KB per board); phones the 1024 px one.
+  if (lite) {
+    href = href.replace(
+      /\/(front|back)\.png$/,
+      small ? '/$1-w1024.webp' : '/$1-w1280.webp',
+    );
+  }
+  return small ? href.replace(/-w1280\.webp$/, '-w1024.webp') : href;
+}
+/** Synchronous cache peek matching {@link fetchBoardText}: lite first, then
+ *  the board.svg fallback, so a remount of a warmed board seeds from cache. */
+const peekBoardText = (src: string) =>
+  peekText(versioned(liteSrc(src))) ?? peekText(versioned(src));
 
 export type BoardArtProps = {
   /** Public path to the layered SVG, e.g. /boards/openesc/board.svg */
@@ -162,11 +212,13 @@ const SHEET_ORDER = ['front', 'f', 'in1', 'in2', 'in3', 'in4', 'b', 'back'];
 type Sheet = {slug: string; label: string; html: string};
 
 /**
- * Module-level cache of parsed layer sheets, keyed by board SVG src. Splitting a
- * multi-MB / 30k-path board SVG with DOMParser is the expensive step (~1 s) and
- * used to re-run on every variant click. Caching the parsed result — and
- * pre-parsing sibling tiers in the background the moment the section is in view —
- * turns a tier switch into an instant cache hit instead of a fetch + parse.
+ * Module-level cache of parsed layer sheets, keyed by board SVG src. Splitting
+ * the board SVG with DOMParser used to be the expensive step (~1 s for a
+ * multi-MB vector board.svg; board-lite.svg is ~20 KB, so it is cheap now but
+ * still not free) and used to re-run on every variant click. Caching the parsed
+ * result, and pre-parsing sibling tiers in the background the moment the
+ * section is in view, turns a tier switch into an instant cache hit instead of
+ * a fetch + parse.
  */
 const parsedCache = new Map<string, Sheet[]>();
 
@@ -191,14 +243,17 @@ function parseSheets(raw: string): Sheet[] {
       const ib = SHEET_ORDER.indexOf(b.id.replace(/^layer-/, ''));
       return (ia < 0 ? 99 : ia) - (ib < 0 ? 99 : ib);
     });
-    // Version the face <image> hrefs (front.png/back.png) so a re-render busts
-    // the PNGs' immutable cache too — the same content hash as the svg fetch, so
-    // markup and bitmaps refetch together. Done on the parsed DOM before
-    // serialization; copper layers carry no <image> so they're unaffected.
+    // Version every <image> href (the faces and, in board-lite.svg, the copper
+    // rasters) so a re-render busts their immutable cache too — the same
+    // content hash as the svg fetch, so markup and bitmaps refetch together.
+    // Done on the parsed DOM before serialization. sizedHref also picks the
+    // WebP face and the raster width for the screen.
+    const small = smallStack();
+    const lite = Boolean(svg.querySelector('image[href*="-w1280.webp"]'));
     for (const img of Array.from(svg.querySelectorAll('image'))) {
       const href = img.getAttribute('href') ?? img.getAttribute('xlink:href');
       if (href && !href.includes('?v=')) {
-        const v = versioned(href);
+        const v = versioned(sizedHref(href, small, lite));
         if (img.hasAttribute('href')) img.setAttribute('href', v);
         if (img.hasAttribute('xlink:href')) img.setAttribute('xlink:href', v);
       }
@@ -234,7 +289,7 @@ async function warmParsed(src: string): Promise<Sheet[]> {
   if (hit) return hit;
   // Fetch the versioned URL (shared asset cache key) but key parsedCache by the
   // bare src so the rest of the component addresses boards by their stable path.
-  const text = await fetchTextCached(versioned(src));
+  const text = await fetchBoardText(src);
   const existing = parsedCache.get(src);
   if (existing) return existing;
   const parsed = parseSheets(text);
@@ -378,10 +433,10 @@ export function BoardArt({
   // `raw` is the SVG text currently on screen. Seed from cache so a tier that
   // was warmed earlier paints immediately with no blank frame.
   const [raw, setRaw] = useState<string | null>(
-    () => peekText(versioned(src)) ?? null,
+    () => peekBoardText(src) ?? null,
   );
   const [revealed, setRevealed] = useState<boolean>(
-    () => peekText(versioned(src)) != null,
+    () => peekBoardText(src) != null,
   );
   const [failed, setFailed] = useState(false);
   const [active, setActive] = useState(0);
@@ -398,7 +453,7 @@ export function BoardArt({
   // board — so a tier switch keeps the prior board on screen until the new one
   // is parsed, and never re-parses a board the cache already holds.
   const rawSrcRef = useRef<string | null>(
-    peekText(versioned(src)) != null ? src : null,
+    peekBoardText(src) != null ? src : null,
   );
   const lastSheetsRef = useRef<Sheet[]>([]);
   // Parsed component manifest for the active board (viewBox + ref→component
@@ -454,7 +509,7 @@ export function BoardArt({
     );
     const ric = (window as any).requestIdleCallback;
     const warmBytes = () => {
-      void fetchTextCached(versioned(src)).catch(() => {});
+      void fetchBoardText(src).catch(() => {});
     };
     const idleId = frugal
       ? null
@@ -504,7 +559,7 @@ export function BoardArt({
   useEffect(() => {
     if (!inView) return;
     let alive = true;
-    fetchTextCached(versioned(src))
+    fetchBoardText(src)
       .then((text) => {
         if (!alive) return;
         // Parse + cache the active board if not already cached, so the memo
@@ -1643,7 +1698,10 @@ export function BoardArt({
               instead of a viewport of black. */}
           <img
             className="board-art-skeleton-preview"
-            src={src.replace(/board\.svg$/, 'front.png')}
+            // The dimmed 800 px thumbnail (export-board-art.mjs derivative),
+            // not the 1568 px PNG: it is a blurred backdrop, and the full face
+            // fetched here on top of the stack's own face was 394 KB twice.
+            src={versioned(src.replace(/board\.svg$/, 'front-w800.webp'))}
             alt=""
             loading="lazy"
             decoding="async"
