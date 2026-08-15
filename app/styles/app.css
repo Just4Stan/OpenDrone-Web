@@ -4331,8 +4331,8 @@ button.reset {
 
 /* Roadmap status chip on a product card: same vocabulary and dot colors as
    the kanban and the PDP chip (the [data-status] rules), quiet pill on the
-   card corner. Not a link — the card is one; the listing's filter rail
-   links the legend once. */
+   card corner. Not a link — the card is one; the roadmap button beside
+   the search box explains the vocabulary once. */
 .product-card-status {
   position: absolute;
   top: 0.6rem;
@@ -4353,15 +4353,14 @@ button.reset {
   background: var(--pod-bg-strong);
 }
 
-/* The one legend button per listing: sits under the category filters in
-   the rail, same pill treatment as the contributors CTA. */
-.catalog-legend {
-  margin-top: var(--sp-6);
-}
-.catalog-legend-btn {
+/* Roadmap button beside the search box, same pill treatment as the
+   contributors CTA; the roadmap explains the status chips on the cards. */
+.catalog-roadmap-btn {
   display: inline-flex;
   align-items: center;
-  padding: 0.6rem 1.1rem;
+  align-self: center;
+  margin-left: var(--sp-3);
+  padding: 0.7rem 1.2rem;
   border: 1px solid color-mix(in srgb, var(--color-gold) 55%, transparent);
   border-radius: 999px;
   font-family: var(--font-mono);
@@ -4373,7 +4372,7 @@ button.reset {
   text-decoration: none;
   transition: background 0.18s ease, color 0.18s ease, border-color 0.18s ease;
 }
-.catalog-legend-btn:hover {
+.catalog-roadmap-btn:hover {
   background: var(--color-gold-fill);
   border-color: var(--color-gold-fill);
   color: var(--color-on-accent);
@@ -4387,7 +4386,16 @@ button.reset {
 }
 .catalog-search .search-form-row {
   margin-bottom: 0;
-  max-width: 40rem;
+  max-width: 46rem;
+  flex-wrap: nowrap;
+}
+@media (max-width: 767px) {
+  .catalog-search .search-form-row {
+    flex-wrap: wrap;
+  }
+  .catalog-roadmap-btn {
+    margin-left: 0;
+  }
 }
 .catalog-term {
   color: var(--color-text);
