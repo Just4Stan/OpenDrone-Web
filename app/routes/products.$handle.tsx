@@ -2184,7 +2184,17 @@ export default function Product() {
                                 key={p.name + i}
                                 className={`board-part-chip${lit ? ' is-active' : ''}`}
                                 aria-pressed={lit}
+                                // Tap toggles: a lit chip whose box is on the
+                                // visible face clears; otherwise (not lit, or
+                                // lit but hidden under another layer) it
+                                // (re)asserts and BoardArt flips to the part.
+                                // Set-only left the spotlight stuck on until
+                                // another chip was tapped.
                                 onClick={() => {
+                                  if (lit && highlightVisible) {
+                                    clearHover();
+                                    return;
+                                  }
                                   setHoveredRefs([...p.refs]);
                                   setHoveredUnion(p.union);
                                   setHoveredGroups(p.groups);
