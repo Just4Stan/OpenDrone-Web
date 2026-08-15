@@ -203,12 +203,15 @@ export default function Studio() {
   // A preview click can select a key hundreds of rows deep in a product
   // file's list; bring the highlighted row into view or the click looks
   // like it did nothing.
+  // `data` is a dependency on purpose: a preview click on another file sets
+  // `selected` before that file's keys have loaded, so the scroll must also
+  // run when the list itself arrives.
   useEffect(() => {
     if (!selected) return;
     document
       .querySelector('.studio-keys button.is-on')
       ?.scrollIntoView({block: 'nearest'});
-  }, [selected]);
+  }, [selected, data]);
 
   /**
    * Every editable string in the file, addressed by path.
