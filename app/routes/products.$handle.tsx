@@ -1587,12 +1587,21 @@ export default function Product() {
           />
         </span>
         {isBundle ? (
-          <span className="product-buy-sku">
-            {/* Name the actual pair for the tier (20×20 ships the Mini). */}
-            {content.variants?.[activeTier]?.highlights?.find(
-              ([k]) => k === 'Pair',
-            )?.[1] ?? `OpenFC-Lite + OpenESC · ${activeTier}`}
-          </span>
+          (() => {
+            // Name the actual pair for the tier (20×20 ships the Mini).
+            const hs = content.variants?.[activeTier]?.highlights;
+            const hi = hs?.findIndex(([k]) => k === 'Pair') ?? -1;
+            return (
+              <span
+                className="product-buy-sku"
+                {...(hi >= 0
+                  ? prodEdit(`variants.${activeTier}.highlights.${hi}.1`)
+                  : {})}
+              >
+                {hs?.[hi]?.[1] ?? `OpenFC-Lite + OpenESC · ${activeTier}`}
+              </span>
+            );
+          })()
         ) : selectedVariant?.sku ? (
           <span className="product-buy-sku">
             {copyText('product-chrome.buy_sku_prefix')}{' '}
@@ -1610,7 +1619,12 @@ export default function Product() {
           : selectedVariant?.availableForSale
             ? copyText('product-chrome.buy_stock_in')
             : content.statusNote
-              ? `${copyText('product-chrome.buy_stock_out') ?? ''} · ${content.statusNote}`
+              ? (
+                  <>
+                    {copyText('product-chrome.buy_stock_out') ?? ''} ·{' '}
+                    <span {...prodEdit('statusNote')}>{content.statusNote}</span>
+                  </>
+                )
               : copyText('product-chrome.buy_stock_out')}
       </span>
       {!isBundle && selectedVariant && !selectedVariant.availableForSale ? (
