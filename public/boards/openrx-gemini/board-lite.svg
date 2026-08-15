@@ -1,0 +1,119 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0.21 1.85 17 15.7" width="17.0000mm" height="15.7000mm" preserveAspectRatio="xMidYMid meet" overflow="hidden" data-board="openrx-gemini">
+  <defs>
+    <clipPath id="board-clip-openrx-gemini" clipPathUnits="userSpaceOnUse">
+      <path d="M 16.7427 1.8505 L 16.8076 1.8591 L 16.8709 1.8760 L 16.9314 1.9011 L 16.9881 1.9338 L 17.0400 1.9737 L 17.0863 2.0200 L 17.1262 2.0719 L 17.1589 2.1286 L 17.1840 2.1891 L 17.2009 2.2523 L 17.2095 2.3173 L 17.2100 2.3500 L 17.2100 17.0500 L 17.2095 17.0827 L 17.2009 17.1476 L 17.1840 17.2109 L 17.1589 17.2714 L 17.1262 17.3281 L 17.0863 17.3800 L 17.0400 17.4263 L 16.9881 17.4662 L 16.9314 17.4989 L 16.8709 17.5240 L 16.8076 17.5409 L 16.7427 17.5495 L 16.7100 17.5500 L 0.7100 17.5500 L 0.6773 17.5495 L 0.6123 17.5409 L 0.5491 17.5240 L 0.4886 17.4989 L 0.4319 17.4662 L 0.3800 17.4263 L 0.3337 17.3800 L 0.2938 17.3281 L 0.2611 17.2714 L 0.2360 17.2109 L 0.2191 17.1476 L 0.2105 17.0827 L 0.2100 17.0500 L 0.2100 2.3500 L 0.2105 2.3173 L 0.2191 2.2523 L 0.2360 2.1891 L 0.2611 2.1286 L 0.2938 2.0719 L 0.3337 2.0200 L 0.3800 1.9737 L 0.4319 1.9338 L 0.4886 1.9011 L 0.5491 1.8760 L 0.6123 1.8591 L 0.6773 1.8505 L 0.7100 1.8500 L 16.7100 1.8500 Z" clip-rule="evenodd"/>
+    </clipPath>
+  </defs>
+  <g id="layer-back" class="board-layer board-layer-back">
+    <image href="/boards/openrx-gemini/back.png" x="0.0568" y="1.1279" width="17.1532" height="17.1551" preserveAspectRatio="none" image-rendering="optimizeQuality"/>
+  </g>
+  <g id="layer-edge-cuts" class="board-layer board-layer-edge-cuts">
+<g style="fill:#000000; fill-opacity:1.0000;stroke:#000000; stroke-opacity:1.0000;
+stroke-linecap:round; stroke-linejoin:round;"
+ transform="translate(0 0) scale(1 1)">
+<path style="fill:none; 
+stroke:#D0D2CD; stroke-width:0.0500; stroke-opacity:1; 
+stroke-linecap:round; stroke-linejoin:round;fill:none"
+d="M 0.2100,2.3500
+0.2105,2.3173
+0.2191,2.2523
+0.2360,2.1891
+0.2611,2.1286
+0.2938,2.0719
+0.3337,2.0200
+0.3800,1.9737
+0.4319,1.9338
+0.4886,1.9011
+0.5491,1.8760
+0.6123,1.8591
+0.6773,1.8505
+0.7100,1.8500
+16.7100,1.8500
+16.7427,1.8505
+16.8076,1.8591
+16.8709,1.8760
+16.9314,1.9011
+16.9881,1.9338
+17.0400,1.9737
+17.0863,2.0200
+17.1262,2.0719
+17.1589,2.1286
+17.1840,2.1891
+17.2009,2.2523
+17.2095,2.3173
+17.2100,2.3500
+17.2100,17.0500
+17.2095,17.0827
+17.2009,17.1476
+17.1840,17.2109
+17.1589,17.2714
+17.1262,17.3281
+17.0863,17.3800
+17.0400,17.4263
+16.9881,17.4662
+16.9314,17.4989
+16.8709,17.5240
+16.8076,17.5409
+16.7427,17.5495
+16.7100,17.5500
+0.7100,17.5500
+0.6773,17.5495
+0.6123,17.5409
+0.5491,17.5240
+0.4886,17.4989
+0.4319,17.4662
+0.3800,17.4263
+0.3337,17.3800
+0.2938,17.3281
+0.2611,17.2714
+0.2360,17.2109
+0.2191,17.1476
+0.2105,17.0827
+0.2100,17.0500
+Z" /> 
+</g>
+<g style="fill:#000000; fill-opacity:1.0000; stroke:none;">
+<circle cx="6.0900" cy="16.6000" r="0.2000" /> 
+<circle cx="6.0900" cy="18.6000" r="0.2000" /> 
+<circle cx="6.5900" cy="17.6000" r="0.5000" /> 
+<circle cx="7.0900" cy="16.6000" r="0.2000" /> 
+<circle cx="7.0900" cy="18.6000" r="0.2000" /> 
+<circle cx="1.0100" cy="16.6000" r="0.2000" /> 
+<circle cx="1.0100" cy="18.6000" r="0.2000" /> 
+<circle cx="1.5100" cy="17.6000" r="0.5000" /> 
+<circle cx="2.0100" cy="16.6000" r="0.2000" /> 
+<circle cx="2.0100" cy="18.6000" r="0.2000" /> 
+<circle cx="3.5500" cy="16.6000" r="0.2000" /> 
+<circle cx="3.5500" cy="18.6000" r="0.2000" /> 
+<circle cx="4.0500" cy="17.6000" r="0.5000" /> 
+<circle cx="4.5500" cy="16.6000" r="0.2000" /> 
+<circle cx="4.5500" cy="18.6000" r="0.2000" /> 
+<circle cx="8.6300" cy="16.6000" r="0.2000" /> 
+<circle cx="8.6300" cy="18.6000" r="0.2000" /> 
+<circle cx="9.1300" cy="17.6000" r="0.5000" /> 
+<circle cx="9.6300" cy="16.6000" r="0.2000" /> 
+<circle cx="9.6300" cy="18.6000" r="0.2000" /> 
+</g>
+  </g>
+  <g id="layer-f" class="board-layer board-layer-f">
+    <image href="/boards/openrx-gemini/layer-f-w2048.webp" x="0.21" y="1.85" width="17" height="15.7" preserveAspectRatio="none"/>
+  </g>
+  <g id="layer-in1" class="board-layer board-layer-in1">
+    <image href="/boards/openrx-gemini/layer-in1-w2048.webp" x="0.21" y="1.85" width="17" height="15.7" preserveAspectRatio="none"/>
+  </g>
+  <g id="layer-in2" class="board-layer board-layer-in2">
+    <image href="/boards/openrx-gemini/layer-in2-w2048.webp" x="0.21" y="1.85" width="17" height="15.7" preserveAspectRatio="none"/>
+  </g>
+  <g id="layer-in3" class="board-layer board-layer-in3">
+    <image href="/boards/openrx-gemini/layer-in3-w2048.webp" x="0.21" y="1.85" width="17" height="15.7" preserveAspectRatio="none"/>
+  </g>
+  <g id="layer-in4" class="board-layer board-layer-in4">
+    <image href="/boards/openrx-gemini/layer-in4-w2048.webp" x="0.21" y="1.85" width="17" height="15.7" preserveAspectRatio="none"/>
+  </g>
+  <g id="layer-b" class="board-layer board-layer-b">
+    <image href="/boards/openrx-gemini/layer-b-w2048.webp" x="0.21" y="1.85" width="17" height="15.7" preserveAspectRatio="none"/>
+  </g>
+  <g id="layer-front" class="board-layer board-layer-front">
+    <image href="/boards/openrx-gemini/front.png" x="0.0679" y="1.1284" width="17.1421" height="17.1432" preserveAspectRatio="none" image-rendering="optimizeQuality"/>
+  </g>
+</svg>

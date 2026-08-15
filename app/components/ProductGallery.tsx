@@ -1,6 +1,6 @@
 import {Image} from '@shopify/hydrogen';
 import {useSearchParams} from 'react-router';
-import {useEffect, useRef} from 'react';
+import {useEffect, useMemo, useRef} from 'react';
 import {SmoothImage} from './SmoothImage';
 import {Txt} from './Txt';
 import {copyText} from '~/lib/copy';
@@ -45,6 +45,25 @@ export function ProductGallery({
     setSearchParams(next, {replace: true, preventScrollReset: true});
   }, [parsed, images.length, searchParams, setSearchParams]);
 
+  // Slide track. Every image the visitor has stepped to stays MOUNTED (its
+  // own <img>, decoded, hidden with visibility) instead of one <img> whose src
+  // is swapped per step: the swap discarded the previous bitmap and re-ran the
+  // blur-up cover on every step, even back to a photo already seen (Bastian's
+  // 2026-08-15 phone test). Neighbours of the active slide are mounted too so
+  // a swipe lands on a decoded image; anything further out waits until it is
+  // visited, so a long deck does not download every photo up front.
+  const visited = useRef<Set<string>>(new Set());
+  const mounted = useMemo(() => {
+    const keys = images.map((img) => img.id ?? img.url);
+    visited.current.add(keys[index]);
+    const set = new Set(visited.current);
+    if (images.length > 1) {
+      set.add(keys[(index + 1) % images.length]);
+      set.add(keys[(index - 1 + images.length) % images.length]);
+    }
+    return set;
+  }, [images, index]);
+
   if (images.length === 0) {
     return (
       <div className="product-gallery-empty">
@@ -66,8 +85,6 @@ export function ProductGallery({
 
   const prev = () => setIndex(index === 0 ? images.length - 1 : index - 1);
   const next = () => setIndex(index === images.length - 1 ? 0 : index + 1);
-  const current = images[index];
-
   // Touch swipe: flick the main image ←/→ to step photos. Same threshold +
   // direction-ratio gate as the board explorer (BoardArt). Horizontal-only —
   // we never preventDefault, so a vertical drag still scrolls the page; only a
@@ -98,18 +115,37 @@ export function ProductGallery({
         onTouchStart={onTouchStart}
         onTouchEnd={onTouchEnd}
       >
-        <SmoothImage
-          data={current}
-          alt={
-            current.altText || copyText('product-chrome.gallery_image_alt') || ''
-          }
-          aspectRatio="1/1"
-          sizes="(min-width: 960px) 60vw, 100vw"
-          loading="eager"
-          // This is the PDP's LCP element — without an explicit priority it
-          // competes with the route chunk + fonts at default priority.
-          fetchPriority="high"
-        />
+        {images.map((img, i) => {
+          const key = img.id ?? img.url;
+          if (!mounted.has(key)) return null;
+          const active = i === index;
+          return (
+            <div
+              key={key}
+              className={`product-gallery-slide${active ? ' is-active' : ''}`}
+              aria-hidden={active ? undefined : 'true'}
+            >
+              <SmoothImage
+                data={img}
+                alt={
+                  img.altText ||
+                  copyText('product-chrome.gallery_image_alt') ||
+                  ''
+                }
+                aspectRatio="1/1"
+                sizes="(min-width: 960px) 60vw, 100vw"
+                // The active slide is the PDP's LCP element: without an
+                // explicit priority it competes with the route chunk + fonts
+                // at default priority. Neighbours are pre-decoded at low
+                // priority; a hidden slide is never lazy (lazy + hidden would
+                // sit unloaded until the box intersects, which it always
+                // does, at the wrong moment).
+                loading="eager"
+                fetchPriority={active ? 'high' : 'low'}
+              />
+            </div>
+          );
+        })}
         {images.length > 1 && (
           <div className="product-gallery-controls" aria-hidden="false">
             <button

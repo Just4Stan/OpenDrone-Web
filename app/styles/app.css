@@ -3,34 +3,42 @@
 /* Self-hosted typefaces. Inter Variable covers 100-900 in a single
    file; JetBrains Mono ships as three static weights for spec tables,
    prices, SKUs, and any technical readout. font-display: swap so the
-   system fallback paints first and the woff2 hot-swaps when ready. */
+   system fallback paints first and the woff2 hot-swaps when ready.
+   The files live in app/assets/fonts and are imported through Vite so the
+   stylesheet and the preloads in root.tsx resolve to the SAME hashed CDN
+   URL: a root-relative /fonts/ path here resolved against cdn.shopify.com
+   (where this stylesheet is served from) while the preload hit the site
+   origin, and every font downloaded twice. They are also subset to Latin,
+   Latin Extended-A and the engineering symbols the copy uses (see
+   scripts/subset-fonts.sh); every OpenType feature and both Inter axes are
+   kept, so rendering is unchanged. */
 @font-face {
   font-family: "Inter";
   font-style: normal;
   font-weight: 100 900;
   font-display: swap;
-  src: url("/fonts/inter-var.woff2") format("woff2-variations");
+  src: url("../assets/fonts/inter-var.woff2") format("woff2-variations");
 }
 @font-face {
   font-family: "JetBrains Mono";
   font-style: normal;
   font-weight: 400;
   font-display: swap;
-  src: url("/fonts/jetbrains-mono-Regular.woff2") format("woff2");
+  src: url("../assets/fonts/jetbrains-mono-Regular.woff2") format("woff2");
 }
 @font-face {
   font-family: "JetBrains Mono";
   font-style: normal;
   font-weight: 500;
   font-display: swap;
-  src: url("/fonts/jetbrains-mono-Medium.woff2") format("woff2");
+  src: url("../assets/fonts/jetbrains-mono-Medium.woff2") format("woff2");
 }
 @font-face {
   font-family: "JetBrains Mono";
   font-style: normal;
   font-weight: 700;
   font-display: swap;
-  src: url("/fonts/jetbrains-mono-Bold.woff2") format("woff2");
+  src: url("../assets/fonts/jetbrains-mono-Bold.woff2") format("woff2");
 }
 /* Tokyo — the brand face (Graphicxell). Used ONLY for product/brand name
    tokens (OpenStack, OpenFC, OpenESC, OpenFrame, …), never for body copy.
@@ -44,7 +52,7 @@
   font-style: normal;
   font-weight: 400 800;
   font-display: swap;
-  src: url("/fonts/tokyo-regular.woff2") format("woff2");
+  src: url("../assets/fonts/tokyo-regular.woff2") format("woff2");
 }
 
 @theme {
@@ -3694,6 +3702,18 @@ button.reset {
   aspect-ratio: 1 / 1;
   overflow: hidden;
   border-radius: var(--r-md);
+}
+
+/* Slide track: every mounted photo fills the square; only the active one is
+   visible. visibility (not display) keeps hidden slides decoded so stepping
+   back to one is instant with no blur-up. */
+.product-gallery-slide {
+  position: absolute;
+  inset: 0;
+}
+.product-gallery-slide:not(.is-active) {
+  visibility: hidden;
+  pointer-events: none;
 }
 
 .product-gallery-main:focus-visible {

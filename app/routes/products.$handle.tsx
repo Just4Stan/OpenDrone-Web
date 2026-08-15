@@ -787,9 +787,13 @@ export default function Product() {
   const activeVariant = content.variants?.[activeTier];
 
   // Gallery: dedupe by URL and, on tiered products, hide images whose
-  // filename names a DIFFERENT tier (openesc-20x20-back.png has no business
-  // in the 30×30 deck). Normalizes '20×20' → '20x20' for the filename match;
-  // images naming no tier (lifestyle shots) always stay.
+  // filename OR alt text names a DIFFERENT tier (openesc-20x20-back.png, or
+  // alt "OpenRX Mono, top", has no business in another tier's deck).
+  // Normalizes '20×20' → '20x20' for the match; images naming no tier
+  // (lifestyle shots) always stay, and the selected variant's own featured
+  // image always stays. Shopify's storefront API only links ONE image per
+  // variant, so tagging the rest is a data job: name the file or set the alt
+  // text with the tier key in Shopify admin.
   const galleryImages = useMemo(() => {
     const nodes = product.images?.nodes?.length
       ? product.images.nodes
@@ -815,10 +819,13 @@ export default function Product() {
     // "lite-ufl"), leaving an empty gallery. An image belongs to the
     // longest tier key its filename contains; keep it when that's the
     // active tier or when it names no tier at all.
+    const featuredId = selectedVariant?.image?.id ?? null;
     return deduped.filter((img) => {
+      if (featuredId && img.id === featuredId) return true;
       const name = img.url.split('?')[0].toLowerCase();
+      const alt = norm(img.altText ?? '');
       const best = keys
-        .filter((k) => name.includes(k))
+        .filter((k) => name.includes(k) || alt.includes(k))
         .sort((a, b) => b.length - a.length)[0];
       return !best || best === active;
     });

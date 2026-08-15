@@ -804,6 +804,140 @@ function writeVersionFile() {
   console.log(`Wrote ${out} — version ${v}`);
 }
 
+// Downscaled WebP derivatives of front.png for the places that show a board
+// as a thumbnail rather than as the teardown face: the mobile home stage,
+// the roadmap kanban cards. front.png is a 1568 px RGBA render (400-700 KB);
+// the largest of those slots is 264 CSS px, so a 528 px (2x) and 800 px (3x)
+// WebP cover every phone at 40-80 KB. Needs cwebp on PATH (brew install
+// webp). Alpha is kept lossless (-alpha_q 100) so the drop-shadow edge is
+// identical to the PNG. Runs on every build and on --derivatives-only.
+const FACE_DERIVATIVE_WIDTHS = [528, 800];
+function writeFaceDerivatives() {
+  const base = resolve(here, '..', 'public', 'boards');
+  let n = 0;
+  for (const handle of readdirSync(base).sort()) {
+    const dir = join(base, handle);
+    if (!statSync(dir).isDirectory()) continue;
+    const src = join(dir, 'front.png');
+    if (!existsSync(src)) continue;
+    for (const w of FACE_DERIVATIVE_WIDTHS) {
+      const out = join(dir, `front-w${w}.webp`);
+      execFileSync(
+        'cwebp',
+        ['-quiet', '-q', '90', '-alpha_q', '100', '-m', '6', '-sharp_yuv',
+         '-resize', String(w), '0', src, '-o', out],
+        {stdio: 'pipe'},
+      );
+      n++;
+    }
+  }
+  console.log(`Wrote ${n} front-w*.webp derivatives`);
+}
+
+// ---- Copper-layer rasters + board-lite.svg --------------------------------
+// The site does NOT inline the vector copper layers any more. A board.svg is
+// 1-2 MB with ~2000 via circles per layer; six of those stacked as inline SVG
+// sheets, each behind CSS filters and transform transitions, made the layer
+// sweep stutter on phones (Bastian's 2026-08-15 test). So this step renders
+// every copper layer of the finished board.svg to a WebP with headless
+// Chromium (the same engine that would have painted the vector, so the pixels
+// are what the vector would have produced) and writes board-lite.svg: the same
+// master with each copper <g> body replaced by one <image> covering the
+// viewBox. Faces (front/back) and the edge-cuts underlay stay as they are.
+// BoardArt fetches board-lite.svg (see app/components/BoardArt.tsx) and swaps
+// -w2048 for -w1024 on small screens. Lossless: lossy WebP/AVIF is bigger on
+// this flat-colour, hard-edged content and would smear the traces.
+// Faces get a 1024 px lossy WebP too (photoreal render, q90) for the same
+// small-screen swap.
+const LAYER_RASTER_WIDTHS = [2048, 1024];
+const COPPER_SLUG_RE = /^(f|b|in\d+)$/;
+async function writeLayerRasters(onlyHandle) {
+  const {chromium} = await import('playwright');
+  const base = resolve(here, '..', 'public', 'boards');
+  const browser = await chromium.launch();
+  try {
+    for (const handle of readdirSync(base).sort()) {
+      if (onlyHandle && handle !== onlyHandle) continue;
+      const dir = join(base, handle);
+      const svgPath = join(dir, 'board.svg');
+      if (!statSync(dir).isDirectory() || !existsSync(svgPath)) continue;
+      const svg = readFileSync(svgPath, 'utf8');
+      const vb = svg.match(/viewBox="([^"]+)"/)[1].split(/\s+/).map(Number);
+      const defs = svg.slice(svg.indexOf('<defs>'), svg.indexOf('</defs>') + 7);
+      // Top-level layer groups are written one per line at 2-space indent by
+      // buildBoard above; each runs to the next one (or to </svg>).
+      const heads = [...svg.matchAll(/\n {2}<g id="layer-([a-z0-9-]+)"/g)];
+      const bounds = heads.map((m, i) => ({
+        slug: m[1],
+        start: m.index + 1,
+        end: i + 1 < heads.length ? heads[i + 1].index + 1 : svg.lastIndexOf('</svg>'),
+      }));
+      const r4 = (v) => +v.toFixed(4);
+      let lite = svg;
+      for (const W of LAYER_RASTER_WIDTHS) {
+        const H = Math.round((W * vb[3]) / vb[2]);
+        const page = await browser.newPage({
+          viewport: {width: W, height: H},
+          deviceScaleFactor: 1,
+        });
+        for (const b of bounds) {
+          if (!COPPER_SLUG_RE.test(b.slug)) continue;
+          const group = svg.slice(b.start, b.end);
+          await page.setContent(
+            `<!doctype html><body style="margin:0;background:transparent">` +
+              `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${vb.join(' ')}" ` +
+              `width="${W}" height="${H}" style="display:block">${defs}${group}</svg>`,
+          );
+          const png = join(dir, `.layer-${b.slug}-w${W}.png`);
+          await page.screenshot({
+            path: png,
+            omitBackground: true,
+            clip: {x: 0, y: 0, width: W, height: H},
+          });
+          execFileSync(
+            'cwebp',
+            ['-quiet', '-lossless', '-z', '7', '-exact', png, '-o', join(dir, `layer-${b.slug}-w${W}.webp`)],
+            {stdio: 'pipe'},
+          );
+          rmSync(png);
+        }
+        await page.close();
+      }
+      // Replace each copper group's body with one <image>. Absolute public
+      // href, like the faces: the SVG is inlined into the page by DOMParser.
+      // No clip-path on the group: the raster is already clipped.
+      for (const b of [...bounds].reverse()) {
+        if (!COPPER_SLUG_RE.test(b.slug)) continue;
+        const group = svg.slice(b.start, b.end);
+        const open = group.match(/^ {2}<g id="layer-[a-z0-9-]+" class="[^"]*"/)[0];
+        const img =
+          `    <image href="/boards/${handle}/layer-${b.slug}-w2048.webp" ` +
+          `x="${r4(vb[0])}" y="${r4(vb[1])}" width="${r4(vb[2])}" height="${r4(vb[3])}" ` +
+          `preserveAspectRatio="none"/>`;
+        lite = lite.slice(0, b.start) + `${open}>\n${img}\n  </g>\n` + lite.slice(b.end);
+      }
+      writeFileSync(join(dir, 'board-lite.svg'), lite);
+      // Faces at 1024 for phones (BoardArt swaps front.png -> front-w1024.webp).
+      for (const face of ['front', 'back']) {
+        const src = join(dir, `${face}.png`);
+        if (!existsSync(src)) continue;
+        execFileSync(
+          'cwebp',
+          ['-quiet', '-q', '90', '-alpha_q', '100', '-m', '6', '-sharp_yuv', '-resize', '1024', '0', src, '-o', join(dir, `${face}-w1024.webp`)],
+          {stdio: 'pipe'},
+        );
+      }
+      const kb = (f) => (statSync(join(dir, f)).size / 1024).toFixed(0);
+      console.log(
+        `Wrote ${join(dir, 'board-lite.svg')} (${kb('board-lite.svg')} KB) + ` +
+          `${bounds.filter((b) => COPPER_SLUG_RE.test(b.slug)).length} copper rasters x ${LAYER_RASTER_WIDTHS.join('/')} px`,
+      );
+    }
+  } finally {
+    await browser.close();
+  }
+}
+
 function usage() {
   console.error(
     'Usage:\n' +
@@ -811,20 +945,35 @@ function usage() {
       '  node scripts/export-board-art.mjs --all\n' +
       '  node scripts/export-board-art.mjs --all --components-only\n' +
       '  node scripts/export-board-art.mjs <pcb> <handle> --components-only\n' +
+      '  node scripts/export-board-art.mjs --derivatives-only\n' +
+      '  node scripts/export-board-art.mjs --rasters-only [handle]\n' +
       '\n' +
-      '  --components-only  regenerate ONLY components.json (no svg/render).',
+      '  --components-only  regenerate ONLY components.json (no svg/render).\n' +
+      '  --derivatives-only regenerate ONLY the front-w*.webp thumbnails.\n' +
+      '  --rasters-only     regenerate ONLY board-lite.svg + layer rasters.',
   );
   process.exit(2);
 }
 
 const rawArgs = process.argv.slice(2);
 const componentsOnly = rawArgs.includes('--components-only');
-const args = rawArgs.filter((a) => a !== '--components-only');
+const derivativesOnly = rawArgs.includes('--derivatives-only');
+const rastersOnly = rawArgs.includes('--rasters-only');
+const args = rawArgs.filter(
+  (a) =>
+    a !== '--components-only' &&
+    a !== '--derivatives-only' &&
+    a !== '--rasters-only',
+);
 // In --components-only mode we skip kicad-cli svg + render and only rewrite
 // components.json (board.svg / front.png / back.png are left untouched).
 const build = componentsOnly ? buildComponentsOnly : buildBoard;
 
-if (args[0] === '--all') {
+if (rastersOnly) {
+  await writeLayerRasters(args[0]);
+} else if (derivativesOnly) {
+  writeFaceDerivatives();
+} else if (args[0] === '--all') {
   const boards = loadBoards();
   const failures = [];
   for (const {handle, pcb} of boards) {
@@ -843,6 +992,10 @@ if (args[0] === '--all') {
   // can be rebaked without re-rendering. The hash covers board.svg/front/back
   // PNGs, so a render-free run that doesn't touch them yields the same token.
   writeVersionFile();
+  if (!componentsOnly) {
+    writeFaceDerivatives();
+    await writeLayerRasters();
+  }
   if (failures.length) {
     console.error(`\n${failures.length} board(s) failed:`);
     for (const f of failures) console.error(`  - ${f}`);
@@ -851,6 +1004,10 @@ if (args[0] === '--all') {
 } else if (args.length === 2) {
   build(args[0], args[1]);
   writeVersionFile();
+  if (!componentsOnly) {
+    writeFaceDerivatives();
+    await writeLayerRasters(args[1]);
+  }
 } else {
   usage();
 }

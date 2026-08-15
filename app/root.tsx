@@ -14,6 +14,9 @@ import {
 } from 'react-router';
 import type {Route} from './+types/root';
 import favicon from '~/assets/favicon.svg';
+import interVarWoff2 from '~/assets/fonts/inter-var.woff2';
+import jetbrainsMonoWoff2 from '~/assets/fonts/jetbrains-mono-Regular.woff2';
+import tokyoWoff2 from '~/assets/fonts/tokyo-regular.woff2';
 import {HEADER_QUERY, HEADER_PRODUCTS_QUERY} from '~/lib/fragments';
 import {resolveAllStatuses, roadmapStatusMap} from '~/lib/coming-soon';
 import {fetchStatusFlagsFast} from '~/lib/roadmap-data';
@@ -98,28 +101,31 @@ export function links() {
     // Preload the above-the-fold typefaces so first paint doesn't flash
     // system fallbacks then reflow on swap. Fonts fetch in CORS mode even
     // same-origin, so crossorigin is required for the preload to match the
-    // @font-face request and not double-download.
+    // @font-face request and not double-download. The hrefs are the Vite
+    // asset imports, not /fonts/ paths: app.css is served from the CDN and
+    // resolves its url() against that origin, so only an identical hashed
+    // URL on both sides makes the preload actually satisfy the font request.
     // - Inter: body text.
     // - JetBrains Mono: NOT just spec tables — it renders the header nav,
     //   prices and SKUs sitewide, all above the fold.
     // - Tokyo (7.4 KB): every brand/product wordmark.
     {
       rel: 'preload',
-      href: '/fonts/inter-var.woff2',
+      href: interVarWoff2,
       as: 'font',
       type: 'font/woff2',
       crossOrigin: 'anonymous',
     },
     {
       rel: 'preload',
-      href: '/fonts/jetbrains-mono-Regular.woff2',
+      href: jetbrainsMonoWoff2,
       as: 'font',
       type: 'font/woff2',
       crossOrigin: 'anonymous',
     },
     {
       rel: 'preload',
-      href: '/fonts/tokyo-regular.woff2',
+      href: tokyoWoff2,
       as: 'font',
       type: 'font/woff2',
       crossOrigin: 'anonymous',

@@ -7,6 +7,17 @@ import {ProductItem} from '~/components/ProductItem';
 import {AnimatedNumber} from '~/components/AnimatedNumber';
 import {Txt} from '~/components/Txt';
 import {PRODUCT_CONTENT} from '~/lib/product-content';
+import {BOARD_ART_VERSION} from '~/data/board-art-version';
+
+// Downscaled WebP thumbnails written by scripts/export-board-art.mjs next to
+// front.png. The stage slot is at most 264 CSS px, so 528 (2x) and 800 (3x)
+// cover every phone at a tenth of the 1568 px PNG. Same ?v= cache-bust as
+// BoardArt so a regenerated render is refetched.
+const boardThumb = (handle: string, w: 528 | 800) =>
+  `/boards/${handle}/front-w${w}.webp?v=${BOARD_ART_VERSION}`;
+// Mirrors .home-mobile-board: width clamp(178px, 54vw, 264px).
+const BOARD_THUMB_SIZES = '(min-width: 489px) 264px, 54vw';
+
 
 /* Below-fold "index" band — the open-hardware ledger in the PDP's
  * spec-table language. Every row is a fact already published elsewhere on
@@ -79,22 +90,28 @@ export function MobileHome({
           <span className="home-mobile-board-float home-mobile-board-float--rear">
             <img
               className="home-mobile-board"
-              src="/boards/openesc/front.png"
+              src={boardThumb('openesc', 800)}
+              srcSet={`${boardThumb('openesc', 528)} 528w, ${boardThumb('openesc', 800)} 800w`}
+              sizes={BOARD_THUMB_SIZES}
               alt=""
               width={520}
               height={520}
               loading="eager"
+              fetchPriority="low"
               decoding="async"
             />
           </span>
           <span className="home-mobile-board-float home-mobile-board-float--front">
             <img
               className="home-mobile-board"
-              src="/boards/openfc-lite/front.png"
+              src={boardThumb('openfc-lite', 800)}
+              srcSet={`${boardThumb('openfc-lite', 528)} 528w, ${boardThumb('openfc-lite', 800)} 800w`}
+              sizes={BOARD_THUMB_SIZES}
               alt=""
               width={520}
               height={520}
               loading="eager"
+              fetchPriority="high"
               decoding="async"
             />
           </span>
