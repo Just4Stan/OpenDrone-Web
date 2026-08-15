@@ -20,6 +20,8 @@ import {
 } from '@shopify/hydrogen';
 import {useAside} from '~/components/Aside';
 import {Txt} from '~/components/Txt';
+import {ConceptPlate} from '~/components/ConceptPlate';
+import {isConceptStatus} from '~/lib/roadmap-data';
 import {ProductPrice} from '~/components/ProductPrice';
 import {ProductGallery} from '~/components/ProductGallery';
 import {ProductForm} from '~/components/ProductForm';
@@ -84,6 +86,9 @@ export const meta: Route.MetaFunction = ({data, location}) =>
     type: 'product',
     // Canonical without the ?Model= query so variant links don't splinter.
     url: `${SITE_ORIGIN}${location.pathname}`,
+    // Planned / in-progress products render the concept plate, which is a
+    // placeholder, not content worth indexing.
+    robots: isConceptStatus(data?.roadmapStatus) ? 'noindex, follow' : undefined,
   });
 
 /**
@@ -595,6 +600,16 @@ function useChapterReveal(key: string) {
 }
 
 export default function Product() {
+  const {product, roadmapStatus} = useLoaderData<typeof loader>();
+  // Nothing about a planned or in-progress product is settled, so it gets
+  // the concept plate instead of a product page (docs/product-status.md).
+  if (isConceptStatus(roadmapStatus)) {
+    return <ConceptPlate title={product.title} status={roadmapStatus} />;
+  }
+  return <ProductPage />;
+}
+
+function ProductPage() {
   const {
     product,
     bundleProducts,

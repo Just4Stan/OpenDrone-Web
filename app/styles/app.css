@@ -4966,6 +4966,37 @@ button.reset {
   border-bottom-color: var(--color-gold);
 }
 
+/* Concept plate: what /products/<handle> renders while the product is
+   planned or in-progress. Reuses the PDP eyebrow, headline, status chip and
+   idea-CTA idioms so it reads as the same family, minus everything that
+   would state a spec that can still change. */
+.concept-plate {
+  min-height: 60vh;
+  display: flex;
+  align-items: center;
+}
+.concept-plate-inner {
+  width: min(100% - 2 * var(--sp-6), 40rem);
+  margin: 0 auto;
+  padding: var(--sp-8) 0;
+}
+.concept-plate .product-hero-headline {
+  margin-top: var(--sp-3);
+}
+.concept-plate-body {
+  margin: var(--sp-5) 0 0;
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  line-height: 1.6;
+  color: var(--color-text-dim);
+}
+.concept-plate-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-4);
+  margin-top: var(--sp-6);
+}
+
 /* Morphing buy rail — wraps the ladder + buy module. At rest it's a
    transparent passthrough; pinned (desktop, scrolled into the chapters) it
    floats over the page in its own column lane and CSS collapses it to a row
