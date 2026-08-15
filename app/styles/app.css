@@ -8336,53 +8336,6 @@ a.what-chain-chip:hover {
   letter-spacing: 0.04em;
 }
 
-/* Commit timeline: repo activity as a discrete strip along the chapter's
-   bottom edge, clear of the text and the contributor tiles. The chapter's
-   content-visibility containment makes .chapter the containing block and a
-   stacking context, so z-index -1 keeps it tucked under any overlap. */
-.commit-timeline {
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 0.75rem;
-  height: 56px;
-  z-index: -1;
-  pointer-events: none;
-  overflow: hidden;
-}
-
-.commit-timeline-axis {
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 14px;
-  height: 1px;
-  background: color-mix(in srgb, var(--color-border) 70%, transparent);
-}
-
-.commit-timeline-tick {
-  position: absolute;
-  bottom: 14px;
-  width: 1px;
-  background: color-mix(in srgb, var(--color-gold) 30%, transparent);
-}
-
-.commit-timeline-date {
-  position: absolute;
-  bottom: 0;
-  font-family: var(--font-mono);
-  font-size: 9px;
-  letter-spacing: 0.14em;
-  color: color-mix(in srgb, var(--color-text-muted) 55%, transparent);
-}
-
-@media (max-width: 879px) {
-  /* On phones the text fills the section; texture under it is just noise. */
-  .commit-timeline {
-    display: none;
-  }
-}
-
 /* Category chips */
 .category-chips {
   display: flex;

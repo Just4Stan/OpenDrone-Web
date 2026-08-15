@@ -28,7 +28,6 @@ import {ProductGallery} from '~/components/ProductGallery';
 import {ProductForm} from '~/components/ProductForm';
 import {RelatedProducts} from '~/components/RelatedProducts';
 import {FirmwareSupport} from '~/components/FirmwareSupport';
-import {CommitTimeline} from '~/components/CommitTimeline';
 import {VariantLadder} from '~/components/VariantLadder';
 import {BoardArt} from '~/components/BoardArt';
 import {SchematicViewer} from '~/components/SchematicViewer';
@@ -46,7 +45,7 @@ import {
   type ChapterType,
 } from '~/lib/chapters';
 import {buildSeoMeta, buildProductJsonLd, SITE_ORIGIN} from '~/lib/seo';
-import {fetchCommitActivity, fetchContributors} from '~/lib/github';
+import {fetchContributors} from '~/lib/github';
 import {orderByCredits, snapshotContributors} from '~/lib/contributors-snapshot';
 import {ContributorGrid, ContributorGridSkeleton} from '~/components/Contributors';
 import {
@@ -208,34 +207,15 @@ function loadDeferredData({context, params}: Route.LoaderArgs) {
   if (!handle) {
     return {
       recommendations: Promise.resolve(null),
-      commitActivity: Promise.resolve([]),
       contributors: Promise.resolve([]),
       reviews: Promise.resolve(null),
     };
   }
 
-  // Repo set for the contributors chapter's commit-activity strip. Only the
-  // primary repo per product: fetching every tier's repo too tripled the
-  // unauthenticated GitHub API calls per page and blew the 60/hr rate limit.
   const content = PRODUCT_CONTENT[handle];
-  const repoUrls: string[] = [];
-  if (content) {
-    if (content.bundle) {
-      for (const c of content.bundle.components) {
-        const sub = PRODUCT_CONTENT[c.handle];
-        if (sub?.repoUrl) repoUrls.push(sub.repoUrl);
-      }
-    } else if (content.repoUrl) {
-      repoUrls.push(content.repoUrl);
-    }
-  }
   // Optional GITHUB_TOKEN lifts the API ceiling from 60 to 5000 calls an
-  // hour; unset, both fetches degrade to their empty states.
+  // hour; unset, the contributor fetch degrades to its empty state.
   const ghToken = context.env.GITHUB_TOKEN;
-
-  // Commit-activity texture for the contributors chapter, best-effort: an
-  // empty array just means no strip.
-  const commitActivity = fetchCommitActivity(repoUrls, ghToken).catch(() => []);
 
   // Contributor grid: every repo in the line (tier repos included) so the
   // section credits people whichever mount they worked on. Same
@@ -295,7 +275,7 @@ function loadDeferredData({context, params}: Route.LoaderArgs) {
   // metafield aggregate (or, with no aggregate, renders nothing at all).
   const reviews = fetchProductReviews(context.env, handle);
 
-  return {recommendations, commitActivity, contributors, reviews};
+  return {recommendations, contributors, reviews};
 }
 
 const DOWNLOAD_ICONS: Record<DownloadKind, string> = {
@@ -628,7 +608,6 @@ function ProductPage() {
     bundleProducts,
     stackProducts,
     recommendations,
-    commitActivity,
     contributors,
     reviews,
     reviewsEnabled: reviewsOn,
@@ -2497,14 +2476,6 @@ function ProductPage() {
           titleId="product-chrome.ch_contributors_title"
           noMedia
         >
-          {/* Repo activity as engraving behind the text: one faint tick per
-              commit, streamed with the same best-effort GitHub budget as the
-              grid below. Null on failure, invisible on quiet repos. */}
-          <Suspense fallback={null}>
-            <Await resolve={commitActivity} errorElement={null}>
-              {(commits) => <CommitTimeline commits={commits} />}
-            </Await>
-          </Suspense>
           {/* No prose above the grid; the how-and-why lives once, on the
               contributing page. The button sits to the grid's right — the
               row of people ends in the door you walk through to join them. */}
