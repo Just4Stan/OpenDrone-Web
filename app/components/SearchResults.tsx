@@ -1,16 +1,12 @@
 /**
- * Only the chrome is copy. Section headings, the pagination links and the empty
- * state come from `content/copy/search.json`; result titles, images and prices
- * are Shopify data and stay where they are, so nothing a studio edit can do
- * changes what the catalog says a product is called.
+ * Pages and articles matching the catalog page's search term. Only the
+ * section headings are copy (`content/copy/collections-all.json`); result
+ * titles are Shopify data. Products are not listed here: the term filters
+ * the catalog grid itself.
  */
 import {Link} from 'react-router';
-import {Image, Money, Pagination} from '@shopify/hydrogen';
 import {urlWithTrackingParams, type RegularSearchReturn} from '~/lib/search';
-import {useProductStatusResolver} from '~/lib/coming-soon';
-import {isComingSoon} from '~/lib/product-content';
 import {Txt} from '~/components/Txt';
-import {copyText} from '~/lib/copy';
 
 type SearchItems = RegularSearchReturn['result']['items'];
 type PartialSearchResult<ItemType extends keyof SearchItems> = Pick<
@@ -37,8 +33,6 @@ export function SearchResults({
 
 SearchResults.Articles = SearchResultsArticles;
 SearchResults.Pages = SearchResultsPages;
-SearchResults.Products = SearchResultsProducts;
-SearchResults.Empty = SearchResultsEmpty;
 
 function SearchResultsArticles({
   term,
@@ -50,7 +44,7 @@ function SearchResultsArticles({
 
   return (
     <section className="search-section">
-      <Txt id="search.section_articles" as="h2" />
+      <Txt id="collections-all.section_articles" as="h2" />
       <div className="search-results-list">
         {articles?.nodes?.map((article) => {
           const articleUrl = urlWithTrackingParams({
@@ -79,7 +73,7 @@ function SearchResultsPages({term, pages}: PartialSearchResult<'pages'>) {
 
   return (
     <section className="search-section">
-      <Txt id="search.section_pages" as="h2" />
+      <Txt id="collections-all.section_pages" as="h2" />
       <div className="search-results-list">
         {pages?.nodes?.map((page) => {
           const pageUrl = urlWithTrackingParams({
@@ -98,87 +92,5 @@ function SearchResultsPages({term, pages}: PartialSearchResult<'pages'>) {
         })}
       </div>
     </section>
-  );
-}
-
-function SearchResultsProducts({
-  term,
-  products,
-}: PartialSearchResult<'products'>) {
-  // Coming-soon products list but never show a price.
-  const productStatus = useProductStatusResolver();
-  if (!products?.nodes.length) {
-    return null;
-  }
-
-  return (
-    <section className="search-section">
-      <Txt id="search.section_products" as="h2" />
-      <Pagination connection={products}>
-        {({nodes, isLoading, NextLink, PreviousLink}) => {
-          const ItemsMarkup = nodes.map((product) => {
-            const productUrl = urlWithTrackingParams({
-              baseUrl: `/products/${product.handle}`,
-              trackingParams: product.trackingParameters,
-              term,
-            });
-
-            const soon = productStatus(product.handle) !== 'live';
-            const price = soon
-              ? undefined
-              : product?.selectedOrFirstAvailableVariant?.price;
-            const image = product?.selectedOrFirstAvailableVariant?.image;
-
-            return (
-              <div className="search-results-item" key={product.id}>
-                <Link className="search-product-link" prefetch="viewport" to={productUrl}>
-                  {image && (
-                    <Image data={image} alt={product.title} width={50} />
-                  )}
-                  <div>
-                    <p>{product.title}</p>
-                    <small>{price && <Money data={price} />}</small>
-                  </div>
-                </Link>
-              </div>
-            );
-          });
-
-          return (
-            <div>
-              <div className="search-pagination">
-                <PreviousLink>
-                  {isLoading ? (
-                    copyText('search.pagination_loading')
-                  ) : (
-                    <Txt id="search.pagination_previous" />
-                  )}
-                </PreviousLink>
-              </div>
-              <div className="search-results-list">
-                {ItemsMarkup}
-              </div>
-              <div className="search-pagination">
-                <NextLink>
-                  {isLoading ? (
-                    copyText('search.pagination_loading')
-                  ) : (
-                    <Txt id="search.pagination_next" />
-                  )}
-                </NextLink>
-              </div>
-            </div>
-          );
-        }}
-      </Pagination>
-    </section>
-  );
-}
-
-function SearchResultsEmpty() {
-  return (
-    <div className="empty-state">
-      <Txt id="search.empty" as="p" />
-    </div>
   );
 }

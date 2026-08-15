@@ -1,299 +1,30 @@
-import {useLoaderData} from 'react-router';
+import {redirect} from 'react-router';
 import type {Route} from './+types/search';
-import {getPaginationVariables, Analytics} from '@shopify/hydrogen';
-import {SearchForm} from '~/components/SearchForm';
-import {SearchResults} from '~/components/SearchResults';
 import {
-  type RegularSearchReturn,
   type PredictiveSearchReturn,
   getEmptyPredictiveSearchResult,
+  buildSearchPath,
 } from '~/lib/search';
-import {buildSeoMeta} from '~/lib/seo';
-import {Txt} from '~/components/Txt';
-import {copyText, editAttrs} from '~/lib/copy';
-import type {
-  RegularSearchQuery,
-  PredictiveSearchQuery,
-} from 'storefrontapi.generated';
+import type {PredictiveSearchQuery} from 'storefrontapi.generated';
 
 /**
- * The two term-bearing meta strings carry a `{term}` token rather than being
- * assembled from fragments. A copy file cannot interpolate, but splitting
- * `Search results for "esc"` into a prefix and a quote would leave two
- * half-sentences in the studio and no way to reorder them. The token keeps the
- * whole sentence editable; the value it stands for stays in code.
+ * `/search` is the predictive-search endpoint for the header's typeahead
+ * only (`?predictive`). The search page itself merged into the catalog on
+ * 2026-08-15: a plain `/search?q=term` redirects to `/collections/all?q=term`,
+ * where the term filters the product grid and lists matching pages and
+ * articles.
  */
-function withTerm(id: string, fallback: string, term: string): string {
-  return (copyText(id) ?? fallback).replace('{term}', term);
-}
-
-export const meta: Route.MetaFunction = ({data}) =>
-  buildSeoMeta({
-    title: data?.term
-      ? withTerm('search.meta_title_term', 'Search results for "{term}"', data.term)
-      : copyText('search.meta_title') ?? 'Search',
-    description: data?.term
-      ? withTerm(
-          'search.meta_description_term',
-          'Search OpenDrone for {term}.',
-          data.term,
-        )
-      : copyText('search.meta_description') ?? '',
-    robots: 'noindex,follow',
-  });
-
 export async function loader({request, context}: Route.LoaderArgs) {
   const url = new URL(request.url);
-  const isPredictive = url.searchParams.has('predictive');
-  const searchPromise: Promise<PredictiveSearchReturn | RegularSearchReturn> =
-    isPredictive
-      ? predictiveSearch({request, context})
-      : regularSearch({request, context});
-
+  if (!url.searchParams.has('predictive')) {
+    throw redirect(buildSearchPath(url.searchParams.get('q')), 301);
+  }
   try {
-    return await searchPromise;
+    return await predictiveSearch({request, context});
   } catch (error) {
     console.error(error);
     throw new Response((error as Error).message, {status: 500});
   }
-}
-
-/**
- * Renders the /search route
- */
-export default function SearchPage() {
-  const {type, term, result, error} = useLoaderData<typeof loader>();
-  if (type === 'predictive') return null;
-
-  return (
-    <div className="search-page page-shell">
-      <header className="page-header">
-        <Txt id="search.eyebrow" as="p" className="page-eyebrow" />
-        <Txt id="search.title" as="h1" className="page-title" />
-        <Txt id="search.description" as="p" className="page-description" />
-      </header>
-      <SearchForm>
-        {({inputRef}) => (
-          <div className="search-form-row">
-            <input
-              className="search-input"
-              defaultValue={term}
-              name="q"
-              placeholder={copyText('search.input_placeholder')}
-              ref={inputRef}
-              type="search"
-              {...editAttrs('search.input_placeholder')}
-            />
-            <Txt
-              id="search.submit"
-              as="button"
-              className="search-submit"
-              type="submit"
-            />
-          </div>
-        )}
-      </SearchForm>
-      {error && <p className="search-error">{error}</p>}
-      {!term || !result?.total ? (
-        <SearchResults.Empty />
-      ) : (
-        <SearchResults result={result} term={term}>
-          {({articles, pages, products, term}) => (
-            <div className="search-results-layout">
-              <SearchResults.Products products={products} term={term} />
-              <SearchResults.Pages pages={pages} term={term} />
-              <SearchResults.Articles articles={articles} term={term} />
-            </div>
-          )}
-        </SearchResults>
-      )}
-      <Analytics.SearchView data={{searchTerm: term, searchResults: result}} />
-    </div>
-  );
-}
-
-/**
- * Regular search query and fragments
- * (adjust as needed)
- */
-const SEARCH_PRODUCT_FRAGMENT = `#graphql
-  fragment SearchProduct on Product {
-    __typename
-    handle
-    id
-    publishedAt
-    title
-    trackingParameters
-    vendor
-    selectedOrFirstAvailableVariant(
-      selectedOptions: []
-      ignoreUnknownOptions: true
-      caseInsensitiveMatch: true
-    ) {
-      id
-      image {
-        url
-        altText
-        width
-        height
-      }
-      price {
-        amount
-        currencyCode
-      }
-      compareAtPrice {
-        amount
-        currencyCode
-      }
-      selectedOptions {
-        name
-        value
-      }
-      product {
-        handle
-        title
-      }
-    }
-  }
-` as const;
-
-const SEARCH_PAGE_FRAGMENT = `#graphql
-  fragment SearchPage on Page {
-     __typename
-     handle
-    id
-    title
-    trackingParameters
-  }
-` as const;
-
-const SEARCH_ARTICLE_FRAGMENT = `#graphql
-  fragment SearchArticle on Article {
-    __typename
-    handle
-    id
-    title
-    trackingParameters
-    blog {
-      handle
-    }
-  }
-` as const;
-
-const PAGE_INFO_FRAGMENT = `#graphql
-  fragment PageInfoFragment on PageInfo {
-    hasNextPage
-    hasPreviousPage
-    startCursor
-    endCursor
-  }
-` as const;
-
-// NOTE: https://shopify.dev/docs/api/storefront/latest/queries/search
-export const SEARCH_QUERY = `#graphql
-  query RegularSearch(
-    $country: CountryCode
-    $endCursor: String
-    $first: Int
-    $language: LanguageCode
-    $last: Int
-    $term: String!
-    $startCursor: String
-  ) @inContext(country: $country, language: $language) {
-    articles: search(
-      query: $term,
-      types: [ARTICLE],
-      first: $first,
-    ) {
-      nodes {
-        ...on Article {
-          ...SearchArticle
-        }
-      }
-    }
-    pages: search(
-      query: $term,
-      types: [PAGE],
-      first: $first,
-    ) {
-      nodes {
-        ...on Page {
-          ...SearchPage
-        }
-      }
-    }
-    products: search(
-      after: $endCursor,
-      before: $startCursor,
-      first: $first,
-      last: $last,
-      query: $term,
-      sortKey: RELEVANCE,
-      types: [PRODUCT],
-      unavailableProducts: HIDE,
-    ) {
-      nodes {
-        ...on Product {
-          ...SearchProduct
-        }
-      }
-      pageInfo {
-        ...PageInfoFragment
-      }
-    }
-  }
-  ${SEARCH_PRODUCT_FRAGMENT}
-  ${SEARCH_PAGE_FRAGMENT}
-  ${SEARCH_ARTICLE_FRAGMENT}
-  ${PAGE_INFO_FRAGMENT}
-` as const;
-
-/**
- * Regular search fetcher
- */
-async function regularSearch({
-  request,
-  context,
-}: Pick<
-  Route.LoaderArgs,
-  'request' | 'context'
->): Promise<RegularSearchReturn> {
-  const {storefront} = context;
-  const url = new URL(request.url);
-  const variables = getPaginationVariables(request, {pageBy: 8});
-  const term = String(url.searchParams.get('q') || '');
-
-  // Search articles, pages, and products for the `q` term
-  const {
-    errors,
-    ...items
-  }: {errors?: Array<{message: string}>} & RegularSearchQuery =
-    await storefront.query(SEARCH_QUERY, {
-      variables: {...variables, term},
-    });
-
-  if (!items) {
-    throw new Error('No search data returned from Shopify API');
-  }
-
-  // The legacy firmware-donation tip product is not catalog; keep it out of
-  // search results (search() has no product_type filter argument).
-  if (items.products?.nodes) {
-    items.products.nodes = items.products.nodes.filter(
-      (p) => p.handle !== 'firmware-donation',
-    );
-  }
-
-  const total = Object.values(items).reduce(
-    (acc: number, {nodes}: {nodes: Array<unknown>}) => acc + nodes.length,
-    0,
-  );
-
-  const error = errors
-    ? errors.map(({message}: {message: string}) => message).join(', ')
-    : undefined;
-
-  return {type: 'regular', term, error, result: {total, items}};
 }
 
 /**
@@ -469,7 +200,7 @@ async function predictiveSearch({
     throw new Error('No predictive search data returned from Shopify API');
   }
 
-  // Same legacy-product exclusion as the regular search above.
+  // Same legacy-product exclusion as the catalog query on /collections/all.
   if (items.products) {
     items.products = items.products.filter(
       (p) => p.handle !== 'firmware-donation',

@@ -30,5 +30,15 @@
   "empty_catalog_title": "Catalog is being stocked",
   "empty_catalog_body": "Products are not yet listed. Follow along on GitHub for hardware progress.",
   "empty_catalog_secondary": "GitHub",
-  "status_legend_link": "What the status labels mean →"
+  "status_legend_link": "What they mean →",
+  "meta_title_term": "Search results for \"{term}\"",
+  "search_placeholder": "Search products, pages and articles",
+  "search_submit": "Search",
+  "search_clear": "Clear ×",
+  "count_for_term": "for",
+  "section_pages": "Pages",
+  "section_articles": "Articles",
+  "empty_search_title": "Nothing found",
+  "empty_search_body": "Try a product name, part number or article keyword.",
+  "status_heading": "Status labels"
 }

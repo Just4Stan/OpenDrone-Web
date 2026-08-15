@@ -1,6 +1,6 @@
 import type {
   PredictiveSearchQuery,
-  RegularSearchQuery,
+  CatalogSiteSearchQuery,
 } from 'storefrontapi.generated';
 
 type ResultWithItems<Type extends 'predictive' | 'regular', Items> = {
@@ -10,9 +10,11 @@ type ResultWithItems<Type extends 'predictive' | 'regular', Items> = {
   result: {total: number; items: Items};
 };
 
+/** Pages + articles matching the catalog page's search term (products are
+ *  matched client-side against the catalog itself). */
 export type RegularSearchReturn = ResultWithItems<
   'regular',
-  RegularSearchQuery
+  CatalogSiteSearchQuery
 >;
 export type PredictiveSearchReturn = ResultWithItems<
   'predictive',
@@ -28,7 +30,7 @@ export function buildSearchPath(term?: string | null) {
   }
 
   const search = params.toString();
-  return search ? `/search?${search}` : '/search';
+  return search ? `/collections/all?${search}` : '/collections/all';
 }
 
 /**
