@@ -39,7 +39,7 @@ export async function action({request, context}: Route.ActionArgs) {
   if (request.method !== 'POST') {
     return data<WithdrawResult>({ok: false, message: 'Method not allowed.'}, {status: 405});
   }
-  const env = context.env as Record<string, string | undefined>;
+  const env = context.env as unknown as Record<string, string | undefined>;
   const form = await request.formData();
 
   // Honeypot: real users never fill this hidden field.

@@ -58,6 +58,7 @@ import {
 } from '~/components/ProductReviews';
 import {OshwaMark} from '~/components/OshwaMark';
 import {useNoHover, useIsMobile} from '~/lib/use-media-query';
+import {GpsrBlock} from '~/components/GpsrBlock';
 import {
   PRODUCT_CONTENT,
   PRODUCT_CONTENT_FALLBACK,
@@ -2386,6 +2387,7 @@ export default function Product() {
             downloads={content.downloads}
             editBase={`${product.handle}.downloads`}
           />
+          {rootData?.company ? <GpsrBlock company={rootData.company} /> : null}
         </Chapter>
     ),
     /** The open firmware the board runs, and how to support its devs. */
