@@ -52,9 +52,22 @@ export function roadmapStatusMap(
 export function useRoadmapStatus(
   handle?: string | null,
 ): RoadmapStatus | undefined {
+  return useRoadmapStatusResolver()(handle);
+}
+
+/**
+ * Same resolution as {@link useRoadmapStatus}, as a plain function for
+ * components that resolve MANY handles in a loop (header pods): call the
+ * hook once, use the closure per item.
+ */
+export function useRoadmapStatusResolver(): (
+  handle?: string | null,
+) => RoadmapStatus | undefined {
   const data = useRouteLoaderData<RootLoader>('root');
-  if (!handle) return undefined;
-  return data?.roadmapStatuses?.[handle] ?? statusForHandle(handle);
+  return (handle) =>
+    handle
+      ? (data?.roadmapStatuses?.[handle] ?? statusForHandle(handle))
+      : undefined;
 }
 
 /**
