@@ -51,7 +51,7 @@ ____________________
 5. **Terugzendkosten** zijn voor uw rekening.
 6. Incutec BV vergoedt alle betalingen (inclusief standaard leveringskosten) uiterlijk **14 dagen** nadat wij het product hebben terugontvangen of u bewijs van terugzending heeft geleverd.
 7. Terugbetaling geschiedt via hetzelfde betaalmiddel als bij uw oorspronkelijke aankoop.
-8. Het product moet in originele staat worden teruggestuurd. Waardevermindering door gebruik dat verder gaat dan nodig is om de aard en kenmerken van het product vast te stellen, kan in mindering worden gebracht.
+8. Het product moet in originele staat worden teruggestuurd. Waardevermindering door gebruik dat verder gaat dan nodig is om de aard en kenmerken van het product vast te stellen, kan in mindering worden gebracht. Voor elektronicacomponenten gaan solderen, montage, het aansluiten van voeding en vlieggebruik verder dan die beoordeling (zie Algemene Voorwaarden Art. 5.8).
 
 ---
 

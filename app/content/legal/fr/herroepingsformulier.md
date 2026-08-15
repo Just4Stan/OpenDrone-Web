@@ -52,7 +52,7 @@ ____________________
 5. **Les frais de retour** sont à votre charge.
 6. Incutec BV rembourse tous les paiements (y compris les frais de livraison standard) au plus tard **14 jours** après réception du produit retourné ou après que vous avez fourni une preuve de renvoi, la date la plus proche étant retenue.
 7. Le remboursement est effectué selon le même moyen de paiement que votre achat initial.
-8. Le produit doit être retourné dans son état d’origine. Une diminution de valeur due à une utilisation allant au-delà de ce qui est nécessaire pour établir la nature, les caractéristiques et le fonctionnement du produit peut être déduite.
+8. Le produit doit être retourné dans son état d’origine. Une diminution de valeur due à une utilisation allant au-delà de ce qui est nécessaire pour établir la nature, les caractéristiques et le fonctionnement du produit peut être déduite. Pour des composants électroniques, souder, monter, raccorder une alimentation et utiliser en vol vont au-delà de cette évaluation (voir Conditions Générales art. 5.8).
 
 ---
 

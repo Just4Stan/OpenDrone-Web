@@ -103,6 +103,8 @@
 
 9.4. **Examen lors d'une réclamation de garantie.** En cas de réclamation, Incutec BV examine le produit retourné et partage ses constatations avec le consommateur (photos et mesures le cas échéant). Des traces de causes étrangères à la conformité, telles que des dommages de soudure aux pastilles ou connecteurs, une tension d'alimentation inversée ou excessive, des dommages mécaniques ou des dégâts des eaux, peuvent renverser la présomption légale selon laquelle le défaut existait à la livraison lorsqu'elles sont incompatibles avec la nature du défaut (art. 1649quater §4 ancien Code civil). Cet article ne limite pas la garantie légale ; il décrit la manière dont les réclamations sont évaluées.
 
+9.5. **Pas de garantie commerciale.** Incutec BV n'offre aucune garantie commerciale en plus de la garantie légale de conformité. Toute référence à une « garantie » sur le site ou dans la documentation produit vise la garantie légale de l'art. 9.2.
+
 ### Article 10 : Responsabilité
 
 10.1. La responsabilité d’Incutec BV pour les dommages indirects ou consécutifs est limitée au montant facturé de la commande concernée, sans préjudice de la garantie légale (Art. 9) et de la responsabilité du fait des produits. Cette limitation n’affecte pas les droits du consommateur au titre de la garantie légale ni de toute autre disposition légale impérative.
@@ -163,6 +165,10 @@
 
 16.3. Les factures aux clients professionnels sont émises via les canaux de facturation électronique structurée légalement requis là où le droit belge l’exige. Dans les autres cas, Incutec BV peut utiliser toute autre forme de facturation légalement autorisée.
 
+16.4. **Responsabilité B2B.** Sauf dol ou faute lourde d'Incutec BV, et sauf dommage résultant d'une atteinte à la vie ou à l'intégrité physique, la responsabilité d'Incutec BV envers les clients professionnels est limitée, par sinistre et au total, au montant facturé de la commande concernée ; la responsabilité pour les dommages indirects et consécutifs, y compris le manque à gagner, la perte de production et les dommages à d'autres équipements, est exclue. Les défauts doivent être signalés par écrit dans les 14 jours de leur découverte ; la réparation ou le remplacement s'effectue au choix d'Incutec BV.
+
+16.5. **Preuve B2B.** Entre Incutec BV et les clients professionnels, les enregistrements électroniques (données de commande, fichiers journaux, données de production et de test) valent preuve, sauf preuve contraire.
+
 ### Article 17 : Force majeure
 
 17.1. Incutec BV n’est pas responsable du retard ou de l’inexécution causés par des circonstances indépendantes de sa volonté raisonnable, y compris mais non limités à : perturbations d’usine, pénuries de matières premières ou de composants, mesures gouvernementales, restrictions d’importation ou d’exportation, catastrophes naturelles, épidémies ou pandémies.
@@ -178,6 +184,10 @@
 ### Article 19 : Langue
 
 19.1. La version en langue néerlandaise des présentes conditions est le texte authentique. Les traductions en français, anglais ou autres langues sont informatives et non contraignantes.
+
+### Article 20 : Divisibilité
+
+20.1. Si une disposition des présentes conditions s'avère totalement ou partiellement nulle ou inapplicable, les autres dispositions restent pleinement en vigueur. La disposition concernée est alors appliquée dans la mesure permise par la loi, ou remplacée par une disposition valable se rapprochant le plus possible de l'intention initiale.
 
 ---
 

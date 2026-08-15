@@ -103,6 +103,8 @@
 
 9.4. **Onderzoek bij een garantieclaim.** Bij een claim onderzoekt Incutec BV het teruggestuurde product en deelt het de bevindingen met de consument (foto's en meetresultaten waar relevant). Sporen van oorzaken buiten de conformiteit, zoals soldeerschade aan pads of connectoren, omgepoolde of te hoge voedingsspanning, mechanische schade of waterschade, kunnen het wettelijke vermoeden weerleggen dat het gebrek bij levering bestond, wanneer zij onverenigbaar zijn met de aard van het gebrek (Art. 1649quater §4 oud BW). Dit artikel beperkt de wettelijke garantie niet; het beschrijft hoe claims worden beoordeeld.
 
+9.5. **Geen commerciële garantie.** Incutec BV biedt geen commerciële garantie bovenop de wettelijke conformiteitsgarantie. Elke verwijzing naar "garantie" op de website of in productdocumentatie betreft de wettelijke garantie van Art. 9.2.
+
 ### Artikel 10: Aansprakelijkheid
 
 10.1. De aansprakelijkheid van Incutec BV voor indirecte of gevolgschade is beperkt tot het factuurbedrag van de betreffende bestelling, onverminderd de wettelijke garantie (Art. 9) en productaansprakelijkheid. Deze beperking doet geen afbreuk aan de rechten van de consument op grond van de wettelijke garantie of enige andere dwingende wettelijke bepaling.
@@ -163,6 +165,10 @@
 
 16.3. Facturen aan professionele klanten worden opgesteld via de wettelijk vereiste gestructureerde elektronische facturatiekanalen wanneer Belgisch recht dit vereist. In andere gevallen kan Incutec BV een andere wettelijk toegelaten factuurvorm gebruiken.
 
+16.4. **Aansprakelijkheid B2B.** Behoudens opzet of zware fout van Incutec BV, en behoudens schade door aantasting van het leven of de fysieke integriteit, is de aansprakelijkheid van Incutec BV jegens professionele klanten per schadegeval en in totaal beperkt tot het factuurbedrag van de betrokken bestelling, en is aansprakelijkheid voor indirecte schade en gevolgschade, waaronder winstderving, productieverlies en schade aan andere apparatuur, uitgesloten. Gebreken moeten schriftelijk worden gemeld binnen 14 dagen na ontdekking; herstel of vervanging geschiedt naar keuze van Incutec BV.
+
+16.5. **Bewijs B2B.** Tussen Incutec BV en professionele klanten gelden elektronische registraties (bestelgegevens, logbestanden, productie- en testrecords) als bewijs, behoudens tegenbewijs.
+
 ### Artikel 17: Overmacht
 
 17.1. Incutec BV is niet aansprakelijk voor vertraging of niet-nakoming veroorzaakt door omstandigheden buiten haar redelijke controle, waaronder maar niet beperkt tot: fabrieksonderbrekingen, tekort aan grondstoffen of componenten, overheidsmaatregelen, import- of exportbeperkingen, natuurrampen, epidemieën of pandemieën.
@@ -178,6 +184,10 @@
 ### Artikel 19: Taal
 
 19.1. De Nederlandstalige versie van deze voorwaarden is de authentieke tekst. Vertalingen in het Frans, Engels of andere talen zijn informatief en niet bindend.
+
+### Artikel 20: Deelbaarheid
+
+20.1. Indien een bepaling van deze voorwaarden geheel of gedeeltelijk nietig of niet-afdwingbaar blijkt, blijven de overige bepalingen onverminderd van kracht. De betrokken bepaling wordt in dat geval toegepast in de mate waarin de wet dit toelaat, dan wel vervangen door een geldige bepaling die de oorspronkelijke bedoeling zo dicht mogelijk benadert.
 
 ---
 

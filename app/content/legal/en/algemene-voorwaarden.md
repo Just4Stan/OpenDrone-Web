@@ -103,6 +103,8 @@
 
 9.4. **Inspection on a warranty claim.** On a claim, Incutec BV examines the returned product and shares its findings with the consumer (photos and measurements where relevant). Traces of causes outside conformity, such as soldering damage to pads or connectors, reversed or excessive supply voltage, mechanical damage or water damage, can rebut the legal presumption that the defect existed at delivery where they are incompatible with the nature of the defect (Art. 1649quater §4 old Civil Code). This article does not limit the legal warranty; it describes how claims are assessed.
 
+9.5. **No commercial guarantee.** Incutec BV offers no commercial guarantee on top of the legal conformity warranty. Any reference to "warranty" on the website or in product documentation refers to the legal warranty of Art. 9.2.
+
 ### Article 10: Liability
 
 10.1. Incutec BV's liability for indirect or consequential damage is limited to the invoice amount of the order in question, without prejudice to the legal warranty (Art. 9) and product liability. This limitation does not affect the consumer's rights under the legal warranty or any other mandatory legal provision.
@@ -163,6 +165,10 @@
 
 16.3. Invoices to professional customers are issued through the legally required structured electronic invoicing channels where Belgian law so requires. In other cases, Incutec BV may use any other legally permitted invoice form.
 
+16.4. **B2B liability.** Except for intent or gross negligence of Incutec BV, and except for damage from injury to life or physical integrity, Incutec BV's liability toward professional customers is limited per event and in aggregate to the invoice amount of the order concerned, and liability for indirect and consequential damage, including loss of profit, loss of production and damage to other equipment, is excluded. Defects must be reported in writing within 14 days of discovery; repair or replacement is at Incutec BV's option.
+
+16.5. **B2B evidence.** Between Incutec BV and professional customers, electronic records (order data, log files, production and test records) serve as evidence, subject to proof to the contrary.
+
 ### Article 17: Force majeure
 
 17.1. Incutec BV is not liable for delay or non-performance caused by circumstances beyond its reasonable control, including but not limited to: factory disruptions, shortages of raw materials or components, governmental measures, import or export restrictions, natural disasters, epidemics or pandemics.
@@ -178,6 +184,10 @@
 ### Article 19: Language
 
 19.1. The Dutch-language version of these terms is the authentic text. Translations into French, English or other languages are informative and not binding.
+
+### Article 20: Severability
+
+20.1. If any provision of these terms proves wholly or partly void or unenforceable, the remaining provisions remain in full force. The provision concerned is then applied to the extent the law permits, or replaced by a valid provision that approximates the original intent as closely as possible.
 
 ---
 
