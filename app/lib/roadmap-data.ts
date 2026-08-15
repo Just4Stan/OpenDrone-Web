@@ -34,6 +34,12 @@ export type RoadmapItem = {
   productPath?: string;
   /** Public design source. Omit when nothing public exists. */
   link?: string;
+  /**
+   * GitHub repo name while the repo exists but is still private, so the
+   * README status badge (`/api/status/<repo>.json`) can serve the static
+   * status. Replace with `link` the day the repo goes public.
+   */
+  repo?: string;
   /** Board render for the kanban card, from public/boards/. */
   image?: string;
   /**
@@ -100,6 +106,7 @@ export const ROADMAP: RoadmapItem[] = [
     // repo (purged supplier quotes remain reachable through refs/pull/8), so
     // it has no public link yet and its topic cannot be fetched. Add the link
     // the day the repo goes public; until then the static value IS the status.
+    repo: 'OpenFrame',
   },
   {
     id: 'motors',
