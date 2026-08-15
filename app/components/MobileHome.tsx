@@ -8,13 +8,16 @@ import {AnimatedNumber} from '~/components/AnimatedNumber';
 import {Txt} from '~/components/Txt';
 import {PRODUCT_CONTENT} from '~/lib/product-content';
 import {BOARD_ART_VERSION} from '~/data/board-art-version';
+import {assetUrl} from '~/lib/asset-url';
 
 // Downscaled WebP thumbnails written by scripts/export-board-art.mjs next to
 // front.png. The stage slot is at most 264 CSS px, so 528 (2x) and 800 (3x)
 // cover every phone at a tenth of the 1568 px PNG. Same ?v= cache-bust as
 // BoardArt so a regenerated render is refetched.
 const boardThumb = (handle: string, w: 528 | 800) =>
-  `/boards/${handle}/front-w${w}.webp${BOARD_ART_VERSION ? `?v=${BOARD_ART_VERSION}` : ''}`;
+  assetUrl(
+    `/boards/${handle}/front-w${w}.webp${BOARD_ART_VERSION ? `?v=${BOARD_ART_VERSION}` : ''}`,
+  );
 // Mirrors .home-mobile-board: width clamp(178px, 54vw, 264px).
 const BOARD_THUMB_SIZES = '(min-width: 489px) 264px, 54vw';
 

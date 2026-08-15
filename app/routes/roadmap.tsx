@@ -15,12 +15,15 @@ import {
 } from '~/lib/roadmap-data';
 import {voteShares, voteTally} from '~/lib/votes';
 import {BOARD_ART_VERSION} from '~/data/board-art-version';
+import {assetUrl} from '~/lib/asset-url';
 
 // roadmap-data points at /boards/<handle>/front.png (the 1568 px render);
 // the kanban card is 10.5rem wide, so serve the WebP thumbnails written next to
 // it by scripts/export-board-art.mjs instead.
 const boardThumb = (png: string, w: 528 | 800) =>
-  `${png.replace(/front\.png$/, `front-w${w}.webp`)}${BOARD_ART_VERSION ? `?v=${BOARD_ART_VERSION}` : ''}`;
+  assetUrl(
+    `${png.replace(/front\.png$/, `front-w${w}.webp`)}${BOARD_ART_VERSION ? `?v=${BOARD_ART_VERSION}` : ''}`,
+  );
 
 /**
  * Words live in `content/copy/roadmap.json`; this file holds the machinery.
