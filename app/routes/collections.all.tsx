@@ -2,27 +2,49 @@ import type {Route} from './+types/collections.all';
 import {useMemo} from 'react';
 import type {ReactNode} from 'react';
 import {Link, useLoaderData, useSearchParams} from 'react-router';
+import {Analytics} from '@shopify/hydrogen';
 import type {MoneyV2} from '@shopify/hydrogen/storefront-api-types';
 import {ProductItem, type ProductQuickAdd} from '~/components/ProductItem';
 import type {StackOffer} from '~/components/StackQuickAdd';
-import type {CollectionItemFragment} from 'storefrontapi.generated';
+import type {
+  CollectionItemFragment,
+  CatalogSiteSearchQuery,
+} from 'storefrontapi.generated';
 import {buildSeoMeta, SITE_ORIGIN} from '~/lib/seo';
 import {EmptyState} from '~/components/EmptyState';
-import {PRODUCT_CONTENT, isComingSoon} from '~/lib/product-content';
+import {SearchForm} from '~/components/SearchForm';
+import {SearchResults} from '~/components/SearchResults';
+import {PRODUCT_CONTENT} from '~/lib/product-content';
 import {useProductStatusResolver} from '~/lib/coming-soon';
 import {stackDiscountedPrice} from '~/lib/stack-discount';
 import {Txt} from '~/components/Txt';
 import {copyText, editAttrs} from '~/lib/copy';
 
-export const meta: Route.MetaFunction = ({location}) =>
+/**
+ * The term-bearing meta string carries a `{term}` token rather than being
+ * assembled from fragments, so the whole sentence stays editable as one.
+ */
+function withTerm(id: string, fallback: string, term: string): string {
+  return (copyText(id) ?? fallback).replace('{term}', term);
+}
+
+export const meta: Route.MetaFunction = ({data, location}) =>
   buildSeoMeta({
-    title: copyText('collections-all.meta_title') ?? 'All Products',
+    title: data?.term
+      ? withTerm(
+          'collections-all.meta_title_term',
+          'Search results for "{term}"',
+          data.term,
+        )
+      : copyText('collections-all.meta_title') ?? 'All Products',
     description:
       copyText('collections-all.meta_description') ??
       'Browse every OpenDrone product in one place: open source flight controllers, ESCs, receivers, frames, bundles, and accessories. Filter by category and sort by price or newest.',
     type: 'product',
-    // Canonical without filter/sort queries so variants don't splinter.
+    // Canonical without filter/sort/search queries so variants don't splinter.
     url: `${SITE_ORIGIN}${location.pathname}`,
+    // A search result set is not a page worth indexing.
+    robots: data?.term ? 'noindex,follow' : undefined,
   });
 
 /**
@@ -55,22 +77,35 @@ const SORT_OPTIONS: Array<{value: string; copyId: string; label: string}> = [
 /** Products created within this window get a "NEW" badge. */
 const NEW_WINDOW_MS = 1000 * 60 * 60 * 24 * 30;
 
-export async function loader(args: Route.LoaderArgs) {
-  const criticalData = await loadCriticalData(args);
-  return {...criticalData};
-}
-
-async function loadCriticalData({context}: Route.LoaderArgs) {
+export async function loader({request, context}: Route.LoaderArgs) {
+  const term = String(new URL(request.url).searchParams.get('q') || '').trim();
   // The catalog is small; fetch it whole (newest first) with variants, then
   // expand/filter/sort client-side from the URL so the page is one shareable
-  // browse hub that lists every model on its own card.
-  const {products} = await context.storefront.query(CATALOG_QUERY, {
-    variables: {first: 100},
-    // Catalog content changes rarely — cache long instead of the 1s default.
-    cache: context.storefront.CacheLong(),
-  });
+  // browse hub that lists every model on its own card. A search term filters
+  // those same cards client-side; only pages and articles need Shopify's
+  // search() for it, and only when there is a term.
+  const [{products}, siteSearch] = await Promise.all([
+    context.storefront.query(CATALOG_QUERY, {
+      variables: {first: 100},
+      // Catalog content changes rarely — cache long instead of the 1s default.
+      cache: context.storefront.CacheLong(),
+    }),
+    term
+      ? context.storefront
+          .query(SITE_SEARCH_QUERY, {variables: {term, first: 10}})
+          .catch((err: unknown) => {
+            console.warn('[catalog] site search failed', err);
+            return null;
+          })
+      : Promise.resolve(null),
+  ]);
   // Server timestamp for the NEW badge, so SSR and first client render agree.
-  return {products: products.nodes, now: Date.now()};
+  return {
+    products: products.nodes,
+    now: Date.now(),
+    term,
+    siteSearch: siteSearch as CatalogSiteSearchQuery | null,
+  };
 }
 
 type CatalogProduct = CollectionItemFragment;
@@ -80,6 +115,8 @@ type Card = {
   key: string;
   product: CatalogProduct;
   title: string;
+  /** What the search box matches against: title, tier, handle, type. */
+  searchText: string;
   to: string;
   price: MoneyV2;
   /** The tier's own variant image, so each size card shows its real board
@@ -160,8 +197,23 @@ function joinTitle(title: string, value: string): string {
   return rest ? `${title} ${rest}` : title;
 }
 
+/** Case- and accent-insensitive token match: every word of the term must
+ *  occur somewhere in the card's searchable text. */
+function normalise(s: string): string {
+  return s
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase();
+}
+function matchesTerm(haystack: string, term: string): boolean {
+  const words = normalise(term).split(/\s+/).filter(Boolean);
+  if (!words.length) return true;
+  const hay = normalise(haystack);
+  return words.every((w) => hay.includes(w));
+}
+
 export default function Collection() {
-  const {products, now} = useLoaderData<typeof loader>();
+  const {products, now, term, siteSearch} = useLoaderData<typeof loader>();
   const [searchParams, setSearchParams] = useSearchParams();
   const activeType = searchParams.get('type');
   const onlySale = searchParams.get('sale') === '1';
@@ -246,6 +298,7 @@ export default function Collection() {
             key: `${p.id}:${value}`,
             product: p,
             title: joinTitle(p.title, value),
+            searchText: [p.title, value, p.handle, p.productType].join(' '),
             to: `/products/${p.handle}?${encodeURIComponent(axis)}=${encodeURIComponent(value)}`,
             price,
             image: sv?.image ?? p.featuredImage,
@@ -281,6 +334,7 @@ export default function Collection() {
           key: p.id,
           product: p,
           title: p.title,
+          searchText: [p.title, p.handle, p.productType].join(' '),
           to: `/products/${p.handle}`,
           price: p.priceRange.minVariantPrice,
           onSale: comingSoon ? false : productOnSale(p),
@@ -336,9 +390,11 @@ export default function Collection() {
 
   const anyOnSale = useMemo(() => cards.some((c) => c.onSale), [cards]);
 
-  // Filter, then sort. `newest` keeps the loader's fetch order.
+  // Filter (search term, category, sale), then sort. `newest` keeps the
+  // loader's fetch order.
   const visible = useMemo(() => {
     let list = cards;
+    if (term) list = list.filter((c) => matchesTerm(c.searchText, term));
     if (activeType)
       list = list.filter((c) => (c.product.productType || 'Other') === activeType);
     if (onlySale) list = list.filter((c) => c.onSale);
@@ -360,7 +416,7 @@ export default function Collection() {
         break; // newest — already CREATED_AT desc from the loader
     }
     return sorted;
-  }, [cards, activeType, onlySale, sort]);
+  }, [cards, term, activeType, onlySale, sort]);
 
   const setParam = (key: string, value: string | null) => {
     const next = new URLSearchParams(searchParams);
@@ -392,19 +448,53 @@ export default function Collection() {
   const isNew = (createdAt?: string | null) =>
     createdAt ? now - Date.parse(createdAt) < NEW_WINDOW_MS : false;
 
+  // Pages + articles for the term (products are the grid itself).
+  const pages = siteSearch?.pages;
+  const articles = siteSearch?.articles;
+  const extraHits = (pages?.nodes.length ?? 0) + (articles?.nodes.length ?? 0);
+  // Keep the active filters when a new term is submitted: the form only
+  // carries `q`, so the rest ride along as hidden fields.
+  const carried = ['type', 'sale', 'sort'].filter((k) => searchParams.get(k));
+
   return (
     <div className="collection page-shell">
       <header className="page-header collection-header">
         <Txt id="collections-all.eyebrow" as="p" className="page-eyebrow" />
         <Txt id="collections-all.title" as="h1" className="page-title" />
-        {/* Every card carries its roadmap status chip; this is the one
-            place the listing links the vocabulary's explanation. */}
-        <Link prefetch="viewport" to="/roadmap" className="collection-status-link">
-          <Txt
-            id="collections-all.status_legend_link"
-            fallback="What the status labels mean →"
-          />
-        </Link>
+        {/* The catalog is also the search page: the term filters the grid
+            below and lists matching pages and articles under it. */}
+        <SearchForm action="/collections/all" className="catalog-search">
+          {({inputRef}) => (
+            <div className="search-form-row catalog-search-row">
+              {carried.map((k) => (
+                <input
+                  key={k}
+                  type="hidden"
+                  name={k}
+                  value={searchParams.get(k) ?? ''}
+                />
+              ))}
+              <input
+                className="search-input"
+                key={term}
+                defaultValue={term}
+                name="q"
+                placeholder={copyText('collections-all.search_placeholder')}
+                aria-label={copyText('collections-all.search_placeholder')}
+                ref={inputRef}
+                type="search"
+                enterKeyHint="search"
+                {...editAttrs('collections-all.search_placeholder')}
+              />
+              <Txt
+                id="collections-all.search_submit"
+                as="button"
+                className="search-submit"
+                type="submit"
+              />
+            </div>
+          )}
+        </SearchForm>
       </header>
 
       {hasProducts ? (
@@ -446,6 +536,26 @@ export default function Collection() {
                 )}
               </ul>
             </div>
+            {/* Every card carries its roadmap status chip; this is the one
+                place the listing explains the vocabulary, as a real button
+                under the filters rather than a footnote in the header. */}
+            <div className="catalog-filter-group catalog-legend">
+              <Txt
+                id="collections-all.status_heading"
+                as="h2"
+                className="catalog-filter-head"
+              />
+              <Link
+                prefetch="viewport"
+                to="/roadmap"
+                className="catalog-legend-btn"
+              >
+                <Txt
+                  id="collections-all.status_legend_link"
+                  fallback="What they mean →"
+                />
+              </Link>
+            </div>
           </aside>
 
           {/* Main column — toolbar (count + sort) above the product grid. */}
@@ -460,6 +570,20 @@ export default function Collection() {
                       : 'collections-all.count_other'
                   }
                 />
+                {term ? (
+                  <>
+                    {' '}
+                    <Txt id="collections-all.count_for_term" as="span" />{' '}
+                    <q className="catalog-term">{term}</q>{' '}
+                    <button
+                      type="button"
+                      className="catalog-term-clear"
+                      onClick={() => setParam('q', null)}
+                    >
+                      <Txt id="collections-all.search_clear" />
+                    </button>
+                  </>
+                ) : null}
               </p>
               <label className="collection-sort catalog-sort">
                 <span
@@ -508,7 +632,14 @@ export default function Collection() {
                   />
                 ))}
               </div>
-            ) : (
+            ) : term && !extraHits ? (
+              <EmptyState
+                title={<Txt id="collections-all.empty_search_title" />}
+                description={<Txt id="collections-all.empty_search_body" />}
+                ctaLabel={<Txt id="collections-all.empty_filters_cta" />}
+                ctaTo="/collections/all"
+              />
+            ) : term ? null : (
               <EmptyState
                 title={<Txt id="collections-all.empty_filters_title" />}
                 description={<Txt id="collections-all.empty_filters_body" />}
@@ -516,6 +647,13 @@ export default function Collection() {
                 ctaTo="/collections/all"
               />
             )}
+
+            {term && extraHits > 0 ? (
+              <div className="search-results-layout catalog-site-results">
+                <SearchResults.Pages pages={pages!} term={term} />
+                <SearchResults.Articles articles={articles!} term={term} />
+              </div>
+            ) : null}
           </div>
         </div>
       ) : (
@@ -534,9 +672,54 @@ export default function Collection() {
           }
         />
       )}
+      {term ? (
+        <Analytics.SearchView
+          data={{
+            searchTerm: term,
+            searchResults: {total: visible.length + extraHits},
+          }}
+        />
+      ) : null}
     </div>
   );
 }
+
+/** Pages and articles for the search term. Products are matched against
+ *  the catalog cards client-side, so search() is only asked for the rest. */
+const SITE_SEARCH_QUERY = `#graphql
+  query CatalogSiteSearch(
+    $country: CountryCode
+    $language: LanguageCode
+    $term: String!
+    $first: Int
+  ) @inContext(country: $country, language: $language) {
+    articles: search(query: $term, types: [ARTICLE], first: $first) {
+      nodes {
+        ... on Article {
+          __typename
+          handle
+          id
+          title
+          trackingParameters
+          blog {
+            handle
+          }
+        }
+      }
+    }
+    pages: search(query: $term, types: [PAGE], first: $first) {
+      nodes {
+        ... on Page {
+          __typename
+          handle
+          id
+          title
+          trackingParameters
+        }
+      }
+    }
+  }
+` as const;
 
 const COLLECTION_ITEM_FRAGMENT = `#graphql
   fragment MoneyCollectionItem on MoneyV2 {

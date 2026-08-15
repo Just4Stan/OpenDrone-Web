@@ -20,12 +20,14 @@ import {
 } from '@shopify/hydrogen';
 import {useAside} from '~/components/Aside';
 import {Txt} from '~/components/Txt';
+import {ConceptPlate} from '~/components/ConceptPlate';
+import {isConceptStatus} from '~/lib/roadmap-data';
+import {WHAT_IS_THIS_ID} from '~/lib/product-content';
 import {ProductPrice} from '~/components/ProductPrice';
 import {ProductGallery} from '~/components/ProductGallery';
 import {ProductForm} from '~/components/ProductForm';
 import {RelatedProducts} from '~/components/RelatedProducts';
 import {FirmwareSupport} from '~/components/FirmwareSupport';
-import {CommitTimeline} from '~/components/CommitTimeline';
 import {VariantLadder} from '~/components/VariantLadder';
 import {BoardArt} from '~/components/BoardArt';
 import {SchematicViewer} from '~/components/SchematicViewer';
@@ -43,7 +45,7 @@ import {
   type ChapterType,
 } from '~/lib/chapters';
 import {buildSeoMeta, buildProductJsonLd, SITE_ORIGIN} from '~/lib/seo';
-import {fetchCommitActivity, fetchContributors} from '~/lib/github';
+import {fetchContributors} from '~/lib/github';
 import {orderByCredits, snapshotContributors} from '~/lib/contributors-snapshot';
 import {ContributorGrid, ContributorGridSkeleton} from '~/components/Contributors';
 import {
@@ -58,7 +60,6 @@ import {
 } from '~/components/ProductReviews';
 import {OshwaMark} from '~/components/OshwaMark';
 import {useNoHover, useIsMobile} from '~/lib/use-media-query';
-import {GpsrBlock} from '~/components/GpsrBlock';
 import {
   PRODUCT_CONTENT,
   PRODUCT_CONTENT_FALLBACK,
@@ -85,6 +86,9 @@ export const meta: Route.MetaFunction = ({data, location}) =>
     type: 'product',
     // Canonical without the ?Model= query so variant links don't splinter.
     url: `${SITE_ORIGIN}${location.pathname}`,
+    // Planned / in-progress products render the concept plate, which is a
+    // placeholder, not content worth indexing.
+    robots: isConceptStatus(data?.roadmapStatus) ? 'noindex, follow' : undefined,
   });
 
 /**
@@ -203,34 +207,15 @@ function loadDeferredData({context, params}: Route.LoaderArgs) {
   if (!handle) {
     return {
       recommendations: Promise.resolve(null),
-      commitActivity: Promise.resolve([]),
       contributors: Promise.resolve([]),
       reviews: Promise.resolve(null),
     };
   }
 
-  // Repo set for the contributors chapter's commit-activity strip. Only the
-  // primary repo per product: fetching every tier's repo too tripled the
-  // unauthenticated GitHub API calls per page and blew the 60/hr rate limit.
   const content = PRODUCT_CONTENT[handle];
-  const repoUrls: string[] = [];
-  if (content) {
-    if (content.bundle) {
-      for (const c of content.bundle.components) {
-        const sub = PRODUCT_CONTENT[c.handle];
-        if (sub?.repoUrl) repoUrls.push(sub.repoUrl);
-      }
-    } else if (content.repoUrl) {
-      repoUrls.push(content.repoUrl);
-    }
-  }
   // Optional GITHUB_TOKEN lifts the API ceiling from 60 to 5000 calls an
-  // hour; unset, both fetches degrade to their empty states.
+  // hour; unset, the contributor fetch degrades to its empty state.
   const ghToken = context.env.GITHUB_TOKEN;
-
-  // Commit-activity texture for the contributors chapter, best-effort: an
-  // empty array just means no strip.
-  const commitActivity = fetchCommitActivity(repoUrls, ghToken).catch(() => []);
 
   // Contributor grid: every repo in the line (tier repos included) so the
   // section credits people whichever mount they worked on. Same
@@ -290,7 +275,7 @@ function loadDeferredData({context, params}: Route.LoaderArgs) {
   // metafield aggregate (or, with no aggregate, renders nothing at all).
   const reviews = fetchProductReviews(context.env, handle);
 
-  return {recommendations, commitActivity, contributors, reviews};
+  return {recommendations, contributors, reviews};
 }
 
 const DOWNLOAD_ICONS: Record<DownloadKind, string> = {
@@ -596,12 +581,33 @@ function useChapterReveal(key: string) {
 }
 
 export default function Product() {
+  const {product, roadmapStatus} = useLoaderData<typeof loader>();
+  // Nothing about a planned or in-progress product is settled, so it gets
+  // the concept plate instead of a product page (docs/product-status.md).
+  if (isConceptStatus(roadmapStatus)) {
+    return <ConceptPlate title={product.title} status={roadmapStatus} />;
+  }
+  return <ProductPage />;
+}
+
+/** Document-space layout box via the offsetParent chain: unaffected by CSS
+ *  transforms, unlike getBoundingClientRect. */
+function layoutBox(el: HTMLElement) {
+  let top = 0;
+  let left = 0;
+  for (let n: HTMLElement | null = el; n; n = n.offsetParent as HTMLElement | null) {
+    top += n.offsetTop;
+    left += n.offsetLeft;
+  }
+  return {top, left, width: el.offsetWidth, height: el.offsetHeight};
+}
+
+function ProductPage() {
   const {
     product,
     bundleProducts,
     stackProducts,
     recommendations,
-    commitActivity,
     contributors,
     reviews,
     reviewsEnabled: reviewsOn,
@@ -621,12 +627,19 @@ export default function Product() {
       const scope = document.querySelector<HTMLElement>(
         '.chapter[data-repo-scope]',
       );
-      const card = document.querySelector('.open-source-card--github');
+      const card = document.querySelector<HTMLElement>(
+        '.open-source-card--github',
+      );
       if (!scope) return;
-      const s = scope.getBoundingClientRect();
-      const c = card?.getBoundingClientRect();
+      // Layout boxes, not getBoundingClientRect: the chapter reveal
+      // translates both the card's chapter and the scope, and a rect read
+      // mid-transition left the line short or long depending on when the
+      // measure ran. offsetTop/offsetLeft ignore transforms entirely, so
+      // the timing of the reveal no longer matters.
+      const s = layoutBox(scope);
+      const c = card ? layoutBox(card) : null;
       const x = c ? c.left + c.width / 2 - s.left : -1;
-      const h = c ? s.top - c.bottom : 0;
+      const h = c ? s.top - (c.top + c.height) : 0;
       if (c && h > 8 && h < 400 && x > 0 && x < s.width) {
         scope.style.setProperty('--repo-lead-x', `${Math.round(x)}px`);
         scope.style.setProperty('--repo-lead-h', `${Math.round(h)}px`);
@@ -1802,6 +1815,7 @@ export default function Product() {
       ];
       return (
         <Chapter
+          id={WHAT_IS_THIS_ID}
           number={n}
           label="What is this"
           title={title}
@@ -2462,14 +2476,6 @@ export default function Product() {
           titleId="product-chrome.ch_contributors_title"
           noMedia
         >
-          {/* Repo activity as engraving behind the text: one faint tick per
-              commit, streamed with the same best-effort GitHub budget as the
-              grid below. Null on failure, invisible on quiet repos. */}
-          <Suspense fallback={null}>
-            <Await resolve={commitActivity} errorElement={null}>
-              {(commits) => <CommitTimeline commits={commits} />}
-            </Await>
-          </Suspense>
           {/* No prose above the grid; the how-and-why lives once, on the
               contributing page. The button sits to the grid's right — the
               row of people ends in the door you walk through to join them. */}
@@ -2750,9 +2756,6 @@ export default function Product() {
 
       <RelatedProducts recommendations={recommendations} />
 
-      {/* GPSR Art. 19 listing information: kept out of the product story,
-          rendered as a quiet compliance strip at the very end of the page. */}
-      {rootData?.company ? <GpsrBlock company={rootData.company} /> : null}
       <Analytics.ProductView
         data={{
           products: [

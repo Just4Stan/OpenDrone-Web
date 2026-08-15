@@ -586,7 +586,7 @@ export function HeaderMenu({
       {isMobile && (
         <>
           <SearchForm
-            action="/search"
+            action="/collections/all"
             className="site-mobile-nav-search"
             onSubmit={() => close()}
           >

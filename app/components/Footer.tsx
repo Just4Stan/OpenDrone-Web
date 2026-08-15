@@ -26,7 +26,6 @@ interface FooterProps {
 const SHOP_LINKS: Array<{to: string; copy: string}> = [
   {to: '/collections/all', copy: 'nav_all_products'},
   {to: '/newsletter', copy: 'nav_newsletter'},
-  {to: '/search', copy: 'nav_search'},
 ];
 
 /**

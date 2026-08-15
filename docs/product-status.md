@@ -24,8 +24,8 @@ One `status-*` topic per repo, matched against `STATUS_ORDER` in
 | `status-launched` | Buyable, design settled | Price shown, orderable (Shopify stock decides in/out of stock) |
 | `status-beta` | Buyable, first production batch | Price shown, orderable, early-batch pricing possible |
 | `status-alpha` | Community testing, not buyable | Product page with waitlist signup; NO price anywhere |
-| `status-in-progress` | First design exists, nothing under test | Locked page ("coming soon" plate); no price |
-| `status-planned` | No design yet, spec open on Discord | Concept plate + "help design it" repo link; no price |
+| `status-in-progress` | First design exists, nothing under test | Concept plate only (name, status chip, Discord link); no product page, no price |
+| `status-planned` | No design yet, spec open on Discord | Concept plate only, same as in-progress |
 
 ## Resolution order (app/lib/product-content.ts, `resolveStatus`)
 

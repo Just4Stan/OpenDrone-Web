@@ -94,9 +94,10 @@ export const ROADMAP: RoadmapItem[] = [
   {
     id: 'openframe',
     added: '2026-08-11',
-    status: 'planned',
+    // Samples ordered, nothing under test yet (2026-08-15).
+    status: 'in-progress',
     productPath: '/products/openframe',
-    // OpenDrone-hw/OpenFrame carries status-planned but is still a private
+    // OpenDrone-hw/OpenFrame carries status-in-progress but is still a private
     // repo (purged supplier quotes remain reachable through refs/pull/8), so
     // it has no public link yet and its topic cannot be fetched. Add the link
     // the day the repo goes public; until then the static value IS the status.
@@ -309,4 +310,15 @@ export function voteCandidates(roadmap: RoadmapItem[] = ROADMAP): RoadmapItem[] 
  */
 export function votableIds(): string[] {
   return ROADMAP.map((r) => r.id);
+}
+
+/**
+ * Planned and in-progress products have no settled design, so the shop
+ * shows them a concept plate instead of a product page. Alpha and beyond
+ * get the full page (docs/product-status.md).
+ */
+export function isConceptStatus(
+  status: ProductStatus | null | undefined,
+): status is 'planned' | 'in-progress' {
+  return status === 'planned' || status === 'in-progress';
 }

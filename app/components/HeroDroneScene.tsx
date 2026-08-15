@@ -17,7 +17,7 @@ import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {MeshoptDecoder} from 'three/addons/libs/meshopt_decoder.module.js';
 import {RoomEnvironment} from 'three/addons/environments/RoomEnvironment.js';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
-import {heroCaption} from '~/lib/product-content';
+import {heroCaption, whatIsThisHref} from '~/lib/product-content';
 
 export type HeroBeat = {
   id: string;
@@ -843,7 +843,9 @@ export function HeroDroneScene({
           // their studio.json caption.
           caption: (b.handle && heroCaption(b.handle)) || b.caption,
           hint: b.hint,
-          href: b.href,
+          // Same rule for the pointer: a handle beat links to that chapter
+          // on the product page, so the caption and its source stay one.
+          href: (b.handle && whatIsThisHref(b.handle)) || b.href,
           fade: b.fade,
           partSize: b.partSize,
           stops: b.stops,

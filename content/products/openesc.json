@@ -5,7 +5,7 @@
     "line1": "An ESC (or 4)",
     "line2Italic": "",
     "line3": "",
-    "lead": "6 mosfets per motor, 2 for each phase. Driven by a gate driver, controlled by a microcontroller. Duplicate that 4 times et voila, 'An ESC'."
+    "lead": ""
   },
   "whatIsThis": {
     "intro": "An ESC turns battery power into AC signals needed for BLDC motors to spin. This one specifically is sensorless. Do that four times over: per motor a microcontroller running AM32, a gate driver, and six MOSFETs doing the power switching. It listens for throttle commands from the flight controller over DShot and reports motor RPM back on the same wire, which Betaflight uses to filter gyro noise at exactly the motors' frequencies. Current sensing is on board, exposed through the connector to the Flight Controller.",

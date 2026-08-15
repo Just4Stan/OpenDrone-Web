@@ -4137,7 +4137,8 @@ button.reset {
   grid-template-columns: auto 1fr auto;
   grid-template-areas:
     "eyebrow eyebrow eyebrow"
-    "title   .       sort";
+    "title   .       sort"
+    "search  search  search";
   column-gap: 2.5rem;
   row-gap: 0.25rem;
   align-items: end;
@@ -4168,7 +4169,8 @@ button.reset {
     grid-template-areas:
       "eyebrow"
       "title"
-      "sort";
+      "sort"
+      "search";
     column-gap: 0;
   }
   .collection-header .page-title {
@@ -4329,8 +4331,8 @@ button.reset {
 
 /* Roadmap status chip on a product card: same vocabulary and dot colors as
    the kanban and the PDP chip (the [data-status] rules), quiet pill on the
-   card corner. Not a link — the card is one; the listing header links the
-   legend once. */
+   card corner. Not a link — the card is one; the listing's filter rail
+   links the legend once. */
 .product-card-status {
   position: absolute;
   top: 0.6rem;
@@ -4351,17 +4353,61 @@ button.reset {
   background: var(--pod-bg-strong);
 }
 
-/* The one legend link per listing. */
-.collection-status-link {
-  display: inline-block;
-  margin-top: 0.6rem;
-  font-family: var(--font-mono);
-  font-size: 12px;
-  letter-spacing: 0.08em;
-  color: var(--color-gold);
+/* The one legend button per listing: sits under the category filters in
+   the rail, same pill treatment as the contributors CTA. */
+.catalog-legend {
+  margin-top: var(--sp-6);
 }
-.collection-status-link:hover {
+.catalog-legend-btn {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.6rem 1.1rem;
+  border: 1px solid color-mix(in srgb, var(--color-gold) 55%, transparent);
+  border-radius: 999px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--color-gold);
+  text-decoration: none;
+  transition: background 0.18s ease, color 0.18s ease, border-color 0.18s ease;
+}
+.catalog-legend-btn:hover {
+  background: var(--color-gold-fill);
+  border-color: var(--color-gold-fill);
+  color: var(--color-on-accent);
+}
+
+/* Search box in the catalog header: the catalog is the search page. Spans
+   the header's full width under the title row. */
+.collection-header .catalog-search {
+  grid-area: search;
+  margin-top: var(--sp-4);
+}
+.catalog-search .search-form-row {
+  margin-bottom: 0;
+  max-width: 40rem;
+}
+.catalog-term {
+  color: var(--color-text);
+}
+.catalog-term-clear {
+  appearance: none;
+  background: none;
+  border: none;
+  padding: 0 0.2rem;
+  font: inherit;
+  letter-spacing: inherit;
+  color: var(--color-gold);
+  cursor: pointer;
+}
+.catalog-term-clear:hover {
   color: var(--color-accent);
+}
+/* Pages + articles hits under the grid. */
+.catalog-site-results {
+  margin-top: var(--sp-8);
 }
 
 /* Corner badge on a product card (New / Sale). */
@@ -4964,6 +5010,37 @@ button.reset {
 }
 .product-buy-idea-repo:hover {
   border-bottom-color: var(--color-gold);
+}
+
+/* Concept plate: what /products/<handle> renders while the product is
+   planned or in-progress. Reuses the PDP eyebrow, headline, status chip and
+   idea-CTA idioms so it reads as the same family, minus everything that
+   would state a spec that can still change. */
+.concept-plate {
+  min-height: 60vh;
+  display: flex;
+  align-items: center;
+}
+.concept-plate-inner {
+  width: min(100% - 2 * var(--sp-6), 40rem);
+  margin: 0 auto;
+  padding: var(--sp-8) 0;
+}
+.concept-plate .product-hero-headline {
+  margin-top: var(--sp-3);
+}
+.concept-plate-body {
+  margin: var(--sp-5) 0 0;
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  line-height: 1.6;
+  color: var(--color-text-dim);
+}
+.concept-plate-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-4);
+  margin-top: var(--sp-6);
 }
 
 /* Morphing buy rail — wraps the ladder + buy module. At rest it's a
@@ -8255,12 +8332,12 @@ a.what-chain-chip:hover {
   border: 1px solid var(--color-border);
   border-radius: var(--r-md);
   padding: 1.25rem 1.4rem;
-  /* Hug the 52ch body text instead of spanning the full body column; the
-     card otherwise trails ~450px of empty gradient past the copy. The cap
-     keeps a long one-line links row (e.g. AM32's no-donate note) from
-     dragging the card wide; it wraps instead. */
+  /* Hug the content instead of spanning the full body column; the card
+     otherwise trails ~450px of empty gradient past the copy. The links row
+     below is one horizontal line by design and sets the width when it is
+     wider than the 52ch body. */
   width: fit-content;
-  max-width: 36rem;
+  max-width: 100%;
   background:
     linear-gradient(
       180deg,
@@ -8277,7 +8354,8 @@ a.what-chain-chip:hover {
 .firmware-support-links {
   margin: 0;
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
+  white-space: nowrap;
   gap: 0.5rem 1.4rem;
   font-family: var(--font-mono);
   font-size: 11px;
@@ -8302,53 +8380,6 @@ a.what-chain-chip:hover {
   color: color-mix(in srgb, var(--color-text-muted) 75%, transparent);
   text-transform: none;
   letter-spacing: 0.04em;
-}
-
-/* Commit timeline: repo activity as a discrete strip along the chapter's
-   bottom edge, clear of the text and the contributor tiles. The chapter's
-   content-visibility containment makes .chapter the containing block and a
-   stacking context, so z-index -1 keeps it tucked under any overlap. */
-.commit-timeline {
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 0.75rem;
-  height: 56px;
-  z-index: -1;
-  pointer-events: none;
-  overflow: hidden;
-}
-
-.commit-timeline-axis {
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 14px;
-  height: 1px;
-  background: color-mix(in srgb, var(--color-border) 70%, transparent);
-}
-
-.commit-timeline-tick {
-  position: absolute;
-  bottom: 14px;
-  width: 1px;
-  background: color-mix(in srgb, var(--color-gold) 30%, transparent);
-}
-
-.commit-timeline-date {
-  position: absolute;
-  bottom: 0;
-  font-family: var(--font-mono);
-  font-size: 9px;
-  letter-spacing: 0.14em;
-  color: color-mix(in srgb, var(--color-text-muted) 55%, transparent);
-}
-
-@media (max-width: 879px) {
-  /* On phones the text fills the section; texture under it is just noise. */
-  .commit-timeline {
-    display: none;
-  }
 }
 
 /* Category chips */
