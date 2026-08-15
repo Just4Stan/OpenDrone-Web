@@ -845,11 +845,13 @@ function writeFaceDerivatives() {
 // master with each copper <g> body replaced by one <image> covering the
 // viewBox. Faces (front/back) and the edge-cuts underlay stay as they are.
 // BoardArt fetches board-lite.svg (see app/components/BoardArt.tsx) and swaps
-// -w2048 for -w1024 on small screens. Lossless: lossy WebP/AVIF is bigger on
+// -w1280 for -w1024 on small screens. The stack is at most ~590 CSS px wide
+// (measured 1280-2560 px viewports), so 1280 px covers a 2x desktop with the
+// active sheet's 1.05 scale. Lossless: lossy WebP/AVIF is bigger on
 // this flat-colour, hard-edged content and would smear the traces.
 // Faces get a 1024 px lossy WebP too (photoreal render, q90) for the same
 // small-screen swap.
-const LAYER_RASTER_WIDTHS = [2048, 1024];
+const LAYER_RASTER_WIDTHS = [1280, 1024];
 const COPPER_SLUG_RE = /^(f|b|in\d+)$/;
 async function writeLayerRasters(onlyHandle) {
   const {chromium} = await import('playwright');
@@ -911,7 +913,7 @@ async function writeLayerRasters(onlyHandle) {
         const group = svg.slice(b.start, b.end);
         const open = group.match(/^ {2}<g id="layer-[a-z0-9-]+" class="[^"]*"/)[0];
         const img =
-          `    <image href="/boards/${handle}/layer-${b.slug}-w2048.webp" ` +
+          `    <image href="/boards/${handle}/layer-${b.slug}-w1280.webp" ` +
           `x="${r4(vb[0])}" y="${r4(vb[1])}" width="${r4(vb[2])}" height="${r4(vb[3])}" ` +
           `preserveAspectRatio="none"/>`;
         lite = lite.slice(0, b.start) + `${open}>\n${img}\n  </g>\n` + lite.slice(b.end);

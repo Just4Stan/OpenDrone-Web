@@ -57,7 +57,7 @@ async function fetchBoardText(src: string): Promise<string> {
     return fetchTextCached(versioned(src));
   }
 }
-// Rasters ship at 2048 px (desktop) and 1024 px (phones); the faces at 1568 px
+// Rasters ship at 1280 px (desktop) and 1024 px (phones); the faces at 1568 px
 // PNG (desktop) and 1024 px WebP (phones). A phone stack is under 400 CSS px,
 // so 1024 px is still 2.5x oversampled there while decoding a quarter of the
 // pixels. Decided once per parse (the parsed sheets are cached per src), so a
@@ -73,7 +73,7 @@ function smallStack(): boolean {
 function sizedHref(href: string, small: boolean): string {
   if (!small) return href;
   return href
-    .replace(/-w2048\.webp$/, '-w1024.webp')
+    .replace(/-w1280\.webp$/, '-w1024.webp')
     .replace(/\/(front|back)\.png$/, '/$1-w1024.webp');
 }
 

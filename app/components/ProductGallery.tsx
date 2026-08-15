@@ -1,6 +1,6 @@
 import {Image} from '@shopify/hydrogen';
 import {useSearchParams} from 'react-router';
-import {useEffect, useMemo, useRef} from 'react';
+import {useEffect, useMemo, useRef, useState} from 'react';
 import {SmoothImage} from './SmoothImage';
 import {Txt} from './Txt';
 import {copyText} from '~/lib/copy';
@@ -53,16 +53,39 @@ export function ProductGallery({
   // a swipe lands on a decoded image; anything further out waits until it is
   // visited, so a long deck does not download every photo up front.
   const visited = useRef<Set<string>>(new Set());
+  // Neighbours join only once the page has loaded and gone idle: at page load
+  // the active photo is the LCP element and two more full-size fetches next
+  // to it pushed it out (measured +350 KB before LCP on the PDP).
+  const [warmNeighbours, setWarmNeighbours] = useState(false);
+  useEffect(() => {
+    if (images.length < 2) return;
+    let id: number | undefined;
+    const arm = () => {
+      id =
+        typeof requestIdleCallback !== 'undefined'
+          ? requestIdleCallback(() => setWarmNeighbours(true), {timeout: 4000})
+          : window.setTimeout(() => setWarmNeighbours(true), 2500);
+    };
+    if (document.readyState === 'complete') arm();
+    else window.addEventListener('load', arm, {once: true});
+    return () => {
+      window.removeEventListener('load', arm);
+      if (id !== undefined) {
+        if (typeof cancelIdleCallback !== 'undefined') cancelIdleCallback(id);
+        clearTimeout(id);
+      }
+    };
+  }, [images.length]);
   const mounted = useMemo(() => {
     const keys = images.map((img) => img.id ?? img.url);
     visited.current.add(keys[index]);
     const set = new Set(visited.current);
-    if (images.length > 1) {
+    if (warmNeighbours && images.length > 1) {
       set.add(keys[(index + 1) % images.length]);
       set.add(keys[(index - 1 + images.length) % images.length]);
     }
     return set;
-  }, [images, index]);
+  }, [images, index, warmNeighbours]);
 
   if (images.length === 0) {
     return (
@@ -136,10 +159,10 @@ export function ProductGallery({
                 sizes="(min-width: 960px) 60vw, 100vw"
                 // The active slide is the PDP's LCP element: without an
                 // explicit priority it competes with the route chunk + fonts
-                // at default priority. Neighbours are pre-decoded at low
-                // priority; a hidden slide is never lazy (lazy + hidden would
-                // sit unloaded until the box intersects, which it always
-                // does, at the wrong moment).
+                // at default priority. Neighbours (mounted after idle) are
+                // pre-decoded at low priority; a hidden slide is never lazy
+                // (lazy + hidden would sit unloaded until the box intersects,
+                // which it always does, at the wrong moment).
                 loading="eager"
                 fetchPriority={active ? 'high' : 'low'}
               />

@@ -55,6 +55,31 @@
   src: url("../assets/fonts/tokyo-regular.woff2") format("woff2");
 }
 
+/* Metric-matched fallbacks. font-display: swap paints the system face first;
+   without these the swap to Inter / JetBrains Mono reflowed every line and
+   moved everything below (CLS 0.22 on the mobile home over slow 4G, all of it
+   the ledger sliding). size-adjust and the ascent/descent overrides make the
+   local face occupy the same advance width and line box as the web font, so
+   the swap changes glyph shapes only. Values computed from the real font
+   files with fontTools (average advance over site copy, hhea metrics); Roboto
+   (Android) is close enough to Arial to share its numbers. */
+@font-face {
+  font-family: "Inter Fallback";
+  src: local("Arial"), local("Roboto"), local("Helvetica");
+  size-adjust: 105.6%;
+  ascent-override: 91.75%;
+  descent-override: 22.84%;
+  line-gap-override: 0%;
+}
+@font-face {
+  font-family: "JetBrains Mono Fallback";
+  src: local("Menlo"), local("Consolas"), local("Courier New");
+  size-adjust: 99.7%;
+  ascent-override: 102.3%;
+  descent-override: 30%;
+  line-gap-override: 0%;
+}
+
 @theme {
   --color-bg: #0d0d10;
   --color-bg-card: #141417;
@@ -129,11 +154,11 @@
   /* Brand typography. Inter for display + body, JetBrains Mono for
      technical readouts (prices, specs, SKUs, version tags). System
      fallbacks paint immediately while the woff2 swap completes. */
-  --font-display: "Inter", -apple-system, BlinkMacSystemFont, ui-sans-serif,
+  --font-display: "Inter", "Inter Fallback", -apple-system, BlinkMacSystemFont, ui-sans-serif,
     system-ui, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-  --font-sans: "Inter", -apple-system, BlinkMacSystemFont, ui-sans-serif,
+  --font-sans: "Inter", "Inter Fallback", -apple-system, BlinkMacSystemFont, ui-sans-serif,
     system-ui, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-  --font-mono: "JetBrains Mono", ui-monospace, Menlo, Monaco, "SF Mono",
+  --font-mono: "JetBrains Mono", "JetBrains Mono Fallback", ui-monospace, Menlo, Monaco, "SF Mono",
     "Cascadia Mono", "Segoe UI Mono", Consolas, monospace;
 
   /* Brand face for product/brand name tokens. Falls back to the display
@@ -349,7 +374,7 @@ html.light .schematic-sheet {
 html {
   background-color: var(--color-bg);
   color: var(--color-text);
-  font-family: "Inter", -apple-system, BlinkMacSystemFont, ui-sans-serif,
+  font-family: "Inter", "Inter Fallback", -apple-system, BlinkMacSystemFont, ui-sans-serif,
     system-ui, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   font-size: var(--fs-base);
   line-height: 1.5;

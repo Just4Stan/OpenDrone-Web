@@ -96,22 +96,22 @@ Z" />
 </g>
   </g>
   <g id="layer-f" class="board-layer board-layer-f">
-    <image href="/boards/openrx-lite-ufl/layer-f-w2048.webp" x="0.6512" y="0.075" width="10" height="11.5" preserveAspectRatio="none"/>
+    <image href="/boards/openrx-lite-ufl/layer-f-w1280.webp" x="0.6512" y="0.075" width="10" height="11.5" preserveAspectRatio="none"/>
   </g>
   <g id="layer-in1" class="board-layer board-layer-in1">
-    <image href="/boards/openrx-lite-ufl/layer-in1-w2048.webp" x="0.6512" y="0.075" width="10" height="11.5" preserveAspectRatio="none"/>
+    <image href="/boards/openrx-lite-ufl/layer-in1-w1280.webp" x="0.6512" y="0.075" width="10" height="11.5" preserveAspectRatio="none"/>
   </g>
   <g id="layer-in2" class="board-layer board-layer-in2">
-    <image href="/boards/openrx-lite-ufl/layer-in2-w2048.webp" x="0.6512" y="0.075" width="10" height="11.5" preserveAspectRatio="none"/>
+    <image href="/boards/openrx-lite-ufl/layer-in2-w1280.webp" x="0.6512" y="0.075" width="10" height="11.5" preserveAspectRatio="none"/>
   </g>
   <g id="layer-in3" class="board-layer board-layer-in3">
-    <image href="/boards/openrx-lite-ufl/layer-in3-w2048.webp" x="0.6512" y="0.075" width="10" height="11.5" preserveAspectRatio="none"/>
+    <image href="/boards/openrx-lite-ufl/layer-in3-w1280.webp" x="0.6512" y="0.075" width="10" height="11.5" preserveAspectRatio="none"/>
   </g>
   <g id="layer-in4" class="board-layer board-layer-in4">
-    <image href="/boards/openrx-lite-ufl/layer-in4-w2048.webp" x="0.6512" y="0.075" width="10" height="11.5" preserveAspectRatio="none"/>
+    <image href="/boards/openrx-lite-ufl/layer-in4-w1280.webp" x="0.6512" y="0.075" width="10" height="11.5" preserveAspectRatio="none"/>
   </g>
   <g id="layer-b" class="board-layer board-layer-b">
-    <image href="/boards/openrx-lite-ufl/layer-b-w2048.webp" x="0.6512" y="0.075" width="10" height="11.5" preserveAspectRatio="none"/>
+    <image href="/boards/openrx-lite-ufl/layer-b-w1280.webp" x="0.6512" y="0.075" width="10" height="11.5" preserveAspectRatio="none"/>
   </g>
   <g id="layer-front" class="board-layer board-layer-front">
     <image href="/boards/openrx-lite-ufl/front.png" x="-0.0971" y="0.075" width="11.504" height="11.5" preserveAspectRatio="none" image-rendering="optimizeQuality"/>
