@@ -492,6 +492,16 @@ export default function Collection() {
                 className="search-submit"
                 type="submit"
               />
+              {/* Every card carries its roadmap status chip; the roadmap is
+                  where the vocabulary is explained, one button, beside the
+                  search box. */}
+              <Link
+                prefetch="viewport"
+                to="/roadmap"
+                className="catalog-roadmap-btn"
+              >
+                <Txt id="collections-all.roadmap_link" fallback="Roadmap →" />
+              </Link>
             </div>
           )}
         </SearchForm>
@@ -535,26 +545,6 @@ export default function Collection() {
                   ),
                 )}
               </ul>
-            </div>
-            {/* Every card carries its roadmap status chip; this is the one
-                place the listing explains the vocabulary, as a real button
-                under the filters rather than a footnote in the header. */}
-            <div className="catalog-filter-group catalog-legend">
-              <Txt
-                id="collections-all.status_heading"
-                as="h2"
-                className="catalog-filter-head"
-              />
-              <Link
-                prefetch="viewport"
-                to="/roadmap"
-                className="catalog-legend-btn"
-              >
-                <Txt
-                  id="collections-all.status_legend_link"
-                  fallback="What they mean →"
-                />
-              </Link>
             </div>
           </aside>
 
