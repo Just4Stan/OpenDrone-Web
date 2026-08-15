@@ -307,11 +307,20 @@ const DOWNLOAD_ICONS: Record<DownloadKind, string> = {
   other: '↓',
 };
 
-function DownloadsGrid({downloads}: {downloads: DownloadAsset[]}) {
+function DownloadsGrid({
+  downloads,
+  editBase,
+}: {
+  downloads: DownloadAsset[];
+  /** Studio tag prefix, `<handle>.downloads`; the grid is per-product. */
+  editBase?: string;
+}) {
   if (downloads.length === 0) return null;
+  const edit = (i: number, field: string) =>
+    editBase ? editAttrs(`${editBase}.${i}.${field}`) : {};
   return (
     <div className="downloads-grid">
-      {downloads.map((d) => (
+      {downloads.map((d, i) => (
         <a
           key={d.href}
           href={d.href}
@@ -322,9 +331,19 @@ function DownloadsGrid({downloads}: {downloads: DownloadAsset[]}) {
           <span className="download-icon" aria-hidden="true">
             {DOWNLOAD_ICONS[d.kind] ?? DOWNLOAD_ICONS.other}
           </span>
-          <span className="download-label">{d.label}</span>
-          {d.note ? <span className="download-note">{d.note}</span> : null}
-          {d.size ? <span className="download-size">{d.size}</span> : null}
+          <span className="download-label" {...edit(i, 'label')}>
+            {d.label}
+          </span>
+          {d.note ? (
+            <span className="download-note" {...edit(i, 'note')}>
+              {d.note}
+            </span>
+          ) : null}
+          {d.size ? (
+            <span className="download-size" {...edit(i, 'size')}>
+              {d.size}
+            </span>
+          ) : null}
           <Txt
             id="product-chrome.download_cta"
             as="span"
@@ -793,6 +812,24 @@ export default function Product() {
   const mergedSpecs = mergeSpecs(content.specs, activeVariant?.specs);
   const mergedBox = [...content.inTheBox, ...(activeVariant?.inTheBox ?? [])];
 
+  // Studio click-to-edit for per-product strings. Copy files get their
+  // `data-edit` tag from `<Txt>`/`editAttrs`, but everything rendered out of
+  // `content/products/<handle>.json` was untagged, so clicking it in the
+  // studio preview did nothing. The id's page segment is the handle; the
+  // studio matches it to `products/<handle>` by suffix, and the rest is the
+  // leaf path inside that file.
+  const prodEdit = (path: string) => editAttrs(`${product.handle}.${path}`);
+  // A merged spec row renders from the variant override when one replaced or
+  // appended it, from the shared table otherwise: point the tag at the leaf
+  // the words actually live in, or a studio edit lands on the wrong row.
+  const specEditBase = (key: string): string => {
+    const o =
+      activeVariant?.specs?.findIndex(([k, v]) => k === key && v !== null) ??
+      -1;
+    if (o >= 0) return `variants.${activeTier}.specs.${o}`;
+    return `specs.${content.specs.findIndex(([k]) => k === key)}`;
+  };
+
   // Bundle (OpenStack): resolve each component's variant for the active size,
   // so add-to-cart drops the real FC + ESC lines and the buy module shows the
   // combined price. The size axis is matched by name ("Model") + the active
@@ -993,6 +1030,17 @@ export default function Product() {
       clearTimeout(tDone);
     };
   }, [activePins]);
+  // Studio tag base for the pin list on screen. The displayed list is, by
+  // reference, either the shared `teardown.pins` or one tier's own list, so
+  // the file path is recovered by identity rather than guessed from the
+  // active tier (the list deliberately lags a tier swap).
+  const pinEditBase = useMemo(() => {
+    if (content.teardown?.pins === displayedPins) return 'teardown.pins';
+    for (const [tier, v] of Object.entries(content.variants ?? {})) {
+      if (v.pins === displayedPins) return `variants.${tier}.pins`;
+    }
+    return null;
+  }, [displayedPins, content.teardown, content.variants]);
   // Partition pins by the dominant side of their refs. Until the map loads (or
   // for pins with no resolvable side) pins fall into `other`, rendered flat.
   const groupedPins = useMemo(() => {
@@ -1206,6 +1254,11 @@ export default function Product() {
   // highlights its footprint(s) on the board (keyboard mirrors mouse for a11y).
   const renderPin = (pin: ChapterPin) => {
     const refs = pin.refs;
+    const pinIdx = displayedPins.indexOf(pin);
+    const pinEdit = (field: string) =>
+      pinEditBase && pinIdx >= 0
+        ? prodEdit(`${pinEditBase}.${pinIdx}.${field}`)
+        : {};
     // Chip-row pin (e.g. FC I/O pads): one row, a horizontal set of chips, each
     // highlighting its own pad group on hover/focus.
     if (pin.chips?.length) {
@@ -1217,7 +1270,7 @@ export default function Product() {
             className="teardown-io-tag"
           />
           <div className="teardown-io-chips">
-            {pin.chips.map((chip) => {
+            {pin.chips.map((chip, chipIdx) => {
               const chipActive =
                 hoveredRefs.length === chip.refs.length &&
                 chip.refs.every((r) => hoveredRefs.includes(r));
@@ -1243,6 +1296,7 @@ export default function Product() {
                   key={chip.label}
                   className={`teardown-io-chip${chipActive ? ' is-active' : ''}`}
                   {...chipHandlers}
+                  {...pinEdit(`chips.${chipIdx}.label`)}
                 >
                   {chip.label}
                 </button>
@@ -1296,8 +1350,15 @@ export default function Product() {
         }
         {...handlers}
       >
-        <span className="teardown-pin-part">{pin.part}</span>
-        <span className="teardown-pin-cost">{pin.cost ?? '×1'}</span>
+        <span className="teardown-pin-part" {...pinEdit('part')}>
+          {pin.part}
+        </span>
+        <span
+          className="teardown-pin-cost"
+          {...(pin.cost ? pinEdit('cost') : {})}
+        >
+          {pin.cost ?? '×1'}
+        </span>
       </li>
     );
   };
@@ -1476,7 +1537,9 @@ export default function Product() {
           )}
         />
         {content.statusNote ? (
-          <span className="product-buy-sku">{content.statusNote}</span>
+          <span className="product-buy-sku" {...prodEdit('statusNote')}>
+            {content.statusNote}
+          </span>
         ) : selectedVariant?.sku ? (
           <span className="product-buy-sku">
             {copyText('product-chrome.buy_sku_prefix')}{' '}
@@ -1709,7 +1772,9 @@ export default function Product() {
             ) : undefined
           }
         >
-          <p className="chapter-body">{wit.intro}</p>
+          <p className="chapter-body" {...prodEdit('whatIsThis.intro')}>
+            {wit.intro}
+          </p>
           <div className="what-chain" aria-label={copyText('product-chrome.what_chain_aria')}>
             {chain.map((c, i) => {
               const active = wit.chain === c.id;
@@ -2154,19 +2219,21 @@ export default function Product() {
           <dl className="spec-table">
             {mergedSpecs.map(([k, v]) => (
               <div key={k}>
-                <dt>{k}</dt>
+                <dt {...prodEdit(`${specEditBase(k)}.0`)}>{k}</dt>
                 {/* Count-up on the numeric runs the first time the table
                     scrolls into view. spec-table already sets tabular-nums,
                     so digits don't jitter mid-count; reduced-motion and
                     variant-switch re-renders are handled inside. */}
-                <dd>
+                <dd {...prodEdit(`${specEditBase(k)}.1`)}>
                   <AnimatedNumber value={v} />
                 </dd>
               </div>
             ))}
           </dl>
           {content.footnote ? (
-            <p className="chapter-footnote">{content.footnote}</p>
+            <p className="chapter-footnote" {...prodEdit('footnote')}>
+              {content.footnote}
+            </p>
           ) : null}
         </Chapter>
     ),
@@ -2191,33 +2258,68 @@ export default function Product() {
           ) : null}
           {mergedBox.length > 0 ? (
             <ul className="in-the-box">
-              {mergedBox.map((it) => (
-                <li key={`${it.qty ?? ''}${it.item}`}>
-                  {it.qty ? (
-                    <span className="in-the-box-qty">{it.qty}</span>
-                  ) : null}
-                  <span className="in-the-box-item">{it.item}</span>
-                  {it.note ? (
-                    <span className="in-the-box-note">{it.note}</span>
-                  ) : null}
-                </li>
-              ))}
+              {mergedBox.map((it, i) => {
+                // Rows past the shared list came from the active variant's
+                // own additions; tag each field with the leaf it renders.
+                const boxBase =
+                  i < content.inTheBox.length
+                    ? `inTheBox.${i}`
+                    : `variants.${activeTier}.inTheBox.${i - content.inTheBox.length}`;
+                return (
+                  <li key={`${it.qty ?? ''}${it.item}`}>
+                    {it.qty ? (
+                      <span
+                        className="in-the-box-qty"
+                        {...prodEdit(`${boxBase}.qty`)}
+                      >
+                        {it.qty}
+                      </span>
+                    ) : null}
+                    <span
+                      className="in-the-box-item"
+                      {...prodEdit(`${boxBase}.item`)}
+                    >
+                      {it.item}
+                    </span>
+                    {it.note ? (
+                      <span
+                        className="in-the-box-note"
+                        {...prodEdit(`${boxBase}.note`)}
+                      >
+                        {it.note}
+                      </span>
+                    ) : null}
+                  </li>
+                );
+              })}
             </ul>
           ) : null}
           {content.bundle ? (
             <div className="bundle-components">
-              {content.bundle.components.map((c) => (
+              {content.bundle.components.map((c, ci) => (
                 <Link
                   key={c.handle}
                   to={`/products/${c.handle}`}
                   prefetch="viewport"
                   className="bundle-component-card"
                 >
-                  <p className="bundle-component-title">{c.title}</p>
-                  <p className="bundle-component-blurb">{c.blurb}</p>
+                  <p
+                    className="bundle-component-title"
+                    {...prodEdit(`bundle.components.${ci}.title`)}
+                  >
+                    {c.title}
+                  </p>
+                  <p
+                    className="bundle-component-blurb"
+                    {...prodEdit(`bundle.components.${ci}.blurb`)}
+                  >
+                    {c.blurb}
+                  </p>
                   <p className="bundle-component-firmware">
                     {copyText('product-chrome.bundle_component_firmware_label')}{' '}
-                    <span>{c.firmware}</span>
+                    <span {...prodEdit(`bundle.components.${ci}.firmware`)}>
+                      {c.firmware}
+                    </span>
                   </p>
                   <Txt
                     id="product-chrome.bundle_component_more"
@@ -2245,7 +2347,10 @@ export default function Product() {
             as="p"
             className="chapter-body"
           />
-          <DownloadsGrid downloads={content.downloads} />
+          <DownloadsGrid
+            downloads={content.downloads}
+            editBase={`${product.handle}.downloads`}
+          />
         </Chapter>
     ),
     /** The open firmware the board runs, and how to support its devs. */
@@ -2426,7 +2531,7 @@ export default function Product() {
         <div className="product-hero-copy">
           <p className="product-hero-eyebrow">
             {copyText('product-chrome.hero_eyebrow_file')} {content.fileNumber} ·{' '}
-            {content.family}
+            <span {...prodEdit('family')}>{content.family}</span>
             {roadmapStatus ? (
               <Link
                 prefetch="viewport"
@@ -2444,11 +2549,11 @@ export default function Product() {
             <h1 className="product-hero-headline">
               {/* Skip empty lines — single-line heroes (OpenESC) otherwise
                   render stray empty <em>/<span> nodes and join spaces. */}
-              <span>{content.hero.line1}</span>
+              <span {...prodEdit('hero.line1')}>{content.hero.line1}</span>
               {content.hero.line2Italic ? (
                 <>
                   {' '}
-                  <span>
+                  <span {...prodEdit('hero.line2Italic')}>
                     <em>{content.hero.line2Italic}</em>
                   </span>
                 </>
@@ -2456,7 +2561,7 @@ export default function Product() {
               {content.hero.line3 ? (
                 <>
                   {' '}
-                  <span>{content.hero.line3}</span>
+                  <span {...prodEdit('hero.line3')}>{content.hero.line3}</span>
                 </>
               ) : null}
             </h1>
@@ -2468,7 +2573,9 @@ export default function Product() {
             </h1>
           )}
           {content.hero.lead ? (
-            <p className="product-hero-lead">{content.hero.lead}</p>
+            <p className="product-hero-lead" {...prodEdit('hero.lead')}>
+              {content.hero.lead}
+            </p>
           ) : null}
 
           <ul
@@ -2555,8 +2662,15 @@ export default function Product() {
 
           {content.pairCta ? (
             <Link className="pair-cta" to={content.pairCta.to} prefetch="viewport">
-              <span className="pair-cta-eyebrow">{content.pairCta.eyebrow}</span>
-              <span className="pair-cta-title">{content.pairCta.title}</span>
+              <span
+                className="pair-cta-eyebrow"
+                {...prodEdit('pairCta.eyebrow')}
+              >
+                {content.pairCta.eyebrow}
+              </span>
+              <span className="pair-cta-title" {...prodEdit('pairCta.title')}>
+                {content.pairCta.title}
+              </span>
               <span className="pair-cta-arrow" aria-hidden="true">→</span>
             </Link>
           ) : null}
