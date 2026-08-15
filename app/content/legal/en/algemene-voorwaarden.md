@@ -118,7 +118,7 @@
 
 ### Article 12: Personal data
 
-12.1. Incutec BV processes personal data in accordance with the General Data Protection Regulation (GDPR). See the Privacy Policy at opendrone.store/privacy.
+12.1. Incutec BV processes personal data in accordance with the General Data Protection Regulation (GDPR). See the Privacy Policy at opendrone.be/privacy.
 
 ### Article 13: Complaints
 

@@ -25,7 +25,7 @@ Cookies zijn kleine tekstbestanden die door een website op uw apparaat worden ge
 
 Wij gebruiken **Plausible Analytics** (EU-gehost, cookieloos). Plausible plaatst geen cookies en verwerkt geen persoonsgegevens waarvoor toestemming nodig is. Daarom tonen wij geen toestemmingsbanner voor analyse.
 
-Shopify's ingebouwde analytische cookies (`_shopify_s`, `_shopify_y`) staan uit tenzij u deze expliciet aanvaardt.
+Shopify's ingebouwde analytische cookies (`_shopify_s`, `_shopify_y`) zijn niet geactiveerd en worden op deze storefront niet geplaatst.
 
 #### Marketing cookies
 

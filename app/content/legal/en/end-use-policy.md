@@ -1,6 +1,6 @@
 ---
 type: compliance
-status: draft
+status: final
 owner: incutec
 last_updated: 2026-04-28
 tags: [policy, end-use, export-control]
@@ -9,7 +9,7 @@ tags: [policy, end-use, export-control]
 # End-Use Policy
 
 **Issuer:** Incutec BV
-**Effective:** Date of incorporation, mid-May 2026
+**Effective:** 8 June 2026 (date of incorporation of Incutec BV)
 **Review:** Annual; or upon material change to product scope, regulatory environment, or distribution channels.
 
 ## 1. Scope
@@ -69,4 +69,4 @@ This policy:
 ---
 
 **Signed for Incutec BV:**
-De bestuurder
+Stan Coene, Bestuurder

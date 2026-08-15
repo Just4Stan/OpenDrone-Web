@@ -122,4 +122,4 @@ En cas de violation de données présentant un risque pour vos droits et libert�
 
 ### 11. Modifications
 
-Incutec BV peut modifier cette politique de confidentialité. La version la plus récente est toujours disponible sur opendrone.store/privacy. En cas de modifications substantielles, vous serez informé par courriel.
+Incutec BV peut modifier cette politique de confidentialité. La version la plus récente est toujours disponible sur opendrone.be/privacy. En cas de modifications substantielles, vous serez informé par courriel.
