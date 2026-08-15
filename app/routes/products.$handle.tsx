@@ -617,17 +617,38 @@ export default function Product() {
     };
     const t = setTimeout(measure, 900);
     const scope = document.querySelector('.chapter[data-repo-scope]');
+    const timers: ReturnType<typeof setTimeout>[] = [];
     let io: IntersectionObserver | undefined;
     if (scope && typeof IntersectionObserver !== 'undefined') {
       io = new IntersectionObserver(([e]) => {
-        if (e.isIntersecting) setTimeout(measure, 700);
+        // Twice: once as the reveal transform is ending and once well after,
+        // because a rect measured mid-translate leaves the line short or
+        // long (transforms move rects without resizing anything, so the
+        // ResizeObserver below cannot see them).
+        if (e.isIntersecting) {
+          timers.push(setTimeout(measure, 700), setTimeout(measure, 1500));
+        }
       });
       io.observe(scope);
+    }
+    // One-shot timers miss late layout: images decoding, fonts swapping,
+    // fetched sections filling in. All of those change an element's height
+    // somewhere above the scope, which shifts the card/scope distance, so a
+    // body-size observer catches them; the card observer catches the card
+    // itself rewrapping.
+    let ro: ResizeObserver | undefined;
+    if (typeof ResizeObserver !== 'undefined') {
+      ro = new ResizeObserver(() => measure());
+      ro.observe(document.body);
+      const card = document.querySelector('.open-source-card--github');
+      if (card) ro.observe(card);
     }
     window.addEventListener('resize', measure);
     return () => {
       clearTimeout(t);
+      timers.forEach(clearTimeout);
       io?.disconnect();
+      ro?.disconnect();
       window.removeEventListener('resize', measure);
     };
   }, [product.handle]);
