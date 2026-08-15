@@ -58,6 +58,8 @@ All of these read the same resolution (do not add a surface that doesn't):
   cart permalinks drop locked lines — the client hiding a button is never
   the only defence
 - Back-in-stock growth flow
+- The README status badge: `/api/status/<Repo>.json` (shields endpoint
+  schema), same fetch, same fallback
 
 The root loader resolves every handle once per request with the live topics
 and ships the map to the client (`productStatuses`), so all surfaces agree
