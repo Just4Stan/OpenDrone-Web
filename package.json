@@ -36,7 +36,9 @@
     "studio:coverage": "node scripts/studio-coverage.mjs",
     "sync:contributors": "node scripts/sync-contributors.mjs",
     "votes:tally": "node scripts/tally-votes.mjs",
-    "goals:update": "node scripts/update-goals.mjs"
+    "goals:update": "node scripts/update-goals.mjs",
+    "sync:specs": "node scripts/import-specs.mjs --write",
+    "sync:specs:check": "node scripts/import-specs.mjs --check"
   },
   "prettier": "@shopify/prettier-config",
   "dependencies": {

@@ -293,7 +293,7 @@
     ],
     [
       "Input",
-      "2–6S LiPo"
+      "2–6S LiPo (6.0–25.2 V)"
     ],
     [
       "BEC",
@@ -309,11 +309,7 @@
     ],
     [
       "Current sense",
-      "On-board"
-    ],
-    [
-      "TVS protection",
-      "None"
+      "On-board, 165 A"
     ],
     [
       "FC connector",
@@ -321,7 +317,7 @@
     ],
     [
       "Mounting",
-      "20 × 20 mm, Ø3.0 mm holes"
+      "20 × 20 mm, 3.0 mm holes"
     ],
     [
       "Dimensions",
@@ -349,20 +345,6 @@
           "Input",
           "2–6S"
         ]
-      ],
-      "specs": [
-        [
-          "Continuous",
-          "40 A / channel"
-        ],
-        [
-          "Input",
-          "2–6S LiPo"
-        ],
-        [
-          "Current sense",
-          "On-board, 165 A"
-        ]
       ]
     },
     "30×30": {
@@ -389,19 +371,15 @@
         ],
         [
           "Input",
-          "2–8S LiPo"
+          "2–8S LiPo (6.0–33.6 V)"
         ],
         [
           "Current sense",
           "On-board, 330 A"
         ],
         [
-          "TVS protection",
-          "On the battery rail"
-        ],
-        [
           "Mounting",
-          "30.5 × 30.5 mm, Ø4.0 mm holes (M3)"
+          "30.5 × 30.5 mm, 4.0 mm holes"
         ],
         [
           "Dimensions",
