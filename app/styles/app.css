@@ -5846,7 +5846,7 @@ button.reset {
      logo grows into the freed width. The wide slot drops the logo's leftward
      gutter bleed so it can't reach the card. */
   .chapter:has(.firmware-support) {
-    grid-template-columns: fit-content(38rem) minmax(0, 1fr);
+    grid-template-columns: fit-content(40rem) minmax(0, 1fr);
   }
   .chapter:has(.firmware-support) .firmware-logo {
     margin-left: 0;
@@ -8356,11 +8356,16 @@ a.what-chain-chip:hover {
   display: flex;
   flex-wrap: nowrap;
   white-space: nowrap;
-  gap: 0.5rem 1.4rem;
+  gap: 0.5rem 1.1rem;
   font-family: var(--font-mono);
   font-size: 11px;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
+}
+/* Three links on one line need a little more room than the 52ch body: let
+   the card take the whole body column and keep the row inside it. */
+.firmware-support {
+  min-width: min(100%, 36rem);
 }
 
 .firmware-support-links a {
