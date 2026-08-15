@@ -13,7 +13,18 @@
  *
  * Usage:
  *   node scripts/perf-audit.mjs [--url http://localhost:3001] [--throttle 4]
+ *     [--device "Pixel 7"|"iPhone SE"|"Moto G4"] [--network slow4g|fast3g]
  *     [--out perf-report.json] [--headed] [--scenario home,pdp,...]
+ *
+ * Two harnesses, one script:
+ *   desktop  node scripts/perf-audit.mjs --throttle 4
+ *            (1440x900 @2x, CPU 4x = a slow laptop; WebGL scenarios need --headed)
+ *   mobile   node scripts/perf-audit.mjs --device "Pixel 7" --throttle 6 --network slow4g
+ *            (real device descriptor: viewport, DPR, UA, touch; CPU 6x + slow 4G
+ *            is a 2019-class Android on a weak connection)
+ * --device switches the mobile-relevant scenarios (mobile, teardown, gallery)
+ * to touch input and the desktop-only ones (home, drawer) skip themselves.
+ * Every scenario also records transferred bytes by resource type.
  *
  * Baseline vs fix runs: keep the JSON reports and diff the numbers.
  *
@@ -23,7 +34,7 @@
  * a WebGL canvas mid-scroll, confirm suspicious stalls with --headed before
  * chasing them.
  */
-import {chromium} from 'playwright';
+import {chromium, devices} from 'playwright';
 import fs from 'node:fs';
 
 const args = process.argv.slice(2);
@@ -37,6 +48,21 @@ const BASE = argVal('url', 'http://localhost:3001').replace(/\/$/, '');
 const THROTTLE = Number(argVal('throttle', '1'));
 const OUT = argVal('out', '');
 const HEADED = args.includes('--headed');
+const DEVICE = argVal('device', '');
+const NETWORK = argVal('network', '');
+// Chrome DevTools presets (down/up bytes per second, RTT ms).
+const NETWORKS = {
+  slow4g: {downloadThroughput: (400 * 1024) / 8, uploadThroughput: (400 * 1024) / 8, latency: 400},
+  fast3g: {downloadThroughput: (1.6 * 1024 * 1024) / 8, uploadThroughput: (750 * 1024) / 8, latency: 150},
+};
+if (NETWORK && !NETWORKS[NETWORK]) {
+  console.error(`unknown --network ${NETWORK}; use ${Object.keys(NETWORKS).join('|')}`);
+  process.exit(2);
+}
+if (DEVICE && !devices[DEVICE]) {
+  console.error(`unknown --device "${DEVICE}"; Playwright knows e.g. "Pixel 7", "iPhone SE", "Moto G4", "Galaxy S9+"`);
+  process.exit(2);
+}
 const ONLY = argVal('scenario', '')
   .split(',')
   .map((s) => s.trim())
@@ -299,9 +325,12 @@ const scenarios = {
     }
   },
 
-  /** Mobile viewport: MobileHome + touch-first surfaces. */
+  /** Mobile viewport: MobileHome + touch-first surfaces. Under --device the
+   *  context already IS the phone (UA, DPR, touch), which is the real path:
+   *  the SSR picks MobileHome from the UA. Without --device this only
+   *  narrows the desktop viewport, i.e. the resize path. */
   async mobile(page, report) {
-    await page.setViewportSize({width: 390, height: 844});
+    if (!DEVICE) await page.setViewportSize({width: 390, height: 844});
     try {
       await page.goto(BASE + '/', {waitUntil: 'domcontentloaded'});
       await page.evaluate(HARNESS);
@@ -318,8 +347,80 @@ const scenarios = {
         await measure(page, 'pdp-scroll', () => page.evaluate(() => window.__pa.sweep(document.documentElement.scrollHeight - innerHeight, 5000)), 5200),
       );
     } finally {
-      await page.setViewportSize({width: 1440, height: 900});
+      if (!DEVICE) await page.setViewportSize({width: 1440, height: 900});
     }
+  },
+
+  /** PDP teardown: fetch/parse of the board asset, the reveal, then a full
+   *  layer sweep front -> back -> front, stepping via the deck dots (touch) or
+   *  the rail (mouse). The sweep is where the phone stutter lived. */
+  async teardown(page, report) {
+    await page.goto(BASE + '/products/openesc', {waitUntil: 'domcontentloaded'});
+    await page.evaluate(HARNESS);
+    await idle(page, 1200);
+    report.nav = await page.evaluate(() => window.__pa.nav());
+    report.steps = [];
+    const board = page.locator('.board-art').first();
+    await board.waitFor({state: 'attached', timeout: 15000});
+    report.steps.push(
+      await measure(page, 'reveal', async () => {
+        await board.evaluate((el) => el.scrollIntoView({block: 'center'}));
+        await idle(page, 4500);
+      }, 4700),
+    );
+    const sheets = await page.locator('.board-sheet').count();
+    report.sheets = sheets;
+    const step = async (i) => {
+      const dot = page.locator('.board-art .board-deck-dot').nth(i);
+      const rail = page.locator('.board-art .board-folder-rail button').nth(i);
+      if (await dot.count() && (await dot.isVisible())) await dot.tap().catch(() => dot.click({force: true}));
+      else if (await rail.count()) await rail.click({force: true}).catch(() => {});
+      else await page.locator('.board-sheet').nth(i).click({force: true}).catch(() => {});
+      await idle(page, 700);
+    };
+    report.steps.push(
+      await measure(page, 'sweep-down', async () => {
+        for (let i = 1; i < sheets; i++) await step(i);
+      }, Math.max(2500, sheets * 750)),
+    );
+    report.steps.push(
+      await measure(page, 'sweep-up', async () => {
+        for (let i = sheets - 2; i >= 0; i--) await step(i);
+      }, Math.max(2500, sheets * 750)),
+    );
+    // Part spotlight: first chip/pin lights a footprint (flip + highlight)
+    const chip = page.locator('.board-part-chip:visible, .teardown-pin-hoverable:visible').first();
+    if (await chip.count()) {
+      report.steps.push(await measure(page, 'part-spotlight', () => chip.click({force: true}), 3000));
+      report.steps.push(await measure(page, 'part-clear', () => chip.click({force: true}), 2500));
+    }
+  },
+
+  /** PDP gallery: step through every photo and back to the first; a visited
+   *  photo must come back without a refetch or a blur-up. */
+  async gallery(page, report) {
+    await page.goto(BASE + '/products/openrx', {waitUntil: 'domcontentloaded'});
+    await page.evaluate(HARNESS);
+    await idle(page, 1500);
+    report.nav = await page.evaluate(() => window.__pa.nav());
+    report.steps = [];
+    const dots = page.locator('.product-gallery-deck .board-deck-dot');
+    const n = await dots.count();
+    report.images = n;
+    let imgFetches = 0;
+    const onReq = (req) => { if (req.resourceType() === 'image' && /cdn\.shopify\.com\/s\/files/.test(req.url())) imgFetches += 1; };
+    page.on('request', onReq);
+    const go = async (i) => {
+      const dot = dots.nth(i);
+      if (await dot.isVisible()) await dot.click({force: true});
+      else await page.locator('.product-gallery-thumb').nth(i).click({force: true}).catch(() => {});
+      await idle(page, 600);
+    };
+    report.steps.push(await measure(page, 'step-forward', async () => { for (let i = 1; i < n; i++) await go(i); }, Math.max(2000, n * 650)));
+    const before = imgFetches;
+    report.steps.push(await measure(page, 'step-back', async () => { for (let i = n - 2; i >= 0; i--) await go(i); }, Math.max(2000, n * 650)));
+    report.steps[report.steps.length - 1].imageFetchesOnRevisit = imgFetches - before;
+    page.off('request', onReq);
   },
 
   /** Client-side navigation between routes (SPA transitions). */
@@ -347,11 +448,21 @@ async function main() {
     headless: !HEADED,
     args: ['--enable-gpu', '--use-angle=metal', '--disable-background-timer-throttling', '--disable-renderer-backgrounding'],
   });
-  const context = await browser.newContext({
-    viewport: {width: 1440, height: 900},
-    deviceScaleFactor: 2,
-  });
+  const context = await browser.newContext(
+    DEVICE
+      ? {...devices[DEVICE]}
+      : {viewport: {width: 1440, height: 900}, deviceScaleFactor: 2},
+  );
   const page = await context.newPage();
+  // Transfer accounting per scenario: bytes by resource type, from the
+  // request sizes Playwright records (compressed body + headers).
+  let bytes = {};
+  page.on('requestfinished', (req) => {
+    req.sizes().then((sz) => {
+      const t = req.resourceType();
+      bytes[t] = (bytes[t] || 0) + (sz.responseBodySize || 0);
+    }).catch(() => {});
+  });
   const consoleErrors = [];
   page.on('console', (msg) => {
     if (msg.type() === 'error') consoleErrors.push(msg.text().slice(0, 300));
@@ -361,6 +472,10 @@ async function main() {
   const cdp = await context.newCDPSession(page);
   if (THROTTLE > 1) {
     await cdp.send('Emulation.setCPUThrottlingRate', {rate: THROTTLE});
+  }
+  if (NETWORK) {
+    await cdp.send('Network.enable');
+    await cdp.send('Network.emulateNetworkConditions', {offline: false, ...NETWORKS[NETWORK]});
   }
 
   const gpu = await (async () => {
@@ -377,12 +492,19 @@ async function main() {
   const report = {
     base: BASE,
     throttle: THROTTLE,
+    device: DEVICE || 'desktop 1440x900@2x',
+    network: NETWORK || 'unthrottled',
     gpu,
     startedAt: new Date().toISOString(),
     scenarios: {},
   };
 
-  const names = ONLY.length ? ONLY : Object.keys(scenarios);
+  // Desktop-only scenarios (mouse hover, WebGL hero) are skipped under a
+  // phone descriptor; the rest run with touch where they tap.
+  const DESKTOP_ONLY = new Set(['home', 'drawer', 'collections', 'search', 'content', 'spanav']);
+  const names = (ONLY.length ? ONLY : Object.keys(scenarios)).filter(
+    (n) => !(DEVICE && DESKTOP_ONLY.has(n) && !ONLY.length),
+  );
   for (const name of names) {
     if (!scenarios[name]) {
       console.error(`unknown scenario: ${name}`);
@@ -390,12 +512,17 @@ async function main() {
     }
     const sr = {};
     const t0 = Date.now();
+    bytes = {};
     try {
       await scenarios[name](page, sr);
     } catch (err) {
       sr.error = String(err).slice(0, 400);
     }
     sr.wallMs = Date.now() - t0;
+    sr.transferKB = Object.fromEntries(
+      Object.entries(bytes).map(([k, v]) => [k, Math.round(v / 1024)]),
+    );
+    sr.transferKB.total = Math.round(Object.values(bytes).reduce((a, b) => a + b, 0) / 1024);
     report.scenarios[name] = sr;
     console.error(`- ${name} done in ${sr.wallMs}ms`);
   }

@@ -196,13 +196,25 @@ export function SchematicViewer({
     // Warm sibling tiers (manifest + sheet images, ~1 MB/sheet) only when the
     // main thread is idle, so they never compete with the active board's sheets
     // for the first paint. Cancelled if the effect re-runs before idle fires.
+    // On a phone, or under data-saver / a sub-4G link, only the manifests are
+    // warmed: the sibling SHEETS (~110 KB brotli each, 5-10 per line) wait for
+    // an actual tier switch. That switch then shows the sheet a beat later
+    // instead of instantly, which beats a megabyte of speculative SVG on
+    // mobile data. Desktop keeps the full warm.
     let warmId: number | undefined;
     if (handles) {
+      const conn = (navigator as {connection?: {saveData?: boolean; effectiveType?: string}}).connection;
+      const frugal =
+        Boolean(conn?.saveData) ||
+        /(^|\b)(slow-)?[23]g\b/.test(String(conn?.effectiveType ?? '')) ||
+        (typeof window.matchMedia === 'function' &&
+          window.matchMedia('(max-width: 900px)').matches);
       const warm = () => {
         for (const h of handles) {
           if (h === handle) continue;
           void fetchJsonCached<Manifest>(manifestUrl(h))
             .then((m) => {
+              if (frugal) return;
               for (const s of m.sheets ?? [])
                 prefetchImage(sheetUrl(h, s.file));
             })
