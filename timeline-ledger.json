@@ -1,0 +1,396 @@
+{
+  "version": 1,
+  "updatedAt": "2026-08-15T18:14:26.730Z",
+  "repos": {
+    "OpenESC-20x20": {
+      "createdAt": "2026-03-09",
+      "status": "alpha",
+      "statusSince": "2026-08-15",
+      "archived": false,
+      "releases": 2
+    },
+    "OpenESC-30x30": {
+      "createdAt": "2026-03-14",
+      "status": "alpha",
+      "statusSince": "2026-08-15",
+      "archived": false,
+      "releases": 2
+    },
+    "OpenDrone-Web": {
+      "createdAt": "2026-03-21",
+      "status": null,
+      "statusSince": "2026-08-15",
+      "archived": false,
+      "releases": 0
+    },
+    "OpenRX": {
+      "createdAt": "2026-03-23",
+      "status": "alpha",
+      "statusSince": "2026-08-15",
+      "archived": false,
+      "releases": 2
+    },
+    "OpenFC-Lite-Mini": {
+      "createdAt": "2026-03-26",
+      "status": "alpha",
+      "statusSince": "2026-08-15",
+      "archived": false,
+      "releases": 2
+    },
+    "OpenVTX": {
+      "createdAt": "2026-03-26",
+      "status": "planned",
+      "statusSince": "2026-08-15",
+      "archived": false,
+      "releases": 0
+    },
+    "OpenRemoteID": {
+      "createdAt": "2026-03-26",
+      "status": "planned",
+      "statusSince": "2026-08-15",
+      "archived": false,
+      "releases": 0
+    },
+    "OpenFC-Lite": {
+      "createdAt": "2026-06-03",
+      "status": "alpha",
+      "statusSince": "2026-08-15",
+      "archived": false,
+      "releases": 2
+    },
+    "KiCad-Library": {
+      "createdAt": "2026-06-29",
+      "status": null,
+      "statusSince": "2026-08-15",
+      "archived": false,
+      "releases": 2
+    },
+    "OpenAIO": {
+      "createdAt": "2026-08-04",
+      "status": "planned",
+      "statusSince": "2026-08-15",
+      "archived": false,
+      "releases": 0
+    },
+    "OpenAIO-Whoop": {
+      "createdAt": "2026-08-04",
+      "status": "planned",
+      "statusSince": "2026-08-15",
+      "archived": false,
+      "releases": 0
+    },
+    "Charger": {
+      "createdAt": "2026-08-04",
+      "status": "planned",
+      "statusSince": "2026-08-15",
+      "archived": false,
+      "releases": 0
+    },
+    "OpenDrone-Brand": {
+      "createdAt": "2026-08-08",
+      "status": null,
+      "statusSince": "2026-08-15",
+      "archived": false,
+      "releases": 0
+    },
+    "hardware-template": {
+      "createdAt": "2026-08-13",
+      "status": null,
+      "statusSince": "2026-08-15",
+      "archived": false,
+      "releases": 0
+    },
+    "OpenDrone-Fixtures": {
+      "createdAt": "2026-08-15",
+      "status": null,
+      "statusSince": "2026-08-15",
+      "archived": false,
+      "releases": 0
+    },
+    "OpenDrone-Scripts": {
+      "createdAt": "2026-08-15",
+      "status": null,
+      "statusSince": "2026-08-15",
+      "archived": false,
+      "releases": 0
+    }
+  },
+  "events": [
+    {
+      "id": "repo:OpenESC-20x20",
+      "kind": "repo",
+      "repo": "OpenESC-20x20",
+      "date": "2026-03-09",
+      "url": "https://github.com/OpenDrone-hw/OpenESC-20x20",
+      "archived": false,
+      "observed": "2026-08-15"
+    },
+    {
+      "id": "repo:OpenESC-30x30",
+      "kind": "repo",
+      "repo": "OpenESC-30x30",
+      "date": "2026-03-14",
+      "url": "https://github.com/OpenDrone-hw/OpenESC-30x30",
+      "archived": false,
+      "observed": "2026-08-15"
+    },
+    {
+      "id": "repo:OpenDrone-Web",
+      "kind": "repo",
+      "repo": "OpenDrone-Web",
+      "date": "2026-03-21",
+      "url": "https://github.com/OpenDrone-hw/OpenDrone-Web",
+      "archived": false,
+      "observed": "2026-08-15"
+    },
+    {
+      "id": "repo:OpenRX",
+      "kind": "repo",
+      "repo": "OpenRX",
+      "date": "2026-03-23",
+      "url": "https://github.com/OpenDrone-hw/OpenRX",
+      "archived": false,
+      "observed": "2026-08-15"
+    },
+    {
+      "id": "repo:OpenFC-Lite-Mini",
+      "kind": "repo",
+      "repo": "OpenFC-Lite-Mini",
+      "date": "2026-03-26",
+      "url": "https://github.com/OpenDrone-hw/OpenFC-Lite-Mini",
+      "archived": false,
+      "observed": "2026-08-15"
+    },
+    {
+      "id": "repo:OpenRemoteID",
+      "kind": "repo",
+      "repo": "OpenRemoteID",
+      "date": "2026-03-26",
+      "url": "https://github.com/OpenDrone-hw/OpenRemoteID",
+      "archived": false,
+      "observed": "2026-08-15"
+    },
+    {
+      "id": "repo:OpenVTX",
+      "kind": "repo",
+      "repo": "OpenVTX",
+      "date": "2026-03-26",
+      "url": "https://github.com/OpenDrone-hw/OpenVTX",
+      "archived": false,
+      "observed": "2026-08-15"
+    },
+    {
+      "id": "repo:OpenFC-Lite",
+      "kind": "repo",
+      "repo": "OpenFC-Lite",
+      "date": "2026-06-03",
+      "url": "https://github.com/OpenDrone-hw/OpenFC-Lite",
+      "archived": false,
+      "observed": "2026-08-15"
+    },
+    {
+      "id": "repo:KiCad-Library",
+      "kind": "repo",
+      "repo": "KiCad-Library",
+      "date": "2026-06-29",
+      "url": "https://github.com/OpenDrone-hw/KiCad-Library",
+      "archived": false,
+      "observed": "2026-08-15"
+    },
+    {
+      "id": "repo:Charger",
+      "kind": "repo",
+      "repo": "Charger",
+      "date": "2026-08-04",
+      "url": "https://github.com/OpenDrone-hw/Charger",
+      "archived": false,
+      "observed": "2026-08-15"
+    },
+    {
+      "id": "repo:OpenAIO",
+      "kind": "repo",
+      "repo": "OpenAIO",
+      "date": "2026-08-04",
+      "url": "https://github.com/OpenDrone-hw/OpenAIO",
+      "archived": false,
+      "observed": "2026-08-15"
+    },
+    {
+      "id": "repo:OpenAIO-Whoop",
+      "kind": "repo",
+      "repo": "OpenAIO-Whoop",
+      "date": "2026-08-04",
+      "url": "https://github.com/OpenDrone-hw/OpenAIO-Whoop",
+      "archived": false,
+      "observed": "2026-08-15"
+    },
+    {
+      "id": "repo:OpenDrone-Brand",
+      "kind": "repo",
+      "repo": "OpenDrone-Brand",
+      "date": "2026-08-08",
+      "url": "https://github.com/OpenDrone-hw/OpenDrone-Brand",
+      "archived": false,
+      "observed": "2026-08-15"
+    },
+    {
+      "id": "release:OpenESC-20x20:rev3",
+      "kind": "release",
+      "repo": "OpenESC-20x20",
+      "date": "2026-08-12",
+      "tag": "rev3",
+      "name": "OpenESC-20x20 Rev 3",
+      "prerelease": false,
+      "url": "https://github.com/OpenDrone-hw/OpenESC-20x20/releases/tag/rev3",
+      "observed": "2026-08-15"
+    },
+    {
+      "id": "release:OpenESC-30x30:rev3",
+      "kind": "release",
+      "repo": "OpenESC-30x30",
+      "date": "2026-08-12",
+      "tag": "rev3",
+      "name": "OpenESC-30x30 Rev 3",
+      "prerelease": false,
+      "url": "https://github.com/OpenDrone-hw/OpenESC-30x30/releases/tag/rev3",
+      "observed": "2026-08-15"
+    },
+    {
+      "id": "release:OpenFC-Lite-Mini:rev3",
+      "kind": "release",
+      "repo": "OpenFC-Lite-Mini",
+      "date": "2026-08-12",
+      "tag": "rev3",
+      "name": "OpenFC-Lite-Mini Rev 3",
+      "prerelease": false,
+      "url": "https://github.com/OpenDrone-hw/OpenFC-Lite-Mini/releases/tag/rev3",
+      "observed": "2026-08-15"
+    },
+    {
+      "id": "release:OpenFC-Lite:rev3",
+      "kind": "release",
+      "repo": "OpenFC-Lite",
+      "date": "2026-08-12",
+      "tag": "rev3",
+      "name": "OpenFC-Lite Rev 3",
+      "prerelease": false,
+      "url": "https://github.com/OpenDrone-hw/OpenFC-Lite/releases/tag/rev3",
+      "observed": "2026-08-15"
+    },
+    {
+      "id": "release:OpenRX:rev2",
+      "kind": "release",
+      "repo": "OpenRX",
+      "date": "2026-08-12",
+      "tag": "rev2",
+      "name": "OpenRX Rev 2",
+      "prerelease": false,
+      "url": "https://github.com/OpenDrone-hw/OpenRX/releases/tag/rev2",
+      "observed": "2026-08-15"
+    },
+    {
+      "id": "repo:hardware-template",
+      "kind": "repo",
+      "repo": "hardware-template",
+      "date": "2026-08-13",
+      "url": "https://github.com/OpenDrone-hw/hardware-template",
+      "archived": false,
+      "observed": "2026-08-15"
+    },
+    {
+      "id": "release:KiCad-Library:pcm-v1.0.0",
+      "kind": "release",
+      "repo": "KiCad-Library",
+      "date": "2026-08-14",
+      "tag": "pcm-v1.0.0",
+      "name": "PCM package 1.0.0",
+      "prerelease": false,
+      "url": "https://github.com/OpenDrone-hw/KiCad-Library/releases/tag/pcm-v1.0.0",
+      "observed": "2026-08-15"
+    },
+    {
+      "id": "release:OpenESC-20x20:rev3.1",
+      "kind": "release",
+      "repo": "OpenESC-20x20",
+      "date": "2026-08-14",
+      "tag": "rev3.1",
+      "name": "OpenESC-20x20 Rev 3.1",
+      "prerelease": false,
+      "url": "https://github.com/OpenDrone-hw/OpenESC-20x20/releases/tag/rev3.1",
+      "observed": "2026-08-15"
+    },
+    {
+      "id": "release:OpenESC-30x30:rev3.1",
+      "kind": "release",
+      "repo": "OpenESC-30x30",
+      "date": "2026-08-14",
+      "tag": "rev3.1",
+      "name": "OpenESC-30x30 Rev 3.1",
+      "prerelease": false,
+      "url": "https://github.com/OpenDrone-hw/OpenESC-30x30/releases/tag/rev3.1",
+      "observed": "2026-08-15"
+    },
+    {
+      "id": "release:OpenFC-Lite-Mini:rev3.1",
+      "kind": "release",
+      "repo": "OpenFC-Lite-Mini",
+      "date": "2026-08-14",
+      "tag": "rev3.1",
+      "name": "OpenFC-Lite-Mini Rev 3.1",
+      "prerelease": false,
+      "url": "https://github.com/OpenDrone-hw/OpenFC-Lite-Mini/releases/tag/rev3.1",
+      "observed": "2026-08-15"
+    },
+    {
+      "id": "release:OpenFC-Lite:rev3.1",
+      "kind": "release",
+      "repo": "OpenFC-Lite",
+      "date": "2026-08-14",
+      "tag": "rev3.1",
+      "name": "OpenFC-Lite Rev 3.1",
+      "prerelease": false,
+      "url": "https://github.com/OpenDrone-hw/OpenFC-Lite/releases/tag/rev3.1",
+      "observed": "2026-08-15"
+    },
+    {
+      "id": "release:OpenRX:rev2.1",
+      "kind": "release",
+      "repo": "OpenRX",
+      "date": "2026-08-14",
+      "tag": "rev2.1",
+      "name": "OpenRX Rev 2.1",
+      "prerelease": false,
+      "url": "https://github.com/OpenDrone-hw/OpenRX/releases/tag/rev2.1",
+      "observed": "2026-08-15"
+    },
+    {
+      "id": "release:KiCad-Library:pcm-v1.1.0",
+      "kind": "release",
+      "repo": "KiCad-Library",
+      "date": "2026-08-15",
+      "tag": "pcm-v1.1.0",
+      "name": "PCM package 1.1.0",
+      "prerelease": false,
+      "url": "https://github.com/OpenDrone-hw/KiCad-Library/releases/tag/pcm-v1.1.0",
+      "observed": "2026-08-15"
+    },
+    {
+      "id": "repo:OpenDrone-Fixtures",
+      "kind": "repo",
+      "repo": "OpenDrone-Fixtures",
+      "date": "2026-08-15",
+      "url": "https://github.com/OpenDrone-hw/OpenDrone-Fixtures",
+      "archived": false,
+      "observed": "2026-08-15"
+    },
+    {
+      "id": "repo:OpenDrone-Scripts",
+      "kind": "repo",
+      "repo": "OpenDrone-Scripts",
+      "date": "2026-08-15",
+      "url": "https://github.com/OpenDrone-hw/OpenDrone-Scripts",
+      "archived": false,
+      "observed": "2026-08-15"
+    }
+  ]
+}
