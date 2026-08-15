@@ -22,7 +22,6 @@ import algemeneVoorwaardenNl from '~/content/legal/nl/algemene-voorwaarden.md?ra
 import privacyPolicyNl from '~/content/legal/nl/privacy-policy.md?raw';
 import cookiePolicyNl from '~/content/legal/nl/cookie-policy.md?raw';
 import herroepingNl from '~/content/legal/nl/herroepingsformulier.md?raw';
-import peppolNl from '~/content/legal/nl/peppol-e-invoicing.md?raw';
 import vulnPolicyNl from '~/content/legal/nl/vulnerability-handling-policy.md?raw';
 import warrantyNl from '~/content/legal/nl/warranty.md?raw';
 import shippingNl from '~/content/legal/nl/shipping.md?raw';
@@ -32,7 +31,6 @@ import algemeneVoorwaardenFr from '~/content/legal/fr/algemene-voorwaarden.md?ra
 import privacyPolicyFr from '~/content/legal/fr/privacy-policy.md?raw';
 import cookiePolicyFr from '~/content/legal/fr/cookie-policy.md?raw';
 import herroepingFr from '~/content/legal/fr/herroepingsformulier.md?raw';
-import peppolFr from '~/content/legal/fr/peppol-e-invoicing.md?raw';
 import vulnPolicyFr from '~/content/legal/fr/vulnerability-handling-policy.md?raw';
 import warrantyFr from '~/content/legal/fr/warranty.md?raw';
 import shippingFr from '~/content/legal/fr/shipping.md?raw';
@@ -42,7 +40,6 @@ import algemeneVoorwaardenEn from '~/content/legal/en/algemene-voorwaarden.md?ra
 import privacyPolicyEn from '~/content/legal/en/privacy-policy.md?raw';
 import cookiePolicyEn from '~/content/legal/en/cookie-policy.md?raw';
 import herroepingEn from '~/content/legal/en/herroepingsformulier.md?raw';
-import peppolEn from '~/content/legal/en/peppol-e-invoicing.md?raw';
 import vulnPolicyEn from '~/content/legal/en/vulnerability-handling-policy.md?raw';
 import warrantyEn from '~/content/legal/en/warranty.md?raw';
 import shippingEn from '~/content/legal/en/shipping.md?raw';
@@ -53,7 +50,6 @@ export type LegalSlug =
   | 'privacy-policy'
   | 'cookie-policy'
   | 'herroepingsformulier'
-  | 'peppol-e-invoicing'
   | 'vulnerability-handling-policy'
   | 'warranty'
   | 'shipping'
@@ -64,7 +60,6 @@ const SOURCES_NL: Record<LegalSlug, string> = {
   'privacy-policy': privacyPolicyNl,
   'cookie-policy': cookiePolicyNl,
   herroepingsformulier: herroepingNl,
-  'peppol-e-invoicing': peppolNl,
   'vulnerability-handling-policy': vulnPolicyNl,
   warranty: warrantyNl,
   shipping: shippingNl,
@@ -76,7 +71,6 @@ const SOURCES_EN: Record<LegalSlug, string> = {
   'privacy-policy': privacyPolicyEn,
   'cookie-policy': cookiePolicyEn,
   herroepingsformulier: herroepingEn,
-  'peppol-e-invoicing': peppolEn,
   'vulnerability-handling-policy': vulnPolicyEn,
   warranty: warrantyEn,
   shipping: shippingEn,
@@ -88,7 +82,6 @@ const SOURCES_FR: Record<LegalSlug, string> = {
   'privacy-policy': privacyPolicyFr,
   'cookie-policy': cookiePolicyFr,
   herroepingsformulier: herroepingFr,
-  'peppol-e-invoicing': peppolFr,
   'vulnerability-handling-policy': vulnPolicyFr,
   warranty: warrantyFr,
   shipping: shippingFr,

@@ -27,7 +27,6 @@ const FILES = {
   'privacy-policy.md': 'webshop/privacy-policy.md',
   'cookie-policy.md': 'webshop/cookie-policy.md',
   'herroepingsformulier.md': 'webshop/herroepingsformulier.md',
-  'peppol-e-invoicing.md': 'webshop/peppol-e-invoicing.md',
   // NOT synced: vulnerability-handling-policy.md and end-use-policy.md.
   // Their compliance-repo masters are ENGLISH; the files in
   // app/content/legal/nl/ are hand-translated Dutch (like en/ and fr/).
