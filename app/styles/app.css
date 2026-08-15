@@ -7291,16 +7291,26 @@ html.light .firmware-logo--tile {
 }
 
 /* One quiet mono link under the card row, pointing at /open-source. Same
-   voice as .firmware-support-links: muted at rest, gold on hover. */
+   voice as .firmware-support-links: muted at rest, gold on hover. The repo
+   lead line (the next chapter's ::before) crosses this row on its way from
+   the GitHub card down to the scope outline: the label sits above the line
+   with its own background, so the line reads as passing behind a station
+   on the route rather than striking through the words. */
 .open-source-story-link {
   margin: var(--sp-3) 0 0;
   font-family: var(--font-mono);
   font-size: 11px;
   letter-spacing: 0.1em;
   text-transform: uppercase;
+  position: relative;
+  z-index: 1;
 }
 
 .open-source-story-link a {
+  display: inline-block;
+  padding: 0.3rem 0.6rem;
+  margin-left: -0.6rem;
+  background: var(--color-bg);
   color: var(--color-text-muted);
   text-decoration: none;
 }
