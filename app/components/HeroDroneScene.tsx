@@ -1148,6 +1148,8 @@ export function HeroDroneScene({
       let gestureDir = 0;
       let gestureAccum = 0;
       let gestureStepped = false;  // this gesture already emitted its one step
+      let steppedAt = 0;           // when it did, for re-flick detection
+      let lastAbsD = 0;            // previous event's |delta|, for re-flick detection
       let queuedStep: 0 | 1 | -1 = 0;  // one advance banked while the beat plays
       // Continuation owed because a move parked at a rest mid-passage. Kept
       // apart from queuedStep so a scroll banked during the first half of a
@@ -1197,7 +1199,25 @@ export function HeroDroneScene({
         // force-opens mid-stream, and a momentum tail (small decaying deltas,
         // no gaps) stays inside its gesture and stays inert.
         const sinceLast = now - lastWheel;
-        if (sinceLast > GESTURE_GAP_MS || (sinceLast >= 80 && Math.abs(d) >= 40)) {
+        // A trackpad flick's momentum tail streams small decaying deltas for
+        // a second or more with no gap, so a second confident flick inside
+        // that tail used to be inert: the reader had to wait for silence, and
+        // the hero read as "scrolling barely works". A delta that jumps well
+        // above the decaying tail, once this gesture's step is spent and has
+        // had time to show, is a new gesture. A steady finger push never
+        // trips it (its deltas do not jump), and momentum only decays.
+        const reflick =
+          gestureStepped &&
+          now - steppedAt > 350 &&
+          Math.abs(d) >= 40 &&
+          lastAbsD < 20 &&
+          Math.abs(d) > lastAbsD * 2;
+        lastAbsD = Math.abs(d);
+        if (
+          sinceLast > GESTURE_GAP_MS ||
+          (sinceLast >= 80 && Math.abs(d) >= 40) ||
+          reflick
+        ) {
           // Open the new gesture from the stop the timeline is HEADED TO,
           // not from wherever the spring happens to be mid-flight. Without
           // this, a wheel tick during a rail-dot or keyboard jump reopens
@@ -1236,6 +1256,7 @@ export function HeroDroneScene({
         const THRESH = cfg.scroll?.stepPx ?? 45;
         if (gestureStepped || Math.abs(gestureAccum) < THRESH) return;
         gestureStepped = true;
+        steppedAt = now;
         const dir = (Math.sign(gestureAccum) || 1) as 1 | -1;
 
         // Pacing: the beat on screen must be seen before the move happens (a
