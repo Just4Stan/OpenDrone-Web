@@ -20,11 +20,11 @@ Cookies are small text files placed on your device by a website when you visit i
 |--------|---------|-----------|
 | `cart`, `cart_sig`, `cart_ts`, `_secure_session_id`, `_shopify_tm` | Cart and session handling (Shopify) | Session |
 | `_tracking_consent`, `_cmp_a` | Remember your cookie preferences (Shopify Customer Privacy API) | 6 months |
-| `__stripe_mid`, `__stripe_sid` | Payment fraud prevention — set **only on Shopify's hosted checkout pages** during payment, not on this storefront (Stripe, Art. 129 §1 LCE — Belgian Electronic Communications Act of 13 June 2005, second indent: strictly necessary for the provision of the service explicitly requested; ePrivacy Directive 2002/58/EC) | 1 year / session |
+| `__stripe_mid`, `__stripe_sid` | Payment fraud prevention — set **only on Shopify's hosted checkout pages** during payment, not on this storefront (Stripe, Art. 10/2 of the Act of 30 July 2018 (as inserted by the Act of 21 December 2021), strictly necessary for the service explicitly requested; ePrivacy Directive 2002/58/EC) | 1 year / session |
 
 #### Analytics
 
-We use **Plausible Analytics** (EU-hosted, cookieless). Plausible sets no cookies and processes no personal data requiring consent. That is why we do not show a consent banner for analytics.
+We use **Plausible Analytics** (EU-hosted, cookieless). Plausible sets no cookies and stores no persistent identifier; the IP address is hashed and not retained. This processing falls outside the ePrivacy consent requirement and relies on our legitimate interest (Art. 6.1.f GDPR). That is why we do not show a consent banner for analytics.
 
 Shopify's built-in analytics cookies (`_shopify_s`, `_shopify_y`) are not activated and are not set on this storefront.
 

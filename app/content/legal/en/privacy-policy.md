@@ -39,7 +39,7 @@ Incutec BV has not appointed a Data Protection Officer (DPO) because this is not
 | Payment processing | Necessary for performance of a contract (Art. 6.1.b) |
 | Invoicing and bookkeeping | Legal obligation (Art. 6.1.c: VAT legislation, accounting law) |
 | Customer service | Legitimate interest (Art. 6.1.f) |
-| Website analytics | Legitimate interest (Art. 6.1.f) or consent (Art. 6.1.a) |
+| Website analytics | Legitimate interest (Art. 6.1.f); cookieless, no persistent identifier |
 | Newsletter | Consent (Art. 6.1.a) |
 | Fraud / abuse prevention | Legitimate interest (Art. 6.1.f) |
 
@@ -82,7 +82,7 @@ You have the right to:
 - **Rectification** of inaccurate data (Art. 16)
 - **Erasure** of your data ("right to be forgotten") (Art. 17)
 - **Restriction** of processing (Art. 18)
-- **Object** to processing based on legitimate interest (Art. 21)
+- **Object** to processing based on legitimate interest (Art. 21). You may object to processing for direct marketing at any time and free of charge; we then stop that processing immediately (Art. 21.2-21.3)
 - **Portability** of your data (Art. 20)
 - **Withdraw** your consent (Art. 7.3)
 
@@ -112,9 +112,11 @@ Incutec BV takes appropriate technical and organisational measures to protect pe
 
 ### 9. Automated decision-making
 
-Incutec BV does not use automated decision-making or profiling that produces legal effects concerning you or similarly significantly affects you, within the meaning of Art. 22 GDPR.
+When you place an order, the webshop platform's fraud detection (Shopify Fraud Analysis) automatically evaluates signals such as payment details, delivery address, IP address and ordering pattern and assigns a risk score. An order with a high score may be refused automatically. This is automated decision-making within the meaning of Art. 22 GDPR, necessary for entering into and performing the contract (Art. 22.2.a). You have the right to human intervention, to express your point of view and to contest the decision: contact contact@opendrone.be and a staff member will review the order. No other automated decision-making or profiling takes place.
 
-Shopify's automated fraud detection systems (Shopify Protect / Fraud Analysis) may result in orders being refused or flagged. This constitutes automated decision-making that affects the processing of your order. You may contact Incutec BV for human review of a refused order.
+**Whether providing data is required.** Name, address, email and payment details are needed to fulfil an order; without them no contract can be concluded. Invoicing data must be retained by law. All other data (phone number, newsletter, account details) is optional.
+
+**Copy of safeguards.** A copy of the standard contractual clauses or the DPF certification covering the transfers in section 5 can be requested via privacy@opendrone.be.
 
 ### 10. Data breaches
 
@@ -122,4 +124,4 @@ In the event of a data breach presenting a risk to your rights and freedoms, we 
 
 ### 11. Amendments
 
-Incutec BV may amend this privacy policy. The most recent version is always available at opendrone.be/privacy. In the event of material changes, you will be notified by email.
+Incutec BV may amend this privacy policy. The most recent version is always available at opendrone.be/privacy. Customers and newsletter subscribers are notified by email of material changes.

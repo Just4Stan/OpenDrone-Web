@@ -58,7 +58,7 @@ const LEGAL_LINKS: Array<{to: string; copy: string}> = [
   {to: '/algemene-voorwaarden', copy: 'nav_terms'},
   {to: '/privacy', copy: 'nav_privacy'},
   {to: '/cookies', copy: 'nav_cookies'},
-  {to: '/herroepingsrecht', copy: 'nav_withdrawal'},
+  {to: '/herroepingsrecht#withdraw', copy: 'nav_withdrawal'},
   {to: '/shipping', copy: 'nav_shipping'},
   {to: '/warranty', copy: 'nav_warranty'},
   {to: '/end-use', copy: 'nav_end_use'},

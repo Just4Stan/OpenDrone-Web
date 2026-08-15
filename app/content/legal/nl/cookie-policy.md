@@ -19,11 +19,11 @@ Cookies zijn kleine tekstbestanden die door een website op uw apparaat worden ge
 |--------|------|--------------|
 | `cart`, `cart_sig`, `cart_ts`, `_secure_session_id`, `_shopify_tm` | Winkelwagen- en sessiebeheer (Shopify) | Sessie |
 | `_tracking_consent`, `_cmp_a` | Uw cookievoorkeuren onthouden (Shopify Customer Privacy API) | 6 maanden |
-| `__stripe_mid`, `__stripe_sid` | Fraudepreventie bij betaling — wordt **uitsluitend op de gehoste Shopify-checkoutpagina's** geplaatst tijdens de betaling, niet op deze storefront (Stripe, Art. 129 §1 WEC — Wet van 13 juni 2005, tweede streepje: strikt noodzakelijk voor de uitdrukkelijk gevraagde dienst; ePrivacy-richtlijn 2002/58/EG) | 1 jaar / sessie |
+| `__stripe_mid`, `__stripe_sid` | Fraudepreventie bij betaling — wordt **uitsluitend op de gehoste Shopify-checkoutpagina's** geplaatst tijdens de betaling, niet op deze storefront (Stripe, Art. 10/2 Wet van 30 juli 2018 (zoals ingevoegd door de Wet van 21 december 2021), strikt noodzakelijk voor de uitdrukkelijk gevraagde dienst; Art. 5(3) ePrivacy-richtlijn 2002/58/EG) | 1 jaar / sessie |
 
 #### Analytische cookies
 
-Wij gebruiken **Plausible Analytics** (EU-gehost, cookieloos). Plausible plaatst geen cookies en verwerkt geen persoonsgegevens waarvoor toestemming nodig is. Daarom tonen wij geen toestemmingsbanner voor analyse.
+Wij gebruiken **Plausible Analytics** (EU-gehost, cookieloos). Plausible plaatst geen cookies en slaat geen persistente identifier op; het IP-adres wordt gehasht en niet bewaard. Deze verwerking valt niet onder de toestemmingsvereiste van de ePrivacy-regels en steunt op ons gerechtvaardigd belang (Art. 6.1.f AVG). Daarom tonen wij geen toestemmingsbanner voor analyse.
 
 Shopify's ingebouwde analytische cookies (`_shopify_s`, `_shopify_y`) zijn niet geactiveerd en worden op deze storefront niet geplaatst.
 
@@ -84,7 +84,7 @@ Source: https://www.dataprotectionauthority.be/publications/recommendation-no-01
 | `_tracking_consent`, `_cmp_a` (Customer Privacy API) | Strictly necessary | No |
 | `_shopify_s`, `_shopify_y` (Shopify analytics) | Analytics | Yes, opt-in |
 | `_shopify_sa_t`, `_shopify_sa_p`, `_shopify_d`, `_orig_referrer`, `_landing_page` | Marketing | Yes, opt-in |
-| Stripe `__stripe_mid`, `__stripe_sid` | Strictly necessary (fraud prevention, Art. 6.1(f) AVG + Art. 129 WEC) | No |
+| Stripe `__stripe_mid`, `__stripe_sid` | Strictly necessary (fraud prevention, Art. 6.1(f) AVG + Art. 10/2 Wet 30 juli 2018) | No |
 
 ### Policy text updates before publishing
 - Replace the analytics placeholder with the actual Shopify + Plausible entries above.

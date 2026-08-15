@@ -23,6 +23,8 @@ export type WithdrawalNotice = {
   receivedOn: string;
   remarks: string;
   locale: 'nl' | 'en' | 'fr';
+  /** ISO timestamp of submission, set by the action; echoed in both mails. */
+  submittedAt: string;
 };
 
 const CONFIRM_SUBJECT: Record<WithdrawalNotice['locale'], string> = {
@@ -88,7 +90,7 @@ export async function sendWithdrawalNotice(
     `Ontvangen op: ${notice.receivedOn}`,
     `Opmerkingen:  ${notice.remarks || '(geen)'}`,
     '',
-    `Ingediend: ${new Date().toISOString()}`,
+    `Ingediend: ${notice.submittedAt}`,
   ].join('\n');
 
   await send(env, {
@@ -104,8 +106,13 @@ export async function sendWithdrawalNotice(
     text: [
       CONFIRM_BODY[notice.locale],
       '',
+      `Submitted / Ingediend / Envoyé: ${notice.submittedAt}`,
+      `Name: ${notice.name}`,
+      `Email: ${notice.email}`,
       `Order: ${notice.orderNumber}`,
       `Products: ${notice.products}`,
+      `Received on: ${notice.receivedOn || '-'}`,
+      `Remarks: ${notice.remarks || '-'}`,
       '',
       'Incutec BV, Stapelhuisstraat 15, 3000 Leuven, Belgium',
       'contact@opendrone.be',

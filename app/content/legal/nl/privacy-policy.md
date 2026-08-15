@@ -38,7 +38,7 @@ Incutec BV heeft geen Functionaris voor Gegevensbescherming (DPO) aangesteld aan
 | Betalingsverwerking | Noodzakelijk voor uitvoering overeenkomst (Art. 6.1.b) |
 | Facturatie en boekhouding | Wettelijke verplichting (Art. 6.1.c: BTW-wetgeving, boekhoudwet) |
 | Klantenservice | Gerechtvaardigd belang (Art. 6.1.f) |
-| Website-analyse | Gerechtvaardigd belang (Art. 6.1.f) of toestemming (Art. 6.1.a) |
+| Website-analyse | Gerechtvaardigd belang (Art. 6.1.f); cookieloos, geen persistente identifier |
 | Nieuwsbrief | Toestemming (Art. 6.1.a) |
 | Fraude-/misbruikpreventie | Gerechtvaardigd belang (Art. 6.1.f) |
 
@@ -81,7 +81,7 @@ U heeft het recht om:
 - **Rectificatie** te vragen van onjuiste gegevens (Art. 16)
 - **Verwijdering** te vragen ("recht op vergetelheid") (Art. 17)
 - **Beperking** van de verwerking te vragen (Art. 18)
-- **Bezwaar** te maken tegen verwerking op grond van gerechtvaardigd belang (Art. 21)
+- **Bezwaar** te maken tegen verwerking op grond van gerechtvaardigd belang (Art. 21). Tegen verwerking voor direct marketing kunt u te allen tijde en kosteloos bezwaar maken; wij stoppen die verwerking dan onmiddellijk (Art. 21.2-21.3)
 - **Overdraagbaarheid** van uw gegevens te vragen (Art. 20)
 - Uw **toestemming** in te trekken (Art. 7.3)
 
@@ -111,9 +111,11 @@ Incutec BV neemt passende technische en organisatorische maatregelen om persoons
 
 ### 9. Geautomatiseerde besluitvorming
 
-Incutec BV maakt geen gebruik van geautomatiseerde besluitvorming of profilering die rechtsgevolgen heeft voor u of u op vergelijkbare wijze in aanmerkelijke mate treft, in de zin van Art. 22 AVG.
+Bij het plaatsen van een bestelling beoordeelt de fraudedetectie van het webshopplatform (Shopify Fraud Analysis) automatisch signalen zoals betaalgegevens, afleveradres, IP-adres en bestelpatroon en kent zij een risicoscore toe. Een bestelling met een hoge score kan automatisch worden geweigerd. Dit is geautomatiseerde besluitvorming in de zin van Art. 22 AVG, noodzakelijk voor het sluiten en uitvoeren van de overeenkomst (Art. 22.2.a). U heeft het recht op menselijke tussenkomst, om uw standpunt kenbaar te maken en om het besluit te betwisten: neem contact op via contact@opendrone.be, dan beoordeelt een medewerker de bestelling. Voor het overige vindt geen geautomatiseerde besluitvorming of profilering plaats.
 
-Shopify's geautomatiseerde fraudedetectiesystemen (Shopify Protect / Fraud Analysis) kunnen leiden tot het weigeren of markeren van bestellingen. Dit betreft een geautomatiseerd besluit dat invloed heeft op de verwerking van uw bestelling. U kunt contact opnemen met Incutec BV voor menselijke beoordeling van een geweigerde bestelling.
+**Verplicht karakter van de gegevens.** Naam, adres, e-mail en betaalgegevens zijn nodig om een bestelling te kunnen uitvoeren; zonder deze gegevens kan geen overeenkomst worden gesloten. Facturatiegegevens moeten wettelijk worden bewaard. Alle andere gegevens (telefoonnummer, nieuwsbrief, accountgegevens) zijn vrijwillig.
+
+**Kopie van de waarborgen.** Een kopie van de standaardcontractuele clausules of de DPF-certificering die de doorgiften in punt 5 dekt, kunt u opvragen via privacy@opendrone.be.
 
 ### 10. Datalekken
 
@@ -121,7 +123,7 @@ Bij een datalek dat een risico inhoudt voor uw rechten en vrijheden, zijn wij ve
 
 ### 11. Wijzigingen
 
-Incutec BV kan dit privacybeleid wijzigen. De meest recente versie is altijd beschikbaar op opendrone.be/privacy. Bij wezenlijke wijzigingen wordt u per e-mail op de hoogte gesteld.
+Incutec BV kan dit privacybeleid wijzigen. De meest recente versie is altijd beschikbaar op opendrone.be/privacy. Klanten en nieuwsbriefabonnees worden bij wezenlijke wijzigingen per e-mail op de hoogte gesteld.
 
 ---
 

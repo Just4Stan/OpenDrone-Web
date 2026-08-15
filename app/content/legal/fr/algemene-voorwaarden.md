@@ -1,7 +1,7 @@
 # Conditions Générales de Vente : Incutec BV
 
 **Obligatoires pour la boutique en ligne. Doivent être téléchargeables en PDF. Doivent être acceptées avant la commande.**
-**La version néerlandaise (/algemene-voorwaarden) constitue le texte juridiquement faisant foi pour les consommateurs résidant en Belgique. Cette traduction française est fournie à titre informatif uniquement.**
+**La version néerlandaise (/algemene-voorwaarden) prévaut en cas de contradiction, sauf à l’égard des consommateurs, pour lesquels l’interprétation la plus favorable s’applique (art. 19). Cette traduction française est fournie pour votre commodité.**
 
 ---
 
@@ -51,15 +51,15 @@
 
 5.3. Pendant le délai de réflexion, le consommateur manipule le produit et son emballage avec soin. Le consommateur ne déballe ou n’utilise le produit que dans la mesure nécessaire pour en établir la nature, les caractéristiques et le fonctionnement.
 
-5.4. Le consommateur exerce le droit de rétractation en complétant le formulaire type de rétractation (annexe) ou en faisant toute autre déclaration dénuée d’ambiguïté à Incutec BV.
+5.4. Le consommateur exerce le droit de rétractation en complétant le formulaire type de rétractation (annexe), via le formulaire en ligne sur opendrone.be/herroepingsrecht, ou en faisant toute autre déclaration dénuée d’ambiguïté à Incutec BV. Le consommateur renvoie le produit dans les 14 jours suivant sa déclaration de rétractation.
 
 5.5. Les frais de retour du produit sont à la charge du consommateur.
 
-5.6. Incutec BV rembourse tous les paiements effectués par le consommateur, y compris les frais de livraison éventuels, au plus tard **14 jours** après qu’Incutec BV a reçu le produit retourné ou après que le consommateur a démontré que le produit a été renvoyé.
+5.6. Incutec BV rembourse tous les paiements effectués par le consommateur, y compris les frais de livraison standard (hors supplément d’un mode de livraison plus coûteux choisi par le consommateur), au plus tard **14 jours** après qu’Incutec BV a reçu le produit retourné ou après que le consommateur a démontré que le produit a été renvoyé.
 
 5.7. Le remboursement est effectué selon le même moyen de paiement que la transaction initiale, sauf si le consommateur accepte expressément un moyen de paiement différent.
 
-5.8. **Dépréciation.** Le consommateur est responsable de la dépréciation du produit résultant de manipulations allant au-delà de ce qui est nécessaire pour établir sa nature, ses caractéristiques et son fonctionnement (art. VI.51 §2 WER). Pour des composants électroniques, cela signifie en particulier : souder sur le produit, le monter dans un système, raccorder une alimentation ou des moteurs, flasher un autre firmware et l'utiliser en vol vont au-delà de cette évaluation. La dépréciation qui en résulte est déduite du remboursement et peut, lorsque le produit ne peut plus être vendu comme neuf, atteindre le prix d'achat intégral. Le droit de rétractation lui-même n'est pas perdu.
+5.8. **Dépréciation.** Le consommateur est responsable de la dépréciation du produit résultant de manipulations allant au-delà de ce qui est nécessaire pour établir sa nature, ses caractéristiques et son fonctionnement (art. VI.51 §2 CDE). Pour des composants électroniques, cela signifie en particulier : souder sur le produit, le monter dans un système, raccorder une batterie ou des moteurs, flasher un autre firmware et l'utiliser en vol vont au-delà de cette évaluation ; le raccorder par USB pour vérifier son fonctionnement, non. La dépréciation est motivée par Incutec BV, évaluée sur la valeur résiduelle réelle et déduite du remboursement ; ce n'est que lorsque le produit n'a plus aucune valeur résiduelle qu'elle peut atteindre le prix d'achat intégral. Le droit de rétractation lui-même n'est pas perdu.
 
 ### Article 6 : Exclusion du droit de rétractation
 
@@ -77,7 +77,7 @@
 
 7.3. Le risque de dommage et/ou de perte des produits incombe à Incutec BV jusqu’au moment de la livraison au consommateur.
 
-7.4. Incutec BV propose au moins **deux modes de livraison** (Art. VI.45/2 CDE : Loi du 9 février 2024, applicable depuis le 21 septembre 2024 à toutes les boutiques en ligne belges). Les deux modes doivent être sensiblement différents (par ex. livraison à domicile + point relais ; recourir à deux transporteurs qui proposent tous deux uniquement la livraison à domicile ne suffit pas).
+7.4. Incutec BV propose au moins **deux modes de livraison sensiblement différents** (art. VI.45/2 CDE).
 
 ### Article 8 : Paiement
 
@@ -93,7 +93,7 @@
 
 9.2bis. **Biens comportant des éléments numériques :** Les produits d’Incutec BV contiennent un firmware (éléments numériques) nécessaire à leur fonctionnement, au sens de la Directive (UE) 2019/771 Art. 2(5b). Incutec BV veille à informer le consommateur des mises à jour de firmware disponibles nécessaires au maintien de la conformité du produit pendant la période de garantie de 2 ans. Les mises à jour de firmware sont mises à disposition via les projets open source sur lesquels les produits sont basés (Betaflight, AM32, ExpressLRS). Incutec BV maintient le support hardware spécifique (définitions de cibles) nécessaire à l’installation de ces mises à jour.
 
-9.2ter. **Hiérarchie des remèdes :** En cas de défaut de conformité, le consommateur a le droit de demander, à son choix, la réparation ou le remplacement du produit. Ce n’est que lorsque la réparation et le remplacement sont impossibles ou disproportionnés que le consommateur peut demander une réduction de prix ou la résolution du contrat (art. 1649quinquies de l’ancien Code civil, inséré par la Loi du 20 mars 2022 transposant la Directive (UE) 2019/771).
+9.2ter. **Hiérarchie des remèdes :** En cas de défaut de conformité, le consommateur a le droit de demander, à son choix, la réparation ou le remplacement du produit. Le consommateur peut demander une réduction du prix ou la résolution du contrat lorsque la réparation ou le remplacement est impossible ou disproportionné, lorsqu’Incutec BV n’a pas effectué ou a refusé la réparation ou le remplacement, ou ne l’a pas fait gratuitement, dans un délai raisonnable ou sans inconvénient majeur, lorsque le défaut réapparaît malgré une tentative de remède, ou lorsque le défaut est d’une gravité telle qu’une réduction immédiate du prix ou la résolution est justifiée (art. 1649quinquies ancien Code civil ; Directive (UE) 2019/771 art. 13(4)).
 
 9.3. La garantie légale ne couvre pas un défaut causé par :
 - Une utilisation ou installation incorrecte (dérogation au manuel d’utilisation), dans la mesure où le défaut en résulte
@@ -101,15 +101,15 @@
 - Des modifications ou reprogrammations effectuées par le consommateur, dans la mesure où le défaut en résulte. La modification de firmware open source ou du matériel n’exclut pas la garantie pour les défauts sans lien avec cette modification (voir la page garantie)
 - Des causes externes (dégâts des eaux, foudre, tension ou courant hors spécifications), dans la mesure où le défaut en résulte
 
-9.4. **Examen lors d'une réclamation de garantie.** En cas de réclamation, Incutec BV examine le produit retourné et partage ses constatations avec le consommateur (photos et mesures le cas échéant). Des traces de causes étrangères à la conformité, telles que des dommages de soudure aux pastilles ou connecteurs, une tension d'alimentation inversée ou excessive, des dommages mécaniques ou des dégâts des eaux, peuvent renverser la présomption légale selon laquelle le défaut existait à la livraison lorsqu'elles sont incompatibles avec la nature du défaut (art. 1649quater §4 ancien Code civil). Cet article ne limite pas la garantie légale ; il décrit la manière dont les réclamations sont évaluées.
+9.4. **Examen lors d'une réclamation de garantie.** En cas de réclamation, Incutec BV examine le produit retourné et partage ses constatations avec le consommateur (photos et mesures le cas échéant). Des traces de causes étrangères à la conformité, telles que des dommages de soudure aux pastilles ou connecteurs, une tension d'alimentation inversée ou excessive, des dommages mécaniques ou des dégâts des eaux, peuvent servir de preuve contraire que le défaut n’existait pas à la livraison, ou établir que la présomption légale est incompatible avec la nature du défaut (art. 1649quater §4 ancien Code civil). Le renvoi, la réparation et le remplacement au titre de la garantie légale sont gratuits pour le consommateur. Cet article ne limite pas la garantie légale ; il décrit la manière dont les réclamations sont évaluées.
 
 9.5. **Pas de garantie commerciale.** Incutec BV n'offre aucune garantie commerciale en plus de la garantie légale de conformité. Toute référence à une « garantie » sur le site ou dans la documentation produit vise la garantie légale de l'art. 9.2.
 
 ### Article 10 : Responsabilité
 
-10.1. La responsabilité d’Incutec BV pour les dommages indirects ou consécutifs est limitée au montant facturé de la commande concernée, sans préjudice de la garantie légale (Art. 9) et de la responsabilité du fait des produits. Cette limitation n’affecte pas les droits du consommateur au titre de la garantie légale ni de toute autre disposition légale impérative.
+10.1. Sauf dol ou faute lourde d’Incutec BV ou de ses préposés, et sauf inexécution d’une obligation essentielle autre que pour cause de force majeure, la responsabilité d’Incutec BV pour les dommages indirects ou consécutifs est limitée au montant facturé de la commande concernée, sans préjudice de la garantie légale (Art. 9) et de la responsabilité du fait des produits. Cette limitation n’affecte pas les droits du consommateur au titre de la garantie légale ni de toute autre disposition légale impérative.
 
-10.2. La limitation de l’Art. 10.1 n’affecte pas la responsabilité légale du fabricant au titre de la responsabilité du fait des produits (Directive (UE) 2024/2853) ni les droits du consommateur au titre de la garantie légale (Directive (UE) 2019/771). La responsabilité pour dommages corporels ne peut être limitée contractuellement (Art. VI.83, 32° CDE).
+10.2. La limitation de l’art. 10.1 n’affecte pas la responsabilité légale du fabricant du fait des produits (loi du 25 février 1991 ; après transposition, Directive (UE) 2024/2853) ni les droits du consommateur au titre de la garantie légale (Directive (UE) 2019/771). La responsabilité en cas de décès ou de lésions corporelles ne peut être exclue ni limitée (art. VI.83, 25° CDE).
 
 10.3. Incutec BV n’est pas responsable des dommages résultant de l’utilisation du produit en violation du manuel d’utilisation ou en dehors des spécifications.
 
@@ -139,9 +139,9 @@
 
 ### Article 13 : Plaintes
 
-13.1. Le consommateur est prié de notifier à Incutec BV dans les meilleurs délais tout défaut de conformité. Le consommateur peut exercer ses droits au titre de la garantie légale pendant toute la période de garantie de 2 ans.
+13.1. Le consommateur informe Incutec BV dans les deux mois suivant la constatation d’un défaut de conformité (art. 1649quater §2 ancien Code civil). La garantie légale court pendant 2 ans à compter de la livraison.
 
-13.2. Incutec BV répond aux plaintes dans un délai de **14 jours**.
+13.2. Incutec BV accuse réception d’une plainte dans les 5 jours ouvrables et y répond sur le fond dans un délai de **14 jours**.
 
 13.3. Si le consommateur estime qu’un produit constitue un risque pour la sécurité, cela peut être signalé à contact@opendrone.be. Incutec BV enquête sur chaque signalement de sécurité et prend des mesures correctives si nécessaire.
 
@@ -159,13 +159,13 @@
 
 ### Article 16 : Clients professionnels (B2B)
 
-16.1. Pour les transactions avec des entreprises (clients professionnels agissant dans le cadre de leur activité professionnelle), les Articles 5, 6, 9 et 13 des présentes conditions ne s’appliquent pas. Dans ce cas, les dispositions du Code civil s’appliquent.
+16.1. Pour les transactions avec des entreprises (clients professionnels agissant dans le cadre de leur activité professionnelle), les Articles 5, 6, 9 et 13 des présentes conditions ne s’appliquent pas. Dans ce cas, les dispositions du Code civil s’appliquent. Un client qui communique un numéro d’entreprise ou de TVA lors de la commande est réputé agir en tant qu’entreprise.
 
 16.2. Pour les transactions B2B, le Tribunal de l’entreprise de Louvain est exclusivement compétent.
 
 16.3. Les factures aux clients professionnels sont émises via les canaux de facturation électronique structurée légalement requis là où le droit belge l’exige. Dans les autres cas, Incutec BV peut utiliser toute autre forme de facturation légalement autorisée.
 
-16.4. **Responsabilité B2B.** Sauf dol ou faute lourde d'Incutec BV, et sauf dommage résultant d'une atteinte à la vie ou à l'intégrité physique, la responsabilité d'Incutec BV envers les clients professionnels est limitée, par sinistre et au total, au montant facturé de la commande concernée ; la responsabilité pour les dommages indirects et consécutifs, y compris le manque à gagner, la perte de production et les dommages à d'autres équipements, est exclue. Les défauts doivent être signalés par écrit dans les 14 jours de leur découverte ; la réparation ou le remplacement s'effectue au choix d'Incutec BV.
+16.4. **Responsabilité B2B.** Sauf dol ou faute lourde d'Incutec BV, et sauf dommage résultant d'une atteinte à la vie ou à l'intégrité physique, la responsabilité d'Incutec BV envers les clients professionnels est limitée, par sinistre et au total, au montant facturé de la commande concernée ; la responsabilité pour les dommages indirects et consécutifs, y compris le manque à gagner, la perte de production et les dommages à d'autres équipements, est exclue. Les défauts apparents et les livraisons non conformes doivent être signalés par écrit dans les 8 jours de la livraison, à peine de déchéance ; les vices cachés dans les 14 jours de leur découverte et au plus tard 12 mois après la livraison (art. 1648 ancien Code civil). La réparation ou le remplacement s'effectue au choix d'Incutec BV.
 
 16.5. **Preuve B2B.** Entre Incutec BV et les clients professionnels, les enregistrements électroniques (données de commande, fichiers journaux, données de production et de test) valent preuve, sauf preuve contraire.
 
@@ -183,11 +183,11 @@
 
 ### Article 19 : Langue
 
-19.1. La version en langue néerlandaise des présentes conditions est le texte authentique. Les traductions en français, anglais ou autres langues sont informatives et non contraignantes.
+19.1. En cas de contradiction entre les versions linguistiques des présentes conditions, le texte néerlandais prévaut, sauf à l’égard des consommateurs, pour lesquels l’interprétation la plus favorable s’applique (art. VI.37 §2 CDE).
 
 ### Article 20 : Divisibilité
 
-20.1. Si une disposition des présentes conditions s'avère totalement ou partiellement nulle ou inapplicable, les autres dispositions restent pleinement en vigueur. La disposition concernée est alors appliquée dans la mesure permise par la loi, ou remplacée par une disposition valable se rapprochant le plus possible de l'intention initiale.
+20.1. Si une disposition des présentes conditions s'avère totalement ou partiellement nulle ou inapplicable, les autres dispositions restent pleinement en vigueur. Entre entreprises, la disposition nulle est remplacée par une disposition valable se rapprochant le plus possible de l'intention initiale.
 
 ---
 

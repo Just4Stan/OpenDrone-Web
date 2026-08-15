@@ -27,13 +27,16 @@ export async function loader({request}: Route.LoaderArgs) {
   );
 }
 
-type WithdrawResult = {ok: boolean; message?: string};
+type WithdrawResult = {ok: boolean; message?: string; submittedAt?: string; receiptSent?: boolean};
 
 /**
- * Online withdrawal function (Directive (EU) 2023/2673 Art. 11a via Art.
- * VI.49/1 WER): consumers must be able to withdraw through the website with
- * a confirmation of receipt on a durable medium. The action emails the shop
- * and sends the consumer a confirmation email.
+ * Online withdrawal function (Directive (EU) 2023/2673, new CRD Art. 11a,
+ * applicable from 19 June 2026 to all distance contracts with a statutory
+ * withdrawal right; Belgian transposition pending, so no WER article is cited
+ * here). The action records the statement, emails the shop and sends the
+ * consumer an acknowledgement of receipt with the full content and timestamp.
+ * If the acknowledgement cannot be sent, the page says so and shows the
+ * timestamp instead of pretending a receipt is on its way.
  */
 export async function action({request, context}: Route.ActionArgs) {
   if (request.method !== 'POST') {
@@ -42,13 +45,18 @@ export async function action({request, context}: Route.ActionArgs) {
   const env = context.env as unknown as Record<string, string | undefined>;
   const form = await request.formData();
 
-  // Honeypot: real users never fill this hidden field.
+  // Honeypot: real users never fill this hidden field. Reject explicitly
+  // rather than fake a success, so a false positive is visible to the user.
   if (String(form.get('website') || '') !== '') {
-    return data<WithdrawResult>({ok: true});
+    return data<WithdrawResult>(
+      {ok: false, message: 'Submission rejected. Please email contact@opendrone.be.'},
+      {status: 400},
+    );
   }
 
   const ip = clientIp(request);
-  const limited = checkRateLimit(`withdraw:${ip}`, 5, 60 * 60 * 1000);
+  const emailKey = String(form.get('email') || '').trim().toLowerCase().slice(0, 200);
+  const limited = checkRateLimit(`withdraw:${ip}:${emailKey}`, 10, 60 * 60 * 1000);
   if (!limited.allowed) {
     return data<WithdrawResult>(
       {ok: false, message: 'Too many submissions. Please try again later or email contact@opendrone.be.'},
@@ -67,6 +75,7 @@ export async function action({request, context}: Route.ActionArgs) {
     receivedOn: String(form.get('received') || '').trim().slice(0, 40),
     remarks: String(form.get('remarks') || '').trim().slice(0, 2000),
     locale,
+    submittedAt: new Date().toISOString(),
   };
 
   if (!notice.name || !notice.email.includes('@') || !notice.orderNumber || !notice.products) {
@@ -76,8 +85,14 @@ export async function action({request, context}: Route.ActionArgs) {
     );
   }
 
-  await sendWithdrawalNotice(env, notice);
-  return data<WithdrawResult>({ok: true});
+  const receiptSent = await sendWithdrawalNotice(env, notice);
+  if (!receiptSent) {
+    console.error('[withdrawal] receipt email not sent', {
+      order: notice.orderNumber,
+      submittedAt: notice.submittedAt,
+    });
+  }
+  return data<WithdrawResult>({ok: true, submittedAt: notice.submittedAt, receiptSent});
 }
 
 const FORM_COPY = {
@@ -90,9 +105,11 @@ const FORM_COPY = {
     products: 'Product(en) waarop de herroeping betrekking heeft',
     received: 'Ontvangen op (datum)',
     remarks: 'Opmerkingen (optioneel)',
-    submit: 'Herroeping indienen',
+    submit: 'Herroeping bevestigen',
     submitting: 'Versturen…',
     done: 'Uw herroeping is ingediend. U ontvangt binnen enkele minuten een ontvangstbevestiging per e-mail.',
+    noReceipt: 'Uw herroeping is geregistreerd, maar de bevestigingsmail kon niet worden verzonden. Bewaar deze pagina (schermafbeelding) als bewijs of mail contact@opendrone.be met het tijdstip hieronder.',
+    stamp: 'Geregistreerd op',
   },
   en: {
     heading: 'Submit your withdrawal online',
@@ -103,9 +120,11 @@ const FORM_COPY = {
     products: 'Product(s) the withdrawal concerns',
     received: 'Received on (date)',
     remarks: 'Remarks (optional)',
-    submit: 'Submit withdrawal',
+    submit: 'Confirm withdrawal',
     submitting: 'Sending…',
     done: 'Your withdrawal has been submitted. A confirmation of receipt will arrive by email within a few minutes.',
+    noReceipt: 'Your withdrawal was recorded, but the confirmation email could not be sent. Keep this page (screenshot) as proof or email contact@opendrone.be quoting the timestamp below.',
+    stamp: 'Recorded at',
   },
   fr: {
     heading: 'Exercer votre rétractation en ligne',
@@ -116,9 +135,11 @@ const FORM_COPY = {
     products: 'Produit(s) concerné(s) par la rétractation',
     received: 'Reçu le (date)',
     remarks: 'Remarques (facultatif)',
-    submit: 'Envoyer la rétractation',
+    submit: 'Confirmer la rétractation',
     submitting: 'Envoi…',
     done: 'Votre rétractation a été envoyée. Une confirmation de réception vous parviendra par courriel dans quelques minutes.',
+    noReceipt: 'Votre rétractation a été enregistrée, mais le courriel de confirmation n’a pas pu être envoyé. Conservez cette page (capture d’écran) comme preuve ou écrivez à contact@opendrone.be en citant l’horodatage ci-dessous.',
+    stamp: 'Enregistrée le',
   },
 } as const;
 
@@ -130,8 +151,13 @@ function WithdrawalForm({locale}: {locale: 'nl' | 'en' | 'fr'}) {
 
   if (result?.ok) {
     return (
-      <div className="rich-content mt-10 rounded border border-[var(--color-border)] p-6">
-        <p>{copy.done}</p>
+      <div id="withdraw" className="rich-content mt-10 rounded border border-[var(--color-border)] p-6">
+        <p>{result.receiptSent ? copy.done : copy.noReceipt}</p>
+        {result.submittedAt ? (
+          <p className="font-mono text-xs">
+            {copy.stamp}: {result.submittedAt}
+          </p>
+        ) : null}
       </div>
     );
   }
@@ -139,7 +165,7 @@ function WithdrawalForm({locale}: {locale: 'nl' | 'en' | 'fr'}) {
   const field =
     'w-full rounded border border-[var(--color-border)] bg-transparent px-3 py-2 text-[var(--color-text)]';
   return (
-    <Form method="post" className="mt-10 max-w-xl space-y-4">
+    <Form method="post" id="withdraw" className="mt-10 max-w-xl space-y-4">
       <h2 className="font-mono text-[13px] uppercase tracking-[0.2em] text-[var(--color-text-muted)]">
         {copy.heading}
       </h2>
