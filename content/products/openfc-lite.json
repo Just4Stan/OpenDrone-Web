@@ -4,7 +4,8 @@
   "hero": {
     "line1": "A flight controller,",
     "line2Italic": "minus",
-    "line3": "what you don’t need."
+    "line3": "what you don’t need.",
+    "lead": ""
   },
   "whatIsThis": {
     "intro": "The flight controller is the drone's computer. This one runs Betaflight on an RP2354, a dual-core chip from the Raspberry Pi Pico family, reading a 6-axis IMU thousands of times per second and correcting all four motors to follow your commands. It records blackbox to a microSD card, draws OSD over your analog video feed, and has a switchable 10 V rail so you can power your VTX from it. ",
