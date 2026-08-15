@@ -232,8 +232,18 @@ docs/                      hero-studio, growth-architecture, store-compliance
 
 **Board art pipeline**: `npm run gen:board-art` shells out to `kicad-cli` and
 KiCad's `pcbnew` Python to export each PCB as a layered SVG, clipped to the true
-board outline, with a mirrored back side. `boards.config.json` maps handles to
-`.kicad_pcb` paths outside this repo, so it is gitignored (copy the example).
+board outline, with a mirrored back side. `scripts/boards.config.json` maps
+handles to `.kicad_pcb` paths relative to the container that holds the board
+checkouts (`~/OpenDrone/hardware`; `OPENDRONE_HARDWARE` overrides it).
+
+**Repo-to-site mirror**: the board repos are the source of truth for specs and
+release assets, the site is a maintained mirror. `npm run sync:specs` reads the
+`## Specifications` table of each mapped README (`scripts/repo-sync.config.json`,
+same root and override as above) into `content/products/<handle>.json`;
+`--check` diffs. `npm run sync:downloads` is the same for the latest GitHub
+release assets, prepared but not switched on: the downloads chapter stays empty
+until it is wanted, so nobody runs its `--write`. OpenRX stays hand-maintained.
+Both run at release step 9 alongside the art commands and land as a normal PR.
 
 **Hero pipeline**: Onshape assembly → GLB export → `scripts/hero-assets/build-hero.mjs`
 (meshopt, chunk split) → `public/models/<design>/` → tuned in the studio's hero
@@ -297,6 +307,7 @@ The complete annotated list is [`.env.example`](.env.example). Groups:
 | `npm run publish:post -- content/posts/<slug>.md` | publish a blog post (`--dry`, `--draft`) |
 | `npm run compose:newsletter <handle>` | branded HTML email from a published post |
 | `npm run gen:board-art` | export PCB SVGs (needs KiCad) |
+| `npm run sync:specs` / `sync:downloads` | mirror README specs / release assets into the product JSON |
 | `npm run studio:coverage` | how much copy is studio-editable |
 | `npm run gen:shopify-templates` | branded Shopify notification-email HTML |
 

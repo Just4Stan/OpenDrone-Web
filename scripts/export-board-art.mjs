@@ -86,6 +86,7 @@ import {
 import {join, basename, dirname, resolve} from 'node:path';
 import {tmpdir} from 'node:os';
 import {fileURLToPath} from 'node:url';
+import {loadBoards} from './boards-config.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 
@@ -101,7 +102,6 @@ const KICAD_PYTHON =
 const OUTLINE_SCRIPT = resolve(here, 'board-outline.py');
 const COMPONENTS_SCRIPT = resolve(here, 'board-components.py');
 const RENDER_FIT_SCRIPT = resolve(here, 'board-render-fit.py');
-const CONFIG_PATH = resolve(here, 'boards.config.json');
 
 // ImageMagick — used to horizontally mirror the bottom render into the
 // look-through top-down frame (and only there; render + detection do the math).
@@ -767,22 +767,6 @@ function buildComponentsOnly(pcbPath, handle) {
 }
 
 /** Read the local board manifest (handle → .kicad_pcb path). */
-function loadConfig() {
-  let raw;
-  try {
-    raw = readFileSync(CONFIG_PATH, 'utf8');
-  } catch {
-    console.error(
-      `No ${basename(CONFIG_PATH)} found. Copy boards.config.example.json to ` +
-        `boards.config.json and fill in your local .kicad_pcb paths.`,
-    );
-    process.exit(2);
-  }
-  const boards = JSON.parse(raw);
-  if (!Array.isArray(boards)) throw new Error('boards.config.json must be an array');
-  return boards;
-}
-
 // Bake a content version into the bundle so BoardArt can bust the CDN's 1-year
 // immutable cache on the (unversioned) board.svg + front/back.png URLs. Oxygen
 // serves everything under public/ with `max-age=31536000`, so an in-place regen
@@ -841,7 +825,7 @@ const args = rawArgs.filter((a) => a !== '--components-only');
 const build = componentsOnly ? buildComponentsOnly : buildBoard;
 
 if (args[0] === '--all') {
-  const boards = loadConfig();
+  const boards = loadBoards();
   const failures = [];
   for (const {handle, pcb} of boards) {
     if (!handle || !pcb) {

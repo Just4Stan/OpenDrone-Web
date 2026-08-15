@@ -275,11 +275,11 @@
     ],
     [
       "Input",
-      "3–6S LiPo"
+      "3–8S LiPo (9.0–33.6 V)"
     ],
     [
       "BEC",
-      "10 V switchable + 5 V always-on, 3 A"
+      "10 V switchable + 5 V always-on, 3.5 A"
     ],
     [
       "Current sense",
@@ -291,7 +291,7 @@
     ],
     [
       "Mounting",
-      "30.5 × 30.5 mm, Ø4.0 mm holes"
+      "30.5 × 30.5 mm, 4.0 mm holes"
     ],
     [
       "Dimensions",
@@ -328,8 +328,16 @@
           "3"
         ],
         [
+          "Input",
+          "3–6S LiPo (9.0–25.2 V)"
+        ],
+        [
+          "BEC",
+          "10 V switchable + 5 V always-on, 3 A"
+        ],
+        [
           "Mounting",
-          "20 × 20 mm, Ø3.0 mm holes"
+          "20 × 20 mm, 3.0 mm holes"
         ],
         [
           "Dimensions",
@@ -521,24 +529,6 @@
         ],
         [
           "Size",
-          "37.9 × 37.9 mm"
-        ]
-      ],
-      "specs": [
-        [
-          "MCU",
-          "RP2354B"
-        ],
-        [
-          "UARTs",
-          "4"
-        ],
-        [
-          "Mounting",
-          "30.5 × 30.5 mm, Ø4.0 mm holes"
-        ],
-        [
-          "Dimensions",
           "37.9 × 37.9 mm"
         ]
       ],
