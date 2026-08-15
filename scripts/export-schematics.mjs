@@ -34,12 +34,12 @@ import {
 import {join, basename, dirname, resolve} from 'node:path';
 import {tmpdir} from 'node:os';
 import {fileURLToPath} from 'node:url';
+import {loadBoards} from './boards-config.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const KICAD_CLI =
   process.env.KICAD_CLI ||
   '/Applications/KiCad/KiCad.app/Contents/MacOS/kicad-cli';
-const CONFIG_PATH = resolve(here, 'boards.config.json');
 
 // Nicer labels for common sheet names; anything else is title-cased.
 const LABELS = {
@@ -321,7 +321,7 @@ function writeVersionFile() {
 
 const args = process.argv.slice(2);
 if (args[0] === '--all') {
-  const boards = JSON.parse(readFileSync(CONFIG_PATH, 'utf8'));
+  const boards = loadBoards();
   const failures = [];
   for (const {handle, pcb} of boards) {
     const sch = pcb.replace(/\.kicad_pcb$/, '.kicad_sch');

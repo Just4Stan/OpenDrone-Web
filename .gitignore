@@ -34,8 +34,6 @@ scripts/out/
 
 # Local board-art manifest: maps product handles to absolute paths of
 # KiCad sources that live outside this (public) repo. Machine-specific —
-# copy boards.config.example.json to boards.config.json and fill it in.
-scripts/boards.config.json
 
 # iCloud Drive collision-rename pattern: when iCloud detects two
 # concurrent edits to the same file, it renames the loser to "<name> 2.<ext>".

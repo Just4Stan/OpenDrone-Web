@@ -21,12 +21,12 @@
  * whose README matches the base exactly gets NO override list.
  *
  * Typography. Repo tables stay plain ASCII; the site keeps its marks. The
- * importer applies exactly two rewrites to values (documented here, nowhere
+ * importer applies exactly three rewrites to values (documented here, nowhere
  * else): a hyphen BETWEEN DIGITS becomes an en dash (2-6S -> 2–6S; 6-layer
- * and JST-SH are untouched), and ` x ` between digits becomes ` × `
- * (20 x 20 mm). Nothing else is rewritten; if the site should show a mark,
- * put the plain-ASCII form of the fact in the README and extend these rules
- * deliberately.
+ * and JST-SH are untouched), ` x ` between digits becomes ` × ` (20 x 20 mm),
+ * and a count multiplier `<digits>x ` becomes `<digits>× ` (4x DShot). Nothing
+ * else is rewritten; if the site should show a mark, put the plain-ASCII form
+ * of the fact in the README and extend these rules deliberately.
  */
 import fs from 'node:fs';
 import path from 'node:path';
@@ -49,12 +49,17 @@ if (!mode) {
 }
 
 const cfg = JSON.parse(fs.readFileSync(CONFIG, 'utf8'));
-const root = cfg.root.replace(/^~(?=\/)/, os.homedir());
+// The board checkouts: OPENDRONE_HARDWARE when set, else the config's root.
+const root = (process.env.OPENDRONE_HARDWARE || cfg.root).replace(
+  /^~(?=\/)/,
+  os.homedir(),
+);
 
-/** The two typography rules. Keep this the only place they exist. */
+/** The three typography rules. Keep this the only place they exist. */
 function normalize(value) {
   return value
     .replace(/(?<=\d) ?x ?(?=\d)/g, ' × ')
+    .replace(/(?<=\d)x(?= )/g, '×')
     .replace(/(?<=\d)-(?=\d)/g, '–');
 }
 
