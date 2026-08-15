@@ -148,16 +148,25 @@ export function HeroDroneScene({
     const cleanup: Array<() => void> = [];
 
     const TEST = typeof location !== 'undefined' && new URLSearchParams(location.search).has('herotest');
+    // /public is served with a one-year max-age and these files are not
+    // content-hashed, so a returning visitor kept an old studio.json (no
+    // handles, no captions) for a year after every deploy: the site said
+    // one thing, their browser another (Stan, 2026-08-15). Vite's base is
+    // the per-deployment CDN path on Oxygen, so it is a free build id.
+    const V = encodeURIComponent(
+      (import.meta.env.BASE_URL || '/').replace(/[^a-z0-9]/gi, '').slice(-24) || 'dev',
+    );
+    const modelUrl = (folder: string, file: string) => `/models/${folder}/${file}?v=${V}`;
 
     (async () => {
       // Only some sizes have an assembly built. Fall back rather than 404ing,
       // so the size selector keeps working before the other models exist.
       let folder = model;
-      let res = await fetch(`/models/${folder}/studio.json`);
+      let res = await fetch(modelUrl(folder, 'studio.json'));
       if (!res.ok && folder !== FALLBACK_MODEL) {
         console.warn(`[hero] no assembly for "${folder}", showing ${FALLBACK_MODEL}`);
         folder = FALLBACK_MODEL;
-        res = await fetch(`/models/${folder}/studio.json`);
+        res = await fetch(modelUrl(folder, 'studio.json'));
       }
       if (!res.ok) throw new Error(`studio.json ${res.status}`);
       const cfg = (await res.json()) as StudioConfig;
@@ -477,7 +486,7 @@ export function HeroDroneScene({
       };
       renderer.setAnimationLoop(previewFrame);
 
-      const manifest = await fetch(`/models/${folder}/chunks.json`)
+      const manifest = await fetch(modelUrl(folder, 'chunks.json'))
         .then((r) => (r.ok ? (r.json() as Promise<ChunkManifest>) : null))
         .catch(() => null);
       // No manifest means an older single-file build. Still supported.
@@ -495,7 +504,7 @@ export function HeroDroneScene({
         onLoad?.({label: c.label, frac: bytesDone / totalBytes, chunk: c.id, done: false, pieces});
         const g = await new Promise<{scene: THREE.Group}>((resolve, reject) =>
           loader.load(
-            `/models/${folder}/${c.file}`,
+            modelUrl(folder, c.file),
             resolve as any,
             (e) => {
               if (!e.total) return;

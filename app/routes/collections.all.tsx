@@ -500,7 +500,10 @@ export default function Collection() {
                 to="/roadmap"
                 className="catalog-roadmap-btn"
               >
-                <Txt id="collections-all.roadmap_link" fallback="Roadmap →" />
+                <Txt
+                  id="collections-all.roadmap_link"
+                  fallback="What the status labels mean →"
+                />
               </Link>
             </div>
           )}

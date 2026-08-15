@@ -42,12 +42,6 @@ export const EDITORIAL_SERIES: EditorialEntry[] = [
     minutes: 3,
   },
   {
-    slug: 'contributing',
-    title: 'Contributing',
-    hook: 'How to report a problem, change a design, and get credited for it.',
-    minutes: 2,
-  },
-  {
     slug: 'timeline',
     title: 'Timeline',
     hook: 'Everything that has actually shipped, dated.',

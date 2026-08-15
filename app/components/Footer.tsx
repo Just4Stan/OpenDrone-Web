@@ -2,7 +2,7 @@ import {Suspense} from 'react';
 import {Await} from 'react-router';
 import {NavLink} from '~/components/nav';
 import type {HeaderQuery} from 'storefrontapi.generated';
-import {DISCORD_INVITE_URL, type CompanyIdentity} from '~/lib/company';
+import {DISCORD_INVITE_URL, CONTRIBUTING_URL, type CompanyIdentity} from '~/lib/company';
 import type {NewsletterAccount} from '~/components/PageLayout';
 import {CompanyFooterBlock} from '~/components/CompanyFooterBlock';
 import {NewsletterSignup} from '~/components/NewsletterSignup';
@@ -37,13 +37,13 @@ const SHOP_LINKS: Array<{to: string; copy: string}> = [
 const SOCIAL_LINKS: Array<{href: string; copy: string}> = [
   {href: DISCORD_INVITE_URL, copy: 'nav_discord'},
   {href: 'https://github.com/OpenDrone-hw', copy: 'nav_github'},
+  {href: CONTRIBUTING_URL, copy: 'nav_contributing'},
 ];
 
 const COMPANY_LINKS: Array<{to: string; copy: string}> = [
   {to: '/open-source', copy: 'nav_open_source_incutec'},
   {to: '/firmware-partners', copy: 'nav_firmware_partners'},
   {to: '/roadmap', copy: 'nav_roadmap'},
-  {to: '/contributing', copy: 'nav_contributing'},
   {to: '/timeline', copy: 'nav_timeline'},
   {to: '/production', copy: 'nav_production'},
 ];

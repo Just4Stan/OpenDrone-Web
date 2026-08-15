@@ -201,7 +201,7 @@ infer status from prose anywhere else.
 - [Open source model and Incutec BV, the company behind the shop](${origin}/open-source)
 - [Firmware partners](${origin}/firmware-partners)
 - [Product roadmap, community vote and financial goals](${origin}/roadmap)
-- [How to contribute](${origin}/contributing)
+- [How to contribute](https://github.com/OpenDrone-hw/.github/blob/main/CONTRIBUTING.md)
 - [Release timeline, everything that has shipped](${origin}/timeline)
 - [Where the boards are made](${origin}/production)
 - [All products](${origin}/collections/all)
