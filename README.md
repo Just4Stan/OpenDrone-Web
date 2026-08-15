@@ -91,7 +91,14 @@ also carries the how-to-help section that used to live at `/contribute`.
 
 `/timeline` lists every milestone of the project with a link to the evidence:
 first commits, fab orders, bench validations, upstream merges. No claims without
-receipts.
+receipts. Two sources: a curated list in `app/routes/timeline.tsx` for the
+things only a human knows (bench results, samples ordered, videos), and the
+timeline ledger for everything GitHub can prove on its own: releases, repos
+appearing, and `status-*` topic flips across the public OpenDrone-hw repos.
+The ledger is `timeline-ledger.json` on this repo's unprotected `data` branch,
+appended daily by `.github/workflows/timeline-ledger.yml`
+(`scripts/sync-timeline.mjs`) and read live by the page, so a tag cut on a
+board is on the timeline the next day with nobody editing anything.
 
 ### Open source: why, and who pays
 
@@ -315,6 +322,7 @@ The complete annotated list is [`.env.example`](.env.example). Groups:
 | `npm run compose:newsletter <handle>` | branded HTML email from a published post |
 | `npm run gen:board-art` | export PCB SVGs + copper-layer rasters (needs KiCad, cwebp) |
 | `npm run sync:specs` / `sync:downloads` | mirror README specs / release assets into the product JSON |
+| `npm run sync:timeline` | append releases, new repos and status flips to the timeline ledger (CI does this daily on the `data` branch) |
 | `npm run studio:coverage` | how much copy is studio-editable |
 | `npm run gen:shopify-templates` | branded Shopify notification-email HTML |
 | `npm run audit:perf -- --device "Pixel 7" --throttle 6 --network slow4g` | mobile perf lab: frames, long tasks, bytes per interaction (drop `--device` for the desktop lab) |

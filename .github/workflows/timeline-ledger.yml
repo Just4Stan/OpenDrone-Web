@@ -1,0 +1,53 @@
+# Daily append to the timeline ledger: releases, new repos and status-topic
+# flips across the public OpenDrone-hw repos, dated and linked. The ledger
+# lives on the unprotected `data` branch and /timeline reads it live, so
+# nothing here touches main: no PR, no merge, no deploy. See
+# scripts/sync-timeline.mjs for the event model.
+
+name: Timeline ledger
+
+on:
+  schedule:
+    - cron: '17 5 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: timeline-ledger
+  cancel-in-progress: false
+
+jobs:
+  ledger:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/checkout@v7
+        with:
+          ref: data
+          path: ledger
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+
+      - name: Append to the ledger
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: node scripts/sync-timeline.mjs --ledger ledger/timeline-ledger.json --write
+
+      - name: Push the data branch
+        working-directory: ledger
+        run: |
+          git config user.name 'opendrone-bot'
+          git config user.email 'bot@opendrone.be'
+          if git diff --quiet -- timeline-ledger.json; then
+            echo 'ledger unchanged'
+            exit 0
+          fi
+          git add timeline-ledger.json
+          git commit -m "Timeline ledger: $(date -u +%F)"
+          git push origin HEAD:data

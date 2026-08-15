@@ -1,6 +1,11 @@
 import {useEffect, useMemo, useRef, useState} from 'react';
-import {Link} from 'react-router';
+import {Link, useLoaderData} from 'react-router';
 import type {Route} from './+types/timeline';
+import {
+  fetchTimelineLedger,
+  tagForRepo,
+  type LedgerEvent,
+} from '~/lib/timeline-ledger';
 import {buildSeoMeta} from '~/lib/seo';
 import {EditorialShell} from '~/components/EditorialShell';
 import {Txt} from '~/components/Txt';
@@ -20,8 +25,14 @@ export const meta: Route.MetaFunction = () =>
     description: copyText('timeline.meta_description') ?? '',
   });
 
+/**
+ * The machine half of the page: releases, repos and status flips from the
+ * ledger (app/lib/timeline-ledger.ts), best-effort. A miss just leaves the
+ * curated list on its own.
+ */
 export async function loader(_args: Route.LoaderArgs) {
-  return {};
+  const ledger = await fetchTimelineLedger();
+  return {ledgerEvents: ledger?.events ?? []};
 }
 
 type EventKind =
@@ -31,10 +42,12 @@ type EventKind =
   | 'cert'
   | 'upstream'
   | 'launch'
+  | 'status'
   | 'post';
 
 type TimelineEvent = {
-  /** Copy key stem: `event_<id>_title` and optional `event_<id>_detail`. */
+  /** Copy key stem: `event_<id>_title` and optional `event_<id>_detail`,
+   *  unless `title` is set (ledger events carry their words resolved). */
   id: string;
   date: string; // YYYY-MM-DD
   /** Filter tag: esc | fc | rx | frame | company. Untagged = company. */
@@ -42,6 +55,8 @@ type TimelineEvent = {
   kind: EventKind;
   /** Public receipt: repo, commit, tag, certification, or post. */
   url?: string;
+  title?: string;
+  detail?: string;
 };
 
 const KIND_GLYPH: Record<EventKind, string> = {
@@ -51,8 +66,95 @@ const KIND_GLYPH: Record<EventKind, string> = {
   cert: '◉',
   upstream: '⇪',
   launch: '⚑',
+  status: '⇢',
   post: '✎',
 };
+
+const norm = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, '');
+
+function fill(id: string, fallback: string, vars: Record<string, string>): string {
+  let out = copyText(id) ?? fallback;
+  for (const [k, v] of Object.entries(vars)) out = out.replaceAll(`{${k}}`, v);
+  return out;
+}
+
+/** Ledger events as timeline rows: words from the copy templates, tag from
+ *  the repo, kind mapped onto the page's glyph vocabulary. Archived repos
+ *  and pre-releases still list; they are dated facts. */
+function fromLedger(e: LedgerEvent): TimelineEvent | null {
+  const tag = tagForRepo(e.repo);
+  if (e.kind === 'release' && e.tag) {
+    return {
+      id: e.id,
+      date: e.date,
+      tag,
+      kind: 'launch',
+      url: e.url,
+      title: fill(
+        e.prerelease
+          ? 'timeline.auto_release_prerelease_title'
+          : 'timeline.auto_release_title',
+        e.prerelease ? '{repo} {tag} pre-release' : '{repo} {tag} released',
+        {repo: e.repo, tag: e.tag},
+      ),
+      // A release name that only restates repo + tag ("OpenRX Rev 2.1")
+      // is not a detail.
+      detail:
+        e.name && norm(e.name) !== norm(`${e.repo} ${e.tag}`)
+          ? e.name
+          : undefined,
+    };
+  }
+  if (e.kind === 'repo') {
+    return {
+      id: e.id,
+      date: e.date,
+      tag,
+      kind: 'commit',
+      url: e.url,
+      title: fill('timeline.auto_repo_title', '{repo}: repository opened', {
+        repo: e.repo,
+      }),
+    };
+  }
+  if (e.kind === 'status' && e.status) {
+    return {
+      id: e.id,
+      date: e.date,
+      tag,
+      kind: 'status',
+      url: e.url,
+      title: fill('timeline.auto_status_title', '{repo} moved to {status}', {
+        repo: e.repo,
+        status: e.status,
+      }),
+      detail: e.from
+        ? fill(
+            'timeline.auto_status_from_detail',
+            'From {from}, per the status-* topic on the repo.',
+            {from: e.from},
+          )
+        : undefined,
+    };
+  }
+  return null;
+}
+
+/** A curated entry that names the same fact wins over the ledger's: same
+ *  tag and kind within a week (repo openings vs hand-written first
+ *  commits, a hand-noted release vs its tag). */
+function dedupe(curated: TimelineEvent[], auto: TimelineEvent[]): TimelineEvent[] {
+  const day = 86_400_000;
+  return auto.filter(
+    (a) =>
+      !curated.some(
+        (c) =>
+          (c.tag ?? 'company') === (a.tag ?? 'company') &&
+          c.kind === a.kind &&
+          Math.abs(Date.parse(c.date) - Date.parse(a.date)) <= 7 * day,
+      ),
+  );
+}
 
 const FILTERS: Array<{key: 'all' | NonNullable<TimelineEvent['tag']>}> = [
   {key: 'all'},
@@ -157,13 +259,20 @@ function useTraceProgress(
 }
 
 export default function TimelineRoute() {
+  const {ledgerEvents} = useLoaderData<typeof loader>();
   const [filter, setFilter] = useState<(typeof FILTERS)[number]['key']>('all');
   const rootRef = useRef<HTMLDivElement | null>(null);
   useTraceProgress(rootRef);
 
-  // Newest first, grouped by year.
+  // Curated + ledger, newest first, grouped by year.
+  const all = useMemo(() => {
+    const auto = (ledgerEvents as LedgerEvent[])
+      .map(fromLedger)
+      .filter((e): e is TimelineEvent => e !== null);
+    return [...TIMELINE, ...dedupe(TIMELINE, auto)];
+  }, [ledgerEvents]);
   const groups = useMemo(() => {
-    const events = [...TIMELINE]
+    const events = [...all]
       .filter((e) => filter === 'all' || (e.tag ?? 'company') === filter)
       .sort((a, b) => (a.date < b.date ? 1 : -1));
     const byYear = new Map<string, TimelineEvent[]>();
@@ -172,7 +281,7 @@ export default function TimelineRoute() {
       byYear.set(y, [...(byYear.get(y) ?? []), e]);
     }
     return [...byYear.entries()];
-  }, [filter]);
+  }, [all, filter]);
 
   return (
     <EditorialShell slug="timeline" pageClassName="timeline-page">
@@ -224,18 +333,27 @@ export default function TimelineRoute() {
                           target="_blank"
                           rel="noopener noreferrer"
                         >
-                          <Txt id={`timeline.event_${e.id}_title`} /> ↗
+                          {e.title ?? (
+                            <Txt id={`timeline.event_${e.id}_title`} />
+                          )}{' '}
+                          ↗
                         </a>
                       ) : (
-                        <Txt id={`timeline.event_${e.id}_title`} />
+                        (e.title ?? <Txt id={`timeline.event_${e.id}_title`} />)
                       )}
                     </h3>
                     {/* No detail key on this event renders nothing. */}
-                    <Txt
-                      id={`timeline.event_${e.id}_detail`}
-                      as="p"
-                      className="tl-detail"
-                    />
+                    {e.title ? (
+                      e.detail ? (
+                        <p className="tl-detail">{e.detail}</p>
+                      ) : null
+                    ) : (
+                      <Txt
+                        id={`timeline.event_${e.id}_detail`}
+                        as="p"
+                        className="tl-detail"
+                      />
+                    )}
                   </div>
                 </li>
               ))}

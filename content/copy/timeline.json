@@ -62,5 +62,10 @@
   "event_release_tags_cut_title": "Release tags cut on the validated boards",
   "event_release_tags_cut_detail": "rev2 on OpenESC 20×20 and both FCs, rev1 on OpenESC 30×30.",
   "cta_primary": "What ships next →",
-  "cta_secondary": "Put yourself on this timeline →"
+  "cta_secondary": "Put yourself on this timeline →",
+  "auto_release_title": "{repo} {tag} released",
+  "auto_release_prerelease_title": "{repo} {tag} pre-release",
+  "auto_repo_title": "{repo}: repository opened",
+  "auto_status_title": "{repo} moved to {status}",
+  "auto_status_from_detail": "From {from}, per the status-* topic on the repo."
 }
