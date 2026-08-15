@@ -8,7 +8,7 @@
     "lead": "An RP2354 dual-core M33 running Betaflight on a 6-layer board: a 6-axis IMU, microSD blackbox, PIO-driven analog OSD, and a switchable 10 V VTX rail. No barometer, no onboard radio. Bring your own RX over UART and keep the board small and cheap."
   },
   "whatIsThis": {
-    "intro": "The flight controller is the drone's computer. This one runs Betaflight on an RP2354, a dual-core chip from the Raspberry Pi Pico family, reading a 6-axis IMU thousands of times per second and correcting all four motors to follow your sticks. It records every flight to a microSD card (blackbox, for tuning and crash forensics), draws telemetry over your analog video feed (OSD), and has a switchable 10 V rail so you can power your VTX from it and reboot it from your radio. There is no receiver on board, on purpose: you wire your own over a UART, keep the board cheap, and pick your own radio link.",
+    "intro": "The flight controller is the drone's computer. This one runs Betaflight on an RP2354, a dual-core chip from the Raspberry Pi Pico family, reading a 6-axis IMU thousands of times per second and correcting all four motors to follow your commands. It records blackbox to a microSD card, draws OSD over your analog video feed, and has a switchable 10 V rail so you can power your VTX from it. ",
     "needs": [
       "A 4-in-1 ESC and four motors (OpenESC pairs directly, one plug)",
       "A receiver wired to a UART (OpenRX, CRSF)",
@@ -37,21 +37,21 @@
     "pins": [
       {
         "ref": "①",
-        "part": "RP2354B · dual M33 @ 150 MHz",
+        "part": "RP2354B ",
         "refs": [
           "U2"
         ]
       },
       {
         "ref": "②",
-        "part": "6-axis IMU (SPI)",
+        "part": "6-axis IMU",
         "refs": [
           "U9"
         ]
       },
       {
         "ref": "③",
-        "part": "microSD blackbox (SPI)",
+        "part": "microSD blackbox",
         "refs": [
           "Card1"
         ]
@@ -67,7 +67,7 @@
       },
       {
         "ref": "⑤",
-        "part": "Switchable VTX / 5 V buck",
+        "part": "10V/ 5V buck",
         "refs": [
           "U6",
           "U16"
@@ -103,7 +103,7 @@
       },
       {
         "ref": "⑦",
-        "part": "USB-C + USB/battery diode-OR",
+        "part": "USB-C + 4.5V OR",
         "refs": [
           "USB1",
           "D6",
@@ -339,21 +339,21 @@
       "pins": [
         {
           "ref": "①",
-          "part": "RP2354A · dual M33 @ 150 MHz",
+          "part": "RP2354A",
           "refs": [
             "U10"
           ]
         },
         {
           "ref": "②",
-          "part": "6-axis IMU (SPI)",
+          "part": "6-axis IMU",
           "refs": [
             "U9"
           ]
         },
         {
           "ref": "③",
-          "part": "microSD blackbox (SPI)",
+          "part": "microSD blackbox ",
           "refs": [
             "Card1"
           ]
@@ -369,7 +369,7 @@
         },
         {
           "ref": "⑤",
-          "part": "Switchable VTX / 5 V buck",
+          "part": "10V / 5V buck",
           "refs": [
             "U3",
             "U4"
@@ -405,7 +405,7 @@
         },
         {
           "ref": "⑦",
-          "part": "USB-C + USB/battery diode-OR",
+          "part": "USB-C + 4.5V OR",
           "refs": [
             "USB1",
             "D6",

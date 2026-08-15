@@ -17,7 +17,7 @@
   "error_meta_title": "Something went wrong",
   "error_meta_description": "An unexpected error occurred.",
   "error_title": "Something went wrong",
-  "error_body": "An unexpected error occurred. Try again, or head back to the catalog.",
+  "error_body": "An unexpected error occurred. ",
   "error_details": "Technical details",
   "error_cta_home": "Home",
   "error_cta_shop": "Shop"

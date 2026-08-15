@@ -9,14 +9,14 @@
   "s2_title": "*01* · Today",
   "s2_body": [
     "Fabrication and assembly currently happen in China. The BOM is written around parts you can actually order, so a self-build is a real option, not a theoretical one.",
-    "Manufacturing, quality control and sales are Incutec's side of the project: the things a community cannot do alone. [Finished boards](/collections/all) come back to Incutec in Belgium, where they are inspected, flashed and packed before shipping."
+    "Manufacturing, quality control and sales are Incutec's side of the project: the things a community cannot do alone. [Finished products](/collections/all) come back to Incutec in Belgium, where they are inspected, flashed and packed before shipping. Maybe you'll even get some candy :)"
   ],
   "s3_title": "*02* · The future",
   "s3_body": [
     "We want more of this made in-house, closer to home. The obstacle is not ambition, it is capital: every step on the ladder is equipment, floor space and people. So the plan is to buy it with what we earn, one capability at a time, cheapest and most useful first.",
     "PCB assembly is the first because it is genuinely approachable at our scale and pays for itself fastest. It also buys freedom: we choose the parts instead of designing around what a fab stocks, and a revision takes days instead of weeks.",
     "We can start stocking a standard library of components for the community to design around for rapid prototyping.",
-    "After that it gets harder and more expensive. Routing carbon is mostly a filtration and enclosure problem. Aluminium means a 5-axis machine and a chemical line to finish what comes off it. Motors are the deep end: stamping and stacking steel laminations, coating and winding them, bonding magnets into a flux ring, machining bells and bases, balancing the rotors. None of that is exotic, all of it is a factory.",
+    "After that it gets harder and more expensive. CNC carbon is mostly a filtration and enclosure problem. Aluminium means a 5-axis machine and a chemical line to anodise what comes off it. Motors are the deep end: stamping and stacking steel laminations, coating and winding them, bonding magnets into a flux ring, machining bells and bases, balancing the rotors. One can dream.",
     "This is also why the community half of the project matters. Every design a maintainer takes on is engineering time we can spend on manufacturing instead of on the next schematic. We would rather be the people who build it well than be the only people allowed to design it."
   ],
   "cta_primary": "Why the files are public →",

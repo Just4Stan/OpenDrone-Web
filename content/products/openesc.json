@@ -8,7 +8,7 @@
     "lead": "6 mosfets per motor, 2 for each phase. Driven by a gate driver, controlled by a microcontroller. Duplicate that 4 times et voila, 'An ESC'."
   },
   "whatIsThis": {
-    "intro": "An ESC turns battery power into motion. A brushless motor is three coils, and spinning it means switching current through them in exactly the right sequence, at exactly the motor's own speed. This board does that four times over: per motor a microcontroller running AM32, a gate driver, and six MOSFETs doing the power switching, 40 A continuous each on the 20x20 board. It listens for throttle commands from the flight controller over DShot and reports motor RPM back on the same wire, which Betaflight uses to filter gyro noise at exactly the motors' frequencies. Current sensing is on board, so your OSD knows what you are burning.",
+    "intro": "An ESC turns battery power into AC signals needed for BLDC motors to spin. This one specifically is sensorless. Do that four times over: per motor a microcontroller running AM32, a gate driver, and six MOSFETs doing the power switching. It listens for throttle commands from the flight controller over DShot and reports motor RPM back on the same wire, which Betaflight uses to filter gyro noise at exactly the motors' frequencies. Current sensing is on board, exposed through the connector to the Flight Controller.",
     "needs": [
       "A flight controller to command it (OpenFC Lite, one 8-pin cable, in the box)",
       "Four brushless motors soldered to the pads",
@@ -37,7 +37,7 @@
     "pins": [
       {
         "ref": "①",
-        "part": "AT32F421 motor MCU",
+        "part": "AT32F421 MCU",
         "cost": "×4",
         "refs": [
           "U2",
@@ -59,7 +59,7 @@
       },
       {
         "ref": "③",
-        "part": "DOY180N03 power MOSFET",
+        "part": "Power MOSFET",
         "cost": "×24",
         "refs": [
           "Q1",
@@ -90,14 +90,14 @@
       },
       {
         "ref": "④",
-        "part": "INA186A3 current sense",
+        "part": "INA186A3 CSA",
         "refs": [
           "U12"
         ]
       },
       {
         "ref": "⑤",
-        "part": "0.2 mΩ sense shunt",
+        "part": "0.2 mΩ current shunt",
         "refs": [
           "Rsense1"
         ]
@@ -111,14 +111,14 @@
       },
       {
         "ref": "⑦",
-        "part": "LMR54406 buck",
+        "part": "LMR54406 Buck",
         "refs": [
           "U13"
         ]
       },
       {
         "ref": "⑧",
-        "part": "JST-SH FC connector",
+        "part": "JST-SH connector",
         "refs": [
           "J1"
         ]
@@ -210,7 +210,7 @@
       },
       {
         "ref": "⑫",
-        "part": "Bulk ceramic capacitor array",
+        "part": "Bulk Ceramic Array",
         "cost": "×22",
         "box": "union",
         "refs": [

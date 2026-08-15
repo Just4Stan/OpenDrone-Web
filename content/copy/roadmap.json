@@ -5,7 +5,7 @@
   "meta_description": "Every OpenDrone project with its current status, what the community voted to build next, and the financial goals the shop is working toward.",
   "eyebrow": "Roadmap",
   "title": "What we're building.",
-  "lead": "The end goal is to cover every corner of the FPV hardware spectrum, foundational hardware first: stack, receiver, frame, motors, video. This page is the live state of that plan: where every project stands, what you voted for next, and what the money is building toward.",
+  "lead": "The end goal is to cover every corner of the FPV hardware spectrum, foundational hardware first: fc, esc, receiver, frame, motors, video. This page is the live state of that plan.",
   "s1_title": "*01* · How this works",
   "s1_body": [
     "Everything starts as a conversation on [the OpenDrone Discord](@discord): what the market needs, which specs make sense, what can realistically be produced. Agreeing before anyone draws is the point. It stops two people building the same thing, and it kills bad ideas before someone spends weeks on a layout. When you want to do more than talk, [the contributing page](/contributing) is the manual."
@@ -60,7 +60,7 @@
   "gate_in-progress": "design iterations",
   "gate_planned": "design requirements",
   "votes_title": "*02* · What you want next",
-  "votes_body": "Every order carries an optional ballot: in the cart, rank up to three of the planned and in-progress projects from this board, and checkout files your ranking with the order. The counts are re-tallied from orders weekly and published right here, on the cards above and in the standings below. The vote steers our prioritisation; engineering reality can still overrule it, in the open.",
+  "votes_body": "Every order carries an optional ballot: in the cart, rank up to three of the planned and in-progress projects from this board, and checkout files your ranking with the order. The vote steers our priorities; engineering reality can still overrule it but we will tell you and not silently drop stuff.",
   "votes_empty": "No ballots counted yet. When you order, the cart carries a ranked ballot for what we should build next; the standings appear here and on the board above.",
   "votes_ballots_label": "ballots counted",
   "votes_count_label": "votes",
@@ -68,7 +68,7 @@
   "votes_graduated_title": "Voted up, already moving",
   "votes_method": "Ranked choice: 3 points for a first pick, 2 for a second, 1 for a third.",
   "goals_title": "*03* · Where the money goes",
-  "goals_body": "Shop profit goes to R&D and manufacturing, and we would rather show that than say it. So here is what we are saving for, one goal at a time. The meter is computed from sales on a weekly rhythm, in coarse 5% steps: deliberately approximate, never a live feed of our books.",
+  "goals_body": "Shop profit goes to R&D and manufacturing, and we would rather show that than say it. So here is what we are saving for, one goal at a time. ",
   "goals_status_done": "Done",
   "goals_status_current": "Saving for this",
   "goals_status_next": "Up next",
