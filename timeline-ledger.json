@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-08-16T05:44:59.568Z",
+  "updatedAt": "2026-08-17T05:51:46.895Z",
   "repos": {
     "OpenESC-20x20": {
       "createdAt": "2026-03-09",
@@ -67,8 +67,8 @@
     },
     "OpenAIO": {
       "createdAt": "2026-08-04",
-      "status": "planned",
-      "statusSince": "2026-08-15",
+      "status": "in-progress",
+      "statusSince": "2026-08-17",
       "archived": false,
       "releases": 0
     },
@@ -391,6 +391,16 @@
       "url": "https://github.com/OpenDrone-hw/OpenDrone-Scripts",
       "archived": false,
       "observed": "2026-08-15"
+    },
+    {
+      "id": "status:OpenAIO:in-progress:2026-08-17",
+      "kind": "status",
+      "repo": "OpenAIO",
+      "date": "2026-08-17",
+      "status": "in-progress",
+      "from": "planned",
+      "url": "https://github.com/OpenDrone-hw/OpenAIO",
+      "observed": "2026-08-17"
     }
   ]
 }
