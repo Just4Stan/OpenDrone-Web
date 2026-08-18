@@ -180,7 +180,6 @@
   "variants": {
     "Lite": {
       "oshwaUid": "BE000030",
-      "tagline": "2.4 GHz with an on-board ceramic antenna: the low-cost default.",
       "highlights": [
         [
           "Band",
@@ -188,7 +187,7 @@
         ],
         [
           "Antenna",
-          "Ceramic, on-board"
+          "Ceramic"
         ]
       ],
       "specs": [
@@ -278,7 +277,6 @@
     },
     "Lite-UFL": {
       "oshwaUid": "BE000031",
-      "tagline": "Same radio, swapped to a U.FL pigtail for an external antenna.",
       "highlights": [
         [
           "Band",
@@ -286,7 +284,7 @@
         ],
         [
           "Antenna",
-          "U.FL × 1"
+          "U.FL"
         ]
       ],
       "specs": [
@@ -382,11 +380,10 @@
     },
     "Mono": {
       "oshwaUid": "BE000032",
-      "tagline": "One radio covering both bands, with the RF front-end.",
       "highlights": [
         [
           "Band",
-          "2.4 GHz + 900 MHz"
+          "2.4 + 900 MHz"
         ],
         [
           "Antenna",
@@ -498,11 +495,10 @@
     },
     "Gemini": {
       "oshwaUid": "BE000033",
-      "tagline": "Two radios in ExpressLRS Xrossband mode for frequency-diverse links.",
       "highlights": [
         [
           "Band",
-          "2.4 GHz + 900 MHz, diversity"
+          "2.4 + 900 MHz"
         ],
         [
           "Antenna",

@@ -4621,6 +4621,9 @@ button.reset {
   font-size: var(--fs-xs);
   letter-spacing: 0.04em;
   text-transform: none;
+  /* A chip never breaks internally: the row wraps between chips or not at all
+     (the labels are short enough to hold one line, Stan 2026-08-18). */
+  white-space: nowrap;
   color: var(--color-text-muted);
   background: transparent;
 }
@@ -5150,6 +5153,12 @@ button.reset {
   .buy-rail.is-pinned.is-mobile.is-suppressed {
     display: none;
   }
+  /* Alpha (coming soon): pills only, no price row — give the strip a little
+     more breathing room so it doesn't read as a clipped bar. */
+  .buy-rail.is-pinned.is-mobile.is-ladderonly {
+    padding-top: 0.45rem;
+    padding-bottom: max(0.45rem, calc(env(safe-area-inset-bottom) * 0.5));
+  }
   @keyframes buy-rail-rise {
     from {
       opacity: 0;
@@ -5198,6 +5207,12 @@ button.reset {
     display: none;
   }
 
+  /* Alpha (coming soon): the pinned rail carries the variant pills alone, so
+     the padding no longer has to make room for the add-to-cart button. */
+  .buy-rail.is-pinned.is-ladderonly {
+    padding: 0.4rem;
+  }
+
   /* Combine the centring translateX with the drop so they don't fight; `both`
      keeps the centred end state after the animation. */
   @keyframes buy-rail-drop {
@@ -5239,8 +5254,7 @@ button.reset {
   .buy-rail.is-pinned .variant-tier-glow {
     border-radius: var(--r-pill);
   }
-  .buy-rail.is-pinned .variant-tier-tagline,
-  .buy-rail.is-pinned .variant-tier-cells,
+  .buy-rail.is-pinned .variant-tier-specs,
   .buy-rail.is-pinned .variant-tier-flag {
     display: none;
   }
@@ -5363,8 +5377,7 @@ button.reset {
 
 /* Card content sits above the gliding selection highlight. */
 .variant-tier-head,
-.variant-tier-tagline,
-.variant-tier-cells {
+.variant-tier-specs {
   position: relative;
   z-index: 1;
 }
@@ -5425,38 +5438,29 @@ button.reset {
   color: var(--color-gold);
 }
 
-.variant-tier-tagline {
-  font-family: var(--font-sans);
-  font-size: var(--fs-xs);
-  line-height: 1.45;
-  color: var(--color-text-dim);
-}
-
-.variant-tier-cells {
-  display: flex;
-  flex-direction: column;
-  gap: 0.3rem;
-  margin-top: var(--sp-2);
-}
-
-.variant-tier-cell {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: var(--sp-2);
+/* The differing specs as ONE dotted line under the tier name, on every card.
+   Values only (keys are .sr-only): the card name plus two short values is the
+   whole comparison, and it has to survive a 2-up grid in the hero column, so
+   the line stays mono, tight and unwrapped where it fits. */
+.variant-tier-specs {
+  display: block;
   font-family: var(--font-mono);
   font-size: var(--fs-xs);
   line-height: 1.4;
-}
-
-.variant-tier-cell-k {
   color: var(--color-text-muted);
+  font-variant-numeric: tabular-nums;
+  /* Each value holds together; the line breaks only between values. */
+  overflow-wrap: normal;
 }
 
-.variant-tier-cell-v {
-  text-align: right;
+.variant-tier-spec {
+  white-space: nowrap;
   color: var(--color-text);
-  font-variant-numeric: tabular-nums;
+}
+
+.variant-tier-sep {
+  padding: 0 0.4em;
+  color: var(--color-text-dim);
 }
 
 .product-buy-civilian a {
@@ -16126,9 +16130,7 @@ html.light .editorial-watermark {
   .variant-ladder-axis,
   .variant-ladder-axis-hint,
   .variant-tier-flag,
-  .variant-tier-cell-k,
-  .variant-tier-cell-v,
-  .variant-tier-tagline,
+  .variant-tier-specs,
   .chapter-number,
   .chapter-label,
   .product-card-meta,

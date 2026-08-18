@@ -25,7 +25,7 @@ export type EditorialEntry = {
 export const EDITORIAL_SERIES: EditorialEntry[] = [
   {
     slug: 'open-source',
-    title: 'Open source',
+    title: 'Open Source',
     hook: 'Who designs the boards, who sells them, and why those are two different jobs.',
     minutes: 4,
   },

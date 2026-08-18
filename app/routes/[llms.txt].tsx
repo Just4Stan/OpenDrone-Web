@@ -135,9 +135,9 @@ export async function loader({context, request}: Route.LoaderArgs) {
 
   const body = `# OpenDrone
 
-> Open-source FPV drone hardware, sold as assembled boards. Every product's full
+> Open-Source FPV drone hardware, sold as assembled boards. Every product's full
 > design source (schematic, PCB, BOM, 3D STEP) is public on GitHub under
-> CERN-OHL-S v2; firmware is upstream open source (Betaflight, AM32, ExpressLRS).
+> CERN-OHL-S v2; firmware is upstream Open Source (Betaflight, AM32, ExpressLRS).
 > OpenDrone is a community-run open hardware project. The shop and the boards
 > are manufactured, sold and supported by Incutec BV, Stapelhuisstraat 15,
 > 3000 Leuven, Belgium (VAT BE 1038.934.039). Prices in EUR, VAT included,
@@ -201,7 +201,7 @@ infer status from prose anywhere else.
 
 ## Learn more
 
-- [Open source model and Incutec BV, the company behind the shop](${origin}/open-source)
+- [Open Source model and Incutec BV, the company behind the shop](${origin}/open-source)
 - [Firmware partners](${origin}/firmware-partners)
 - [Product roadmap, community vote and financial goals](${origin}/roadmap)
 - [How to contribute](https://github.com/OpenDrone-hw/.github/blob/main/CONTRIBUTING.md)

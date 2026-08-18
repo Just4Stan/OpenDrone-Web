@@ -1709,13 +1709,17 @@ function ProductPage() {
   // teardown chapter (the board no longer pins full-screen there) so variant/SKU
   // switching is reachable everywhere on the page, not just above the fold.
   const railSuppressed = railPinned && asideType !== 'closed';
+  // Coming soon (alpha): there is nothing to buy, and a notify form fixed to
+  // the viewport would be noise, so the pinned copy carries the ladder ALONE.
+  // The variants are the whole point of an alpha page, so switching them stays
+  // reachable from anywhere on it (Stan, 2026-08-18).
   const pinnedRail = (
     <div
-      className={`buy-rail is-pinned${railMobile ? ' is-mobile' : ''}${railSuppressed ? ' is-suppressed' : ''}`}
+      className={`buy-rail is-pinned${railMobile ? ' is-mobile' : ''}${soon ? ' is-ladderonly' : ''}${railSuppressed ? ' is-suppressed' : ''}`}
       style={railBox && !railMobile ? {right: railBox.right} : undefined}
     >
       {railMobile ? railLadderCompact : railLadder}
-      {railBuyModule}
+      {soon ? null : railBuyModule}
     </div>
   );
 
@@ -2686,8 +2690,7 @@ function ProductPage() {
                     aria-hidden="true"
                     className="trust-chip-oshwa-mark"
                   />
-                  {copyText('product-chrome.trust_chip_oshwa')} ·{' '}
-                  {activeOshwaUid}
+                  {copyText('product-chrome.trust_chip_oshwa')}
                 </a>
               </li>
             ) : null}
@@ -2734,9 +2737,11 @@ function ProductPage() {
           </div>
           {/* Separate compact bar pinned to the top while the in-hero selector
               is out of view, so variants stay switchable from anywhere. Coming
-              soon: nothing to buy, so no pinned bar — an email form fixed to
-              the viewport would be noise, and the in-flow signup is enough. */}
-          {railPinned && !soon ? createPortal(pinnedRail, document.body) : null}
+              soon: ladder only (see pinnedRail), and nothing at all when the
+              product has no variants to switch. */}
+          {railPinned && (!soon || hasLadder)
+            ? createPortal(pinnedRail, document.body)
+            : null}
 
           {content.pairCta ? (
             <Link className="pair-cta" to={content.pairCta.to} prefetch="viewport">

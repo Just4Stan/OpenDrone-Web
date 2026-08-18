@@ -9,7 +9,7 @@ const DEFAULT_LOCALE = 'en_US';
 export const SITE_ORIGIN = 'https://opendrone.be';
 
 export const DEFAULT_SEO_DESCRIPTION =
-  'Open source drone electronics designed in Belgium.';
+  'Open Source drone electronics designed in Belgium.';
 
 function stripHtml(value?: string | null) {
   if (!value) return '';

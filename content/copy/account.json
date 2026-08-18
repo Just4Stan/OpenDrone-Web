@@ -47,7 +47,7 @@
   "dash.community_title": "The work happens on Discord.",
   "dash.community_lede": "Firmware help, build logs, release threads. Same engineers who designed the boards answer there.",
   "dash.community_cta": "Open Discord →",
-  "dash.build_eyebrow": "Open source",
+  "dash.build_eyebrow": "Open Source",
   "dash.build_title": "Every board, on GitHub.",
   "dash.build_lede": "Schematics, firmware, Gerbers. Fork your own, submit a PR, or just read along to understand what’s flying in your drone.",
   "dash.build_cta": "Browse the repos →",
