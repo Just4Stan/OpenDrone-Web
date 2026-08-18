@@ -1,6 +1,6 @@
 ---
 title: OpenRX Video Release
-summary: Four open-source ExpressLRS receivers, one range test, and the design rule one of them breaks. 
+summary: Four Open-Source ExpressLRS receivers, one range test, and the design rule one of them breaks. 
 date: 2026-07-18
 tags: [video, build-notes]
 author: OpenDrone
@@ -16,7 +16,7 @@ The video is live: [How LoRa (ExpressLRS) Receivers Work](https://www.youtube.co
 ![The four OpenRX boards wired to the logger](./images/openrx-range-test-boards.jpg)
 
 All four boards share the same core: an ESP32-C3, a 3.3 V regulator, and the
-open-source ExpressLRS firmware. They differ only in the radio:
+Open-Source ExpressLRS firmware. They differ only in the radio:
 
 - **Lite**: SX1281, 2.4 GHz, ceramic chip antenna on the PCB. No antenna to
   attach, nothing sticking out.
@@ -25,8 +25,8 @@ open-source ExpressLRS firmware. They differ only in the radio:
 - **Gemini**: two LR1121s, two independent radios, two antennas. Two copies of
   the same RF layout on one board.
 
-Everything is open source, KiCad files included, under CERN-OHL-S, and all four
-are OSHWA-certified open source hardware:
+Everything is Open Source, KiCad files included, under CERN-OHL-S, and all four
+are OSHWA-certified Open Source hardware:
 [github.com/OpenDrone-hw/OpenRX](https://github.com/OpenDrone-hw/OpenRX).
 
 ## The test

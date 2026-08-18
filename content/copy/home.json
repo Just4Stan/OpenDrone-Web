@@ -2,7 +2,7 @@
   "$route": "/",
   "$title": "Home",
   "meta_title": "Open Source Drone Parts",
-  "meta_description": "Open source flight controllers and ESCs. Designed in Belgium.",
+  "meta_description": "Open Source flight controllers and ESCs. Designed in Belgium.",
   "shop": "Shop",
   "loading_models": "loading models…",
   "skip_to_catalog": "Skip to catalog",

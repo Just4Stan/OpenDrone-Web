@@ -25,7 +25,7 @@ import {
  */
 export const meta: Route.MetaFunction = () =>
   buildSeoMeta({
-    title: copyText('open-source.meta_title') ?? 'Open source',
+    title: copyText('open-source.meta_title') ?? 'Open Source',
     description: copyText('open-source.meta_description') ?? '',
   });
 

@@ -40,7 +40,7 @@ export const meta: Route.MetaFunction = ({data, location}) =>
       : copyText('collections-all.meta_title') ?? 'All Products',
     description:
       copyText('collections-all.meta_description') ??
-      'Browse every OpenDrone product in one place: open source flight controllers, ESCs, receivers, frames, bundles, and accessories. Filter by category and sort by price or newest.',
+      'Browse every OpenDrone product in one place: Open Source flight controllers, ESCs, receivers, frames, bundles, and accessories. Filter by category and sort by price or newest.',
     type: 'product',
     // Canonical without filter/sort/search queries so variants don't splinter.
     url: `${SITE_ORIGIN}${location.pathname}`,

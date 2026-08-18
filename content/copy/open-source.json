@@ -1,8 +1,8 @@
 {
   "$route": "/open-source",
-  "$title": "Open source",
-  "meta_title": "Open source · OpenDrone and Incutec",
-  "meta_description": "OpenDrone is a community project, Incutec is a Belgian startup that started the initiative and hosts this website, sells the products here, and does what the community can't do on their own. Why everything is open source, and how the bills get paid.",
+  "$title": "Open Source",
+  "meta_title": "Open Source · OpenDrone and Incutec",
+  "meta_description": "OpenDrone is a community project, Incutec is a Belgian startup that started the initiative and hosts this website, sells the products here, and does what the community can't do on their own. Why everything is Open Source, and how the bills get paid.",
   "eyebrow": "Open Source",
   "title": "We sell hardware. The designs are yours.",
   "lead": "Every OpenDrone product comes with its full source on GitHub. Incutec is the Belgian startup that started the initiative, hosts this website, sells the products here, and does what the community can't do on their own.",
@@ -18,7 +18,7 @@
   ],
   "s3_title": "*03* · Why a company is in the loop",
   "s3_body": [
-    "Incutec is a young startup from Leuven, Belgium, founded in June 2026. We're trying out a new business model where development is decentralised like open-source code projects, but a company still holds the responsibility of bringing the product to market.",
+    "Incutec is a young startup from Leuven, Belgium, founded in June 2026. We're trying out a new business model where development is decentralised like Open-Source code projects, but a company still holds the responsibility of bringing the product to market.",
     "OpenDrone is our pilot project; we think FPV is the perfect place to start. Development is already mostly decentralised in code, but we are increasingly reliant on Chinese goods and the companies behind them to innovate on the hardware side. We don't think this is bad, but we think they shouldn't be the only players."
   ],
   "s4_title": "*04* · A record label for hardware",
