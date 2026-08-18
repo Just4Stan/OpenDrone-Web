@@ -35,7 +35,7 @@ export function VariantLadder({
   activeValue: string;
   onSelect: (value: string) => void;
   /** Compact mode: a single horizontal row of name-only pills (no axis label,
-   *  tagline or spec cells) — for the pinned mobile buy bar where space is tight
+   *  spec line) — for the pinned mobile buy bar where space is tight
    *  but variant switching still needs to be reachable. */
   compact?: boolean;
 }) {
@@ -140,20 +140,23 @@ export function VariantLadder({
                   </span>
                 ) : null}
               </span>
-              {compact ? null : content.tagline ? (
-                <span className="variant-tier-tagline">{content.tagline}</span>
-              ) : null}
-              {/* Spec cells only on the selected tier: four cards each
-                  carrying a full mono table read as a wall ("too busy"
-                  feedback, 2026-07-17). The tagline keeps unselected tiers
-                  comparable in prose; the full matrix lives in the Datasheet
-                  chapter. */}
-              {compact || !selected ? null : (
-                <span className="variant-tier-cells">
-                  {content.highlights.map(([k, v]) => (
-                    <span className="variant-tier-cell" key={k}>
-                      <span className="variant-tier-cell-k">{k}</span>
-                      <span className="variant-tier-cell-v">{v}</span>
+              {/* One line of the specs that actually differ, on EVERY card
+                  so the tiers compare at a glance (Stan, 2026-08-18: the
+                  selected-only spec table hid the comparison and the prose
+                  tagline said nothing a spec doesn't). Keys ride along for
+                  screen readers only; keep the values short enough to hold
+                  one line. */}
+              {compact || !content.highlights.length ? null : (
+                <span className="variant-tier-specs">
+                  {content.highlights.map(([k, v], i) => (
+                    <span className="variant-tier-spec" key={k}>
+                      {i > 0 ? (
+                        <span className="variant-tier-sep" aria-hidden="true">
+                          ·
+                        </span>
+                      ) : null}
+                      <span className="sr-only">{k}: </span>
+                      {v}
                     </span>
                   ))}
                 </span>

@@ -334,12 +334,8 @@
       "oshwaUid": "BE000028",
       "highlights": [
         [
-          "Mount",
-          "20×20"
-        ],
-        [
           "Continuous",
-          "40 A / channel"
+          "40 A/ch"
         ],
         [
           "Input",
@@ -352,12 +348,8 @@
       "repoUrl": "https://github.com/OpenDrone-hw/OpenESC-30x30",
       "highlights": [
         [
-          "Mount",
-          "30×30"
-        ],
-        [
           "Continuous",
-          "60 A / channel"
+          "60 A/ch"
         ],
         [
           "Input",

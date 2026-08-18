@@ -217,9 +217,10 @@ export type VariantContent = {
    *  `repoUrl`. Lines whose tiers share one repo (OpenRX subfolders) leave it
    *  unset. */
   repoUrl?: string;
-  /** One-line role under the tier name in the ladder card. */
-  tagline?: string;
-  /** The 3–4 cells that differ between tiers, shown in the card body. */
+  /** The cells that differ between tiers, rendered as ONE dotted line under
+   *  the tier name on every ladder card. Keep it to two short values: the
+   *  line has to hold a single row in the hero column's 2-up grid, and the
+   *  full matrix lives in the Datasheet chapter. */
   highlights: Array<[string, string]>;
   /** Per-tier spec deltas merged over the shared `specs` by row key: a
    *  value replaces the base row, `null` hides it (a cost-down tier dropping
