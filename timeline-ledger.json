@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-08-18T05:45:58.310Z",
+  "updatedAt": "2026-08-19T05:47:40.947Z",
   "repos": {
     "OpenESC-20x20": {
       "createdAt": "2026-03-09",
@@ -35,7 +35,7 @@
       "status": "alpha",
       "statusSince": "2026-08-15",
       "archived": false,
-      "releases": 2
+      "releases": 3
     },
     "OpenVTX": {
       "createdAt": "2026-03-26",
@@ -401,6 +401,17 @@
       "from": "planned",
       "url": "https://github.com/OpenDrone-hw/OpenAIO",
       "observed": "2026-08-17"
+    },
+    {
+      "id": "release:OpenFC-Lite-Mini:rev3.2",
+      "kind": "release",
+      "repo": "OpenFC-Lite-Mini",
+      "date": "2026-08-18",
+      "tag": "rev3.2",
+      "name": "OpenFC-Lite-Mini Rev 3.2",
+      "prerelease": false,
+      "url": "https://github.com/OpenDrone-hw/OpenFC-Lite-Mini/releases/tag/rev3.2",
+      "observed": "2026-08-19"
     }
   ]
 }
