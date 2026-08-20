@@ -42,6 +42,11 @@ declare global {
     // Pre-launch banner kill switch: unset/anything ≠ '0' keeps the banner.
     PUBLIC_PRELAUNCH?: string;
 
+    // Opens /learn in a deployed build. The corpus behind it is unreviewed
+    // research, so the routes 404 unless this is exactly '1'. Dev always
+    // renders it. Drop the flag once the chapters pass the fact-check.
+    PUBLIC_LEARN_DRAFT?: string;
+
     // Lifts the GitHub API ceiling from 60 to 5000 calls an hour for the
     // PDP's latest-commit card and contributor grid. Unauthenticated, a
     // handful of page loads exhausts the budget and the contributor grid
