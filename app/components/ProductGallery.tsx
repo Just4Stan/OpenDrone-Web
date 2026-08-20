@@ -48,8 +48,8 @@ export function ProductGallery({
   // Slide track. Every image the visitor has stepped to stays MOUNTED (its
   // own <img>, decoded, hidden with visibility) instead of one <img> whose src
   // is swapped per step: the swap discarded the previous bitmap and re-ran the
-  // blur-up cover on every step, even back to a photo already seen (Bastian's
-  // 2026-08-15 phone test). Neighbours of the active slide are mounted too so
+  // blur-up cover on every step, even back to a photo already seen (measured on
+  // a phone, 2026-08-15). Neighbours of the active slide are mounted too so
   // a swipe lands on a decoded image; anything further out waits until it is
   // visited, so a long deck does not download every photo up front.
   const visited = useRef<Set<string>>(new Set());

@@ -4417,7 +4417,7 @@ button.reset {
    was dropped and the hero is the opening statement. */
 /* Product pages run a tighter rail than the shared 1520px one. At full rail
    width the chapters reach nearly edge to edge on a large display and the
-   page reads as a wall. 1102px (2026-08-12, Stan: two 10% trims off the old
+   page reads as a wall. 1102px (2026-08-12, maintainer: two 10% trims off the old
    1360px cap) matches the shrink-wrapped chapter cards, which no longer need
    the width. Scoped here on purpose: --rail-width is shared with the footer
    and the other routes, and narrowing it globally is the site lane's call,
@@ -4622,7 +4622,7 @@ button.reset {
   letter-spacing: 0.04em;
   text-transform: none;
   /* A chip never breaks internally: the row wraps between chips or not at all
-     (the labels are short enough to hold one line, Stan 2026-08-18). */
+     (the labels are short enough to hold one line, maintainer 2026-08-18). */
   white-space: nowrap;
   color: var(--color-text-muted);
   background: transparent;
@@ -5816,7 +5816,7 @@ button.reset {
     margin-left: 0;
   }
   /* The logo tracks the chapter's own height and hugs the right edge
-     (Stan, 2026-08-12): square tile marks (AM32, ExpressLRS) take the
+     (maintainer, 2026-08-12): square tile marks (AM32, ExpressLRS) take the
      full row height; Betaflight's wide transparent mark keeps its
      width-driven size, right-aligned and vertically centred. The tile is
      absolutely positioned so its 100% height reads the text column's
@@ -5843,7 +5843,7 @@ button.reset {
     margin-inline: 0;
   }
   /* Contributors chapter: the join button rides the title line (top right),
-     not the grid row (Stan, 2026-08-12). The one-line title leaves that
+     not the grid row (maintainer, 2026-08-12). The one-line title leaves that
      corner free at every desktop width. */
   .chapter:has(.contributors-row) .chapter-body-col {
     position: relative;
@@ -5857,7 +5857,7 @@ button.reset {
      explorer and the schematic viewer, tied by the lead line to the
      GitHub-repo card in the chapter above — the lines alone carry the claim
      that everything inside is the contents of the product's GitHub repo
-     (the border tag was dropped, Stan 2026-08-12). Negative margins keep
+     (the border tag was dropped, maintainer 2026-08-12). Negative margins keep
      the body column's left edge aligned with the other chapters. */
   .chapter[data-repo-scope] {
     position: relative;
@@ -6116,7 +6116,7 @@ button.reset {
   padding: clamp(1.5rem, 7%, 3rem);
 }
 
-/* Light mode: a near-black slab reads far too heavy (Stan, 2026-08-12), so
+/* Light mode: a near-black slab reads far too heavy (maintainer, 2026-08-12), so
    drop the tile and invert the white-on-transparent mark to near-black on
    the page, mirroring how a multi-colour mark sits transparent. filter
    would invert a background/border too, hence transparent and none. */
@@ -6594,7 +6594,8 @@ html.light .firmware-logo--tile {
   letter-spacing: 0.14em;
   text-transform: uppercase;
   text-align: center;
-  /* Full text colour: the muted grey read as low-contrast (Stan, 2026-08-12). */
+  /* Full text colour: the muted grey read as low-contrast
+     (maintainer, 2026-08-12). */
   color: var(--color-text);
   padding: 0.48em 0.4em;
   /* Standardised viewer-pill radius (schematic sheets + PCB layers share it). */
@@ -6647,7 +6648,7 @@ html.light .firmware-logo--tile {
 .board-folder-tabs button.is-active .board-folder-tab-fn {
   color: color-mix(in srgb, var(--color-on-accent) 72%, transparent);
 }
-/* The names-only compact rail variant was removed 2026-08-12 (Stan): its
+/* The names-only compact rail variant was removed 2026-08-12 (maintainer): its
    tight-gutter trigger misfired under the repo-scope layout and a wrapped
    names-only pill read worse than the full rail overlapping slightly. */
 /* The rail sizes to its longest label, so normal sheet names stay on one line.
@@ -6753,7 +6754,7 @@ html.light .firmware-logo--tile {
   flex: 1 1 auto;
   min-width: 0;
   /* Short enough that pins + board + schematic read as one screenful
-     (72vh/700px pushed the schematic below the fold; Stan, 2026-08-12). */
+     (72vh/700px pushed the schematic below the fold; maintainer, 2026-08-12). */
   height: min(58vh, 560px);
 }
 /* The sheet rail rides the schematic's RIGHT edge on desktop, mirroring the
@@ -7080,7 +7081,7 @@ html.light .firmware-logo--tile {
   max-width: none;
 }
 
-/* Emphasis segments keep the title colour (2026-08-12, Stan: gold highlights
+/* Emphasis segments keep the title colour (2026-08-12, maintainer: gold highlights
    in chapter heads read as cheesy); the markup keeps its <em> semantics. */
 .chapter-title em {
   font-style: normal;
@@ -7791,7 +7792,7 @@ html.light .firmware-logo--tile {
 /* Provenance card — Designed / Assembled / Next. Pinned inside the
    In-the-box chapter so "where is this made" sits next to the parts
    list, not buried in the legal footer. */
-/* Its own card (Stan, 2026-08-12), in the in-the-box table idiom: label as
+/* Its own card (maintainer, 2026-08-12), in the in-the-box table idiom: label as
    the header, hairline-divided rows, the story links as buttons along the
    bottom. Shrink-wrapped like the other chapter cards. */
 .provenance-card {
@@ -10497,7 +10498,7 @@ a.what-chain-chip:hover {
 
 .editorial-hero {
   /* Air around the title, but not so much the page reads as gaps
-     (tightened twice on 2026-08-11 on Stan's call). */
+     (tightened twice on 2026-08-11 on the maintainer's call). */
   margin-bottom: 2.25rem;
 }
 
@@ -10519,7 +10520,7 @@ a.what-chain-chip:hover {
   margin: 0 0 1.25rem;
 }
 
-/* Keep the head on ONE line where the viewport allows (Stan, 2026-08-12,
+/* Keep the head on ONE line where the viewport allows (maintainer, 2026-08-12,
    all six public-infrastructure pages): the title alone may run past the
    640px reading column into the shell's empty right margin. The cap is
    the distance from the centred column's left edge to the viewport gutter,
@@ -16654,8 +16655,9 @@ html.light .editorial-watermark {
    exploration launchpad. Visible in both the page and the drawer cart. */
 .cart-empty-explore {
   display: flex;
-  /* One row, always: Stan's call (2026-08-11). The chip list is short enough
-     that nowrap holds on phones too; chips shrink via padding, not wrap. */
+  /* One row, always: the maintainer's call (2026-08-11). The chip list is
+     short enough that nowrap holds on phones too; chips shrink via padding,
+     not wrap. */
   flex-wrap: nowrap;
   justify-content: center;
   gap: 0.5rem;
@@ -17044,7 +17046,7 @@ body:has(.buy-rail.is-pinned.is-mobile) .placeholder-banner {
   position: absolute;
   right: clamp(20px, 5vw, 96px);
   top: clamp(120px, 19vh, 210px);
-  /* Wider measure (2026-08-12, Stan): the copy owns this side of the stage,
+  /* Wider measure (2026-08-12, maintainer): the copy owns this side of the stage,
      let it breathe instead of wrapping tight at 34ch. */
   max-width: min(46ch, 38vw);
   animation: hp-in 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;

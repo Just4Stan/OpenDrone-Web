@@ -86,7 +86,7 @@ export type WhatIsThis = {
  * otherwise the intro's first two sentences (first one only when two run
  * past 200 characters, hero copy is a caption, not a chapter). One
  * derivation, used by the homepage loader, so the hero explainers are the
- * What-does-this-do words by construction (Stan, 2026-08-15).
+ * What-does-this-do words by construction (maintainer, 2026-08-15).
  */
 /** DOM id of the "What does this do?" chapter on a product page; the
  *  homepage walkthrough links each part straight to it. */

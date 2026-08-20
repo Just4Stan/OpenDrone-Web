@@ -10,8 +10,8 @@
  * API.
  *
  * The tally file is committed like all other content, so the counts shown on
- * /roadmap are exactly as fresh as the last tally run, and Stan can review or
- * correct them in the studio's Goals tab before they ship.
+ * /roadmap are exactly as fresh as the last tally run, and the maintainer can
+ * review or correct them in the studio's Goals tab before they ship.
  */
 
 /** Cart attribute key. `_` prefix hides it from the customer at checkout. */

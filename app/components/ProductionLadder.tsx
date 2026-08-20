@@ -6,7 +6,7 @@ import {goals} from '~/lib/goals';
  * SAME data as the financial goals (`content/goals.json`), so the ladder can
  * never promise something the goals do not.
  *
- * Shape, per Stan (2026-08-11): the filled node is where we are today
+ * Shape, per the maintainer (2026-08-11): the filled node is where we are today
  * (inspect/flash/ship from Belgium), a SOLID line climbs to the goal being
  * saved for, and a DOTTED line continues to the one after it, which is
  * openly speculative. Nothing beyond that is drawn, and nothing carries a

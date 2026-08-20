@@ -616,7 +616,7 @@ function ProductPage() {
   useChapterReveal(product.handle);
 
   // Lead line: ties the GitHub-repo study card to the repo-scope outline in
-  // the chapter below it (Stan, 2026-08-12). Measured rather than pure CSS
+  // the chapter below it (maintainer, 2026-08-12). Measured rather than pure CSS
   // because the card's column shifts with which cards a product shows, and
   // the card clips its own pseudo-elements (overflow: hidden). Written as
   // CSS vars on the scope chapter; the ::before there draws the line.
@@ -1712,7 +1712,7 @@ function ProductPage() {
   // Coming soon (alpha): there is nothing to buy, and a notify form fixed to
   // the viewport would be noise, so the pinned copy carries the ladder ALONE.
   // The variants are the whole point of an alpha page, so switching them stays
-  // reachable from anywhere on it (Stan, 2026-08-18).
+  // reachable from anywhere on it (maintainer, 2026-08-18).
   const pinnedRail = (
     <div
       className={`buy-rail is-pinned${railMobile ? ' is-mobile' : ''}${soon ? ' is-ladderonly' : ''}${railSuppressed ? ' is-suppressed' : ''}`}
@@ -1875,7 +1875,7 @@ function ProductPage() {
             })}
           </div>
           {/* The "before this flies you also need" list moved out of the
-              chapter (Stan, 2026-08-12): that story belongs to a general
+              chapter (maintainer, 2026-08-12): that story belongs to a general
               FPV intro page, planned. The data stays in whatIsThis.needs
               for that page. */}
           {/* The homepage hero walks the whole machine part by part; this is
@@ -1900,7 +1900,7 @@ function ProductPage() {
         title={title}
         titleId="product-chrome.ch_open_source_title"
         // The schematic viewer moved into the teardown chapter (2026-08-12,
-        // Stan: both viewers live under one repo-scope outline). wideMedia
+        // maintainer: both viewers live under one repo-scope outline). wideMedia
         // keeps the 4-across card-row layout; noMedia stops the empty media
         // slot from rendering the placeholder glyph.
         wideMedia={!!schematicHandle}

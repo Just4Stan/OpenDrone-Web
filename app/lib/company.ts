@@ -9,7 +9,7 @@
 /** Public invite to the OpenDrone Discord, where the project is coordinated. */
 export const DISCORD_INVITE_URL = 'https://discord.gg/ABajnacUsS';
 /** The org's contributing guide, the single how-to for every repo. The
- *  site's /contributing route redirects here (Stan, 2026-08-15). */
+ *  site's /contributing route redirects here (maintainer, 2026-08-15). */
 export const CONTRIBUTING_URL =
   'https://github.com/OpenDrone-hw/.github/blob/main/CONTRIBUTING.md';
 

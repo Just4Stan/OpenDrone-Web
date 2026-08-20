@@ -30,7 +30,7 @@ const SHOP_LINKS: Array<{to: string; copy: string}> = [
 
 /**
  * The community column: every place OpenDrone and Incutec are present, one
- * link each. Per-repo links were removed on Stan's call (2026-08-11): the
+ * link each. Per-repo links were removed on the maintainer's call (2026-08-11): the
  * GitHub org covers them, and the site-source link lives in the bottom bar.
  * Add new socials here as accounts go live; the label is a chrome.json key.
  */
@@ -48,7 +48,7 @@ const COMPANY_LINKS: Array<{to: string; copy: string}> = [
   {to: '/production', copy: 'nav_production'},
 ];
 
-// Imprint, contact and security head the Legal column (Stan, 2026-08-12):
+// Imprint, contact and security head the Legal column (maintainer, 2026-08-12):
 // they are practical/legal reader destinations, not part of the company story.
 const LEGAL_LINKS: Array<{to: string; copy: string}> = [
   {to: '/legal', copy: 'nav_legal_imprint'},

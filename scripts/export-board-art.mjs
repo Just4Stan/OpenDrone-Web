@@ -848,7 +848,7 @@ function writeFaceDerivatives() {
 // The site does NOT inline the vector copper layers any more. A board.svg is
 // 1-2 MB with ~2000 via circles per layer; six of those stacked as inline SVG
 // sheets, each behind CSS filters and transform transitions, made the layer
-// sweep stutter on phones (Bastian's 2026-08-15 test). So this step renders
+// sweep stutter on phones (measured 2026-08-15). So this step renders
 // every copper layer of the finished board.svg to a WebP with headless
 // Chromium (the same engine that would have painted the vector, so the pixels
 // are what the vector would have produced) and writes board-lite.svg: the same
