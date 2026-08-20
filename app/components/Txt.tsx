@@ -85,7 +85,7 @@ export function Txt({
     return <>{fallback}</>;
   }
 
-  // Emptied in the studio means GONE, not an empty element. Stan's rule
+  // Emptied in the studio means GONE, not an empty element. The maintainer's rule
   // (2026-08-11): clearing a text box removes the thing it filled, and an
   // empty <p>/<h2> still carries its margins, which is exactly the stray
   // whitespace he flagged. Whitespace-only counts as emptied.

@@ -4,7 +4,7 @@
  * PDP firmware chapter's donate links, so a URL change lands everywhere.
  *
  * There is deliberately no per-board fee here. The €1-per-board forwarding
- * scheme was cancelled by Stan (2026-08-11): financially it did not carry.
+ * scheme was cancelled by the maintainer (2026-08-11): financially it did not carry.
  * What the shop gives these projects instead is exposure (every product page
  * links them and their donation page), the regular certification sums their
  * hardware processes ask for, and occasional public donations.

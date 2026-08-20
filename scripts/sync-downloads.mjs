@@ -12,7 +12,7 @@
  *   node scripts/sync-downloads.mjs --check   print what would be written, exit 1 on drift
  *   node scripts/sync-downloads.mjs --write   apply
  *
- * PREPARED, NOT SWITCHED ON (Stan, 2026-08-15): the downloads chapter stays
+ * PREPARED, NOT SWITCHED ON (maintainer, 2026-08-15): the downloads chapter stays
  * empty on every product for now, so nobody runs --write yet. The mapping and
  * the naming convention below are the contract to release against in the
  * meantime; the day the chapter is wanted, run --write and open the PR.

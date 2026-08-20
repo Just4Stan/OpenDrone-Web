@@ -9,7 +9,7 @@ import type {ProductStatus as RoadmapStatus} from '~/lib/roadmap-data';
  * `in-progress`. Nothing about such a product is settled (shape, spec,
  * price, timing), so it gets no hero, specs, teardown or buy module: only
  * the name, the status chip and the door to Discord where the design
- * happens. Alpha and beyond render the full page (Stan, 2026-08-15).
+ * happens. Alpha and beyond render the full page (maintainer, 2026-08-15).
  */
 export function ConceptPlate({
   title,

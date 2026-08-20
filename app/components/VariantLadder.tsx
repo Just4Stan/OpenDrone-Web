@@ -141,7 +141,7 @@ export function VariantLadder({
                 ) : null}
               </span>
               {/* One line of the specs that actually differ, on EVERY card
-                  so the tiers compare at a glance (Stan, 2026-08-18: the
+                  so the tiers compare at a glance (maintainer, 2026-08-18: the
                   selected-only spec table hid the comparison and the prose
                   tagline said nothing a spec doesn't). Keys ride along for
                   screen readers only; keep the values short enough to hold

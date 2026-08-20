@@ -29,7 +29,7 @@ export default function ProductionRoute() {
         <Txt id="production.lead" as="p" className="editorial-lead" />
       </header>
 
-      {/* Section 01 (designed in the open) was cut by Stan in the studio
+      {/* Section 01 (designed in the open) was cut by the maintainer in the studio
           (2026-08-11); the open-source page carries that story. */}
       <section className="editorial-section">
         <Txt

@@ -852,7 +852,7 @@ export function BoardArt({
         '.board-sheet.is-active svg, .board-sheet.is-active img',
       );
       // Repo-scope alignment: pin the VISIBLE board's top-right corner just
-      // inside the outline's top-right border (Stan, 2026-08-12). Derived
+      // inside the outline's top-right border (maintainer, 2026-08-12). Derived
       // from the NEVER-TRANSLATING stack box plus the sheet's resting
       // transform model, not from the transformed sheet element, so the
       // value is correct BEFORE the fly-in finishes and the flight lands on
@@ -914,7 +914,7 @@ export function BoardArt({
         );
       };
       // Always the full rail (names + function blurbs): the names-only
-      // is-compact fallback was dropped 2026-08-12 (Stan) — under the
+      // is-compact fallback was dropped 2026-08-12 (maintainer) — under the
       // repo-scope layout its tight-gutter trigger misfired on tall boards
       // and a wrapping names-only pill reads worse than a slight overlap.
       const target = placeWidth(railFull);

@@ -151,7 +151,7 @@ export function HeroDroneScene({
     // /public is served with a one-year max-age and these files are not
     // content-hashed, so a returning visitor kept an old studio.json (no
     // handles, no captions) for a year after every deploy: the site said
-    // one thing, their browser another (Stan, 2026-08-15). Vite's base is
+    // one thing, their browser another (maintainer, 2026-08-15). Vite's base is
     // the per-deployment CDN path on Oxygen, so it is a free build id.
     const V = encodeURIComponent(
       (import.meta.env.BASE_URL || '/').replace(/[^a-z0-9]/gi, '').slice(-24) || 'dev',
@@ -848,7 +848,7 @@ export function HeroDroneScene({
           // A beat naming a product handle takes its caption from that
           // product's What-does-this-do content (whatIsThis.hero, else the
           // intro's opening), so the homepage and the PDP explain a part
-          // with one voice (Stan, 2026-08-15). Beats without a handle keep
+          // with one voice (maintainer, 2026-08-15). Beats without a handle keep
           // their studio.json caption.
           caption: (b.handle && heroCaption(b.handle)) || b.caption,
           hint: b.hint,
@@ -1122,7 +1122,7 @@ export function HeroDroneScene({
       // gesture. It is not skipped either: a wheel step ROUTES through it
       // (stepStop below) and holds for REST_DWELL_S, so the reader sees the
       // old part sitting in the assembled drone before the next pulls out
-      // (Stan, 2026-08-15). Keyboard stepping still visits rests one by one.
+      // (maintainer, 2026-08-15). Keyboard stepping still visits rests one by one.
       const nextPartIdx = (from: number, dir: number) => {
         let i = from;
         do {
@@ -1161,7 +1161,7 @@ export function HeroDroneScene({
       let lastAbsD = 0;            // previous event's |delta|, for re-flick detection
       let queuedStep: 0 | 1 | -1 = 0;  // direction banked while the beat plays
       // How many flicks are banked in queuedStep's direction. Every confident
-      // flick counts as one part (Stan, 2026-08-15: one flick, one subject),
+      // flick counts as one part (maintainer, 2026-08-15: one flick, one subject),
       // so a burst of three plays three parts in turn instead of two. Capped
       // so a runaway scroll cannot queue the whole walkthrough; a flick the
       // other way empties the bank and turns around.

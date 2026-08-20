@@ -55,7 +55,7 @@ Two site-specific consequences of one gold, both deliberate:
 - **Gold is 1.62:1 on the light surface.** Fine for the mark and the wordmark,
   which are exempt from contrast rules. Gold chips and eyebrows on light sit at
   roughly that too, which is a deliberate brand accent, not an oversight
-  (Stan, 2026-08-14). Anything a user has to *read* rather than recognise uses
+  (maintainer, 2026-08-14). Anything a user has to *read* rather than recognise uses
   `--color-text` or `--color-text-muted`.
 - **Focus rings never use gold.** WCAG 1.4.11 wants 3:1 and gives focus
   indicators no logo exemption, so `--color-focus` is ink on light.
