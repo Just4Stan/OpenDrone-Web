@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-08-24T05:54:10.382Z",
+  "updatedAt": "2026-08-25T05:48:34.588Z",
   "repos": {
     "OpenESC-20x20": {
       "createdAt": "2026-03-09",
@@ -73,7 +73,7 @@
       "releases": 0
     },
     "OpenAIO-Whoop": {
-      "createdAt": "2026-08-04",
+      "createdAt": "2026-08-24",
       "status": "planned",
       "statusSince": "2026-08-15",
       "archived": false,
