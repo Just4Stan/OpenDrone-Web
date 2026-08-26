@@ -1,20 +1,20 @@
 {
   "version": 1,
-  "updatedAt": "2026-08-25T05:48:34.588Z",
+  "updatedAt": "2026-08-26T05:51:02.914Z",
   "repos": {
     "OpenESC-20x20": {
       "createdAt": "2026-03-09",
       "status": "alpha",
       "statusSince": "2026-08-15",
       "archived": false,
-      "releases": 2
+      "releases": 3
     },
     "OpenESC-30x30": {
       "createdAt": "2026-03-14",
       "status": "alpha",
       "statusSince": "2026-08-15",
       "archived": false,
-      "releases": 2
+      "releases": 3
     },
     "OpenDrone-Web": {
       "createdAt": "2026-03-21",
@@ -35,7 +35,7 @@
       "status": "alpha",
       "statusSince": "2026-08-15",
       "archived": false,
-      "releases": 3
+      "releases": 4
     },
     "OpenVTX": {
       "createdAt": "2026-03-26",
@@ -56,7 +56,7 @@
       "status": "alpha",
       "statusSince": "2026-08-15",
       "archived": false,
-      "releases": 2
+      "releases": 3
     },
     "KiCad-Library": {
       "createdAt": "2026-06-29",
@@ -412,6 +412,50 @@
       "prerelease": false,
       "url": "https://github.com/OpenDrone-hw/OpenFC-Lite-Mini/releases/tag/rev3.2",
       "observed": "2026-08-19"
+    },
+    {
+      "id": "release:OpenESC-20x20:rev3.3",
+      "kind": "release",
+      "repo": "OpenESC-20x20",
+      "date": "2026-08-25",
+      "tag": "rev3.3",
+      "name": "OpenESC-20x20 Rev 3.3",
+      "prerelease": false,
+      "url": "https://github.com/OpenDrone-hw/OpenESC-20x20/releases/tag/rev3.3",
+      "observed": "2026-08-26"
+    },
+    {
+      "id": "release:OpenESC-30x30:rev3.3",
+      "kind": "release",
+      "repo": "OpenESC-30x30",
+      "date": "2026-08-25",
+      "tag": "rev3.3",
+      "name": "OpenESC-30x30 Rev 3.3",
+      "prerelease": false,
+      "url": "https://github.com/OpenDrone-hw/OpenESC-30x30/releases/tag/rev3.3",
+      "observed": "2026-08-26"
+    },
+    {
+      "id": "release:OpenFC-Lite-Mini:rev3.3",
+      "kind": "release",
+      "repo": "OpenFC-Lite-Mini",
+      "date": "2026-08-25",
+      "tag": "rev3.3",
+      "name": "OpenFC-Lite-Mini Rev 3.3",
+      "prerelease": false,
+      "url": "https://github.com/OpenDrone-hw/OpenFC-Lite-Mini/releases/tag/rev3.3",
+      "observed": "2026-08-26"
+    },
+    {
+      "id": "release:OpenFC-Lite:rev3.3",
+      "kind": "release",
+      "repo": "OpenFC-Lite",
+      "date": "2026-08-25",
+      "tag": "rev3.3",
+      "name": "OpenFC-Lite Rev 3.3",
+      "prerelease": false,
+      "url": "https://github.com/OpenDrone-hw/OpenFC-Lite/releases/tag/rev3.3",
+      "observed": "2026-08-26"
     }
   ]
 }
