@@ -2,7 +2,7 @@
 
 Reference for anyone building or reviewing the store. It lists the EU and Belgian requirements the storefront itself must satisfy: product-listing content, consumer-law machinery, privacy/cookies, tax display, shipping policy, and sales restrictions. Incutec BV is an EU-established manufacturer selling B2C and B2B and shipping from Belgium, so the store carries the manufacturer and seller obligations directly.
 
-This is the storefront-facing subset. Product certification (CE/RED/FCC) and internal operational planning live elsewhere and are out of scope here.
+This is the storefront-facing subset. OpenDrone CE/RED and EU DoC scope lives only in `product/CE.md` in the private compliance repository and is out of scope here.
 
 ## 1. Product-listing content (GPSR, Reg (EU) 2023/988)
 
@@ -56,7 +56,7 @@ Terms and conditions, privacy policy, cookie policy, return/refund policy, and t
 
 ## 7. Product conformity display
 
-Publish the signed Declarations of Conformity and show the CE marking on the relevant product pages (open, RadioMaster-style publishing). Link the DoC PDF from each certified SKU's listing.
+Use only the status and outputs controlled by `compliance/product/CE.md`. Do not show CE or publish a DoC until the exact declaration unit is ready, all declaration gates pass and the signed output exists. Link a published declaration from its stable `/doc/<sku>` page; do not describe a self-declared product as "certified".
 
 ## Sources
 
