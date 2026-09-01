@@ -27,7 +27,10 @@ Open-Source ExpressLRS firmware. They differ only in the radio:
 
 Everything is Open Source, KiCad files included, under CERN-OHL-S, and all four
 are OSHWA-certified Open Source hardware:
-[github.com/OpenDrone-hw/OpenRX](https://github.com/OpenDrone-hw/OpenRX).
+[OpenRX Lite](https://github.com/OpenDrone-hw/OpenRX-Lite),
+[Lite-UFL](https://github.com/OpenDrone-hw/OpenRX-Lite-UFL),
+[Mono](https://github.com/OpenDrone-hw/OpenRX-Mono), and
+[Gemini](https://github.com/OpenDrone-hw/OpenRX-Gemini).
 
 ## The test
 
@@ -71,7 +74,11 @@ The full video walks through modulation, the noise floor, LoRa, and the PCB
 design in KiCad:
 [youtube.com/watch?v=ssmQkRkXE84](https://www.youtube.com/watch?v=ssmQkRkXE84).
 
-Hardware, schematics and layouts: [github.com/OpenDrone-hw/OpenRX](https://github.com/OpenDrone-hw/OpenRX).
+Hardware, schematics and layouts:
+[Lite](https://github.com/OpenDrone-hw/OpenRX-Lite),
+[Lite-UFL](https://github.com/OpenDrone-hw/OpenRX-Lite-UFL),
+[Mono](https://github.com/OpenDrone-hw/OpenRX-Mono), and
+[Gemini](https://github.com/OpenDrone-hw/OpenRX-Gemini).
 Subscribe below to get an email when the boards go on sale.
 
 We're still working on the website, let us know on discord if there's things to change!
