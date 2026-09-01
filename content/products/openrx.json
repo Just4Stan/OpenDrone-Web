@@ -24,7 +24,7 @@
     "logo": "/logos/expresslrs.svg",
     "logoDark": true
   },
-  "repoUrl": "https://github.com/OpenDrone-hw/OpenRX",
+  "repoUrl": "https://github.com/OpenDrone-hw/OpenRX-Lite",
   "credits": [
     "bastian2001",
     "Just4Stan"
@@ -164,21 +164,18 @@
       "Betaflight passthrough or Wi-Fi"
     ],
     [
-      "Wi-Fi antenna",
-      "Separate on-board ceramic"
-    ],
-    [
       "Dimensions",
       "10.0 × 11.5 mm"
     ],
     [
       "PCB",
-      "6-layer"
+      "6-layer, 1.0 mm"
     ]
   ],
   "optionAxis": "Model",
   "variants": {
     "Lite": {
+      "repoUrl": "https://github.com/OpenDrone-hw/OpenRX-Lite",
       "oshwaUid": "BE000030",
       "highlights": [
         [
@@ -188,16 +185,6 @@
         [
           "Antenna",
           "Ceramic"
-        ]
-      ],
-      "specs": [
-        [
-          "Antenna",
-          "On-board ceramic, no wire to tear off"
-        ],
-        [
-          "Dimensions",
-          "10.0 × 11.5 mm"
         ]
       ],
       "pins": [
@@ -271,11 +258,12 @@
       ],
       "boardArt": {
         "src": "/boards/openrx-lite/board.svg",
-        "inspectUrl": "https://kicanvas.org/?github=https://github.com/OpenDrone-hw/OpenRX/blob/main/OpenRX-Lite/OpenRX-Lite.kicad_pcb",
-        "schematicUrl": "https://kicanvas.org/?github=https://github.com/OpenDrone-hw/OpenRX/blob/main/OpenRX-Lite/OpenRX-Lite.kicad_sch"
+        "inspectUrl": "https://kicanvas.org/?github=https://github.com/OpenDrone-hw/OpenRX-Lite/blob/main/hardware/OpenRX-Lite.kicad_pcb",
+        "schematicUrl": "https://kicanvas.org/?github=https://github.com/OpenDrone-hw/OpenRX-Lite/blob/main/hardware/OpenRX-Lite.kicad_sch"
       }
     },
     "Lite-UFL": {
+      "repoUrl": "https://github.com/OpenDrone-hw/OpenRX-Lite-UFL",
       "oshwaUid": "BE000031",
       "highlights": [
         [
@@ -290,11 +278,7 @@
       "specs": [
         [
           "Antenna",
-          "U.FL, run the dipole of your choice"
-        ],
-        [
-          "Dimensions",
-          "10.0 × 11.5 mm"
+          "U.FL"
         ]
       ],
       "inTheBox": [
@@ -374,11 +358,12 @@
       ],
       "boardArt": {
         "src": "/boards/openrx-lite-ufl/board.svg",
-        "inspectUrl": "https://kicanvas.org/?github=https://github.com/OpenDrone-hw/OpenRX/blob/main/OpenRX-Lite-UFL/OpenRX-Lite-UFL.kicad_pcb",
-        "schematicUrl": "https://kicanvas.org/?github=https://github.com/OpenDrone-hw/OpenRX/blob/main/OpenRX-Lite-UFL/OpenRX-Lite-UFL.kicad_sch"
+        "inspectUrl": "https://kicanvas.org/?github=https://github.com/OpenDrone-hw/OpenRX-Lite-UFL/blob/main/hardware/OpenRX-Lite-UFL.kicad_pcb",
+        "schematicUrl": "https://kicanvas.org/?github=https://github.com/OpenDrone-hw/OpenRX-Lite-UFL/blob/main/hardware/OpenRX-Lite-UFL.kicad_sch"
       }
     },
     "Mono": {
+      "repoUrl": "https://github.com/OpenDrone-hw/OpenRX-Mono",
       "oshwaUid": "BE000032",
       "highlights": [
         [
@@ -393,7 +378,7 @@
       "specs": [
         [
           "Band",
-          "2.4 GHz + 900 MHz, one antenna"
+          "2.4 GHz and sub-GHz"
         ],
         [
           "Radio",
@@ -401,11 +386,11 @@
         ],
         [
           "Antenna",
-          "U.FL, both bands through one RF switch"
+          "U.FL"
         ],
         [
           "Telemetry power",
-          "12–22 dBm selectable (158 mW max)"
+          "Up to 22 dBm (158 mW)"
         ],
         [
           "Dimensions",
@@ -489,11 +474,12 @@
       ],
       "boardArt": {
         "src": "/boards/openrx-mono/board.svg",
-        "inspectUrl": "https://kicanvas.org/?github=https://github.com/OpenDrone-hw/OpenRX/blob/main/OpenRX-Mono/OpenRX-Mono.kicad_pcb",
-        "schematicUrl": "https://kicanvas.org/?github=https://github.com/OpenDrone-hw/OpenRX/blob/main/OpenRX-Mono/OpenRX-Mono.kicad_sch"
+        "inspectUrl": "https://kicanvas.org/?github=https://github.com/OpenDrone-hw/OpenRX-Mono/blob/main/hardware/OpenRX-Mono.kicad_pcb",
+        "schematicUrl": "https://kicanvas.org/?github=https://github.com/OpenDrone-hw/OpenRX-Mono/blob/main/hardware/OpenRX-Mono.kicad_sch"
       }
     },
     "Gemini": {
+      "repoUrl": "https://github.com/OpenDrone-hw/OpenRX-Gemini",
       "oshwaUid": "BE000033",
       "highlights": [
         [
@@ -508,23 +494,31 @@
       "specs": [
         [
           "Band",
-          "2.4 GHz + 900 MHz, two radio chains"
+          "2.4 GHz and sub-GHz, Xrossband"
         ],
         [
           "Radio",
-          "2× LR1121"
+          null
         ],
         [
           "Antenna",
-          "2× U.FL, one per radio"
+          null
         ],
         [
           "Telemetry power",
-          "12–22 dBm per radio (158 mW)"
+          "Up to 22 dBm (158 mW)"
         ],
         [
           "Dimensions",
           "17.0 × 15.7 mm"
+        ],
+        [
+          "Radios",
+          "2× LR1121"
+        ],
+        [
+          "Antennas",
+          "2× U.FL"
         ]
       ],
       "inTheBox": [
@@ -619,8 +613,8 @@
       ],
       "boardArt": {
         "src": "/boards/openrx-gemini/board.svg",
-        "inspectUrl": "https://kicanvas.org/?github=https://github.com/OpenDrone-hw/OpenRX/blob/main/OpenRX-Gemini/OpenRX-Gemini.kicad_pcb",
-        "schematicUrl": "https://kicanvas.org/?github=https://github.com/OpenDrone-hw/OpenRX/blob/main/OpenRX-Gemini/OpenRX-Gemini.kicad_sch"
+        "inspectUrl": "https://kicanvas.org/?github=https://github.com/OpenDrone-hw/OpenRX-Gemini/blob/main/hardware/OpenRX-Gemini.kicad_pcb",
+        "schematicUrl": "https://kicanvas.org/?github=https://github.com/OpenDrone-hw/OpenRX-Gemini/blob/main/hardware/OpenRX-Gemini.kicad_sch"
       }
     }
   }

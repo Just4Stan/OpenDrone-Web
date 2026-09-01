@@ -6,9 +6,9 @@
     {"handle": "openesc-30x30", "pcb": "OpenESC-30x30/hardware/4in1.kicad_pcb"},
     {"handle": "openfc-lite", "pcb": "OpenFC-Lite/hardware/OpenFC.kicad_pcb"},
     {"handle": "openfc-lite-mini", "pcb": "OpenFC-Lite-Mini/hardware/OpenFC.kicad_pcb"},
-    {"handle": "openrx-lite", "pcb": "OpenRX/OpenRX-Lite/OpenRX-Lite.kicad_pcb"},
-    {"handle": "openrx-lite-ufl", "pcb": "OpenRX/OpenRX-Lite-UFL/OpenRX-Lite-UFL.kicad_pcb"},
-    {"handle": "openrx-mono", "pcb": "OpenRX/OpenRX-Mono/OpenRX-Mono.kicad_pcb"},
-    {"handle": "openrx-gemini", "pcb": "OpenRX/OpenRX-Gemini/OpenRX-Gemini.kicad_pcb"}
+    {"handle": "openrx-lite", "pcb": "OpenRX-Lite/hardware/OpenRX-Lite.kicad_pcb"},
+    {"handle": "openrx-lite-ufl", "pcb": "OpenRX-Lite-UFL/hardware/OpenRX-Lite-UFL.kicad_pcb"},
+    {"handle": "openrx-mono", "pcb": "OpenRX-Mono/hardware/OpenRX-Mono.kicad_pcb"},
+    {"handle": "openrx-gemini", "pcb": "OpenRX-Gemini/hardware/OpenRX-Gemini.kicad_pcb"}
   ]
 }

@@ -42,11 +42,7 @@ export type RoadmapItem = {
   repo?: string;
   /** Board render for the kanban card, from public/boards/. */
   image?: string;
-  /**
-   * One kanban card per physical board. OpenRX is one roadmap entry (one
-   * repo, one status topic, one vote identity) but four boards; the board
-   * shows each. Items without variants are their own single card.
-   */
+  /** Optional visual variants for one repository and one status identity. */
   variants?: {id: string; image?: string}[];
   /**
    * ISO date the entry joined this list. Shown on the vote standings so a
@@ -86,16 +82,32 @@ export const ROADMAP: RoadmapItem[] = [
     image: '/boards/openesc-30x30/front.png',
   },
   {
-    id: 'openrx',
+    id: 'openrx_lite',
     status: 'alpha',
     productPath: '/products/openrx',
-    link: 'https://github.com/OpenDrone-hw/OpenRX',
-    variants: [
-      {id: 'openrx_lite', image: '/boards/openrx-lite/front.png'},
-      {id: 'openrx_lite_ufl', image: '/boards/openrx-lite-ufl/front.png'},
-      {id: 'openrx_gemini', image: '/boards/openrx-gemini/front.png'},
-      {id: 'openrx_mono', image: '/boards/openrx-mono/front.png'},
-    ],
+    link: 'https://github.com/OpenDrone-hw/OpenRX-Lite',
+    image: '/boards/openrx-lite/front.png',
+  },
+  {
+    id: 'openrx_lite_ufl',
+    status: 'alpha',
+    productPath: '/products/openrx',
+    link: 'https://github.com/OpenDrone-hw/OpenRX-Lite-UFL',
+    image: '/boards/openrx-lite-ufl/front.png',
+  },
+  {
+    id: 'openrx_mono',
+    status: 'alpha',
+    productPath: '/products/openrx',
+    link: 'https://github.com/OpenDrone-hw/OpenRX-Mono',
+    image: '/boards/openrx-mono/front.png',
+  },
+  {
+    id: 'openrx_gemini',
+    status: 'alpha',
+    productPath: '/products/openrx',
+    link: 'https://github.com/OpenDrone-hw/OpenRX-Gemini',
+    image: '/boards/openrx-gemini/front.png',
   },
   {
     id: 'openframe',
