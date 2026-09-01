@@ -5,15 +5,15 @@
     </clipPath>
   </defs>
   <g id="layer-back" class="board-layer board-layer-back">
-    <image href="/boards/openesc-30x30/back.png" x="9.0804" y="9.8" width="43.0769" height="42.6633" preserveAspectRatio="none" image-rendering="optimizeQuality"/>
+    <image href="/boards/openesc-30x30/back.png" x="9.3612" y="9.8" width="42.5156" height="42.6633" preserveAspectRatio="none" image-rendering="optimizeQuality"/>
   </g>
   <g id="layer-edge-cuts" class="board-layer board-layer-edge-cuts">
 <g style="fill:#000000; fill-opacity:1.0000;stroke:#000000; stroke-opacity:1.0000;
 stroke-linecap:round; stroke-linejoin:round;"
  transform="translate(0 0) scale(1 1)">
 </g>
-<g style="fill:none; 
-stroke:#D0D2CD; stroke-width:0.4000; stroke-opacity:1; 
+<g style="fill:none;
+stroke:#D0D2CD; stroke-width:0.4000; stroke-opacity:1;
 stroke-linecap:round; stroke-linejoin:round;">
 <path d="M10.2603 18.5778
 L10.2962 18.6136
@@ -215,8 +215,8 @@ L50.9690 39.8136
 <path d="M51.4239 36.5500 A5.0001 5.0001 0.0 0 0 51.4239 39.0500" />
 <path d="M51.1019 45.0412 A0.6000 0.6000 0.0 0 0 51.4239 44.3500" />
 <path d="M51.4239 41.8500 A5.0001 5.0001 0.0 0 0 51.4239 44.3500" />
-<circle cx="22.0326" cy="51.3000" r="0.5000" /> 
-<circle cx="39.2326" cy="51.3000" r="0.5000" /> 
+<circle cx="22.0326" cy="51.3000" r="0.5000" />
+<circle cx="39.2326" cy="51.3000" r="0.5000" />
 <path d="M18.0778,48.9000 C18.4334,48.9056 18.7889,48.9112 19.0528,48.9252" />
 <path d="M19.0528,48.9252 C19.2394,48.9352 19.3802,48.9494 19.5380,48.9756" />
 <path d="M19.5380,48.9756 C19.6971,49.0021 19.8737,49.0408 20.0185,49.0985" />
@@ -246,36 +246,12 @@ L50.9690 39.8136
 <path d="M43.1873,48.9000 C42.8318,48.9056 42.4762,48.9112 42.2124,48.9252" />
 </g>
 <g style="fill:#000000; fill-opacity:1.0000; stroke:none;">
-<circle cx="22.0326" cy="51.3000" r="0.6000" /> 
-<circle cx="39.2326" cy="51.3000" r="0.6000" /> 
-<circle cx="15.3826" cy="14.6000" r="2.0000" /> 
-<circle cx="15.3826" cy="45.1000" r="2.0000" /> 
-<circle cx="45.8826" cy="14.6000" r="2.0000" /> 
-<circle cx="45.8826" cy="45.1000" r="2.0000" /> 
-<circle cx="10.4222" cy="18.0000" r="0.2000" /> 
-<circle cx="10.4222" cy="15.2000" r="0.2000" /> 
-<circle cx="10.4222" cy="20.5000" r="0.2000" /> 
-<circle cx="10.4222" cy="23.3000" r="0.2000" /> 
-<circle cx="10.4222" cy="25.8000" r="0.2000" /> 
-<circle cx="10.4222" cy="28.6000" r="0.2000" /> 
-<circle cx="10.4222" cy="31.1000" r="0.2000" /> 
-<circle cx="10.4222" cy="33.9000" r="0.2000" /> 
-<circle cx="10.4222" cy="36.4000" r="0.2000" /> 
-<circle cx="10.4222" cy="39.2000" r="0.2000" /> 
-<circle cx="10.4222" cy="41.7000" r="0.2000" /> 
-<circle cx="10.4222" cy="44.5000" r="0.2000" /> 
-<circle cx="50.8430" cy="15.2000" r="0.2000" /> 
-<circle cx="50.8430" cy="18.0000" r="0.2000" /> 
-<circle cx="50.8430" cy="20.5000" r="0.2000" /> 
-<circle cx="50.8430" cy="23.3000" r="0.2000" /> 
-<circle cx="50.8430" cy="25.8000" r="0.2000" /> 
-<circle cx="50.8430" cy="28.6000" r="0.2000" /> 
-<circle cx="50.8430" cy="31.1000" r="0.2000" /> 
-<circle cx="50.8430" cy="33.9000" r="0.2000" /> 
-<circle cx="50.8430" cy="36.4000" r="0.2000" /> 
-<circle cx="50.8430" cy="39.2000" r="0.2000" /> 
-<circle cx="50.8430" cy="41.7000" r="0.2000" /> 
-<circle cx="50.8430" cy="44.5000" r="0.2000" /> 
+<circle cx="22.0326" cy="51.3000" r="0.6000" />
+<circle cx="39.2326" cy="51.3000" r="0.6000" />
+<circle cx="15.3826" cy="14.6000" r="2.0000" />
+<circle cx="15.3826" cy="45.1000" r="2.0000" />
+<circle cx="45.8826" cy="14.6000" r="2.0000" />
+<circle cx="45.8826" cy="45.1000" r="2.0000" />
 </g>
   </g>
   <g id="layer-f" class="board-layer board-layer-f">

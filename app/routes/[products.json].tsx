@@ -103,7 +103,7 @@ export async function loader({context, request}: Route.LoaderArgs) {
   return new Response(
     JSON.stringify(
       {
-        note: 'Pre-launch: prices are placeholders and subject to change. Civilian use only — see /end-use. Agent guide: /llms.txt',
+        note: 'Availability and pricing reflect the current store response. Civilian use only — see /end-use. Agent guide: /llms.txt',
         products,
       },
       null,

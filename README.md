@@ -248,7 +248,7 @@ page stacks (six vector layers of vias stuttered on phones), with the full
 for the mobile home and roadmap come from the same run; rasters and thumbnails
 alone: `--rasters-only`, `--derivatives-only`. `scripts/boards.config.json` maps
 handles to `.kicad_pcb` paths relative to the container that holds the board
-checkouts (`~/OpenDrone/hardware`; `OPENDRONE_HARDWARE` overrides it).
+checkouts (`../hardware`; `OPENDRONE_HARDWARE` overrides it).
 
 **Repo-to-site mirror**: the board repos are the source of truth for specs and
 release assets, the site is a maintained mirror. `npm run sync:specs` reads the

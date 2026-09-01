@@ -1,7 +1,7 @@
 # Growth architecture (analytics, attribution, email, ledger)
 
-Settled facts about the growth stack shipped in PRs #277-#284 (July 2026).
-Live task tracking lives in `drafts/coordination.md`, not here.
+Implemented architecture of the growth stack. Verify behavior against the
+current source and tests; this document is not a task tracker.
 
 ## Data spine
 
