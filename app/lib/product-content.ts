@@ -401,18 +401,17 @@ export type ProductContent = {
  *   GND_2 the small signal-row ground. Not the +BATT rail, not the CSA+ lug.
  * - 30x30 MOSFETs sit 10 on the front and 14 on the back. All 24 are listed;
  *   the viewer shows each side's subset on its own face.
- * - The 30x30 hides `Dimensions` (null) because the outline is still an open
- *   item in its repo.
- * - Specs verified against the OpenESC repos (KiCad files + Rev3 production
- *   BOMs, 2026-08-07). Field order follows FPV retail convention: firmware,
+ * - The 30x30 hides `Dimensions` (null) until a verified outline value is
+ *   available from its repo.
+ * - Specs come from the OpenESC repos (KiCad files + production BOMs). Field
+ *   order follows FPV retail convention: firmware,
  *   current, input, protocol, silicon, sensing, connector, physical. Weight
  *   rows land once boards are weighed.
  * - The stack BXGY discounts the ESC itself when the FC joins the cart.
  * - Launching with 20x20 and 30x30. Pro (higher-current) variants land later
  *   as further values on the same "Model" axis.
- * - TODO(downloads): publish schematic.pdf, bom.csv, gerbers.zip, manual.pdf,
- *   wiring.pdf and flashing.md to the OpenESC-20x20 repo, then add the cards.
- *   Until then KiCanvas plus the GitHub link cover "study the design".
+ * - Download cards stay omitted until their corresponding release artifacts
+ *   exist. KiCanvas and the GitHub link remain the current design sources.
  *
  * openfc-lite
  * - The shipping cost-down flight controller: one design, two mount sizes
@@ -423,44 +422,32 @@ export type ProductContent = {
  *   caps, so it reads as the whole buck rather than just the chip.
  * - The 20x20 (Mini) is its own repo and its own refdes layout: RP2354A
  *   QFN-60, no op-amp in the OSD front end.
- * - Specs verified against the OpenFC-Lite / OpenFC-Lite-Mini repos (KiCad
- *   files + Rev3 BOMs, 2026-08-07). IMU: every shipping OpenFC is BMI270
- *   (maintainer, 2026-08-08). The LGA-14 footprint also takes the LSM6DSV16X the
+ * - Specs come from the OpenFC-Lite / OpenFC-Lite-Mini repos (KiCad files and
+ *   production BOMs). The shipping IMU is BMI270. The LGA-14 footprint also takes the LSM6DSV16X the
  *   rev2 build used, which is why the KiCad value, and so the teardown
  *   viewer, still reads LSM6DSV16X on the 30x30.
  * - The stack BXGY discounts the added ESC, not this FC and not the pair.
- * - TODO(downloads): publish schematic.pdf, bom.csv, gerbers.zip and
- *   manual.pdf to the OpenFC-Lite repos and wire the cards here.
+ * - Download cards stay omitted until their corresponding repository release
+ *   artifacts exist.
  *
  * openrx
  * - Base `teardown.pins` match the Lite tier; every variant overrides them.
  *   The Wi-Fi antenna and the ELRS link antenna are SEPARATE: AE1 is on the
  *   /WIFI net to the ESP32-C3, the link path is AE2 or U.FL.
- * - Downloads point at what the repo publishes today (verified 200 on
- *   raw.githubusercontent, 2026-07-18). Still unpublished, add when they
- *   land: STEP for Lite/Gemini, BOM for Lite-UFL/Mono, gerbers, manual.
- * - Specs verified against the OpenRX repo (KiCad boards, fab BOMs,
- *   shared/elrs-targets JSON, 2026-08-07): bands rather than radio part
+ * - Downloads point only at artifacts the repository currently publishes.
+ * - Specs come from the OpenRX repo (KiCad boards, fab BOMs and
+ *   shared/elrs-targets JSON): bands rather than radio part
  *   numbers, no flash targets.
  *
  * openframe
- * - Geometry parsed from the released STEP files (2026-08-07). Wheelbase and
- *   stack clearance are derived from the CAD, they appear in no doc. Weights
- *   land once the first CNC batch is measured.
+ * - Frame content is a planned-product fallback. It does not claim a public
+ *   CAD source, measured weight, or material grade.
  * - `teardown.frameViewer` is the fallback when a tier defines none. Both
  *   tiers override it and it seeds the viewer's preload set, so it points at
  *   a current model (the 5") rather than the stale generic frame.glb.
- * - TODO(copy): teardown pin text is placeholder. The exploded viewer is the
- *   CAD analogue of the boards' KiCanvas layer reveal; the text states only
- *   known specs (5 mm arms, 30.5 x 30.5 pattern), no invented material
- *   grades. `inspectUrl` stays omitted until the OnShape doc is public.
- * - TODO(copy): variant editorial is placeholder and only wires the "Model"
- *   axis and ladder. Shared specs still read 5-inch; reconcile once the 3"
- *   (OpenFrame3) specs land.
- * - TODO(onshape): the frame is an OnShape document, not a GitHub repo. The
- *   old STEP/DXF/assembly links pointed at a repo that does not exist and
- *   were removed. Wire real artifacts (OnShape embedded viewer + STEP export)
- *   once the OnShape integration lands. We do not release DXF cutting files.
+ * - Teardown and variant copy is intentionally limited to the known 5 mm-arm
+ *   and 30.5 x 30.5 mm-pattern facts. `inspectUrl` and download links remain
+ *   omitted until a public source and real artifacts exist.
  */
 
 /** Minimal structural view of the two `node:fs` calls the disk fallback uses. */

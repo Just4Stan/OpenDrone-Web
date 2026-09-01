@@ -1,5 +1,5 @@
 import {admin} from './_client.mjs';
-const handles = ['openesc', 'openfc', 'openrx', 'openframe', 'openstack'];
+const handles = ['openesc', 'openfc-lite', 'openrx', 'openframe'];
 for (const h of handles) {
   const d = await admin(
     `#graphql

@@ -37,7 +37,7 @@ import {fileURLToPath} from 'node:url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, '..');
-const SITE_ORIGIN = 'https://opendrone.store';
+const SITE_ORIGIN = 'https://opendrone.be';
 const RESEND_API = 'https://api.resend.com';
 
 // --- env (no dotenv dep in this repo — mirror shopify-infra/_client.mjs) ----
@@ -202,22 +202,36 @@ async function shopifyNotifyEmails(handle) {
 }
 
 // --- email template ------------------------------------------------------------
-// TODO(copy): draft copy — subject + body need your voice, and the
-// handle ("openfc-lite") should become the real product title.
+
+const PRODUCT_TITLES = {
+  openrx: 'OpenRX',
+  openesc: 'OpenESC',
+  'openfc-lite': 'OpenFC Lite',
+  'openfc-lite-mini': 'OpenFC Lite Mini',
+  openframe: 'OpenFrame',
+};
+
+function productTitle(handle) {
+  return PRODUCT_TITLES[handle] ?? handle
+    .split('-')
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
+}
 
 function renderBlast(handle) {
+  const title = productTitle(handle);
   const url = `${SITE_ORIGIN}/products/${handle}?utm_source=newsletter&utm_medium=email&utm_campaign=launch-${handle}`;
-  const subject = `${handle} is live`;
+  const subject = `${title} is live`;
   const text = [
     'Hi,',
     '',
-    `You asked to be notified when ${handle} launches — it's on sale now:`,
+    `You asked to be notified when ${title} launches — it's on sale now:`,
     url,
     '',
     'Thanks for waiting.',
     'OpenDrone',
     '',
-    'You get this because you signed up for launch updates at opendrone.store.',
+    'You get this because you signed up for launch updates at opendrone.be.',
     'Unsubscribe: {{{RESEND_UNSUBSCRIBE_URL}}}',
   ].join('\n');
   const html = `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
@@ -231,11 +245,11 @@ function renderBlast(handle) {
         </td></tr>
         <tr><td style="padding:18px 28px 28px;color:#e5e5e5;font-size:15px">
           <p>Hi,</p>
-          <p>You asked to be notified when <strong>${handle}</strong> launches &mdash; it&rsquo;s on sale now.</p>
+          <p>You asked to be notified when <strong>${title}</strong> launches &mdash; it&rsquo;s on sale now.</p>
           <p style="margin:24px 0 32px">
             <a href="${url}" style="display:inline-block;background:#ffb700;color:#0a0a0a;text-decoration:none;font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:0.14em;text-transform:uppercase;font-weight:700;padding:12px 18px;border-radius:2px">View product &rarr;</a>
           </p>
-          <p style="color:#737373;font-size:13px;line-height:1.6">You get this because you signed up for launch updates at opendrone.store. <a href="{{{RESEND_UNSUBSCRIBE_URL}}}" style="color:#ffb700">Unsubscribe</a>.</p>
+          <p style="color:#737373;font-size:13px;line-height:1.6">You get this because you signed up for launch updates at opendrone.be. <a href="{{{RESEND_UNSUBSCRIBE_URL}}}" style="color:#ffb700">Unsubscribe</a>.</p>
         </td></tr>
       </table>
     </td></tr>

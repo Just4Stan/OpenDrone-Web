@@ -209,11 +209,9 @@ where the fetch fails.
 Code is still duplicated: the teardown choreography, prop rigging, board merging
 and the four `select` shapes exist in both files. They agree today, but nothing
 enforces that. Changing one without the other will cause drift, and that
-duplication is the main known debt.
+duplication is the main maintenance limitation.
 
-## Known debt
-
-Kept here rather than in commit messages so it stays visible.
+## Current limitations
 
 - The choreography, prop rigging and group membership rules are code, not
   config, so a new design with a different structure still needs edits.
@@ -229,7 +227,7 @@ Kept here rather than in commit messages so it stays visible.
 - The studio and the site do not render materials identically: side by side at
   the same beat, the site shows gold motor bells where the studio shows red.
   Both apply the same profile table, so the divergence is in the renderer paths
-  rather than in the settings. Unresolved.
+  rather than in the settings.
 - Failures are mostly `console.warn`, not visible. A beat that resolves to zero
   nodes still runs, still spotlights nothing, and still shows its caption, which
   reads as an animation bug rather than a config one.
@@ -240,7 +238,7 @@ Kept here rather than in commit messages so it stays visible.
 ## Review findings
 
 An adversarial review of the hero component produced the list below. Fixed
-items are struck through in intent; open ones are real and unaddressed.
+items remain as design rationale; the rest describe current behavior.
 
 ### Fixed
 
