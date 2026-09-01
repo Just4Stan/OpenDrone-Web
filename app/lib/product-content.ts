@@ -210,12 +210,12 @@ export type VariantContent = {
    *  what Shopify matches against); set this when the shown name should differ
    *  from the matched key (e.g. key "20×20" shown as "20×20 (mini)"). */
   label?: string;
-  /** Per-tier GitHub repo, when a line splits its mounts across separate repos
-   *  (OpenFC-Lite vs OpenFC-Lite-Mini, OpenESC-20x20 vs OpenESC-30x30). The PDP
+  /** Per-tier GitHub repo, when a line splits its boards across separate repos
+   *  (OpenFC-Lite vs OpenFC-Lite-Mini, OpenESC-20x20 vs OpenESC-30x30, or the
+   *  four OpenRX boards). The PDP
    *  points the repo card, issues link and latest-commit card at this when the
    *  tier is selected; tiers without their own repo fall back to the product's
-   *  `repoUrl`. Lines whose tiers share one repo (OpenRX subfolders) leave it
-   *  unset. */
+   *  `repoUrl`. */
   repoUrl?: string;
   /** The cells that differ between tiers, rendered as ONE dotted line under
    *  the tier name on every ladder card. Keep it to two short values: the
@@ -435,8 +435,8 @@ export type ProductContent = {
  *   The Wi-Fi antenna and the ELRS link antenna are SEPARATE: AE1 is on the
  *   /WIFI net to the ESP32-C3, the link path is AE2 or U.FL.
  * - Downloads point only at artifacts the repository currently publishes.
- * - Specs come from the OpenRX repo (KiCad boards, fab BOMs and
- *   shared/elrs-targets JSON): bands rather than radio part
+ * - Specs come from the four OpenRX board repos (KiCad boards, release BOMs
+ *   and firmware target JSON): bands rather than radio part
  *   numbers, no flash targets.
  *
  * openframe

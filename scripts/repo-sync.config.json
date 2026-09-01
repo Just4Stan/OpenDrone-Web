@@ -1,5 +1,5 @@
 {
-  "$comment": "Repo -> product spec mapping for scripts/import-specs.mjs. The board repo READMEs are the canonical spec source; this file says which repo feeds which variant of which product JSON. The FIRST variant listed for a product is the base: its README table becomes the shared `specs` array, the other variants become per-tier overrides. `root` is the container holding the board checkouts; OPENDRONE_HARDWARE overrides it so the mirror can be regenerated from any machine. OpenRX is deliberately absent: one repo, four boards, hand-maintained exception (maintainer, 2026-08-15).",
+  "$comment": "Repo -> product spec mapping for scripts/import-specs.mjs. The board repo READMEs are the canonical spec source; this file says which repo feeds which variant of which product JSON. The FIRST variant listed for a product is the base: its README table becomes the shared `specs` array, the other variants become per-tier overrides. `root` is the container holding the board checkouts; OPENDRONE_HARDWARE overrides it so the mirror can be regenerated from any machine.",
   "root": "../hardware",
   "products": [
     {
@@ -25,6 +25,27 @@
         {
           "tier": "20×20",
           "repo": "OpenFC-Lite-Mini"
+        }
+      ]
+    },
+    {
+      "handle": "openrx",
+      "variants": [
+        {
+          "tier": "Lite",
+          "repo": "OpenRX-Lite"
+        },
+        {
+          "tier": "Lite-UFL",
+          "repo": "OpenRX-Lite-UFL"
+        },
+        {
+          "tier": "Mono",
+          "repo": "OpenRX-Mono"
+        },
+        {
+          "tier": "Gemini",
+          "repo": "OpenRX-Gemini"
         }
       ]
     }
