@@ -543,4 +543,3 @@ Note on method: GitHub REST API was queried directly for repo creation dates, co
 - Vendor announcement dates for the Jumper T16, RadioMaster TX16S, TX12, Zorro, Boxer and Pocket. The dates recorded are firmware-support and first-archived-page dates, which bracket the launches.
 - Receiver street prices over time, in particular the frequently repeated "sub USD 10 ELRS receiver versus USD 40 to 50 Crossfire Nano" comparison. No archived retailer page was retrieved to fix either number.
 - Whether ExpressLRS descends from any earlier codebase at all. The first commit is a self-contained ESP sketch, but no statement from AlessandroAU about prior art was found.
-

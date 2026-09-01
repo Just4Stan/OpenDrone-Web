@@ -12,8 +12,8 @@
 stroke-linecap:round; stroke-linejoin:round;"
  transform="translate(0 0) scale(1 1)">
 </g>
-<g style="fill:none; 
-stroke:#D0D2CD; stroke-width:0.1000; stroke-opacity:1; 
+<g style="fill:none;
+stroke:#D0D2CD; stroke-width:0.1000; stroke-opacity:1;
 stroke-linecap:round; stroke-linejoin:round;">
 <path d="M28.7288 35.9861
 L29.4664 36.0630
@@ -156,12 +156,12 @@ L48.6410 36.0630
 <path d="M48.6410,36.0630 C48.5078,36.0779 48.4178,36.0893 48.2743,36.1180" />
 </g>
 <g style="fill:#000000; fill-opacity:1.0000; stroke:none;">
-<circle cx="32.2537" cy="38.6000" r="0.5000" /> 
-<circle cx="45.8537" cy="38.6000" r="0.5000" /> 
-<circle cx="29.0537" cy="12.2000" r="1.5000" /> 
-<circle cx="29.0537" cy="32.2000" r="1.5000" /> 
-<circle cx="49.0537" cy="12.2000" r="1.5000" /> 
-<circle cx="49.0537" cy="32.2000" r="1.5000" /> 
+<circle cx="32.2537" cy="38.6000" r="0.5000" />
+<circle cx="45.8537" cy="38.6000" r="0.5000" />
+<circle cx="29.0537" cy="12.2000" r="1.5000" />
+<circle cx="29.0537" cy="32.2000" r="1.5000" />
+<circle cx="49.0537" cy="12.2000" r="1.5000" />
+<circle cx="49.0537" cy="32.2000" r="1.5000" />
 </g>
   </g>
   <g id="layer-f" class="board-layer board-layer-f">

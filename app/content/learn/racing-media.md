@@ -375,4 +375,3 @@ searching went through r.jina.ai as a fetch proxy in front of DuckDuckGo.
 web.archive.org, apnews.com, wired.com and sec.gov's full-text search are all
 blocked to this tool, which is why several bullets above could not be promoted
 to [verified].
-

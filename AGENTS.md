@@ -33,4 +33,3 @@ type check, lint, tests, and build as appropriate. For visual changes, inspect
 the affected responsive states and record any checks that could not be run.
 Never claim a deployment or external integration succeeded without observing
 the result.
-
