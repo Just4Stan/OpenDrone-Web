@@ -1,0 +1,2 @@
+# Deliberately fake JWT fixture used to verify public-output redaction.
+0986449491d65de817e389d74c58602ab7353064:app/lib/support/scrubber.test.ts:jwt:176
