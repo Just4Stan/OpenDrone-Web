@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-09-01T10:08:43.631Z",
+  "updatedAt": "2026-09-02T09:39:25.320Z",
   "repos": {
     "OpenESC-20x20": {
       "createdAt": "2026-03-09",
@@ -113,6 +113,34 @@
       "statusSince": "2026-08-15",
       "archived": false,
       "releases": 0
+    },
+    "OpenRX-Gemini": {
+      "createdAt": "2026-09-01",
+      "status": "alpha",
+      "statusSince": "2026-09-02",
+      "archived": false,
+      "releases": 2
+    },
+    "OpenRX-Mono": {
+      "createdAt": "2026-09-01",
+      "status": "alpha",
+      "statusSince": "2026-09-02",
+      "archived": false,
+      "releases": 2
+    },
+    "OpenRX-Lite": {
+      "createdAt": "2026-09-01",
+      "status": "alpha",
+      "statusSince": "2026-09-02",
+      "archived": false,
+      "releases": 2
+    },
+    "OpenRX-Lite-UFL": {
+      "createdAt": "2026-09-01",
+      "status": "alpha",
+      "statusSince": "2026-09-02",
+      "archived": false,
+      "releases": 2
     }
   },
   "events": [
@@ -456,6 +484,130 @@
       "prerelease": false,
       "url": "https://github.com/OpenDrone-hw/OpenFC-Lite/releases/tag/rev3.3",
       "observed": "2026-08-26"
+    },
+    {
+      "id": "release:OpenRX-Gemini:rev2",
+      "kind": "release",
+      "repo": "OpenRX-Gemini",
+      "date": "2026-09-01",
+      "tag": "rev2",
+      "name": "OpenRX Gemini Rev 2",
+      "prerelease": false,
+      "url": "https://github.com/OpenDrone-hw/OpenRX-Gemini/releases/tag/rev2",
+      "observed": "2026-09-02"
+    },
+    {
+      "id": "release:OpenRX-Gemini:rev2.1",
+      "kind": "release",
+      "repo": "OpenRX-Gemini",
+      "date": "2026-09-01",
+      "tag": "rev2.1",
+      "name": "OpenRX Gemini Rev 2.1",
+      "prerelease": false,
+      "url": "https://github.com/OpenDrone-hw/OpenRX-Gemini/releases/tag/rev2.1",
+      "observed": "2026-09-02"
+    },
+    {
+      "id": "release:OpenRX-Lite-UFL:rev2",
+      "kind": "release",
+      "repo": "OpenRX-Lite-UFL",
+      "date": "2026-09-01",
+      "tag": "rev2",
+      "name": "OpenRX Lite UFL Rev 2",
+      "prerelease": false,
+      "url": "https://github.com/OpenDrone-hw/OpenRX-Lite-UFL/releases/tag/rev2",
+      "observed": "2026-09-02"
+    },
+    {
+      "id": "release:OpenRX-Lite-UFL:rev2.1",
+      "kind": "release",
+      "repo": "OpenRX-Lite-UFL",
+      "date": "2026-09-01",
+      "tag": "rev2.1",
+      "name": "OpenRX Lite UFL Rev 2.1",
+      "prerelease": false,
+      "url": "https://github.com/OpenDrone-hw/OpenRX-Lite-UFL/releases/tag/rev2.1",
+      "observed": "2026-09-02"
+    },
+    {
+      "id": "release:OpenRX-Lite:rev2",
+      "kind": "release",
+      "repo": "OpenRX-Lite",
+      "date": "2026-09-01",
+      "tag": "rev2",
+      "name": "OpenRX Lite Rev 2",
+      "prerelease": false,
+      "url": "https://github.com/OpenDrone-hw/OpenRX-Lite/releases/tag/rev2",
+      "observed": "2026-09-02"
+    },
+    {
+      "id": "release:OpenRX-Lite:rev2.1",
+      "kind": "release",
+      "repo": "OpenRX-Lite",
+      "date": "2026-09-01",
+      "tag": "rev2.1",
+      "name": "OpenRX Lite Rev 2.1",
+      "prerelease": false,
+      "url": "https://github.com/OpenDrone-hw/OpenRX-Lite/releases/tag/rev2.1",
+      "observed": "2026-09-02"
+    },
+    {
+      "id": "release:OpenRX-Mono:rev2",
+      "kind": "release",
+      "repo": "OpenRX-Mono",
+      "date": "2026-09-01",
+      "tag": "rev2",
+      "name": "OpenRX Mono Rev 2",
+      "prerelease": false,
+      "url": "https://github.com/OpenDrone-hw/OpenRX-Mono/releases/tag/rev2",
+      "observed": "2026-09-02"
+    },
+    {
+      "id": "release:OpenRX-Mono:rev2.1",
+      "kind": "release",
+      "repo": "OpenRX-Mono",
+      "date": "2026-09-01",
+      "tag": "rev2.1",
+      "name": "OpenRX Mono Rev 2.1",
+      "prerelease": false,
+      "url": "https://github.com/OpenDrone-hw/OpenRX-Mono/releases/tag/rev2.1",
+      "observed": "2026-09-02"
+    },
+    {
+      "id": "repo:OpenRX-Gemini",
+      "kind": "repo",
+      "repo": "OpenRX-Gemini",
+      "date": "2026-09-01",
+      "url": "https://github.com/OpenDrone-hw/OpenRX-Gemini",
+      "archived": false,
+      "observed": "2026-09-02"
+    },
+    {
+      "id": "repo:OpenRX-Lite",
+      "kind": "repo",
+      "repo": "OpenRX-Lite",
+      "date": "2026-09-01",
+      "url": "https://github.com/OpenDrone-hw/OpenRX-Lite",
+      "archived": false,
+      "observed": "2026-09-02"
+    },
+    {
+      "id": "repo:OpenRX-Lite-UFL",
+      "kind": "repo",
+      "repo": "OpenRX-Lite-UFL",
+      "date": "2026-09-01",
+      "url": "https://github.com/OpenDrone-hw/OpenRX-Lite-UFL",
+      "archived": false,
+      "observed": "2026-09-02"
+    },
+    {
+      "id": "repo:OpenRX-Mono",
+      "kind": "repo",
+      "repo": "OpenRX-Mono",
+      "date": "2026-09-01",
+      "url": "https://github.com/OpenDrone-hw/OpenRX-Mono",
+      "archived": false,
+      "observed": "2026-09-02"
     }
   ]
 }
